@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// AUTH & USERS
+// ==========================================
+
+enum UserRole {
+  OWNER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(OWNER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businesses Business[]
+}
+
+// ==========================================
+// SUBSCRIPTIONS
+// ==========================================
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  plan       SubscriptionPlan   @default(FREE)
+  status     SubscriptionStatus @default(ACTIVE)
+  businessId String             @unique
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// BUSINESS & SERVICES
+// ==========================================
+
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  apiKey    String   @unique
+  ownerId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        User?         @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  services     Service[]
+  appointments Appointment[]
+  subscription Subscription?
+
+  @@index([ownerId])
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  duration    Int     // minutos
+  price       Float
+  businessId  String
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+// ==========================================
+// APPOINTMENTS
+// ==========================================
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  customerName  String
+  customerEmail String
+  startTime     DateTime
+  endTime       DateTime
+  status        AppointmentStatus @default(PENDING)
+  businessId    String
+  serviceId     String
+  createdAt     DateTime          @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([serviceId])
+  @@index([startTime])
+}
