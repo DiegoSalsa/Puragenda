@@ -18,6 +18,10 @@ export default async function WidgetPage({
     include: {
       services: { orderBy: { name: "asc" } },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
+      staff: {
+        where: { isActive: true },
+        include: { schedule: { orderBy: { dayOfWeek: "asc" } } },
+      },
     },
   });
 
@@ -26,15 +30,12 @@ export default async function WidgetPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] p-5">
         <div className="w-full max-w-lg rounded-2xl border border-white/[0.06] bg-[#111] p-8 text-center">
           <p className="text-xl font-semibold">Negocio no encontrado</p>
-          <p className="mt-2 text-sm text-white/40">
-            El identificador &ldquo;{slug}&rdquo; no existe.
-          </p>
+          <p className="mt-2 text-sm text-white/40">El identificador &ldquo;{slug}&rdquo; no existe.</p>
         </div>
       </div>
     );
   }
 
-  // Color cascade: URL param > primaryColor (without #) > brandColor > default
   const primaryHex = business.primaryColor.replace("#", "");
   const widgetColor = color || business.brandColor || primaryHex || "7C3AED";
 
@@ -47,6 +48,7 @@ export default async function WidgetPage({
         logoUrl: business.logoUrl,
         primaryColor: business.primaryColor,
         secondaryColor: business.secondaryColor,
+        backgroundColor: business.backgroundColor,
         brandColor: widgetColor,
       }}
       services={business.services.map((s) => ({
@@ -55,6 +57,13 @@ export default async function WidgetPage({
       primaryColor={widgetColor}
       businessHours={business.businessHours.map((h) => ({
         dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
+      }))}
+      staffMembers={business.staff.map((s) => ({
+        id: s.id,
+        name: s.name,
+        schedule: s.schedule.map((sc) => ({
+          dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
+        })),
       }))}
     />
   );

@@ -91,19 +91,20 @@ model Subscription {
 // ==========================================
 
 model Business {
-  id             String   @id @default(cuid())
-  name           String
-  slug           String   @unique
-  apiKey         String   @unique
-  logoUrl        String?
-  primaryColor   String   @default("#7C3AED")
-  secondaryColor String   @default("#5B21B6")
-  brandColor     String?  // Legacy widget color (without #)
-  allowedOrigins String[] @default([])
-  timezone       String   @default("America/Santiago")
-  ownerId        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  apiKey          String   @unique
+  logoUrl         String?
+  primaryColor    String   @default("#7C3AED")
+  secondaryColor  String   @default("#5B21B6")
+  backgroundColor String   @default("#0A0A0A")
+  brandColor      String?
+  allowedOrigins  String[] @default([])
+  timezone        String   @default("America/Santiago")
+  ownerId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   owner         User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   services      Service[]
@@ -118,9 +119,9 @@ model Business {
 
 model BusinessHours {
   id         String  @id @default(cuid())
-  dayOfWeek  Int     // 0=Sunday, 1=Monday, ..., 6=Saturday
-  startTime  String  // "09:00"
-  endTime    String  // "19:00"
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
   isOpen     Boolean @default(true)
   businessId String
 
@@ -153,12 +154,27 @@ model Staff {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  appointments Appointment[]
+  business      Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments  Appointment[]
+  schedule      StaffSchedule[]
 
   @@unique([businessId, email])
   @@index([businessId])
+}
+
+model StaffSchedule {
+  id        String  @id @default(cuid())
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isWorking Boolean @default(true)
+  staffId   String
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, dayOfWeek])
+  @@index([staffId])
 }
 
 model Service {

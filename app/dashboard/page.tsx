@@ -2,65 +2,56 @@ import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
 import { getAppointments } from "@/server/services/appointment.service";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
-import { format, startOfWeek, endOfWeek, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, addDays, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, Clock, Users, UserCheck, UserX } from "lucide-react";
+import { Calendar, Clock, UserCheck, Users } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const user = await getCurrentSessionUser();
-  if (!user) {
-    return <div className="py-20 text-center text-white/40">Debes iniciar sesión para acceder al dashboard</div>;
-  }
+  if (!user) return <div className="py-20 text-center text-white/40">Debes iniciar sesión para acceder al dashboard</div>;
 
   const business = await getFirstBusinessByOwnerId(user.id);
-  if (!business) {
-    return <div className="py-20 text-center text-white/40">No tienes un negocio configurado aún</div>;
+  if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio configurado aún</div>;
+
+  const params = await searchParams;
+  const today = new Date();
+
+  // URL-based week navigation
+  let targetDate = today;
+  if (params.date) {
+    try { targetDate = parseISO(params.date); } catch { targetDate = today; }
   }
 
-  const today = new Date();
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const weekAppointments = await getAppointments(business.id, {
-    from: weekStart,
-    to: addDays(weekEnd, 1),
-  });
-
+  const weekAppointments = await getAppointments(business.id, { from: weekStart, to: addDays(weekEnd, 1) });
   const todayCount = weekAppointments.filter((a) => isSameDay(new Date(a.startTime), today)).length;
   const totalServices = await prisma.service.count({ where: { businessId: business.id } });
   const pendingCount = weekAppointments.filter((a) => a.status === "PENDING").length;
   const checkedInCount = weekAppointments.filter((a) => a.status === "CHECKED_IN").length;
 
-  // Serialize appointments for the client component
   const serialized = weekAppointments.map((a) => ({
-    id: a.id,
-    customerName: a.customerName,
-    customerEmail: a.customerEmail,
-    startTime: a.startTime.toISOString(),
-    endTime: a.endTime.toISOString(),
-    status: a.status,
-    serviceName: a.service.name,
-    staffName: a.staff?.name || "Sin asignar",
+    id: a.id, customerName: a.customerName, customerEmail: a.customerEmail,
+    startTime: a.startTime.toISOString(), endTime: a.endTime.toISOString(),
+    status: a.status, serviceName: a.service.name, staffName: a.staff?.name || "Sin asignar",
   }));
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-white/40">
-          Resumen semanal para{" "}
-          <span className="font-medium text-[#7C3AED]">{business.name}</span>
+          Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
         </p>
       </div>
 
       <SubscriptionBanner businessId={business.id} />
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Hoy", value: todayCount, sub: format(today, "EEEE, d MMM", { locale: es }), icon: Calendar },
@@ -79,11 +70,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Weekly Calendar */}
-      <WeeklyCalendar
-        appointments={serialized}
-        weekStartISO={weekStart.toISOString()}
-      />
+      <WeeklyCalendar appointments={serialized} weekStartISO={weekStart.toISOString()} />
     </div>
   );
 }

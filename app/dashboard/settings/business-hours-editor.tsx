@@ -43,7 +43,6 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
               : "border-white/[0.03] bg-white/[0.01] opacity-50"
           }`}
         >
-          {/* Toggle */}
           <button
             type="button"
             onClick={() => update(h.dayOfWeek, "isOpen", !h.isOpen)}
@@ -58,16 +57,14 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
             />
           </button>
 
-          {/* Day label */}
           <span className="w-24 text-sm font-medium">{DAYS[h.dayOfWeek]}</span>
 
-          {/* Time selectors */}
           {h.isOpen ? (
             <div className="flex items-center gap-2">
               <select
                 value={h.startTime}
                 onChange={(e) => update(h.dayOfWeek, "startTime", e.target.value)}
-                className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-sm outline-none"
+                className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white outline-none [&>option]:bg-[#1a1a1a] [&>option]:text-white"
               >
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -75,7 +72,7 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
               <select
                 value={h.endTime}
                 onChange={(e) => update(h.dayOfWeek, "endTime", e.target.value)}
-                className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-sm outline-none"
+                className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white outline-none [&>option]:bg-[#1a1a1a] [&>option]:text-white"
               >
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
