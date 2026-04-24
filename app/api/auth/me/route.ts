@@ -1,4 +1,4 @@
-import { getApiSessionUser } from "@/backend/auth/user-session";
+import { getApiSessionUser } from "@/server/auth/user-session";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {

@@ -19,9 +19,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@/frontend/*": ["./frontend/*"],
-      "@/backend/*": ["./backend/*"]
+      "@/*": ["./src/*"],
+      "@/core/*": ["./src/core/*"],
+      "@/server/*": ["./src/server/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/lib/*": ["./src/lib/*"]
     }
   },
   "include": [

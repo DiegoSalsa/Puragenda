@@ -1,10 +1,9 @@
-import { getApiSessionUser } from "@/backend/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/backend/services/business.service";
-import { getServicesByBusinessId, createService } from "@/backend/services/service.service";
-import { serviceSchema } from "@/backend/validations/booking";
+import { getApiSessionUser } from "@/server/auth/user-session";
+import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getServicesByBusinessId, createService } from "@/server/services/service.service";
+import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
 
-// GET - obtener todos los servicios del negocio del usuario autenticado
 export async function GET(request: NextRequest) {
   try {
     const user = await getApiSessionUser(request);
@@ -24,7 +23,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - crear un nuevo servicio
 export async function POST(request: NextRequest) {
   try {
     const user = await getApiSessionUser(request);
@@ -39,7 +37,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Coerce string values to numbers for validation
     const parsed = serviceSchema.safeParse({
       ...body,
       duration: Number(body.duration),

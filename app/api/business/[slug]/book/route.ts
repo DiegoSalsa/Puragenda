@@ -1,7 +1,7 @@
-import { getBusinessBySlug, validateApiKey } from "@/backend/services/business.service";
-import { getServiceByIdAndBusiness } from "@/backend/services/service.service";
-import { createAppointment } from "@/backend/services/appointment.service";
-import { bookingSchema } from "@/backend/validations/booking";
+import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
+import { getServiceByIdAndBusiness } from "@/server/services/service.service";
+import { createAppointment } from "@/server/services/appointment.service";
+import { bookingSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
 
 export async function POST(
@@ -13,7 +13,6 @@ export async function POST(
   try {
     const body = await request.json();
 
-    // Validación con Zod
     const parsed = bookingSchema.safeParse(body);
     if (!parsed.success) {
       const errors = parsed.error.issues.map((i) => i.message);
@@ -23,18 +22,14 @@ export async function POST(
       );
     }
 
-    const { serviceId, customerName, customerEmail, startTime, endTime } = parsed.data;
+    const { serviceId, customerName, customerEmail, customerPhone, startTime, endTime, staffId } = parsed.data;
 
-    // Buscar negocio
     const business = await getBusinessBySlug(slug);
     if (!business) {
-      return Response.json(
-        { error: "Negocio no encontrado" },
-        { status: 404 }
-      );
+      return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
 
-    // Validar API Key
+    // Validate API Key
     const apiKey = request.headers.get("x-api-key") || body.apiKey;
     if (!validateApiKey(business, apiKey)) {
       return Response.json(
@@ -43,7 +38,7 @@ export async function POST(
       );
     }
 
-    // Verificar que el servicio pertenece al negocio
+    // Verify service belongs to business
     const service = await getServiceByIdAndBusiness(serviceId, business.id);
     if (!service) {
       return Response.json(
@@ -52,21 +47,20 @@ export async function POST(
       );
     }
 
-    // Crear cita con detección de colisiones
+    // Create appointment with collision detection
     const result = await createAppointment({
       customerName,
       customerEmail,
+      customerPhone,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       businessId: business.id,
       serviceId: service.id,
+      staffId,
     });
 
     if (!result.success) {
-      return Response.json(
-        { error: result.error },
-        { status: 409 }
-      );
+      return Response.json({ error: result.error }, { status: 409 });
     }
 
     return Response.json(result.appointment, { status: 201 });
@@ -78,14 +72,6 @@ export async function POST(
   }
 }
 
-// Manejo de OPTIONS para CORS preflight
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, x-api-key",
-    },
-  });
+  return new Response(null, { status: 204 });
 }

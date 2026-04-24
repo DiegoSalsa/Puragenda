@@ -1,10 +1,10 @@
-import { verifyCredentials } from "@/backend/services/auth.service";
+import { verifyCredentials } from "@/server/services/auth.service";
 import {
   AUTH_COOKIE_NAME,
   createSessionToken,
   getSessionCookieOptions,
-} from "@/backend/auth/session";
-import { loginSchema } from "@/backend/validations/auth";
+} from "@/server/auth/session";
+import { loginSchema } from "@/server/validations/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       const errors = parsed.error.issues.map((issue) => issue.message);
       return NextResponse.json(
-        { error: "Errores de validacion", details: errors },
+        { error: "Errores de validación", details: errors },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Email o contrasena incorrectos" },
+        { error: "Email o contraseña incorrectos" },
         { status: 401 }
       );
     }
@@ -38,15 +38,11 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.json(
-      {
-        message: "Login exitoso",
-        user,
-      },
+      { message: "Login exitoso", user },
       { status: 200 }
     );
 
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
-
     return response;
   } catch {
     return NextResponse.json(

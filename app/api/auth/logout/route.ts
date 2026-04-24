@@ -1,11 +1,8 @@
-import {
-  AUTH_COOKIE_NAME,
-  getSessionCookieOptions,
-} from "@/backend/auth/session";
+import { AUTH_COOKIE_NAME, getSessionCookieOptions } from "@/server/auth/session";
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const response = NextResponse.json({ message: "Sesion cerrada" }, { status: 200 });
+  const response = NextResponse.json({ message: "Sesión cerrada" }, { status: 200 });
 
   response.cookies.set(AUTH_COOKIE_NAME, "", {
     ...getSessionCookieOptions(),

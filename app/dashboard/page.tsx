@@ -1,22 +1,10 @@
-import { prisma } from "@/backend/db/prisma";
-import {
-  getFirstBusinessByOwnerId,
-} from "@/backend/services/business.service";
-import { getAppointments } from "@/backend/services/appointment.service";
-import { getCurrentSessionUser } from "@/backend/auth/user-session";
+import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getAppointments } from "@/server/services/appointment.service";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { prisma } from "@/server/db/prisma";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Clock, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/frontend/components/ui/table";
-import { Badge } from "@/frontend/components/ui/badge";
 import { AppointmentActions } from "./appointment-actions";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +14,8 @@ export default async function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        Debes iniciar sesion para acceder al dashboard
+      <div className="py-20 text-center text-white/40">
+        Debes iniciar sesión para acceder al dashboard
       </div>
     );
   }
@@ -36,8 +24,8 @@ export default async function DashboardPage() {
 
   if (!business) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        No tienes un negocio configurado aun
+      <div className="py-20 text-center text-white/40">
+        No tienes un negocio configurado aún
       </div>
     );
   }
@@ -67,138 +55,132 @@ export default async function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="mt-1 text-white/40">
           Resumen de citas para{" "}
-          <span className="text-violet-300 font-medium">{business.name}</span>
+          <span className="font-medium text-[#0085CB]">{business.name}</span>
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Citas Hoy
-            </CardTitle>
-            <Calendar className="w-4 h-4 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{todayAppointments.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {format(today, "EEEE, d 'de' MMMM", { locale: es })}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pendientes
-            </CardTitle>
-            <Clock className="w-4 h-4 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Citas por confirmar
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Servicios
-            </CardTitle>
-            <Users className="w-4 h-4 text-white" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalServices}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Servicios activos
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {[
+          {
+            label: "Citas Hoy",
+            value: todayAppointments.length,
+            sub: format(today, "EEEE, d 'de' MMMM", { locale: es }),
+            icon: Calendar,
+          },
+          {
+            label: "Pendientes",
+            value: pendingCount,
+            sub: "Citas por confirmar",
+            icon: Clock,
+          },
+          {
+            label: "Servicios",
+            value: totalServices,
+            sub: "Servicios activos",
+            icon: Users,
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-white/[0.06] bg-[#111] p-6"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-white/40">{stat.label}</p>
+              <stat.icon className="h-4 w-4 text-white/20" />
+            </div>
+            <p className="mt-2 text-3xl font-bold">{stat.value}</p>
+            <p className="mt-1 text-xs text-white/30">{stat.sub}</p>
+          </div>
+        ))}
       </div>
 
       {/* Appointments Table */}
-      <Card className="border-border/50 bg-card/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Todas las Citas</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-2xl border border-white/[0.06] bg-[#111]">
+        <div className="border-b border-white/[0.06] p-6">
+          <h2 className="text-lg font-semibold">Todas las Citas</h2>
+        </div>
+
+        <div className="p-6">
           {allAppointments.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <div className="py-12 text-center text-white/30">
+              <Calendar className="mx-auto mb-4 h-12 w-12 opacity-30" />
               <p>No hay citas registradas</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">Cliente</TableHead>
-                  <TableHead className="text-muted-foreground">Email</TableHead>
-                  <TableHead className="text-muted-foreground">Servicio</TableHead>
-                  <TableHead className="text-muted-foreground">Fecha y Hora</TableHead>
-                  <TableHead className="text-muted-foreground">Estado</TableHead>
-                  <TableHead className="text-muted-foreground">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allAppointments.map((appointment) => (
-                  <TableRow
-                    key={appointment.id}
-                    className="border-border/50 hover:bg-muted/30"
-                  >
-                    <TableCell className="font-medium">
-                      {appointment.customerName}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {appointment.customerEmail}
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-violet-400/35 bg-violet-700/25 text-xs font-medium text-white">
-                        {appointment.service.name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(
-                        new Date(appointment.startTime),
-                        "dd/MM/yyyy HH:mm",
-                        { locale: es }
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          appointment.status === "CONFIRMED"
-                            ? "default"
-                            : "secondary"
-                        }
-                        className={
-                          appointment.status === "CONFIRMED"
-                            ? "border-violet-400/40 bg-violet-700/25 text-white hover:bg-violet-700/35"
-                            : "border-white/30 bg-background/80 text-white hover:bg-white/10"
-                        }
-                      >
-                        {appointment.status === "CONFIRMED"
-                          ? "Confirmada"
-                          : "Pendiente"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <AppointmentActions
-                        id={appointment.id}
-                        currentStatus={appointment.status}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wider text-white/30">
+                    <th className="pb-3 pr-4">Cliente</th>
+                    <th className="pb-3 pr-4">Email</th>
+                    <th className="pb-3 pr-4">Servicio</th>
+                    <th className="pb-3 pr-4">Profesional</th>
+                    <th className="pb-3 pr-4">Fecha y Hora</th>
+                    <th className="pb-3 pr-4">Estado</th>
+                    <th className="pb-3">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allAppointments.map((appointment) => (
+                    <tr
+                      key={appointment.id}
+                      className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]"
+                    >
+                      <td className="py-3.5 pr-4 font-medium">
+                        {appointment.customerName}
+                      </td>
+                      <td className="py-3.5 pr-4 text-white/40">
+                        {appointment.customerEmail}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <span className="inline-flex items-center rounded-lg border border-[#0085CB]/20 bg-[#0085CB]/10 px-2 py-0.5 text-xs font-medium text-[#0085CB]">
+                          {appointment.service.name}
+                        </span>
+                      </td>
+                      <td className="py-3.5 pr-4 text-white/40">
+                        {appointment.staff?.name || "—"}
+                      </td>
+                      <td className="py-3.5 pr-4 text-white/40">
+                        {format(
+                          new Date(appointment.startTime),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: es }
+                        )}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <span
+                          className={`inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-medium ${
+                            appointment.status === "CONFIRMED"
+                              ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                              : appointment.status === "CANCELLED"
+                              ? "border border-red-500/20 bg-red-500/10 text-red-400"
+                              : "border border-white/10 bg-white/[0.03] text-white/50"
+                          }`}
+                        >
+                          {appointment.status === "CONFIRMED"
+                            ? "Confirmada"
+                            : appointment.status === "CANCELLED"
+                            ? "Cancelada"
+                            : "Pendiente"}
+                        </span>
+                      </td>
+                      <td className="py-3.5">
+                        <AppointmentActions
+                          id={appointment.id}
+                          currentStatus={appointment.status}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

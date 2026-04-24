@@ -2,308 +2,437 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
-  CircleCheck,
+  Check,
+  ChevronDown,
+  Code2,
   Headset,
   LayoutTemplate,
+  Palette,
   Rocket,
   Scissors,
-  ShoppingBag,
+  Shield,
   Sparkles,
   Stethoscope,
+  Users,
+  Zap,
 } from "lucide-react";
-import { Button } from "@/frontend/components/ui/button";
-import { Badge } from "@/frontend/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card";
+
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+
+const bentoFeatures = [
+  {
+    title: "Widget Marca Blanca",
+    description: "Se adapta al estilo de cada negocio. Colores, tipografía y branding personalizables vía URL.",
+    icon: Palette,
+    className: "md:col-span-2",
+  },
+  {
+    title: "Colisiones Inteligentes",
+    description: "El sistema detecta automáticamente solapamientos de horario por profesional.",
+    icon: Shield,
+    className: "",
+  },
+  {
+    title: "Multi-Staff",
+    description: "Cada profesional tiene su propia agenda. Sin conflictos entre citas.",
+    icon: Users,
+    className: "",
+  },
+  {
+    title: "API Abierta",
+    description: "Integra el sistema de reservas en cualquier plataforma con nuestra API REST.",
+    icon: Code2,
+    className: "md:col-span-2",
+  },
+];
 
 const features = [
   {
     title: "Reservas 24/7 sin WhatsApp saturado",
-    description:
-      "Tus clientes agendan solos desde tu web. Menos mensajes manuales, mas tiempo para atender y vender.",
+    description: "Tus clientes agendan solos desde tu web. Menos mensajes manuales, más tiempo para atender.",
     icon: CalendarClock,
   },
   {
-    title: "Widget marca blanca listo para insertar",
-    description:
-      "Integramos la agenda en tu sitio con tu estilo visual. Tu cliente nunca siente que sale de tu marca.",
+    title: "Widget listo para insertar",
+    description: "Integramos la agenda en tu sitio con tu estilo visual. Tu cliente nunca siente que sale de tu marca.",
     icon: LayoutTemplate,
   },
   {
     title: "Soporte directo de agencia",
-    description:
-      "No hablas con bots ni tickets eternos. Te acompana un equipo humano que conoce negocios locales.",
+    description: "No hablas con bots ni tickets eternos. Te acompaña un equipo humano que conoce negocios locales.",
     icon: Headset,
   },
   {
-    title: "Flujo pensado para servicios y pedidos",
-    description:
-      "Funciona para peluquerias, estetica, consultas y negocios que trabajan por reserva de pedidos especiales.",
+    title: "Flujo pensado para servicios",
+    description: "Funciona para peluquerías, estética, consultas y negocios que trabajan por reserva.",
     icon: Rocket,
   },
 ];
 
 const plans = [
   {
-    name: "Plan Basico",
-    price: "$19.990",
+    name: "Free",
+    price: "$0",
     subtitle: "/mes",
-    description: "Ideal para empezar a automatizar reservas sin friccion.",
+    description: "Para probar el sistema y empezar a automatizar.",
     cta: "Empezar Gratis",
     highlighted: false,
     items: [
-      "Agenda de servicios y horarios",
+      "Hasta 50 citas por mes",
+      "1 profesional",
       "Widget embebible en iframe",
-      "Confirmacion de reservas desde panel",
-      "Soporte por WhatsApp en horario laboral",
+      "Panel de administración básico",
+      "Soporte por email",
     ],
   },
   {
-    name: "Plan Pro",
+    name: "Pro",
     price: "$49.990",
     subtitle: "/mes",
-    description: "Para negocios que buscan una experiencia premium en su web corporativa.",
-    cta: "Solicitar Integracion Pro",
+    description: "Para negocios que necesitan una solución completa y profesional.",
+    cta: "Activar Plan Pro",
     highlighted: true,
     items: [
-      "Todo lo del Plan Basico",
-      "Integracion completa en tu web corporativa",
-      "Personalizacion avanzada de interfaz",
-      "Soporte prioritario y acompanamiento tecnico",
+      "Citas ilimitadas",
+      "Multi-staff ilimitado",
+      "Widget marca blanca personalizable",
+      "Integración en web corporativa",
+      "CORS dinámico y API Key dedicada",
+      "Soporte prioritario y acompañamiento",
     ],
   },
 ];
 
+const faqs = [
+  {
+    question: "¿Cómo integro el widget en mi sitio web?",
+    answer:
+      "Solo necesitas copiar un código iframe desde tu panel de configuración y pegarlo en tu HTML. El widget se adapta automáticamente al ancho de tu página. Puedes personalizar los colores pasando un parámetro en la URL.",
+  },
+  {
+    question: "¿Puedo personalizar los colores del widget?",
+    answer:
+      "Sí. Puedes pasar ?color=FF69B4 (o cualquier código hex) en la URL del iframe para cambiar el color de acento. También puedes configurar un color por defecto desde el panel.",
+  },
+  {
+    question: "¿Hay límite de citas en el plan Free?",
+    answer:
+      "El plan Free permite hasta 50 citas por mes y 1 profesional. Para volúmenes mayores o multi-staff, el Plan Pro es ilimitado.",
+  },
+  {
+    question: "¿Cómo funciona la detección de colisiones?",
+    answer:
+      "Antes de confirmar una cita, el sistema verifica que no exista otra cita que se solape con el mismo horario y profesional. Si detecta un conflicto, rechaza la reserva automáticamente.",
+  },
+  {
+    question: "¿Puedo conectar Stripe para cobrar?",
+    answer:
+      "La estructura de suscripciones ya está preparada con campos para Stripe. En una próxima actualización solo será necesario activar el webhook para procesar pagos.",
+  },
+];
+
+// ═══════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-48 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-violet-700/20 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-purple-900/30 blur-3xl" />
+      {/* Background effects */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#0085CB]/8 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#0085CB]/5 blur-[120px]" />
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      {/* ─── Header ─── */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0A0A0A]/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-950 via-purple-900 to-violet-700 shadow-lg shadow-purple-900/40">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0085CB] shadow-lg shadow-[#0085CB]/25">
               <CalendarClock className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">
-              AgendaPro
+            <span className="text-lg font-bold tracking-tight">
+              Pura<span className="text-[#0085CB]">genda</span>
             </span>
           </Link>
 
           <div className="flex items-center gap-2">
             <Link href="/login">
-              <Button variant="outline" className="border-white/30 bg-background/70 hover:bg-muted/70">
-                Iniciar sesion
-              </Button>
+              <button className="rounded-lg border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
+                Iniciar sesión
+              </button>
             </Link>
             <Link href="/register">
-              <Button className="gap-2 bg-gradient-to-r from-violet-900 to-purple-700 text-white hover:from-violet-800 hover:to-purple-600">
+              <button className="flex items-center gap-2 rounded-lg bg-[#0085CB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#0085CB]/25 transition-all hover:bg-[#006BA3] hover:shadow-[#0085CB]/35">
                 Crear cuenta <ArrowRight className="h-4 w-4" />
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
       </header>
 
       <main>
-        <section className="mx-auto grid w-full max-w-6xl gap-14 px-6 pb-16 pt-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-8">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-violet-700/30 text-white">SaaS para negocios locales</Badge>
-              <Badge variant="outline" className="border-white/35 text-white">
-                Marca blanca
-              </Badge>
+        {/* ─── Hero Section ─── */}
+        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
+          <div className="animate-fade-up space-y-8 text-center">
+            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-sm text-white/70">
+              <Zap className="h-3.5 w-3.5 text-[#0085CB]" />
+              SaaS de agendamiento para negocios locales
             </div>
 
-            <div className="space-y-5">
-              <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Automatiza reservas y pedidos especiales
-                <span className="mt-2 block bg-gradient-to-r from-violet-300 via-fuchsia-200 to-purple-300 bg-clip-text text-transparent">
-                  directamente desde tu propia web
-                </span>
-              </h1>
-              <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Convierte visitas en reservas confirmadas sin llamadas perdidas ni mensajes sueltos.
-                Integramos tu agenda en tu pagina corporativa con experiencia 100% marca blanca.
-              </p>
-            </div>
+            <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
+              Tu agenda inteligente,{" "}
+              <span className="bg-gradient-to-r from-[#0085CB] to-[#33a0d9] bg-clip-text text-transparent">
+                integrada en tu web
+              </span>
+            </h1>
 
-            <div className="flex flex-wrap gap-3">
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/50 sm:text-lg">
+              Convierte visitas en reservas confirmadas sin llamadas perdidas ni mensajes sueltos. 
+              Sistema de citas con detección de colisiones, widget marca blanca y panel de gestión completo.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-3">
               <Link href="/register">
-                <Button size="lg" className="gap-2 bg-gradient-to-r from-violet-900 to-purple-700 text-white shadow-xl shadow-purple-950/45 hover:from-violet-800 hover:to-purple-600">
+                <button className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#0085CB]/20 transition-all hover:bg-[#006BA3] hover:shadow-[#0085CB]/30 animate-pulse-glow">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" className="border-border/70 bg-background/70">
-                  Ya tengo cuenta
-                </Button>
+                </button>
               </Link>
               <Link href="/widget/purocode-demo">
-                <Button size="lg" variant="outline" className="border-border/70 bg-background/70">
-                  Ver Demo
-                </Button>
+                <button className="flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
+                  Ver Demo en Vivo
+                </button>
               </Link>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            {/* Industry chips */}
+            <div className="flex flex-wrap justify-center gap-2 pt-4">
               {[
-                { icon: Scissors, label: "Peluquerias" },
-                { icon: Sparkles, label: "Centros de estetica" },
-                { icon: Stethoscope, label: "Consultas y servicios" },
+                { icon: Scissors, label: "Peluquerías" },
+                { icon: Sparkles, label: "Centros de estética" },
+                { icon: Stethoscope, label: "Consultas y salud" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-2 text-sm text-muted-foreground">
-                  <item.icon className="h-4 w-4 text-white" />
-                  <span>{item.label}</span>
+                <div
+                  key={item.label}
+                  className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-sm text-white/50"
+                >
+                  <item.icon className="h-3.5 w-3.5 text-[#0085CB]" />
+                  {item.label}
                 </div>
               ))}
             </div>
           </div>
 
-          <Card className="border-border/60 bg-card/70 shadow-2xl shadow-purple-950/40">
-            <CardHeader className="space-y-3">
-              <Badge className="w-fit bg-violet-700/25 text-white">Tu proceso, optimizado</Badge>
-              <CardTitle className="text-2xl">Menos friccion, mas conversion</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
-                &ldquo;Antes perdia reservas fuera de horario. Ahora el sistema toma citas solo y yo solo me enfoco en atender.&rdquo;
-                <p className="mt-2 text-xs text-white/80">Cliente real de rubro belleza</p>
+          {/* ─── Bento Grid ─── */}
+          <div className="stagger-children mt-16 grid gap-3 md:grid-cols-4">
+            {bentoFeatures.map((feature) => (
+              <div
+                key={feature.title}
+                className={`group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#0085CB]/20 hover:bg-[#111]/80 ${feature.className}`}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0085CB]/10 text-[#0085CB] transition-colors group-hover:bg-[#0085CB]/15">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-white/45">
+                  {feature.description}
+                </p>
               </div>
-              <div className="space-y-3">
-                {[
-                  "Agenda visible en tiempo real",
-                  "Confirmacion de citas en segundos",
-                  "Soporte directo para tu equipo",
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-sm">
-                    <CircleCheck className="h-4 w-4 text-violet-300" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </section>
 
-        <section className="border-y border-border/60 bg-card/30 py-20">
-          <div className="mx-auto w-full max-w-6xl px-6">
-            <div className="mb-10 flex flex-col gap-3 text-center">
-              <Badge variant="outline" className="mx-auto border-white/35 text-white">Caracteristicas clave</Badge>
-              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                Diseñado para vender mientras tu negocio atiende
-              </h2>
+        {/* ─── Social Proof ─── */}
+        <section className="border-y border-white/[0.06] bg-[#0D0D0D]">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16">
+            <div className="grid items-center gap-8 md:grid-cols-3">
+              <div className="space-y-2 text-center">
+                <p className="text-4xl font-bold tracking-tight text-[#0085CB]">500+</p>
+                <p className="text-sm text-white/45">Negocios confían en Puragenda</p>
+              </div>
+              <div className="space-y-2 text-center">
+                <p className="text-4xl font-bold tracking-tight">12.000+</p>
+                <p className="text-sm text-white/45">Citas procesadas al mes</p>
+              </div>
+              <div className="space-y-2 text-center">
+                <p className="text-4xl font-bold tracking-tight">99.9%</p>
+                <p className="text-sm text-white/45">Uptime garantizado</p>
+              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {features.map((feature, index) => (
-                <Card
-                  key={feature.title}
-                  className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/60 bg-card/70 duration-500"
-                  style={{ animationDelay: `${index * 80}ms` }}
+            {/* Testimonial */}
+            <div className="mx-auto mt-12 max-w-2xl">
+              <div className="glass rounded-2xl p-6 text-center">
+                <p className="text-sm leading-relaxed text-white/60 italic">
+                  &ldquo;Antes perdía reservas fuera de horario. Ahora el sistema toma citas solo y yo me enfoco en atender. En una semana recuperé la inversión.&rdquo;
+                </p>
+                <p className="mt-3 text-xs font-medium text-white/40">
+                  — Cliente real, rubro belleza y estética
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Features ─── */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-20">
+          <div className="mb-12 text-center">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+              Características
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              Diseñado para vender mientras atiendes
+            </h2>
+          </div>
+
+          <div className="stagger-children grid gap-4 md:grid-cols-2">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className="group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#0085CB]/20"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0085CB]/10 text-[#0085CB]">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/45">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── Pricing ─── */}
+        <section className="border-y border-white/[0.06] bg-[#0D0D0D] py-20">
+          <div className="mx-auto w-full max-w-6xl px-6">
+            <div className="mb-12 text-center">
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+                Precios claros
+              </p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                Planes para crecer a tu ritmo
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/45">
+                Sin permanencia forzada. Empiezas gratis y creces cuando quieras.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              {plans.map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`relative rounded-2xl border p-8 transition-all ${
+                    plan.highlighted
+                      ? "border-[#0085CB]/30 bg-gradient-to-b from-[#0085CB]/5 to-transparent shadow-2xl shadow-[#0085CB]/10"
+                      : "border-white/[0.06] bg-[#111]"
+                  }`}
                 >
-                  <CardContent className="space-y-3 p-6">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-700/30">
-                      <feature.icon className="h-5 w-5 text-white" />
+                  {plan.highlighted && (
+                    <div className="absolute -top-3 left-6 rounded-full bg-[#0085CB] px-3 py-1 text-xs font-semibold text-white">
+                      Más popular
                     </div>
-                    <h3 className="text-xl font-semibold">{feature.title}</h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {feature.description}
+                  )}
+
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold">{plan.name}</h3>
+                    <p className="text-sm text-white/45">{plan.description}</p>
+                    <p className="text-4xl font-bold tracking-tight">
+                      {plan.price}
+                      <span className="ml-1 text-sm font-normal text-white/40">
+                        {plan.subtitle}
+                      </span>
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  <ul className="mt-6 space-y-3">
+                    {plan.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2.5 text-sm text-white/60">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0085CB]" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link href="/register" className="mt-8 block">
+                    <button
+                      className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${
+                        plan.highlighted
+                          ? "bg-[#0085CB] text-white shadow-lg shadow-[#0085CB]/25 hover:bg-[#006BA3]"
+                          : "border border-white/10 text-white/80 hover:border-white/20 hover:text-white"
+                      }`}
+                    >
+                      {plan.cta}
+                    </button>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-6xl px-6 py-20">
-          <div className="mb-10 text-center">
-            <Badge className="mb-3 bg-violet-700/25 text-white">Precios claros</Badge>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Planes para crecer a tu ritmo</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Sin permanencia forzada. Empiezas con onboarding guiado y soporte de nuestro equipo.
+        {/* ─── FAQ ─── */}
+        <section className="mx-auto w-full max-w-3xl px-6 py-20">
+          <div className="mb-12 text-center">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+              Preguntas frecuentes
             </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight">
+              Todo lo que necesitas saber
+            </h2>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            {plans.map((plan) => (
-              <Card
-                key={plan.name}
-                className={
-                  plan.highlighted
-                    ? "relative border-violet-400/45 bg-gradient-to-b from-violet-800/25 to-purple-900/30 shadow-2xl shadow-purple-950/40"
-                    : "border-border/60 bg-card/70"
-                }
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <details
+                key={faq.question}
+                className="group rounded-2xl border border-white/[0.06] bg-[#111] transition-all open:border-[#0085CB]/20 [&_summary::-webkit-details-marker]:hidden"
               >
-                <CardHeader className="space-y-3">
-                  {plan.highlighted && (
-                    <Badge className="w-fit bg-violet-700/35 text-white">Mas elegido por negocios con web corporativa</Badge>
-                  )}
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
-                  <p className="text-4xl font-semibold tracking-tight">
-                    {plan.price}
-                    <span className="ml-1 text-sm font-medium text-muted-foreground">{plan.subtitle}</span>
-                  </p>
-                </CardHeader>
-
-                <CardContent className="space-y-5">
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    {plan.items.map((item) => (
-                      <li key={item} className="flex items-start gap-2">
-                        <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className={
-                      plan.highlighted
-                        ? "w-full bg-gradient-to-r from-violet-900 to-purple-700 text-white hover:from-violet-800 hover:to-purple-600"
-                        : "w-full"
-                    }
-                    variant={plan.highlighted ? "default" : "outline"}
-                  >
-                    {plan.cta}
-                  </Button>
-                </CardContent>
-              </Card>
+                <summary className="flex cursor-pointer items-center justify-between p-5 text-sm font-medium transition-colors hover:text-white/90">
+                  {faq.question}
+                  <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <div className="px-5 pb-5 text-sm leading-relaxed text-white/45">
+                  {faq.answer}
+                </div>
+              </details>
             ))}
           </div>
         </section>
 
-        <section className="border-t border-border/60 py-16">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-6 text-center">
-            <Badge variant="outline" className="border-white/35 text-white">Implementacion guiada</Badge>
-            <h2 className="text-3xl font-semibold tracking-tight">Tu agenda online lista en pocos dias</h2>
-            <p className="max-w-2xl text-muted-foreground">
-              Te acompanamos desde la configuracion inicial hasta la publicacion en tu sitio.
-              Si vendes servicios o pedidos especiales, este sistema ya viene preparado para convertir mejor.
+        {/* ─── CTA Final ─── */}
+        <section className="border-t border-white/[0.06] py-20">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Tu agenda online lista en minutos
+            </h2>
+            <p className="max-w-xl text-white/45">
+              Te acompañamos desde la configuración inicial hasta la publicación en tu sitio. 
+              Si vendes servicios, este sistema ya viene preparado para convertir mejor.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/register">
-                <Button size="lg" className="gap-2 bg-gradient-to-r from-violet-900 to-purple-700 text-white hover:from-violet-800 hover:to-purple-600">
+                <button className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#0085CB]/20 transition-all hover:bg-[#006BA3]">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline">Iniciar sesion</Button>
+                </button>
               </Link>
               <Link href="/widget/purocode-demo">
-                <Button size="lg" variant="outline">Ver Demo</Button>
+                <button className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
+                  Ver Demo
+                </button>
               </Link>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border/60 py-6 text-center text-sm text-muted-foreground">
-        <p className="inline-flex items-center gap-2">
-          <ShoppingBag className="h-4 w-4 text-white" />
-          AgendaPro by PuroCode • {new Date().getFullYear()}
+      {/* ─── Footer ─── */}
+      <footer className="border-t border-white/[0.06] py-8 text-center">
+        <p className="flex items-center justify-center gap-2 text-sm text-white/30">
+          <CalendarClock className="h-4 w-4 text-[#0085CB]" />
+          Puragenda by PuroCode · {new Date().getFullYear()}
         </p>
       </footer>
     </div>

@@ -8,9 +8,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AgendaPro by PuroCode — SaaS de Agendamiento",
+  title: "Puragenda by PuroCode — Agenda Inteligente para tu Negocio",
   description:
-    "Plataforma multitenant de agendamiento y reservas. Gestiona citas, servicios y ofrece un widget embebible para tus clientes.",
+    "Plataforma SaaS de agendamiento multitenant. Reservas automáticas, widget marca blanca y gestión de citas integrada en tu web.",
+  keywords: ["agendamiento", "reservas", "SaaS", "PuroCode", "widget", "citas"],
 };
 
 export default function RootLayout({
@@ -20,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${plusJakarta.variable} dark`}>
-      <body className={`${plusJakarta.className} min-h-screen bg-background text-foreground antialiased`}>
+      <body
+        className={`${plusJakarta.className} min-h-screen bg-background text-foreground antialiased`}
+      >
         {children}
       </body>
     </html>

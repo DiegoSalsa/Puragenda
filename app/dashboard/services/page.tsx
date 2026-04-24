@@ -1,6 +1,6 @@
-import { getCurrentSessionUser } from "@/backend/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/backend/services/business.service";
-import { getServicesByBusinessId } from "@/backend/services/service.service";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getServicesByBusinessId } from "@/server/services/service.service";
 import { ServicesClient } from "./services-client";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,8 @@ export default async function ServicesPage() {
 
   if (!user) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        Debes iniciar sesion para ver tus servicios
+      <div className="py-20 text-center text-white/40">
+        Debes iniciar sesión para ver tus servicios
       </div>
     );
   }
@@ -20,8 +20,8 @@ export default async function ServicesPage() {
 
   if (!business) {
     return (
-      <div className="text-center py-20 text-muted-foreground">
-        No tienes un negocio configurado aun
+      <div className="py-20 text-center text-white/40">
+        No tienes un negocio configurado aún
       </div>
     );
   }

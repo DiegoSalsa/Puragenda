@@ -1,4 +1,4 @@
-import { getBusinessWithServices } from "@/backend/services/business.service";
+import { getBusinessWithServices } from "@/server/services/business.service";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -11,10 +11,7 @@ export async function GET(
     const business = await getBusinessWithServices(slug);
 
     if (!business) {
-      return Response.json(
-        { error: "Negocio no encontrado" },
-        { status: 404 }
-      );
+      return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
 
     return Response.json(business.services);

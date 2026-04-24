@@ -4,15 +4,6 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
-import { Button } from "@/frontend/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card";
-import { Input } from "@/frontend/components/ui/input";
-import { Label } from "@/frontend/components/ui/label";
-
-type LoginResponse = {
-  error?: string;
-  details?: string[];
-};
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,15 +21,12 @@ export function LoginForm() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as LoginResponse;
-        const message = data.error || "No se pudo iniciar sesion";
+        const data = await response.json().catch(() => ({}));
+        const message = data.error || "No se pudo iniciar sesión";
         const details = data.details?.length ? `: ${data.details.join(", ")}` : "";
         setError(`${message}${details}`);
         return;
@@ -52,69 +40,66 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="border-border/60 bg-card/70 shadow-2xl shadow-purple-950/35">
-      <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl">Iniciar sesion</CardTitle>
-        <p className="text-sm text-muted-foreground">
+    <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 shadow-2xl animate-fade-up">
+      <div className="mb-6 space-y-1.5">
+        <h2 className="text-2xl font-bold">Iniciar sesión</h2>
+        <p className="text-sm text-white/40">
           Accede a tu panel para gestionar servicios y citas.
         </p>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </div>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Contrasena</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="********"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </div>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="text-sm text-white/60">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+          />
+        </div>
 
-          {error && (
-            <div className="rounded-lg border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-              {error}
-            </div>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm text-white/60">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="********"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+          />
+        </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0085CB] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#006BA3] disabled:opacity-50"
+        >
+          {loading ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Entrando...</>
+          ) : (
+            <><LogIn className="h-4 w-4" /> Entrar al dashboard</>
           )}
+        </button>
+      </form>
 
-          <Button
-            type="submit"
-            className="w-full gap-2 bg-gradient-to-r from-violet-900 to-purple-700 text-white hover:from-violet-800 hover:to-purple-600"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Entrando...
-              </>
-            ) : (
-              <>
-                <LogIn className="h-4 w-4" /> Entrar al dashboard
-              </>
-            )}
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Aun no tienes cuenta?{" "}
-          <Link href="/register" className="text-white underline-offset-4 hover:underline">
-            Crear cuenta
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+      <p className="mt-4 text-center text-sm text-white/40">
+        ¿Aún no tienes cuenta?{" "}
+        <Link href="/register" className="text-[#0085CB] hover:underline">
+          Crear cuenta
+        </Link>
+      </p>
+    </div>
   );
 }

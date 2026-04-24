@@ -1,26 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/frontend/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/frontend/components/ui/card";
-import { Input } from "@/frontend/components/ui/input";
-import { Label } from "@/frontend/components/ui/label";
-import { Textarea } from "@/frontend/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/frontend/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/frontend/components/ui/table";
 import { Plus, Pencil, Trash2, Loader2, Wrench } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 interface Service {
   id: string;
@@ -106,24 +88,14 @@ export function ServicesClient({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("¿Estas seguro de eliminar este servicio?")) return;
+    if (!confirm("¿Estás seguro de eliminar este servicio?")) return;
 
     try {
-      await fetch(`/api/dashboard/services/${id}`, {
-        method: "DELETE",
-      });
+      await fetch(`/api/dashboard/services/${id}`, { method: "DELETE" });
       await fetchServices();
     } catch (error) {
       console.error("Error deleting service:", error);
     }
-  }
-
-  function formatPrice(price: number) {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-      minimumFractionDigits: 0,
-    }).format(price);
   }
 
   return (
@@ -131,55 +103,56 @@ export function ServicesClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Servicios</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1 text-white/40">
             Gestiona los servicios que ofrece tu negocio.
           </p>
         </div>
 
-        <Button
+        <button
           onClick={openCreate}
-          className="gap-2 bg-gradient-to-r from-violet-900 to-purple-700 text-white hover:from-violet-800 hover:to-purple-600"
+          className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#006BA3]"
         >
-          <Plus className="w-4 h-4" /> Nuevo Servicio
-        </Button>
+          <Plus className="h-4 w-4" /> Nuevo Servicio
+        </button>
+      </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="bg-card border-border/50">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? "Editar Servicio" : "Nuevo Servicio"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre</Label>
-                <Input
-                  id="name"
+      {/* Dialog/Modal */}
+      {dialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-[#111] p-6 shadow-2xl animate-scale-in">
+            <h3 className="text-lg font-semibold">
+              {editingService ? "Editar Servicio" : "Nuevo Servicio"}
+            </h3>
+
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm text-white/60">Nombre</label>
+                <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ej: Consultoria Web"
+                  placeholder="Ej: Consultoría Web"
                   required
-                  className="bg-muted/50 border-border/50"
+                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripcion</Label>
-                <Textarea
-                  id="description"
+              <div className="space-y-1.5">
+                <label className="text-sm text-white/60">Descripción</label>
+                <textarea
                   value={form.description}
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
-                  placeholder="Descripcion del servicio..."
+                  placeholder="Descripción del servicio..."
                   rows={3}
-                  className="bg-muted/50 border-border/50"
+                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duracion (minutos)</Label>
-                  <Input
-                    id="duration"
+                <div className="space-y-1.5">
+                  <label className="text-sm text-white/60">
+                    Duración (minutos)
+                  </label>
+                  <input
                     type="number"
                     value={form.duration}
                     onChange={(e) =>
@@ -188,13 +161,12 @@ export function ServicesClient({
                     placeholder="60"
                     required
                     min="1"
-                    className="bg-muted/50 border-border/50"
+                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Precio (CLP)</Label>
-                  <Input
-                    id="price"
+                <div className="space-y-1.5">
+                  <label className="text-sm text-white/60">Precio (CLP)</label>
+                  <input
                     type="number"
                     value={form.price}
                     onChange={(e) =>
@@ -203,120 +175,108 @@ export function ServicesClient({
                     placeholder="50000"
                     required
                     min="0"
-                    className="bg-muted/50 border-border/50"
+                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setDialogOpen(false)}
-                  className="border-border/50"
+                  className="rounded-xl border border-white/[0.06] px-4 py-2 text-sm text-white/60 transition-colors hover:text-white"
                 >
                   Cancelar
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
                   disabled={saving}
-                  className="bg-violet-800 text-white hover:bg-violet-700"
+                  className="rounded-xl bg-[#0085CB] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#006BA3] disabled:opacity-50"
                 >
                   {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : editingService ? (
                     "Guardar Cambios"
                   ) : (
                     "Crear Servicio"
                   )}
-                </Button>
+                </button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+        </div>
+      )}
 
-      <Card className="border-border/50 bg-card/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Listado de Servicios</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Services Table */}
+      <div className="rounded-2xl border border-white/[0.06] bg-[#111]">
+        <div className="border-b border-white/[0.06] p-6">
+          <h2 className="text-lg font-semibold">Listado de Servicios</h2>
+        </div>
+        <div className="p-6">
           {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-white" />
+            <div className="py-12 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/30" />
             </div>
           ) : services.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Wrench className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>No hay servicios aun. Crea el primero.</p>
+            <div className="py-12 text-center text-white/30">
+              <Wrench className="mx-auto mb-4 h-12 w-12 opacity-30" />
+              <p>No hay servicios aún. Crea el primero.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">
-                    Nombre
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Descripcion
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Duracion
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Precio
-                  </TableHead>
-                  <TableHead className="text-muted-foreground text-right">
-                    Acciones
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {services.map((service) => (
-                  <TableRow
-                    key={service.id}
-                    className="border-border/50 hover:bg-muted/30"
-                  >
-                    <TableCell className="font-medium">
-                      {service.name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-xs truncate">
-                      {service.description || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center rounded-md border border-violet-400/35 bg-violet-700/25 px-2 py-0.5 text-xs font-medium text-white">
-                        {service.duration} min
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {formatPrice(service.price)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openEdit(service)}
-                          className="h-7 w-7 p-0 text-muted-foreground hover:text-white"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(service.id)}
-                          className="h-7 w-7 p-0 text-muted-foreground hover:text-red-400"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wider text-white/30">
+                    <th className="pb-3 pr-4">Nombre</th>
+                    <th className="pb-3 pr-4">Descripción</th>
+                    <th className="pb-3 pr-4">Duración</th>
+                    <th className="pb-3 pr-4">Precio</th>
+                    <th className="pb-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((service) => (
+                    <tr
+                      key={service.id}
+                      className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]"
+                    >
+                      <td className="py-3.5 pr-4 font-medium">
+                        {service.name}
+                      </td>
+                      <td className="max-w-xs truncate py-3.5 pr-4 text-white/40">
+                        {service.description || "—"}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <span className="inline-flex items-center rounded-lg border border-[#0085CB]/20 bg-[#0085CB]/10 px-2 py-0.5 text-xs font-medium text-[#0085CB]">
+                          {service.duration} min
+                        </span>
+                      </td>
+                      <td className="py-3.5 pr-4 font-mono text-sm">
+                        {formatPrice(service.price)}
+                      </td>
+                      <td className="py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openEdit(service)}
+                            className="rounded-lg p-2 text-white/30 transition-colors hover:bg-white/[0.05] hover:text-white/70"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service.id)}
+                            className="rounded-lg p-2 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
