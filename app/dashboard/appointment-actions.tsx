@@ -1,8 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, X, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
+
+const STATUS_ACTIONS = [
+  { status: "CONFIRMED" as const, label: "Confirmar", icon: Check, color: "emerald" },
+  { status: "CHECKED_IN" as const, label: "Asistió", icon: UserCheck, color: "blue" },
+  { status: "NO_SHOW" as const, label: "No asistió", icon: UserX, color: "amber" },
+  { status: "CANCELLED" as const, label: "Cancelar", icon: X, color: "red" },
+];
 
 export function AppointmentActions({
   id,
@@ -14,7 +21,7 @@ export function AppointmentActions({
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
-  async function handleAction(action: "CONFIRMED" | "CANCELLED") {
+  async function handleAction(action: string) {
     setLoading(action);
     try {
       await fetch(`/api/dashboard/appointments/${id}`, {
@@ -30,59 +37,45 @@ export function AppointmentActions({
     }
   }
 
-  if (currentStatus === "CONFIRMED") {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="flex items-center gap-1 text-xs text-emerald-400/70">
-          <Check className="h-3 w-3" /> Confirmada
-        </span>
-        <button
-          onClick={() => handleAction("CANCELLED")}
-          disabled={loading !== null}
-          className="rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs text-red-400 transition-all hover:bg-red-500/20 disabled:opacity-50"
-        >
-          {loading === "CANCELLED" ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            "Cancelar"
-          )}
-        </button>
-      </div>
-    );
-  }
+  const available = STATUS_ACTIONS.filter((a) => a.status !== currentStatus);
 
   if (currentStatus === "CANCELLED") {
-    return (
-      <span className="flex items-center gap-1 text-xs text-red-400/70">
-        <X className="h-3 w-3" /> Cancelada
-      </span>
-    );
+    return <span className="flex items-center gap-1 text-xs text-red-400/70"><X className="h-3 w-3" /> Cancelada</span>;
+  }
+
+  if (currentStatus === "CHECKED_IN") {
+    return <span className="flex items-center gap-1 text-xs text-blue-400/70"><UserCheck className="h-3 w-3" /> Asistió</span>;
+  }
+
+  if (currentStatus === "NO_SHOW") {
+    return <span className="flex items-center gap-1 text-xs text-amber-400/70"><UserX className="h-3 w-3" /> No asistió</span>;
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleAction("CONFIRMED")}
-        disabled={loading !== null}
-        className="rounded-lg bg-[#7C3AED] px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
-      >
-        {loading === "CONFIRMED" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : (
-          "Confirmar"
-        )}
-      </button>
-      <button
-        onClick={() => handleAction("CANCELLED")}
-        disabled={loading !== null}
-        className="rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-1.5 text-xs text-red-400 transition-all hover:bg-red-500/20 disabled:opacity-50"
-      >
-        {loading === "CANCELLED" ? (
-          <Loader2 className="h-3 w-3 animate-spin" />
-        ) : (
-          "Cancelar"
-        )}
-      </button>
+    <div className="flex flex-wrap items-center gap-1.5">
+      {available.filter((a) => {
+        if (currentStatus === "PENDING") return ["CONFIRMED", "CANCELLED"].includes(a.status);
+        if (currentStatus === "CONFIRMED") return ["CHECKED_IN", "NO_SHOW", "CANCELLED"].includes(a.status);
+        return false;
+      }).map((action) => {
+        const colorMap: Record<string, string> = {
+          emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20",
+          blue: "bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20",
+          amber: "bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20",
+          red: "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20",
+        };
+        return (
+          <button
+            key={action.status}
+            onClick={() => handleAction(action.status)}
+            disabled={loading !== null}
+            className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-all disabled:opacity-50 ${colorMap[action.color]}`}
+          >
+            {loading === action.status ? <Loader2 className="h-3 w-3 animate-spin" /> : <action.icon className="h-3 w-3" />}
+            {action.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -73,36 +73,51 @@ const features = [
 
 const plans = [
   {
-    name: "Base",
-    price: "$24.990",
+    name: "Individual",
+    price: "$14.990",
     subtitle: "/mes",
-    description: "Automatiza tu agenda y empieza a recibir reservas desde tu web.",
+    description: "Para emprendedores que trabajan solos.",
     cta: "Probar 1 mes gratis",
     highlighted: false,
     badge: "30 días gratis",
     items: [
       "Citas ilimitadas",
       "1 profesional",
-      "Widget embebible en iframe",
-      "Panel de administración completo",
+      "Widget embebible",
       "Detección de colisiones",
       "Soporte por email",
+    ],
+  },
+  {
+    name: "Base",
+    price: "$24.990",
+    subtitle: "/mes",
+    description: "Para equipos que necesitan crecer con multi-staff.",
+    cta: "Empezar ahora",
+    highlighted: false,
+    items: [
+      "Todo de Individual",
+      "Staff adicional ($3.000 c/u)",
+      "Horarios configurables",
+      "Panel completo",
+      "Marca blanca",
+      "Soporte prioritario",
     ],
   },
   {
     name: "Pro",
     price: "$39.990",
     subtitle: "/mes",
-    description: "Para negocios que necesitan multi-staff y marca blanca total.",
+    description: "La solución completa para negocios profesionales.",
     cta: "Activar Plan Pro",
     highlighted: true,
     items: [
-      "Citas ilimitadas",
-      "Multi-staff ilimitado",
-      "Widget marca blanca personalizable",
-      "Integración en web corporativa",
-      "CORS dinámico y API Key dedicada",
-      "Soporte prioritario y acompañamiento",
+      "Todo de Base",
+      "Staff adicional ($5.000 c/u)",
+      "CORS + API Key dedicada",
+      "Calendario semanal pro",
+      "Pago anual = 10 meses",
+      "Soporte dedicado",
     ],
   },
 ];
@@ -322,7 +337,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
               {plans.map((plan) => (
                 <div
                   key={plan.name}

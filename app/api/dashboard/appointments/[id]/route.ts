@@ -25,9 +25,9 @@ export async function PATCH(
     const body = await request.json();
     const { status } = body;
 
-    if (!status || !["PENDING", "CONFIRMED", "CANCELLED"].includes(status)) {
+    if (!status || !["PENDING", "CONFIRMED", "CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(status)) {
       return Response.json(
-        { error: "Estado inválido. Use PENDING, CONFIRMED o CANCELLED" },
+        { error: "Estado inválido" },
         { status: 400 }
       );
     }

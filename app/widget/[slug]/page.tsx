@@ -17,6 +17,7 @@ export default async function WidgetPage({
     where: { slug },
     include: {
       services: { orderBy: { name: "asc" } },
+      businessHours: { orderBy: { dayOfWeek: "asc" } },
     },
   });
 
@@ -33,13 +34,28 @@ export default async function WidgetPage({
     );
   }
 
-  const widgetColor = color || business.brandColor || "0085CB";
+  // Color cascade: URL param > primaryColor (without #) > brandColor > default
+  const primaryHex = business.primaryColor.replace("#", "");
+  const widgetColor = color || business.brandColor || primaryHex || "7C3AED";
 
   return (
     <WidgetClient
-      business={{ name: business.name, slug: business.slug, apiKey: business.apiKey, brandColor: widgetColor }}
-      services={business.services.map((s) => ({ id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price }))}
+      business={{
+        name: business.name,
+        slug: business.slug,
+        apiKey: business.apiKey,
+        logoUrl: business.logoUrl,
+        primaryColor: business.primaryColor,
+        secondaryColor: business.secondaryColor,
+        brandColor: widgetColor,
+      }}
+      services={business.services.map((s) => ({
+        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price,
+      }))}
       primaryColor={widgetColor}
+      businessHours={business.businessHours.map((h) => ({
+        dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
+      }))}
     />
   );
 }

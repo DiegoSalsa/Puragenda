@@ -103,7 +103,7 @@ export async function registerUser(data: {
     await tx.subscription.create({
       data: {
         businessId: business.id,
-        plan: "BASIC",
+        plan: "INDIVIDUAL",
         status: givesTrial ? "TRIALING" : "ACTIVE",
         isTrial: givesTrial,
         trialEndsAt: givesTrial ? addDays(now, TRIAL_DURATION_DAYS) : null,

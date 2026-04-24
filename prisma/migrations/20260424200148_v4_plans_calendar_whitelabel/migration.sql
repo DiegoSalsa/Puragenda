@@ -2,13 +2,16 @@
 CREATE TYPE "UserRole" AS ENUM ('OWNER', 'STAFF', 'SUPERADMIN');
 
 -- CreateEnum
-CREATE TYPE "SubscriptionPlan" AS ENUM ('BASIC', 'PRO');
+CREATE TYPE "SubscriptionPlan" AS ENUM ('INDIVIDUAL', 'BASIC', 'PRO');
 
 -- CreateEnum
 CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'TRIALING', 'INACTIVE', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED');
+CREATE TYPE "BillingCycle" AS ENUM ('MONTHLY', 'ANNUAL');
+
+-- CreateEnum
+CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'CHECKED_IN', 'NO_SHOW');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -40,10 +43,12 @@ CREATE TABLE "BlacklistedIp" (
 -- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
-    "plan" "SubscriptionPlan" NOT NULL DEFAULT 'BASIC',
+    "plan" "SubscriptionPlan" NOT NULL DEFAULT 'INDIVIDUAL',
     "status" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
+    "billingCycle" "BillingCycle" NOT NULL DEFAULT 'MONTHLY',
     "isTrial" BOOLEAN NOT NULL DEFAULT false,
     "trialEndsAt" TIMESTAMP(3),
+    "extraStaffCount" INTEGER NOT NULL DEFAULT 0,
     "businessId" TEXT NOT NULL,
     "stripeCustomerId" TEXT,
     "stripeSubscriptionId" TEXT,
@@ -60,6 +65,9 @@ CREATE TABLE "Business" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "apiKey" TEXT NOT NULL,
+    "logoUrl" TEXT,
+    "primaryColor" TEXT NOT NULL DEFAULT '#7C3AED',
+    "secondaryColor" TEXT NOT NULL DEFAULT '#5B21B6',
     "brandColor" TEXT,
     "allowedOrigins" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "timezone" TEXT NOT NULL DEFAULT 'America/Santiago',
@@ -68,6 +76,29 @@ CREATE TABLE "Business" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Business_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BusinessHours" (
+    "id" TEXT NOT NULL,
+    "dayOfWeek" INTEGER NOT NULL,
+    "startTime" TEXT NOT NULL,
+    "endTime" TEXT NOT NULL,
+    "isOpen" BOOLEAN NOT NULL DEFAULT true,
+    "businessId" TEXT NOT NULL,
+
+    CONSTRAINT "BusinessHours_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BlockedDate" (
+    "id" TEXT NOT NULL,
+    "date" DATE NOT NULL,
+    "reason" TEXT,
+    "businessId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BlockedDate_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -135,6 +166,18 @@ CREATE UNIQUE INDEX "Business_apiKey_key" ON "Business"("apiKey");
 CREATE INDEX "Business_ownerId_idx" ON "Business"("ownerId");
 
 -- CreateIndex
+CREATE INDEX "BusinessHours_businessId_idx" ON "BusinessHours"("businessId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BusinessHours_businessId_dayOfWeek_key" ON "BusinessHours"("businessId", "dayOfWeek");
+
+-- CreateIndex
+CREATE INDEX "BlockedDate_businessId_idx" ON "BlockedDate"("businessId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BlockedDate_businessId_date_key" ON "BlockedDate"("businessId", "date");
+
+-- CreateIndex
 CREATE INDEX "Staff_businessId_idx" ON "Staff"("businessId");
 
 -- CreateIndex
@@ -160,6 +203,12 @@ ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_businessId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "Business" ADD CONSTRAINT "Business_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BusinessHours" ADD CONSTRAINT "BusinessHours_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BlockedDate" ADD CONSTRAINT "BlockedDate_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Staff" ADD CONSTRAINT "Staff_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -152,7 +152,7 @@ export async function getAppointmentByIdAndBusiness(
  */
 export async function updateAppointmentStatus(
   appointmentId: string,
-  status: "PENDING" | "CONFIRMED" | "CANCELLED"
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW"
 ) {
   return prisma.appointment.update({
     where: { id: appointmentId },

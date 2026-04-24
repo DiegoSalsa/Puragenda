@@ -36,6 +36,10 @@ export default async function AdminPage() {
     (s) => s.status === "TRIALING"
   ).length;
 
+  const paidIndividual = subscriptions.filter(
+    (s) => s.plan === "INDIVIDUAL" && s.status === "ACTIVE" && !s.isTrial
+  ).length;
+
   const paidBasic = subscriptions.filter(
     (s) => s.plan === "BASIC" && s.status === "ACTIVE" && !s.isTrial
   ).length;
@@ -44,7 +48,7 @@ export default async function AdminPage() {
     (s) => s.plan === "PRO" && s.status === "ACTIVE"
   ).length;
 
-  const estimatedMRR = paidBasic * PRICING.BASIC + paidPro * PRICING.PRO;
+  const estimatedMRR = paidIndividual * PRICING.INDIVIDUAL.monthly + paidBasic * PRICING.BASIC.monthly + paidPro * PRICING.PRO.monthly;
 
   const stats = [
     {
@@ -124,20 +128,29 @@ export default async function AdminPage() {
           <div className="mt-4 space-y-3">
             <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
               <div>
-                <p className="text-sm font-medium">Plan Base</p>
-                <p className="text-xs text-white/40">{paidBasic} negocios × $24.990</p>
+                <p className="text-sm font-medium">Individual</p>
+                <p className="text-xs text-white/40">{paidIndividual} × $14.990</p>
               </div>
               <p className="font-mono text-sm font-bold">
-                ${(paidBasic * PRICING.BASIC).toLocaleString("es-CL")}
+                ${(paidIndividual * PRICING.INDIVIDUAL.monthly).toLocaleString("es-CL")}
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <div>
+                <p className="text-sm font-medium">Plan Base</p>
+                <p className="text-xs text-white/40">{paidBasic} × $24.990</p>
+              </div>
+              <p className="font-mono text-sm font-bold">
+                ${(paidBasic * PRICING.BASIC.monthly).toLocaleString("es-CL")}
               </p>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
               <div>
                 <p className="text-sm font-medium">Plan Pro</p>
-                <p className="text-xs text-white/40">{paidPro} negocios × $39.990</p>
+                <p className="text-xs text-white/40">{paidPro} × $39.990</p>
               </div>
               <p className="font-mono text-sm font-bold">
-                ${(paidPro * PRICING.PRO).toLocaleString("es-CL")}
+                ${(paidPro * PRICING.PRO.monthly).toLocaleString("es-CL")}
               </p>
             </div>
           </div>

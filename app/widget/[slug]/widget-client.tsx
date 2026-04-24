@@ -7,22 +7,49 @@ import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Loader2,
 import { formatPrice, capitalize } from "@/lib/utils";
 
 interface Service { id: string; name: string; description: string | null; duration: number; price: number; }
+interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface Props {
-  business: { name: string; slug: string; apiKey: string; brandColor: string | null };
+  business: { name: string; slug: string; apiKey: string; logoUrl: string | null; primaryColor: string; secondaryColor: string; brandColor: string | null };
   services: Service[];
   primaryColor: string;
+  businessHours?: BusinessHour[];
 }
 
 type Step = "service" | "datetime" | "details" | "success";
 type FormState = { name: string; email: string; phone: string };
 type BlockedSlot = { startTime: string; endTime: string };
 
-function buildDays() { return Array.from({ length: 10 }, (_, i) => addDays(new Date(), i + 1)); }
+function buildDays(businessHours?: BusinessHour[]) {
+  const days: Date[] = [];
+  let d = new Date();
+  while (days.length < 10) {
+    d = addDays(d, 1);
+    const dow = d.getDay();
+    if (businessHours && businessHours.length > 0) {
+      const bh = businessHours.find((h) => h.dayOfWeek === dow);
+      if (bh && !bh.isOpen) continue;
+    }
+    days.push(new Date(d));
+  }
+  return days;
+}
 
-function buildSlots(date: Date, duration: number) {
+function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]) {
+  const dow = date.getDay();
+  let startH = 9, startM = 0, endH = 19, endM = 0;
+
+  if (businessHours && businessHours.length > 0) {
+    const bh = businessHours.find((h) => h.dayOfWeek === dow);
+    if (bh && bh.isOpen) {
+      const [sh, sm] = bh.startTime.split(":").map(Number);
+      const [eh, em] = bh.endTime.split(":").map(Number);
+      startH = sh; startM = sm; endH = eh; endM = em;
+    }
+  }
+
   const slots: { start: Date; end: Date }[] = [];
-  let current = setMinutes(setHours(date, 9), 0);
-  const end = setMinutes(setHours(date, 19), 0);
+  let current = setMinutes(setHours(date, startH), startM);
+  const end = setMinutes(setHours(date, endH), endM);
   while (addMinutes(current, duration) <= end) {
     slots.push({ start: current, end: addMinutes(current, duration) });
     current = addMinutes(current, 30);
@@ -38,7 +65,7 @@ function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[]) {
   return false;
 }
 
-export function WidgetClient({ business, services, primaryColor }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours }: Props) {
   const pc = `#${primaryColor}`;
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -51,11 +78,11 @@ export function WidgetClient({ business, services, primaryColor }: Props) {
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const days = useMemo(() => buildDays(), []);
+  const days = useMemo(() => buildDays(businessHours), [businessHours]);
   const slots = useMemo(() => {
     if (!selectedDate || !selectedService) return [];
-    return buildSlots(selectedDate, selectedService.duration);
-  }, [selectedDate, selectedService]);
+    return buildSlots(selectedDate, selectedService.duration, businessHours);
+  }, [selectedDate, selectedService, businessHours]);
 
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: form.phone.length === 0 || /^\+?[0-9\s()-]{8,18}$/.test(form.phone) };
   const isFormValid = validation.name && validation.email && validation.phone;
@@ -100,9 +127,14 @@ export function WidgetClient({ business, services, primaryColor }: Props) {
         {/* Header */}
         <div className="border-b border-white/[0.06] bg-[#0E0E0E] px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Reserva online</p>
-              <h1 className="text-lg font-bold tracking-tight">{business.name}</h1>
+            <div className="flex items-center gap-3">
+              {business.logoUrl && (
+                <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />
+              )}
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Reserva online</p>
+                <h1 className="text-lg font-bold tracking-tight">{business.name}</h1>
+              </div>
             </div>
             <span className="rounded-lg px-2.5 py-1 text-xs font-medium text-white" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>
           </div>
@@ -119,7 +151,6 @@ export function WidgetClient({ business, services, primaryColor }: Props) {
 
         {/* Content */}
         <div className="p-5 sm:p-6">
-
           {/* Step 1: Service */}
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
@@ -128,7 +159,6 @@ export function WidgetClient({ business, services, primaryColor }: Props) {
                 {services.map((s) => (
                   <button key={s.id} type="button" onClick={() => { setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
                     className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                    style={{ ["--hover-border" as string]: `${pc}30` }}
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)}
                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
                     <div className="flex items-start justify-between gap-3">
@@ -195,8 +225,7 @@ export function WidgetClient({ business, services, primaryColor }: Props) {
                 </div>
               )}
               <button type="button" disabled={!selectedSlot} onClick={() => setStep("details")}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-30"
-                style={{ background: pc }}>
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-30" style={{ background: pc }}>
                 Continuar con mis datos <ChevronRight className="h-4 w-4" />
               </button>
             </div>
