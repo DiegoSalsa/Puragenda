@@ -50,7 +50,7 @@ export default async function SettingsPage() {
         {/* Slug */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Link2 className="h-4 w-4 text-[#0085CB]" />
+            <Link2 className="h-4 w-4 text-[#7C3AED]" />
             Slug del Negocio
           </div>
           <div className="flex items-center gap-3">
@@ -67,9 +67,9 @@ export default async function SettingsPage() {
         {/* API Key */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Key className="h-4 w-4 text-[#0085CB]" />
+            <Key className="h-4 w-4 text-[#7C3AED]" />
             API Key
-            <span className="rounded-lg border border-[#0085CB]/20 bg-[#0085CB]/10 px-2 py-0.5 text-xs text-[#0085CB]">
+            <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]">
               Secreta
             </span>
           </div>
@@ -88,7 +88,7 @@ export default async function SettingsPage() {
         {/* Iframe Code */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Code2 className="h-4 w-4 text-[#0085CB]" />
+            <Code2 className="h-4 w-4 text-[#7C3AED]" />
             Código de Embebido (iframe)
           </div>
           <div className="flex items-start gap-3">

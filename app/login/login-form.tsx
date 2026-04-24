@@ -58,7 +58,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
@@ -71,7 +71,7 @@ export function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
@@ -84,7 +84,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0085CB] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#006BA3] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
         >
           {loading ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Entrando...</>
@@ -96,7 +96,7 @@ export function LoginForm() {
 
       <p className="mt-4 text-center text-sm text-white/40">
         ¿Aún no tienes cuenta?{" "}
-        <Link href="/register" className="text-[#0085CB] hover:underline">
+        <Link href="/register" className="text-[#7C3AED] hover:underline">
           Crear cuenta
         </Link>
       </p>

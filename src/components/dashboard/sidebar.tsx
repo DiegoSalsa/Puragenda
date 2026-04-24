@@ -44,11 +44,11 @@ export function DashboardSidebar({
     <aside className="flex w-64 shrink-0 flex-col border-r border-white/[0.06] bg-[#0E0E0E]">
       <div className="border-b border-white/[0.06] p-6">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0085CB] shadow-lg shadow-[#0085CB]/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/20">
             <CalendarClock className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-bold tracking-tight">
-            Pura<span className="text-[#0085CB]">genda</span>
+            Pura<span className="text-[#7C3AED]">genda</span>
           </span>
         </Link>
       </div>
@@ -65,7 +65,7 @@ export function DashboardSidebar({
               href={item.href}
               className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "border-[#0085CB]/20 bg-[#0085CB]/10 text-white"
+                  ? "border-[#7C3AED]/20 bg-[#7C3AED]/10 text-white"
                   : "border-transparent text-white/50 hover:bg-white/[0.03] hover:text-white/80"
               }`}
             >

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Clock, Users } from "lucide-react";
 import { AppointmentActions } from "./appointment-actions";
+import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -57,9 +58,12 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-white/40">
           Resumen de citas para{" "}
-          <span className="font-medium text-[#0085CB]">{business.name}</span>
+          <span className="font-medium text-[#7C3AED]">{business.name}</span>
         </p>
       </div>
+
+      {/* Subscription Upsell */}
+      <SubscriptionBanner businessId={business.id} />
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -136,7 +140,7 @@ export default async function DashboardPage() {
                         {appointment.customerEmail}
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="inline-flex items-center rounded-lg border border-[#0085CB]/20 bg-[#0085CB]/10 px-2 py-0.5 text-xs font-medium text-[#0085CB]">
+                        <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
                           {appointment.service.name}
                         </span>
                       </td>

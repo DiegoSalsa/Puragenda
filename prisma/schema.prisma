@@ -13,19 +13,37 @@ datasource db {
 enum UserRole {
   OWNER
   STAFF
+  SUPERADMIN
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole @default(OWNER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  role             UserRole  @default(OWNER)
+  isSuperAdmin     Boolean   @default(false)
+  trialUsedAt      DateTime? // When trial was activated
+  registrationIp   String?   // IP at registration for fraud detection
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   businesses Business[]
   staff      Staff[]
+}
+
+// ==========================================
+// ANTI-FRAUD
+// ==========================================
+
+model BlacklistedIp {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  reason    String?
+  userId    String?  // Who triggered the blacklist
+  createdAt DateTime @default(now())
+
+  @@index([ip])
 }
 
 // ==========================================
@@ -33,20 +51,23 @@ model User {
 // ==========================================
 
 enum SubscriptionPlan {
-  FREE
+  BASIC
   PRO
 }
 
 enum SubscriptionStatus {
   ACTIVE
+  TRIALING
   INACTIVE
   CANCELLED
 }
 
 model Subscription {
   id                    String             @id @default(cuid())
-  plan                  SubscriptionPlan   @default(FREE)
+  plan                  SubscriptionPlan   @default(BASIC)
   status                SubscriptionStatus @default(ACTIVE)
+  isTrial               Boolean            @default(false)
+  trialEndsAt           DateTime?
   businessId            String             @unique
   stripeCustomerId      String?
   stripeSubscriptionId  String?
@@ -66,7 +87,7 @@ model Business {
   name           String
   slug           String   @unique
   apiKey         String   @unique
-  brandColor     String?  // Hex color without # (e.g., "0085CB")
+  brandColor     String?
   allowedOrigins String[] @default([])
   timezone       String   @default("America/Santiago")
   ownerId        String?
@@ -104,7 +125,7 @@ model Service {
   id          String  @id @default(cuid())
   name        String
   description String?
-  duration    Int     // minutes
+  duration    Int
   price       Float
   businessId  String
 

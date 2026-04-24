@@ -7,7 +7,7 @@ export type { SessionUser };
 
 interface SessionPayload extends SessionUser {
   exp: number;
-  v: 1;
+  v: 2;
 }
 
 function getAuthSecret(): string {
@@ -15,7 +15,6 @@ function getAuthSecret(): string {
   if (configured && configured.length >= 32) {
     return configured;
   }
-  // Dev fallback — MUST be replaced in production
   return "dev-only-auth-secret-change-in-production-32+chars";
 }
 
@@ -46,7 +45,7 @@ export function createSessionToken(
   const payload: SessionPayload = {
     ...user,
     exp: Math.floor(Date.now() / 1000) + maxAgeSeconds,
-    v: 1,
+    v: 2,
   };
 
   const encodedPayload = toBase64Url(JSON.stringify(payload));
@@ -76,7 +75,7 @@ export function verifySessionToken(token: string): SessionUser | null {
     const decoded = fromBase64Url(encodedPayload).toString("utf8");
     const payload = JSON.parse(decoded) as SessionPayload;
 
-    if (payload.v !== 1) return null;
+    if (payload.v !== 2) return null;
     if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
 
     return {
@@ -84,6 +83,7 @@ export function verifySessionToken(token: string): SessionUser | null {
       email: payload.email,
       name: payload.name,
       role: payload.role,
+      isSuperAdmin: payload.isSuperAdmin ?? false,
     };
   } catch {
     return null;

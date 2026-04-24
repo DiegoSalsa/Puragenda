@@ -3,11 +3,28 @@ import type { NextRequest } from "next/server";
 
 const AUTH_COOKIE = "puragenda_session";
 
-// Routes that require authentication
 const PROTECTED_PREFIXES = ["/dashboard", "/api/dashboard"];
-
-// Public API routes that need CORS handling
+const ADMIN_PREFIXES = ["/admin", "/api/admin"];
 const PUBLIC_API_PREFIX = "/api/business";
+
+/**
+ * Decode session payload from the cookie token.
+ * Lightweight: only reads the payload, does NOT verify HMAC.
+ * Full signature verification happens in user-session.ts on the server.
+ */
+function readSessionPayload(token: string): { isSuperAdmin?: boolean } | null {
+  try {
+    const [encodedPayload] = token.split(".");
+    if (!encodedPayload) return null;
+
+    const normalized = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const decoded = atob(padded);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,6 +34,28 @@ export function middleware(request: NextRequest) {
     return handleCorsResponse(request);
   }
 
+  // ─── Protect SuperAdmin routes ───
+  const isAdmin = ADMIN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  if (isAdmin) {
+    const token = request.cookies.get(AUTH_COOKIE)?.value;
+    if (!token) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    const payload = readSessionPayload(token);
+    if (!payload?.isSuperAdmin) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    return NextResponse.next();
+  }
+
   // ─── Protect dashboard routes ───
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
@@ -24,14 +63,9 @@ export function middleware(request: NextRequest) {
 
   if (isProtected) {
     const token = request.cookies.get(AUTH_COOKIE)?.value;
-
     if (!token) {
-      // API routes return 401, pages redirect to login
       if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: "No autenticado" },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "No autenticado" }, { status: 401 });
       }
       return NextResponse.redirect(new URL("/login", request.url));
     }
@@ -46,7 +80,6 @@ function handleCorsResponse(request: NextRequest): NextResponse {
 
   if (isPreflight) {
     const response = new NextResponse(null, { status: 204 });
-    // Allow the origin temporarily; the actual route handler validates apiKey + allowedOrigins
     if (origin) {
       response.headers.set("Access-Control-Allow-Origin", origin);
     }
@@ -57,13 +90,11 @@ function handleCorsResponse(request: NextRequest): NextResponse {
   }
 
   const response = NextResponse.next();
-
   if (origin) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, x-api-key");
   }
-
   return response;
 }
 
@@ -71,6 +102,8 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/api/dashboard/:path*",
+    "/admin/:path*",
+    "/api/admin/:path*",
     "/api/business/:path*",
   ],
 };

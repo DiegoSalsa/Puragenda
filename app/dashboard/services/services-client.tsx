@@ -110,7 +110,7 @@ export function ServicesClient({
 
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#006BA3]"
+          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#5B21B6]"
         >
           <Plus className="h-4 w-4" /> Nuevo Servicio
         </button>
@@ -132,7 +132,7 @@ export function ServicesClient({
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ej: Consultoría Web"
                   required
-                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                 />
               </div>
               <div className="space-y-1.5">
@@ -144,7 +144,7 @@ export function ServicesClient({
                   }
                   placeholder="Descripción del servicio..."
                   rows={3}
-                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -161,7 +161,7 @@ export function ServicesClient({
                     placeholder="60"
                     required
                     min="1"
-                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -175,7 +175,7 @@ export function ServicesClient({
                     placeholder="50000"
                     required
                     min="0"
-                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#0085CB]/30"
+                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
                 </div>
               </div>
@@ -190,7 +190,7 @@ export function ServicesClient({
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-[#0085CB] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#006BA3] disabled:opacity-50"
+                  className="rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -246,7 +246,7 @@ export function ServicesClient({
                         {service.description || "—"}
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="inline-flex items-center rounded-lg border border-[#0085CB]/20 bg-[#0085CB]/10 px-2 py-0.5 text-xs font-medium text-[#0085CB]">
+                        <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
                           {service.duration} min
                         </span>
                       </td>

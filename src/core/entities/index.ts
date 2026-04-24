@@ -2,20 +2,19 @@
 // Puragenda — Domain Entities (TypeScript types)
 // ═══════════════════════════════════════════
 
-// ---------- Enums ----------
-
-export type UserRole = "OWNER" | "STAFF";
-export type SubscriptionPlan = "FREE" | "PRO";
-export type SubscriptionStatus = "ACTIVE" | "INACTIVE" | "CANCELLED";
+export type UserRole = "OWNER" | "STAFF" | "SUPERADMIN";
+export type SubscriptionPlan = "BASIC" | "PRO";
+export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
 export type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
-
-// ---------- User ----------
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  isSuperAdmin: boolean;
+  trialUsedAt: Date | null;
+  registrationIp: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,8 +23,6 @@ export type SafeUser = Omit<User, "createdAt" | "updatedAt"> & {
   createdAt?: Date;
   updatedAt?: Date;
 };
-
-// ---------- Business ----------
 
 export interface Business {
   id: string;
@@ -40,8 +37,6 @@ export interface Business {
   updatedAt: Date;
 }
 
-// ---------- Staff ----------
-
 export interface Staff {
   id: string;
   name: string;
@@ -53,18 +48,14 @@ export interface Staff {
   updatedAt: Date;
 }
 
-// ---------- Service ----------
-
 export interface Service {
   id: string;
   name: string;
   description: string | null;
-  duration: number; // minutes
+  duration: number;
   price: number;
   businessId: string;
 }
-
-// ---------- Appointment ----------
 
 export interface Appointment {
   id: string;
@@ -80,12 +71,12 @@ export interface Appointment {
   createdAt: Date;
 }
 
-// ---------- Subscription ----------
-
 export interface Subscription {
   id: string;
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
+  isTrial: boolean;
+  trialEndsAt: Date | null;
   businessId: string;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
@@ -94,16 +85,13 @@ export interface Subscription {
   updatedAt: Date;
 }
 
-// ---------- Session ----------
-
 export interface SessionUser {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  isSuperAdmin: boolean;
 }
-
-// ---------- Widget ----------
 
 export interface WidgetBusiness {
   name: string;
@@ -120,12 +108,5 @@ export interface WidgetService {
   price: number;
 }
 
-export interface TimeSlot {
-  start: Date;
-  end: Date;
-}
-
-export interface BlockedSlot {
-  startTime: string;
-  endTime: string;
-}
+export interface TimeSlot { start: Date; end: Date; }
+export interface BlockedSlot { startTime: string; endTime: string; }

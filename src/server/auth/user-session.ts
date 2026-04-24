@@ -17,7 +17,7 @@ export async function getCurrentSessionUser(): Promise<SessionUser | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { id: true, email: true, name: true, role: true },
+    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true },
   });
 
   if (!user) return null;
@@ -38,7 +38,7 @@ export async function getApiSessionUser(
 
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { id: true, email: true, name: true, role: true },
+    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true },
   });
 
   if (!user) return null;

@@ -20,8 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Capture IP for anti-fraud
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || request.headers.get("x-real-ip")
+      || "unknown";
+
     const { email, password, name } = parsed.data;
-    const result = await registerUser({ email, password, name });
+    const result = await registerUser({ email, password, name, ip });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });
@@ -32,6 +37,7 @@ export async function POST(request: NextRequest) {
       email: result.user.email,
       name: result.user.name,
       role: result.user.role,
+      isSuperAdmin: result.user.isSuperAdmin,
     });
 
     const response = NextResponse.json(

@@ -1,11 +1,11 @@
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('OWNER', 'STAFF');
+CREATE TYPE "UserRole" AS ENUM ('OWNER', 'STAFF', 'SUPERADMIN');
 
 -- CreateEnum
-CREATE TYPE "SubscriptionPlan" AS ENUM ('FREE', 'PRO');
+CREATE TYPE "SubscriptionPlan" AS ENUM ('BASIC', 'PRO');
 
 -- CreateEnum
-CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'CANCELLED');
+CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'TRIALING', 'INACTIVE', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED');
@@ -17,6 +17,9 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'OWNER',
+    "isSuperAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "trialUsedAt" TIMESTAMP(3),
+    "registrationIp" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -24,10 +27,23 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "BlacklistedIp" (
+    "id" TEXT NOT NULL,
+    "ip" TEXT NOT NULL,
+    "reason" TEXT,
+    "userId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BlacklistedIp_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
-    "plan" "SubscriptionPlan" NOT NULL DEFAULT 'FREE',
+    "plan" "SubscriptionPlan" NOT NULL DEFAULT 'BASIC',
     "status" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
+    "isTrial" BOOLEAN NOT NULL DEFAULT false,
+    "trialEndsAt" TIMESTAMP(3),
     "businessId" TEXT NOT NULL,
     "stripeCustomerId" TEXT,
     "stripeSubscriptionId" TEXT,
@@ -99,6 +115,12 @@ CREATE TABLE "Appointment" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BlacklistedIp_ip_key" ON "BlacklistedIp"("ip");
+
+-- CreateIndex
+CREATE INDEX "BlacklistedIp_ip_idx" ON "BlacklistedIp"("ip");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Subscription_businessId_key" ON "Subscription"("businessId");

@@ -73,25 +73,27 @@ const features = [
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
+    name: "Base",
+    price: "$24.990",
     subtitle: "/mes",
-    description: "Para probar el sistema y empezar a automatizar.",
-    cta: "Empezar Gratis",
+    description: "Automatiza tu agenda y empieza a recibir reservas desde tu web.",
+    cta: "Probar 1 mes gratis",
     highlighted: false,
+    badge: "30 días gratis",
     items: [
-      "Hasta 50 citas por mes",
+      "Citas ilimitadas",
       "1 profesional",
       "Widget embebible en iframe",
-      "Panel de administración básico",
+      "Panel de administración completo",
+      "Detección de colisiones",
       "Soporte por email",
     ],
   },
   {
     name: "Pro",
-    price: "$49.990",
+    price: "$39.990",
     subtitle: "/mes",
-    description: "Para negocios que necesitan una solución completa y profesional.",
+    description: "Para negocios que necesitan multi-staff y marca blanca total.",
     cta: "Activar Plan Pro",
     highlighted: true,
     items: [
@@ -142,19 +144,19 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Background effects */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#0085CB]/8 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#0085CB]/5 blur-[120px]" />
+        <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#7C3AED]/8 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#7C3AED]/5 blur-[120px]" />
       </div>
 
       {/* ─── Header ─── */}
       <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0A0A0A]/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0085CB] shadow-lg shadow-[#0085CB]/25">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/25">
               <CalendarClock className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight">
-              Pura<span className="text-[#0085CB]">genda</span>
+              Pura<span className="text-[#7C3AED]">genda</span>
             </span>
           </Link>
 
@@ -165,7 +167,7 @@ export default function HomePage() {
               </button>
             </Link>
             <Link href="/register">
-              <button className="flex items-center gap-2 rounded-lg bg-[#0085CB] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#0085CB]/25 transition-all hover:bg-[#006BA3] hover:shadow-[#0085CB]/35">
+              <button className="flex items-center gap-2 rounded-lg bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35">
                 Crear cuenta <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
@@ -178,13 +180,13 @@ export default function HomePage() {
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
           <div className="animate-fade-up space-y-8 text-center">
             <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-sm text-white/70">
-              <Zap className="h-3.5 w-3.5 text-[#0085CB]" />
+              <Zap className="h-3.5 w-3.5 text-[#7C3AED]" />
               SaaS de agendamiento para negocios locales
             </div>
 
             <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
               Tu agenda inteligente,{" "}
-              <span className="bg-gradient-to-r from-[#0085CB] to-[#33a0d9] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] bg-clip-text text-transparent">
                 integrada en tu web
               </span>
             </h1>
@@ -196,7 +198,7 @@ export default function HomePage() {
 
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/register">
-                <button className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#0085CB]/20 transition-all hover:bg-[#006BA3] hover:shadow-[#0085CB]/30 animate-pulse-glow">
+                <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/30 animate-pulse-glow">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
                 </button>
               </Link>
@@ -218,7 +220,7 @@ export default function HomePage() {
                   key={item.label}
                   className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-sm text-white/50"
                 >
-                  <item.icon className="h-3.5 w-3.5 text-[#0085CB]" />
+                  <item.icon className="h-3.5 w-3.5 text-[#7C3AED]" />
                   {item.label}
                 </div>
               ))}
@@ -230,9 +232,9 @@ export default function HomePage() {
             {bentoFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className={`group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#0085CB]/20 hover:bg-[#111]/80 ${feature.className}`}
+                className={`group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#7C3AED]/20 hover:bg-[#111]/80 ${feature.className}`}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0085CB]/10 text-[#0085CB] transition-colors group-hover:bg-[#0085CB]/15">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED] transition-colors group-hover:bg-[#7C3AED]/15">
                   <feature.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
@@ -249,7 +251,7 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-6xl px-6 py-16">
             <div className="grid items-center gap-8 md:grid-cols-3">
               <div className="space-y-2 text-center">
-                <p className="text-4xl font-bold tracking-tight text-[#0085CB]">500+</p>
+                <p className="text-4xl font-bold tracking-tight text-[#7C3AED]">500+</p>
                 <p className="text-sm text-white/45">Negocios confían en Puragenda</p>
               </div>
               <div className="space-y-2 text-center">
@@ -279,7 +281,7 @@ export default function HomePage() {
         {/* ─── Features ─── */}
         <section className="mx-auto w-full max-w-6xl px-6 py-20">
           <div className="mb-12 text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
               Características
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -291,9 +293,9 @@ export default function HomePage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#0085CB]/20"
+                className="group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#7C3AED]/20"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0085CB]/10 text-[#0085CB]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED]">
                   <feature.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
@@ -309,14 +311,14 @@ export default function HomePage() {
         <section className="border-y border-white/[0.06] bg-[#0D0D0D] py-20">
           <div className="mx-auto w-full max-w-6xl px-6">
             <div className="mb-12 text-center">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
                 Precios claros
               </p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                 Planes para crecer a tu ritmo
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-white/45">
-                Sin permanencia forzada. Empiezas gratis y creces cuando quieras.
+                Prueba gratis 30 días. Sin tarjeta. Cancela cuando quieras.
               </p>
             </div>
 
@@ -326,13 +328,18 @@ export default function HomePage() {
                   key={plan.name}
                   className={`relative rounded-2xl border p-8 transition-all ${
                     plan.highlighted
-                      ? "border-[#0085CB]/30 bg-gradient-to-b from-[#0085CB]/5 to-transparent shadow-2xl shadow-[#0085CB]/10"
+                      ? "border-[#7C3AED]/30 bg-gradient-to-b from-[#7C3AED]/5 to-transparent shadow-2xl shadow-[#7C3AED]/10"
                       : "border-white/[0.06] bg-[#111]"
                   }`}
                 >
                   {plan.highlighted && (
-                    <div className="absolute -top-3 left-6 rounded-full bg-[#0085CB] px-3 py-1 text-xs font-semibold text-white">
+                    <div className="absolute -top-3 left-6 rounded-full bg-[#7C3AED] px-3 py-1 text-xs font-semibold text-white">
                       Más popular
+                    </div>
+                  )}
+                  {"badge" in plan && plan.badge && !plan.highlighted && (
+                    <div className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-3 py-1 text-xs font-semibold text-white">
+                      {plan.badge}
                     </div>
                   )}
 
@@ -350,7 +357,7 @@ export default function HomePage() {
                   <ul className="mt-6 space-y-3">
                     {plan.items.map((item) => (
                       <li key={item} className="flex items-start gap-2.5 text-sm text-white/60">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#0085CB]" />
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
                         {item}
                       </li>
                     ))}
@@ -360,7 +367,7 @@ export default function HomePage() {
                     <button
                       className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${
                         plan.highlighted
-                          ? "bg-[#0085CB] text-white shadow-lg shadow-[#0085CB]/25 hover:bg-[#006BA3]"
+                          ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25 hover:bg-[#5B21B6]"
                           : "border border-white/10 text-white/80 hover:border-white/20 hover:text-white"
                       }`}
                     >
@@ -376,7 +383,7 @@ export default function HomePage() {
         {/* ─── FAQ ─── */}
         <section className="mx-auto w-full max-w-3xl px-6 py-20">
           <div className="mb-12 text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#0085CB]">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
               Preguntas frecuentes
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight">
@@ -388,7 +395,7 @@ export default function HomePage() {
             {faqs.map((faq) => (
               <details
                 key={faq.question}
-                className="group rounded-2xl border border-white/[0.06] bg-[#111] transition-all open:border-[#0085CB]/20 [&_summary::-webkit-details-marker]:hidden"
+                className="group rounded-2xl border border-white/[0.06] bg-[#111] transition-all open:border-[#7C3AED]/20 [&_summary::-webkit-details-marker]:hidden"
               >
                 <summary className="flex cursor-pointer items-center justify-between p-5 text-sm font-medium transition-colors hover:text-white/90">
                   {faq.question}
@@ -414,7 +421,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/register">
-                <button className="flex items-center gap-2 rounded-xl bg-[#0085CB] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#0085CB]/20 transition-all hover:bg-[#006BA3]">
+                <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6]">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
                 </button>
               </Link>
@@ -431,7 +438,7 @@ export default function HomePage() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/[0.06] py-8 text-center">
         <p className="flex items-center justify-center gap-2 text-sm text-white/30">
-          <CalendarClock className="h-4 w-4 text-[#0085CB]" />
+          <CalendarClock className="h-4 w-4 text-[#7C3AED]" />
           Puragenda by PuroCode · {new Date().getFullYear()}
         </p>
       </footer>
