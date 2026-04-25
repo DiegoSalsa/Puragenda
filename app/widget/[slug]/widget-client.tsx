@@ -14,7 +14,7 @@ interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
     primaryColor: string; secondaryColor: string; backgroundColor: string; brandColor: string | null;
-    textColor?: string;
+    textColor?: string; textSecondary?: string; fontSize?: number;
   };
   services: Service[];
   primaryColor: string;
@@ -93,6 +93,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
+  const textSecondary = business.textSecondary || `${textColor}66`;
+  const fontSize = business.fontSize || 14;
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
@@ -172,16 +174,28 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const stepIdx = step === "service" ? 0 : step === "staff" ? 1 : step === "datetime" ? (hasMultipleStaff ? 2 : 1) : step === "details" ? (hasMultipleStaff ? 3 : 2) : stepLabels.length;
 
   return (
-    <div className="min-h-screen p-3 sm:p-5" style={{ background: "transparent", ["--wp" as string]: pc }}>
+    <div
+      className="w-full min-h-screen p-3 sm:p-5"
+      style={{
+        background: bgColor,
+        ["--wp" as string]: pc,
+        ["--wbg" as string]: bgColor,
+        ["--wtext" as string]: textColor,
+        ["--wtext-secondary" as string]: textSecondary,
+        ["--wfont-size" as string]: `${fontSize}px`,
+        fontSize: `${fontSize}px`,
+        color: textColor,
+      }}
+    >
       <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl" style={{ background: bgColor, color: textColor }}>
         {/* Header */}
-        <div className="border-b border-white/[0.06] bg-[#0E0E0E] px-5 py-4 sm:px-6">
+        <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6" style={{ background: `${bgColor}CC` }}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Reserva online</p>
-                <h1 className="text-lg font-bold tracking-tight">{business.name}</h1>
+                <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>Reserva online</p>
+                <h1 className="text-lg font-bold tracking-tight" style={{ color: textColor }}>{business.name}</h1>
               </div>
             </div>
             <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>
@@ -189,7 +203,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step !== "success" && (
             <div className={`mt-4 grid gap-2 text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
               {stepLabels.map((label, i) => (
-                <div key={label} className="rounded-full px-2 py-1.5 text-center transition-all duration-300" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}>
+                <div key={label} className="rounded-full px-2 py-1.5 text-center transition-all duration-300" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
                   {label}
                 </div>
               ))}
@@ -365,11 +379,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
 
-        <div className="border-t border-white/[0.06] bg-[#0E0E0E] px-5 py-3 text-center text-xs text-white/20">
+        <div className="border-t border-white/[0.06] px-5 py-3 text-center text-xs" style={{ background: `${bgColor}CC`, color: textSecondary }}>
           Powered by Puragenda · integración marca blanca
         </div>
       </div>
-      <div className="mt-4 text-center text-xs text-white/15"><p className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />Compatible con móviles y listo para iframe.</p></div>
     </div>
   );
 }

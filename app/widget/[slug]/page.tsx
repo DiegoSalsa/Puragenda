@@ -8,7 +8,10 @@ export default async function WidgetPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ color?: string; primary?: string; secondary?: string; bg?: string; text?: string }>;
+  searchParams: Promise<{
+    color?: string; primary?: string; secondary?: string;
+    bg?: string; text?: string; textSecondary?: string; fontSize?: string;
+  }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -27,9 +30,9 @@ export default async function WidgetPage({
 
   if (!business) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-5" style={{ background: "transparent" }}>
+      <div className="flex w-full min-h-screen items-center justify-center p-5" style={{ background: "#000" }}>
         <div className="w-full max-w-lg rounded-2xl border border-white/[0.06] bg-[#111] p-8 text-center">
-          <p className="text-xl font-semibold">Negocio no encontrado</p>
+          <p className="text-xl font-semibold text-white">Negocio no encontrado</p>
           <p className="mt-2 text-sm text-white/40">El identificador &ldquo;{slug}&rdquo; no existe.</p>
         </div>
       </div>
@@ -42,6 +45,8 @@ export default async function WidgetPage({
   const secondaryColor = sp.secondary ? `#${sp.secondary}` : business.secondaryColor;
   const bgColor = sp.bg ? `#${sp.bg}` : business.backgroundColor;
   const textColor = sp.text ? `#${sp.text}` : "#FFFFFF";
+  const textSecondary = sp.textSecondary ? `#${sp.textSecondary}` : undefined;
+  const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : undefined;
 
   return (
     <WidgetClient
@@ -55,6 +60,8 @@ export default async function WidgetPage({
         backgroundColor: bgColor,
         brandColor: widgetColor,
         textColor,
+        textSecondary: textSecondary || `${textColor}66`,
+        fontSize: fontSize || 14,
       }}
       services={business.services.map((s) => ({
         id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price,

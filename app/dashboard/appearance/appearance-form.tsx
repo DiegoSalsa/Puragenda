@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Save, Eye, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Loader2, Save, Eye, Image as ImageIcon, RefreshCw, Type, Palette } from "lucide-react";
 import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
 
-interface FormData { primaryColor: string; secondaryColor: string; backgroundColor: string; textColor: string; logoUrl: string; }
+interface FormData {
+  primaryColor: string; secondaryColor: string; backgroundColor: string;
+  textColor: string; textSecondary: string; fontSize: number; logoUrl: string;
+}
 
 const COLOR_FIELDS: { key: keyof FormData; label: string; description: string }[] = [
-  { key: "primaryColor", label: "Color Primario", description: "Se aplica a botones, estados activos y acentos principales." },
-  { key: "secondaryColor", label: "Color Secundario", description: "Se aplica a bordes, iconos y textos de apoyo." },
-  { key: "backgroundColor", label: "Color de Fondo del Formulario", description: "Color de fondo de la tarjeta de reserva (no del sitio web)." },
-  { key: "textColor", label: "Color de Texto", description: "Color principal de la tipografía dentro del widget." },
+  { key: "primaryColor", label: "Color de Botones y Acentos", description: "Se aplica a botones principales, estados activos, pills y enlaces destacados del widget." },
+  { key: "secondaryColor", label: "Color Secundario", description: "Se aplica a bordes sutiles, iconos decorativos y estados hover de elementos secundarios." },
+  { key: "backgroundColor", label: "Color de Fondo del Formulario", description: "Color de fondo de la tarjeta de reserva completa. No afecta al sitio web donde se incrusta." },
+  { key: "textColor", label: "Color de Texto Principal", description: "Color de la tipografía principal: títulos, nombres de servicios y contenido prioritario." },
+  { key: "textSecondary", label: "Color de Texto Secundario", description: "Color de etiquetas, descripciones y textos de menor jerarquía visual dentro del widget." },
 ];
 
 function ColorInput({ label, description, value, onChange }: { label: string; description: string; value: string; onChange: (v: string) => void }) {
@@ -38,10 +42,21 @@ function ColorInput({ label, description, value, onChange }: { label: string; de
   );
 }
 
-export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<FormData, "textColor"> & { textColor?: string }; widgetSlug: string }) {
+export function AppearanceForm({
+  initialData,
+  widgetSlug,
+}: {
+  initialData: { primaryColor: string; secondaryColor: string; backgroundColor: string; logoUrl: string };
+  widgetSlug: string;
+}) {
   const [data, setData] = useState<FormData>({
-    ...initialData,
-    textColor: initialData.textColor || "#FFFFFF",
+    primaryColor: initialData.primaryColor,
+    secondaryColor: initialData.secondaryColor,
+    backgroundColor: initialData.backgroundColor,
+    textColor: "#FFFFFF",
+    textSecondary: "#FFFFFF66",
+    fontSize: 14,
+    logoUrl: initialData.logoUrl,
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -55,15 +70,16 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
     const s = d.secondaryColor.replace("#", "");
     const b = d.backgroundColor.replace("#", "");
     const t = d.textColor.replace("#", "");
-    return `/widget/${widgetSlug}?primary=${p}&secondary=${s}&bg=${b}&text=${t}`;
+    const ts = d.textSecondary.replace("#", "");
+    return `/widget/${widgetSlug}?primary=${p}&secondary=${s}&bg=${b}&text=${t}&textSecondary=${ts}&fontSize=${d.fontSize}`;
   }
 
-  // Initialize preview
+  // Initialize preview on mount
   useEffect(() => {
     setPreviewUrl(buildPreviewUrl(data));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function update(field: keyof FormData, value: string) {
+  function update(field: keyof FormData, value: string | number) {
     const next = { ...data, [field]: value };
     setData(next);
     setSaved(false);
@@ -86,10 +102,12 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
     setSaving(false);
   }
 
-  // Contrast check: is text readable on background?
+  // Contrast check
   function getContrastRatio(hex1: string, hex2: string): number {
     function lum(hex: string): number {
-      const rgb = hex.replace("#", "").match(/.{2}/g)?.map((c) => {
+      const clean = hex.replace("#", "").slice(0, 6);
+      if (clean.length !== 6) return 0;
+      const rgb = clean.match(/.{2}/g)?.map((c) => {
         const v = parseInt(c, 16) / 255;
         return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
       }) || [0, 0, 0];
@@ -100,26 +118,30 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
     return (lighter + 0.05) / (darker + 0.05);
   }
 
-  const contrastOk = data.textColor.length === 7 && data.backgroundColor.length === 7
-    ? getContrastRatio(data.textColor, data.backgroundColor) >= 3
+  const bgHex = data.backgroundColor.replace("#", "").slice(0, 6);
+  const textHex = data.textColor.replace("#", "").slice(0, 6);
+  const contrastOk = bgHex.length === 6 && textHex.length === 6
+    ? getContrastRatio(`#${textHex}`, `#${bgHex}`) >= 3
     : true;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Form */}
       <div className="space-y-6">
+        {/* Colors */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 space-y-6">
           <h3 className="text-sm font-medium flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ background: data.primaryColor }} />
-            Personalización del Widget
+            <Palette className="h-4 w-4 text-[#7C3AED]" />
+            Colores del Widget
           </h3>
+          <p className="text-xs text-white/30 -mt-3">Personaliza cada aspecto visual de tu widget de reservas. Los cambios se reflejan al instante en la vista previa.</p>
 
           {COLOR_FIELDS.map((field) => (
             <ColorInput
               key={field.key}
               label={field.label}
               description={field.description}
-              value={data[field.key]}
+              value={data[field.key] as string}
               onChange={(v) => update(field.key, v)}
             />
           ))}
@@ -128,20 +150,48 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
           {!contrastOk && (
             <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
               <span className="text-amber-400 text-xs mt-0.5">⚠</span>
-              <p className="text-xs text-amber-400/80">Bajo contraste entre texto y fondo. El texto podría ser difícil de leer.</p>
+              <p className="text-xs text-amber-400/80">Bajo contraste entre texto principal y fondo. Ratio actual: {getContrastRatio(`#${textHex}`, `#${bgHex}`).toFixed(1)}:1. Se recomienda al menos 4.5:1.</p>
             </div>
           )}
+        </div>
+
+        {/* Typography */}
+        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 space-y-5">
+          <h3 className="text-sm font-medium flex items-center gap-2">
+            <Type className="h-4 w-4 text-[#7C3AED]" />
+            Tipografía
+          </h3>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-white/80">Tamaño de Fuente Base</label>
+              <span className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1 font-mono text-xs text-white">{data.fontSize}px</span>
+            </div>
+            <p className="text-[11px] text-white/35">Controla el tamaño base de la tipografía. Todos los textos del widget se escalan proporcionalmente.</p>
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className="text-xs text-white/30">12</span>
+              <input
+                type="range"
+                min={12}
+                max={18}
+                step={1}
+                value={data.fontSize}
+                onChange={(e) => update("fontSize", parseInt(e.target.value, 10))}
+                className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
+              />
+              <span className="text-xs text-white/30">18</span>
+            </div>
+          </div>
 
           {/* Preview swatch */}
           <div className="rounded-xl border border-white/[0.06] p-4 space-y-2">
-            <p className="text-xs text-white/40">Vista previa rápida</p>
-            <div className="flex items-center gap-3">
-              <div className="h-16 flex-1 rounded-lg flex items-center justify-center text-sm font-medium" style={{ background: data.backgroundColor, color: data.textColor, border: `1px solid ${data.secondaryColor}40` }}>
-                <span>Texto de ejemplo</span>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="h-7 w-16 rounded-md flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: data.primaryColor }}>Botón</div>
-                <div className="h-7 w-16 rounded-md flex items-center justify-center text-[10px]" style={{ background: `${data.secondaryColor}20`, color: data.secondaryColor, border: `1px solid ${data.secondaryColor}40` }}>Borde</div>
+            <p className="text-xs text-white/40">Vista previa de tipografía y colores</p>
+            <div className="rounded-lg p-4 space-y-2" style={{ background: data.backgroundColor, border: `1px solid ${data.secondaryColor}25` }}>
+              <p className="font-semibold" style={{ color: data.textColor, fontSize: `${data.fontSize}px` }}>Título de ejemplo</p>
+              <p style={{ color: data.textSecondary, fontSize: `${data.fontSize - 2}px` }}>Esta es una descripción secundaria para validar el contraste visual.</p>
+              <div className="flex gap-2 mt-2">
+                <div className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: data.primaryColor, fontSize: `${data.fontSize - 2}px` }}>Reservar</div>
+                <div className="rounded-lg px-3 py-1.5 text-xs" style={{ background: `${data.secondaryColor}15`, color: data.secondaryColor, border: `1px solid ${data.secondaryColor}30`, fontSize: `${data.fontSize - 2}px` }}>Cancelar</div>
               </div>
             </div>
           </div>
@@ -152,7 +202,7 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
           <h3 className="text-sm font-medium flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
           </h3>
-          <p className="text-[11px] text-white/35">URL de la imagen de tu logo. Se mostrará en la cabecera del widget.</p>
+          <p className="text-[11px] text-white/35">URL de la imagen de tu logo. Se muestra en la cabecera del widget de reservas.</p>
           <input
             type="text"
             value={data.logoUrl}
@@ -191,7 +241,7 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
             <RefreshCw className="h-3 w-3" /> Recargar
           </button>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-white/[0.06]" style={{ background: "#1a1a1a" }}>
+        <div className="overflow-hidden rounded-2xl border border-white/[0.06]" style={{ background: "#000" }}>
           {previewUrl && (
             <iframe
               src={previewUrl}
@@ -201,7 +251,7 @@ export function AppearanceForm({ initialData, widgetSlug }: { initialData: Omit<
             />
           )}
         </div>
-        <p className="text-[11px] text-white/20 text-center">Los cambios se reflejan automáticamente. Presiona &quot;Guardar&quot; para persistirlos.</p>
+        <p className="text-[11px] text-white/20 text-center">Los cambios se reflejan automáticamente al mover los selectores. Presiona &quot;Guardar&quot; para persistirlos en la base de datos.</p>
       </div>
     </div>
   );

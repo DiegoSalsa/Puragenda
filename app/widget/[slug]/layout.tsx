@@ -7,14 +7,13 @@ export const metadata: Metadata = {
 
 export default function WidgetLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: "transparent",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="w-full min-h-screen" style={{ background: "#000000" }}>
       <style>{`
-        html, body { background-color: transparent !important; }
+        html, body {
+          background-color: #000000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
       `}</style>
       {children}
     </div>
