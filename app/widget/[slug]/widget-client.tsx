@@ -170,8 +170,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const stepIdx = step === "service" ? 0 : step === "staff" ? 1 : step === "datetime" ? (hasMultipleStaff ? 2 : 1) : step === "details" ? (hasMultipleStaff ? 3 : 2) : stepLabels.length;
 
   return (
-    <div className="min-h-screen p-3 sm:p-5" style={{ background: bgColor, ["--wp" as string]: pc }}>
-      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111] shadow-2xl">
+    <div className="min-h-screen p-3 sm:p-5" style={{ background: "transparent", ["--wp" as string]: pc }}>
+      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl" style={{ background: bgColor }}>
         {/* Header */}
         <div className="border-b border-white/[0.06] bg-[#0E0E0E] px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-2">

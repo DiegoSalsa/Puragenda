@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save } from "lucide-react";
+import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown } from "lucide-react";
 import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const DAYS_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -12,17 +13,21 @@ for (let h = 6; h <= 23; h++) { TIMES.push(`${String(h).padStart(2, "0")}:00`); 
 
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
 interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; }
+interface LimitInfo { plan: string; currentCount: number; maxAllowed: number; canAdd: boolean; }
 
 function defaultSchedule(): ScheduleEntry[] {
   return Array.from({ length: 7 }, (_, i) => ({ dayOfWeek: i, startTime: "09:00", endTime: "19:00", isWorking: i >= 1 && i <= 5 }));
 }
 
-export function StaffList({ staff: initialStaff }: { staff: StaffMember[] }) {
+const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", BASIC: "Base", PRO: "Pro" };
+
+export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMember[]; limitInfo: LimitInfo }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<Record<string, ScheduleEntry[]>>(() => {
     const map: Record<string, ScheduleEntry[]> = {};
@@ -32,11 +37,14 @@ export function StaffList({ staff: initialStaff }: { staff: StaffMember[] }) {
   const [savingSchedule, setSavingSchedule] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const atLimit = !limitInfo.canAdd;
+
   async function handleCreate() {
     if (!name.trim()) return;
-    setCreating(true);
-    await createStaffAction({ name: name.trim(), email: email.trim() || undefined });
-    setName(""); setEmail(""); setShowForm(false); setCreating(false);
+    setCreating(true); setCreateError("");
+    const result = await createStaffAction({ name: name.trim(), email: email.trim() || undefined });
+    if (result.error) { setCreateError(result.error); setCreating(false); return; }
+    setName(""); setEmail(""); setShowForm(false); setCreating(false); setCreateError("");
     router.refresh();
   }
 
@@ -62,10 +70,41 @@ export function StaffList({ staff: initialStaff }: { staff: StaffMember[] }) {
 
   return (
     <div className="space-y-4">
+      {/* Limit indicator */}
+      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+        <p className="text-sm text-white/50">
+          Profesionales: <span className="font-bold text-white">{limitInfo.currentCount}</span>
+          <span className="text-white/30"> / {limitInfo.maxAllowed}</span>
+          <span className="ml-2 text-xs text-white/30">Plan {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</span>
+        </p>
+        {atLimit && (
+          <Link href="/dashboard/settings#plan" className="flex items-center gap-1.5 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 px-3 py-1.5 text-xs font-medium text-[#A78BFA] hover:bg-[#7C3AED]/20 transition-all">
+            <Crown className="h-3 w-3" /> Mejorar plan
+          </Link>
+        )}
+      </div>
+
+      {/* Limit warning */}
+      {atLimit && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-300">Límite alcanzado</p>
+            <p className="text-xs text-amber-400/70">Tu plan {PLAN_LABELS[limitInfo.plan]} permite máximo {limitInfo.maxAllowed} profesional(es). Mejora tu plan para agregar más.</p>
+          </div>
+        </div>
+      )}
+
       {/* Add Staff */}
       {!showForm ? (
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-white/10 px-4 py-3 text-sm text-white/40 transition-all hover:border-[#7C3AED]/30 hover:text-white/70 w-full justify-center">
-          <Plus className="h-4 w-4" /> Agregar profesional
+        <button
+          onClick={() => { if (!atLimit) setShowForm(true); }}
+          disabled={atLimit}
+          className={`flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm w-full justify-center transition-all ${
+            atLimit ? "border-white/[0.03] text-white/15 cursor-not-allowed" : "border-white/10 text-white/40 hover:border-[#7C3AED]/30 hover:text-white/70"
+          }`}
+        >
+          <Plus className="h-4 w-4" /> {atLimit ? "Límite de profesionales alcanzado" : "Agregar profesional"}
         </button>
       ) : (
         <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-5 space-y-3">
@@ -74,11 +113,12 @@ export function StaffList({ staff: initialStaff }: { staff: StaffMember[] }) {
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" className="rounded-xl border border-white/[0.06] bg-[#1a1a1a] px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/30" />
             <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (opcional)" className="rounded-xl border border-white/[0.06] bg-[#1a1a1a] px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/30" />
           </div>
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
           <div className="flex gap-2">
             <button onClick={handleCreate} disabled={creating || !name.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
             </button>
-            <button onClick={() => setShowForm(false)} className="rounded-xl border border-white/[0.06] px-4 py-2 text-sm text-white/50">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setCreateError(""); }} className="rounded-xl border border-white/[0.06] px-4 py-2 text-sm text-white/50">Cancelar</button>
           </div>
         </div>
       )}

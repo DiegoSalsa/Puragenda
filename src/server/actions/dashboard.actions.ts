@@ -37,11 +37,35 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
 }
 
 // ─── Staff CRUD ───
+
+// Plan limits: max staff allowed (base, before extras)
+const PLAN_STAFF_LIMITS: Record<string, number> = { INDIVIDUAL: 1, BASIC: 3, PRO: 5 };
+
+export async function getStaffLimitInfo(businessId: string) {
+  const [subscription, currentCount] = await Promise.all([
+    prisma.subscription.findUnique({ where: { businessId } }),
+    prisma.staff.count({ where: { businessId } }),
+  ]);
+  const plan = subscription?.plan || "INDIVIDUAL";
+  const baseLimit = PLAN_STAFF_LIMITS[plan] ?? 1;
+  const extras = subscription?.extraStaffCount || 0;
+  const maxAllowed = baseLimit + extras;
+  return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
+}
+
 export async function createStaffAction(data: { name: string; email?: string }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getFirstBusinessByOwnerId(user.id);
   if (!business) return { error: "No tienes un negocio" };
+
+  // Enforce staff limit
+  const limitInfo = await getStaffLimitInfo(business.id);
+  if (!limitInfo.canAdd) {
+    const planLabels: Record<string, string> = { INDIVIDUAL: "Individual", BASIC: "Base", PRO: "Pro" };
+    return { error: `Has alcanzado el límite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para añadir más.` };
+  }
+
   try {
     await prisma.staff.create({ data: { name: data.name, email: data.email || null, businessId: business.id, isActive: true } });
   } catch { return { error: "Error al crear. ¿Email duplicado?" }; }

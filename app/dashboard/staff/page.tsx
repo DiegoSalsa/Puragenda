@@ -3,6 +3,7 @@ import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { Users } from "lucide-react";
 import { StaffList } from "./staff-list";
+import { getStaffLimitInfo } from "@/server/actions/dashboard.actions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,23 +14,18 @@ export default async function StaffPage() {
   const business = await getFirstBusinessByOwnerId(user.id);
   if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio</div>;
 
-  const staffMembers = await prisma.staff.findMany({
-    where: { businessId: business.id },
-    include: { schedule: { orderBy: { dayOfWeek: "asc" } } },
-    orderBy: { createdAt: "asc" },
-  });
+  const [staffMembers, limitInfo] = await Promise.all([
+    prisma.staff.findMany({
+      where: { businessId: business.id },
+      include: { schedule: { orderBy: { dayOfWeek: "asc" } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    getStaffLimitInfo(business.id),
+  ]);
 
   const serialized = staffMembers.map((s) => ({
-    id: s.id,
-    name: s.name,
-    email: s.email,
-    isActive: s.isActive,
-    schedule: s.schedule.map((sc) => ({
-      dayOfWeek: sc.dayOfWeek,
-      startTime: sc.startTime,
-      endTime: sc.endTime,
-      isWorking: sc.isWorking,
-    })),
+    id: s.id, name: s.name, email: s.email, isActive: s.isActive,
+    schedule: s.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking })),
   }));
 
   return (
@@ -43,7 +39,7 @@ export default async function StaffPage() {
           <p className="text-sm text-white/40">Gestiona tu equipo y sus horarios individuales.</p>
         </div>
       </div>
-      <StaffList staff={serialized} />
+      <StaffList staff={serialized} limitInfo={limitInfo} />
     </div>
   );
 }
