@@ -124,3 +124,26 @@ export async function saveAppearanceAction(data: { primaryColor: string; seconda
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
+
+// ─── Staff Deletion (Soft Delete) ───
+export async function deleteStaffAction(staffId: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getFirstBusinessByOwnerId(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
+  if (!staff) return { error: "Profesional no encontrado" };
+
+  // Soft delete: deactivate + disconnect from future appointments
+  await prisma.$transaction([
+    // Nullify staffId on all appointments referencing this staff
+    prisma.appointment.updateMany({ where: { staffId }, data: { staffId: null } }),
+    // Delete schedules
+    prisma.staffSchedule.deleteMany({ where: { staffId } }),
+    // Delete the staff record
+    prisma.staff.delete({ where: { id: staffId } }),
+  ]);
+
+  revalidatePath("/dashboard/staff");
+  return { success: true };
+}

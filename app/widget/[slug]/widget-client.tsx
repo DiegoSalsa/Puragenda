@@ -14,6 +14,7 @@ interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
     primaryColor: string; secondaryColor: string; backgroundColor: string; brandColor: string | null;
+    textColor?: string;
   };
   services: Service[];
   primaryColor: string;
@@ -91,6 +92,7 @@ function isStaffWorkingOnDay(staff: StaffMember, dow: number): boolean {
 export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
+  const textColor = business.textColor || "#FFFFFF";
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
@@ -171,7 +173,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   return (
     <div className="min-h-screen p-3 sm:p-5" style={{ background: "transparent", ["--wp" as string]: pc }}>
-      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl" style={{ background: bgColor }}>
+      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl" style={{ background: bgColor, color: textColor }}>
         {/* Header */}
         <div className="border-b border-white/[0.06] bg-[#0E0E0E] px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-2">
