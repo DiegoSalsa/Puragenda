@@ -28,5 +28,5 @@ export default async function ServicesPage() {
 
   const services = await getServicesByBusinessId(business.id);
 
-  return <ServicesClient initialServices={services} />;
+  return <ServicesClient initialServices={services} maxServicesPerBooking={business.maxServicesPerBooking} />;
 }

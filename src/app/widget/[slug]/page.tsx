@@ -44,9 +44,9 @@ export default async function WidgetPage({
   const widgetColor = sp.primary || sp.color || business.brandColor || primaryHex || "7C3AED";
   const secondaryColor = sp.secondary ? `#${sp.secondary}` : business.secondaryColor;
   const bgColor = sp.bg ? `#${sp.bg}` : business.backgroundColor;
-  const textColor = sp.text ? `#${sp.text}` : "#FFFFFF";
-  const textSecondary = sp.textSecondary ? `#${sp.textSecondary}` : undefined;
-  const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : undefined;
+  const textColor = sp.text ? `#${sp.text}` : (business.textColor || "#FFFFFF");
+  const textMuted = sp.textSecondary ? `#${sp.textSecondary}` : (business.textMutedColor || `${textColor}66`);
+  const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : (business.widgetFontSize || 14);
 
   return (
     <WidgetClient
@@ -60,8 +60,8 @@ export default async function WidgetPage({
         backgroundColor: bgColor,
         brandColor: widgetColor,
         textColor,
-        textSecondary: textSecondary || `${textColor}66`,
-        fontSize: fontSize || 14,
+        textSecondary: textMuted,
+        fontSize,
       }}
       services={business.services.map((s) => ({
         id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price,
@@ -77,6 +77,7 @@ export default async function WidgetPage({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
         })),
       }))}
+      maxServicesPerBooking={business.maxServicesPerBooking}
     />
   );
 }

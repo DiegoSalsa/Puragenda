@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { addDays } from "date-fns";
 import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
+import { applyReferralCode, incrementPaidReferrals } from "@/server/services/affiliate.service";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -53,12 +54,14 @@ async function isTrialBlocked(email: string, ip: string | null): Promise<boolean
 /**
  * Register a new user with hashed password.
  * Creates Business + Subscription (with trial if eligible) + Staff.
+ * Optionally links to an affiliate via referralCode.
  */
 export async function registerUser(data: {
   email: string;
   password: string;
   name: string;
   ip?: string | null;
+  referralCode?: string | null;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
@@ -119,8 +122,18 @@ export async function registerUser(data: {
       });
     }
 
-    return { user, business };
+    return { user, business, givesTrial };
   });
+
+  // Apply referral code if provided (outside transaction for affiliate service calls)
+  if (data.referralCode && data.referralCode.trim()) {
+    await applyReferralCode(created.business.id, data.referralCode.trim());
+
+    // If registered without trial (direct paid), count as paid referral immediately
+    if (!created.givesTrial) {
+      await incrementPaidReferrals(created.business.id);
+    }
+  }
 
   return { success: true as const, user: created.user, business: created.business };
 }

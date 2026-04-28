@@ -23,7 +23,7 @@ export const PLANS = { INDIVIDUAL: "INDIVIDUAL", BASIC: "BASIC", PRO: "PRO" } as
 
 // Pricing (CLP/month)
 export const PRICING = {
-  INDIVIDUAL: { monthly: 14990, name: "Individual" },
+  INDIVIDUAL: { monthly: 9990, name: "Individual" },
   BASIC:      { monthly: 24990, name: "Base" },
   PRO:        { monthly: 39990, name: "Pro" },
 } as const;

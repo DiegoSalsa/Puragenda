@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { updateMaxServicesAction } from "@/server/actions/dashboard.actions";
 
 interface Service {
   id: string;
@@ -14,14 +15,18 @@ interface Service {
 
 export function ServicesClient({
   initialServices,
+  maxServicesPerBooking = 1,
 }: {
   initialServices: Service[];
+  maxServicesPerBooking?: number;
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [saving, setSaving] = useState(false);
+  const [maxServices, setMaxServices] = useState(maxServicesPerBooking);
+  const [savingMax, setSavingMax] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -29,6 +34,13 @@ export function ServicesClient({
     duration: "",
     price: "",
   });
+
+  async function handleSaveMaxServices(val: number) {
+    setMaxServices(val);
+    setSavingMax(true);
+    await updateMaxServicesAction(val);
+    setSavingMax(false);
+  }
 
   async function fetchServices() {
     setLoading(true);
@@ -100,7 +112,7 @@ export function ServicesClient({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Servicios</h1>
           <p className="mt-1 text-white/40">
@@ -110,10 +122,39 @@ export function ServicesClient({
 
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#5B21B6]"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#5B21B6]"
         >
           <Plus className="h-4 w-4" /> Nuevo Servicio
         </button>
+      </div>
+
+      {/* Multi-service config */}
+      <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
+            <Settings2 className="h-4 w-4 text-[#7C3AED]" />
+          </div>
+          <div className="flex-1 space-y-3">
+            <div>
+              <p className="text-sm font-medium">Servicios por reserva</p>
+              <p className="text-xs text-white/35">Permite que tus clientes seleccionen varios servicios en una sola cita.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={maxServices}
+                onChange={(e) => handleSaveMaxServices(parseInt(e.target.value, 10))}
+                className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+              <span className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1 font-mono text-xs text-white min-w-[3rem] text-center">
+                {savingMax ? "..." : maxServices}
+              </span>
+            </div>
+            <p className="text-[11px] text-white/25">{maxServices === 1 ? "Solo un servicio por cita (modo estándar)." : `Hasta ${maxServices} servicios por cita. Las duraciones y precios se suman automáticamente.`}</p>
+          </div>
+        </div>
       </div>
 
       {/* Dialog/Modal */}

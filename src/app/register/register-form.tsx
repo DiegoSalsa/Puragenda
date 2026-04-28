@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Gift } from "lucide-react";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +30,12 @@ export function RegisterForm() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          referralCode: referralCode.trim() || undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -110,6 +116,23 @@ export function RegisterForm() {
             minLength={8}
             required
             className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+          />
+        </div>
+
+        {/* Referral Code (Optional) */}
+        <div className="space-y-1.5">
+          <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-white/60">
+            <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
+            Código de Referido <span className="text-white/25">(opcional)</span>
+          </label>
+          <input
+            id="referralCode"
+            type="text"
+            placeholder="Ej: PG-ABC123"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+            maxLength={20}
+            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
           />
         </div>
 

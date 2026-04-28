@@ -105,7 +105,15 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
 }
 
 // ─── Appearance ───
-export async function saveAppearanceAction(data: { primaryColor: string; secondaryColor: string; backgroundColor: string; logoUrl?: string }) {
+export async function saveAppearanceAction(data: {
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
+  textColor?: string;
+  textMutedColor?: string;
+  widgetFontSize?: number;
+  logoUrl?: string;
+}) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getFirstBusinessByOwnerId(user.id);
@@ -116,12 +124,31 @@ export async function saveAppearanceAction(data: { primaryColor: string; seconda
       primaryColor: data.primaryColor,
       secondaryColor: data.secondaryColor,
       backgroundColor: data.backgroundColor,
+      textColor: data.textColor || "#FFFFFF",
+      textMutedColor: data.textMutedColor || "#FFFFFF66",
+      widgetFontSize: data.widgetFontSize || 14,
       logoUrl: data.logoUrl || null,
       brandColor: data.primaryColor.replace("#", ""),
     },
   });
   revalidatePath("/dashboard/appearance");
   revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// ─── Max Services Per Booking ───
+export async function updateMaxServicesAction(maxServices: number) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getFirstBusinessByOwnerId(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const clamped = Math.max(1, Math.min(10, Math.floor(maxServices)));
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { maxServicesPerBooking: clamped },
+  });
+  revalidatePath("/dashboard/services");
   return { success: true };
 }
 

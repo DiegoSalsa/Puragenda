@@ -18,6 +18,14 @@ export const registerSchema = z.object({
     .min(2, "El nombre debe tener al menos 2 caracteres")
     .max(100)
     .trim(),
+
+  referralCode: z
+    .string()
+    .max(20)
+    .trim()
+    .toUpperCase()
+    .optional()
+    .nullable(),
 });
 
 export const loginSchema = z.object({

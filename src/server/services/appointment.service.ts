@@ -55,6 +55,9 @@ export async function createAppointment(data: {
   businessId: string;
   serviceId: string;
   staffId?: string;
+  additionalServiceIds?: string[];
+  totalDuration?: number;
+  totalPrice?: number;
 }) {
   // Check collision for the specific staff member (or business-wide if no staff)
   const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
@@ -82,6 +85,9 @@ export async function createAppointment(data: {
       businessId: data.businessId,
       serviceId: data.serviceId,
       staffId: data.staffId,
+      additionalServiceIds: data.additionalServiceIds || [],
+      totalDuration: data.totalDuration,
+      totalPrice: data.totalPrice,
     },
     include: { service: true },
   });

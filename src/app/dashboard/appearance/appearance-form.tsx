@@ -6,15 +6,15 @@ import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
 
 interface FormData {
   primaryColor: string; secondaryColor: string; backgroundColor: string;
-  textColor: string; textSecondary: string; fontSize: number; logoUrl: string;
+  textColor: string; textMutedColor: string; fontSize: number; logoUrl: string;
 }
 
 const COLOR_FIELDS: { key: keyof FormData; label: string; description: string }[] = [
   { key: "primaryColor", label: "Color de Botones y Acentos", description: "Se aplica a botones principales, estados activos, pills y enlaces destacados del widget." },
-  { key: "secondaryColor", label: "Color Secundario", description: "Se aplica a bordes sutiles, iconos decorativos y estados hover de elementos secundarios." },
+  { key: "secondaryColor", label: "Color de Acentos y Bordes", description: "Se aplica a bordes sutiles, iconos decorativos y estados hover de elementos secundarios." },
   { key: "backgroundColor", label: "Color de Fondo del Formulario", description: "Color de fondo de la tarjeta de reserva completa. No afecta al sitio web donde se incrusta." },
   { key: "textColor", label: "Color de Texto Principal", description: "Color de la tipografía principal: títulos, nombres de servicios y contenido prioritario." },
-  { key: "textSecondary", label: "Color de Texto Secundario", description: "Color de etiquetas, descripciones y textos de menor jerarquía visual dentro del widget." },
+  { key: "textMutedColor", label: "Color de Texto Secundario", description: "Color para frases como 'Elige el servicio que quieras reservar', etiquetas y descripciones de menor jerarquía." },
 ];
 
 function ColorInput({ label, description, value, onChange }: { label: string; description: string; value: string; onChange: (v: string) => void }) {
@@ -26,7 +26,7 @@ function ColorInput({ label, description, value, onChange }: { label: string; de
         <div className="relative">
           <input
             type="color"
-            value={value}
+            value={value.slice(0, 7)}
             onChange={(e) => onChange(e.target.value)}
             className="h-10 w-10 cursor-pointer rounded-lg border border-white/[0.06] bg-transparent [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none"
           />
@@ -46,16 +46,19 @@ export function AppearanceForm({
   initialData,
   widgetSlug,
 }: {
-  initialData: { primaryColor: string; secondaryColor: string; backgroundColor: string; logoUrl: string };
+  initialData: {
+    primaryColor: string; secondaryColor: string; backgroundColor: string;
+    textColor?: string; textMutedColor?: string; widgetFontSize?: number; logoUrl: string;
+  };
   widgetSlug: string;
 }) {
   const [data, setData] = useState<FormData>({
     primaryColor: initialData.primaryColor,
     secondaryColor: initialData.secondaryColor,
     backgroundColor: initialData.backgroundColor,
-    textColor: "#FFFFFF",
-    textSecondary: "#FFFFFF66",
-    fontSize: 14,
+    textColor: initialData.textColor || "#FFFFFF",
+    textMutedColor: initialData.textMutedColor || "#FFFFFF66",
+    fontSize: initialData.widgetFontSize || 14,
     logoUrl: initialData.logoUrl,
   });
   const [saving, setSaving] = useState(false);
@@ -70,7 +73,7 @@ export function AppearanceForm({
     const s = d.secondaryColor.replace("#", "");
     const b = d.backgroundColor.replace("#", "");
     const t = d.textColor.replace("#", "");
-    const ts = d.textSecondary.replace("#", "");
+    const ts = d.textMutedColor.replace("#", "");
     return `/widget/${widgetSlug}?primary=${p}&secondary=${s}&bg=${b}&text=${t}&textSecondary=${ts}&fontSize=${d.fontSize}`;
   }
 
@@ -96,6 +99,9 @@ export function AppearanceForm({
       primaryColor: data.primaryColor,
       secondaryColor: data.secondaryColor,
       backgroundColor: data.backgroundColor,
+      textColor: data.textColor,
+      textMutedColor: data.textMutedColor,
+      widgetFontSize: data.fontSize,
       logoUrl: data.logoUrl || undefined,
     });
     if (result.success) setSaved(true);
@@ -129,7 +135,7 @@ export function AppearanceForm({
       {/* Form */}
       <div className="space-y-6">
         {/* Colors */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 space-y-6">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-6">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Palette className="h-4 w-4 text-[#7C3AED]" />
             Colores del Widget
@@ -156,7 +162,7 @@ export function AppearanceForm({
         </div>
 
         {/* Typography */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 space-y-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-5">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Type className="h-4 w-4 text-[#7C3AED]" />
             Tipografía
@@ -188,7 +194,7 @@ export function AppearanceForm({
             <p className="text-xs text-white/40">Vista previa de tipografía y colores</p>
             <div className="rounded-lg p-4 space-y-2" style={{ background: data.backgroundColor, border: `1px solid ${data.secondaryColor}25` }}>
               <p className="font-semibold" style={{ color: data.textColor, fontSize: `${data.fontSize}px` }}>Título de ejemplo</p>
-              <p style={{ color: data.textSecondary, fontSize: `${data.fontSize - 2}px` }}>Esta es una descripción secundaria para validar el contraste visual.</p>
+              <p style={{ color: data.textMutedColor, fontSize: `${data.fontSize - 2}px` }}>Esta es una descripción secundaria para validar el contraste visual.</p>
               <div className="flex gap-2 mt-2">
                 <div className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: data.primaryColor, fontSize: `${data.fontSize - 2}px` }}>Reservar</div>
                 <div className="rounded-lg px-3 py-1.5 text-xs" style={{ background: `${data.secondaryColor}15`, color: data.secondaryColor, border: `1px solid ${data.secondaryColor}30`, fontSize: `${data.fontSize - 2}px` }}>Cancelar</div>
@@ -198,7 +204,7 @@ export function AppearanceForm({
         </div>
 
         {/* Logo */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 space-y-4">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
           </h3>

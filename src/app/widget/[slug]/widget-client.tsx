@@ -20,6 +20,7 @@ interface Props {
   primaryColor: string;
   businessHours?: BusinessHour[];
   staffMembers?: StaffMember[];
+  maxServicesPerBooking?: number;
 }
 
 type Step = "service" | "staff" | "datetime" | "details" | "success";
@@ -89,14 +90,16 @@ function isStaffWorkingOnDay(staff: StaffMember, dow: number): boolean {
   return entry ? entry.isWorking : false;
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1 }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
   const textSecondary = business.textSecondary || `${textColor}66`;
   const fontSize = business.fontSize || 14;
+  const isMultiService = maxServicesPerBooking > 1;
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
@@ -107,14 +110,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  const totalDuration = isMultiService ? selectedServices.reduce((s, sv) => s + sv.duration, 0) : (selectedService?.duration || 0);
+  const totalPrice = isMultiService ? selectedServices.reduce((s, sv) => s + sv.price, 0) : (selectedService?.price || 0);
+
   const hasMultipleStaff = staffMembers && staffMembers.length > 1;
 
   const days = useMemo(() => buildDays(businessHours), [businessHours]);
   const slots = useMemo(() => {
-    if (!selectedDate || !selectedService) return [];
+    const dur = isMultiService ? totalDuration : selectedService?.duration;
+    if (!selectedDate || !dur) return [];
     const staffSched = selectedStaff?.schedule;
-    return buildSlots(selectedDate, selectedService.duration, businessHours, staffSched);
-  }, [selectedDate, selectedService, businessHours, selectedStaff]);
+    return buildSlots(selectedDate, dur, businessHours, staffSched);
+  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService]);
 
   // Filter available staff for a given day
   const availableStaff = useMemo(() => {
@@ -138,7 +145,26 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   useEffect(() => { if (selectedDate) fetchBlocked(selectedDate); }, [selectedDate, fetchBlocked]);
 
   function handleSelectService(s: Service) {
+    if (isMultiService) {
+      setSelectedServices((prev) => {
+        const exists = prev.find((x) => x.id === s.id);
+        if (exists) return prev.filter((x) => x.id !== s.id);
+        if (prev.length >= maxServicesPerBooking) return prev;
+        return [...prev, s];
+      });
+      return;
+    }
     setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
+    if (hasMultipleStaff) { setStep("staff"); } else {
+      if (staffMembers && staffMembers.length === 1) setSelectedStaff(staffMembers[0]);
+      setStep("datetime");
+    }
+  }
+
+  function handleMultiServiceContinue() {
+    if (selectedServices.length === 0) return;
+    setSelectedService(selectedServices[0]);
+    setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
     if (hasMultipleStaff) { setStep("staff"); } else {
       if (staffMembers && staffMembers.length === 1) setSelectedStaff(staffMembers[0]);
       setStep("datetime");
@@ -151,11 +177,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     if (!selectedService || !selectedSlot || !isFormValid) return;
     setSubmitting(true); setApiError("");
     try {
+      const serviceIds = isMultiService && selectedServices.length > 0
+        ? selectedServices.map((s) => s.id)
+        : [selectedService.id];
       const res = await fetch(`/api/business/${business.slug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
         body: JSON.stringify({
-          serviceId: selectedService.id, customerName: form.name, customerEmail: form.email,
+          serviceId: serviceIds[0], serviceIds,
+          customerName: form.name, customerEmail: form.email,
           customerPhone: form.phone || undefined, startTime: selectedSlot.start.toISOString(),
           endTime: selectedSlot.end.toISOString(), staffId: selectedStaff?.id,
         }),
@@ -166,7 +196,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   function restart() {
-    setStep("service"); setSelectedService(null); setSelectedStaff(null); setSelectedDate(null); setSelectedSlot(null);
+    setStep("service"); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedDate(null); setSelectedSlot(null);
     setForm({ name: "", email: "", phone: "" }); setTouched({ name: false, email: false, phone: false }); setApiError(""); setBlockedSlots([]);
   }
 
@@ -215,26 +245,49 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {/* Step 1: Service */}
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
-              <div><h2 className="text-xl font-bold">1. Selecciona un servicio</h2><p className="text-sm text-white/40">Elige el servicio que quieres reservar.</p></div>
+              <div><h2 className="text-xl font-bold">1. {isMultiService ? "Selecciona servicios" : "Selecciona un servicio"}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : "Elige el servicio que quieras reservar."}</p></div>
               <div className="grid gap-3">
-                {services.map((s) => (
+                {services.map((s) => {
+                  const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
+                  return (
                   <button key={s.id} type="button" onClick={() => handleSelectService(s)}
-                    className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
+                    className="group rounded-xl border bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                    style={{ borderColor: isSelected ? `${pc}40` : "rgba(255,255,255,0.06)" }}
+                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = `${pc}40`; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <p className="font-medium">{s.name}</p>
-                        {s.description && <p className="text-sm text-white/40">{s.description}</p>}
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/40">
+                        {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
                           <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-1"><Clock3 className="h-3 w-3" />{s.duration} min</span>
                           <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-1">{formatPrice(s.price)}</span>
                         </div>
                       </div>
-                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5" />
+                      {isMultiService ? (
+                        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all" style={isSelected ? { borderColor: pc, background: pc } : { borderColor: "rgba(255,255,255,0.15)" }}>
+                          {isSelected && <span className="text-xs text-white font-bold">✓</span>}
+                        </div>
+                      ) : (
+                        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5" />
+                      )}
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
+              {isMultiService && selectedServices.length > 0 && (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-sm space-y-1">
+                    <div className="flex justify-between" style={{ color: textSecondary }}><span>Servicios:</span><span className="font-medium" style={{ color: textColor }}>{selectedServices.length}</span></div>
+                    <div className="flex justify-between" style={{ color: textSecondary }}><span>Duración total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
+                    <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice)}</span></div>
+                  </div>
+                  <button type="button" onClick={handleMultiServiceContinue}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all" style={{ background: pc }}>
+                    Continuar <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -379,8 +432,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
 
-        <div className="border-t border-white/[0.06] px-5 py-3 text-center text-xs" style={{ background: `${bgColor}CC`, color: textSecondary }}>
-          Powered by Puragenda · integración marca blanca
+        <div className="sticky bottom-0 border-t border-white/[0.06] px-5 py-3 text-center text-xs" style={{ background: bgColor, color: textSecondary }}>
+          PurAgenda Powered by PuroCode
         </div>
       </div>
     </div>

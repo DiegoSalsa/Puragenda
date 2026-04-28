@@ -2,6 +2,7 @@ import { getBusinessBySlug, validateApiKey } from "@/server/services/business.se
 import { getServiceByIdAndBusiness } from "@/server/services/service.service";
 import { createAppointment } from "@/server/services/appointment.service";
 import { bookingSchema } from "@/server/validations/booking";
+import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 
 export async function POST(
@@ -22,7 +23,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, customerName, customerEmail, customerPhone, startTime, endTime, staffId } = parsed.data;
+    const { serviceId, serviceIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -38,13 +39,39 @@ export async function POST(
       );
     }
 
-    // Verify service belongs to business
+    // Verify primary service belongs to business
     const service = await getServiceByIdAndBusiness(serviceId, business.id);
     if (!service) {
       return Response.json(
         { error: "Servicio no encontrado para este negocio" },
         { status: 404 }
       );
+    }
+
+    // Handle multi-service: validate all serviceIds
+    const allServiceIds = serviceIds && serviceIds.length > 0 ? serviceIds : [serviceId];
+    const additionalIds = allServiceIds.filter((id) => id !== serviceId);
+
+    // Validate max services per booking
+    if (allServiceIds.length > business.maxServicesPerBooking) {
+      return Response.json(
+        { error: `Máximo ${business.maxServicesPerBooking} servicio(s) por reserva` },
+        { status: 400 }
+      );
+    }
+
+    // Calculate totals for multi-service
+    let totalDuration = service.duration;
+    let totalPrice = service.price;
+
+    if (additionalIds.length > 0) {
+      const additionalServices = await prisma.service.findMany({
+        where: { id: { in: additionalIds }, businessId: business.id },
+      });
+      for (const s of additionalServices) {
+        totalDuration += s.duration;
+        totalPrice += s.price;
+      }
     }
 
     // Create appointment with collision detection
@@ -57,6 +84,9 @@ export async function POST(
       businessId: business.id,
       serviceId: service.id,
       staffId,
+      additionalServiceIds: additionalIds,
+      totalDuration: allServiceIds.length > 1 ? totalDuration : undefined,
+      totalPrice: allServiceIds.length > 1 ? totalPrice : undefined,
     });
 
     if (!result.success) {

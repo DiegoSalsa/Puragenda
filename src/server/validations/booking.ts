@@ -6,6 +6,8 @@ export const bookingSchema = z
       .string({ message: "El ID del servicio es obligatorio" })
       .min(1, "El ID del servicio no puede estar vacío"),
 
+    serviceIds: z.array(z.string()).optional(),
+
     staffId: z.string().optional(),
 
     customerName: z

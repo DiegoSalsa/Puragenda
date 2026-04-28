@@ -28,6 +28,9 @@ export default async function AppearancePage() {
           primaryColor: business.primaryColor,
           secondaryColor: business.secondaryColor,
           backgroundColor: business.backgroundColor,
+          textColor: business.textColor,
+          textMutedColor: business.textMutedColor,
+          widgetFontSize: business.widgetFontSize,
           logoUrl: business.logoUrl || "",
         }}
         widgetSlug={business.slug}

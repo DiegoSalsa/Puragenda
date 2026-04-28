@@ -82,9 +82,9 @@ c:\Users\diego\Desktop\agenda\
 
 | Plan | Precio/mes | Staff incluido | Staff extra |
 |------|-----------|----------------|-------------|
-| Individual | $14.990 CLP | 1 | No permitido |
-| Base | $24.990 CLP | 1 | +$3.000/extra |
-| Pro | $39.990 CLP | 1 | +$5.000/extra |
+| Individual | $9.990 CLP | 1 | No permitido |
+| Base | $19.990 CLP | 3 | +$3.000/extra |
+| Pro | $39.990 CLP | 5 | +$5.000/extra |
 
 - **Trial:** 30 días gratis (anti-fraude por IP + email).
 - **Anual:** Paga 10 meses, obtiene 12.

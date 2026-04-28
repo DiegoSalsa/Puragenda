@@ -76,6 +76,7 @@ model Subscription {
   isTrial               Boolean            @default(false)
   trialEndsAt           DateTime?
   extraStaffCount       Int                @default(0)
+  nextBillingDiscount   Float              @default(0)
   businessId            String             @unique
   stripeCustomerId      String?
   stripeSubscriptionId  String?
@@ -91,30 +92,38 @@ model Subscription {
 // ==========================================
 
 model Business {
-  id              String   @id @default(cuid())
-  name            String
-  slug            String   @unique
-  apiKey          String   @unique
-  logoUrl         String?
-  primaryColor    String   @default("#7C3AED")
-  secondaryColor  String   @default("#5B21B6")
-  backgroundColor String   @default("#0A0A0A")
-  brandColor      String?
-  allowedOrigins  String[] @default([])
-  timezone        String   @default("America/Santiago")
-  ownerId         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  name                  String
+  slug                  String   @unique
+  apiKey                String   @unique
+  logoUrl               String?
+  primaryColor          String   @default("#7C3AED")
+  secondaryColor        String   @default("#5B21B6")
+  backgroundColor       String   @default("#0A0A0A")
+  textColor             String   @default("#FFFFFF")
+  textMutedColor        String   @default("#FFFFFF66")
+  widgetFontSize        Int      @default(14)
+  brandColor            String?
+  maxServicesPerBooking Int      @default(1)
+  allowedOrigins        String[] @default([])
+  timezone              String   @default("America/Santiago")
+  ownerId               String?
+  referredByAffiliateId String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  owner         User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  services      Service[]
-  staff         Staff[]
-  appointments  Appointment[]
-  subscription  Subscription?
-  businessHours BusinessHours[]
-  blockedDates  BlockedDate[]
+  owner              User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  referredByAffiliate Affiliate?    @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
+  affiliate          Affiliate?     @relation("AffiliateOwner")
+  services           Service[]
+  staff              Staff[]
+  appointments       Appointment[]
+  subscription       Subscription?
+  businessHours      BusinessHours[]
+  blockedDates       BlockedDate[]
 
   @@index([ownerId])
+  @@index([referredByAffiliateId])
 }
 
 model BusinessHours {
@@ -204,17 +213,20 @@ enum AppointmentStatus {
 }
 
 model Appointment {
-  id            String            @id @default(cuid())
-  customerName  String
-  customerEmail String
-  customerPhone String?
-  startTime     DateTime
-  endTime       DateTime
-  status        AppointmentStatus @default(PENDING)
-  businessId    String
-  serviceId     String
-  staffId       String?
-  createdAt     DateTime          @default(now())
+  id                   String            @id @default(cuid())
+  customerName         String
+  customerEmail        String
+  customerPhone        String?
+  startTime            DateTime
+  endTime              DateTime
+  status               AppointmentStatus @default(PENDING)
+  additionalServiceIds String[]          @default([])
+  totalDuration        Int?
+  totalPrice           Float?
+  businessId           String
+  serviceId            String
+  staffId              String?
+  createdAt            DateTime          @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -224,4 +236,21 @@ model Appointment {
   @@index([serviceId])
   @@index([staffId, startTime, endTime])
   @@index([startTime])
+}
+
+// ==========================================
+// AFFILIATES
+// ==========================================
+
+model Affiliate {
+  id                 String     @id @default(cuid())
+  referralCode       String     @unique
+  businessId         String     @unique
+  paidReferrals      Int        @default(0)
+  createdAt          DateTime   @default(now())
+
+  business           Business   @relation("AffiliateOwner", fields: [businessId], references: [id], onDelete: Cascade)
+  referredBusinesses Business[] @relation("ReferredBy")
+
+  @@index([referralCode])
 }
