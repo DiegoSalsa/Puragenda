@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-white/40">Debes iniciar sesión para acceder al dashboard</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión para acceder al dashboard</div>;
 
   const business = await getFirstBusinessByOwnerId(user.id);
-  if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio configurado aún</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
   const params = await searchParams;
   const today = new Date();
@@ -45,7 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-white/40">
+        <p className="mt-1 text-muted-foreground">
           Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
         </p>
       </div>
@@ -59,13 +59,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           { label: "Asistidos", value: checkedInCount, sub: "Esta semana", icon: UserCheck },
           { label: "Servicios", value: totalServices, sub: "Activos", icon: Users },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-2xl border border-white/[0.06] bg-[#111] p-5">
+          <div key={stat.label} className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-white/40">{stat.label}</p>
-              <stat.icon className="h-4 w-4 text-white/20" />
+              <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+              <stat.icon className="h-4 w-4 text-muted-foreground/50" />
             </div>
             <p className="mt-2 text-2xl font-bold">{stat.value}</p>
-            <p className="mt-1 text-xs text-white/30">{stat.sub}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">{stat.sub}</p>
           </div>
         ))}
       </div>

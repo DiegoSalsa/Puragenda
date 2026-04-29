@@ -20,10 +20,10 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
               <Sparkles className="h-4 w-4 text-[#A78BFA]" />
               <p className="text-sm font-semibold text-[#A78BFA]">Periodo de Prueba · Plan {plan === "INDIVIDUAL" ? "Individual" : plan === "BASIC" ? "Base" : "Pro"}</p>
             </div>
-            <p className="max-w-md text-sm text-white/50">
-              Te quedan <span className="font-bold text-white">{daysLeft} días</span> de prueba gratuita.
+            <p className="max-w-md text-sm text-muted-foreground">
+              Te quedan <span className="font-bold text-foreground">{daysLeft} días</span> de prueba gratuita.
             </p>
-            <div className="flex items-center gap-1.5 text-xs text-white/30">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
               <Clock className="h-3 w-3" />
               {daysLeft <= 5 ? "¡Tu trial expira pronto!" : `${daysLeft} días restantes`}
             </div>
@@ -32,7 +32,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
             {plan === "INDIVIDUAL" && (
               <>
                 <Link href="/dashboard/settings#plan">
-                  <button className="flex items-center gap-1.5 rounded-xl border border-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/70 transition-all hover:border-white/20">
+                  <button className="flex items-center gap-1.5 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:border-[#7C3AED]/30">
                     <Zap className="h-3.5 w-3.5" /> Base · $24.990/mes
                   </button>
                 </Link>
@@ -63,7 +63,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Plan Individual · ¿Listo para crecer?</p>
-            <p className="text-sm text-white/40">Sube a Base ($24.990/mes) o Pro ($39.990/mes) para multi-staff.</p>
+            <p className="text-sm text-muted-foreground">Sube a Base ($24.990/mes) o Pro ($39.990/mes) para multi-staff.</p>
           </div>
           <Link href="/dashboard/settings#plan">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
@@ -82,7 +82,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-[#A78BFA]" />¿Necesitas más funcionalidades?</p>
-            <p className="text-sm text-white/40">Sube a Pro por $15.000 más al mes.</p>
+            <p className="text-sm text-muted-foreground">Sube a Pro por $15.000 más al mes.</p>
           </div>
           <Link href="/dashboard/settings#plan">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">

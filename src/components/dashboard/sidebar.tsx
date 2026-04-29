@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Calendar, ExternalLink, Gift, LayoutDashboard, Menu, Settings, Wrench, CalendarClock, Users, Palette, X } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
@@ -26,17 +27,17 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
 
   return (
     <>
-      <div className="border-b border-white/[0.06] p-6 flex items-center justify-between">
+      <div className="border-b border-border p-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/20">
             <CalendarClock className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-bold tracking-tight">
+          <span className="text-lg font-bold tracking-tight text-foreground">
             Pura<span className="text-[#7C3AED]">genda</span>
           </span>
         </Link>
         {onClose && (
-          <button onClick={onClose} className="md:hidden rounded-lg p-1.5 text-white/40 hover:text-white/70 transition-colors">
+          <button onClick={onClose} className="md:hidden rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-5 w-5" />
           </button>
         )}
@@ -52,8 +53,8 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
               onClick={onClose}
               className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "border-[#7C3AED]/20 bg-[#7C3AED]/10 text-white"
-                  : "border-transparent text-white/50 hover:bg-white/[0.03] hover:text-white/80"
+                  ? "border-[#7C3AED]/20 bg-[#7C3AED]/10 text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-accent/5 hover:text-foreground"
               }`}
             >
               <item.icon className="h-4 w-4" />
@@ -63,13 +64,16 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
         })}
       </nav>
 
-      <div className="border-t border-white/[0.06] p-4">
-        <Link href={widgetHref} target="_blank" className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/40 transition-colors hover:text-white/70">
+      <div className="border-t border-border p-4">
+        <Link href={widgetHref} target="_blank" className="flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ExternalLink className="h-4 w-4" /> Ver widget
         </Link>
-        <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-          <p className="text-xs text-white/30">Sesión iniciada</p>
-          <p className="mt-0.5 text-sm font-medium truncate">{userName}</p>
+        <div className="mt-3 px-3">
+          <ThemeToggle />
+        </div>
+        <div className="mt-3 rounded-xl border border-border bg-muted/50 px-3 py-2">
+          <p className="text-xs text-muted-foreground">Sesión iniciada</p>
+          <p className="mt-0.5 text-sm font-medium truncate text-foreground">{userName}</p>
         </div>
         <div className="mt-3"><LogoutButton /></div>
       </div>
@@ -91,11 +95,11 @@ export function DashboardSidebar({
   return (
     <>
       {/* Mobile hamburger */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center gap-3 border-b border-white/[0.06] bg-[#0E0E0E] px-4 py-3 md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-white/60 hover:text-white transition-colors">
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar px-4 py-3 md:hidden">
+        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
           <Menu className="h-5 w-5" />
         </button>
-        <span className="text-sm font-bold tracking-tight">
+        <span className="text-sm font-bold tracking-tight text-foreground">
           Pura<span className="text-[#7C3AED]">genda</span>
         </span>
       </div>
@@ -106,14 +110,14 @@ export function DashboardSidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="relative flex h-full w-72 max-w-[80vw] flex-col bg-[#0E0E0E] shadow-2xl animate-slide-left">
+          <aside className="relative flex h-full w-72 max-w-[80vw] flex-col bg-sidebar shadow-2xl animate-slide-left">
             <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} onClose={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-white/[0.06] bg-[#0E0E0E]">
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-sidebar">
         <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} />
       </aside>
     </>

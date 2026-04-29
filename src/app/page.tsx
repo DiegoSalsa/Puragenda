@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
-  Check,
   ChevronDown,
   Code2,
   Headset,
@@ -16,6 +15,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { PricingCards } from "@/components/pricing-cards";
 
 // ═══════════════════════════════════════════
 // DATA
@@ -71,56 +71,7 @@ const features = [
   },
 ];
 
-const plans = [
-  {
-    name: "Individual",
-    price: "$9.990",
-    subtitle: "/mes",
-    description: "Para emprendedores que trabajan solos.",
-    cta: "Probar 1 mes gratis",
-    highlighted: false,
-    badge: "30 días gratis",
-    items: [
-      "Citas ilimitadas",
-      "1 profesional",
-      "Widget embebible",
-      "Detección de colisiones",
-      "Soporte por email",
-    ],
-  },
-  {
-    name: "Base",
-    price: "$24.990",
-    subtitle: "/mes",
-    description: "Para equipos que necesitan crecer con multi-staff.",
-    cta: "Empezar ahora",
-    highlighted: false,
-    items: [
-      "Todo de Individual",
-      "Staff adicional ($3.000 c/u)",
-      "Horarios configurables",
-      "Panel completo",
-      "Marca blanca",
-      "Soporte prioritario",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$39.990",
-    subtitle: "/mes",
-    description: "La solución completa para negocios profesionales.",
-    cta: "Activar Plan Pro",
-    highlighted: true,
-    items: [
-      "Todo de Base",
-      "Staff adicional ($5.000 c/u)",
-      "CORS + API Key dedicada",
-      "Calendario semanal pro",
-      "Pago anual = 10 meses",
-      "Soporte dedicado",
-    ],
-  },
-];
+// Plans data is now in the shared PricingCards component
 
 const faqs = [
   {
@@ -545,65 +496,11 @@ export default function HomePage() {
                 Planes para crecer a tu ritmo
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-white/45">
-                Prueba gratis 30 días. Sin tarjeta. Cancela cuando quieras.
+                Prueba gratis en Plan Base. Sin tarjeta. Cancela cuando quieras.
               </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`relative rounded-2xl border p-8 transition-all ${
-                    plan.highlighted
-                      ? "border-[#7C3AED]/30 bg-gradient-to-b from-[#7C3AED]/5 to-transparent shadow-2xl shadow-[#7C3AED]/10"
-                      : "border-white/[0.06] bg-[#111]"
-                  }`}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute -top-3 left-6 rounded-full bg-[#7C3AED] px-3 py-1 text-xs font-semibold text-white">
-                      Más popular
-                    </div>
-                  )}
-                  {"badge" in plan && plan.badge && !plan.highlighted && (
-                    <div className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-3 py-1 text-xs font-semibold text-white">
-                      {plan.badge}
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold">{plan.name}</h3>
-                    <p className="text-sm text-white/45">{plan.description}</p>
-                    <p className="text-4xl font-bold tracking-tight">
-                      {plan.price}
-                      <span className="ml-1 text-sm font-normal text-white/40">
-                        {plan.subtitle}
-                      </span>
-                    </p>
-                  </div>
-
-                  <ul className="mt-6 space-y-3">
-                    {plan.items.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm text-white/60">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link href="/register" className="mt-8 block">
-                    <button
-                      className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${
-                        plan.highlighted
-                          ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25 hover:bg-[#5B21B6]"
-                          : "border border-white/10 text-white/80 hover:border-white/20 hover:text-white"
-                      }`}
-                    >
-                      {plan.cta}
-                    </button>
-                  </Link>
-                </div>
-              ))}
-            </div>
+            <PricingCards mode="landing" />
           </div>
         </section>
 

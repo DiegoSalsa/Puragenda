@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -20,11 +21,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${plusJakarta.variable} dark`}>
+    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
       <body
         className={`${plusJakarta.className} min-h-screen bg-background text-foreground antialiased`}
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
