@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma";
 import type { MetadataRoute } from "next";
+import { industriesData } from "@/lib/data/industries";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
 
@@ -17,6 +18,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/sobre-nosotros`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.9,
     },
     {
       url: `${SITE_URL}/login`,
@@ -44,6 +51,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Programmatic SEO Routes (Industries)
+  const industryRoutes: MetadataRoute.Sitemap = industriesData.map((ind) => ({
+    url: `${SITE_URL}/para/${ind.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
   // Dynamic routes: all public business widget pages
   const businesses = await prisma.business.findMany({
     select: { slug: true, updatedAt: true },
@@ -57,5 +72,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...businessRoutes];
+  return [...staticRoutes, ...industryRoutes, ...businessRoutes];
 }
