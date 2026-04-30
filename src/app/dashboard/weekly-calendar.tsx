@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
@@ -29,7 +29,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: CalendarAppointment[]; weekStartISO: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
