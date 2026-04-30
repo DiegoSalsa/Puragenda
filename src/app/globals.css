@@ -244,11 +244,20 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Mobile drawer animation */
-@keyframes slide-left {
+/* Mobile drawer animation (right-to-left entrance for landing navbar) */
+@keyframes drawer-right {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
-.animate-slide-left {
-  animation: slide-left 0.25s ease-out;
+.animate-drawer-right {
+  animation: drawer-right 0.25s ease-out;
+}
+
+/* Mobile drawer animation (left-to-right entrance for sidebar) */
+@keyframes drawer-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-drawer-left {
+  animation: drawer-left 0.25s ease-out;
 }

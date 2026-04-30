@@ -70,11 +70,20 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* ═══ MOBILE DRAWER ═══ */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-background border-l border-border shadow-lg z-50 animate-slide-left">
+        <div className="fixed inset-0 z-[999] md:hidden">
+          {/* Dark overlay */}
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer panel — FORCED opaque via inline style */}
+          <aside
+            className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-l border-border bg-background z-[1000] shadow-2xl animate-drawer-right"
+          >
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-border p-6">
               <div className="flex items-center gap-2.5">
                 <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
@@ -87,6 +96,8 @@ export function Navbar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            {/* Nav links */}
             <nav className="flex-1 space-y-1 p-4">
               {navLinks.map((link) => (
                 <a
@@ -99,8 +110,10 @@ export function Navbar() {
                 </a>
               ))}
             </nav>
+
+            {/* Bottom actions */}
             <div className="space-y-3 border-t border-border p-4">
-              <div className="px-3 flex items-center gap-3">
+              <div className="flex items-center gap-3 px-3">
                 <ThemeToggle />
                 <InstallPWAButton variant="nav" />
               </div>

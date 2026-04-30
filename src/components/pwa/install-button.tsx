@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Download, X, Share } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Download, X } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -10,95 +10,95 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallPWAButton({ variant = "default" }: { variant?: "default" | "sidebar" | "nav" }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-  const [canShow, setCanShow] = useState(false);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
-    if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true) {
-      setInstalled(true);
+    // Already running as installed PWA — hide button
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+    if (standalone) {
+      setIsStandalone(true);
       return;
     }
 
-    // Detect iOS (iPhone, iPad, iPod)
+    // Detect iOS
     const ua = window.navigator.userAgent;
-    const isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    setIsIOS(isiOS);
+    const ios =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    setIsIOS(ios);
 
-    // On iOS, always show the button (no beforeinstallprompt support)
-    if (isiOS) {
-      setCanShow(true);
-      return;
-    }
-
-    // On Android/desktop, wait for beforeinstallprompt
-    function handleBeforeInstallPrompt(e: Event) {
+    // Listen for the install prompt (Chrome/Edge/Samsung/Android)
+    function onBeforeInstall(e: Event) {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setCanShow(true);
     }
 
-    function handleAppInstalled() {
-      setInstalled(true);
+    function onInstalled() {
+      setIsStandalone(true);
       setDeferredPrompt(null);
-      setCanShow(false);
     }
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
+  // Already installed as PWA → don't render
+  if (isStandalone) return null;
+
   async function handleClick() {
-    // iOS flow: show instructions modal
+    // CASE 1: Native install prompt available (Android Chrome, Edge, etc.)
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") setIsStandalone(true);
+      setDeferredPrompt(null);
+      return;
+    }
+
+    // CASE 2: iOS → show instructions
     if (isIOS) {
       setShowIOSModal(true);
       return;
     }
-    // Android/desktop flow: trigger install prompt
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setInstalled(true);
-      setCanShow(false);
-    }
-    setDeferredPrompt(null);
+
+    // CASE 3: Desktop/Android without prompt (HTTP, or unsupported browser)
+    // → still show the iOS-style instructions as a generic guide
+    setShowIOSModal(true);
   }
 
-  // Don't render if already installed or can't show
-  if (installed || !canShow) return null;
-
-  const buttonContent = (
-    <>
-      <Download className="h-4 w-4" />
-      {variant === "nav" ? "Instalar" : "Instalar App"}
-    </>
-  );
-
-  const sidebarClasses = "flex w-full items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10";
-  const navClasses = "flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10";
-  const defaultClasses = "flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10";
-
-  const className = variant === "sidebar" ? sidebarClasses : variant === "nav" ? navClasses : defaultClasses;
+  // ── Styles per variant ──
+  const cls =
+    variant === "sidebar"
+      ? "flex w-full items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10"
+      : variant === "nav"
+        ? "flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10"
+        : "flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10";
 
   return (
     <>
-      <button onClick={handleClick} className={className}>
-        {buttonContent}
+      <button onClick={handleClick} className={cls}>
+        <Download className="h-4 w-4" />
+        {variant === "nav" ? "Instalar" : "Instalar App"}
       </button>
 
-      {/* iOS Instructions Modal */}
+      {/* Instructions modal (iOS or fallback) */}
       {showIOSModal && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSModal(false)}>
+        <div
+          className="fixed inset-0 flex items-end sm:items-center justify-center"
+          style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => setShowIOSModal(false)}
+        >
           <div
-            className="mx-4 mb-4 w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up"
+            className="mx-4 mb-4 w-full max-w-sm rounded-2xl border border-border p-6 shadow-2xl"
+            style={{ backgroundColor: "var(--background, #ffffff)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -108,52 +108,76 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                 </div>
                 <h3 className="text-base font-semibold text-foreground">Instalar Puragenda</h3>
               </div>
-              <button
-                onClick={() => setShowIOSModal(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={() => setShowIOSModal(false)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Para instalar la app en tu iPhone o iPad:
-              </p>
-
-              <div className="space-y-3">
-                {/* Step 1 */}
-                <div className="flex items-start gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
-                  <div className="text-sm">
-                    <p className="text-foreground font-medium">Toca el ícono de Compartir</p>
-                    <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                      Es el cuadrado con la flecha hacia arriba
-                      <svg className="h-4 w-4 text-[#007AFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                      </svg>
-                    </p>
+              {isIOS ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Para instalar la app en tu iPhone o iPad:
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Toca el ícono de Compartir</p>
+                        <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                          Es el cuadrado con la flecha hacia arriba
+                          <svg className="h-4 w-4 text-[#007AFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Busca la opción</p>
+                        <p className="text-muted-foreground mt-0.5">&quot;Agregar a la pantalla de inicio&quot;</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Confirma tocando &quot;Agregar&quot;</p>
+                        <p className="text-muted-foreground mt-0.5">¡Listo! La app aparecerá en tu pantalla.</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="flex items-start gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
-                  <div className="text-sm">
-                    <p className="text-foreground font-medium">Desplázate y toca</p>
-                    <p className="text-muted-foreground mt-0.5">&quot;Agregar a la pantalla de inicio&quot;</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Para instalar Puragenda como aplicación:
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Abre el menú del navegador</p>
+                        <p className="text-muted-foreground mt-0.5">Los tres puntos (⋮) en la esquina superior derecha.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Selecciona &quot;Instalar aplicación&quot;</p>
+                        <p className="text-muted-foreground mt-0.5">O &quot;Agregar a la pantalla de inicio&quot;.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
+                      <div className="text-sm">
+                        <p className="text-foreground font-medium">Confirma la instalación</p>
+                        <p className="text-muted-foreground mt-0.5">¡La app se instalará automáticamente!</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex items-start gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
-                  <div className="text-sm">
-                    <p className="text-foreground font-medium">Confirma tocando &quot;Agregar&quot;</p>
-                    <p className="text-muted-foreground mt-0.5">¡Listo! La app aparecerá en tu pantalla de inicio.</p>
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
 
               <button
                 onClick={() => setShowIOSModal(false)}
