@@ -8,20 +8,26 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+// Global reference so the prompt persists across component mounts
+let _deferredPrompt: BeforeInstallPromptEvent | null = null;
+let _listenerAdded = false;
+
+if (typeof window !== "undefined" && !_listenerAdded) {
+  window.addEventListener("beforeinstallprompt", (e: Event) => {
+    e.preventDefault();
+    _deferredPrompt = e as BeforeInstallPromptEvent;
+  });
+  _listenerAdded = true;
+}
+
 export function InstallPWAButton({ variant = "default" }: { variant?: "default" | "sidebar" | "nav" }) {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [promptAvailable, setPromptAvailable] = useState(!!_deferredPrompt);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Register service worker (required for beforeinstallprompt)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
-
-    // Already running as installed PWA — hide button
+    // Check if already running as installed PWA
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
@@ -37,55 +43,57 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     setIsIOS(ios);
 
-    // Listen for the install prompt (Chrome/Edge/Samsung/Android)
+    // Check if prompt already captured by global listener
+    if (_deferredPrompt) {
+      setPromptAvailable(true);
+    }
+
+    // Listen for future beforeinstallprompt events
     function onBeforeInstall(e: Event) {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      _deferredPrompt = e as BeforeInstallPromptEvent;
+      setPromptAvailable(true);
     }
 
     function onInstalled() {
       setIsStandalone(true);
-      setDeferredPrompt(null);
+      _deferredPrompt = null;
+      setPromptAvailable(false);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
-
-    // Mark ready after a short delay to allow beforeinstallprompt to fire
-    const timeout = setTimeout(() => setReady(true), 1500);
-
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
-      clearTimeout(timeout);
     };
   }, []);
 
-  // Already installed as PWA → don't render
+  // Already installed → hide
   if (isStandalone) return null;
 
-  // Not ready yet (waiting for beforeinstallprompt to potentially fire)
-  if (!ready && !deferredPrompt && !isIOS) return null;
-
   async function handleClick() {
-    // CASE 1: Native install prompt available (Android Chrome, Edge, etc.)
-    // This triggers the actual "Add to Home Screen" prompt from the browser
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setIsStandalone(true);
-      setDeferredPrompt(null);
+    // CASE 1: Native install prompt available → triggers browser install dialog
+    if (_deferredPrompt) {
+      try {
+        await _deferredPrompt.prompt();
+        const { outcome } = await _deferredPrompt.userChoice;
+        if (outcome === "accepted") setIsStandalone(true);
+      } catch {
+        // prompt() can only be called once
+      }
+      _deferredPrompt = null;
+      setPromptAvailable(false);
       return;
     }
 
-    // CASE 2: iOS → show instructions (only way on iOS/Safari)
+    // CASE 2: iOS → show step-by-step instructions
     if (isIOS) {
       setShowIOSModal(true);
       return;
     }
 
-    // CASE 3: Browser doesn't support install (Firefox, etc.)
-    // Show generic instructions
+    // CASE 3: Unsupported browser → tell user to use Chrome
     setShowIOSModal(true);
   }
 
@@ -166,21 +174,21 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Tu navegador no soporta la instalación automática. Para instalar Puragenda:
+                    Tu navegador no soporta la instalación automática.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Abre en Google Chrome</p>
-                        <p className="text-muted-foreground mt-0.5">La instalación automática funciona en Chrome y Edge.</p>
+                        <p className="text-foreground font-medium">Abre esta página en Google Chrome</p>
+                        <p className="text-muted-foreground mt-0.5">La instalación automática requiere Chrome o Edge.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Presiona &quot;Instalar&quot; de nuevo</p>
-                        <p className="text-muted-foreground mt-0.5">Se descargará automáticamente.</p>
+                        <p className="text-foreground font-medium">Presiona &quot;Instalar App&quot;</p>
+                        <p className="text-muted-foreground mt-0.5">Se instalará automáticamente con ícono en tu pantalla.</p>
                       </div>
                     </div>
                   </div>

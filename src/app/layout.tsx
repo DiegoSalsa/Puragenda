@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { RegisterSW } from "@/components/pwa/register-sw";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -46,9 +47,11 @@ export default function RootLayout({
         className={`${plusJakarta.className} min-h-screen bg-background text-foreground antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <RegisterSW />
           {children}
         </ThemeProvider>
       </body>
     </html>
   );
 }
+
