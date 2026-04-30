@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { HeroEmailCapture } from "@/components/landing/hero-email-capture";
+import { WordCarousel } from "@/components/landing/word-carousel";
 import {
   Accordion,
   AccordionContent,
@@ -210,7 +211,8 @@ export default function HomePage() {
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
           <div className="animate-fade-up space-y-8 text-center">
             <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
-              Software de Reservas y Agenda Online para tu Negocio
+              Software de Reservas <br className="hidden sm:block" />
+              <WordCarousel />
             </h1>
 
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
