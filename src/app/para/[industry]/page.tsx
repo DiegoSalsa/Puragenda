@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
-import { HeroEmailCapture } from "@/components/landing/hero-email-capture";
 import { industriesData } from "@/lib/data/industries";
 import {
   Accordion,
@@ -89,8 +88,22 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
               {data.heroSubheadline}
             </p>
 
-            <HeroEmailCapture />
-            <p className="text-xs text-muted-foreground/60">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+            <div className="mx-auto mt-8 flex max-w-md flex-col justify-center gap-4 sm:flex-row">
+              <Link href="/register">
+                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] sm:w-auto">
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </button>
+              </Link>
+              <Link href="/widget/purocode-demo">
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card/50 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur-sm transition-all hover:bg-muted sm:w-auto">
+                  Ver Demo
+                </button>
+              </Link>
+            </div>
+            <p className="mt-6 text-xs text-muted-foreground/60">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
           </div>
         </section>
 
