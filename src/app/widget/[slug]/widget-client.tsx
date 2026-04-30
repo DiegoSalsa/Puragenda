@@ -90,6 +90,20 @@ function isStaffWorkingOnDay(staff: StaffMember, dow: number): boolean {
   return entry ? entry.isWorking : false;
 }
 
+/**
+ * Returns '#000000' or '#FFFFFF' depending on which contrasts better against the given hex color.
+ * Uses the YIQ formula for perceptual brightness.
+ */
+function getContrastColor(hex: string): string {
+  const clean = hex.replace("#", "");
+  if (clean.length < 6) return "#FFFFFF";
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? "#000000" : "#FFFFFF";
+}
+
 export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1 }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
@@ -283,7 +297,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice)}</span></div>
                   </div>
                   <button type="button" onClick={handleMultiServiceContinue}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all" style={{ background: pc }}>
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all" style={{ background: pc, color: getContrastColor(pc) }}>
                     Continuar <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -372,7 +386,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
               )}
               <button type="button" disabled={!selectedSlot} onClick={() => setStep("details")}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-30" style={{ background: pc }}>
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-30" style={{ background: pc, color: getContrastColor(pc) }}>
                 Continuar con mis datos <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -403,7 +417,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                 ))}
                 {apiError && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{apiError}</div>}
-                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-30" style={{ background: pc }}>
+                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-30" style={{ background: pc, color: getContrastColor(pc) }}>
                   {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Confirmando...</> : <>Confirmar reserva <ChevronRight className="h-4 w-4" /></>}
                 </button>
               </form>
