@@ -77,10 +77,9 @@ export function Navbar() {
             style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
             onClick={() => setMobileOpen(false)}
           />
-          {/* Drawer panel — FORCED opaque background */}
+          {/* Drawer panel */}
           <aside
-            className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-l border-border z-[1000] shadow-2xl animate-drawer-right"
-            style={{ backgroundColor: "var(--background, #ffffff)" }}
+            className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-l border-border z-[1000] shadow-2xl animate-drawer-right bg-white dark:bg-[#0A0A0A]"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border p-6">
