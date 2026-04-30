@@ -74,7 +74,7 @@ export function Navbar() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-white dark:bg-neutral-950 z-50 shadow-2xl animate-slide-left">
+          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-background border-l border-border shadow-lg z-50 animate-slide-left">
             <div className="flex items-center justify-between border-b border-border p-6">
               <div className="flex items-center gap-2.5">
                 <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
