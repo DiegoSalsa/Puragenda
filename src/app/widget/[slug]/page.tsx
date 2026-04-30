@@ -1,7 +1,46 @@
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+// ── Dynamic SEO per business ──
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const business = await prisma.business.findUnique({
+    where: { slug },
+    select: { name: true, slug: true, logoUrl: true },
+  });
+
+  if (!business) {
+    return { title: "Negocio no encontrado", description: "El negocio solicitado no existe en Puragenda." };
+  }
+
+  const title = `Reserva en ${business.name} | Puragenda`;
+  const description = `Agenda tu cita en ${business.name} de forma rápida y segura. Reservas online 24/7 con confirmación inmediata.`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Puragenda",
+      locale: "es_CL",
+      type: "website",
+      ...(business.logoUrl && { images: [{ url: business.logoUrl, width: 400, height: 400, alt: business.name }] }),
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      ...(business.logoUrl && { images: [business.logoUrl] }),
+    },
+    alternates: { canonical: url },
+  };
+}
 
 export default async function WidgetPage({
   params,
@@ -50,9 +89,31 @@ export default async function WidgetPage({
   const textColor = sp.text ? `#${sp.text}` : (business.textColor || "#FFFFFF");
   const textMuted = sp.textSecondary ? `#${sp.textSecondary}` : (business.textMutedColor || `${textColor}66`);
   const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : (business.widgetFontSize || 14);
+  // LocalBusiness JSON-LD for local SEO
+  const jsonLdLocalBusiness = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: business.name,
+    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`,
+    ...(business.logoUrl && { image: business.logoUrl }),
+    potentialAction: {
+      "@type": "ReserveAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`,
+        actionPlatform: ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"],
+      },
+      result: {
+        "@type": "Reservation",
+        name: `Reserva en ${business.name}`,
+      },
+    },
+  };
 
   return (
-    <WidgetClient
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdLocalBusiness) }} />
+      <WidgetClient
       business={{
         name: business.name,
         slug: business.slug,
@@ -83,5 +144,6 @@ export default async function WidgetPage({
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
     />
+    </>
   );
 }

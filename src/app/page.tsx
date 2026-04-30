@@ -109,8 +109,65 @@ const faqs = [
 // ═══════════════════════════════════════════
 
 export default function HomePage() {
+  const jsonLdSoftware = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Puragenda",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: "https://puragenda.cl",
+    description:
+      "Sistema de agendamiento online para peluquerías, estética, consultas y servicios. Reservas 24/7, widget marca blanca y multi-profesional.",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Plan Base",
+        price: "9990",
+        priceCurrency: "CLP",
+        priceValidUntil: "2027-12-31",
+        availability: "https://schema.org/InStock",
+      },
+      {
+        "@type": "Offer",
+        name: "Plan Pro",
+        price: "19990",
+        priceCurrency: "CLP",
+        priceValidUntil: "2027-12-31",
+        availability: "https://schema.org/InStock",
+      },
+    ],
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      reviewCount: "127",
+    },
+    creator: {
+      "@type": "Organization",
+      name: "PuroCode",
+      url: "https://purocode.cl",
+    },
+  };
+
+  const jsonLdOrg = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Puragenda",
+    url: "https://puragenda.cl",
+    logo: "https://puragenda.cl/icon-512x512.png",
+    description: "Plataforma SaaS de agendamiento online para negocios de servicios en Latinoamérica.",
+    sameAs: [],
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      availableLanguage: ["Spanish"],
+    },
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* JSON-LD Structured Data */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
       {/* Background effects */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#7C3AED]/8 blur-[120px]" />

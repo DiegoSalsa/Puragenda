@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { RegisterSW } from "@/components/pwa/register-sw";
+import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -9,15 +10,38 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
+
 export const viewport: Viewport = {
-  themeColor: "#a855f7",
+  themeColor: "#7C3AED",
 };
 
 export const metadata: Metadata = {
-  title: "Puragenda by PuroCode — Agenda Inteligente para tu Negocio",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Puragenda — Sistema de Reservas Online para Negocios | Agenda Inteligente",
+    template: "%s | Puragenda",
+  },
   description:
-    "Plataforma SaaS de agendamiento multitenant. Reservas automáticas, widget marca blanca y gestión de citas integrada en tu web.",
-  keywords: ["agendamiento", "reservas", "SaaS", "PuroCode", "widget", "citas"],
+    "Sistema de agendamiento online para peluquerías, estética, consultas y servicios. Reservas 24/7, widget marca blanca, multi-profesional y detección de colisiones. Alternativa a AgendaPro.",
+  keywords: [
+    "sistema de reservas online",
+    "agenda online",
+    "software de citas",
+    "agendamiento",
+    "reservas online Chile",
+    "alternativa AgendaPro",
+    "widget de reservas",
+    "gestión de citas",
+    "peluquería",
+    "estética",
+    "SaaS",
+    "PuroCode",
+    "Puragenda",
+  ],
+  authors: [{ name: "PuroCode", url: "https://purocode.cl" }],
+  creator: "PuroCode",
+  publisher: "PuroCode",
   manifest: "/site.webmanifest",
   appleWebApp: {
     capable: true,
@@ -34,6 +58,44 @@ export const metadata: Metadata = {
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
+  openGraph: {
+    type: "website",
+    locale: "es_CL",
+    url: SITE_URL,
+    siteName: "Puragenda",
+    title: "Puragenda — Sistema de Reservas Online para Negocios",
+    description:
+      "Reservas 24/7, widget marca blanca, multi-profesional y detección de colisiones. La agenda inteligente para tu negocio.",
+    images: [
+      {
+        url: "/icon-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "Puragenda Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Puragenda — Agenda Inteligente para tu Negocio",
+    description:
+      "Sistema de reservas online con widget embebible. Alternativa moderna a AgendaPro.",
+    images: ["/icon-512x512.png"],
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -49,9 +111,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <RegisterSW />
           {children}
+          <CookieBanner />
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
