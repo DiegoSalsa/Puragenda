@@ -21,8 +21,9 @@ export function generateStaticParams() {
   }));
 }
 
-export function generateMetadata({ params }: { params: { industry: string } }): Metadata {
-  const data = industriesData.find((i) => i.slug === params.industry);
+export async function generateMetadata({ params }: { params: Promise<{ industry: string }> }): Promise<Metadata> {
+  const { industry } = await params;
+  const data = industriesData.find((i) => i.slug === industry);
   if (!data) return {};
 
   const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/para/${data.slug}`;
@@ -43,8 +44,9 @@ export function generateMetadata({ params }: { params: { industry: string } }): 
   };
 }
 
-export default function IndustryPage({ params }: { params: { industry: string } }) {
-  const data = industriesData.find((i) => i.slug === params.industry);
+export default async function IndustryPage({ params }: { params: Promise<{ industry: string }> }) {
+  const { industry } = await params;
+  const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
 
   // JSON-LD specific for the industry SoftwareApplication + FAQ
