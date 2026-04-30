@@ -281,3 +281,84 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
   revalidatePath("/dashboard/staff");
   return { success: true };
 }
+
+// ─── Business Logo Upload (Cloudinary) ───
+
+export async function updateBusinessLogoAction(formData: FormData) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
+
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const file = formData.get("logo") as File | null;
+  if (!file || file.size === 0) return { error: "No se recibió ninguna imagen" };
+
+  // Validate file type
+  const allowed = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+  if (!allowed.includes(file.type)) {
+    return { error: "Formato no soportado. Usa PNG, JPG, WebP o SVG." };
+  }
+
+  // Validate size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: "La imagen es muy pesada. Máximo 5MB." };
+  }
+
+  try {
+    // Convert File to base64 data URI for Cloudinary upload
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+
+    // Dynamic import to avoid issues if env vars aren't set yet
+    const { cloudinary } = await import("@/server/lib/cloudinary");
+
+    // Upload with auto-resize and optimization
+    const result = await cloudinary.uploader.upload(base64, {
+      folder: "puragenda_logos",
+      public_id: `business_${business.id}`,
+      overwrite: true,
+      transformation: [
+        {
+          width: 400,
+          height: 400,
+          crop: "fill",
+          gravity: "center",
+        },
+      ],
+      fetch_format: "auto",
+      quality: "auto",
+    });
+
+    // Save the optimized URL to DB
+    await prisma.business.update({
+      where: { id: business.id },
+      data: { logoUrl: result.secure_url },
+    });
+
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/dashboard");
+    return { success: true, url: result.secure_url };
+  } catch (err) {
+    console.error("Cloudinary upload error:", err);
+    return { error: "Error al subir la imagen. Verifica tu configuración de Cloudinary." };
+  }
+}
+
+export async function removeBusinessLogoAction() {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { logoUrl: null },
+  });
+
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
