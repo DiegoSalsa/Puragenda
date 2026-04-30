@@ -134,7 +134,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/register">
+              <Link href="/pricing">
                 <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/30 animate-pulse-glow">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
                 </button>
@@ -515,7 +515,7 @@ export default function HomePage() {
               Si vendes servicios, este sistema ya viene preparado para convertir mejor.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/register">
+              <Link href="/pricing">
                 <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6]">
                   Empezar Gratis <ArrowRight className="h-4 w-4" />
                 </button>

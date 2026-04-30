@@ -50,7 +50,7 @@ export function Navbar() {
               Entrar
             </button>
           </Link>
-          <Link href="/register">
+          <Link href="/pricing">
             <button className="flex items-center gap-2 rounded-lg bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35">
               Crear cuenta <ArrowRight className="h-4 w-4" />
             </button>
@@ -106,7 +106,7 @@ export function Navbar() {
                   Entrar
                 </button>
               </Link>
-              <Link href="/register" onClick={() => setMobileOpen(false)}>
+              <Link href="/pricing" onClick={() => setMobileOpen(false)}>
                 <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25">
                   Crear cuenta <ArrowRight className="h-4 w-4" />
                 </button>
