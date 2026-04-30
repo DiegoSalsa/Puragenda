@@ -115,7 +115,7 @@ export function ServicesClient({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Servicios</h1>
-          <p className="mt-1 text-white/40">
+          <p className="mt-1 text-muted-foreground">
             Gestiona los servicios que ofrece tu negocio.
           </p>
         </div>
@@ -129,7 +129,7 @@ export function ServicesClient({
       </div>
 
       {/* Multi-service config */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6">
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
             <Settings2 className="h-4 w-4 text-[#7C3AED]" />
@@ -137,7 +137,7 @@ export function ServicesClient({
           <div className="flex-1 space-y-3">
             <div>
               <p className="text-sm font-medium">Servicios por reserva</p>
-              <p className="text-xs text-white/35">Permite que tus clientes seleccionen varios servicios en una sola cita.</p>
+              <p className="text-xs text-muted-foreground">Permite que tus clientes seleccionen varios servicios en una sola cita.</p>
             </div>
             <div className="flex items-center gap-4">
               <input
@@ -148,11 +148,11 @@ export function ServicesClient({
                 onChange={(e) => handleSaveMaxServices(parseInt(e.target.value, 10))}
                 className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer"
               />
-              <span className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1 font-mono text-xs text-white min-w-[3rem] text-center">
+              <span className="rounded-lg border border-border bg-muted px-3 py-1 font-mono text-xs min-w-[3rem] text-center">
                 {savingMax ? "..." : maxServices}
               </span>
             </div>
-            <p className="text-[11px] text-white/25">{maxServices === 1 ? "Solo un servicio por cita (modo estándar)." : `Hasta ${maxServices} servicios por cita. Las duraciones y precios se suman automáticamente.`}</p>
+            <p className="text-[11px] text-muted-foreground/70">{maxServices === 1 ? "Solo un servicio por cita (modo estándar)." : `Hasta ${maxServices} servicios por cita. Las duraciones y precios se suman automáticamente.`}</p>
           </div>
         </div>
       </div>
@@ -160,24 +160,24 @@ export function ServicesClient({
       {/* Dialog/Modal */}
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/[0.06] bg-[#111] p-6 shadow-2xl animate-scale-in">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-scale-in">
             <h3 className="text-lg font-semibold">
               {editingService ? "Editar Servicio" : "Nuevo Servicio"}
             </h3>
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm text-white/60">Nombre</label>
+                <label className="text-sm text-muted-foreground">Nombre</label>
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ej: Consultoría Web"
                   required
-                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm text-white/60">Descripción</label>
+                <label className="text-sm text-muted-foreground">Descripción</label>
                 <textarea
                   value={form.description}
                   onChange={(e) =>
@@ -185,12 +185,12 @@ export function ServicesClient({
                   }
                   placeholder="Descripción del servicio..."
                   rows={3}
-                  className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm text-white/60">
+                  <label className="text-sm text-muted-foreground">
                     Duración (minutos)
                   </label>
                   <input
@@ -202,11 +202,11 @@ export function ServicesClient({
                     placeholder="60"
                     required
                     min="1"
-                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm text-white/60">Precio (CLP)</label>
+                  <label className="text-sm text-muted-foreground">Precio (CLP)</label>
                   <input
                     type="number"
                     value={form.price}
@@ -216,7 +216,7 @@ export function ServicesClient({
                     placeholder="50000"
                     required
                     min="0"
-                    className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
                 </div>
               </div>
@@ -224,7 +224,7 @@ export function ServicesClient({
                 <button
                   type="button"
                   onClick={() => setDialogOpen(false)}
-                  className="rounded-xl border border-white/[0.06] px-4 py-2 text-sm text-white/60 transition-colors hover:text-white"
+                  className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Cancelar
                 </button>
@@ -248,8 +248,8 @@ export function ServicesClient({
       )}
 
       {/* Services Table */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111]">
-        <div className="border-b border-white/[0.06] p-6">
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="border-b border-border p-6">
           <h2 className="text-lg font-semibold">Listado de Servicios</h2>
         </div>
         <div className="p-6">
@@ -258,7 +258,7 @@ export function ServicesClient({
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/30" />
             </div>
           ) : services.length === 0 ? (
-            <div className="py-12 text-center text-white/30">
+            <div className="py-12 text-center text-muted-foreground">
               <Wrench className="mx-auto mb-4 h-12 w-12 opacity-30" />
               <p>No hay servicios aún. Crea el primero.</p>
             </div>
@@ -266,7 +266,7 @@ export function ServicesClient({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wider text-white/30">
+                  <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="pb-3 pr-4">Nombre</th>
                     <th className="pb-3 pr-4">Descripción</th>
                     <th className="pb-3 pr-4">Duración</th>
@@ -278,12 +278,12 @@ export function ServicesClient({
                   {services.map((service) => (
                     <tr
                       key={service.id}
-                      className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]"
+                      className="border-b border-border/50 transition-colors hover:bg-muted/50"
                     >
                       <td className="py-3.5 pr-4 font-medium">
                         {service.name}
                       </td>
-                      <td className="max-w-xs truncate py-3.5 pr-4 text-white/40">
+                      <td className="max-w-xs truncate py-3.5 pr-4 text-muted-foreground">
                         {service.description || "—"}
                       </td>
                       <td className="py-3.5 pr-4">

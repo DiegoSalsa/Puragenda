@@ -40,11 +40,11 @@ export function ReferralsClient({
   return (
     <div className="space-y-6">
       {/* Referral Code Card */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 sm:p-6">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-white/60">Tu código de referido</p>
-            <p className="text-xs text-white/30">Compártelo con otros negocios para que se registren con tu código.</p>
+            <p className="text-sm font-medium text-muted-foreground">Tu código de referido</p>
+            <p className="text-xs text-muted-foreground">Compártelo con otros negocios para que se registren con tu código.</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-5 py-3">
@@ -62,7 +62,7 @@ export function ReferralsClient({
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10">
               <Users className="h-4 w-4 text-blue-400" />
@@ -74,7 +74,7 @@ export function ReferralsClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500/10">
               <TrendingUp className="h-4 w-4 text-green-400" />
@@ -86,7 +86,7 @@ export function ReferralsClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: discountActive ? "rgba(124,58,237,0.15)" : "rgba(255,255,255,0.03)" }}>
               <Star className="h-4 w-4" style={{ color: discountActive ? "#7C3AED" : "rgba(255,255,255,0.2)" }} />
@@ -102,7 +102,7 @@ export function ReferralsClient({
       </div>
 
       {/* Progress Card */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 sm:p-6 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Progreso hacia el descuento</p>
@@ -130,7 +130,7 @@ export function ReferralsClient({
       </div>
 
       {/* How it works */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 sm:p-6 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <p className="text-sm font-medium flex items-center gap-2">
           <Gift className="h-4 w-4 text-[#7C3AED]" />
           ¿Cómo funciona?
@@ -156,16 +156,16 @@ export function ReferralsClient({
 
       {/* Referred businesses list */}
       {referredBusinesses.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 sm:p-6 space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
           <p className="text-sm font-medium">Negocios referidos</p>
           <div className="space-y-2">
             {referredBusinesses.map((b) => {
               const st = statusLabels[b.status] || statusLabels.INACTIVE;
               return (
-                <div key={b.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div key={b.id} className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium">{b.name}</p>
-                    <p className="text-xs text-white/30">{new Date(b.createdAt).toLocaleDateString("es-CL")}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString("es-CL")}</p>
                   </div>
                   <span
                     className="rounded-full px-2.5 py-1 text-xs font-medium"

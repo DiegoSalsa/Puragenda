@@ -39,15 +39,15 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
           key={h.dayOfWeek}
           className={`flex flex-wrap items-center gap-3 rounded-xl border p-3 transition-all ${
             h.isOpen
-              ? "border-white/[0.06] bg-white/[0.02]"
-              : "border-white/[0.03] bg-white/[0.01] opacity-50"
+              ? "border-border bg-muted/50"
+              : "border-border/50 bg-muted/20 opacity-50"
           }`}
         >
           <button
             type="button"
             onClick={() => update(h.dayOfWeek, "isOpen", !h.isOpen)}
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              h.isOpen ? "bg-[#7C3AED]" : "bg-white/10"
+              h.isOpen ? "bg-[#7C3AED]" : "bg-muted-foreground/30"
             }`}
           >
             <div
@@ -64,21 +64,21 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
               <select
                 value={h.startTime}
                 onChange={(e) => update(h.dayOfWeek, "startTime", e.target.value)}
-                className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white outline-none [&>option]:bg-[#1a1a1a] [&>option]:text-white"
+                className="rounded-lg border border-border bg-muted px-3 py-1.5 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground"
               >
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <span className="text-white/30">—</span>
+              <span className="text-muted-foreground">—</span>
               <select
                 value={h.endTime}
                 onChange={(e) => update(h.dayOfWeek, "endTime", e.target.value)}
-                className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1.5 text-sm text-white outline-none [&>option]:bg-[#1a1a1a] [&>option]:text-white"
+                className="rounded-lg border border-border bg-muted px-3 py-1.5 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground"
               >
                 {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
           ) : (
-            <span className="text-sm text-white/30">Cerrado</span>
+            <span className="text-sm text-muted-foreground">Cerrado</span>
           )}
         </div>
       ))}

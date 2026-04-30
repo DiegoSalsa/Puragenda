@@ -1,6 +1,7 @@
 import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
 import { getServiceByIdAndBusiness } from "@/server/services/service.service";
 import { createAppointment } from "@/server/services/appointment.service";
+import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
@@ -39,6 +40,30 @@ export async function POST(
       );
     }
 
+    // ── Anti-No-Show: Check if client is blocked ──
+    // Only enforce if the business has a PRO subscription (feature gating)
+    const subscription = await prisma.subscription.findUnique({
+      where: { businessId: business.id },
+    });
+
+    if (subscription?.plan === "PRO") {
+      const existingClient = await prisma.client.findUnique({
+        where: {
+          businessId_email: { businessId: business.id, email: customerEmail },
+        },
+      });
+
+      if (existingClient && existingClient.noShowCount >= 2) {
+        return Response.json(
+          {
+            error: "Tu cuenta ha sido bloqueada por inasistencias reiteradas. Contacta al negocio para más información.",
+            code: "NO_SHOW_BLOCKED",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Verify primary service belongs to business
     const service = await getServiceByIdAndBusiness(serviceId, business.id);
     if (!service) {
@@ -74,6 +99,23 @@ export async function POST(
       }
     }
 
+    // ── CRM: Upsert Client record ──
+    const client = await prisma.client.upsert({
+      where: {
+        businessId_email: { businessId: business.id, email: customerEmail },
+      },
+      update: {
+        name: customerName,
+        phone: customerPhone || undefined,
+      },
+      create: {
+        name: customerName,
+        email: customerEmail,
+        phone: customerPhone || undefined,
+        businessId: business.id,
+      },
+    });
+
     // Create appointment with collision detection
     const result = await createAppointment({
       customerName,
@@ -87,10 +129,25 @@ export async function POST(
       additionalServiceIds: additionalIds,
       totalDuration: allServiceIds.length > 1 ? totalDuration : undefined,
       totalPrice: allServiceIds.length > 1 ? totalPrice : undefined,
+      clientId: client.id,
     });
 
     if (!result.success) {
       return Response.json({ error: result.error }, { status: 409 });
+    }
+
+    // Send email notifications asynchronously (don't block the response)
+    const appointmentWithRelations = await prisma.appointment.findUnique({
+      where: { id: result.appointment.id },
+      include: {
+        service: true,
+        staff: true,
+        business: { include: { owner: { select: { email: true, name: true } } } },
+      },
+    });
+
+    if (appointmentWithRelations) {
+      sendBookingNotifications(appointmentWithRelations).catch(() => {});
     }
 
     return Response.json(result.appointment, { status: 201 });

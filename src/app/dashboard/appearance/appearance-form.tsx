@@ -20,22 +20,22 @@ const COLOR_FIELDS: { key: keyof FormData; label: string; description: string }[
 function ColorInput({ label, description, value, onChange }: { label: string; description: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-white/80">{label}</label>
-      <p className="text-[11px] text-white/35 leading-relaxed">{description}</p>
+      <label className="text-sm font-medium">{label}</label>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">{description}</p>
       <div className="flex items-center gap-3 mt-1.5">
         <div className="relative">
           <input
             type="color"
             value={value.slice(0, 7)}
             onChange={(e) => onChange(e.target.value)}
-            className="h-10 w-10 cursor-pointer rounded-lg border border-white/[0.06] bg-transparent [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none"
+            className="h-10 w-10 cursor-pointer rounded-lg border border-border bg-transparent [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none"
           />
         </div>
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 rounded-xl border border-white/[0.06] bg-[#1a1a1a] px-4 py-2.5 font-mono text-sm text-white outline-none focus:border-[#7C3AED]/30 transition-colors"
+          className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
         />
       </div>
     </div>
@@ -135,12 +135,12 @@ export function AppearanceForm({
       {/* Form */}
       <div className="space-y-6">
         {/* Colors */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-6">
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-6">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Palette className="h-4 w-4 text-[#7C3AED]" />
             Colores del Widget
           </h3>
-          <p className="text-xs text-white/30 -mt-3">Personaliza cada aspecto visual de tu widget de reservas. Los cambios se reflejan al instante en la vista previa.</p>
+          <p className="text-xs text-muted-foreground -mt-3">Personaliza cada aspecto visual de tu widget de reservas. Los cambios se reflejan al instante en la vista previa.</p>
 
           {COLOR_FIELDS.map((field) => (
             <ColorInput
@@ -162,7 +162,7 @@ export function AppearanceForm({
         </div>
 
         {/* Typography */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-5">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <Type className="h-4 w-4 text-[#7C3AED]" />
             Tipografía
@@ -170,12 +170,12 @@ export function AppearanceForm({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-white/80">Tamaño de Fuente Base</label>
-              <span className="rounded-lg border border-white/[0.06] bg-[#1a1a1a] px-3 py-1 font-mono text-xs text-white">{data.fontSize}px</span>
+              <label className="text-sm font-medium">Tamaño de Fuente Base</label>
+              <span className="rounded-lg border border-border bg-muted px-3 py-1 font-mono text-xs">{data.fontSize}px</span>
             </div>
-            <p className="text-[11px] text-white/35">Controla el tamaño base de la tipografía. Todos los textos del widget se escalan proporcionalmente.</p>
+            <p className="text-[11px] text-muted-foreground">Controla el tamaño base de la tipografía. Todos los textos del widget se escalan proporcionalmente.</p>
             <div className="flex items-center gap-3 mt-1.5">
-              <span className="text-xs text-white/30">12</span>
+              <span className="text-xs text-muted-foreground">12</span>
               <input
                 type="range"
                 min={12}
@@ -185,13 +185,13 @@ export function AppearanceForm({
                 onChange={(e) => update("fontSize", parseInt(e.target.value, 10))}
                 className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
               />
-              <span className="text-xs text-white/30">18</span>
+              <span className="text-xs text-muted-foreground">18</span>
             </div>
           </div>
 
           {/* Preview swatch */}
-          <div className="rounded-xl border border-white/[0.06] p-4 space-y-2">
-            <p className="text-xs text-white/40">Vista previa de tipografía y colores</p>
+          <div className="rounded-xl border border-border p-4 space-y-2">
+            <p className="text-xs text-muted-foreground">Vista previa de tipografía y colores</p>
             <div className="rounded-lg p-4 space-y-2" style={{ background: data.backgroundColor, border: `1px solid ${data.secondaryColor}25` }}>
               <p className="font-semibold" style={{ color: data.textColor, fontSize: `${data.fontSize}px` }}>Título de ejemplo</p>
               <p style={{ color: data.textMutedColor, fontSize: `${data.fontSize - 2}px` }}>Esta es una descripción secundaria para validar el contraste visual.</p>
@@ -204,22 +204,22 @@ export function AppearanceForm({
         </div>
 
         {/* Logo */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-6 space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
           </h3>
-          <p className="text-[11px] text-white/35">URL de la imagen de tu logo. Se muestra en la cabecera del widget de reservas.</p>
+          <p className="text-[11px] text-muted-foreground">URL de la imagen de tu logo. Se muestra en la cabecera del widget de reservas.</p>
           <input
             type="text"
             value={data.logoUrl}
             onChange={(e) => update("logoUrl", e.target.value)}
             placeholder="https://ejemplo.com/logo.png"
-            className="w-full rounded-xl border border-white/[0.06] bg-[#1a1a1a] px-4 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#7C3AED]/30 transition-colors"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/30 transition-colors"
           />
           {data.logoUrl && (
-            <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
               <img src={data.logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              <p className="text-xs text-white/40">Vista previa del logo</p>
+              <p className="text-xs text-muted-foreground">Vista previa del logo</p>
             </div>
           )}
         </div>
@@ -237,17 +237,17 @@ export function AppearanceForm({
       {/* Live Preview */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-white/40">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Eye className="h-4 w-4" /> Vista previa en tiempo real
           </div>
           <button
             onClick={() => setPreviewUrl(buildPreviewUrl(data) + "&_t=" + Date.now())}
-            className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] px-2.5 py-1.5 text-xs text-white/40 hover:text-white/70 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <RefreshCw className="h-3 w-3" /> Recargar
           </button>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-white/[0.06]" style={{ background: "#000" }}>
+        <div className="overflow-hidden rounded-2xl border border-border" style={{ background: "var(--muted)" }}>
           {previewUrl && (
             <iframe
               src={previewUrl}
@@ -257,7 +257,7 @@ export function AppearanceForm({
             />
           )}
         </div>
-        <p className="text-[11px] text-white/20 text-center">Los cambios se reflejan automáticamente al mover los selectores. Presiona &quot;Guardar&quot; para persistirlos en la base de datos.</p>
+        <p className="text-[11px] text-muted-foreground/60 text-center">Los cambios se reflejan automáticamente al mover los selectores. Presiona &quot;Guardar&quot; para persistirlos en la base de datos.</p>
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ export default async function ServicesPage() {
 
   if (!user) {
     return (
-      <div className="py-20 text-center text-white/40">
+      <div className="py-20 text-center text-muted-foreground">
         Debes iniciar sesión para ver tus servicios
       </div>
     );
@@ -20,7 +20,7 @@ export default async function ServicesPage() {
 
   if (!business) {
     return (
-      <div className="py-20 text-center text-white/40">
+      <div className="py-20 text-center text-muted-foreground">
         No tienes un negocio configurado aún
       </div>
     );

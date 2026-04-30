@@ -16,6 +16,8 @@ import {
   Zap,
 } from "lucide-react";
 import { PricingCards } from "@/components/pricing-cards";
+import { Navbar } from "@/components/landing/navbar";
+import { Footer } from "@/components/landing/footer";
 
 // ═══════════════════════════════════════════
 // DATA
@@ -114,38 +116,13 @@ export default function HomePage() {
         <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#7C3AED]/5 blur-[120px]" />
       </div>
 
-      {/* ─── Header ─── */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0A0A0A]/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/25">
-              <CalendarClock className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">
-              Pura<span className="text-[#7C3AED]">genda</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Link href="/login">
-              <button className="rounded-lg border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
-                Iniciar sesión
-              </button>
-            </Link>
-            <Link href="/register">
-              <button className="flex items-center gap-2 rounded-lg bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35">
-                Crear cuenta <ArrowRight className="h-4 w-4" />
-              </button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main>
         {/* ─── Hero Section ─── */}
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
           <div className="animate-fade-up space-y-8 text-center">
-            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-sm text-white/70">
+            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
               <Zap className="h-3.5 w-3.5 text-[#7C3AED]" />
               SaaS de agendamiento para negocios locales
             </div>
@@ -157,7 +134,7 @@ export default function HomePage() {
               </span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/50 sm:text-lg">
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               Convierte visitas en reservas confirmadas sin llamadas perdidas ni mensajes sueltos. 
               Sistema de citas con detección de colisiones, widget marca blanca y panel de gestión completo.
             </p>
@@ -169,7 +146,7 @@ export default function HomePage() {
                 </button>
               </Link>
               <Link href="/widget/purocode-demo">
-                <button className="flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
+                <button className="flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
                   Ver Demo en Vivo
                 </button>
               </Link>
@@ -184,7 +161,7 @@ export default function HomePage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-sm text-white/50"
+                  className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3.5 py-1.5 text-sm text-muted-foreground"
                 >
                   <item.icon className="h-3.5 w-3.5 text-[#7C3AED]" />
                   {item.label}
@@ -207,17 +184,17 @@ export default function HomePage() {
             {/* Main showcase: Widget + Dashboard side by side */}
             <div className="grid gap-6 lg:grid-cols-5">
               {/* Widget Preview - col 1-2 */}
-              <div className="lg:col-span-2 rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
-                <div className="flex items-center gap-2 text-xs text-white/35">
+              <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <div className="h-2 w-2 rounded-full bg-[#7C3AED] animate-pulse" />
                   Widget de reservas · Vista del cliente
                 </div>
                 {/* Fake widget mockup */}
-                <div className="rounded-xl border border-white/[0.08] bg-[#0A0A0A] p-4 space-y-3 overflow-hidden">
+                <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-3 overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-white/30">Reserva online</p>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">Reserva online</p>
                       <p className="text-sm font-bold">Estética Bella</p>
                     </div>
                     <span className="rounded-md bg-[#E91E8C]/15 px-2 py-0.5 text-[10px] font-medium text-[#E91E8C]">Paso a paso</span>
@@ -226,7 +203,7 @@ export default function HomePage() {
                   <div className="grid grid-cols-3 gap-1.5">
                     <div className="rounded-full bg-[#E91E8C]/20 px-2 py-1 text-center text-[9px] text-[#E91E8C]">Servicio</div>
                     <div className="rounded-full bg-[#E91E8C]/20 px-2 py-1 text-center text-[9px] text-[#E91E8C]">Fecha</div>
-                    <div className="rounded-full border border-white/[0.06] px-2 py-1 text-center text-[9px] text-white/30">Datos</div>
+                    <div className="rounded-full border border-border px-2 py-1 text-center text-[9px] text-muted-foreground">Datos</div>
                   </div>
                   {/* Service cards */}
                   <div className="space-y-2">
@@ -234,7 +211,7 @@ export default function HomePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-medium">Corte de pelo</p>
-                          <div className="mt-1 flex gap-2 text-[10px] text-white/35">
+                          <div className="mt-1 flex gap-2 text-[10px] text-muted-foreground">
                             <span>30 min</span>
                             <span>$15.000</span>
                           </div>
@@ -244,24 +221,24 @@ export default function HomePage() {
                         </div>
                       </div>
                     </div>
-                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5">
+                    <div className="rounded-lg border border-border bg-muted/30 p-2.5">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-medium">Manicure Gel</p>
-                          <div className="mt-1 flex gap-2 text-[10px] text-white/35">
+                          <div className="mt-1 flex gap-2 text-[10px] text-muted-foreground">
                             <span>60 min</span>
                             <span>$25.000</span>
                           </div>
                         </div>
-                        <div className="h-4 w-4 rounded-md border border-white/15" />
+                        <div className="h-4 w-4 rounded-md border border-border" />
                       </div>
                     </div>
                   </div>
                   {/* Date pills */}
                   <div className="grid grid-cols-5 gap-1">
                     {["Lun", "Mar", "Mié", "Jue", "Vie"].map((d, i) => (
-                      <div key={d} className={`rounded-lg border px-1 py-1.5 text-center text-[9px] ${i === 1 ? "border-[#E91E8C]/30 bg-[#E91E8C]/10" : "border-white/[0.06]"}`}>
-                        <p className="text-white/30">{d}</p>
+                      <div key={d} className={`rounded-lg border px-1 py-1.5 text-center text-[9px] ${i === 1 ? "border-[#E91E8C]/30 bg-[#E91E8C]/10" : "border-border"}`}>
+                        <p className="text-muted-foreground">{d}</p>
                         <p className="text-xs font-bold">{14 + i}</p>
                       </div>
                     ))}
@@ -269,35 +246,35 @@ export default function HomePage() {
                   {/* Time slots */}
                   <div className="grid grid-cols-4 gap-1">
                     {["10:00", "10:30", "11:00", "11:30"].map((t, i) => (
-                      <div key={t} className={`rounded-full border px-2 py-1 text-center text-[9px] ${i === 2 ? "border-[#E91E8C]/40 bg-[#E91E8C]/15 text-[#E91E8C] font-semibold" : "border-white/[0.06] text-white/40"}`}>
+                      <div key={t} className={`rounded-full border px-2 py-1 text-center text-[9px] ${i === 2 ? "border-[#E91E8C]/40 bg-[#E91E8C]/15 text-[#E91E8C] font-semibold" : "border-border text-muted-foreground"}`}>
                         {t}
                       </div>
                     ))}
                   </div>
                   {/* Footer */}
-                  <div className="border-t border-white/[0.04] pt-2 text-center text-[8px] text-white/20">
+                  <div className="border-t border-border/50 pt-2 text-center text-[8px] text-muted-foreground/60">
                     PurAgenda Powered by PuroCode
                   </div>
                 </div>
               </div>
 
               {/* Dashboard Preview - col 3-5 */}
-              <div className="lg:col-span-3 rounded-2xl border border-white/[0.06] bg-[#111] p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
-                <div className="flex items-center gap-2 text-xs text-white/35">
+              <div className="lg:col-span-3 rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
                   Panel de administración · Vista del dueño
                 </div>
                 {/* Fake dashboard */}
-                <div className="rounded-xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden">
+                <div className="rounded-xl border border-border bg-muted/50 overflow-hidden">
                   {/* Top bar */}
-                  <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-2.5">
+                  <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#7C3AED]">
                       <CalendarClock className="h-3 w-3 text-white" />
                     </div>
                     <span className="text-xs font-bold">Pura<span className="text-[#7C3AED]">genda</span></span>
                     <div className="ml-auto flex gap-1.5">
                       {["Citas", "Staff", "Servicios"].map((t) => (
-                        <span key={t} className={`rounded-md px-2 py-0.5 text-[9px] ${t === "Citas" ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "text-white/30"}`}>{t}</span>
+                        <span key={t} className={`rounded-md px-2 py-0.5 text-[9px] ${t === "Citas" ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "text-muted-foreground"}`}>{t}</span>
                       ))}
                     </div>
                   </div>
@@ -308,33 +285,33 @@ export default function HomePage() {
                       { label: "Semana", value: "34", sub: "reservas" },
                       { label: "Check-in", value: "92%", sub: "asistencia" },
                     ].map((stat) => (
-                      <div key={stat.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                        <p className="text-[9px] text-white/30">{stat.label}</p>
+                      <div key={stat.label} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                        <p className="text-[9px] text-muted-foreground">{stat.label}</p>
                         <p className="text-lg font-bold leading-tight">{stat.value}</p>
-                        <p className="text-[9px] text-white/25">{stat.sub}</p>
+                        <p className="text-[9px] text-muted-foreground/60">{stat.sub}</p>
                       </div>
                     ))}
                   </div>
                   {/* Calendar/Appointments list */}
                   <div className="px-3 pb-3 space-y-1.5">
-                    <p className="text-[10px] font-medium text-white/40 mb-1">Próximas citas</p>
+                    <p className="text-[10px] font-medium text-muted-foreground mb-1">Próximas citas</p>
                     {[
                       { name: "Juan Pérez", service: "Consultoría Web", time: "10:00", staff: "Diego S.", status: "confirmed" },
                       { name: "María González", service: "Desarrollo Landing", time: "11:00", staff: "Diego S.", status: "pending" },
                       { name: "Ana Torres", service: "Consultoría Web", time: "15:00", staff: "Camila R.", status: "checked" },
                     ].map((apt) => (
-                      <div key={apt.name} className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                      <div key={apt.name} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[9px] font-bold text-[#7C3AED]">
                             {apt.name.charAt(0)}
                           </div>
                           <div>
                             <p className="text-[10px] font-medium">{apt.name}</p>
-                            <p className="text-[9px] text-white/30">{apt.service} · {apt.staff}</p>
+                            <p className="text-[9px] text-muted-foreground">{apt.service} · {apt.staff}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-white/40">{apt.time}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{apt.time}</span>
                           <div className={`h-1.5 w-1.5 rounded-full ${
                             apt.status === "confirmed" ? "bg-green-400" : apt.status === "pending" ? "bg-amber-400" : "bg-blue-400"
                           }`} />
@@ -349,12 +326,12 @@ export default function HomePage() {
             {/* Secondary showcase: 3 feature cards with mini-visuals */}
             <div className="grid gap-4 sm:grid-cols-3">
               {/* Appearance */}
-              <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-[#7C3AED]" />
                   <p className="text-sm font-medium">Personalización total</p>
                 </div>
-                <p className="text-xs text-white/40">Cada negocio define sus colores. El widget se adapta a su marca.</p>
+                <p className="text-xs text-muted-foreground">Cada negocio define sus colores. El widget se adapta a su marca.</p>
                 <div className="flex gap-2">
                   {["#7C3AED", "#E91E8C", "#D97706", "#22c55e", "#3b82f6"].map((c) => (
                     <div key={c} className="h-6 w-6 rounded-lg shadow-lg" style={{ background: c, boxShadow: `0 4px 12px ${c}40` }} />
@@ -362,33 +339,33 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Multi-staff */}
-              <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-[#7C3AED]" />
                   <p className="text-sm font-medium">Multi-profesional</p>
                 </div>
-                <p className="text-xs text-white/40">Cada staff tiene su propio horario y agenda independiente.</p>
+                <p className="text-xs text-muted-foreground">Cada staff tiene su propio horario y agenda independiente.</p>
                 <div className="flex -space-x-2">
                   {["D", "C", "M", "V"].map((letter, i) => (
-                    <div key={letter} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#111] text-[10px] font-bold" style={{ background: ["#7C3AED", "#E91E8C", "#D97706", "#3b82f6"][i], zIndex: 4 - i }}>
+                    <div key={letter} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-card text-[10px] font-bold text-white" style={{ background: ["#7C3AED", "#E91E8C", "#D97706", "#3b82f6"][i], zIndex: 4 - i }}>
                       {letter}
                     </div>
                   ))}
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#111] bg-white/10 text-[10px] text-white/40">+3</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] text-muted-foreground">+3</div>
                 </div>
               </div>
               {/* Collision */}
-              <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-3 group hover:border-[#7C3AED]/20 transition-all">
                 <div className="flex items-center gap-2">
                   <Shield className="h-4 w-4 text-[#7C3AED]" />
                   <p className="text-sm font-medium">Sin solapamientos</p>
                 </div>
-                <p className="text-xs text-white/40">Detección automática de colisiones. Nunca dos citas en el mismo slot.</p>
+                <p className="text-xs text-muted-foreground">Detección automática de colisiones. Nunca dos citas en el mismo slot.</p>
                 <div className="space-y-1 text-[9px]">
                   <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/5 px-2.5 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
                     <span className="text-green-400">10:00 - 11:00</span>
-                    <span className="ml-auto text-white/30">Confirmada</span>
+                    <span className="ml-auto text-muted-foreground">Confirmada</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
@@ -398,7 +375,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/5 px-2.5 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-400" />
                     <span className="text-green-400">11:00 - 12:00</span>
-                    <span className="ml-auto text-white/30">Disponible</span>
+                    <span className="ml-auto text-muted-foreground">Disponible</span>
                   </div>
                 </div>
               </div>
@@ -410,13 +387,13 @@ export default function HomePage() {
             {bentoFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className={`group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#7C3AED]/20 hover:bg-[#111]/80 ${feature.className}`}
+                className={`group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-[#7C3AED]/20 hover:bg-card/80 ${feature.className}`}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED] transition-colors group-hover:bg-[#7C3AED]/15">
                   <feature.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-white/45">
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </div>
@@ -425,20 +402,20 @@ export default function HomePage() {
         </section>
 
         {/* ─── Social Proof ─── */}
-        <section className="border-y border-white/[0.06] bg-[#0D0D0D]">
+        <section className="border-y border-border bg-muted/30">
           <div className="mx-auto w-full max-w-6xl px-6 py-16">
             <div className="grid items-center gap-8 md:grid-cols-3">
               <div className="space-y-2 text-center">
                 <p className="text-4xl font-bold tracking-tight text-[#7C3AED]">500+</p>
-                <p className="text-sm text-white/45">Negocios confían en Puragenda</p>
+                <p className="text-sm text-muted-foreground">Negocios confían en Puragenda</p>
               </div>
               <div className="space-y-2 text-center">
                 <p className="text-4xl font-bold tracking-tight">12.000+</p>
-                <p className="text-sm text-white/45">Citas procesadas al mes</p>
+                <p className="text-sm text-muted-foreground">Citas procesadas al mes</p>
               </div>
               <div className="space-y-2 text-center">
                 <p className="text-4xl font-bold tracking-tight">99.9%</p>
-                <p className="text-sm text-white/45">Uptime garantizado</p>
+                <p className="text-sm text-muted-foreground">Uptime garantizado</p>
               </div>
             </div>
 
@@ -457,7 +434,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── Features ─── */}
-        <section className="mx-auto w-full max-w-6xl px-6 py-20">
+        <section id="caracteristicas" className="mx-auto w-full max-w-6xl px-6 py-20">
           <div className="mb-12 text-center">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
               Características
@@ -471,13 +448,13 @@ export default function HomePage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="group rounded-2xl border border-white/[0.06] bg-[#111] p-6 transition-all duration-300 hover:border-[#7C3AED]/20"
+                className="group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-[#7C3AED]/20"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED]">
                   <feature.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/45">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </div>
@@ -486,7 +463,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── Pricing ─── */}
-        <section className="border-y border-white/[0.06] bg-[#0D0D0D] py-20">
+        <section id="precios" className="border-y border-border bg-muted/30 py-20">
           <div className="mx-auto w-full max-w-6xl px-6">
             <div className="mb-12 text-center">
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
@@ -519,13 +496,13 @@ export default function HomePage() {
             {faqs.map((faq) => (
               <details
                 key={faq.question}
-                className="group rounded-2xl border border-white/[0.06] bg-[#111] transition-all open:border-[#7C3AED]/20 [&_summary::-webkit-details-marker]:hidden"
+                className="group rounded-2xl border border-border bg-card transition-all open:border-[#7C3AED]/20 [&_summary::-webkit-details-marker]:hidden"
               >
                 <summary className="flex cursor-pointer items-center justify-between p-5 text-sm font-medium transition-colors hover:text-white/90">
                   {faq.question}
-                  <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 group-open:rotate-180" />
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
                 </summary>
-                <div className="px-5 pb-5 text-sm leading-relaxed text-white/45">
+                <div className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
                   {faq.answer}
                 </div>
               </details>
@@ -534,12 +511,12 @@ export default function HomePage() {
         </section>
 
         {/* ─── CTA Final ─── */}
-        <section className="border-t border-white/[0.06] py-20">
+        <section className="border-t border-border py-20">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight">
               Tu agenda online lista en minutos
             </h2>
-            <p className="max-w-xl text-white/45">
+            <p className="max-w-xl text-muted-foreground">
               Te acompañamos desde la configuración inicial hasta la publicación en tu sitio. 
               Si vendes servicios, este sistema ya viene preparado para convertir mejor.
             </p>
@@ -550,7 +527,7 @@ export default function HomePage() {
                 </button>
               </Link>
               <Link href="/widget/purocode-demo">
-                <button className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-white/80 transition-all hover:border-white/20 hover:text-white">
+                <button className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
                   Ver Demo
                 </button>
               </Link>
@@ -559,13 +536,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-white/[0.06] py-8 text-center">
-        <p className="flex items-center justify-center gap-2 text-sm text-white/30">
-          <CalendarClock className="h-4 w-4 text-[#7C3AED]" />
-          Puragenda by PuroCode · {new Date().getFullYear()}
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

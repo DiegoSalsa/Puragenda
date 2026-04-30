@@ -12,6 +12,7 @@ datasource db {
 
 enum UserRole {
   OWNER
+  MANAGER
   STAFF
   SUPERADMIN
 }
@@ -118,6 +119,7 @@ model Business {
   services           Service[]
   staff              Staff[]
   appointments       Appointment[]
+  clients            Client[]
   subscription       Subscription?
   businessHours      BusinessHours[]
   blockedDates       BlockedDate[]
@@ -226,16 +228,41 @@ model Appointment {
   businessId           String
   serviceId            String
   staffId              String?
+  clientId             String?
   createdAt            DateTime          @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   staff    Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  client   Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
   @@index([serviceId])
   @@index([staffId, startTime, endTime])
   @@index([startTime])
+  @@index([clientId])
+}
+
+// ==========================================
+// CRM — CLIENTS
+// ==========================================
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  phone        String?
+  totalSpent   Float    @default(0)
+  noShowCount  Int      @default(0)
+  businessId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([businessId, email])
+  @@index([businessId])
 }
 
 // ==========================================

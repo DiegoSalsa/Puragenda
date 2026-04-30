@@ -4,6 +4,8 @@ import {
   getAppointmentByIdAndBusiness,
   updateAppointmentStatus,
 } from "@/server/services/appointment.service";
+import { sendConfirmationEmail } from "@/server/email/send";
+import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 
 export async function PATCH(
@@ -33,6 +35,42 @@ export async function PATCH(
     }
 
     const appointment = await updateAppointmentStatus(id, status);
+
+    // ── CRM: Update Client stats based on status change ──
+    if (existing.clientId) {
+      if (status === "NO_SHOW") {
+        // Increment no-show counter
+        await prisma.client.update({
+          where: { id: existing.clientId },
+          data: { noShowCount: { increment: 1 } },
+        });
+      }
+
+      if (status === "CHECKED_IN" && existing.totalPrice) {
+        // Add to totalSpent when checked in
+        await prisma.client.update({
+          where: { id: existing.clientId },
+          data: { totalSpent: { increment: existing.totalPrice } },
+        });
+      }
+    }
+
+    // Send confirmation email when status changes to CONFIRMED
+    if (status === "CONFIRMED") {
+      const fullAppointment = await prisma.appointment.findUnique({
+        where: { id },
+        include: {
+          service: true,
+          staff: true,
+          business: { include: { owner: { select: { email: true, name: true } } } },
+        },
+      });
+
+      if (fullAppointment) {
+        sendConfirmationEmail(fullAppointment).catch(() => {});
+      }
+    }
+
     return Response.json(appointment);
   } catch {
     return Response.json(

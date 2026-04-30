@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Calendar, ExternalLink, Gift, LayoutDashboard, Menu, Settings, Wrench, CalendarClock, Users, Palette, X } from "lucide-react";
+import { Calendar, ExternalLink, Gift, LayoutDashboard, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, X } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
+  { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
   { href: "/dashboard/appearance", label: "Apariencia", icon: Palette },
   { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },
@@ -21,7 +22,10 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
   const widgetHref = widgetSlug ? `/widget/${widgetSlug}` : "/dashboard/settings";
 
   const visibleItems = navItems.filter((item) => {
-    if (userRole === "STAFF" && ["/dashboard/settings", "/dashboard/staff", "/dashboard/appearance", "/dashboard/referrals"].includes(item.href)) return false;
+    // STAFF: only sees their own agenda
+    if (userRole === "STAFF" && item.href !== "/dashboard") return false;
+    // MANAGER: sees everything except settings (billing)
+    if (userRole === "MANAGER" && item.href === "/dashboard/settings") return false;
     return true;
   });
 

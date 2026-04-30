@@ -55,6 +55,7 @@ export async function createAppointment(data: {
   businessId: string;
   serviceId: string;
   staffId?: string;
+  clientId?: string;
   additionalServiceIds?: string[];
   totalDuration?: number;
   totalPrice?: number;
@@ -85,6 +86,7 @@ export async function createAppointment(data: {
       businessId: data.businessId,
       serviceId: data.serviceId,
       staffId: data.staffId,
+      clientId: data.clientId,
       additionalServiceIds: data.additionalServiceIds || [],
       totalDuration: data.totalDuration,
       totalPrice: data.totalPrice,

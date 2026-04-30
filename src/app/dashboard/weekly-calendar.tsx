@@ -15,7 +15,7 @@ interface CalendarAppointment {
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7:00-18:00
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  PENDING:    { bg: "bg-white/[0.04]", border: "border-white/10", text: "text-white/70", dot: "bg-white/40" },
+  PENDING:    { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
   CONFIRMED:  { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
   CANCELLED:  { bg: "bg-red-500/8", border: "border-red-500/15", text: "text-red-400/60", dot: "bg-red-400" },
   CHECKED_IN: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
@@ -73,9 +73,9 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
 
   return (
     <>
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111] overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Header with navigation */}
-        <div className="border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">Calendario</h2>
             {!isCurrentWeek && (
@@ -85,13 +85,13 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigateWeek("prev")} className="rounded-lg border border-white/[0.06] p-2 text-white/40 transition-all hover:bg-white/[0.03] hover:text-white/70">
+            <button onClick={() => navigateWeek("prev")} className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="min-w-[180px] text-center text-sm text-white/50">
+            <span className="min-w-[180px] text-center text-sm text-muted-foreground">
               {format(weekStart, "d MMM", { locale: es })} — {format(addDays(weekStart, 6), "d MMM yyyy", { locale: es })}
             </span>
-            <button onClick={() => navigateWeek("next")} className="rounded-lg border border-white/[0.06] p-2 text-white/40 transition-all hover:bg-white/[0.03] hover:text-white/70">
+            <button onClick={() => navigateWeek("next")} className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -100,13 +100,13 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
         <div className="overflow-x-auto">
           <div className="min-w-[800px]">
             {/* Day headers */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.06]">
+            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
               <div className="p-2" />
               {days.map((day) => {
                 const isToday = isSameDay(day, today);
                 return (
-                  <div key={day.toISOString()} className={`border-l border-white/[0.06] p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
-                    <p className="text-[10px] uppercase tracking-widest text-white/30">{format(day, "EEE", { locale: es })}</p>
+                  <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: es })}</p>
                     <p className={`text-xl font-bold ${isToday ? "text-[#7C3AED]" : ""}`}>{format(day, "d")}</p>
                   </div>
                 );
@@ -115,15 +115,15 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
 
             {/* Time grid */}
             {HOURS.map((hour) => (
-              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-white/[0.03]">
-                <div className="flex items-start justify-end pr-2 pt-2 text-[11px] text-white/20 font-mono">
+              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/30">
+                <div className="flex items-start justify-end pr-2 pt-2 text-[11px] text-muted-foreground/60 font-mono">
                   {String(hour).padStart(2, "0")}:00
                 </div>
                 {days.map((day) => {
                   const apts = getAptsForDayHour(day, hour);
                   const isToday = isSameDay(day, today);
                   return (
-                    <div key={day.toISOString()} className={`border-l border-white/[0.06] min-h-[52px] p-1 ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                    <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
                       {apts.map((apt) => {
                         const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
                         return (
@@ -132,7 +132,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                               <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                               <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
                             </div>
-                            <p className="mt-0.5 text-[10px] text-white/30 truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
+                            <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
                           </button>
                         );
                       })}
@@ -148,26 +148,26 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
       {/* Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
-          <div className="mx-4 w-full max-w-md animate-scale-in rounded-2xl border border-white/[0.06] bg-[#111] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+          <div className="mx-4 w-full max-w-md animate-scale-in rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <h3 className="text-lg font-semibold">Detalle de Cita</h3>
-              <button onClick={() => setSelected(null)} className="rounded-lg p-1 text-white/30 hover:text-white/60"><X className="h-4 w-4" /></button>
+              <button onClick={() => setSelected(null)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-4 p-6">
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${(STATUS_COLORS[selected.status] || STATUS_COLORS.PENDING).dot}`} />
                 <span className="text-sm font-medium">{STATUS_LABELS[selected.status] || selected.status}</span>
               </div>
-              <div className="space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm">
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-white/30" /><span className="text-white/40">Cliente:</span><span className="font-medium">{selected.customerName}</span></div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-white/30" /><span className="text-white/40">Email:</span><span>{selected.customerEmail}</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-white/30" /><span className="text-white/40">Hora:</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
-                <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-white/30" /><span className="text-white/40">Servicio:</span><span>{selected.serviceName}</span></div>
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-white/30" /><span className="text-white/40">Staff:</span><span>{selected.staffName}</span></div>
+              <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
+                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Cliente:</span><span className="font-medium">{selected.customerName}</span></div>
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Email:</span><span>{selected.customerEmail}</span></div>
+                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Hora:</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
+                <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Servicio:</span><span>{selected.serviceName}</span></div>
+                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Staff:</span><span>{selected.staffName}</span></div>
               </div>
               {!["CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(selected.status) && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-white/40">Cambiar estado:</p>
+                  <p className="text-xs font-medium text-muted-foreground">Cambiar estado:</p>
                   <div className="grid grid-cols-2 gap-2">
                     {selected.status === "PENDING" && (<>
                       <button onClick={() => handleStatus("CONFIRMED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-sm font-medium text-emerald-400 disabled:opacity-50">{loading === "CONFIRMED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Confirmar</button>

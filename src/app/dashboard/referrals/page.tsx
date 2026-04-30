@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-white/40">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
   const business = await getFirstBusinessByOwnerId(user.id);
-  if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
   // Ensure affiliate record exists
   const affiliate = await getOrCreateAffiliate(business.id);
@@ -25,7 +25,7 @@ export default async function ReferralsPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Referidos</h1>
-          <p className="text-sm text-white/40">Invita negocios y gana descuentos en tu suscripción.</p>
+          <p className="text-sm text-muted-foreground">Invita negocios y gana descuentos en tu suscripción.</p>
         </div>
       </div>
       <ReferralsClient

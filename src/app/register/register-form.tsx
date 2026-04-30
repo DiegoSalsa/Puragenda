@@ -54,17 +54,17 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 shadow-2xl animate-fade-up">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">Crear cuenta</h2>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted-foreground">
           Registra tu negocio y empieza a recibir reservas hoy.
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
-          <label htmlFor="name" className="text-sm text-white/60">Nombre</label>
+          <label htmlFor="name" className="text-sm text-muted-foreground">Nombre</label>
           <input
             id="name"
             type="text"
@@ -72,12 +72,12 @@ export function RegisterForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm text-white/60">Email</label>
+          <label htmlFor="email" className="text-sm text-muted-foreground">Email</label>
           <input
             id="email"
             type="email"
@@ -85,12 +85,12 @@ export function RegisterForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-white/60">Contraseña</label>
+          <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
           <input
             id="password"
             type="password"
@@ -99,12 +99,12 @@ export function RegisterForm() {
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="confirmPassword" className="text-sm text-white/60">
+          <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
             Confirmar contraseña
           </label>
           <input
@@ -115,15 +115,15 @@ export function RegisterForm() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
         {/* Referral Code (Optional) */}
         <div className="space-y-1.5">
-          <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-white/60">
+          <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-            Código de Referido <span className="text-white/25">(opcional)</span>
+            Código de Referido <span className="text-muted-foreground/50">(opcional)</span>
           </label>
           <input
             id="referralCode"
@@ -132,7 +132,7 @@ export function RegisterForm() {
             value={referralCode}
             onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             maxLength={20}
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
           />
         </div>
 
@@ -155,7 +155,7 @@ export function RegisterForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-white/40">
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
         <Link href="/login" className="text-[#7C3AED] hover:underline">
           Iniciar sesión

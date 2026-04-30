@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 
 export default async function StaffPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-white/40">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
   const business = await getFirstBusinessByOwnerId(user.id);
-  if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
   const [staffMembers, limitInfo] = await Promise.all([
     prisma.staff.findMany({
@@ -36,7 +36,7 @@ export default async function StaffPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profesionales</h1>
-          <p className="text-sm text-white/40">Gestiona tu equipo y sus horarios individuales.</p>
+          <p className="text-sm text-muted-foreground">Gestiona tu equipo y sus horarios individuales.</p>
         </div>
       </div>
       <StaffList staff={serialized} limitInfo={limitInfo} />

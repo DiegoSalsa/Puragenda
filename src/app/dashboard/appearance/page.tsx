@@ -7,10 +7,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AppearancePage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-white/40">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
   const business = await getFirstBusinessByOwnerId(user.id);
-  if (!business) return <div className="py-20 text-center text-white/40">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
   return (
     <div className="space-y-8">
@@ -20,7 +20,7 @@ export default async function AppearancePage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Apariencia</h1>
-          <p className="text-sm text-white/40">Personaliza los colores y logo de tu widget de reservas.</p>
+          <p className="text-sm text-muted-foreground">Personaliza los colores y logo de tu widget de reservas.</p>
         </div>
       </div>
       <AppearanceForm

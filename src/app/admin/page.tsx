@@ -87,7 +87,7 @@ export default async function AdminPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Panel SuperAdmin</h1>
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-muted-foreground">
             Vista global de Puragenda · métricas en tiempo real
           </p>
         </div>
@@ -101,53 +101,53 @@ export default async function AdminPage() {
             className={`rounded-2xl border p-6 transition-all ${
               stat.gradient
                 ? "border-[#7C3AED]/20 bg-gradient-to-br from-[#7C3AED]/10 to-[#5B21B6]/5"
-                : "border-white/[0.06] bg-[#111]"
+                : "border-border bg-card"
             }`}
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-white/40">{stat.label}</p>
+              <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
               <stat.icon
                 className={`h-4 w-4 ${
-                  stat.gradient ? "text-[#7C3AED]" : "text-white/20"
+                  stat.gradient ? "text-[#7C3AED]" : "text-muted-foreground"
                 }`}
               />
             </div>
             <p className="mt-2 text-3xl font-bold">{stat.value}</p>
-            <p className="mt-1 text-xs text-white/30">{stat.sub}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{stat.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Revenue Breakdown */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="flex items-center gap-2 text-sm font-medium">
             <Sparkles className="h-4 w-4 text-[#7C3AED]" />
             Desglose de Revenue
           </h3>
           <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 p-3">
               <div>
                 <p className="text-sm font-medium">Individual</p>
-                <p className="text-xs text-white/40">{paidIndividual} × $14.990</p>
+                <p className="text-xs text-muted-foreground">{paidIndividual} × $14.990</p>
               </div>
               <p className="font-mono text-sm font-bold">
                 ${(paidIndividual * PRICING.INDIVIDUAL.monthly).toLocaleString("es-CL")}
               </p>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 p-3">
               <div>
                 <p className="text-sm font-medium">Plan Base</p>
-                <p className="text-xs text-white/40">{paidBasic} × $24.990</p>
+                <p className="text-xs text-muted-foreground">{paidBasic} × $24.990</p>
               </div>
               <p className="font-mono text-sm font-bold">
                 ${(paidBasic * PRICING.BASIC.monthly).toLocaleString("es-CL")}
               </p>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 p-3">
               <div>
                 <p className="text-sm font-medium">Plan Pro</p>
-                <p className="text-xs text-white/40">{paidPro} × $39.990</p>
+                <p className="text-xs text-muted-foreground">{paidPro} × $39.990</p>
               </div>
               <p className="font-mono text-sm font-bold">
                 ${(paidPro * PRICING.PRO.monthly).toLocaleString("es-CL")}
@@ -156,7 +156,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="flex items-center gap-2 text-sm font-medium">
             <Clock className="h-4 w-4 text-[#7C3AED]" />
             Trials Activos
@@ -172,11 +172,11 @@ export default async function AdminPage() {
                 return (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3"
+                    className="flex items-center justify-between rounded-xl border border-border bg-muted/50 p-3"
                   >
                     <div>
                       <p className="text-sm font-medium">{s.business.name}</p>
-                      <p className="text-xs text-white/40">/{s.business.slug}</p>
+                      <p className="text-xs text-muted-foreground">/{s.business.slug}</p>
                     </div>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -192,7 +192,7 @@ export default async function AdminPage() {
               })}
             {subscriptions.filter((s) => s.isTrial && s.status === "TRIALING")
               .length === 0 && (
-              <p className="py-4 text-center text-sm text-white/30">
+              <p className="py-4 text-center text-sm text-muted-foreground">
                 No hay trials activos
               </p>
             )}
@@ -201,15 +201,15 @@ export default async function AdminPage() {
       </div>
 
       {/* All Businesses Table */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#111]">
-        <div className="border-b border-white/[0.06] p-6">
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="border-b border-border p-6">
           <h2 className="text-lg font-semibold">Todos los Negocios</h2>
         </div>
         <div className="p-6">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-left text-xs uppercase tracking-wider text-white/30">
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="pb-3 pr-4">Negocio</th>
                   <th className="pb-3 pr-4">Slug</th>
                   <th className="pb-3 pr-4">Plan</th>
@@ -227,7 +227,7 @@ export default async function AdminPage() {
                     <td className="py-3.5 pr-4 font-medium">
                       {sub.business.name}
                     </td>
-                    <td className="py-3.5 pr-4 font-mono text-xs text-white/40">
+                    <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground">
                       /{sub.business.slug}
                     </td>
                     <td className="py-3.5 pr-4">
@@ -235,7 +235,7 @@ export default async function AdminPage() {
                         className={`inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-medium ${
                           sub.plan === "PRO"
                             ? "border border-[#7C3AED]/20 bg-[#7C3AED]/10 text-[#A78BFA]"
-                            : "border border-white/10 bg-white/[0.03] text-white/50"
+                            : "border border-border bg-muted text-muted-foreground"
                         }`}
                       >
                         {sub.plan}
@@ -250,7 +250,7 @@ export default async function AdminPage() {
                             ? "border border-amber-500/20 bg-amber-500/10 text-amber-400"
                             : sub.status === "CANCELLED"
                             ? "border border-red-500/20 bg-red-500/10 text-red-400"
-                            : "border border-white/10 bg-white/[0.03] text-white/50"
+                            : "border border-border bg-muted text-muted-foreground"
                         }`}
                       >
                         {sub.status === "ACTIVE" && <CheckCircle2 className="h-3 w-3" />}
@@ -259,10 +259,10 @@ export default async function AdminPage() {
                         {sub.status}
                       </span>
                     </td>
-                    <td className="py-3.5 pr-4 text-white/40">
+                    <td className="py-3.5 pr-4 text-muted-foreground">
                       {sub.isTrial ? "Sí" : "No"}
                     </td>
-                    <td className="py-3.5 text-white/40">
+                    <td className="py-3.5 text-muted-foreground">
                       {format(new Date(sub.business.createdAt), "dd/MM/yy", {
                         locale: es,
                       })}

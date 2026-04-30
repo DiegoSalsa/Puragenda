@@ -128,14 +128,14 @@ function BillingToggle({
 }) {
   return (
     <div className="flex items-center justify-center gap-1">
-      <div className="flex items-center rounded-full border border-white/[0.08] bg-white/[0.03] p-1">
+      <div className="flex items-center rounded-full border border-border bg-muted p-1">
         <button
           type="button"
           onClick={() => onChange("monthly")}
           className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 ${
             cycle === "monthly"
               ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25"
-              : "text-white/50 hover:text-white/80"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Mensual
@@ -146,7 +146,7 @@ function BillingToggle({
           className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 ${
             cycle === "annual"
               ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25"
-              : "text-white/50 hover:text-white/80"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Anual
@@ -233,7 +233,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               className={`relative rounded-2xl border p-6 sm:p-8 transition-all duration-300 ${
                 plan.highlighted
                   ? "border-[#7C3AED]/30 bg-gradient-to-b from-[#7C3AED]/5 to-transparent shadow-2xl shadow-[#7C3AED]/10"
-                  : "border-white/[0.06] bg-[#111] dark:border-white/[0.06] dark:bg-[#111]"
+                  : "border-border bg-card"
               }`}
             >
               {/* Badges */}
@@ -251,7 +251,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               {/* Header */}
               <div className="space-y-3">
                 <h3 className="text-2xl font-bold">{plan.name}</h3>
-                <p className="text-sm text-white/45">{plan.description}</p>
+                <p className="text-sm text-muted-foreground">{plan.description}</p>
 
                 {/* Price display */}
                 <div className="space-y-1">
@@ -259,13 +259,13 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     <p className="text-4xl font-bold tracking-tight">
                       {formatCLP(totalPrice)}
                     </p>
-                    <span className="text-sm font-normal text-white/40">/mes</span>
+                    <span className="text-sm font-normal text-muted-foreground">/mes</span>
                   </div>
 
                   {/* Annual info line */}
                   {cycle === "annual" && (
                     <div className="space-y-0.5 animate-fade-in">
-                      <p className="text-xs text-white/30 line-through">
+                      <p className="text-xs text-muted-foreground line-through">
                         {formatCLP(monthlyFull + getExtraCost(plan.key) * extras[plan.key])}/mes
                       </p>
                       <p className="text-xs text-emerald-400 font-medium">
@@ -285,7 +285,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               {/* Features */}
               <ul className="mt-6 space-y-3">
                 {plan.items.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-white/60">
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
                     {item}
                   </li>
@@ -301,11 +301,11 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
               {/* Extra Staff Selector */}
               {canAddExtras(plan.key) && (
-                <div className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <div className="mt-6 rounded-xl border border-border bg-muted/50 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-[#7C3AED]" />
-                      <span className="text-sm font-medium text-white/70">
+                      <span className="text-sm font-medium text-muted-foreground">
                         Profesionales extra
                       </span>
                     </div>
@@ -314,7 +314,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                         type="button"
                         onClick={() => handleExtraChange(plan.key, -1)}
                         disabled={extras[plan.key] === 0}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/60 transition-all hover:border-[#7C3AED]/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground transition-all hover:border-[#7C3AED]/30 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                         aria-label="Quitar profesional extra"
                       >
                         <Minus className="h-3.5 w-3.5" />
@@ -326,7 +326,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                         type="button"
                         onClick={() => handleExtraChange(plan.key, 1)}
                         disabled={extras[plan.key] >= 20}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/60 transition-all hover:border-[#7C3AED]/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground transition-all hover:border-[#7C3AED]/30 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                         aria-label="Añadir profesional extra"
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -334,7 +334,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     </div>
                   </div>
                   {extras[plan.key] > 0 && (
-                    <p className="mt-2 text-xs text-white/35 animate-fade-in">
+                    <p className="mt-2 text-xs text-muted-foreground animate-fade-in">
                       +{formatCLP(
                         cycle === "annual"
                           ? Math.round((getExtraCost(plan.key) * ANNUAL_MULTIPLIER) / 12)
@@ -372,14 +372,14 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     {/* Secondary: Subscribe */}
                     {mode === "landing" ? (
                       <Link href="/register" className="block">
-                        <button className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/80 transition-all hover:border-white/20 hover:text-white">
+                        <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
                           Suscribirse
                         </button>
                       </Link>
                     ) : (
                       <button
                         onClick={() => handlePlanAction("BASIC", false)}
-                        className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/80 transition-all hover:border-white/20 hover:text-white"
+                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground"
                       >
                         Suscribirse
                       </button>
@@ -391,14 +391,14 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   <>
                     {mode === "landing" ? (
                       <Link href="/register" className="block">
-                        <button className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/80 transition-all hover:border-white/20 hover:text-white">
+                        <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
                           Suscribirse
                         </button>
                       </Link>
                     ) : (
                       <button
                         onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                        className="w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/80 transition-all hover:border-white/20 hover:text-white"
+                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground"
                       >
                         Suscribirse
                       </button>

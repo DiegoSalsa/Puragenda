@@ -40,17 +40,17 @@ export function LoginForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-6 shadow-2xl animate-fade-up">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">Iniciar sesión</h2>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted-foreground">
           Accede a tu panel para gestionar servicios y citas.
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm text-white/60">Email</label>
+          <label htmlFor="email" className="text-sm text-muted-foreground">Email</label>
           <input
             id="email"
             type="email"
@@ -58,12 +58,12 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-white/60">Contraseña</label>
+          <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
           <input
             id="password"
             type="password"
@@ -71,7 +71,7 @@ export function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
 
@@ -94,7 +94,7 @@ export function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-white/40">
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         ¿Aún no tienes cuenta?{" "}
         <Link href="/register" className="text-[#7C3AED] hover:underline">
           Crear cuenta

@@ -18,7 +18,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen">
       {/* SuperAdmin Sidebar — visually distinct from client dashboard */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-[#7C3AED]/10 bg-[#08080C]">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-[#7C3AED]/10 bg-card">
         {/* Brand — uses gradient border to distinguish from dashboard */}
         <div className="border-b border-[#7C3AED]/10 p-6">
           <Link href="/admin" className="flex items-center gap-2.5">
@@ -45,12 +45,12 @@ export default async function AdminLayout({
             Métricas Globales
           </Link>
 
-          <div className="my-4 border-t border-white/[0.04]" />
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/20">Accesos rápidos</p>
+          <div className="my-4 border-t border-border" />
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Accesos rápidos</p>
 
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-white/40 hover:bg-white/[0.03] hover:text-white/70"
+            className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <CalendarClock className="h-4 w-4" />
             Mi Negocio
@@ -65,7 +65,7 @@ export default async function AdminLayout({
               <p className="text-[10px] uppercase tracking-widest text-[#7C3AED]">SuperAdmin</p>
             </div>
             <p className="mt-1 text-sm font-medium">{user.name}</p>
-            <p className="text-[11px] text-white/30">{user.email}</p>
+            <p className="text-[11px] text-muted-foreground">{user.email}</p>
           </div>
           <div className="mt-3">
             <LogoutButton />
