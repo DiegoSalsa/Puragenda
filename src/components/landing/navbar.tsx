@@ -6,8 +6,10 @@ import { ArrowRight, CalendarClock, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
 const navLinks = [
+  { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#caracteristicas", label: "Características" },
   { href: "#precios", label: "Precios" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function Navbar() {
@@ -17,14 +19,12 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/25">
-            <CalendarClock className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">
-            Pura<span className="text-[#7C3AED]">genda</span>
-          </span>
-        </Link>
+        <div className="flex flex-1 items-center justify-start">
+          <Link href="/" className="flex items-center">
+            <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2] md:scale-[2.5] origin-left dark:hidden" />
+            <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2] md:scale-[2.5] origin-left dark:block" />
+          </Link>
+        </div>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
@@ -40,7 +40,7 @@ export function Navbar() {
         </nav>
 
         {/* Desktop actions */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden flex-1 items-center justify-end gap-3 md:flex">
           <ThemeToggle />
           <Link href="/login">
             <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
@@ -55,12 +55,14 @@ export function Navbar() {
         </div>
 
         {/* Mobile hamburger */}
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="rounded-lg p-2 text-muted-foreground hover:text-foreground md:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex flex-1 items-center justify-end md:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-2 text-muted-foreground hover:text-foreground"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}
@@ -69,9 +71,10 @@ export function Navbar() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-background shadow-2xl animate-slide-left">
             <div className="flex items-center justify-between border-b border-border p-6">
-              <span className="text-lg font-bold tracking-tight">
-                Pura<span className="text-[#7C3AED]">genda</span>
-              </span>
+              <div className="flex items-center">
+                <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2] origin-left dark:hidden" />
+                <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2] origin-left dark:block" />
+              </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
               </button>

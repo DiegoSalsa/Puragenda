@@ -8,13 +8,9 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/20">
-                <CalendarClock className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-base font-bold tracking-tight">
-                Pura<span className="text-[#7C3AED]">genda</span>
-              </span>
+            <Link href="/" className="flex items-center">
+              <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2] origin-left dark:hidden" />
+              <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2] origin-left dark:block" />
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
               Plataforma de agendamiento inteligente para negocios que trabajan por reserva.

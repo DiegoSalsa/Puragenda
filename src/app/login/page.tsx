@@ -18,13 +18,9 @@ export default async function LoginPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6">
-        <Link href="/" className="mx-auto flex w-fit items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/25">
-            <CalendarClock className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">
-            Pura<span className="text-[#7C3AED]">genda</span>
-          </span>
+        <Link href="/" className="mx-auto flex w-fit items-center">
+          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto scale-[2.5] origin-center dark:hidden" />
+          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto scale-[2.5] origin-center dark:block" />
         </Link>
 
         <LoginForm />

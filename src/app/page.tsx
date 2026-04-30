@@ -122,11 +122,6 @@ export default function HomePage() {
         {/* ─── Hero Section ─── */}
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
           <div className="animate-fade-up space-y-8 text-center">
-            <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
-              <Zap className="h-3.5 w-3.5 text-[#7C3AED]" />
-              SaaS de agendamiento para negocios locales
-            </div>
-
             <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
               Tu agenda inteligente,{" "}
               <span className="bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] bg-clip-text text-transparent">
@@ -171,7 +166,7 @@ export default function HomePage() {
           </div>
 
           {/* ─── Product Showcase ─── */}
-          <div className="mt-20 space-y-6">
+          <div id="como-funciona" className="mt-20 space-y-6">
             <div className="text-center">
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
                 Así se ve en acción
@@ -482,7 +477,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── FAQ ─── */}
-        <section className="mx-auto w-full max-w-3xl px-6 py-20">
+        <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-20">
           <div className="mb-12 text-center">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
               Preguntas frecuentes
