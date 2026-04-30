@@ -4,7 +4,7 @@ import {
   getAppointmentByIdAndBusiness,
   updateAppointmentStatus,
 } from "@/server/services/appointment.service";
-import { sendConfirmationEmail } from "@/server/email/send";
+import { sendConfirmationEmail, sendCancellationEmail } from "@/server/email/send";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 
@@ -68,6 +68,22 @@ export async function PATCH(
 
       if (fullAppointment) {
         sendConfirmationEmail(fullAppointment).catch(() => {});
+      }
+    }
+
+    // Send cancellation email when status changes to CANCELLED
+    if (status === "CANCELLED") {
+      const fullAppointment = await prisma.appointment.findUnique({
+        where: { id },
+        include: {
+          service: true,
+          staff: true,
+          business: { include: { owner: { select: { email: true, name: true } } } },
+        },
+      });
+
+      if (fullAppointment) {
+        sendCancellationEmail(fullAppointment).catch(() => {});
       }
     }
 

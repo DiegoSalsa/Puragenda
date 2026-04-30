@@ -8,6 +8,7 @@ import { Loader2, UserPlus, Gift } from "lucide-react";
 export function RegisterForm() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,6 +33,7 @@ export function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          businessName: businessName.trim(),
           email: email.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
@@ -71,6 +73,19 @@ export function RegisterForm() {
             placeholder="Tu nombre"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="businessName" className="text-sm text-muted-foreground">Nombre del Negocio</label>
+          <input
+            id="businessName"
+            type="text"
+            placeholder="Ej: Barbería El Corte"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
             required
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />

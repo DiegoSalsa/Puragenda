@@ -140,3 +140,146 @@ export function confirmedBookingClientEmail(data: BookingEmailData): { subject: 
     `),
   };
 }
+
+// ═══════════════════════════════════════════
+// WELCOME EMAIL
+// ═══════════════════════════════════════════
+
+interface WelcomeEmailData {
+  ownerName: string;
+  businessName: string;
+}
+
+/** Email to owner when they register their account */
+export function welcomeEmail(data: WelcomeEmailData): { subject: string; html: string } {
+  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return {
+    subject: "¡Bienvenido a Puragenda!",
+    html: layout("¡Bienvenido!", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.ownerName}! 🎉</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Tu negocio <strong style="color:${BRAND};">${data.businessName}</strong> ha sido creado exitosamente en Puragenda.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 12px;font-size:14px;color:#0f172a;font-weight:600;">Próximos pasos:</p>
+        <ol style="margin:0;padding:0 0 0 20px;font-size:13px;color:#64748b;line-height:1.8;">
+          <li>Configura tus <strong style="color:#0f172a;">servicios</strong> y precios</li>
+          <li>Agrega a tus <strong style="color:#0f172a;">profesionales</strong></li>
+          <li>Define tus <strong style="color:#0f172a;">horarios</strong> de atención</li>
+          <li>Comparte tu <strong style="color:#0f172a;">widget de reservas</strong> con tus clientes</li>
+        </ol>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}/dashboard" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Ir al Dashboard →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Necesitas ayuda? Responde a este email y te asistiremos.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// STAFF INVITE EMAIL
+// ═══════════════════════════════════════════
+
+interface StaffInviteEmailData {
+  staffName: string;
+  businessName: string;
+  email: string;
+  tempPassword: string;
+}
+
+/** Email to staff member when they are added to a business */
+export function staffInviteEmail(data: StaffInviteEmailData): { subject: string; html: string } {
+  const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return {
+    subject: `Te han invitado a ${data.businessName} — Puragenda`,
+    html: layout("Invitación", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.staffName}! 👋</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        <strong style="color:${BRAND};">${data.businessName}</strong> te ha agregado como profesional en Puragenda.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+        <p style="margin:0 0 12px;font-size:14px;color:#0f172a;font-weight:600;">Tus credenciales de acceso:</p>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0;font-size:13px;color:#64748b;">📧 Email:</td>
+            <td style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;">${data.email}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:13px;color:#64748b;">🔑 Contraseña temporal:</td>
+            <td style="padding:6px 0;font-size:15px;color:#0f172a;font-weight:700;font-family:monospace;letter-spacing:1px;">${data.tempPassword}</td>
+          </tr>
+        </table>
+      </div>
+      <div style="margin:16px 0;padding:14px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
+        <p style="margin:0;font-size:13px;color:#92400e;">
+          <strong>⚠️ Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.
+        </p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${loginUrl}/login" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Iniciar Sesión →
+        </a>
+      </div>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// CANCELLATION EMAIL
+// ═══════════════════════════════════════════
+
+/** Email to client when booking is CANCELLED */
+export function cancellationClientEmail(data: BookingEmailData): { subject: string; html: string } {
+  return {
+    subject: `Tu cita ha sido cancelada — ${data.businessName}`,
+    html: layout("Cita Cancelada", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Cita cancelada</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, lamentamos informarte que tu cita en <strong style="color:${BRAND};">${data.businessName}</strong> ha sido cancelada.
+      </p>
+      ${detailsTable(data)}
+      <div style="margin:20px 0;padding:16px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:13px;color:#991b1b;">
+          <strong>Estado: Cancelada</strong> — Si deseas reagendar, visita nuestro sitio web o contacta directamente a ${data.businessName}.
+        </p>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Disculpa las molestias. Esperamos verte pronto.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// FORGOT PASSWORD EMAIL
+// ═══════════════════════════════════════════
+
+interface ForgotPasswordEmailData {
+  resetLink: string;
+}
+
+/** Email with reset password link */
+export function forgotPasswordEmail(data: ForgotPasswordEmailData): { subject: string; html: string } {
+  return {
+    subject: "Restablecer tu contraseña — Puragenda",
+    html: layout("Restablecer Contraseña", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Restablecer contraseña</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Puragenda.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${data.resetLink}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Restablecer Contraseña →
+        </a>
+      </div>
+      <div style="margin:16px 0;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+        <p style="margin:0;font-size:12px;color:#64748b;">
+          Este enlace expira en <strong style="color:#0f172a;">1 hora</strong>. Si no solicitaste este cambio, puedes ignorar este email de forma segura.
+        </p>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+      <p style="margin:4px 0 0;font-size:11px;color:#94a3b8;word-break:break-all;text-align:center;">${data.resetLink}</p>
+    `),
+  };
+}

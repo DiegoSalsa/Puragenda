@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
       || request.headers.get("x-real-ip")
       || "unknown";
 
-    const { email, password, name, referralCode } = parsed.data;
-    const result = await registerUser({ email, password, name, ip, referralCode });
+    const { email, password, name, businessName, referralCode } = parsed.data;
+    const result = await registerUser({ email, password, name, businessName, ip, referralCode });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });

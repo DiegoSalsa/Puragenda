@@ -114,8 +114,12 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
 
   async function handleCreate() {
     if (!name.trim()) return;
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setCreateError("Debes ingresar un email válido");
+      return;
+    }
     setCreating(true); setCreateError("");
-    const result = await createStaffAction({ name: name.trim(), email: email.trim() || undefined });
+    const result = await createStaffAction({ name: name.trim(), email: email.trim() });
     if (result.error) { setCreateError(result.error); setCreating(false); return; }
     setName(""); setEmail(""); setShowForm(false); setCreating(false); setCreateError("");
     router.refresh();
@@ -193,12 +197,12 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
           <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-5 space-y-3">
             <p className="text-sm font-medium">Nuevo profesional</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (opcional)" className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email del profesional" type="email" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
             </div>
             {createError && <p className="text-sm text-red-400">{createError}</p>}
             <div className="flex gap-2">
-              <button onClick={handleCreate} disabled={creating || !name.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+              <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
               </button>
               <button onClick={() => { setShowForm(false); setCreateError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>

@@ -4,6 +4,10 @@ import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { SALT_ROUNDS } from "@/core/constants";
+import { sendStaffInviteEmail } from "@/server/email/send";
 
 // ─── Appointment Status ───
 export async function updateAppointmentStatusAction(appointmentId: string, status: "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW") {
@@ -53,11 +57,17 @@ export async function getStaffLimitInfo(businessId: string) {
   return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
 }
 
-export async function createStaffAction(data: { name: string; email?: string }) {
+export async function createStaffAction(data: { name: string; email: string }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getFirstBusinessByOwnerId(user.id);
   if (!business) return { error: "No tienes un negocio" };
+
+  // Validate email
+  const email = data.email.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: "Debes proporcionar un email válido" };
+  }
 
   // Enforce staff limit
   const limitInfo = await getStaffLimitInfo(business.id);
@@ -66,9 +76,45 @@ export async function createStaffAction(data: { name: string; email?: string }) 
     return { error: `Has alcanzado el límite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para añadir más.` };
   }
 
+  // Check if user with this email already exists
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return { error: "Ya existe un usuario con ese email. Usa otro email." };
+  }
+
   try {
-    await prisma.staff.create({ data: { name: data.name, email: data.email || null, businessId: business.id, isActive: true } });
-  } catch { return { error: "Error al crear. ¿Email duplicado?" }; }
+    // Generate secure random password
+    const tempPassword = crypto.randomBytes(5).toString("hex"); // 10 char hex string
+    const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
+
+    // Create User + Staff in a transaction
+    await prisma.$transaction(async (tx) => {
+      const staffUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name: data.name.trim(),
+          role: "STAFF",
+        },
+      });
+
+      await tx.staff.create({
+        data: {
+          name: data.name.trim(),
+          email,
+          businessId: business.id,
+          userId: staffUser.id,
+          isActive: true,
+        },
+      });
+    });
+
+    // Send invite email with temporary password (fire and forget)
+    sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword).catch(() => {});
+  } catch {
+    return { error: "Error al crear. ¿Email duplicado?" };
+  }
+
   revalidatePath("/dashboard/staff");
   return { success: true };
 }
@@ -172,5 +218,27 @@ export async function deleteStaffAction(staffId: string) {
   ]);
 
   revalidatePath("/dashboard/staff");
+  return { success: true };
+}
+
+// ─── Business Name ───
+export async function updateBusinessNameAction(name: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getFirstBusinessByOwnerId(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 100) {
+    return { error: "El nombre debe tener entre 2 y 100 caracteres" };
+  }
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { name: trimmed },
+  });
+
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard");
   return { success: true };
 }

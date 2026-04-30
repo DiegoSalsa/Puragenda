@@ -73,6 +73,11 @@ export function LoginForm() {
             required
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
+          <div className="flex justify-end pt-1">
+            <Link href="/auth/forgot-password" className="text-xs text-[#7C3AED] hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
         </div>
 
         {error && (

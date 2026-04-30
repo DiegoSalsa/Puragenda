@@ -6,6 +6,7 @@ import { addDays } from "date-fns";
 import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode, incrementPaidReferrals } from "@/server/services/affiliate.service";
+import { sendWelcomeEmail } from "@/server/email/send";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -60,6 +61,7 @@ export async function registerUser(data: {
   email: string;
   password: string;
   name: string;
+  businessName: string;
   ip?: string | null;
   referralCode?: string | null;
 }) {
@@ -88,8 +90,8 @@ export async function registerUser(data: {
       select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, createdAt: true },
     });
 
-    const businessName = `${data.name} Negocio`;
-    const baseSlug = toSlug(data.name);
+    const businessName = data.businessName;
+    const baseSlug = toSlug(data.businessName);
     const slug = await generateUniqueBusinessSlug(baseSlug, tx);
 
     const business = await tx.business.create({
@@ -134,6 +136,9 @@ export async function registerUser(data: {
       await incrementPaidReferrals(created.business.id);
     }
   }
+
+  // Send welcome email (fire and forget)
+  sendWelcomeEmail(created.user.email, created.user.name, created.business.name).catch(() => {});
 
   return { success: true as const, user: created.user, business: created.business };
 }

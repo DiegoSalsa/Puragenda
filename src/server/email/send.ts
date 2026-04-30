@@ -4,6 +4,10 @@ import {
   newBookingStaffEmail,
   newBookingClientEmail,
   confirmedBookingClientEmail,
+  welcomeEmail,
+  staffInviteEmail,
+  cancellationClientEmail,
+  forgotPasswordEmail,
 } from "./templates";
 
 // ═══════════════════════════════════════════
@@ -25,7 +29,7 @@ interface AppointmentWithRelations {
 }
 
 // ═══════════════════════════════════════════
-// SEND FUNCTIONS
+// BOOKING NOTIFICATIONS
 // ═══════════════════════════════════════════
 
 /**
@@ -120,5 +124,115 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     console.log(`[Email] Confirmation sent to ${appointment.customerEmail}`);
   } catch (err) {
     console.error("[Email] Error sending confirmation:", err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// CANCELLATION EMAIL
+// ═══════════════════════════════════════════
+
+/**
+ * Send cancellation email to the customer when appointment status changes to CANCELLED.
+ */
+export async function sendCancellationEmail(appointment: AppointmentWithRelations) {
+  const data = {
+    customerName: appointment.customerName,
+    customerEmail: appointment.customerEmail,
+    customerPhone: appointment.customerPhone,
+    serviceName: appointment.service.name,
+    staffName: appointment.staff?.name || "Sin asignar",
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    businessName: appointment.business.name,
+  };
+
+  const { subject, html } = cancellationClientEmail(data);
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: appointment.customerEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Cancellation sent to ${appointment.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending cancellation:", err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// WELCOME EMAIL
+// ═══════════════════════════════════════════
+
+/**
+ * Send welcome email to owner after registration.
+ */
+export async function sendWelcomeEmail(ownerEmail: string, ownerName: string, businessName: string) {
+  const { subject, html } = welcomeEmail({ ownerName, businessName });
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: ownerEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Welcome sent to ${ownerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending welcome:", err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// STAFF INVITE EMAIL
+// ═══════════════════════════════════════════
+
+/**
+ * Send invite email to staff with temporary credentials.
+ */
+export async function sendStaffInviteEmail(
+  staffEmail: string,
+  staffName: string,
+  businessName: string,
+  tempPassword: string
+) {
+  const { subject, html } = staffInviteEmail({ staffName, businessName, email: staffEmail, tempPassword });
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: staffEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Staff invite sent to ${staffEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending staff invite:", err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// FORGOT PASSWORD EMAIL
+// ═══════════════════════════════════════════
+
+/**
+ * Send forgot password email with reset link.
+ */
+export async function sendForgotPasswordEmail(email: string, token: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const resetLink = `${appUrl}/auth/new-password?token=${token}`;
+  const { subject, html } = forgotPasswordEmail({ resetLink });
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: email,
+      subject,
+      html,
+    });
+    console.log(`[Email] Forgot password sent to ${email}`);
+  } catch (err) {
+    console.error("[Email] Error sending forgot password:", err);
   }
 }

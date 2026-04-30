@@ -19,6 +19,12 @@ export const registerSchema = z.object({
     .max(100)
     .trim(),
 
+  businessName: z
+    .string({ message: "El nombre del negocio es obligatorio" })
+    .min(2, "El nombre del negocio debe tener al menos 2 caracteres")
+    .max(100, "El nombre del negocio no debe exceder 100 caracteres")
+    .trim(),
+
   referralCode: z
     .string()
     .max(20)
