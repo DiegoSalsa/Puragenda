@@ -18,6 +18,7 @@ import {
 import { PricingCards } from "@/components/pricing-cards";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { WordCarousel } from "@/components/landing/word-carousel";
 
 // ═══════════════════════════════════════════
 // DATA
@@ -124,9 +125,7 @@ export default function HomePage() {
           <div className="animate-fade-up space-y-8 text-center">
             <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
               Tu agenda inteligente,{" "}
-              <span className="bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] bg-clip-text text-transparent">
-                integrada en tu web
-              </span>
+              <WordCarousel />
             </h1>
 
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
