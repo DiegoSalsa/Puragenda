@@ -75,6 +75,23 @@ export async function createAppointment(data: {
     };
   }
 
+  // Check collision with schedule blocks (breaks)
+  if (data.staffId) {
+    const blockCollision = await prisma.scheduleBlock.findFirst({
+      where: {
+        staffId: data.staffId,
+        startTime: { lt: data.endTime },
+        endTime: { gt: data.startTime },
+      },
+    });
+    if (blockCollision) {
+      return {
+        success: false as const,
+        error: "El profesional tiene un bloqueo de horario en ese rango. Por favor selecciona otro horario.",
+      };
+    }
+  }
+
   const appointment = await prisma.appointment.create({
     data: {
       customerName: data.customerName,
@@ -119,6 +136,7 @@ export async function getAppointments(
 /**
  * Get blocked time slots for a specific date and business.
  * Returns only time ranges (no customer data) for the widget.
+ * Includes BOTH existing appointments AND manual schedule blocks (breaks).
  */
 export async function getBlockedSlots(
   businessId: string,
@@ -126,7 +144,8 @@ export async function getBlockedSlots(
   dateEnd: Date,
   staffId?: string
 ) {
-  return prisma.appointment.findMany({
+  // 1) Blocked by existing appointments
+  const appointments = await prisma.appointment.findMany({
     where: {
       businessId,
       status: { not: "CANCELLED" },
@@ -134,12 +153,27 @@ export async function getBlockedSlots(
       startTime: { gte: dateStart },
       endTime: { lte: dateEnd },
     },
-    select: {
-      startTime: true,
-      endTime: true,
-    },
+    select: { startTime: true, endTime: true },
     orderBy: { startTime: "asc" },
   });
+
+  // 2) Blocked by manual schedule blocks (breaks, colación, etc.)
+  const scheduleBlocks = staffId
+    ? await prisma.scheduleBlock.findMany({
+        where: {
+          staffId,
+          startTime: { lt: dateEnd },
+          endTime: { gt: dateStart },
+        },
+        select: { startTime: true, endTime: true },
+        orderBy: { startTime: "asc" },
+      })
+    : [];
+
+  // Merge both lists
+  return [...appointments, ...scheduleBlocks].sort(
+    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+  );
 }
 
 /**

@@ -20,6 +20,11 @@ export default async function StaffPage() {
       include: {
         schedule: { orderBy: { dayOfWeek: "asc" } },
         services: { select: { id: true } },
+        scheduleBlocks: {
+          where: { startTime: { gte: new Date() } },
+          orderBy: { startTime: "asc" },
+          take: 20,
+        },
       },
       orderBy: { createdAt: "asc" },
     }),
@@ -35,6 +40,12 @@ export default async function StaffPage() {
     id: s.id, name: s.name, email: s.email, isActive: s.isActive,
     schedule: s.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking })),
     serviceIds: s.services.map((sv) => sv.id),
+    blocks: s.scheduleBlocks.map((b) => ({
+      id: b.id,
+      startTime: b.startTime.toISOString(),
+      endTime: b.endTime.toISOString(),
+      reason: b.reason,
+    })),
   }));
 
   return (
@@ -52,4 +63,3 @@ export default async function StaffPage() {
     </div>
   );
 }
-

@@ -179,11 +179,12 @@ model Staff {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business      Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  appointments  Appointment[]
-  schedule      StaffSchedule[]
-  services      Service[]
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments   Appointment[]
+  schedule       StaffSchedule[]
+  scheduleBlocks ScheduleBlock[]
+  services       Service[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -201,6 +202,20 @@ model StaffSchedule {
 
   @@unique([staffId, dayOfWeek])
   @@index([staffId])
+}
+
+model ScheduleBlock {
+  id        String   @id @default(cuid())
+  staffId   String
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([staffId])
+  @@index([staffId, startTime, endTime])
 }
 
 model Service {

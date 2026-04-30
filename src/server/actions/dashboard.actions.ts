@@ -362,3 +362,69 @@ export async function removeBusinessLogoAction() {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+// ─── Schedule Blocks (Breaks / Manual Blocks) ───
+
+export async function createScheduleBlockAction(data: {
+  staffId: string;
+  date: string;      // YYYY-MM-DD
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  reason?: string;
+}) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  // Validate staff belongs to business
+  const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
+  if (!staff) return { error: "Profesional no encontrado" };
+
+  // Build DateTimes from date + time
+  const start = new Date(`${data.date}T${data.startTime}:00`);
+  const end = new Date(`${data.date}T${data.endTime}:00`);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
+  if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
+
+  // Check for overlapping blocks
+  const overlap = await prisma.scheduleBlock.findFirst({
+    where: {
+      staffId: data.staffId,
+      startTime: { lt: end },
+      endTime: { gt: start },
+    },
+  });
+  if (overlap) return { error: "Ya existe un bloqueo en ese rango horario" };
+
+  await prisma.scheduleBlock.create({
+    data: {
+      staffId: data.staffId,
+      startTime: start,
+      endTime: end,
+      reason: data.reason?.trim() || null,
+    },
+  });
+
+  revalidatePath("/dashboard/staff");
+  return { success: true };
+}
+
+export async function deleteScheduleBlockAction(blockId: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  // Verify block belongs to a staff in this business
+  const block = await prisma.scheduleBlock.findUnique({
+    where: { id: blockId },
+    include: { staff: { select: { businessId: true } } },
+  });
+  if (!block || block.staff.businessId !== business.id) return { error: "Bloqueo no encontrado" };
+
+  await prisma.scheduleBlock.delete({ where: { id: blockId } });
+  revalidatePath("/dashboard/staff");
+  return { success: true };
+}

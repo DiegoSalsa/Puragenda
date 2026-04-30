@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2 } from "lucide-react";
-import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction } from "@/server/actions/dashboard.actions";
+import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff } from "lucide-react";
+import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, createScheduleBlockAction, deleteScheduleBlockAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -12,7 +12,8 @@ const TIMES: string[] = [];
 for (let h = 6; h <= 23; h++) { TIMES.push(`${String(h).padStart(2, "0")}:00`); TIMES.push(`${String(h).padStart(2, "0")}:30`); }
 
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
-interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; serviceIds: string[]; }
+interface BlockEntry { id: string; startTime: string; endTime: string; reason: string | null; }
+interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; serviceIds: string[]; blocks?: BlockEntry[]; }
 interface LimitInfo { plan: string; currentCount: number; maxAllowed: number; canAdd: boolean; }
 interface ServiceOption { id: string; name: string; }
 
@@ -118,6 +119,16 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
     return map;
   });
   const [savingServices, setSavingServices] = useState<string | null>(null);
+
+  // Block form state
+  const [blockStaffId, setBlockStaffId] = useState<string | null>(null);
+  const [blockDate, setBlockDate] = useState("");
+  const [blockStart, setBlockStart] = useState("13:00");
+  const [blockEnd, setBlockEnd] = useState("14:00");
+  const [blockReason, setBlockReason] = useState("");
+  const [savingBlock, setSavingBlock] = useState(false);
+  const [blockError, setBlockError] = useState("");
+  const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
 
   const atLimit = !limitInfo.canAdd;
 
@@ -407,6 +418,103 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                       {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Guardar horario
                     </button>
+                  </div>
+
+                  {/* ── Section: Schedule Blocks ── */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> Bloqueos de Agenda
+                    </p>
+                    <p className="text-xs text-muted-foreground">Bloquea horarios para descansos, colación u otros motivos. Estos horarios no estarán disponibles para reservas.</p>
+
+                    {/* Existing blocks */}
+                    {(s.blocks && s.blocks.length > 0) && (
+                      <div className="space-y-1.5">
+                        {s.blocks.map((block) => {
+                          const bStart = new Date(block.startTime);
+                          const bEnd = new Date(block.endTime);
+                          const dateStr = bStart.toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" });
+                          const timeStr = `${bStart.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} - ${bEnd.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
+                          return (
+                            <div key={block.id} className="flex items-center justify-between rounded-lg border border-red-500/10 bg-red-500/5 px-3 py-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <CalendarOff className="h-3.5 w-3.5 text-red-400" />
+                                <span className="text-foreground font-medium">{dateStr}</span>
+                                <span className="text-muted-foreground">{timeStr}</span>
+                                {block.reason && <span className="text-xs text-red-400/80">({block.reason})</span>}
+                              </div>
+                              <button
+                                onClick={async () => { setDeletingBlockId(block.id); await deleteScheduleBlockAction(block.id); setDeletingBlockId(null); router.refresh(); }}
+                                disabled={deletingBlockId === block.id}
+                                className="rounded p-1 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                title="Eliminar bloqueo"
+                              >
+                                {deletingBlockId === block.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add block form */}
+                    {blockStaffId === s.id ? (
+                      <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-xs text-muted-foreground mb-1">Fecha</label>
+                            <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)}
+                              min={new Date().toISOString().split("T")[0]}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none" />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-muted-foreground mb-1">Motivo (opcional)</label>
+                            <input type="text" value={blockReason} onChange={(e) => setBlockReason(e.target.value)}
+                              placeholder="Ej: Colación, Médico..."
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/50" />
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-xs text-muted-foreground mb-1">Hora inicio</label>
+                            <select value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-muted-foreground mb-1">Hora fin</label>
+                            <select value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        {blockError && <p className="text-xs text-red-400">{blockError}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              if (!blockDate) { setBlockError("Selecciona una fecha"); return; }
+                              setSavingBlock(true); setBlockError("");
+                              const res = await createScheduleBlockAction({ staffId: s.id, date: blockDate, startTime: blockStart, endTime: blockEnd, reason: blockReason || undefined });
+                              if (res.error) { setBlockError(res.error); } else { setBlockStaffId(null); setBlockDate(""); setBlockReason(""); router.refresh(); }
+                              setSavingBlock(false);
+                            }}
+                            disabled={savingBlock}
+                            className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]"
+                          >
+                            {savingBlock ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+                            Crear bloqueo
+                          </button>
+                          <button onClick={() => { setBlockStaffId(null); setBlockError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setBlockStaffId(s.id); setBlockDate(""); setBlockReason(""); setBlockError(""); }}
+                        className="flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-[#7C3AED]/30 transition-all">
+                        <Plus className="h-4 w-4" /> Agregar bloqueo
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
