@@ -13,8 +13,14 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Register service worker (required for beforeinstallprompt)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
     // Already running as installed PWA — hide button
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
@@ -44,17 +50,26 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
+
+    // Mark ready after a short delay to allow beforeinstallprompt to fire
+    const timeout = setTimeout(() => setReady(true), 1500);
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
+      clearTimeout(timeout);
     };
   }, []);
 
   // Already installed as PWA → don't render
   if (isStandalone) return null;
 
+  // Not ready yet (waiting for beforeinstallprompt to potentially fire)
+  if (!ready && !deferredPrompt && !isIOS) return null;
+
   async function handleClick() {
     // CASE 1: Native install prompt available (Android Chrome, Edge, etc.)
+    // This triggers the actual "Add to Home Screen" prompt from the browser
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -63,14 +78,14 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
       return;
     }
 
-    // CASE 2: iOS → show instructions
+    // CASE 2: iOS → show instructions (only way on iOS/Safari)
     if (isIOS) {
       setShowIOSModal(true);
       return;
     }
 
-    // CASE 3: Desktop/Android without prompt (HTTP, or unsupported browser)
-    // → still show the iOS-style instructions as a generic guide
+    // CASE 3: Browser doesn't support install (Firefox, etc.)
+    // Show generic instructions
     setShowIOSModal(true);
   }
 
@@ -89,7 +104,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
         {variant === "nav" ? "Instalar" : "Instalar App"}
       </button>
 
-      {/* Instructions modal (iOS or fallback) */}
+      {/* Instructions modal (iOS or unsupported browsers) */}
       {showIOSModal && (
         <div
           className="fixed inset-0 flex items-end sm:items-center justify-center"
@@ -151,28 +166,21 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Para instalar Puragenda como aplicación:
+                    Tu navegador no soporta la instalación automática. Para instalar Puragenda:
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Abre el menú del navegador</p>
-                        <p className="text-muted-foreground mt-0.5">Los tres puntos (⋮) en la esquina superior derecha.</p>
+                        <p className="text-foreground font-medium">Abre en Google Chrome</p>
+                        <p className="text-muted-foreground mt-0.5">La instalación automática funciona en Chrome y Edge.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Selecciona &quot;Instalar aplicación&quot;</p>
-                        <p className="text-muted-foreground mt-0.5">O &quot;Agregar a la pantalla de inicio&quot;.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
-                      <div className="text-sm">
-                        <p className="text-foreground font-medium">Confirma la instalación</p>
-                        <p className="text-muted-foreground mt-0.5">¡La app se instalará automáticamente!</p>
+                        <p className="text-foreground font-medium">Presiona &quot;Instalar&quot; de nuevo</p>
+                        <p className="text-muted-foreground mt-0.5">Se descargará automáticamente.</p>
                       </div>
                     </div>
                   </div>

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
-import { InstallPWAButton } from "@/components/pwa/install-button";
 
 const navLinks = [
   { href: "#como-funciona", label: "Cómo funciona" },
@@ -45,7 +44,6 @@ export function Navbar() {
 
         {/* Desktop actions */}
         <div className="hidden flex-1 items-center justify-end gap-3 md:flex">
-          <InstallPWAButton variant="nav" />
           <ThemeToggle />
           <Link href="/login">
             <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
@@ -116,7 +114,6 @@ export function Navbar() {
             <div className="space-y-3 border-t border-border p-4">
               <div className="flex items-center gap-3 px-3">
                 <ThemeToggle />
-                <InstallPWAButton variant="nav" />
               </div>
               <Link href="/login" onClick={() => setMobileOpen(false)}>
                 <button className="w-full rounded-xl border border-border py-2.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground">
