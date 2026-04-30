@@ -1,4 +1,4 @@
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { getAppointments } from "@/server/services/appointment.service";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
@@ -14,8 +14,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión para acceder al dashboard</div>;
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
+
+  // Resolve staffId for role-based filtering
+  let userStaffId: string | undefined;
+  if (user.role === "STAFF") {
+    const staffRecord = await prisma.staff.findFirst({ where: { userId: user.id, businessId: business.id, isActive: true } });
+    userStaffId = staffRecord?.id;
+  }
 
   const params = await searchParams;
   const today = new Date();
@@ -29,7 +36,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const weekAppointments = await getAppointments(business.id, { from: weekStart, to: addDays(weekEnd, 1) });
+  const weekAppointments = await getAppointments(business.id, { from: weekStart, to: addDays(weekEnd, 1), staffId: userStaffId });
   const todayCount = weekAppointments.filter((a) => isSameDay(new Date(a.startTime), today)).length;
   const totalServices = await prisma.service.count({ where: { businessId: business.id } });
   const pendingCount = weekAppointments.filter((a) => a.status === "PENDING").length;

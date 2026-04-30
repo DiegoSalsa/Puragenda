@@ -1,5 +1,5 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { Key, Link2, Code2, Clock, Store } from "lucide-react";
 import { CopyButton } from "./copy-button";
@@ -11,11 +11,11 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
-  if (user.role !== "OWNER" && user.role !== "SUPERADMIN") {
-    return <div className="py-20 text-center text-muted-foreground">Solo el propietario puede acceder a esta sección</div>;
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return <div className="py-20 text-center text-muted-foreground">Solo el administrador puede acceder a esta sección</div>;
   }
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
   const hours = await getBusinessHours(business.id);

@@ -1,5 +1,5 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import {
   getServiceByIdAndBusiness,
   updateService,
@@ -17,7 +17,7 @@ export async function PUT(
     const user = await getApiSessionUser(request);
     if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
 
-    const business = await getFirstBusinessByOwnerId(user.id);
+    const business = await getBusinessForUser(user.id);
     if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
 
     const existing = await getServiceByIdAndBusiness(id, business.id);
@@ -60,7 +60,7 @@ export async function DELETE(
     const user = await getApiSessionUser(request);
     if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
 
-    const business = await getFirstBusinessByOwnerId(user.id);
+    const business = await getBusinessForUser(user.id);
     if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
 
     const existing = await getServiceByIdAndBusiness(id, business.id);

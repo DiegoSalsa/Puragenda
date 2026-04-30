@@ -11,8 +11,8 @@ datasource db {
 // ==========================================
 
 enum UserRole {
-  OWNER
-  MANAGER
+  ADMIN
+  RECEPTIONIST
   STAFF
   SUPERADMIN
 }
@@ -22,7 +22,7 @@ model User {
   email            String    @unique
   password         String
   name             String
-  role             UserRole  @default(OWNER)
+  role             UserRole  @default(ADMIN)
   isSuperAdmin     Boolean   @default(false)
   trialUsedAt      DateTime?
   registrationIp   String?

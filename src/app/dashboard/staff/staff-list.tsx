@@ -97,6 +97,7 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"ADMIN" | "RECEPTIONIST" | "STAFF">("STAFF");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -119,9 +120,9 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
       return;
     }
     setCreating(true); setCreateError("");
-    const result = await createStaffAction({ name: name.trim(), email: email.trim() });
+    const result = await createStaffAction({ name: name.trim(), email: email.trim(), role });
     if (result.error) { setCreateError(result.error); setCreating(false); return; }
-    setName(""); setEmail(""); setShowForm(false); setCreating(false); setCreateError("");
+    setName(""); setEmail(""); setRole("STAFF"); setShowForm(false); setCreating(false); setCreateError("");
     router.refresh();
   }
 
@@ -200,12 +201,24 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email del profesional" type="email" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
             </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1.5">Rol asignado</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "ADMIN" | "RECEPTIONIST" | "STAFF")}
+                className="w-full sm:w-auto rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground"
+              >
+                <option value="ADMIN">Admin — Acceso total</option>
+                <option value="RECEPTIONIST">Recepcionista — Gestiona agenda</option>
+                <option value="STAFF">Profesional — Solo sus citas</option>
+              </select>
+            </div>
             {createError && <p className="text-sm text-red-400">{createError}</p>}
             <div className="flex gap-2">
               <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
               </button>
-              <button onClick={() => { setShowForm(false); setCreateError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
             </div>
           </div>
         )}

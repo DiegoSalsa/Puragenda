@@ -1,5 +1,5 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { getAffiliateInfo, getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { Gift } from "lucide-react";
 import { ReferralsClient } from "./referrals-client";
@@ -10,7 +10,11 @@ export default async function ReferralsPage() {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return <div className="py-20 text-center text-muted-foreground">Solo el administrador puede acceder a esta sección</div>;
+  }
+
+  const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
   // Ensure affiliate record exists

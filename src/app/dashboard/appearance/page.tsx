@@ -1,5 +1,5 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { Palette } from "lucide-react";
 import { AppearanceForm } from "./appearance-form";
 
@@ -9,7 +9,7 @@ export default async function AppearancePage() {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
   return (

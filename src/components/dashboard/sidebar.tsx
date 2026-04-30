@@ -24,8 +24,8 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
   const visibleItems = navItems.filter((item) => {
     // STAFF: only sees their own agenda
     if (userRole === "STAFF" && item.href !== "/dashboard") return false;
-    // MANAGER: sees everything except settings (billing)
-    if (userRole === "MANAGER" && item.href === "/dashboard/settings") return false;
+    // RECEPTIONIST: sees everything except settings & referrals (billing/admin)
+    if (userRole === "RECEPTIONIST" && (item.href === "/dashboard/settings" || item.href === "/dashboard/referrals")) return false;
     return true;
   });
 

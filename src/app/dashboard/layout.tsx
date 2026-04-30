@@ -1,6 +1,6 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -14,7 +14,7 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
 
   return (
     <div className="flex min-h-screen">

@@ -2,7 +2,7 @@
 // Puragenda — Domain Entities
 // ═══════════════════════════════════════════
 
-export type UserRole = "OWNER" | "MANAGER" | "STAFF" | "SUPERADMIN";
+export type UserRole = "ADMIN" | "RECEPTIONIST" | "STAFF" | "SUPERADMIN";
 export type SubscriptionPlan = "INDIVIDUAL" | "BASIC" | "PRO";
 export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
 export type BillingCycle = "MONTHLY" | "ANNUAL";

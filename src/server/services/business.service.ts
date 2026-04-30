@@ -33,6 +33,22 @@ export async function getFirstBusinessByOwnerId(ownerId: string) {
 }
 
 /**
+ * Get the business for a user — either as owner OR as active staff member.
+ * This is the primary function to use in dashboard pages/actions.
+ */
+export async function getBusinessForUser(userId: string) {
+  return prisma.business.findFirst({
+    where: {
+      OR: [
+        { ownerId: userId },
+        { staff: { some: { userId, isActive: true } } },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
  * Get the first business with services by owner.
  */
 export async function getFirstBusinessWithServicesByOwnerId(ownerId: string) {

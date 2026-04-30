@@ -16,7 +16,7 @@ export const AUTH_COOKIE_NAME = "puragenda_session";
 export const SUPERADMIN_EMAILS = ["admin@purocode.cl", "diego@purocode.cl"];
 
 // Roles
-export const ROLES = { OWNER: "OWNER", STAFF: "STAFF", SUPERADMIN: "SUPERADMIN" } as const;
+export const ROLES = { ADMIN: "ADMIN", RECEPTIONIST: "RECEPTIONIST", STAFF: "STAFF", SUPERADMIN: "SUPERADMIN" } as const;
 
 // Plans
 export const PLANS = { INDIVIDUAL: "INDIVIDUAL", BASIC: "BASIC", PRO: "PRO" } as const;

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -13,7 +13,7 @@ import { sendStaffInviteEmail } from "@/server/email/send";
 export async function updateAppointmentStatusAction(appointmentId: string, status: "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW") {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   const apt = await prisma.appointment.findFirst({ where: { id: appointmentId, businessId: business.id } });
   if (!apt) return { error: "Cita no encontrada" };
@@ -26,7 +26,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
 export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   const ops = hours.map((h) =>
     prisma.businessHours.upsert({
@@ -57,16 +57,27 @@ export async function getStaffLimitInfo(businessId: string) {
   return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
 }
 
-export async function createStaffAction(data: { name: string; email: string }) {
+export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF" }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+
+  // Only ADMIN can create staff
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "No tienes permisos para agregar profesionales" };
+  }
 
   // Validate email
   const email = data.email.trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Debes proporcionar un email válido" };
+  }
+
+  // Validate role
+  const assignedRole = data.role || "STAFF";
+  if (!["ADMIN", "RECEPTIONIST", "STAFF"].includes(assignedRole)) {
+    return { error: "Rol inválido" };
   }
 
   // Enforce staff limit
@@ -94,7 +105,7 @@ export async function createStaffAction(data: { name: string; email: string }) {
           email,
           password: hashedPassword,
           name: data.name.trim(),
-          role: "STAFF",
+          role: assignedRole,
         },
       });
 
@@ -122,7 +133,7 @@ export async function createStaffAction(data: { name: string; email: string }) {
 export async function toggleStaffActiveAction(staffId: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Staff no encontrado" };
@@ -134,7 +145,7 @@ export async function toggleStaffActiveAction(staffId: string) {
 export async function saveStaffScheduleAction(staffId: string, schedule: { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean }[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Staff no encontrado" };
@@ -162,7 +173,7 @@ export async function saveAppearanceAction(data: {
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   await prisma.business.update({
     where: { id: business.id },
@@ -186,7 +197,7 @@ export async function saveAppearanceAction(data: {
 export async function updateMaxServicesAction(maxServices: number) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
 
   const clamped = Math.max(1, Math.min(10, Math.floor(maxServices)));
@@ -202,7 +213,7 @@ export async function updateMaxServicesAction(maxServices: number) {
 export async function deleteStaffAction(staffId: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
@@ -225,7 +236,7 @@ export async function deleteStaffAction(staffId: string) {
 export async function updateBusinessNameAction(name: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
 
   const trimmed = name.trim();

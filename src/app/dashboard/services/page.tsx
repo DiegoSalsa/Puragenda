@@ -1,5 +1,5 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId } from "@/server/services/service.service";
 import { ServicesClient } from "./services-client";
 
@@ -16,7 +16,7 @@ export default async function ServicesPage() {
     );
   }
 
-  const business = await getFirstBusinessByOwnerId(user.id);
+  const business = await getBusinessForUser(user.id);
 
   if (!business) {
     return (

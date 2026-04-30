@@ -1,5 +1,5 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
-import { getFirstBusinessByOwnerId } from "@/server/services/business.service";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId, createService } from "@/server/services/service.service";
 import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const business = await getFirstBusinessByOwnerId(user.id);
+    const business = await getBusinessForUser(user.id);
     if (!business) {
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const business = await getFirstBusinessByOwnerId(user.id);
+    const business = await getBusinessForUser(user.id);
     if (!business) {
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }

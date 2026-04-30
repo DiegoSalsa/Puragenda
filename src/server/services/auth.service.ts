@@ -82,7 +82,7 @@ export async function registerUser(data: {
         email: data.email,
         password: hashedPassword,
         name: data.name,
-        role: isSuperAdmin ? "SUPERADMIN" : "OWNER",
+        role: isSuperAdmin ? "SUPERADMIN" : "ADMIN",
         isSuperAdmin,
         registrationIp: ip,
         trialUsedAt: trialBlocked ? null : now,

@@ -80,7 +80,7 @@ async function main() {
   // ─── Biz 2: Estética Bella (BASIC, trial) ───
   console.log("🏢 Estética Bella (Trial Base)...");
   const u2 = await prisma.user.create({
-    data: { email: "vale@esteticabella.cl", password: pw, name: "Valentina López", role: "OWNER", registrationIp: "192.168.1.50", trialUsedAt: now },
+    data: { email: "vale@esteticabella.cl", password: pw, name: "Valentina López", role: "ADMIN", registrationIp: "192.168.1.50", trialUsedAt: now },
   });
   const biz2 = await prisma.business.create({
     data: { name: "Estética Bella", slug: "estetica-bella", apiKey: apiKey(), ownerId: u2.id, primaryColor: "#E91E8C", secondaryColor: "#C2185B", backgroundColor: "#0D0D0D", brandColor: "E91E8C" },
@@ -108,7 +108,7 @@ async function main() {
   // ─── Biz 3: Barbería (INDIVIDUAL) ───
   console.log("🏢 Barbería Santiago (Individual)...");
   const u3 = await prisma.user.create({
-    data: { email: "carlos@barberia.cl", password: pw, name: "Carlos Ruiz", role: "OWNER", registrationIp: "10.0.0.5", trialUsedAt: addDays(now, -60) },
+    data: { email: "carlos@barberia.cl", password: pw, name: "Carlos Ruiz", role: "ADMIN", registrationIp: "10.0.0.5", trialUsedAt: addDays(now, -60) },
   });
   const biz3 = await prisma.business.create({
     data: { name: "Barbería Santiago", slug: "barberia-stgo", apiKey: apiKey(), ownerId: u3.id, primaryColor: "#D97706", secondaryColor: "#92400E", backgroundColor: "#0A0A0A" },

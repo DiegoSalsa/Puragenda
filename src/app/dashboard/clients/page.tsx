@@ -2,13 +2,17 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { ClientsTable } from "./clients-table";
+import { getBusinessForUser } from "@/server/services/business.service";
 
 export default async function ClientsPage() {
   const user = await getCurrentSessionUser();
   if (!user) redirect("/login");
 
-  const business = await prisma.business.findFirst({
-    where: { ownerId: user.id },
+  const biz = await getBusinessForUser(user.id);
+  if (!biz) redirect("/dashboard/settings");
+
+  const business = await prisma.business.findUnique({
+    where: { id: biz.id },
     include: {
       subscription: { select: { plan: true } },
     },
