@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   CalendarClock,
@@ -15,10 +16,12 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { PricingCards } from "@/components/pricing-cards";
 import { Navbar } from "@/components/landing/navbar";
-import { Footer } from "@/components/landing/footer";
-import { WordCarousel } from "@/components/landing/word-carousel";
+import { HeroEmailCapture } from "@/components/landing/hero-email-capture";
+
+// Dynamic imports for below-the-fold components (better TTI)
+const PricingCards = dynamic(() => import("@/components/pricing-cards").then((m) => m.PricingCards), { ssr: true });
+const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
 
 // ═══════════════════════════════════════════
 // DATA
@@ -53,24 +56,24 @@ const bentoFeatures = [
 
 const features = [
   {
-    title: "Reservas 24/7 sin WhatsApp saturado",
-    description: "Tus clientes agendan solos desde tu web. Menos mensajes manuales, más tiempo para atender.",
+    title: "Reservas automáticas 24/7 sin WhatsApp saturado",
+    description: "Tus clientes agendan solos desde tu web a cualquier hora. Menos mensajes manuales, menos llamadas perdidas, más tiempo para atender y hacer crecer tu negocio.",
     icon: CalendarClock,
   },
   {
-    title: "Widget listo para insertar",
-    description: "Integramos la agenda en tu sitio con tu estilo visual. Tu cliente nunca siente que sale de tu marca.",
+    title: "Widget de reservas listo para insertar en tu web",
+    description: "Integramos la agenda de citas en tu sitio con tu estilo visual. Tu cliente nunca siente que sale de tu marca — todo ocurre en tu dominio.",
     icon: LayoutTemplate,
   },
   {
-    title: "Soporte directo de agencia",
-    description: "No hablas con bots ni tickets eternos. Te acompaña un equipo humano que conoce negocios locales.",
-    icon: Headset,
+    title: "Gestión multi-profesional con agendas independientes",
+    description: "Cada profesional tiene su propia agenda, horarios y servicios asignados. Sin conflictos, sin solapamientos, con detección automática de colisiones.",
+    icon: Users,
   },
   {
-    title: "Flujo pensado para servicios",
-    description: "Funciona para peluquerías, estética, consultas y negocios que trabajan por reserva.",
-    icon: Rocket,
+    title: "Soporte humano directo — sin bots ni tickets eternos",
+    description: "Te acompaña un equipo real que conoce negocios locales. Configuración asistida, soporte por WhatsApp y actualizaciones constantes.",
+    icon: Headset,
   },
 ];
 
@@ -78,29 +81,34 @@ const features = [
 
 const faqs = [
   {
-    question: "¿Cómo integro el widget en mi sitio web?",
+    question: "¿Cómo Puragenda ayuda a mi salón de belleza o centro de estética?",
     answer:
-      "Solo necesitas copiar un código iframe desde tu panel de configuración y pegarlo en tu HTML. El widget se adapta automáticamente al ancho de tu página. Puedes personalizar los colores pasando un parámetro en la URL.",
+      "Puragenda automatiza todo el proceso de reservas. Tus clientes agendan desde tu web las 24 horas, el sistema detecta colisiones de horario automáticamente, y tú gestionas todo desde un panel profesional. Menos llamadas, menos WhatsApp, más tiempo para atender.",
   },
   {
-    question: "¿Puedo personalizar los colores del widget?",
+    question: "¿Puedo usar Puragenda desde el celular?",
     answer:
-      "Sí. Puedes pasar ?color=FF69B4 (o cualquier código hex) en la URL del iframe para cambiar el color de acento. También puedes configurar un color por defecto desde el panel.",
+      "Sí. Puragenda funciona como una PWA (Progressive Web App) que puedes instalar directamente en tu celular. Funciona como una app nativa con acceso rápido desde tu pantalla de inicio, tanto en Android como en iPhone.",
   },
   {
-    question: "¿Hay límite de citas en el plan Free?",
+    question: "¿Qué pasa si mi cliente no asiste a su cita?",
     answer:
-      "El plan Free permite hasta 50 citas por mes y 1 profesional. Para volúmenes mayores o multi-staff, el Plan Pro es ilimitado.",
+      "Puedes marcar la cita como 'No Show' desde el dashboard. El sistema registra el historial de asistencia de cada cliente, permitiéndote tomar decisiones informadas sobre políticas de cancelación y prioridad de agenda.",
   },
   {
-    question: "¿Cómo funciona la detección de colisiones?",
+    question: "¿Es Puragenda una alternativa a AgendaPro?",
     answer:
-      "Antes de confirmar una cita, el sistema verifica que no exista otra cita que se solape con el mismo horario y profesional. Si detecta un conflicto, rechaza la reserva automáticamente.",
+      "Sí. Puragenda ofrece las mismas funcionalidades clave — reservas online, multi-profesional, widget embebible — con precios más accesibles, soporte directo humano y sin contratos de permanencia. Ideal para negocios que buscan una solución moderna y flexible.",
   },
   {
-    question: "¿Puedo conectar Stripe para cobrar?",
+    question: "¿Cómo integro el widget de reservas en mi sitio web?",
     answer:
-      "La estructura de suscripciones ya está preparada con campos para Stripe. En una próxima actualización solo será necesario activar el webhook para procesar pagos.",
+      "Solo necesitas copiar un código iframe desde tu panel de configuración y pegarlo en tu HTML. El widget se adapta automáticamente al ancho de tu página y puedes personalizar colores para que combine con tu marca.",
+  },
+  {
+    question: "¿Puragenda funciona para clínicas y consultas médicas?",
+    answer:
+      "Sí. El sistema está diseñado para cualquier negocio que trabaje con citas: clínicas, consultorios, terapias, coaching y más. Cada profesional tiene su propia agenda con horarios y servicios independientes.",
   },
 ];
 
@@ -163,11 +171,26 @@ export default function HomePage() {
     },
   };
 
+  // FAQPage JSON-LD for Google Rich Snippets
+  const jsonLdFaq = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
       {/* Background effects */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#7C3AED]/8 blur-[120px]" />
@@ -177,43 +200,30 @@ export default function HomePage() {
       <Navbar />
 
       <main>
-        {/* ─── Hero Section ─── */}
+        {/* ─── Hero Section (Above the Fold) ─── */}
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
           <div className="animate-fade-up space-y-8 text-center">
             <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
-              Tu agenda inteligente,{" "}
-              <WordCarousel />
+              Software de Reservas y Agenda Online para tu Negocio
             </h1>
 
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Convierte visitas en reservas confirmadas sin llamadas perdidas ni mensajes sueltos. 
+              Convierte visitas en reservas confirmadas sin llamadas perdidas. 
               Sistema de citas con detección de colisiones, widget marca blanca y panel de gestión completo.
+              La alternativa inteligente a AgendaPro.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/pricing">
-                <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/30 animate-pulse-glow">
-                  Empezar Gratis <ArrowRight className="h-4 w-4" />
-                </button>
-              </Link>
-              <Link href="/widget/purocode-demo">
-                <button className="flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
-                  Ver Demo en Vivo
-                </button>
-              </Link>
-            </div>
+            {/* Lead Capture Form */}
+            <HeroEmailCapture />
+            <p className="text-xs text-muted-foreground/60">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
 
-            {/* Industry chips */}
-            <div className="flex flex-wrap justify-center gap-2 pt-4">
+            <div className="flex flex-wrap justify-center gap-2 pt-2">
               {[
                 { icon: Scissors, label: "Peluquerías" },
                 { icon: Sparkles, label: "Centros de estética" },
                 { icon: Stethoscope, label: "Consultas y salud" },
               ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3.5 py-1.5 text-sm text-muted-foreground"
-                >
+                <div key={item.label} className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3.5 py-1.5 text-sm text-muted-foreground">
                   <item.icon className="h-3.5 w-3.5 text-[#7C3AED]" />
                   {item.label}
                 </div>
@@ -484,14 +494,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── Features ─── */}
+        {/* ─── Features / Beneficios ─── */}
         <section id="caracteristicas" className="mx-auto w-full max-w-6xl px-6 py-20">
           <div className="mb-12 text-center">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
-              Características
+              Beneficios para tu negocio
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Diseñado para vender mientras atiendes
+              Funcionalidades que aumentan tus reservas y reducen ausencias
             </h2>
           </div>
 
