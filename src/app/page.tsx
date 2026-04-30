@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { HeroEmailCapture } from "@/components/landing/hero-email-capture";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Dynamic imports for below-the-fold components (better TTI)
 const PricingCards = dynamic(() => import("@/components/pricing-cards").then((m) => m.PricingCards), { ssr: true });
@@ -428,7 +434,7 @@ export default function HomePage() {
                     <span className="text-green-400">10:00 - 11:00</span>
                     <span className="ml-auto text-muted-foreground">Confirmada</span>
                   </div>
-                  <div className="flex items-center gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5">
+            <div className="flex items-center gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
                     <span className="text-red-400 line-through">10:30 - 11:30</span>
                     <span className="ml-auto text-red-400/60">Bloqueada</span>
@@ -446,18 +452,18 @@ export default function HomePage() {
           {/* ─── Bento Grid ─── */}
           <div className="stagger-children mt-16 grid gap-3 md:grid-cols-4">
             {bentoFeatures.map((feature) => (
-              <div
+              <article
                 key={feature.title}
-                className={`group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-[#7C3AED]/20 hover:bg-card/80 ${feature.className}`}
+                className={`group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all hover:border-[#7C3AED]/30 ${feature.className}`}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED] transition-colors group-hover:bg-[#7C3AED]/15">
-                  <feature.icon className="h-5 w-5" />
+                <div className="relative z-10 flex h-full flex-col">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/50 border border-border shadow-sm text-foreground">
+                    <feature.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{feature.description}</p>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
-              </div>
+              </article>
             ))}
           </div>
         </section>
@@ -507,7 +513,7 @@ export default function HomePage() {
 
           <div className="stagger-children grid gap-4 md:grid-cols-2">
             {features.map((feature) => (
-              <div
+              <article
                 key={feature.title}
                 className="group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-[#7C3AED]/20"
               >
@@ -518,7 +524,7 @@ export default function HomePage() {
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
-              </div>
+              </article>
             ))}
           </div>
         </section>
@@ -554,20 +560,22 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-3">
-            {faqs.map((faq) => (
-              <details
-                key={faq.question}
-                className="group rounded-2xl border border-border bg-card transition-all open:border-[#7C3AED]/20 [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="flex cursor-pointer items-center justify-between p-5 text-sm font-medium transition-colors hover:text-white/90">
-                  {faq.question}
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
-                </summary>
-                <div className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground">
-                  {faq.answer}
-                </div>
-              </details>
-            ))}
+            <Accordion className="w-full space-y-3">
+              {faqs.map((faq, index) => (
+                <AccordionItem
+                  key={index}
+                  value={`item-${index}`}
+                  className="rounded-2xl border border-border bg-card px-5 transition-all hover:border-[#7C3AED]/20 data-[state=open]:border-[#7C3AED]/20"
+                >
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline hover:text-white/90">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </section>
 
