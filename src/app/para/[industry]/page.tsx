@@ -13,7 +13,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export const dynamicParams = false; // Solo permite las rutas pre-generadas
+export const dynamicParams = true; // Changed to true to allow ISR fallback on Vercel
 
 export function generateStaticParams() {
   return industriesData.map((ind) => ({
