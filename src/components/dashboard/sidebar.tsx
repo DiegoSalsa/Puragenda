@@ -32,9 +32,12 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
   return (
     <>
       <div className="border-b border-border p-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2.5] origin-left dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2.5] origin-left dark:block" />
+        <Link href="/" className="flex items-center gap-2.5">
+          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-12 w-auto -my-2 dark:hidden" />
+          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-12 w-auto -my-2 dark:block" />
+          <span className="text-xl font-bold tracking-tight">
+            Pura<span className="text-[#7C3AED]">genda</span>
+          </span>
         </Link>
         {onClose && (
           <button onClick={onClose} className="md:hidden rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
@@ -99,9 +102,12 @@ export function DashboardSidebar({
         <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
           <Menu className="h-5 w-5" />
         </button>
-        <div className="flex items-center">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-6 w-auto scale-[2.2] origin-left dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-6 w-auto scale-[2.2] origin-left dark:block" />
+        <div className="flex items-center gap-2.5">
+          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
+          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
+          <span className="text-lg font-bold tracking-tight">
+            Pura<span className="text-[#7C3AED]">genda</span>
+          </span>
         </div>
       </div>
       {/* Spacer for mobile header */}

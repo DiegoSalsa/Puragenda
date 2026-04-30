@@ -20,9 +20,12 @@ export function Navbar() {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <div className="flex flex-1 items-center justify-start">
-          <Link href="/" className="flex items-center">
-            <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2] md:scale-[2.5] origin-left dark:hidden" />
-            <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2] md:scale-[2.5] origin-left dark:block" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-12 w-auto -my-2 dark:hidden" />
+            <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-12 w-auto -my-2 dark:block" />
+            <span className="text-xl font-bold tracking-tight">
+              Pura<span className="text-[#7C3AED]">genda</span>
+            </span>
           </Link>
         </div>
 
@@ -71,9 +74,12 @@ export function Navbar() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col bg-background shadow-2xl animate-slide-left">
             <div className="flex items-center justify-between border-b border-border p-6">
-              <div className="flex items-center">
-                <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto scale-[2] origin-left dark:hidden" />
-                <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto scale-[2] origin-left dark:block" />
+              <div className="flex items-center gap-2.5">
+                <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
+                <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
+                <span className="text-lg font-bold tracking-tight">
+                  Pura<span className="text-[#7C3AED]">genda</span>
+                </span>
               </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
