@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Calendar, ExternalLink, Gift, LayoutDashboard, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, X } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
+import { InstallPWAButton } from "@/components/pwa/install-button";
 
 const navItems = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
@@ -78,6 +79,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
           <p className="text-xs text-muted-foreground">Sesión iniciada</p>
           <p className="mt-0.5 text-sm font-medium truncate text-foreground">{userName}</p>
         </div>
+        <div className="mt-3"><InstallPWAButton variant="sidebar" /></div>
         <div className="mt-3"><LogoutButton /></div>
       </div>
     </>

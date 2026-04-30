@@ -253,3 +253,25 @@ export async function updateBusinessNameAction(name: string) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+// ── Update Staff → Service assignments ──
+export async function updateStaffServicesAction(staffId: string, serviceIds: string[]) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
+  if (!staff) return { error: "Profesional no encontrado" };
+
+  await prisma.staff.update({
+    where: { id: staffId },
+    data: {
+      services: {
+        set: serviceIds.map((id) => ({ id })),
+      },
+    },
+  });
+
+  revalidatePath("/dashboard/staff");
+  return { success: true };
+}

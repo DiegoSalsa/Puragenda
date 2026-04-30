@@ -9,7 +9,7 @@ import { formatPrice, capitalize } from "@/lib/utils";
 interface Service { id: string; name: string; description: string | null; duration: number; price: number; }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
-interface StaffMember { id: string; name: string; schedule: StaffScheduleEntry[]; }
+interface StaffMember { id: string; name: string; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
 interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
@@ -129,6 +129,22 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   const hasMultipleStaff = staffMembers && staffMembers.length > 1;
 
+  // Filter staff who can perform the selected service(s)
+  const filteredStaff = useMemo(() => {
+    if (!staffMembers) return [];
+    const selectedServiceIds = isMultiService
+      ? selectedServices.map((s) => s.id)
+      : selectedService ? [selectedService.id] : [];
+    if (selectedServiceIds.length === 0) return staffMembers;
+    return staffMembers.filter((staff) => {
+      // Staff with no services assigned = available for all (backwards-compatible)
+      if (!staff.serviceIds || staff.serviceIds.length === 0) return true;
+      return selectedServiceIds.some((sid) => staff.serviceIds.includes(sid));
+    });
+  }, [staffMembers, selectedService, selectedServices, isMultiService]);
+
+  const hasMultipleFilteredStaff = filteredStaff.length > 1;
+
   const days = useMemo(() => buildDays(businessHours), [businessHours]);
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
@@ -169,8 +185,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       return;
     }
     setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
-    if (hasMultipleStaff) { setStep("staff"); } else {
-      if (staffMembers && staffMembers.length === 1) setSelectedStaff(staffMembers[0]);
+    if (hasMultipleFilteredStaff) { setStep("staff"); } else {
+      if (filteredStaff.length === 1) setSelectedStaff(filteredStaff[0]);
       setStep("datetime");
     }
   }
@@ -179,8 +195,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     if (selectedServices.length === 0) return;
     setSelectedService(selectedServices[0]);
     setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
-    if (hasMultipleStaff) { setStep("staff"); } else {
-      if (staffMembers && staffMembers.length === 1) setSelectedStaff(staffMembers[0]);
+    if (hasMultipleFilteredStaff) { setStep("staff"); } else {
+      if (filteredStaff.length === 1) setSelectedStaff(filteredStaff[0]);
       setStep("datetime");
     }
   }
@@ -214,8 +230,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setForm({ name: "", email: "", phone: "" }); setTouched({ name: false, email: false, phone: false }); setApiError(""); setBlockedSlots([]);
   }
 
-  const stepLabels = hasMultipleStaff ? ["Servicio", "Profesional", "Fecha y hora", "Tus datos"] : ["Servicio", "Fecha y hora", "Tus datos"];
-  const stepIdx = step === "service" ? 0 : step === "staff" ? 1 : step === "datetime" ? (hasMultipleStaff ? 2 : 1) : step === "details" ? (hasMultipleStaff ? 3 : 2) : stepLabels.length;
+  const stepLabels = hasMultipleFilteredStaff ? ["Servicio", "Profesional", "Fecha y hora", "Tus datos"] : ["Servicio", "Fecha y hora", "Tus datos"];
+  const stepIdx = step === "service" ? 0 : step === "staff" ? 1 : step === "datetime" ? (hasMultipleFilteredStaff ? 2 : 1) : step === "details" ? (hasMultipleFilteredStaff ? 3 : 2) : stepLabels.length;
 
   return (
     <div
@@ -306,7 +322,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
 
           {/* Step 1.5: Staff (only if multi-staff) */}
-          {step === "staff" && selectedService && staffMembers && (
+          {step === "staff" && selectedService && filteredStaff.length > 0 && (
             <div className="animate-fade-up space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
@@ -314,7 +330,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm text-white/40">Selecciona quién te atenderá.</p></div>
               <div className="grid gap-3">
-                {staffMembers.map((staff) => (
+                {filteredStaff.map((staff) => (
                   <button key={staff.id} type="button" onClick={() => { setSelectedStaff(staff); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
                     className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
@@ -337,13 +353,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "datetime" && selectedService && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep(hasMultipleStaff ? "staff" : "service")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep(hasMultipleFilteredStaff ? "staff" : "service")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
                 <div className="flex gap-2">
                   <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
                   {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border border-white/[0.06] text-white/50">{selectedStaff.name}</span>}
                 </div>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm text-white/40">Selecciona un día y luego una hora disponible.</p></div>
+              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm text-white/40">Selecciona un día y luego una hora disponible.</p></div>
               <div className="space-y-3">
                 <p className="text-sm font-medium text-white/60">Días disponibles</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -399,7 +415,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <button type="button" onClick={() => setStep("datetime")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs" style={{ background: `${pc}15`, color: pc }}>Paso final</span>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm text-white/40">Te enviaremos la confirmación.</p></div>
+              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm text-white/40">Te enviaremos la confirmación.</p></div>
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm space-y-2">
                 <div className="flex justify-between"><span className="text-white/40">Servicio</span><span className="font-medium">{selectedService.name}</span></div>
                 {selectedStaff && <div className="flex justify-between"><span className="text-white/40">Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}

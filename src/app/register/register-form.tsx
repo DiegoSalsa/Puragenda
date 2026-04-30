@@ -48,7 +48,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push("/pricing");
+      router.push("/dashboard");
       router.refresh();
     } finally {
       setLoading(false);

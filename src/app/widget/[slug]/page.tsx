@@ -23,7 +23,10 @@ export default async function WidgetPage({
       businessHours: { orderBy: { dayOfWeek: "asc" } },
       staff: {
         where: { isActive: true },
-        include: { schedule: { orderBy: { dayOfWeek: "asc" } } },
+        include: {
+          schedule: { orderBy: { dayOfWeek: "asc" } },
+          services: { select: { id: true } },
+        },
       },
     },
   });
@@ -73,6 +76,7 @@ export default async function WidgetPage({
       staffMembers={business.staff.map((s) => ({
         id: s.id,
         name: s.name,
+        serviceIds: s.services.map((sv) => sv.id),
         schedule: s.schedule.map((sc) => ({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
         })),

@@ -14,18 +14,27 @@ export default async function StaffPage() {
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
-  const [staffMembers, limitInfo] = await Promise.all([
+  const [staffMembers, limitInfo, allServices] = await Promise.all([
     prisma.staff.findMany({
       where: { businessId: business.id },
-      include: { schedule: { orderBy: { dayOfWeek: "asc" } } },
+      include: {
+        schedule: { orderBy: { dayOfWeek: "asc" } },
+        services: { select: { id: true } },
+      },
       orderBy: { createdAt: "asc" },
     }),
     getStaffLimitInfo(business.id),
+    prisma.service.findMany({
+      where: { businessId: business.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
   ]);
 
   const serialized = staffMembers.map((s) => ({
     id: s.id, name: s.name, email: s.email, isActive: s.isActive,
     schedule: s.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking })),
+    serviceIds: s.services.map((sv) => sv.id),
   }));
 
   return (
@@ -39,7 +48,8 @@ export default async function StaffPage() {
           <p className="text-sm text-muted-foreground">Gestiona tu equipo y sus horarios individuales.</p>
         </div>
       </div>
-      <StaffList staff={serialized} limitInfo={limitInfo} />
+      <StaffList staff={serialized} limitInfo={limitInfo} allServices={allServices} />
     </div>
   );
 }
+

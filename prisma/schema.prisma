@@ -183,6 +183,7 @@ model Staff {
   user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   appointments  Appointment[]
   schedule      StaffSchedule[]
+  services      Service[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -212,6 +213,7 @@ model Service {
 
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]
+  staff        Staff[]
 
   @@index([businessId])
 }

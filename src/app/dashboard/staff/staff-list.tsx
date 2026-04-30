@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert } from "lucide-react";
-import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction } from "@/server/actions/dashboard.actions";
+import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench } from "lucide-react";
+import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -12,8 +12,9 @@ const TIMES: string[] = [];
 for (let h = 6; h <= 23; h++) { TIMES.push(`${String(h).padStart(2, "0")}:00`); TIMES.push(`${String(h).padStart(2, "0")}:30`); }
 
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
-interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; }
+interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; serviceIds: string[]; }
 interface LimitInfo { plan: string; currentCount: number; maxAllowed: number; canAdd: boolean; }
+interface ServiceOption { id: string; name: string; }
 
 function defaultSchedule(): ScheduleEntry[] {
   return Array.from({ length: 7 }, (_, i) => ({ dayOfWeek: i, startTime: "09:00", endTime: "19:00", isWorking: i >= 1 && i <= 5 }));
@@ -51,12 +52,12 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
             Esta acción <span className="font-semibold text-red-400">no se puede deshacer</span>. Se eliminarán todos los horarios y se desvinculará de las citas existentes.
           </p>
           <p className="text-sm text-muted-foreground">
-            Para confirmar que deseas eliminar a <span className="font-semibold text-white">{staffName}</span>, escribe el siguiente código de seguridad:
+            Para confirmar que deseas eliminar a <span className="font-semibold text-foreground">{staffName}</span>, escribe el siguiente código de seguridad:
           </p>
           {/* Code display */}
           <div className="flex justify-center">
             <div className="rounded-xl border border-border bg-muted px-5 py-3">
-              <p className="text-center font-mono text-xl font-bold tracking-[0.3em] text-white">{code}</p>
+              <p className="text-center font-mono text-xl font-bold tracking-[0.3em] text-foreground">{code}</p>
             </div>
           </div>
           {/* Input */}
@@ -92,7 +93,7 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
 }
 
 // ─── Staff List ───
-export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMember[]; limitInfo: LimitInfo }) {
+export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: { staff: StaffMember[]; limitInfo: LimitInfo; allServices?: ServiceOption[] }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -110,6 +111,12 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [staffServices, setStaffServices] = useState<Record<string, string[]>>(() => {
+    const map: Record<string, string[]> = {};
+    for (const s of initialStaff) { map[s.id] = s.serviceIds || []; }
+    return map;
+  });
+  const [savingServices, setSavingServices] = useState<string | null>(null);
 
   const atLimit = !limitInfo.canAdd;
 
@@ -155,13 +162,26 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
     router.refresh();
   }
 
+  function toggleServiceForStaff(staffId: string, serviceId: string) {
+    setStaffServices((prev) => {
+      const current = prev[staffId] || [];
+      return { ...prev, [staffId]: current.includes(serviceId) ? current.filter((id) => id !== serviceId) : [...current, serviceId] };
+    });
+  }
+
+  async function handleSaveServices(staffId: string) {
+    setSavingServices(staffId);
+    await updateStaffServicesAction(staffId, staffServices[staffId] || []);
+    setSavingServices(null);
+  }
+
   return (
     <>
       <div className="space-y-4">
         {/* Limit indicator */}
         <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
           <p className="text-sm text-muted-foreground">
-            Profesionales: <span className="font-bold text-white">{limitInfo.currentCount}</span>
+            Profesionales: <span className="font-bold text-foreground">{limitInfo.currentCount}</span>
             <span className="text-muted-foreground/60"> / {limitInfo.maxAllowed}</span>
             <span className="ml-2 text-xs text-muted-foreground">Plan {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</span>
           </p>
@@ -229,15 +249,17 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
           const sched = schedules[s.id] || defaultSchedule();
           return (
             <div key={s.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="flex items-center gap-4 p-5">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
-                  {s.name.charAt(0).toUpperCase()}
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
+                    {s.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`font-medium truncate ${s.isActive ? "" : "text-muted-foreground line-through"}`}>{s.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{s.email || "Sin email"}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-medium ${s.isActive ? "" : "text-muted-foreground line-through"}`}>{s.name}</p>
-                  <p className="text-xs text-muted-foreground">{s.email || "Sin email"}</p>
-                </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:ml-auto sm:shrink-0">
                   <button
                     onClick={() => handleToggle(s.id)}
                     disabled={togglingId === s.id}
@@ -256,12 +278,12 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
               </div>
 
               {expanded && (
-                <div className="border-t border-white/[0.06] p-5 space-y-3">
+                <div className="border-t border-border/50 p-5 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">Horario laboral de {s.name}</p>
                   {sched.map((entry) => (
                     <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border p-2.5 ${entry.isWorking ? "border-border bg-muted/50" : "border-border/50 opacity-40"}`}>
                       <button type="button" onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
-                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-white/10"}`}>
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
                         <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[18px]" : "left-0.5"}`} />
                       </button>
                       <span className="w-12 text-xs font-medium">{DAYS[entry.dayOfWeek]}</span>
@@ -285,6 +307,36 @@ export function StaffList({ staff: initialStaff, limitInfo }: { staff: StaffMemb
                     {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Guardar horario
                   </button>
+
+                  {/* Service Assignments */}
+                  {allServices.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                        <Wrench className="h-3 w-3" /> Servicios que puede realizar
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {allServices.map((svc) => {
+                          const checked = (staffServices[s.id] || []).includes(svc.id);
+                          return (
+                            <label key={svc.id} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all ${checked ? "border-[#7C3AED]/30 bg-[#7C3AED]/5" : "border-border"}`}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleServiceForStaff(s.id, svc.id)}
+                                className="h-4 w-4 rounded border-border accent-[#7C3AED]"
+                              />
+                              <span className={checked ? "text-foreground" : "text-muted-foreground"}>{svc.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <button onClick={() => handleSaveServices(s.id)} disabled={savingServices === s.id}
+                        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                        {savingServices === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Guardar servicios
+                      </button>
+                    </div>
+                  )}
 
                 </div>
               )}

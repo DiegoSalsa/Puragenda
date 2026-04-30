@@ -52,7 +52,7 @@ export function ReferralsClient({
             </div>
             <button
               onClick={handleCopy}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/70"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
             >
               {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
             </button>
@@ -69,7 +69,7 @@ export function ReferralsClient({
             </div>
             <div>
               <p className="text-2xl font-bold">{referredBusinesses.length}</p>
-              <p className="text-xs text-white/35">Referidos totales</p>
+              <p className="text-xs text-muted-foreground">Referidos totales</p>
             </div>
           </div>
         </div>
@@ -81,21 +81,21 @@ export function ReferralsClient({
             </div>
             <div>
               <p className="text-2xl font-bold">{paidReferrals}</p>
-              <p className="text-xs text-white/35">Referidos que pagaron</p>
+              <p className="text-xs text-muted-foreground">Referidos que pagaron</p>
             </div>
           </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: discountActive ? "rgba(124,58,237,0.15)" : "rgba(255,255,255,0.03)" }}>
-              <Star className="h-4 w-4" style={{ color: discountActive ? "#7C3AED" : "rgba(255,255,255,0.2)" }} />
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${discountActive ? "" : "bg-muted"}`} style={discountActive ? { background: "rgba(124,58,237,0.15)" } : undefined}>
+              <Star className={`h-4 w-4 ${discountActive ? "" : "text-muted-foreground"}`} style={discountActive ? { color: "#7C3AED" } : undefined} />
             </div>
             <div>
               <p className="text-2xl font-bold" style={{ color: discountActive ? "#7C3AED" : undefined }}>
                 {discountActive ? "15%" : "0%"}
               </p>
-              <p className="text-xs text-white/35">Descuento activo</p>
+              <p className="text-xs text-muted-foreground">Descuento activo</p>
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function ReferralsClient({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Progreso hacia el descuento</p>
-            <p className="text-xs text-white/35 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {discountActive
                 ? "¡Felicidades! Tienes un 15% de descuento aplicable a tu próximo pago."
                 : `Consigue ${threshold - paidReferrals} referido(s) pagado(s) más para desbloquear un 15% de descuento en tu próximo pago.`}
@@ -116,7 +116,7 @@ export function ReferralsClient({
             {paidReferrals}/{threshold}
           </span>
         </div>
-        <div className="relative h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="relative h-2.5 overflow-hidden rounded-full bg-muted">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
             style={{
@@ -135,20 +135,20 @@ export function ReferralsClient({
           <Gift className="h-4 w-4 text-[#7C3AED]" />
           ¿Cómo funciona?
         </p>
-        <div className="grid gap-3 sm:grid-cols-3 text-xs text-white/50">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2">
+        <div className="grid gap-3 sm:grid-cols-3 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">1</div>
-            <p className="font-medium text-white/70">Comparte tu código</p>
+            <p className="font-medium text-foreground">Comparte tu código</p>
             <p>Envía tu código de referido a otros negocios que quieran usar PurAgenda.</p>
           </div>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2">
+          <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">2</div>
-            <p className="font-medium text-white/70">Ellos se registran</p>
+            <p className="font-medium text-foreground">Ellos se registran</p>
             <p>Al crear su cuenta, ingresan tu código en el campo &quot;Código de Referido&quot;.</p>
           </div>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2">
+          <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">3</div>
-            <p className="font-medium text-white/70">Ganas descuento</p>
+            <p className="font-medium text-foreground">Ganas descuento</p>
             <p>Cuando 10 referidos paguen su suscripción, obtienes un 15% de descuento en tu próximo pago.</p>
           </div>
         </div>
