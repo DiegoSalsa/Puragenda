@@ -174,6 +174,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   useEffect(() => { if (selectedDate) fetchBlocked(selectedDate); }, [selectedDate, fetchBlocked]);
 
+  // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
+  function getStaffForServices(serviceIds: string[]): StaffMember[] {
+    if (!staffMembers) return [];
+    if (serviceIds.length === 0) return staffMembers;
+    return staffMembers.filter((staff) => {
+      if (!staff.serviceIds || staff.serviceIds.length === 0) return true;
+      return serviceIds.some((sid) => staff.serviceIds.includes(sid));
+    });
+  }
+
   function handleSelectService(s: Service) {
     if (isMultiService) {
       setSelectedServices((prev) => {
@@ -185,8 +195,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       return;
     }
     setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
-    if (hasMultipleFilteredStaff) { setStep("staff"); } else {
-      if (filteredStaff.length === 1) setSelectedStaff(filteredStaff[0]);
+    const nowFiltered = getStaffForServices([s.id]);
+    if (nowFiltered.length > 1) { setStep("staff"); } else {
+      if (nowFiltered.length === 1) setSelectedStaff(nowFiltered[0]);
       setStep("datetime");
     }
   }
@@ -195,8 +206,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     if (selectedServices.length === 0) return;
     setSelectedService(selectedServices[0]);
     setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
-    if (hasMultipleFilteredStaff) { setStep("staff"); } else {
-      if (filteredStaff.length === 1) setSelectedStaff(filteredStaff[0]);
+    const svcIds = selectedServices.map((sv) => sv.id);
+    const nowFiltered = getStaffForServices(svcIds);
+    if (nowFiltered.length > 1) { setStep("staff"); } else {
+      if (nowFiltered.length === 1) setSelectedStaff(nowFiltered[0]);
       setStep("datetime");
     }
   }

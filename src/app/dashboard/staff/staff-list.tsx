@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench } from "lucide-react";
+import { useState } from "react";
+import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2 } from "lucide-react";
 import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -99,6 +99,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"ADMIN" | "RECEPTIONIST" | "STAFF">("STAFF");
+  const [createServiceIds, setCreateServiceIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -120,6 +121,16 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
 
   const atLimit = !limitInfo.canAdd;
 
+  // Build a name map for services
+  const serviceNameMap: Record<string, string> = {};
+  for (const svc of allServices) { serviceNameMap[svc.id] = svc.name; }
+
+  function toggleCreateService(serviceId: string) {
+    setCreateServiceIds((prev) =>
+      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId]
+    );
+  }
+
   async function handleCreate() {
     if (!name.trim()) return;
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -127,9 +138,9 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
       return;
     }
     setCreating(true); setCreateError("");
-    const result = await createStaffAction({ name: name.trim(), email: email.trim(), role });
+    const result = await createStaffAction({ name: name.trim(), email: email.trim(), role, serviceIds: createServiceIds });
     if (result.error) { setCreateError(result.error); setCreating(false); return; }
-    setName(""); setEmail(""); setRole("STAFF"); setShowForm(false); setCreating(false); setCreateError("");
+    setName(""); setEmail(""); setRole("STAFF"); setCreateServiceIds([]); setShowForm(false); setCreating(false); setCreateError("");
     router.refresh();
   }
 
@@ -173,6 +184,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
     setSavingServices(staffId);
     await updateStaffServicesAction(staffId, staffServices[staffId] || []);
     setSavingServices(null);
+    router.refresh();
   }
 
   return (
@@ -203,7 +215,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
           </div>
         )}
 
-        {/* Add Staff */}
+        {/* ═══ ADD STAFF FORM ═══ */}
         {!showForm ? (
           <button
             onClick={() => { if (!atLimit) setShowForm(true); }}
@@ -215,7 +227,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
             <Plus className="h-4 w-4" /> {atLimit ? "Límite de profesionales alcanzado" : "Agregar profesional"}
           </button>
         ) : (
-          <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-5 space-y-3">
+          <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-5 space-y-4">
             <p className="text-sm font-medium">Nuevo profesional</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
@@ -233,22 +245,54 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                 <option value="STAFF">Profesional — Solo sus citas</option>
               </select>
             </div>
+
+            {/* ═══ SERVICE CHECKBOXES ON CREATE ═══ */}
+            {allServices.length > 0 && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Wrench className="h-3 w-3" /> Servicios que puede realizar
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {allServices.map((svc) => {
+                    const checked = createServiceIds.includes(svc.id);
+                    return (
+                      <label key={svc.id} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all ${checked ? "border-[#7C3AED]/30 bg-[#7C3AED]/10" : "border-border"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleCreateService(svc.id)}
+                          className="h-4 w-4 rounded border-border accent-[#7C3AED]"
+                        />
+                        <span className={checked ? "text-foreground" : "text-muted-foreground"}>{svc.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {createServiceIds.length === 0 && (
+                  <p className="text-xs text-amber-400/80">⚠ Si no seleccionas ninguno, el profesional podrá atender todos los servicios.</p>
+                )}
+              </div>
+            )}
+
             {createError && <p className="text-sm text-red-400">{createError}</p>}
             <div className="flex gap-2">
               <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
               </button>
-              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); setCreateServiceIds([]); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
             </div>
           </div>
         )}
 
-        {/* Staff List */}
+        {/* ═══ STAFF LIST ═══ */}
         {initialStaff.map((s) => {
           const expanded = expandedId === s.id;
           const sched = schedules[s.id] || defaultSchedule();
+          const assignedServiceNames = (staffServices[s.id] || []).map((id) => serviceNameMap[id]).filter(Boolean);
+
           return (
             <div key={s.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+              {/* ── Card Header ── */}
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
@@ -268,8 +312,8 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                     {togglingId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : s.isActive ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
                     {s.isActive ? "Activo" : "Inactivo"}
                   </button>
-                  <button onClick={() => setExpandedId(expanded ? null : s.id)} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground">
-                    <Clock className="h-3 w-3" /> Horario {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <button onClick={() => setExpandedId(expanded ? null : s.id)} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <Settings2 className="h-3 w-3" /> Configurar {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </button>
                   <button onClick={() => setDeleteTarget(s)} className="rounded-lg border border-red-500/10 p-1.5 text-red-400/40 hover:bg-red-500/10 hover:text-red-400 transition-all" title="Eliminar profesional">
                     <Trash2 className="h-3.5 w-3.5" />
@@ -277,67 +321,93 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                 </div>
               </div>
 
-              {expanded && (
-                <div className="border-t border-border/50 p-5 space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground">Horario laboral de {s.name}</p>
-                  {sched.map((entry) => (
-                    <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border p-2.5 ${entry.isWorking ? "border-border bg-muted/50" : "border-border/50 opacity-40"}`}>
-                      <button type="button" onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
-                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
-                        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[18px]" : "left-0.5"}`} />
-                      </button>
-                      <span className="w-12 text-xs font-medium">{DAYS[entry.dayOfWeek]}</span>
-                      {entry.isWorking ? (
-                        <div className="flex items-center gap-1.5">
-                          <select value={entry.startTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "startTime", e.target.value)}
-                            className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
-                            {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                          <span className="text-muted-foreground">-</span>
-                          <select value={entry.endTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "endTime", e.target.value)}
-                            className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
-                            {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        </div>
-                      ) : <span className="text-xs text-muted-foreground">Libre</span>}
-                    </div>
+              {/* ── Service Badges (always visible) ── */}
+              {assignedServiceNames.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-4 pb-3 sm:px-5 sm:pb-4 -mt-1">
+                  {assignedServiceNames.map((name) => (
+                    <span key={name} className="inline-flex items-center gap-1 rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-2.5 py-0.5 text-[11px] font-medium text-[#7C3AED]">
+                      <Wrench className="h-2.5 w-2.5" /> {name}
+                    </span>
                   ))}
-                  <button onClick={() => handleSaveSchedule(s.id)} disabled={savingSchedule === s.id}
-                    className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                    {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    Guardar horario
-                  </button>
+                </div>
+              )}
+              {assignedServiceNames.length === 0 && allServices.length > 0 && (
+                <div className="px-4 pb-3 sm:px-5 sm:pb-4 -mt-1">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/5 px-2.5 py-0.5 text-[11px] font-medium text-amber-400">
+                    ⚠ Todos los servicios (sin asignar)
+                  </span>
+                </div>
+              )}
 
-                  {/* Service Assignments */}
+              {/* ── Expanded Panel ── */}
+              {expanded && (
+                <div className="border-t border-border/50 p-5 space-y-6">
+                  {/* ── Section: Services ── */}
                   {allServices.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <Wrench className="h-3 w-3" /> Servicios que puede realizar
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                        <Wrench className="h-3.5 w-3.5 text-[#7C3AED]" /> Servicios asignados
                       </p>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {allServices.map((svc) => {
                           const checked = (staffServices[s.id] || []).includes(svc.id);
                           return (
-                            <label key={svc.id} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-all ${checked ? "border-[#7C3AED]/30 bg-[#7C3AED]/5" : "border-border"}`}>
+                            <label key={svc.id} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm cursor-pointer transition-all ${checked ? "border-[#7C3AED]/30 bg-[#7C3AED]/5" : "border-border hover:border-border/80"}`}>
                               <input
                                 type="checkbox"
                                 checked={checked}
                                 onChange={() => toggleServiceForStaff(s.id, svc.id)}
                                 className="h-4 w-4 rounded border-border accent-[#7C3AED]"
                               />
-                              <span className={checked ? "text-foreground" : "text-muted-foreground"}>{svc.name}</span>
+                              <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>{svc.name}</span>
                             </label>
                           );
                         })}
                       </div>
+                      {(staffServices[s.id] || []).length === 0 && (
+                        <p className="text-xs text-amber-400/80">⚠ Sin servicios asignados — este profesional aparece disponible para todos los servicios.</p>
+                      )}
                       <button onClick={() => handleSaveServices(s.id)} disabled={savingServices === s.id}
-                        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
                         {savingServices === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         Guardar servicios
                       </button>
                     </div>
                   )}
 
+                  {/* ── Section: Schedule ── */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                      <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> Horario laboral
+                    </p>
+                    {sched.map((entry) => (
+                      <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border p-2.5 ${entry.isWorking ? "border-border bg-muted/50" : "border-border/50 opacity-40"}`}>
+                        <button type="button" onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
+                          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
+                          <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[18px]" : "left-0.5"}`} />
+                        </button>
+                        <span className="w-12 text-xs font-medium">{DAYS[entry.dayOfWeek]}</span>
+                        {entry.isWorking ? (
+                          <div className="flex items-center gap-1.5">
+                            <select value={entry.startTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "startTime", e.target.value)}
+                              className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                            <span className="text-muted-foreground">-</span>
+                            <select value={entry.endTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "endTime", e.target.value)}
+                              className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          </div>
+                        ) : <span className="text-xs text-muted-foreground">Libre</span>}
+                      </div>
+                    ))}
+                    <button onClick={() => handleSaveSchedule(s.id)} disabled={savingSchedule === s.id}
+                      className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
+                      {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Guardar horario
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -57,7 +57,7 @@ export async function getStaffLimitInfo(businessId: string) {
   return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
 }
 
-export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF" }) {
+export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF"; serviceIds?: string[] }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -98,6 +98,11 @@ export async function createStaffAction(data: { name: string; email: string; rol
     const tempPassword = crypto.randomBytes(5).toString("hex"); // 10 char hex string
     const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
 
+    // Build service connections if provided
+    const serviceConnect = data.serviceIds && data.serviceIds.length > 0
+      ? { connect: data.serviceIds.map((id) => ({ id })) }
+      : undefined;
+
     // Create User + Staff in a transaction
     await prisma.$transaction(async (tx) => {
       const staffUser = await tx.user.create({
@@ -116,6 +121,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
           businessId: business.id,
           userId: staffUser.id,
           isActive: true,
+          ...(serviceConnect ? { services: serviceConnect } : {}),
         },
       });
     });
