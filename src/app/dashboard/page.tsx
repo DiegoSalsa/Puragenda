@@ -70,7 +70,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
-      <WeeklyCalendar appointments={serialized} weekStartISO={weekStart.toISOString()} />
+      <WeeklyCalendar appointments={serialized} weekStartISO={format(weekStart, "yyyy-MM-dd")} />
     </div>
   );
 }

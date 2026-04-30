@@ -32,8 +32,12 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  const weekStart = parseISO(weekStartISO);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStartISO]);
+  const weekStart = useMemo(() => {
+    // Parse yyyy-MM-dd as local date (noon to avoid DST edge cases)
+    const [y, m, d] = weekStartISO.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [weekStartISO]);
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const today = new Date();
 
   function navigateWeek(direction: "prev" | "next") {
