@@ -39,11 +39,11 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   function navigateWeek(direction: "prev" | "next") {
     const target = direction === "next" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1);
     const dateStr = format(target, "yyyy-MM-dd");
-    router.push(`/dashboard?date=${dateStr}`);
+    window.location.href = `/dashboard?date=${dateStr}`;
   }
 
   function goToday() {
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
   }
 
   async function handleStatus(status: string) {
