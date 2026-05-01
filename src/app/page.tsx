@@ -192,7 +192,7 @@ export default function HomePage() {
     })),
   };
   return (
-    <div className="relative min-h-screen text-foreground selection:bg-[#7C3AED]/30">
+    <div className="relative min-h-screen w-full overflow-x-hidden text-foreground selection:bg-[#7C3AED]/30">
       {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
@@ -589,7 +589,7 @@ export default function HomePage() {
         {/* ─── FAQ ─── */}
         <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-24 relative">
           {/* Subtle glow behind FAQ */}
-          <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-[#7C3AED]/5 to-[#A78BFA]/5 blur-[100px]" />
+          <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[600px] max-w-[100vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-[#7C3AED]/5 to-[#A78BFA]/5 blur-[100px]" />
 
           <div className="mb-14 text-center">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
