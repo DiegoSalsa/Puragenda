@@ -106,7 +106,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
       <body
-        className={`${plusJakarta.className} min-h-screen bg-background text-foreground antialiased`}
+        className={`${plusJakarta.className} min-h-screen overflow-x-clip bg-background text-foreground antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <RegisterSW />

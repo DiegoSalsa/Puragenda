@@ -18,7 +18,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex flex-1 items-center justify-start">
