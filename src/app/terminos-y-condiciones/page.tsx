@@ -39,7 +39,16 @@ export default function TerminosPage() {
               </p>
             </header>
 
-            <article className="prose prose-invert prose-purple max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-a:text-[#7C3AED] hover:prose-a:text-[#A78BFA] prose-strong:text-foreground">
+            <article className="
+              text-base text-muted-foreground leading-relaxed
+              [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-12 [&_h2]:mb-6
+              [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-8 [&_h3]:mb-4
+              [&_p]:mb-6
+              [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-3 [&_ul]:mb-6 [&_ul]:marker:text-[#7C3AED]
+              [&_li]:pl-2
+              [&_a]:text-[#7C3AED] hover:[&_a]:text-[#A78BFA] [&_a]:underline [&_a]:transition-colors
+              [&_strong]:text-foreground [&_strong]:font-semibold
+            ">
               <h2>1. Aceptación de los Términos</h2>
               <p>
                 Al acceder y utilizar la plataforma Puragenda (&quot;el Servicio&quot;), operada por PuroCode (&quot;la Empresa&quot;),
@@ -120,7 +129,7 @@ export default function TerminosPage() {
               <h2>11. Contacto</h2>
               <p>
                 Para consultas sobre estos términos, puede contactarnos a través de nuestro sitio web
-                en <a href="https://purocode.cl">purocode.cl</a>.
+                en <a href="https://purocode.com">purocode.com</a>.
               </p>
             </article>
           </div>

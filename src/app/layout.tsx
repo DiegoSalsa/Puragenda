@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     "PuroCode",
     "Puragenda",
   ],
-  authors: [{ name: "PuroCode", url: "https://purocode.cl" }],
+  authors: [{ name: "PuroCode", url: "https://purocode.com" }],
   creator: "PuroCode",
   publisher: "PuroCode",
   manifest: "/site.webmanifest",

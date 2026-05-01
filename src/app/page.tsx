@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import {
   ArrowRight,
   CalendarClock,
+  CheckCircle2,
   ChevronDown,
   Code2,
   Headset,
@@ -158,7 +159,7 @@ export default function HomePage() {
     creator: {
       "@type": "Organization",
       name: "PuroCode",
-      url: "https://purocode.cl",
+      url: "https://purocode.com",
     },
   };
 
@@ -190,90 +191,110 @@ export default function HomePage() {
       },
     })),
   };
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen text-foreground selection:bg-[#7C3AED]/30">
       {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
-      {/* Background effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-48 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#7C3AED]/8 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#7C3AED]/5 blur-[120px]" />
+
+      {/* ─── Premium Background ─── */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
+        {/* Subtle dot/grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+
+        {/* Top Glow Border */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7C3AED]/70 to-transparent shadow-[0_0_15px_#7C3AED]/50" />
+
+        {/* Dynamic Spotlight Aurora (Subtle) */}
+        <div className="absolute top-[-10%] left-1/2 w-[200%] h-[50vh] -translate-x-1/2 opacity-30 dark:opacity-40">
+          <div className="absolute top-0 left-1/2 w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
+        </div>
+
+        {/* Floating Ambient Orbs (Subtle) */}
+        <div className="absolute top-[10%] -left-10 h-[35rem] w-[35rem] rounded-full bg-[#7C3AED]/20 blur-[110px] dark:bg-[#7C3AED]/25" />
+        <div className="absolute top-[30%] -right-10 h-[45rem] w-[45rem] rounded-full bg-[#E91E8C]/10 blur-[130px] dark:bg-[#E91E8C]/15" />
+        <div className="absolute bottom-[10%] left-[10%] h-[40rem] w-[40rem] rounded-full bg-[#3b82f6]/10 blur-[130px] dark:bg-[#3b82f6]/15" />
       </div>
 
       <Navbar />
 
-      <main>
-        {/* ─── Hero Section (Above the Fold) ─── */}
-        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
-          <div className="animate-fade-up space-y-8 text-center">
-            <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
-              Software de Reservas <br className="hidden sm:block" />
+      <main className="relative z-10">
+        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-32">
+          <div className="animate-fade-up space-y-8 text-center relative">
+
+            <h1 className="mx-auto max-w-5xl text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl drop-shadow-sm relative z-10">
+              <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">Software de Reservas</span> <br className="hidden sm:block" />
               <WordCarousel />
             </h1>
 
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Convierte visitas en reservas confirmadas sin llamadas perdidas. 
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:text-xl relative z-10">
+              Convierte visitas en reservas confirmadas sin llamadas perdidas.
               Sistema de citas con detección de colisiones, widget marca blanca y panel de gestión completo.
-              La alternativa inteligente a AgendaPro.
             </p>
 
-            {/* Lead Capture Form */}
-            <div className="mx-auto mt-8 flex max-w-md flex-col justify-center gap-4 sm:flex-row">
-              <Link href="/register">
-                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] sm:w-auto">
+            {/* Lead Capture Form / CTA */}
+            <div className="mx-auto mt-8 flex max-w-md flex-col justify-center gap-4 sm:flex-row relative z-10">
+              <Link href="/register" className="w-full sm:w-auto">
+                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
                   <span className="relative z-10 flex items-center gap-2">
                     Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </button>
               </Link>
-              <Link href="/widget/purocode-demo">
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card/50 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur-sm transition-all hover:bg-muted sm:w-auto">
+              <Link href="/widget/purocode-demo" className="w-full sm:w-auto">
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
                   Ver Demo
                 </button>
               </Link>
             </div>
-            
-            <p className="mt-6 text-xs text-muted-foreground/60">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
 
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
+            <p className="mt-6 text-xs text-muted-foreground/60 font-medium">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+
+            <div className="flex flex-wrap justify-center gap-3 pt-4">
               {[
                 { icon: Scissors, label: "Peluquerías" },
-                { icon: Sparkles, label: "Centros de estética" },
-                { icon: Stethoscope, label: "Consultas y salud" },
+                { icon: Sparkles, label: "Estética" },
+                { icon: Stethoscope, label: "Clínicas" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3.5 py-1.5 text-sm text-muted-foreground">
-                  <item.icon className="h-3.5 w-3.5 text-[#7C3AED]" />
+                <div key={item.label} className="flex items-center gap-2 rounded-full border border-border/50 bg-card/30 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm hover:border-[#7C3AED]/30 transition-colors cursor-default">
+                  <item.icon className="h-4 w-4 text-[#7C3AED]" />
                   {item.label}
                 </div>
               ))}
             </div>
+
           </div>
 
           {/* ─── Product Showcase ─── */}
-          <div id="como-funciona" className="mt-20 space-y-6">
+          <div id="como-funciona" className="mt-24 space-y-8 relative">
+            {/* Massive backdrop glow behind showcase */}
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[600px] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[#7C3AED]/20 to-[#A78BFA]/20 blur-[140px]" />
+
             <div className="text-center">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
-                Así se ve en acción
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
+                Poder y Simplicidad
               </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
                 Todo lo que necesitas, en un solo lugar
               </h2>
             </div>
 
             {/* Main showcase: Widget + Dashboard side by side */}
-            <div className="grid gap-6 lg:grid-cols-5">
+            <div className="grid gap-6 lg:grid-cols-5 relative">
+              {/* Decorative background border for the whole grid */}
+              <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-b from-white/5 to-transparent dark:from-white/5 opacity-50" />
+
               {/* Widget Preview - col 1-2 */}
-              <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <div className="h-2 w-2 rounded-full bg-[#7C3AED] animate-pulse" />
-                  Widget de reservas · Vista del cliente
+              <div className="lg:col-span-2 relative overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-2xl p-6 shadow-2xl shadow-black/5 dark:shadow-[#7C3AED]/10 group transition-all duration-500 hover:border-[#7C3AED]/30 hover:bg-card/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50 pointer-events-none" />
+                <div className="relative flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-6">
+                  <div className="h-2 w-2 rounded-full bg-[#7C3AED] animate-pulse shadow-[0_0_8px_#7C3AED]" />
+                  Vista del cliente
                 </div>
                 {/* Fake widget mockup */}
-                <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-3 overflow-hidden">
+                <div className="rounded-2xl border border-border/40 bg-background/80 backdrop-blur-xl p-5 shadow-inner">
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <div>
@@ -342,13 +363,14 @@ export default function HomePage() {
               </div>
 
               {/* Dashboard Preview - col 3-5 */}
-              <div className="lg:col-span-3 rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 group hover:border-[#7C3AED]/20 transition-all duration-500">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+              <div className="lg:col-span-3 relative overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-2xl p-6 shadow-2xl shadow-black/5 dark:shadow-[#7C3AED]/10 group transition-all duration-500 hover:border-[#7C3AED]/30 hover:bg-card/60">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50 pointer-events-none" />
+                <div className="relative flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-6">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
                   Panel de administración · Vista del dueño
                 </div>
                 {/* Fake dashboard */}
-                <div className="rounded-xl border border-border bg-muted/50 overflow-hidden">
+                <div className="rounded-2xl border border-border/40 bg-background/80 backdrop-blur-xl overflow-hidden shadow-inner">
                   {/* Top bar */}
                   <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#7C3AED]">
@@ -395,9 +417,8 @@ export default function HomePage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono text-muted-foreground">{apt.time}</span>
-                          <div className={`h-1.5 w-1.5 rounded-full ${
-                            apt.status === "confirmed" ? "bg-green-400" : apt.status === "pending" ? "bg-amber-400" : "bg-blue-400"
-                          }`} />
+                          <div className={`h-1.5 w-1.5 rounded-full ${apt.status === "confirmed" ? "bg-green-400" : apt.status === "pending" ? "bg-amber-400" : "bg-blue-400"
+                            }`} />
                         </div>
                       </div>
                     ))}
@@ -450,7 +471,7 @@ export default function HomePage() {
                     <span className="text-green-400">10:00 - 11:00</span>
                     <span className="ml-auto text-muted-foreground">Confirmada</span>
                   </div>
-            <div className="flex items-center gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5">
+                  <div className="flex items-center gap-2 rounded-md border border-red-500/20 bg-red-500/5 px-2.5 py-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-red-400" />
                     <span className="text-red-400 line-through">10:30 - 11:30</span>
                     <span className="ml-auto text-red-400/60">Bloqueada</span>
@@ -466,18 +487,19 @@ export default function HomePage() {
           </div>
 
           {/* ─── Bento Grid ─── */}
-          <div className="stagger-children mt-16 grid gap-3 md:grid-cols-4">
+          <div className="stagger-children mt-16 grid gap-4 md:grid-cols-4 relative">
             {bentoFeatures.map((feature) => (
               <article
                 key={feature.title}
-                className={`group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all hover:border-[#7C3AED]/30 ${feature.className}`}
+                className={`group relative overflow-hidden rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl p-6 transition-all duration-500 hover:border-[#7C3AED]/30 hover:bg-card/50 shadow-lg hover:shadow-xl dark:shadow-none dark:hover:shadow-[0_0_20px_rgba(124,58,237,0.1)] ${feature.className}`}
               >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 opacity-50 pointer-events-none" />
                 <div className="relative z-10 flex h-full flex-col">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-background/50 border border-border shadow-sm text-foreground">
-                    <feature.icon className="h-4 w-4" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background/80 border border-border/50 shadow-sm text-foreground mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:border-[#7C3AED]/40">
+                    <feature.icon className="h-5 w-5 text-[#7C3AED] group-hover:text-[#A78BFA] transition-colors" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{feature.description}</p>
+                  <h3 className="mt-auto text-xl font-bold tracking-tight text-foreground">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
                 </div>
               </article>
             ))}
@@ -565,28 +587,31 @@ export default function HomePage() {
         </section>
 
         {/* ─── FAQ ─── */}
-        <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-20">
-          <div className="mb-12 text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
+        <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-24 relative">
+          {/* Subtle glow behind FAQ */}
+          <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-[#7C3AED]/5 to-[#A78BFA]/5 blur-[100px]" />
+
+          <div className="mb-14 text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
               Preguntas frecuentes
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
               Todo lo que necesitas saber
             </h2>
           </div>
 
-          <div className="space-y-3">
-            <Accordion className="w-full space-y-3">
+          <div className="space-y-4">
+            <Accordion className="w-full space-y-4">
               {faqs.map((faq, index) => (
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className="rounded-2xl border border-border bg-card px-5 transition-all hover:border-[#7C3AED]/20 data-[state=open]:border-[#7C3AED]/20"
+                  className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
                 >
-                  <AccordionTrigger className="text-sm font-medium hover:no-underline hover:text-white/90">
+                  <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-5">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -596,13 +621,14 @@ export default function HomePage() {
         </section>
 
         {/* ─── CTA Final ─── */}
+        {/* ─── CTA Final ─── */}
         <section className="border-t border-border py-20">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight">
               Tu agenda online lista en minutos
             </h2>
             <p className="max-w-xl text-muted-foreground">
-              Te acompañamos desde la configuración inicial hasta la publicación en tu sitio. 
+              Te acompañamos desde la configuración inicial hasta la publicación en tu sitio.
               Si vendes servicios, este sistema ya viene preparado para convertir mejor.
             </p>
             <div className="flex flex-wrap justify-center gap-3">

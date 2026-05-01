@@ -17,7 +17,7 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "PuroCode",
-    url: "https://purocode.cl",
+    url: "https://purocode.com",
     logo: "https://puragenda.cl/icon-512x512.png",
     description: "Agencia de desarrollo de software y creadores de Puragenda.",
     founder: {

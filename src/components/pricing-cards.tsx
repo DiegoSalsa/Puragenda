@@ -38,42 +38,44 @@ const plans: {
   {
     key: "INDIVIDUAL",
     name: "Individual",
-    description: "Para emprendedores que trabajan solos.",
+    description: "Ideal para barberos, terapeutas y profesionales independientes que trabajan solos.",
     highlighted: false,
     items: [
-      "Citas ilimitadas",
+      "Citas y reservas ilimitadas",
       `${STAFF_LIMITS.INDIVIDUAL} profesional incluido`,
-      "Widget embebible",
-      "Detección de colisiones",
-      "Soporte por email",
+      "Widget de reservas para tu web/redes",
+      "App móvil instalable (PWA)",
+      "Notificaciones básicas por email",
+      "Bloqueos de agenda y descansos",
     ],
   },
   {
     key: "BASIC",
     name: "Base",
-    description: "Para equipos que necesitan crecer con multi-staff.",
+    description: "Perfecto para salones pequeños y locales que necesitan gestionar un equipo.",
     highlighted: false,
     badge: `${TRIAL_DURATION_DAYS} días gratis`,
     items: [
       "Todo de Individual",
       `${STAFF_LIMITS.BASIC} profesionales incluidos`,
-      "Horarios configurables",
-      "Panel completo",
-      "Marca blanca",
-      "Soporte prioritario",
+      "Gestión de roles (Recepcionista y Staff)",
+      "Servicios específicos por profesional",
+      "Recordatorios automáticos 24h",
+      "Logo propio en el widget",
     ],
   },
   {
     key: "PRO",
     name: "Pro",
-    description: "La solución completa para negocios profesionales.",
+    description: "La solución definitiva para negocios que buscan fidelizar clientes y medir su crecimiento.",
     highlighted: true,
     items: [
       "Todo de Base",
       `${STAFF_LIMITS.PRO} profesionales incluidos`,
-      "CORS + API Key dedicada",
-      "Calendario semanal pro",
-      "Soporte dedicado",
+      "Mini-CRM: Base de datos de clientes",
+      "Historial completo de reservas",
+      "Métricas y reportes del negocio",
+      "Soporte prioritario por WhatsApp",
     ],
   },
 ];
@@ -230,15 +232,17 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
           return (
             <div
               key={plan.key}
-              className={`relative rounded-2xl border p-6 sm:p-8 transition-all duration-300 ${
+              className={`relative rounded-3xl p-[1px] transition-all duration-500 flex flex-col h-full ${
                 plan.highlighted
-                  ? "border-[#7C3AED]/30 bg-gradient-to-b from-[#7C3AED]/5 to-transparent shadow-2xl shadow-[#7C3AED]/10"
-                  : "border-border bg-card"
+                  ? "shadow-2xl shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 z-10 ring-2 ring-[#7C3AED]"
+                  : "bg-border/40 hover:bg-border/80 shadow-lg hover:shadow-xl dark:shadow-none"
               }`}
             >
+              {/* Card Inner Content */}
+              <div className={`relative flex h-full flex-col rounded-[23px] bg-card p-6 sm:p-8 ${plan.highlighted ? "bg-card/95 backdrop-blur-2xl" : "bg-card/70 backdrop-blur-xl"}`}>
               {/* Badges */}
               {plan.highlighted && (
-                <div className="absolute -top-3 left-6 rounded-full bg-[#7C3AED] px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-[#7C3AED]/25">
+                <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-[#7C3AED]/30 border border-white/20">
                   Más popular
                 </div>
               )}
@@ -349,7 +353,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               )}
 
               {/* Action Buttons */}
-              <div className="mt-6 space-y-2.5">
+              <div className="mt-auto pt-8 space-y-2.5">
                 {plan.key === "BASIC" && (
                   <>
                     {/* Primary: Free Trial */}
@@ -391,14 +395,14 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   <>
                     {mode === "landing" ? (
                       <Link href="/register" className="block">
-                        <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground">
+                        <button className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35">
                           Suscribirse
                         </button>
                       </Link>
                     ) : (
                       <button
                         onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground"
+                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35"
                       >
                         Suscribirse
                       </button>
@@ -424,6 +428,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     )}
                   </>
                 )}
+              </div>
               </div>
             </div>
           );

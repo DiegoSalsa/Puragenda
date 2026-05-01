@@ -13,7 +13,7 @@ export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 export const AUTH_COOKIE_NAME = "puragenda_session";
 
 // SuperAdmin emails
-export const SUPERADMIN_EMAILS = ["admin@purocode.cl", "diego@purocode.cl"];
+export const SUPERADMIN_EMAILS = ["admin@purocode.com", "diego@purocode.com"];
 
 // Roles
 export const ROLES = { ADMIN: "ADMIN", RECEPTIONIST: "RECEPTIONIST", STAFF: "STAFF", SUPERADMIN: "SUPERADMIN" } as const;
