@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 
 const phrases = [
-  "integrada en tu web.",
-  "100% automatizada.",
+  "automático.",
+  "marca blanca.",
+  "24/7 online.",
   "fácil de usar.",
-  "para tu negocio.",
 ];
 
 export function WordCarousel() {
@@ -25,7 +25,7 @@ export function WordCarousel() {
       {phrases.map((phrase, i) => (
         <span
           key={i}
-          className={`col-start-1 row-start-1 bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] bg-clip-text text-transparent transition-all duration-700 ease-in-out pb-2 pr-1 ${
+          className={`col-start-1 row-start-1 whitespace-nowrap bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] bg-clip-text text-transparent transition-all duration-700 ease-in-out pb-2 pr-1 ${
             i === index
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-2 pointer-events-none"

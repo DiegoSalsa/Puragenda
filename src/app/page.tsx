@@ -207,24 +207,24 @@ export default function HomePage() {
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7C3AED]/70 to-transparent shadow-[0_0_15px_#7C3AED]/50" />
 
         {/* Dynamic Spotlight Aurora (Subtle) */}
-        <div className="absolute top-[-10%] left-1/2 w-[200%] h-[50vh] -translate-x-1/2 opacity-30 dark:opacity-40">
-          <div className="absolute top-0 left-1/2 w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
+        <div className="absolute top-[-5%] md:top-[-10%] left-1/2 w-[200%] h-[40vh] md:h-[50vh] -translate-x-1/2 opacity-20 md:opacity-30 dark:opacity-20 dark:md:opacity-40">
+          <div className="absolute top-0 left-1/2 w-[100%] md:w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[60px] md:blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
         </div>
 
         {/* Floating Ambient Orbs (Subtle) */}
-        <div className="absolute top-[10%] -left-10 h-[35rem] w-[35rem] rounded-full bg-[#7C3AED]/20 blur-[110px] dark:bg-[#7C3AED]/25" />
-        <div className="absolute top-[30%] -right-10 h-[45rem] w-[45rem] rounded-full bg-[#E91E8C]/10 blur-[130px] dark:bg-[#E91E8C]/15" />
-        <div className="absolute bottom-[10%] left-[10%] h-[40rem] w-[40rem] rounded-full bg-[#3b82f6]/10 blur-[130px] dark:bg-[#3b82f6]/15" />
+        <div className="absolute top-[5%] md:top-[10%] -left-20 md:-left-10 h-[20rem] w-[20rem] md:h-[35rem] md:w-[35rem] rounded-full bg-[#7C3AED]/15 md:bg-[#7C3AED]/20 blur-[80px] md:blur-[110px] dark:bg-[#7C3AED]/15 dark:md:bg-[#7C3AED]/25" />
+        <div className="absolute top-[30%] -right-20 md:-right-10 h-[25rem] w-[25rem] md:h-[45rem] md:w-[45rem] rounded-full bg-[#E91E8C]/5 md:bg-[#E91E8C]/10 blur-[80px] md:blur-[130px] dark:bg-[#E91E8C]/10 dark:md:bg-[#E91E8C]/15" />
+        <div className="absolute bottom-[10%] left-[0%] md:left-[10%] h-[20rem] w-[20rem] md:h-[40rem] md:w-[40rem] rounded-full bg-[#3b82f6]/5 md:bg-[#3b82f6]/10 blur-[80px] md:blur-[130px] dark:bg-[#3b82f6]/10 dark:md:bg-[#3b82f6]/15" />
       </div>
 
       <Navbar />
 
       <main className="relative z-10">
-        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-32">
-          <div className="animate-fade-up space-y-8 text-center relative">
+        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pt-40 lg:pt-48">
+          <div className="animate-fade-up space-y-6 md:space-y-8 text-center relative">
 
-            <h1 className="mx-auto max-w-5xl text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl drop-shadow-sm relative z-10">
-              <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">Software de Reservas</span> <br className="hidden sm:block" />
+            <h1 className="mx-auto max-w-5xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl drop-shadow-sm relative z-10">
+              <span className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">Software de Reservas</span> <br />
               <WordCarousel />
             </h1>
 
@@ -270,7 +270,7 @@ export default function HomePage() {
           {/* ─── Product Showcase ─── */}
           <div id="como-funciona" className="mt-24 space-y-8 relative">
             {/* Massive backdrop glow behind showcase */}
-            <div className="absolute left-1/2 top-1/2 -z-10 h-[600px] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[#7C3AED]/20 to-[#A78BFA]/20 blur-[140px]" />
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[300px] md:h-[600px] w-[100%] md:w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[#7C3AED]/15 to-[#A78BFA]/15 md:from-[#7C3AED]/20 md:to-[#A78BFA]/20 blur-[100px] md:blur-[140px]" />
 
             <div className="text-center">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
