@@ -283,3 +283,62 @@ export function forgotPasswordEmail(data: ForgotPasswordEmailData): { subject: s
     `),
   };
 }
+
+// ═══════════════════════════════════════════
+// NEW REGISTRATION ADMIN NOTIFICATION
+// ═══════════════════════════════════════════
+
+interface NewRegistrationData {
+  ownerName: string;
+  ownerEmail: string;
+  businessName: string;
+  plan: string;
+  hasTrial: boolean;
+}
+
+/** Email to platform admins when a new business registers */
+export function newRegistrationAdminEmail(data: NewRegistrationData): { subject: string; html: string } {
+  const trialBadge = data.hasTrial
+    ? `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:12px;font-weight:600;">🆓 Trial 30 días</span>`
+    : `<span style="display:inline-block;padding:4px 10px;background:#dcfce7;color:#166534;border-radius:6px;font-size:12px;font-weight:600;">💰 Directo a pago</span>`;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  return {
+    subject: `🚀 Nuevo registro: ${data.businessName} — Puragenda`,
+    html: layout("Nuevo Registro", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo negocio registrado! 🎉</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Un nuevo negocio se ha registrado en Puragenda. Aquí los detalles:
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
+        <tr>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">🏢 Negocio</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:600;">${data.businessName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">👤 Dueño</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerName}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">📧 Email</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">📦 Plan</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.plan}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">🎫 Estado</td>
+          <td style="padding:10px 14px;">${trialBadge}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${appUrl}/para/x7k9m2v4q8" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Ver en Panel Admin →
+        </a>
+      </div>
+    `),
+  };
+}
+

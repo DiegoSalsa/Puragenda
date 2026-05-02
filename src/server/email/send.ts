@@ -8,7 +8,9 @@ import {
   staffInviteEmail,
   cancellationClientEmail,
   forgotPasswordEmail,
+  newRegistrationAdminEmail,
 } from "./templates";
+import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -235,4 +237,36 @@ export async function sendForgotPasswordEmail(email: string, token: string) {
   } catch (err) {
     console.error("[Email] Error sending forgot password:", err);
   }
+}
+
+// ═══════════════════════════════════════════
+// NEW REGISTRATION ADMIN NOTIFICATION
+// ═══════════════════════════════════════════
+
+/**
+ * Notify platform admins when a new business registers or starts a trial.
+ * Errors are logged but never thrown — notification failures should not block registration.
+ */
+export async function sendNewRegistrationNotification(data: {
+  ownerName: string;
+  ownerEmail: string;
+  businessName: string;
+  plan: string;
+  hasTrial: boolean;
+}) {
+  const { subject, html } = newRegistrationAdminEmail(data);
+
+  const tasks = ADMIN_NOTIFICATION_EMAILS.map((adminEmail) =>
+    resend.emails
+      .send({
+        from: EMAIL_FROM,
+        to: adminEmail,
+        subject,
+        html,
+      })
+      .catch((err) => console.error(`[Email] Error sending registration notification to ${adminEmail}:`, err))
+  );
+
+  await Promise.allSettled(tasks);
+  console.log(`[Email] Registration notification sent for ${data.businessName} (${data.ownerEmail})`);
 }

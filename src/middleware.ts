@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server";
 const AUTH_COOKIE = "puragenda_session";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/api/dashboard"];
-const ADMIN_PREFIXES = ["/admin", "/api/admin"];
+const ADMIN_PREFIXES = ["/para/x7k9m2v4q8", "/api/admin"];
+const ADMIN_LOGIN_PATH = "/para/x7k9m2v4q8/login";
 const PUBLIC_API_PREFIX = "/api/business";
 
 /**
@@ -37,12 +38,17 @@ export function middleware(request: NextRequest) {
   // ─── Protect SuperAdmin routes ───
   const isAdmin = ADMIN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   if (isAdmin) {
+    // Allow access to admin login page without auth
+    if (pathname === ADMIN_LOGIN_PATH) {
+      return NextResponse.next();
+    }
+
     const token = request.cookies.get(AUTH_COOKIE)?.value;
     if (!token) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "No autenticado" }, { status: 401 });
       }
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
     }
 
     const payload = readSessionPayload(token);
@@ -102,7 +108,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/api/dashboard/:path*",
-    "/admin/:path*",
+    "/para/x7k9m2v4q8/:path*",
     "/api/admin/:path*",
     "/api/business/:path*",
   ],

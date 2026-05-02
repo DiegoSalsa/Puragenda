@@ -27,6 +27,19 @@ async function main() {
 
   const now = new Date();
   const pw = await bcrypt.hash("purocode123", 12);
+  const pwAdmin = await bcrypt.hash("1234", 12);
+
+  // ─── Platform Admin (contacto@purocode.com) ───
+  console.log("🔐 Platform Admin...");
+  await prisma.user.create({
+    data: {
+      email: "contacto@purocode.com",
+      password: pwAdmin,
+      name: "PuroCode Admin",
+      role: "SUPERADMIN",
+      isSuperAdmin: true,
+    },
+  });
 
   // ─── SuperAdmin ───
   console.log("👑 SuperAdmin...");
@@ -144,6 +157,7 @@ async function main() {
 
   console.log("\n✅ Seed v5 completado!");
   console.log("═══════════════════════════════════════");
+  console.log("  🔐 contacto@purocode.com / 1234       → Platform Admin (SuperAdmin)");
   console.log("  👑 admin@purocode.cl / purocode123     → PRO (3 staff: mañana/tarde/mixto)");
   console.log("  👤 vale@esteticabella.cl / purocode123  → BASIC Trial (2 staff)");
   console.log("  👤 carlos@barberia.cl / purocode123     → INDIVIDUAL (1 staff)");

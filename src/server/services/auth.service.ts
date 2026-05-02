@@ -6,7 +6,7 @@ import { addDays } from "date-fns";
 import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode, incrementPaidReferrals } from "@/server/services/affiliate.service";
-import { sendWelcomeEmail } from "@/server/email/send";
+import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -139,6 +139,15 @@ export async function registerUser(data: {
 
   // Send welcome email (fire and forget)
   sendWelcomeEmail(created.user.email, created.user.name, created.business.name).catch(() => {});
+
+  // Notify platform admins about new registration (fire and forget)
+  sendNewRegistrationNotification({
+    ownerName: created.user.name,
+    ownerEmail: created.user.email,
+    businessName: created.business.name,
+    plan: "BASIC",
+    hasTrial: created.givesTrial,
+  }).catch(() => {});
 
   return { success: true as const, user: created.user, business: created.business };
 }
