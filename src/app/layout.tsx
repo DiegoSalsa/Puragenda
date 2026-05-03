@@ -17,13 +17,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.puragenda.cl'),
+  metadataBase: new URL("https://www.puragenda.cl"),
   title: {
     default: "Puragenda — Sistema de Reservas Online para Negocios | Agenda Inteligente",
     template: "%s | Puragenda",
   },
   description:
-    "El sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza a tus clientes automáticamente. Pruébalo hoy.",
+    "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
   keywords: [
     "sistema de reservas online",
     "agenda online",
@@ -36,7 +36,6 @@ export const metadata: Metadata = {
     "peluquería",
     "estética",
     "SaaS",
-    "PuroCode",
     "Puragenda",
   ],
   authors: [{ name: "PuroCode", url: "https://purocode.com" }],
@@ -61,11 +60,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_CL",
-    url: SITE_URL,
+    url: "/",
     siteName: "Puragenda",
     title: "Puragenda — Sistema de Reservas Online para Negocios",
     description:
-      "Reservas 24/7, widget marca blanca, multi-profesional y detección de colisiones. La agenda inteligente para tu negocio.",
+      "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
     images: [
       {
         url: "/icon-512x512.png",
@@ -77,13 +76,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Puragenda — Agenda Inteligente para tu Negocio",
+    title: "Puragenda — Sistema de Reservas Online para Negocios",
     description:
-      "Sistema de reservas online con widget embebible. Alternativa moderna a AgendaPro.",
+      "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
     images: ["/icon-512x512.png"],
   },
   alternates: {
-    canonical: SITE_URL,
+    canonical: "/",
   },
   robots: {
     index: true,
