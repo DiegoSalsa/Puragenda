@@ -498,7 +498,7 @@ export default function HomePage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background/80 border border-border/50 shadow-sm text-foreground mb-6 group-hover:scale-110 transition-transform duration-500 group-hover:border-[#7C3AED]/40">
                     <feature.icon className="h-5 w-5 text-[#7C3AED] group-hover:text-[#A78BFA] transition-colors" />
                   </div>
-                  <h3 className="mt-auto text-xl font-bold tracking-tight text-foreground">{feature.title}</h3>
+                  <p className="mt-auto text-xl font-bold tracking-tight text-foreground">{feature.title}</p>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
                 </div>
               </article>
@@ -558,7 +558,7 @@ export default function HomePage() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED]">
                   <feature.icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 text-xl font-semibold">{feature.title}</h3>
+                <p className="mt-4 text-xl font-semibold">{feature.title}</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>

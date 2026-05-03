@@ -254,7 +254,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
               {/* Header */}
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold">{plan.name}</h3>
+                <p className="text-2xl font-bold">{plan.name}</p>
                 <p className="text-sm text-muted-foreground">{plan.description}</p>
 
                 {/* Price display */}

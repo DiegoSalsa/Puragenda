@@ -22,7 +22,7 @@ export function Footer() {
 
           {/* Links */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Producto</h4>
+            <p className="text-sm font-semibold">Producto</p>
             <nav className="flex flex-col gap-2">
               <a href="/#caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Características</a>
               <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Precios</Link>
@@ -33,7 +33,7 @@ export function Footer() {
 
           {/* Casos de Uso */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Casos de Uso</h4>
+            <p className="text-sm font-semibold">Casos de Uso</p>
             <nav className="flex flex-col gap-2">
               <Link href="/para/peluquerias" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Para Peluquerías</Link>
               <Link href="/para/estetica" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Para Estética y Spa</Link>
@@ -44,7 +44,7 @@ export function Footer() {
 
           {/* Contact */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Empresa</h4>
+            <p className="text-sm font-semibold">Empresa</p>
             <div className="flex flex-col gap-2">
               <Link href="/sobre-nosotros" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Sobre Nosotros</Link>
               <a href="mailto:contacto@purocode.com" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
@@ -58,7 +58,7 @@ export function Footer() {
 
           {/* Social */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Redes</h4>
+            <p className="text-sm font-semibold">Redes</p>
             <div className="flex items-center gap-3">
               <a
                 href="https://www.instagram.com/purocodecl?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
@@ -83,7 +83,7 @@ export function Footer() {
 
           {/* Legal */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold">Legal</h4>
+            <p className="text-sm font-semibold">Legal</p>
             <nav className="flex flex-col gap-2">
               <Link href="/terminos-y-condiciones" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Términos y Condiciones</Link>
               <Link href="/politica-de-privacidad" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Política de Privacidad</Link>

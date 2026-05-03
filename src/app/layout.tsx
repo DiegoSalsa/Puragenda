@@ -17,13 +17,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL('https://www.puragenda.cl'),
   title: {
     default: "Puragenda — Sistema de Reservas Online para Negocios | Agenda Inteligente",
     template: "%s | Puragenda",
   },
   description:
-    "Sistema de agendamiento online para peluquerías, estética, consultas y servicios. Reservas 24/7, widget marca blanca, multi-profesional y detección de colisiones. Alternativa a AgendaPro.",
+    "El sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza a tus clientes automáticamente. Pruébalo hoy.",
   keywords: [
     "sistema de reservas online",
     "agenda online",
