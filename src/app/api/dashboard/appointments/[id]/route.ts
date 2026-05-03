@@ -5,6 +5,7 @@ import {
   updateAppointmentStatus,
 } from "@/server/services/appointment.service";
 import { sendConfirmationEmail, sendCancellationEmail } from "@/server/email/send";
+import { processLoyaltyStamps } from "@/server/actions/loyalty.actions";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 
@@ -27,7 +28,7 @@ export async function PATCH(
     const body = await request.json();
     const { status } = body;
 
-    if (!status || !["PENDING", "CONFIRMED", "CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(status)) {
+    if (!status || !["PENDING", "CONFIRMED", "CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"].includes(status)) {
       return Response.json(
         { error: "Estado inválido" },
         { status: 400 }
@@ -85,6 +86,13 @@ export async function PATCH(
       if (fullAppointment) {
         sendCancellationEmail(fullAppointment).catch(() => {});
       }
+    }
+
+    // ── Loyalty: Process stamps when appointment is COMPLETED ──
+    if (status === "COMPLETED") {
+      processLoyaltyStamps(id).catch((err) =>
+        console.error("Error processing loyalty stamps:", err)
+      );
     }
 
     return Response.json(appointment);

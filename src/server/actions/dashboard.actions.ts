@@ -428,3 +428,46 @@ export async function deleteScheduleBlockAction(blockId: string) {
   revalidatePath("/dashboard/staff");
   return { success: true };
 }
+
+// ─── Loyalty / Fidelización Config ───
+
+export async function saveLoyaltyConfigAction(data: {
+  isLoyaltyEnabled: boolean;
+  stampsRequired: number;
+  rewardName: string;
+  discountType: string;
+  discountValue: number;
+}) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "Solo el administrador puede configurar la fidelización" };
+  }
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const stamps = Math.max(1, Math.min(50, Math.floor(data.stampsRequired)));
+  const discountVal = Math.max(0, Math.floor(data.discountValue || 0));
+
+  if (data.discountType && !["PERCENTAGE", "FIXED"].includes(data.discountType)) {
+    return { error: "Tipo de descuento inválido" };
+  }
+
+  if (data.discountType === "PERCENTAGE" && discountVal > 100) {
+    return { error: "El porcentaje no puede ser mayor a 100" };
+  }
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      isLoyaltyEnabled: data.isLoyaltyEnabled,
+      stampsRequired: stamps,
+      rewardName: data.rewardName?.trim() || null,
+      discountType: data.discountType || null,
+      discountValue: discountVal || null,
+    },
+  });
+
+  revalidatePath("/dashboard/loyalty");
+  return { success: true };
+}

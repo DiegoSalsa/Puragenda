@@ -124,6 +124,12 @@ model Business {
   timezone              String   @default("America/Santiago")
   ownerId               String?
   referredByAffiliateId String?
+  // ── Loyalty / Fidelización ──
+  isLoyaltyEnabled      Boolean  @default(false)
+  stampsRequired        Int      @default(5)
+  rewardName            String?
+  discountType          String?  // 'PERCENTAGE' | 'FIXED'
+  discountValue         Int?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -137,6 +143,7 @@ model Business {
   subscription       Subscription?
   businessHours      BusinessHours[]
   blockedDates       BlockedDate[]
+  loyaltyCodes       LoyaltyCode[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -242,6 +249,7 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELLED
   CHECKED_IN
+  COMPLETED
   NO_SHOW
 }
 
@@ -279,20 +287,44 @@ model Appointment {
 // ==========================================
 
 model Client {
-  id           String   @id @default(cuid())
-  name         String
-  email        String
-  phone        String?
-  totalSpent   Float    @default(0)
-  noShowCount  Int      @default(0)
-  businessId   String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  totalSpent     Float    @default(0)
+  noShowCount    Int      @default(0)
+  currentStamps  Int      @default(0)
+  businessId     String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]
+  loyaltyCodes LoyaltyCode[]
 
   @@unique([businessId, email])
+  @@index([businessId])
+}
+
+// ==========================================
+// LOYALTY / FIDELIZACIÓN
+// ==========================================
+
+model LoyaltyCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  clientId      String
+  businessId    String
+  discountType  String   // 'PERCENTAGE' | 'FIXED'
+  discountValue Int
+  rewardName    String?
+  isUsed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
   @@index([businessId])
 }
 
