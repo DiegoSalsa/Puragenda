@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/server/db/prisma";
+import { sendLoyaltyStampEmail, sendLoyaltyRewardEmail } from "@/server/email/send";
 import crypto from "crypto";
 
 /**
@@ -11,8 +12,10 @@ import crypto from "crypto";
  * 2. Encuentra al Client asociado a la reserva
  * 3. Incrementa currentStamps en +1
  * 4. Si currentStamps >= stampsRequired → genera LoyaltyCode y resetea stamps
+ * 5. Envía email al cliente con progreso o código de premio
  *
  * Todo dentro de prisma.$transaction para evitar race conditions.
+ * Los emails se envían DESPUÉS de la transacción (fire-and-forget).
  */
 export async function processLoyaltyStamps(appointmentId: string) {
   // Fetch the appointment with business and client data
@@ -22,6 +25,7 @@ export async function processLoyaltyStamps(appointmentId: string) {
       business: {
         select: {
           id: true,
+          name: true,
           isLoyaltyEnabled: true,
           stampsRequired: true,
           rewardName: true,
@@ -32,6 +36,7 @@ export async function processLoyaltyStamps(appointmentId: string) {
       client: {
         select: {
           id: true,
+          name: true,
           email: true,
           currentStamps: true,
         },
@@ -51,6 +56,11 @@ export async function processLoyaltyStamps(appointmentId: string) {
 
   // Guard: business must have discount configured
   if (!business.discountType || !business.discountValue) return;
+
+  // Track what happened inside the transaction for the email
+  let emailScenario: "stamp" | "reward" = "stamp" as "stamp" | "reward";
+  let newStampCount = 0;
+  let generatedCode = "";
 
   // All-or-nothing inside a transaction
   await prisma.$transaction(async (tx) => {
@@ -81,21 +91,45 @@ export async function processLoyaltyStamps(appointmentId: string) {
         data: { currentStamps: 0 },
       });
 
-      // TODO: Disparar email de Resend con el código ganador al customer.email
-      // Ejemplo:
-      // await sendLoyaltyRewardEmail({
-      //   to: client.email,
-      //   code,
-      //   rewardName: business.rewardName,
-      //   discountType: business.discountType,
-      //   discountValue: business.discountValue,
-      // });
+      emailScenario = "reward";
+      generatedCode = code;
     } else {
       // Just increment the stamp count
       await tx.client.update({
         where: { id: client.id },
         data: { currentStamps: newStamps },
       });
+
+      emailScenario = "stamp";
+      newStampCount = newStamps;
     }
   });
+
+  // ── Send emails AFTER the transaction succeeds (fire-and-forget) ──
+
+  const rewardName = business.rewardName || "Premio de fidelización";
+
+  if (emailScenario === "reward") {
+    sendLoyaltyRewardEmail({
+      clientEmail: client.email,
+      clientName: client.name,
+      stampsRequired: business.stampsRequired,
+      rewardName,
+      rewardCode: generatedCode,
+      discountType: business.discountType!,
+      discountValue: business.discountValue!,
+      businessName: business.name,
+      clientId: client.id,
+    }).catch((err) => console.error("[Loyalty] Error sending reward email:", err));
+  } else {
+    sendLoyaltyStampEmail({
+      clientEmail: client.email,
+      clientName: client.name,
+      currentStamps: newStampCount,
+      stampsRequired: business.stampsRequired,
+      rewardName,
+      businessName: business.name,
+      clientId: client.id,
+    }).catch((err) => console.error("[Loyalty] Error sending stamp email:", err));
+  }
 }

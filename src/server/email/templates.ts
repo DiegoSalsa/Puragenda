@@ -345,3 +345,121 @@ export function newRegistrationAdminEmail(data: NewRegistrationData): { subject:
   };
 }
 
+// ═══════════════════════════════════════════
+// LOYALTY — STAMP EARNED (progress)
+// ═══════════════════════════════════════════
+
+interface LoyaltyStampEmailData {
+  clientName: string;
+  currentStamps: number;
+  stampsRequired: number;
+  rewardName: string;
+  businessName: string;
+  portalUrl: string;
+}
+
+/** Email to client when they earn a stamp but haven't reached the goal yet */
+export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject: string; html: string } {
+  const remaining = data.stampsRequired - data.currentStamps;
+  const progressPct = Math.round((data.currentStamps / data.stampsRequired) * 100);
+
+  // Build visual stamp dots
+  const dots = Array.from({ length: data.stampsRequired }, (_, i) => {
+    const filled = i < data.currentStamps;
+    return `<span style="display:inline-block;width:24px;height:24px;margin:0 3px;border-radius:50%;${
+      filled
+        ? `background:${BRAND};box-shadow:0 0 8px ${BRAND}40;`
+        : "background:#e2e8f0;"
+    }"></span>`;
+  }).join("");
+
+  return {
+    subject: `¡Ganaste un nuevo timbre en ${data.businessName}! 🌟`,
+    html: layout("Nuevo Timbre", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo timbre sumado! 🌟</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.clientName}</strong>, gracias por tu visita.
+        Acabas de sumar un timbre en <strong style="color:${BRAND};">${data.businessName}</strong>.
+      </p>
+
+      <!-- Progress -->
+      <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;text-align:center;">
+        <div style="margin-bottom:12px;">${dots}</div>
+        <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;margin:0 auto;max-width:300px;">
+          <div style="background:linear-gradient(90deg,${BRAND},${BRAND_DARK});height:100%;width:${progressPct}%;border-radius:8px;"></div>
+        </div>
+        <p style="margin:12px 0 0;font-size:22px;font-weight:700;color:#0f172a;">
+          ${data.currentStamps} <span style="color:#94a3b8;font-size:14px;font-weight:400;">de</span> ${data.stampsRequired}
+        </p>
+        <p style="margin:4px 0 0;font-size:13px;color:#64748b;">
+          Te ${remaining === 1 ? "falta <strong>1 visita</strong>" : `faltan <strong>${remaining} visitas</strong>`} para ganar tu <strong style="color:${BRAND};">${data.rewardName}</strong>
+        </p>
+      </div>
+
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${data.portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Ver mis timbres →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¡Sigue así, cada visita cuenta!</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// LOYALTY — REWARD WON
+// ═══════════════════════════════════════════
+
+interface LoyaltyRewardEmailData {
+  clientName: string;
+  stampsRequired: number;
+  rewardName: string;
+  rewardCode: string;
+  discountType: string;
+  discountValue: number;
+  businessName: string;
+  portalUrl: string;
+}
+
+/** Email to client when they complete their stamp card and win a reward */
+export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: string; html: string } {
+  const discountLabel =
+    data.discountType === "PERCENTAGE"
+      ? `${data.discountValue}% de descuento`
+      : `$${data.discountValue.toLocaleString()} de descuento`;
+
+  return {
+    subject: `¡Llegaste a la meta! Aquí tienes tu premio de ${data.businessName} 🎁`,
+    html: layout("¡Premio Ganado!", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Felicidades, completaste tu tarjeta! 🎉</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        <strong style="color:#0f172a;">${data.clientName}</strong>, completaste tus <strong>${data.stampsRequired} visitas</strong> en
+        <strong style="color:${BRAND};">${data.businessName}</strong>. ¡Aquí tienes tu premio!
+      </p>
+
+      <!-- Reward card -->
+      <div style="margin:20px 0;padding:24px;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});border-radius:16px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Tu premio</p>
+        <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#fff;">${data.rewardName}</p>
+        <div style="background:rgba(255,255,255,0.15);border:2px dashed rgba(255,255,255,0.4);border-radius:12px;padding:16px;margin:0 auto;max-width:280px;">
+          <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;">Código</p>
+          <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:3px;font-family:monospace;">${data.rewardCode}</p>
+        </div>
+        <p style="margin:12px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">${discountLabel}</p>
+      </div>
+
+      <div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+        <p style="margin:0;font-size:13px;color:#166534;">
+          <strong>📋 ¿Cómo canjearlo?</strong> Presenta este código en tu próxima reserva en ${data.businessName}.
+        </p>
+      </div>
+
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${data.portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Ir a mi portal de premios →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¡Gracias por tu preferencia! Tu tarjeta se ha reiniciado para seguir acumulando.</p>
+    `),
+  };
+}

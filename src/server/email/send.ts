@@ -9,6 +9,8 @@ import {
   cancellationClientEmail,
   forgotPasswordEmail,
   newRegistrationAdminEmail,
+  loyaltyStampEarnedEmail,
+  loyaltyRewardWonEmail,
 } from "./templates";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 
@@ -269,4 +271,86 @@ export async function sendNewRegistrationNotification(data: {
 
   await Promise.allSettled(tasks);
   console.log(`[Email] Registration notification sent for ${data.businessName} (${data.ownerEmail})`);
+}
+
+// ═══════════════════════════════════════════
+// LOYALTY EMAILS
+// ═══════════════════════════════════════════
+
+/**
+ * Send email when client earns a stamp (but hasn’t reached the goal yet).
+ */
+export async function sendLoyaltyStampEmail(data: {
+  clientEmail: string;
+  clientName: string;
+  currentStamps: number;
+  stampsRequired: number;
+  rewardName: string;
+  businessName: string;
+  clientId: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
+
+  const { subject, html } = loyaltyStampEarnedEmail({
+    clientName: data.clientName,
+    currentStamps: data.currentStamps,
+    stampsRequired: data.stampsRequired,
+    rewardName: data.rewardName,
+    businessName: data.businessName,
+    portalUrl,
+  });
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: data.clientEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Loyalty stamp notification sent to ${data.clientEmail} (${data.currentStamps}/${data.stampsRequired})`);
+  } catch (err) {
+    console.error("[Email] Error sending loyalty stamp email:", err);
+  }
+}
+
+/**
+ * Send email when client completes their stamp card and wins a reward.
+ */
+export async function sendLoyaltyRewardEmail(data: {
+  clientEmail: string;
+  clientName: string;
+  stampsRequired: number;
+  rewardName: string;
+  rewardCode: string;
+  discountType: string;
+  discountValue: number;
+  businessName: string;
+  clientId: string;
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
+
+  const { subject, html } = loyaltyRewardWonEmail({
+    clientName: data.clientName,
+    stampsRequired: data.stampsRequired,
+    rewardName: data.rewardName,
+    rewardCode: data.rewardCode,
+    discountType: data.discountType,
+    discountValue: data.discountValue,
+    businessName: data.businessName,
+    portalUrl,
+  });
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: data.clientEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Loyalty reward email sent to ${data.clientEmail} (code: ${data.rewardCode})`);
+  } catch (err) {
+    console.error("[Email] Error sending loyalty reward email:", err);
+  }
 }
