@@ -2,49 +2,55 @@ import { prisma } from "@/server/db/prisma";
 import type { MetadataRoute } from "next";
 import { industriesData } from "@/lib/data/industries";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
+const baseUrl = "https://www.puragenda.cl";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
     {
-      url: SITE_URL,
+      url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
-      url: `${SITE_URL}/pricing`,
+      url: `${baseUrl}/pricing`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${SITE_URL}/sobre-nosotros`,
+      url: `${baseUrl}/sobre-nosotros`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.9,
     },
     {
-      url: `${SITE_URL}/login`,
+      url: `${baseUrl}/alternativa-agendapro`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/login`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.3,
     },
     {
-      url: `${SITE_URL}/register`,
+      url: `${baseUrl}/register`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${SITE_URL}/terminos-y-condiciones`,
+      url: `${baseUrl}/terminos-y-condiciones`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.2,
     },
     {
-      url: `${SITE_URL}/politica-de-privacidad`,
+      url: `${baseUrl}/politica-de-privacidad`,
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.2,
@@ -53,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Programmatic SEO Routes (Industries)
   const industryRoutes: MetadataRoute.Sitemap = industriesData.map((ind) => ({
-    url: `${SITE_URL}/para/${ind.slug}`,
+    url: `${baseUrl}/para/${ind.slug}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,
     priority: 0.8,
@@ -66,7 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const businessRoutes: MetadataRoute.Sitemap = businesses.map((b) => ({
-    url: `${SITE_URL}/widget/${b.slug}`,
+    url: `${baseUrl}/widget/${b.slug}`,
     lastModified: b.updatedAt,
     changeFrequency: "daily" as const,
     priority: 0.7,
