@@ -1,6 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Stamp } from "lucide-react";
 
 interface StampProgressProps {
   currentStamps: number;
@@ -8,52 +8,78 @@ interface StampProgressProps {
 }
 
 export function StampProgress({ currentStamps, stampsRequired }: StampProgressProps) {
+  const percentage = Math.min(100, (currentStamps / stampsRequired) * 100);
+
   return (
-    <div>
+    <div className="space-y-5">
       {/* Visual stamps grid */}
-      <div className="flex flex-wrap gap-2 justify-center">
+      <div className="grid grid-cols-5 gap-2.5 sm:gap-3">
         {Array.from({ length: stampsRequired }, (_, i) => {
           const isActive = i < currentStamps;
+          const isNext = i === currentStamps;
           return (
             <div
               key={i}
               className={`
-                relative flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300
+                group relative flex aspect-square items-center justify-center rounded-2xl border-2 transition-all duration-500
                 ${isActive
-                  ? "border-[#7C3AED]/40 bg-[#7C3AED]/20 shadow-[0_0_12px_rgba(124,58,237,0.3)]"
-                  : "border-white/[0.06] bg-white/[0.02]"
+                  ? "border-[#D4AF37]/50 bg-gradient-to-br from-[#D4AF37]/25 via-[#F5E6A3]/15 to-[#D4AF37]/10 shadow-[0_0_20px_rgba(212,175,55,0.25)] scale-100"
+                  : isNext
+                    ? "border-[#7C3AED]/40 bg-[#7C3AED]/10 animate-pulse shadow-[0_0_12px_rgba(124,58,237,0.15)]"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
                 }
               `}
-              style={{
-                animationDelay: `${i * 60}ms`,
-              }}
+              style={{ animationDelay: `${i * 80}ms`, animationDuration: isNext ? "2s" : undefined }}
             >
-              <Star
-                className={`h-5 w-5 transition-all duration-300 ${
+              {/* Sparkle effect for active stamps */}
+              {isActive && (
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#F5E6A3]/10 to-transparent opacity-60" />
+              )}
+
+              <Stamp
+                className={`relative z-10 h-6 w-6 sm:h-7 sm:w-7 transition-all duration-500 ${
                   isActive
-                    ? "text-[#A78BFA] fill-[#A78BFA] drop-shadow-[0_0_6px_rgba(167,139,250,0.5)]"
-                    : "text-white/10"
+                    ? "text-[#D4AF37] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+                    : isNext
+                      ? "text-[#7C3AED]/60"
+                      : "text-white/[0.08]"
                 }`}
               />
+
               {/* Stamp number */}
               <span
-                className={`absolute -bottom-0.5 text-[8px] font-bold ${
-                  isActive ? "text-[#A78BFA]" : "text-white/10"
+                className={`absolute bottom-1 text-[9px] font-bold tracking-tight ${
+                  isActive ? "text-[#D4AF37]/80" : isNext ? "text-[#7C3AED]/40" : "text-white/[0.06]"
                 }`}
               >
                 {i + 1}
               </span>
+
+              {/* Active glow ring */}
+              {isActive && (
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#F5E6A3]/5 blur-sm -z-10" />
+              )}
             </div>
           );
         })}
       </div>
 
       {/* Progress bar */}
-      <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/[0.04] border border-white/[0.06]">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] transition-all duration-700 ease-out"
+          className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
-            width: `${Math.min(100, (currentStamps / stampsRequired) * 100)}%`,
+            width: `${percentage}%`,
+            background: "linear-gradient(90deg, #7C3AED 0%, #D4AF37 60%, #F5E6A3 100%)",
+            boxShadow: "0 0 12px rgba(212,175,55,0.4)",
+          }}
+        />
+        {/* Shimmer effect */}
+        <div
+          className="absolute inset-0 rounded-full opacity-30"
+          style={{
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+            animation: "shimmer 2s infinite",
           }}
         />
       </div>

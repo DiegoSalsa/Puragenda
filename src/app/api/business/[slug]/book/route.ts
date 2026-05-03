@@ -24,7 +24,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId } = parsed.data;
+    const { serviceId, serviceIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId, rewardCode } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -148,6 +148,31 @@ export async function POST(
 
     if (appointmentWithRelations) {
       sendBookingNotifications(appointmentWithRelations).catch(() => {});
+    }
+
+    // ── Redeem reward code if provided ──
+    if (rewardCode) {
+      try {
+        const loyaltyCode = await prisma.loyaltyCode.findUnique({
+          where: { code: rewardCode },
+          include: { client: { select: { email: true } } },
+        });
+
+        if (
+          loyaltyCode &&
+          !loyaltyCode.isUsed &&
+          loyaltyCode.businessId === business.id &&
+          loyaltyCode.client.email.toLowerCase() === customerEmail.toLowerCase()
+        ) {
+          await prisma.loyaltyCode.update({
+            where: { id: loyaltyCode.id },
+            data: { isUsed: true },
+          });
+        }
+      } catch (err) {
+        console.error("[Book] Error redeeming reward code:", err);
+        // Don't block booking if reward redemption fails
+      }
     }
 
     return Response.json(result.appointment, { status: 201 });

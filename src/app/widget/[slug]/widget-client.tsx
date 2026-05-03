@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { addDays, addMinutes, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Loader2, Mail, Phone, Sparkles, UserRound, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, Phone, Sparkles, UserRound, Users } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 
 interface Service { id: string; name: string; description: string | null; duration: number; price: number; }
@@ -124,8 +124,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // ── Reward / Discount code state ──
+  const [rewardCode, setRewardCode] = useState("");
+  const [rewardStatus, setRewardStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
+  const [rewardError, setRewardError] = useState("");
+  const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number } | null>(null);
+
   const totalDuration = isMultiService ? selectedServices.reduce((s, sv) => s + sv.duration, 0) : (selectedService?.duration || 0);
-  const totalPrice = isMultiService ? selectedServices.reduce((s, sv) => s + sv.price, 0) : (selectedService?.price || 0);
+  const rawTotalPrice = isMultiService ? selectedServices.reduce((s, sv) => s + sv.price, 0) : (selectedService?.price || 0);
+
+  // Apply discount if a valid reward code is present
+  const totalPrice = useMemo(() => {
+    if (!rewardDiscount) return rawTotalPrice;
+    if (rewardDiscount.type === "PERCENTAGE") {
+      return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * rewardDiscount.value / 100));
+    }
+    // FIXED discount
+    return Math.max(0, rawTotalPrice - rewardDiscount.value);
+  }, [rawTotalPrice, rewardDiscount]);
 
   const hasMultipleStaff = staffMembers && staffMembers.length > 1;
 
@@ -214,6 +230,33 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
   }
 
+  async function handleValidateReward() {
+    const code = rewardCode.trim().toUpperCase();
+    if (!code || !form.email) return;
+    setRewardStatus("loading");
+    setRewardError("");
+    try {
+      const res = await fetch(`/api/business/${business.slug}/validate-reward`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
+        body: JSON.stringify({ code, email: form.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRewardStatus("invalid");
+        setRewardError(data.error || "Código inválido.");
+        setRewardDiscount(null);
+      } else {
+        setRewardStatus("valid");
+        setRewardDiscount({ type: data.discountType, value: data.discountValue });
+      }
+    } catch {
+      setRewardStatus("invalid");
+      setRewardError("Error al validar el código.");
+      setRewardDiscount(null);
+    }
+  }
+
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ name: true, email: true, phone: true });
@@ -231,6 +274,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           customerName: form.name, customerEmail: form.email,
           customerPhone: form.phone || undefined, startTime: selectedSlot.start.toISOString(),
           endTime: selectedSlot.end.toISOString(), staffId: selectedStaff?.id,
+          rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
         }),
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
@@ -241,6 +285,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   function restart() {
     setStep("service"); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedDate(null); setSelectedSlot(null);
     setForm({ name: "", email: "", phone: "" }); setTouched({ name: false, email: false, phone: false }); setApiError(""); setBlockedSlots([]);
+    setRewardCode(""); setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null);
   }
 
   const stepLabels = hasMultipleFilteredStaff ? ["Servicio", "Profesional", "Fecha y hora", "Tus datos"] : ["Servicio", "Fecha y hora", "Tus datos"];
@@ -434,6 +479,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 {selectedStaff && <div className="flex justify-between"><span className="text-white/40">Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}
                 <div className="flex justify-between"><span className="text-white/40">Fecha</span><span className="font-medium">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</span></div>
                 <div className="flex justify-between"><span className="text-white/40">Hora</span><span className="font-medium">{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</span></div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/40">Total</span>
+                  <span className="font-medium">
+                    {rewardDiscount ? (
+                      <span className="flex items-center gap-2">
+                        <span className="line-through text-white/30">{formatPrice(rawTotalPrice)}</span>
+                        <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice)}</span>
+                      </span>
+                    ) : formatPrice(rawTotalPrice)}
+                  </span>
+                </div>
               </div>
               <form onSubmit={handleConfirm} className="space-y-4">
                 {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono (opcional)", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
@@ -445,6 +501,43 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     {touched[field] && !validation[field] && <p className="text-xs text-red-400">Campo inválido</p>}
                   </div>
                 ))}
+                {/* ── Reward Code Input ── */}
+                <div className="space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <label className="flex items-center gap-1.5 text-sm text-white/60">
+                    <Gift className="h-3.5 w-3.5" />¿Tienes un código de premio?
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={rewardCode}
+                      onChange={(e) => { setRewardCode(e.target.value.toUpperCase()); if (rewardStatus !== "idle") { setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null); } }}
+                      placeholder="PREMIO-XXXXXX"
+                      className="flex-1 rounded-lg border px-3 py-2 text-sm font-mono tracking-wider uppercase outline-none transition-colors"
+                      style={rewardStatus === "valid" ? { borderColor: "#22c55e40", background: "#22c55e08" } : rewardStatus === "invalid" ? { borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)" } : { borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!rewardCode.trim() || !form.email || rewardStatus === "loading" || rewardStatus === "valid"}
+                      onClick={handleValidateReward}
+                      className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-30"
+                      style={{ background: `${pc}20`, color: pc }}
+                    >
+                      {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}
+                    </button>
+                  </div>
+                  {rewardStatus === "valid" && rewardDiscount && (
+                    <p className="text-xs text-green-400 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      ¡Código aplicado! Descuento de {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : formatPrice(rewardDiscount.value)}
+                    </p>
+                  )}
+                  {rewardStatus === "invalid" && rewardError && (
+                    <p className="text-xs text-red-400">{rewardError}</p>
+                  )}
+                  {!form.email && rewardCode.trim() && (
+                    <p className="text-xs text-amber-400/70">Ingresa tu correo electrónico primero para validar el código.</p>
+                  )}
+                </div>
                 {apiError && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{apiError}</div>}
                 <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-30" style={{ background: pc, color: getContrastColor(pc) }}>
                   {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Confirmando...</> : <>Confirmar reserva <ChevronRight className="h-4 w-4" /></>}

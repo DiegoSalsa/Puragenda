@@ -10,6 +10,8 @@ export const bookingSchema = z
 
     staffId: z.string().optional(),
 
+    rewardCode: z.string().optional(),
+
     customerName: z
       .string({ message: "El nombre es obligatorio" })
       .min(2, "El nombre debe tener al menos 2 caracteres")
