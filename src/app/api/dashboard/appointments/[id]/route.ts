@@ -54,6 +54,13 @@ export async function PATCH(
           data: { totalSpent: { increment: existing.totalPrice } },
         });
       }
+
+      // ── Loyalty: Process stamps when appointment is CHECKED_IN ──
+      if (status === "CHECKED_IN") {
+        processLoyaltyStamps(id).catch((err) =>
+          console.error("Error processing loyalty stamps:", err)
+        );
+      }
     }
 
     // Send confirmation email when status changes to CONFIRMED
@@ -86,13 +93,6 @@ export async function PATCH(
       if (fullAppointment) {
         sendCancellationEmail(fullAppointment).catch(() => {});
       }
-    }
-
-    // ── Loyalty: Process stamps when appointment is COMPLETED ──
-    if (status === "COMPLETED") {
-      processLoyaltyStamps(id).catch((err) =>
-        console.error("Error processing loyalty stamps:", err)
-      );
     }
 
     return Response.json(appointment);
