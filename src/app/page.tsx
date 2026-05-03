@@ -19,15 +19,9 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-
 // Dynamic imports for below-the-fold components (better TTI)
 const PricingCards = dynamic(() => import("@/components/pricing-cards").then((m) => m.PricingCards), { ssr: true });
+const FAQSection = dynamic(() => import("@/components/landing/faq-section").then((m) => m.FAQSection), { ssr: true });
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
 
 // ═══════════════════════════════════════════
@@ -86,38 +80,7 @@ const features = [
 
 // Plans data is now in the shared PricingCards component
 
-const faqs = [
-  {
-    question: "¿Cómo Puragenda ayuda a mi salón de belleza o centro de estética?",
-    answer:
-      "Puragenda automatiza todo el proceso de reservas. Tus clientes agendan desde tu web las 24 horas, el sistema detecta colisiones de horario automáticamente, y tú gestionas todo desde un panel profesional. Menos llamadas, menos WhatsApp, más tiempo para atender.",
-  },
-  {
-    question: "¿Puedo usar Puragenda desde el celular?",
-    answer:
-      "Sí. Puragenda funciona como una PWA (Progressive Web App) que puedes instalar directamente en tu celular. Funciona como una app nativa con acceso rápido desde tu pantalla de inicio, tanto en Android como en iPhone.",
-  },
-  {
-    question: "¿Qué pasa si mi cliente no asiste a su cita?",
-    answer:
-      "Puedes marcar la cita como 'No Show' desde el dashboard. El sistema registra el historial de asistencia de cada cliente, permitiéndote tomar decisiones informadas sobre políticas de cancelación y prioridad de agenda.",
-  },
-  {
-    question: "¿Es Puragenda una alternativa a AgendaPro?",
-    answer:
-      "Sí. Puragenda ofrece las mismas funcionalidades clave — reservas online, multi-profesional, widget embebible — con precios más accesibles, soporte directo humano y sin contratos de permanencia. Ideal para negocios que buscan una solución moderna y flexible.",
-  },
-  {
-    question: "¿Cómo integro el widget de reservas en mi sitio web?",
-    answer:
-      "Solo necesitas copiar un código iframe desde tu panel de configuración y pegarlo en tu HTML. El widget se adapta automáticamente al ancho de tu página y puedes personalizar colores para que combine con tu marca.",
-  },
-  {
-    question: "¿Puragenda funciona para clínicas y consultas médicas?",
-    answer:
-      "Sí. El sistema está diseñado para cualquier negocio que trabaje con citas: clínicas, consultorios, terapias, coaching y más. Cada profesional tiene su propia agenda con horarios y servicios independientes.",
-  },
-];
+// FAQs moved to FAQSection component
 
 // ═══════════════════════════════════════════
 // COMPONENT
@@ -178,25 +141,12 @@ export default function HomePage() {
     },
   };
 
-  // FAQPage JSON-LD for Google Rich Snippets
-  const jsonLdFaq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-    })),
-  };
+  // JSON-LD for FAQ moved to FAQSection
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden text-foreground selection:bg-[#7C3AED]/30">
       {/* JSON-LD Structured Data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
 
       {/* ─── Premium Background ─── */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
@@ -587,38 +537,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── FAQ ─── */}
-        <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-24 relative">
-          {/* Subtle glow behind FAQ */}
-          <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[600px] max-w-[100vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-[#7C3AED]/5 to-[#A78BFA]/5 blur-[100px]" />
-
-          <div className="mb-14 text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
-              Preguntas frecuentes
-            </p>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Todo lo que necesitas saber
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            <Accordion className="w-full space-y-4">
-              {faqs.map((faq, index) => (
-                <AccordionItem
-                  key={index}
-                  value={`item-${index}`}
-                  className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
-                >
-                  <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-5">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
+        <FAQSection />
 
         {/* ─── CTA Final ─── */}
         {/* ─── CTA Final ─── */}
