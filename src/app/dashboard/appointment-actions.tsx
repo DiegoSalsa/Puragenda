@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, Loader2, X, UserCheck, UserX } from "lucide-react";
+import { Check, CheckCircle, Loader2, X, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
 
 const STATUS_ACTIONS = [
