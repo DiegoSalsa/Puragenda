@@ -1,5 +1,8 @@
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
+
+// Zona horaria por defecto para formatear fechas en emails
+const BUSINESS_TZ = "America/Santiago";
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -55,8 +58,8 @@ function detailRow(label: string, value: string): string {
 }
 
 function detailsTable(data: BookingEmailData): string {
-  const date = format(data.startTime, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const time = `${format(data.startTime, "HH:mm")} - ${format(data.endTime, "HH:mm")}`;
+  const date = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const time = `${formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm")} - ${formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm")}`;
   return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
     ${detailRow("📅 Fecha", date)}
     ${detailRow("🕐 Hora", time)}
@@ -121,8 +124,8 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
 
 /** Email to client when booking is CONFIRMED */
 export function confirmedBookingClientEmail(data: BookingEmailData): { subject: string; html: string } {
-  const dateStr = format(data.startTime, "EEEE, d 'de' MMMM", { locale: es });
-  const timeStr = format(data.startTime, "HH:mm");
+  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
   return {
     subject: `¡Reserva Confirmada! Te esperamos — ${data.businessName}`,
     html: layout("Reserva Confirmada", `
