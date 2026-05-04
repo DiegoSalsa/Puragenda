@@ -122,17 +122,17 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                     >
                       {/* Name */}
                       <td className="px-3 sm:px-5 py-3 sm:py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold ${
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className={`flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                             isBlocked
                               ? "bg-red-500/10 text-red-500"
                               : "bg-[#7C3AED]/10 text-[#7C3AED]"
                           }`}>
                             {client.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{client.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
                               Cliente desde {new Date(client.createdAt).toLocaleDateString("es-CL", { month: "short", year: "numeric" })}
                             </p>
                           </div>

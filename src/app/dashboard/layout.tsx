@@ -24,7 +24,7 @@ export default async function DashboardLayout({
         userRole={user.role}
       />
       <main className="flex-1 overflow-auto">
-        <div className="p-4 sm:p-8">{children}</div>
+        <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
       </main>
     </div>
   );
