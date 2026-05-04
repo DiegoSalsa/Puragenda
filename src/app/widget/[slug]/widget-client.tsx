@@ -470,21 +470,21 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "details" && selectedService && selectedSlot && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep("datetime")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep("datetime")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs" style={{ background: `${pc}15`, color: pc }}>Paso final</span>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm text-white/40">Te enviaremos la confirmación.</p></div>
+              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm" style={{ color: textSecondary }}>Te enviaremos la confirmación.</p></div>
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm space-y-2">
-                <div className="flex justify-between"><span className="text-white/40">Servicio</span><span className="font-medium">{selectedService.name}</span></div>
-                {selectedStaff && <div className="flex justify-between"><span className="text-white/40">Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}
-                <div className="flex justify-between"><span className="text-white/40">Fecha</span><span className="font-medium">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Hora</span><span className="font-medium">{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</span></div>
+                <div className="flex justify-between"><span style={{ color: textSecondary }}>Servicio</span><span className="font-medium">{selectedService.name}</span></div>
+                {selectedStaff && <div className="flex justify-between"><span style={{ color: textSecondary }}>Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}
+                <div className="flex justify-between"><span style={{ color: textSecondary }}>Fecha</span><span className="font-medium">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</span></div>
+                <div className="flex justify-between"><span style={{ color: textSecondary }}>Hora</span><span className="font-medium">{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</span></div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/40">Total</span>
+                  <span style={{ color: textSecondary }}>Total</span>
                   <span className="font-medium">
                     {rewardDiscount ? (
                       <span className="flex items-center gap-2">
-                        <span className="line-through text-white/30">{formatPrice(rawTotalPrice)}</span>
+                        <span className="line-through opacity-40">{formatPrice(rawTotalPrice)}</span>
                         <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice)}</span>
                       </span>
                     ) : formatPrice(rawTotalPrice)}
@@ -494,7 +494,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <form onSubmit={handleConfirm} className="space-y-4">
                 {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono (opcional)", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
                   <div key={field} className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-sm text-white/60"><Icon className="h-3.5 w-3.5" />{label}</label>
+                    <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
                     <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder}
                       className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors"
                       style={!touched[field] ? { borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" } : validation[field] ? { borderColor: `${pc}30`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)" }} />
@@ -503,7 +503,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 ))}
                 {/* ── Reward Code Input ── */}
                 <div className="space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  <label className="flex items-center gap-1.5 text-sm text-white/60">
+                  <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" />¿Tienes un código de premio?
                   </label>
                   <div className="flex gap-2">
@@ -552,18 +552,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ background: `${pc}20` }}>
                 <CheckCircle2 className="h-9 w-9" style={{ color: pc }} />
               </div>
-              <div><h2 className="text-2xl font-bold">Reserva confirmada</h2><p className="mx-auto mt-2 max-w-md text-sm text-white/40">Ya quedó agendada tu cita.</p></div>
+              <div><h2 className="text-2xl font-bold">Reserva confirmada</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>Ya quedó agendada tu cita.</p></div>
               <div className="mx-auto max-w-md rounded-xl p-4 text-left text-sm" style={{ background: `${pc}10`, border: `1px solid ${pc}25` }}>
                 <p className="mb-2 flex items-center gap-1 font-medium" style={{ color: pc }}><Sparkles className="h-4 w-4" />Resumen</p>
-                <div className="space-y-1 text-white/70">
-                  <p><span className="text-white/40">Servicio:</span> {selectedService.name}</p>
-                  {selectedStaff && <p><span className="text-white/40">Profesional:</span> {selectedStaff.name}</p>}
-                  <p><span className="text-white/40">Fecha:</span> {capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p>
-                  <p><span className="text-white/40">Hora:</span> {format(selectedSlot.start, "HH:mm")}</p>
-                  <p><span className="text-white/40">Cliente:</span> {form.name}</p>
+                <div className="space-y-1 opacity-80" style={{ color: textColor }}>
+                  <p><span style={{ color: textSecondary }}>Servicio:</span> {selectedService.name}</p>
+                  {selectedStaff && <p><span style={{ color: textSecondary }}>Profesional:</span> {selectedStaff.name}</p>}
+                  <p><span style={{ color: textSecondary }}>Fecha:</span> {capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p>
+                  <p><span style={{ color: textSecondary }}>Hora:</span> {format(selectedSlot.start, "HH:mm")}</p>
+                  <p><span style={{ color: textSecondary }}>Cliente:</span> {form.name}</p>
                 </div>
               </div>
-              <button type="button" onClick={restart} className="rounded-xl border border-white/[0.06] px-5 py-2.5 text-sm text-white/60 transition-all hover:text-white">Agendar otra reserva</button>
+              <button type="button" onClick={restart} className="rounded-xl border px-5 py-2.5 text-sm opacity-60 transition-all hover:opacity-100" style={{ color: textColor, borderColor: `${textColor}15` }}>Agendar otra reserva</button>
             </div>
           )}
         </div>
