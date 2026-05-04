@@ -45,15 +45,15 @@ export default async function LoyaltyPage() {
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            Cada vez que una cita se marca como <strong className="text-foreground">Completada</strong>, el cliente recibe un timbre automáticamente.
+            <span>Cada vez que una cita se marca como <strong className="text-foreground">Completada</strong>, el cliente recibe un timbre automáticamente.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            Al acumular la cantidad de timbres configurada, se genera un <strong className="text-foreground">código de premio</strong> único.
+            <span>Al acumular la cantidad de timbres configurada, se genera un <strong className="text-foreground">código de premio</strong> único.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            Los clientes pueden ver su progreso y premios desde un <strong className="text-foreground">portal público</strong> sin necesidad de crear una cuenta.
+            <span>Los clientes pueden ver su progreso y premios desde un <strong className="text-foreground">portal público</strong> sin necesidad de crear una cuenta.</span>
           </li>
         </ul>
       </div>
