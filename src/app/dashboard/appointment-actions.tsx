@@ -7,7 +7,7 @@ import { useState } from "react";
 const STATUS_ACTIONS = [
   { status: "CONFIRMED" as const, label: "Confirmar", icon: Check, color: "emerald" },
   { status: "CHECKED_IN" as const, label: "Asistió", icon: UserCheck, color: "blue" },
-  { status: "NO_SHOW" as const, label: "No asistió", icon: UserX, color: "amber" },
+  { status: "NO_SHOW" as const, label: "Inasistencia", icon: UserX, color: "amber" },
   { status: "CANCELLED" as const, label: "Cancelar", icon: X, color: "red" },
 ];
 
@@ -52,7 +52,7 @@ export function AppointmentActions({
   }
 
   if (currentStatus === "NO_SHOW") {
-    return <span className="flex items-center gap-1 text-xs text-amber-400/70"><UserX className="h-3 w-3" /> No asistió</span>;
+    return <span className="flex items-center gap-1 text-xs text-amber-400/70"><UserX className="h-3 w-3" /> Inasistencia</span>;
   }
 
   return (

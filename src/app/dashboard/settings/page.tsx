@@ -20,7 +20,10 @@ export default async function SettingsPage() {
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
   const hours = await getBusinessHours(business.id);
-  const widgetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/widget/${business.slug}`;
+  const isProduction = process.env.NODE_ENV === "production";
+  const widgetUrl = isProduction
+    ? `https://www.puragenda.cl/widget/${business.slug}`
+    : `http://localhost:3000/widget/${business.slug}`;
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
 
   return (

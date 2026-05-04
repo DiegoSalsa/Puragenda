@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente", CONFIRMED: "Confirmada", CANCELLED: "Cancelada",
-  CHECKED_IN: "Asistió", NO_SHOW: "No asistió",
+  CHECKED_IN: "Asistió", NO_SHOW: "Inasistencia",
 };
 
 export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: CalendarAppointment[]; weekStartISO: string }) {
@@ -207,11 +207,11 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                     const apts = getAptsForDayHour(day, hour);
                     const isToday = isSameDay(day, today);
                     return (
-                      <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                      <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 min-w-0 overflow-hidden ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
                         {apts.map((apt) => {
                           const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
                           return (
-                            <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1`}>
+                            <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1 overflow-hidden`}>
                               <div className="flex items-center gap-1.5">
                                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                                 <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
@@ -286,7 +286,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                     </>)}
                     {selected.status === "CONFIRMED" && (<>
                       <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} Asistió</button>
-                      <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} No asistió</button>
+                      <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} Inasistencia</button>
                       <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancelar cita</button>
                     </>)}
                   </div>

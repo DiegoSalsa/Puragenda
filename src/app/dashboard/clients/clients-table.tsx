@@ -1,7 +1,9 @@
 "use client";
 
+import React from "react";
+
 import { useState, useMemo } from "react";
-import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail } from "lucide-react";
+import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown } from "lucide-react";
 
 interface ClientData {
   id: string;
@@ -21,6 +23,7 @@ function formatCLP(amount: number) {
 
 export function ClientsTable({ clients }: { clients: ClientData[] }) {
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
@@ -59,7 +62,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
             </div>
             <div>
               <p className="text-2xl font-bold">{formatCLP(totalRevenue)}</p>
-              <p className="text-xs text-muted-foreground">Revenue total</p>
+              <p className="text-xs text-muted-foreground">Ingresos totales</p>
             </div>
           </div>
         </div>
@@ -106,7 +109,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                   <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5">Contacto</th>
                   <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-center">Citas</th>
                   <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">Completadas</th>
-                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">No-Shows</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">Inasistencias</th>
                   <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-right">Total Gastado</th>
                 </tr>
               </thead>
@@ -114,9 +117,10 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                 {filtered.map((client) => {
                   const isBlocked = client.noShowCount >= 2;
                   return (
+                    <React.Fragment key={client.id}>
                     <tr
-                      key={client.id}
-                      className={`border-b border-border/50 transition-colors hover:bg-muted/50 ${
+                      onClick={() => setExpandedId(expandedId === client.id ? null : client.id)}
+                      className={`border-b border-border/50 transition-colors hover:bg-muted/50 cursor-pointer ${
                         isBlocked ? "bg-red-500/[0.03]" : ""
                       }`}
                     >
@@ -130,16 +134,21 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                           }`}>
                             {client.name.charAt(0).toUpperCase()}
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{client.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              Cliente desde {new Date(client.createdAt).toLocaleDateString("es-CL", { month: "short", year: "numeric" })}
-                            </p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{client.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                Cliente desde {new Date(client.createdAt).toLocaleDateString("es-CL", { month: "short", year: "numeric" })}
+                              </p>
+                            </div>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform sm:hidden ${
+                              expandedId === client.id ? "rotate-180" : ""
+                            }`} />
                           </div>
                         </div>
                       </td>
 
-                      {/* Contact */}
+                      {/* Contact - hidden on mobile */}
                       <td className="hidden sm:table-cell px-3 sm:px-5 py-3 sm:py-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -165,7 +174,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                         <span className="font-medium text-emerald-500">{client.completedAppointments}</span>
                       </td>
 
-                      {/* No-shows */}
+                      {/* Inasistencias */}
                       <td className="hidden sm:table-cell px-3 sm:px-5 py-3 sm:py-4 text-center">
                         {client.noShowCount > 0 ? (
                           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -189,6 +198,39 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                         </span>
                       </td>
                     </tr>
+
+                    {/* Expandable detail row (accordion) - shows on mobile */}
+                    {expandedId === client.id && (
+                      <tr className="border-b border-border/50 sm:hidden">
+                        <td colSpan={6} className="px-3 py-3 bg-muted/30">
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="h-3.5 w-3.5 shrink-0" />
+                              <span className="font-medium text-foreground">{client.email}</span>
+                            </div>
+                            {client.phone && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                <span className="font-medium text-foreground">{client.phone}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
+                              <span>Gastado: <span className="font-mono font-medium text-foreground">{client.totalSpent > 0 ? formatCLP(client.totalSpent) : "$0"}</span></span>
+                              <span>Citas: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
+                              <span>Completadas: <span className="font-medium text-emerald-500">{client.completedAppointments}</span></span>
+                            </div>
+                            {client.noShowCount > 0 && (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                <span className="text-amber-500">{client.noShowCount} inasistencia{client.noShowCount > 1 ? "s" : ""}</span>
+                                {isBlocked && <span className="text-red-500 font-medium">· Bloqueado</span>}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

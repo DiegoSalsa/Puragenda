@@ -40,19 +40,22 @@ export async function PATCH(
     // ── CRM: Update Client stats based on status change ──
     if (existing.clientId) {
       if (status === "NO_SHOW") {
-        // Increment no-show counter
+        // Incrementar contador de inasistencias
         await prisma.client.update({
           where: { id: existing.clientId },
           data: { noShowCount: { increment: 1 } },
         });
       }
 
-      if (status === "CHECKED_IN" && existing.totalPrice) {
-        // Add to totalSpent when checked in
-        await prisma.client.update({
-          where: { id: existing.clientId },
-          data: { totalSpent: { increment: existing.totalPrice } },
-        });
+      if (status === "CHECKED_IN") {
+        // Add to totalSpent when checked in — fall back to service price if totalPrice not set
+        const amount = existing.totalPrice || existing.service.price;
+        if (amount > 0) {
+          await prisma.client.update({
+            where: { id: existing.clientId },
+            data: { totalSpent: { increment: amount } },
+          });
+        }
       }
 
       // ── Loyalty: Process stamps when appointment is CHECKED_IN ──
