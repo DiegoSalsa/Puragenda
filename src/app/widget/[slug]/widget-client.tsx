@@ -383,10 +383,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "staff" && selectedService && filteredStaff.length > 0 && (
             <div className="animate-fade-up space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
               </div>
-              <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm text-white/40">Selecciona quién te atenderá.</p></div>
+              <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona quién te atenderá.</p></div>
               <div className="grid gap-3">
                 {filteredStaff.map((staff) => (
                   <button key={staff.id} type="button" onClick={() => { setSelectedStaff(staff); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
@@ -399,7 +399,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         </div>
                         <p className="font-medium">{staff.name}</p>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-white/20" />
+                      <ChevronRight className="h-4 w-4 opacity-25" style={{ color: textColor }} />
                     </div>
                   </button>
                 ))}
@@ -411,15 +411,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "datetime" && selectedService && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep(hasMultipleFilteredStaff ? "staff" : "service")} className="flex items-center gap-1 text-sm text-white/40 hover:text-white/70"><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep(hasMultipleFilteredStaff ? "staff" : "service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <div className="flex gap-2">
                   <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
-                  {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border border-white/[0.06] text-white/50">{selectedStaff.name}</span>}
+                  {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border opacity-60" style={{ color: textColor, borderColor: `${textColor}15` }}>{selectedStaff.name}</span>}
                 </div>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm text-white/40">Selecciona un día y luego una hora disponible.</p></div>
+              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/60">Días disponibles</p>
+                <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   {days.map((day) => {
                     const sel = selectedDate?.toDateString() === day.toDateString();
@@ -429,9 +429,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
                         className={`rounded-xl border px-2 py-2 text-left transition-all ${!staffWorking ? "opacity-30 cursor-not-allowed" : ""}`}
                         style={sel ? { borderColor: `${pc}40`, background: `${pc}15` } : { borderColor: "rgba(255,255,255,0.06)" }}>
-                        <p className="text-[11px] uppercase text-white/40">{capitalize(format(day, "EEE", { locale: es }))}</p>
+                        <p className="text-[11px] uppercase" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: es }))}</p>
                         <p className="text-lg font-bold leading-none">{format(day, "d")}</p>
-                        <p className="text-xs text-white/40">{capitalize(format(day, "MMMM", { locale: es }))}</p>
+                        <p className="text-xs" style={{ color: textSecondary }}>{capitalize(format(day, "MMMM", { locale: es }))}</p>
                       </button>
                     );
                   })}
@@ -439,9 +439,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               {selectedDate && (
                 <div className="space-y-3">
-                  <p className="text-sm font-medium text-white/60">Horas — {capitalize(format(selectedDate, "EEEE d 'de' MMMM", { locale: es }))}</p>
+                  <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Horas — {capitalize(format(selectedDate, "EEEE d 'de' MMMM", { locale: es }))}</p>
                   {loadingSlots ? (
-                    <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-white/30" /></div>
+                    <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin opacity-40" style={{ color: textColor }} /></div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {slots.map((slot) => {
@@ -449,7 +449,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
                         return (
                           <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => setSelectedSlot(slot)}
-                            className={`rounded-full border px-3 py-2 text-sm transition-all ${blocked ? "cursor-not-allowed border-white/[0.03] bg-white/[0.01] text-white/15 line-through" : ""}`}
+                            className={`rounded-full border px-3 py-2 text-sm transition-all ${blocked ? "cursor-not-allowed opacity-20 line-through" : ""}`}
                             style={active && !blocked ? { borderColor: `${pc}50`, background: `${pc}20`, color: pc, fontWeight: 600 } : blocked ? {} : { borderColor: "rgba(255,255,255,0.06)" }}>
                             {format(slot.start, "HH:mm")}
                           </button>
