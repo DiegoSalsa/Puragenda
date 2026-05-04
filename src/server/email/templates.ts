@@ -463,3 +463,45 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
     `),
   };
 }
+
+// ═══════════════════════════════════════════
+// APPOINTMENT REMINDER (day before)
+// ═══════════════════════════════════════════
+
+interface ReminderEmailData {
+  customerName: string;
+  serviceName: string;
+  staffName: string;
+  startTime: Date;
+  endTime: Date;
+  businessName: string;
+}
+
+/** Email to client the day before their appointment */
+export function reminderEmail(data: ReminderEmailData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+
+  return {
+    subject: `Recordatorio de tu cita en ${data.businessName}`,
+    html: layout("Recordatorio de Cita", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Recordatorio de tu cita de mañana 🔔</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, te recordamos que mañana tienes una cita en <strong style="color:${BRAND};">${data.businessName}</strong>.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
+        ${detailRow("📅 Fecha", dateStr)}
+        ${detailRow("🕐 Hora", `${timeStr} - ${timeEnd}`)}
+        ${detailRow("💇 Servicio", data.serviceName)}
+        ${detailRow("👤 Profesional", data.staffName)}
+      </table>
+      <div style="margin:20px 0;padding:16px;background:linear-gradient(135deg,${BRAND}10,${BRAND}05);border-radius:10px;border:1px solid ${BRAND}30;">
+        <p style="margin:0;font-size:15px;color:${BRAND_DARK};text-align:center;font-weight:600;">
+          Te esperamos mañana a las ${timeStr} 🎉
+        </p>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Si necesitas cancelar o reprogramar, contacta directamente a ${data.businessName}.</p>
+    `),
+  };
+}
