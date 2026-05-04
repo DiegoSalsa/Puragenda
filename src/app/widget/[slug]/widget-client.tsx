@@ -179,16 +179,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: form.phone.length === 0 || /^\+?[0-9\s()-]{8,18}$/.test(form.phone) };
   const isFormValid = validation.name && validation.email && validation.phone;
 
-  const fetchBlocked = useCallback(async (date: Date) => {
+  const fetchBlocked = useCallback(async (date: Date, staffId?: string) => {
     setLoadingSlots(true);
     try {
       const dateStr = format(date, "yyyy-MM-dd");
-      const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}`, { headers: { "x-api-key": business.apiKey } });
+      const staffParam = staffId ? `&staffId=${staffId}` : "";
+      const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}`, { headers: { "x-api-key": business.apiKey } });
       if (res.ok) { const data = await res.json(); setBlockedSlots(data); }
     } catch { /* ignore */ } finally { setLoadingSlots(false); }
   }, [business.slug, business.apiKey]);
 
-  useEffect(() => { if (selectedDate) fetchBlocked(selectedDate); }, [selectedDate, fetchBlocked]);
+  useEffect(() => { if (selectedDate) fetchBlocked(selectedDate, selectedStaff?.id); }, [selectedDate, selectedStaff, fetchBlocked]);
 
   // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
   function getStaffForServices(serviceIds: string[]): StaffMember[] {
