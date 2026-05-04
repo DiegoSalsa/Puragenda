@@ -21,7 +21,8 @@ const navItems = [
 
 function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName: string; widgetSlug?: string; userRole?: string; onClose?: () => void }) {
   const pathname = usePathname();
-  const widgetHref = widgetSlug ? `/widget/${widgetSlug}` : "/dashboard/settings";
+  const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
 
   const visibleItems = navItems.filter((item) => {
     // STAFF: only sees their own agenda

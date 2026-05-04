@@ -18,7 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const title = `Reserva en ${business.name} | Puragenda`;
   const description = `Agenda tu cita en ${business.name} de forma rápida y segura. Reservas online 24/7 con confirmación inmediata.`;
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`;
+  const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const url = new URL(`/widget/${business.slug}`, baseUrl).toString();
 
   return {
     title,
@@ -89,18 +90,22 @@ export default async function WidgetPage({
   const textColor = sp.text ? `#${sp.text}` : (business.textColor || "#FFFFFF");
   const textMuted = sp.textSecondary ? `#${sp.textSecondary}` : (business.textMutedColor || `${textColor}66`);
   const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : (business.widgetFontSize || 14);
+
+  const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const url = new URL(`/widget/${business.slug}`, baseUrl).toString();
+
   // LocalBusiness JSON-LD for local SEO
   const jsonLdLocalBusiness = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: business.name,
-    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`,
+    url,
     ...(business.logoUrl && { image: business.logoUrl }),
     potentialAction: {
       "@type": "ReserveAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/widget/${business.slug}`,
+        urlTemplate: url,
         actionPlatform: ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"],
       },
       result: {
