@@ -158,13 +158,13 @@ export default function HomePage() {
 
         {/* Dynamic Spotlight Aurora (Subtle) */}
         <div className="absolute top-[-5%] md:top-[-10%] left-1/2 w-[200%] h-[40vh] md:h-[50vh] -translate-x-1/2 opacity-20 md:opacity-30 dark:opacity-20 dark:md:opacity-40">
-          <div className="absolute top-0 left-1/2 w-[100%] md:w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[60px] md:blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
+          <div className="absolute top-0 left-1/2 w-[100%] md:w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[30px] md:blur-[60px] lg:blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
         </div>
 
         {/* Floating Ambient Orbs (Subtle) */}
-        <div className="absolute top-[5%] md:top-[10%] -left-20 md:-left-10 h-[20rem] w-[20rem] md:h-[35rem] md:w-[35rem] rounded-full bg-[#7C3AED]/15 md:bg-[#7C3AED]/20 blur-[80px] md:blur-[110px] dark:bg-[#7C3AED]/15 dark:md:bg-[#7C3AED]/25" />
-        <div className="absolute top-[30%] -right-20 md:-right-10 h-[25rem] w-[25rem] md:h-[45rem] md:w-[45rem] rounded-full bg-[#E91E8C]/5 md:bg-[#E91E8C]/10 blur-[80px] md:blur-[130px] dark:bg-[#E91E8C]/10 dark:md:bg-[#E91E8C]/15" />
-        <div className="absolute bottom-[10%] left-[0%] md:left-[10%] h-[20rem] w-[20rem] md:h-[40rem] md:w-[40rem] rounded-full bg-[#3b82f6]/5 md:bg-[#3b82f6]/10 blur-[80px] md:blur-[130px] dark:bg-[#3b82f6]/10 dark:md:bg-[#3b82f6]/15" />
+        <div className="absolute top-[5%] md:top-[10%] -left-20 md:-left-10 h-[20rem] w-[20rem] md:h-[35rem] md:w-[35rem] rounded-full bg-[#7C3AED]/15 md:bg-[#7C3AED]/20 blur-[40px] md:blur-[80px] lg:blur-[110px] dark:bg-[#7C3AED]/15 dark:md:bg-[#7C3AED]/25" />
+        <div className="absolute top-[30%] -right-20 md:-right-10 h-[25rem] w-[25rem] md:h-[45rem] md:w-[45rem] rounded-full bg-[#E91E8C]/5 md:bg-[#E91E8C]/10 blur-[40px] md:blur-[100px] lg:blur-[130px] dark:bg-[#E91E8C]/10 dark:md:bg-[#E91E8C]/15" />
+        <div className="absolute bottom-[10%] left-[0%] md:left-[10%] h-[20rem] w-[20rem] md:h-[40rem] md:w-[40rem] rounded-full bg-[#3b82f6]/5 md:bg-[#3b82f6]/10 blur-[40px] md:blur-[100px] lg:blur-[130px] dark:bg-[#3b82f6]/10 dark:md:bg-[#3b82f6]/15" />
       </div>
 
       <Navbar />
@@ -186,7 +186,7 @@ export default function HomePage() {
             {/* Lead Capture Form / CTA */}
             <div className="mx-auto mt-8 flex max-w-md flex-col justify-center gap-4 sm:flex-row relative z-10">
               <Link href="/register" className="w-full sm:w-auto">
-                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
+                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-3 sm:py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
                   <span className="relative z-10 flex items-center gap-2">
                     Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -194,7 +194,7 @@ export default function HomePage() {
                 </button>
               </Link>
               <Link href="/widget/purocode-demo" className="w-full sm:w-auto">
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
+                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-3 sm:py-4 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
                   Ver Demo
                 </button>
               </Link>
@@ -220,7 +220,7 @@ export default function HomePage() {
           {/* ─── Product Showcase ─── */}
           <div id="como-funciona" className="mt-24 space-y-8 relative">
             {/* Massive backdrop glow behind showcase */}
-            <div className="absolute left-1/2 top-1/2 -z-10 h-[300px] md:h-[600px] w-[100%] md:w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[#7C3AED]/15 to-[#A78BFA]/15 md:from-[#7C3AED]/20 md:to-[#A78BFA]/20 blur-[100px] md:blur-[140px]" />
+            <div className="absolute left-1/2 top-1/2 -z-10 h-[300px] md:h-[600px] w-[100%] md:w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-[#7C3AED]/15 to-[#A78BFA]/15 md:from-[#7C3AED]/20 md:to-[#A78BFA]/20 blur-[50px] md:blur-[100px] lg:blur-[140px]" />
 
             <div className="text-center">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">

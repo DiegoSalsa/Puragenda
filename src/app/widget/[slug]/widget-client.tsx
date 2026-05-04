@@ -320,7 +320,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>
           </div>
           {step !== "success" && (
-            <div className={`mt-4 grid gap-2 text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
+            <div className={`mt-4 grid gap-2 text-[10px] sm:text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
               {stepLabels.map((label, i) => (
                 <div key={label} className="rounded-full px-2 py-1.5 text-center transition-all duration-300" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
                   {label}
@@ -421,7 +421,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                   {days.map((day) => {
                     const sel = selectedDate?.toDateString() === day.toDateString();
                     const staffWorking = selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay()) : true;
@@ -444,7 +444,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {loadingSlots ? (
                     <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin opacity-40" style={{ color: textColor }} /></div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                       {slots.map((slot) => {
                         const blocked = isBlocked(slot, blockedSlots);
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
@@ -497,7 +497,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <div key={field} className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
                     <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder}
-                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors"
+                      className="w-full rounded-xl border px-4 py-2.5 text-sm min-h-[44px] outline-none transition-colors"
                       style={!touched[field] ? { borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" } : validation[field] ? { borderColor: `${pc}30`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)" }} />
                     {touched[field] && !validation[field] && <p className="text-xs text-red-400">Campo inválido</p>}
                   </div>
@@ -520,7 +520,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       type="button"
                       disabled={!rewardCode.trim() || !form.email || rewardStatus === "loading" || rewardStatus === "valid"}
                       onClick={handleValidateReward}
-                      className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-30"
+                      className="shrink-0 rounded-lg px-4 py-2 min-h-[44px] text-sm font-medium transition-all disabled:opacity-30"
                       style={{ background: `${pc}20`, color: pc }}
                     >
                       {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}

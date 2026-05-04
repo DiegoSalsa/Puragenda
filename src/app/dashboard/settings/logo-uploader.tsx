@@ -74,7 +74,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-5">
+      <div className="flex items-start gap-3 sm:gap-5">
         {/* Logo preview */}
         <div className="relative shrink-0">
           <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted">
@@ -105,7 +105,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]"
+              className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 h-10 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]"
             >
               {uploading ? (
                 <>
@@ -122,7 +122,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
                 type="button"
                 onClick={handleRemove}
                 disabled={removing || uploading}
-                className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-sm text-red-400 disabled:opacity-50 transition-all hover:bg-red-500/10"
+                className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 h-10 text-sm text-red-400 disabled:opacity-50 transition-all hover:bg-red-500/10"
               >
                 {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                 Eliminar

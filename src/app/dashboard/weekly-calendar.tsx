@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,6 +31,9 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"day" | "week">("week");
+  const [selectedDayIdx, setSelectedDayIdx] = useState<number>(0);
+  const touchStartX = useRef<number | null>(null);
 
   const weekStart = useMemo(() => {
     // Parse yyyy-MM-dd as local date (noon to avoid DST edge cases)
@@ -48,6 +51,49 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
 
   function goToday() {
     router.push("/dashboard");
+  }
+
+  // Sync selected day index when week changes (e.g. after URL navigation)
+  useEffect(() => {
+    const t = new Date();
+    for (let i = 0; i < 7; i++) {
+      if (isSameDay(addDays(weekStart, i), t)) {
+        setSelectedDayIdx(i);
+        return;
+      }
+    }
+    setSelectedDayIdx(0);
+  }, [weekStartISO]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function prevDay() {
+    if (selectedDayIdx > 0) {
+      setSelectedDayIdx((p) => p - 1);
+    } else {
+      navigateWeek("prev");
+      setSelectedDayIdx(6);
+    }
+  }
+
+  function nextDay() {
+    if (selectedDayIdx < 6) {
+      setSelectedDayIdx((p) => p + 1);
+    } else {
+      navigateWeek("next");
+      setSelectedDayIdx(0);
+    }
+  }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 50) {
+      delta < 0 ? nextDay() : prevDay();
+    }
+    touchStartX.current = null;
   }
 
   async function handleStatus(status: string) {
@@ -73,79 +119,141 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   }
 
   const isCurrentWeek = isSameDay(startOfWeek(today, { weekStartsOn: 1 }), weekStart);
+  const selectedDay = days[selectedDayIdx] ?? days[0];
+  const isDayToday = isSameDay(selectedDay, today);
 
   return (
     <>
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        {/* Header with navigation */}
-        <div className="border-b border-border px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Calendario</h2>
-            {!isCurrentWeek && (
-              <button onClick={goToday} className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-xs font-medium text-[#A78BFA] transition-all hover:bg-[#7C3AED]/20">
-                Hoy
+        {/* Header */}
+        <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <h2 className="text-base sm:text-lg font-semibold">Calendario</h2>
+              {!isCurrentWeek && (
+                <button onClick={goToday} className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-xs font-medium text-[#A78BFA] transition-all hover:bg-[#7C3AED]/20">
+                  Hoy
+                </button>
+              )}
+            </div>
+            {/* View toggle */}
+            <div className="flex items-center rounded-xl border border-border bg-muted p-0.5">
+              <button
+                onClick={() => setViewMode("day")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Día
               </button>
-            )}
+              <button
+                onClick={() => setViewMode("week")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Semana
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigateWeek("prev")} className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground">
+          {/* Navigation row */}
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={viewMode === "week" ? () => navigateWeek("prev") : prevDay}
+              className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+            >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="min-w-[180px] text-center text-sm text-muted-foreground">
-              {format(weekStart, "d MMM", { locale: es })} — {format(addDays(weekStart, 6), "d MMM yyyy", { locale: es })}
+            <span className="flex-1 text-center text-sm">
+              {viewMode === "week" ? (
+                <span className="text-muted-foreground">
+                  {format(weekStart, "d MMM", { locale: es })} — {format(addDays(weekStart, 6), "d MMM yyyy", { locale: es })}
+                </span>
+              ) : (
+                <span className="font-medium capitalize">
+                  {format(selectedDay, "EEEE d 'de' MMMM", { locale: es })}
+                </span>
+              )}
             </span>
-            <button onClick={() => navigateWeek("next")} className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground">
+            <button
+              onClick={viewMode === "week" ? () => navigateWeek("next") : nextDay}
+              className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+            >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            {/* Day headers */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
-              <div className="p-2" />
-              {days.map((day) => {
-                const isToday = isSameDay(day, today);
-                return (
-                  <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: es })}</p>
-                    <p className={`text-xl font-bold ${isToday ? "text-[#7C3AED]" : ""}`}>{format(day, "d")}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Time grid */}
-            {HOURS.map((hour) => (
-              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/30">
-                <div className="flex items-start justify-end pr-2 pt-2 text-[11px] text-muted-foreground/60 font-mono">
-                  {String(hour).padStart(2, "0")}:00
-                </div>
+        {viewMode === "week" ? (
+          /* ── Week view ── */
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Day headers */}
+              <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
+                <div className="p-2" />
                 {days.map((day) => {
-                  const apts = getAptsForDayHour(day, hour);
                   const isToday = isSameDay(day, today);
                   return (
-                    <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
-                      {apts.map((apt) => {
-                        const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
-                        return (
-                          <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1`}>
-                            <div className="flex items-center gap-1.5">
-                              <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
-                              <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
-                            </div>
-                            <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
-                          </button>
-                        );
-                      })}
+                    <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: es })}</p>
+                      <p className={`text-xl font-bold ${isToday ? "text-[#7C3AED]" : ""}`}>{format(day, "d")}</p>
                     </div>
                   );
                 })}
               </div>
+              {/* Time grid */}
+              {HOURS.map((hour) => (
+                <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/30">
+                  <div className="flex items-start justify-end pr-2 pt-2 text-[11px] text-muted-foreground/60 font-mono">
+                    {String(hour).padStart(2, "0")}:00
+                  </div>
+                  {days.map((day) => {
+                    const apts = getAptsForDayHour(day, hour);
+                    const isToday = isSameDay(day, today);
+                    return (
+                      <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                        {apts.map((apt) => {
+                          const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
+                          return (
+                            <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1`}>
+                              <div className="flex items-center gap-1.5">
+                                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
+                                <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* ── Day view ── */
+          <div className="select-none" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            {HOURS.map((hour) => (
+              <div key={hour} className="grid grid-cols-[56px_1fr] border-b border-border/30">
+                <div className="flex items-start justify-end pr-2 pt-2 text-[10px] sm:text-[11px] text-muted-foreground/60 font-mono">
+                  {String(hour).padStart(2, "0")}:00
+                </div>
+                <div className={`border-l border-border min-h-[56px] p-1.5 ${isDayToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                  {getAptsForDayHour(selectedDay, hour).map((apt) => {
+                    const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
+                    return (
+                      <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-2 text-left transition-all hover:scale-[1.01] mb-1`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 shrink-0 rounded-full ${sc.dot}`} />
+                          <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
+                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">{apt.serviceName} · {apt.staffName}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modal */}

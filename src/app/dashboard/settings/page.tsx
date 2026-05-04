@@ -58,7 +58,7 @@ export default async function SettingsPage() {
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Link2 className="h-4 w-4 text-[#7C3AED]" /> Slug del Negocio
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm">{business.slug}</div>
             <CopyButton text={business.slug} />
           </div>
@@ -69,7 +69,7 @@ export default async function SettingsPage() {
             <Key className="h-4 w-4 text-[#7C3AED]" /> API Key
             <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]">Secreta</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex-1 break-all rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm">{business.apiKey}</div>
             <CopyButton text={business.apiKey} />
           </div>
@@ -91,7 +91,7 @@ export default async function SettingsPage() {
         <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="mb-4 text-sm font-medium">Previsualización del Widget</h3>
           <div className="overflow-hidden rounded-2xl border border-border">
-            <iframe src={widgetUrl} width="100%" height="700" style={{ border: "none" }} />
+            <iframe src={widgetUrl} width="100%" style={{ border: "none", height: "min(90vh, 700px)" }} />
           </div>
         </div>
       </div>

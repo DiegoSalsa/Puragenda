@@ -102,12 +102,12 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-5 py-3.5">Cliente</th>
-                  <th className="px-5 py-3.5">Contacto</th>
-                  <th className="px-5 py-3.5 text-center">Citas</th>
-                  <th className="px-5 py-3.5 text-center">Completadas</th>
-                  <th className="px-5 py-3.5 text-center">No-Shows</th>
-                  <th className="px-5 py-3.5 text-right">Total Gastado</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5">Cliente</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5">Contacto</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-center">Citas</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">Completadas</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">No-Shows</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-right">Total Gastado</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,7 +121,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       }`}
                     >
                       {/* Name */}
-                      <td className="px-5 py-4">
+                      <td className="px-3 sm:px-5 py-3 sm:py-4">
                         <div className="flex items-center gap-3">
                           <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold ${
                             isBlocked
@@ -140,7 +140,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       </td>
 
                       {/* Contact */}
-                      <td className="px-5 py-4">
+                      <td className="hidden sm:table-cell px-3 sm:px-5 py-3 sm:py-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Mail className="h-3 w-3" />
@@ -156,17 +156,17 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       </td>
 
                       {/* Total appointments */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="px-3 sm:px-5 py-3 sm:py-4 text-center">
                         <span className="font-medium">{client.totalAppointments}</span>
                       </td>
 
                       {/* Completed */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="hidden sm:table-cell px-3 sm:px-5 py-3 sm:py-4 text-center">
                         <span className="font-medium text-emerald-500">{client.completedAppointments}</span>
                       </td>
 
                       {/* No-shows */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="hidden sm:table-cell px-3 sm:px-5 py-3 sm:py-4 text-center">
                         {client.noShowCount > 0 ? (
                           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                             isBlocked
@@ -183,7 +183,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       </td>
 
                       {/* Revenue */}
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-3 sm:px-5 py-3 sm:py-4 text-right">
                         <span className="font-mono font-medium">
                           {client.totalSpent > 0 ? formatCLP(client.totalSpent) : "-"}
                         </span>

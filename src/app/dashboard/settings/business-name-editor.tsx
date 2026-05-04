@@ -31,18 +31,18 @@ export function BusinessNameEditor({ initialName }: { initialName: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nombre de tu negocio"
-          className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+          className="flex-1 w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm min-h-[44px] outline-none transition-colors focus:border-[#7C3AED]/30"
         />
         <button
           onClick={handleSave}
           disabled={saving || !name.trim() || name.trim() === initialName}
-          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 h-11 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Guardar

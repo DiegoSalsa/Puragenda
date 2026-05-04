@@ -35,8 +35,8 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
     <>
       <div className="border-b border-border p-6 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-12 w-auto -my-2 dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-12 w-auto -my-2 dark:block" />
+          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
+          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
           <span className="text-xl font-bold tracking-tight">
             Pura<span className="text-[#7C3AED]">genda</span>
           </span>

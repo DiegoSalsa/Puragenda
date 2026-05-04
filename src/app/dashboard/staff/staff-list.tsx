@@ -318,15 +318,15 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                   <button
                     onClick={() => handleToggle(s.id)}
                     disabled={togglingId === s.id}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition-all ${s.isActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-all ${s.isActive ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
                   >
                     {togglingId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : s.isActive ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
                     {s.isActive ? "Activo" : "Inactivo"}
                   </button>
-                  <button onClick={() => setExpandedId(expanded ? null : s.id)} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <button onClick={() => setExpandedId(expanded ? null : s.id)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                     <Settings2 className="h-3 w-3" /> Configurar {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </button>
-                  <button onClick={() => setDeleteTarget(s)} className="rounded-lg border border-red-500/10 p-1.5 text-red-400/40 hover:bg-red-500/10 hover:text-red-400 transition-all" title="Eliminar profesional">
+                  <button onClick={() => setDeleteTarget(s)} className="rounded-lg border border-red-500/10 p-2 text-red-400/40 hover:bg-red-500/10 hover:text-red-400 transition-all" title="Eliminar profesional">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -394,8 +394,8 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                     {sched.map((entry) => (
                       <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border p-2.5 ${entry.isWorking ? "border-border bg-muted/50" : "border-border/50 opacity-40"}`}>
                         <button type="button" onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
-                          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
-                          <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[18px]" : "left-0.5"}`} />
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
+                          <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[22px]" : "left-0.5"}`} />
                         </button>
                         <span className="w-12 text-xs font-medium">{DAYS[entry.dayOfWeek]}</span>
                         {entry.isWorking ? (
@@ -446,7 +446,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                               <button
                                 onClick={async () => { setDeletingBlockId(block.id); await deleteScheduleBlockAction(block.id); setDeletingBlockId(null); router.refresh(); }}
                                 disabled={deletingBlockId === block.id}
-                                className="rounded p-1 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                className="rounded p-2 min-h-[32px] min-w-[32px] text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center justify-center"
                                 title="Eliminar bloqueo"
                               >
                                 {deletingBlockId === block.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

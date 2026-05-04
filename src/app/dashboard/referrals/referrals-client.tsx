@@ -61,8 +61,8 @@ export function ReferralsClient({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="grid gap-2 sm:gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10">
               <Users className="h-4 w-4 text-blue-400" />
@@ -74,7 +74,7 @@ export function ReferralsClient({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-3 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-500/10">
               <TrendingUp className="h-4 w-4 text-green-400" />

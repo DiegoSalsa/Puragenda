@@ -59,7 +59,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         <button
           type="button"
           onClick={() => setIsEnabled(!isEnabled)}
-          className="transition-colors duration-200"
+          className="h-11 w-11 flex items-center justify-center transition-colors duration-200"
           aria-label={isEnabled ? "Desactivar" : "Activar"}
         >
           {isEnabled ? (
@@ -113,11 +113,11 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
           <label className="flex items-center gap-2 text-sm font-medium">
             Tipo de descuento
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={() => setDiscountType("PERCENTAGE")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                 discountType === "PERCENTAGE"
                   ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
                   : "border-border bg-muted text-muted-foreground hover:border-[#7C3AED]/30"
@@ -129,7 +129,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
             <button
               type="button"
               onClick={() => setDiscountType("FIXED")}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200 ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                 discountType === "FIXED"
                   ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
                   : "border-border bg-muted text-muted-foreground hover:border-[#7C3AED]/30"
@@ -187,7 +187,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:bg-[#6D28D9] disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 h-11 text-sm font-medium text-white transition-all duration-200 hover:bg-[#6D28D9] disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Guardar configuración

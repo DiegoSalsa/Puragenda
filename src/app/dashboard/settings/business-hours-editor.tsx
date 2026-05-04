@@ -46,18 +46,18 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
           <button
             type="button"
             onClick={() => update(h.dayOfWeek, "isOpen", !h.isOpen)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
               h.isOpen ? "bg-[#7C3AED]" : "bg-muted-foreground/30"
             }`}
           >
             <div
-              className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-                h.isOpen ? "left-6" : "left-1"
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                h.isOpen ? "left-[26px]" : "left-1"
               }`}
             />
           </button>
 
-          <span className="w-24 text-sm font-medium">{DAYS[h.dayOfWeek]}</span>
+          <span className="w-20 sm:w-24 text-sm font-medium">{DAYS[h.dayOfWeek]}</span>
 
           {h.isOpen ? (
             <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
       <button
         onClick={handleSave}
         disabled={saving}
-        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
+        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-5 h-11 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
         {saved ? "¡Guardado!" : "Guardar horarios"}
