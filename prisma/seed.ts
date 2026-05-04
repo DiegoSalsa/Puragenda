@@ -47,12 +47,12 @@ async function main() {
     data: { email: "admin@purocode.cl", password: pw, name: "Diego PuroCode", role: "SUPERADMIN", isSuperAdmin: true, registrationIp: "127.0.0.1", trialUsedAt: now },
   });
 
-  // ─── Biz 1: PuroCode Demo (PRO) ───
-  console.log("🏢 PuroCode Demo (Pro)...");
+  // ─── Biz 1: PuroCode Demo (EQUIPO) ───
+  console.log("🏢 PuroCode Demo (Equipo)...");
   const biz1 = await prisma.business.create({
     data: { name: "PuroCode Demo", slug: "purocode-demo", apiKey: apiKey(), ownerId: admin.id, primaryColor: "#7C3AED", secondaryColor: "#5B21B6", backgroundColor: "#0A0A0A" },
   });
-  await prisma.subscription.create({ data: { businessId: biz1.id, plan: "PRO", status: "ACTIVE", billingCycle: "MONTHLY" } });
+  await prisma.subscription.create({ data: { businessId: biz1.id, plan: "EQUIPO", status: "ACTIVE", billingCycle: "MONTHLY" } });
 
   // Business hours Mon-Fri 8-20, Sat 10-14
   for (let d = 0; d <= 6; d++) {
@@ -90,15 +90,15 @@ async function main() {
   const svc2 = await prisma.service.create({ data: { name: "Desarrollo Landing", description: "Landing page profesional.", duration: 90, price: 250000, businessId: biz1.id } });
   await prisma.service.create({ data: { name: "Diseño UI/UX", description: "Sesión de diseño.", duration: 45, price: 50000, businessId: biz1.id } });
 
-  // ─── Biz 2: Estética Bella (BASIC, trial) ───
-  console.log("🏢 Estética Bella (Trial Base)...");
+  // ─── Biz 2: Estética Bella (EQUIPO, trial) ───
+  console.log("🏢 Estética Bella (Trial Equipo)...");
   const u2 = await prisma.user.create({
     data: { email: "vale@esteticabella.cl", password: pw, name: "Valentina López", role: "ADMIN", registrationIp: "192.168.1.50", trialUsedAt: now },
   });
   const biz2 = await prisma.business.create({
     data: { name: "Estética Bella", slug: "estetica-bella", apiKey: apiKey(), ownerId: u2.id, primaryColor: "#E91E8C", secondaryColor: "#C2185B", backgroundColor: "#0D0D0D", brandColor: "E91E8C" },
   });
-  await prisma.subscription.create({ data: { businessId: biz2.id, plan: "BASIC", status: "TRIALING", billingCycle: "MONTHLY", isTrial: true, trialEndsAt: addDays(now, 25), extraStaffCount: 1 } });
+  await prisma.subscription.create({ data: { businessId: biz2.id, plan: "EQUIPO", status: "TRIALING", billingCycle: "MONTHLY", isTrial: true, trialEndsAt: addDays(now, 25), extraStaffCount: 1 } });
 
   for (let d = 0; d <= 6; d++) {
     await prisma.businessHours.create({
@@ -158,8 +158,8 @@ async function main() {
   console.log("\n✅ Seed v5 completado!");
   console.log("═══════════════════════════════════════");
   console.log("  🔐 contacto@purocode.com / 1234       → Platform Admin (SuperAdmin)");
-  console.log("  👑 admin@purocode.cl / purocode123     → PRO (3 staff: mañana/tarde/mixto)");
-  console.log("  👤 vale@esteticabella.cl / purocode123  → BASIC Trial (2 staff)");
+  console.log("  👑 admin@purocode.cl / purocode123     → EQUIPO (3 staff: mañana/tarde/mixto)");
+  console.log("  👤 vale@esteticabella.cl / purocode123  → EQUIPO Trial (2 staff)");
   console.log("  👤 carlos@barberia.cl / purocode123     → INDIVIDUAL (1 staff)");
   console.log("═══════════════════════════════════════\n");
 }
