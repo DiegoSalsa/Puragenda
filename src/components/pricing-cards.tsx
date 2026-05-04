@@ -26,25 +26,6 @@ interface PricingCardsProps {
 // ALL FEATURES — AVAILABLE ON BOTH PLANS
 // ═══════════════════════════════════════════
 
-const sharedFeatures = [
-  "Citas y reservas ilimitadas",
-  "Widget de reservas para tu web/redes",
-  "App móvil instalable (PWA)",
-  "Notificaciones y recordatorios 24h",
-  "Cuentas Invisibles (sin contraseñas)",
-  "Bloqueos de agenda y descansos",
-  "CRM de clientes completo",
-  "Escudo Anti-Inasistencias",
-  "Tarjetas de timbres y fidelización",
-  "Historial completo de reservas",
-  "Logo propio en el widget",
-  "Soporte por WhatsApp",
-];
-
-// ═══════════════════════════════════════════
-// PLAN DATA
-// ═══════════════════════════════════════════
-
 const plans: {
   key: PlanKey;
   name: string;
@@ -58,28 +39,33 @@ const plans: {
   {
     key: "INDIVIDUAL",
     name: "Individual",
-    description: "Ideal para profesionales independientes que trabajan solos.",
+    description: "Para profesionales independientes que trabajan solos.",
     highlighted: false,
     icon: Zap,
     staffLabel: `${STAFF_LIMITS.INDIVIDUAL} profesional incluido`,
     items: [
-      ...sharedFeatures,
+      "Reservas ilimitadas",
+      "Widget para tu web y redes",
+      "Fidelización con timbres",
+      "CRM y anti-inasistencias",
+      "Recordatorios automáticos",
+      "Logo propio en el widget",
     ],
   },
   {
     key: "EQUIPO",
     name: "Equipo",
-    description: "Perfecto para salones, clínicas y locales con un equipo de trabajo.",
+    description: "Para salones, clínicas y locales con equipo de trabajo.",
     highlighted: true,
     badge: `${TRIAL_DURATION_DAYS} días gratis`,
     icon: Crown,
     staffLabel: `${STAFF_LIMITS.EQUIPO} profesionales incluidos`,
     items: [
-      ...sharedFeatures,
+      "Todo de Individual",
       `${STAFF_LIMITS.EQUIPO} profesionales incluidos`,
-      "Gestión de roles (Recepcionista y Staff)",
-      "Servicios específicos por profesional",
-      "Profesionales extra a $3.000/mes c/u",
+      "Roles: Recepcionista y Staff",
+      "Servicios por profesional",
+      "Profesionales extra a $3.000/mes",
     ],
   },
 ];
@@ -211,15 +197,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
       {/* Billing Cycle Toggle */}
       <BillingToggle cycle={cycle} onChange={setCycle} />
 
-      {/* Same Features Banner */}
-      <div className="mx-auto max-w-md rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 text-center">
-        <p className="text-sm font-medium text-emerald-400">
-          ✨ Todas las funcionalidades premium están incluidas en ambos planes
-        </p>
-        <p className="mt-1 text-xs text-emerald-400/60">
-          La única diferencia es la cantidad de profesionales que puedes gestionar
-        </p>
-      </div>
+
 
       {/* Plan Cards — 2 columns */}
       <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2">
