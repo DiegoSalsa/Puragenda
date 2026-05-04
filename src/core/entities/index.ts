@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 
 export type UserRole = "ADMIN" | "RECEPTIONIST" | "STAFF" | "SUPERADMIN";
-export type SubscriptionPlan = "INDIVIDUAL" | "BASIC" | "PRO";
+export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO";
 export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
 export type BillingCycle = "MONTHLY" | "ANNUAL";
 export type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW";

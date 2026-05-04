@@ -67,8 +67,7 @@ model BlacklistedIp {
 
 enum SubscriptionPlan {
   INDIVIDUAL
-  BASIC
-  PRO
+  EQUIPO
 }
 
 enum SubscriptionStatus {

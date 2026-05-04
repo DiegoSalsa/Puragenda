@@ -44,7 +44,7 @@ export async function createBusinessAction(data: {
   ownerEmail: string;
   ownerPassword: string;
   businessName: string;
-  plan: "INDIVIDUAL" | "BASIC" | "PRO";
+  plan: "INDIVIDUAL" | "EQUIPO";
 }) {
   await requireSuperAdmin();
 
@@ -118,7 +118,7 @@ export async function createBusinessAction(data: {
 export async function updateSubscriptionAction(
   subscriptionId: string,
   data: {
-    plan?: "INDIVIDUAL" | "BASIC" | "PRO";
+    plan?: "INDIVIDUAL" | "EQUIPO";
     status?: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
     billingCycle?: "MONTHLY" | "ANNUAL";
     isTrial?: boolean;

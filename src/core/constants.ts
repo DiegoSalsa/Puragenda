@@ -24,23 +24,21 @@ export const ADMIN_SECRET_PATH = "/para/x7k9m2v4q8";
 // Roles
 export const ROLES = { ADMIN: "ADMIN", RECEPTIONIST: "RECEPTIONIST", STAFF: "STAFF", SUPERADMIN: "SUPERADMIN" } as const;
 
-// Plans
-export const PLANS = { INDIVIDUAL: "INDIVIDUAL", BASIC: "BASIC", PRO: "PRO" } as const;
+// Plans (only two: INDIVIDUAL = 1 person, EQUIPO = team)
+export const PLANS = { INDIVIDUAL: "INDIVIDUAL", EQUIPO: "EQUIPO" } as const;
 
 // Pricing (CLP/month)
 export const PRICING = {
   INDIVIDUAL: { monthly: 9990, name: "Individual" },
-  BASIC:      { monthly: 24990, name: "Base" },
-  PRO:        { monthly: 39990, name: "Pro" },
+  EQUIPO:     { monthly: 24990, name: "Equipo" },
 } as const;
 
 // Which plan offers a free trial
-export const TRIAL_PLAN = PLANS.BASIC;
+export const TRIAL_PLAN = PLANS.EQUIPO;
 
-// Extra staff cost (CLP/month)
+// Extra staff cost (CLP/month) — same rate for Equipo
 export const EXTRA_STAFF_COST = {
-  BASIC: 3000,
-  PRO: 5000,
+  EQUIPO: 3000,
 } as const;
 
 // Annual discount: pay 10 months, get 12
@@ -52,8 +50,7 @@ export const TRIAL_DURATION_DAYS = 30;
 // Staff limits per plan
 export const STAFF_LIMITS = {
   INDIVIDUAL: 1,
-  BASIC: 3,     // 3 included, extras purchasable
-  PRO: 5,       // 5 included, extras purchasable
+  EQUIPO: 3,     // 3 included, extras purchasable
 } as const;
 
 // Appointment statuses

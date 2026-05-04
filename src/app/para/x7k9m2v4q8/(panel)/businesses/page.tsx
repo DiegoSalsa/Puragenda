@@ -95,14 +95,12 @@ export default async function BusinessesPage() {
                     <td className="px-4 py-4">
                       <span
                         className={`inline-flex items-center rounded-lg px-2 py-0.5 text-xs font-medium ${
-                          sub?.plan === "PRO"
+                          sub?.plan === "EQUIPO"
                             ? "border border-[#7C3AED]/20 bg-[#7C3AED]/10 text-[#A78BFA]"
-                            : sub?.plan === "BASIC"
-                            ? "border border-blue-500/20 bg-blue-500/10 text-blue-400"
                             : "border border-white/[0.08] bg-[#1a1a22] text-[#888]"
                         }`}
                       >
-                        {sub?.plan || "—"}
+                        {sub?.plan === "EQUIPO" ? "Equipo" : sub?.plan === "INDIVIDUAL" ? "Individual" : sub?.plan || "—"}
                       </span>
                     </td>
                     <td className="px-4 py-4">

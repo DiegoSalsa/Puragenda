@@ -12,13 +12,13 @@ export function canAddStaff(
 ): { allowed: boolean; reason?: string } {
   if (plan === "INDIVIDUAL") {
     if (currentStaffCount >= STAFF_LIMITS.INDIVIDUAL) {
-      return { allowed: false, reason: "El plan Individual permite máximo 1 profesional. Sube a Base o Pro para añadir más." };
+      return { allowed: false, reason: "El plan Individual permite máximo 1 profesional. Sube a Equipo para añadir más." };
     }
     return { allowed: true };
   }
 
-  // BASIC and PRO: 1 included + extras purchased
-  const maxAllowed = 1 + extraStaffCount;
+  // EQUIPO: base included + extras purchased
+  const maxAllowed = STAFF_LIMITS.EQUIPO + extraStaffCount;
   if (currentStaffCount >= maxAllowed) {
     return { allowed: false, reason: `Has alcanzado el límite de ${maxAllowed} profesional(es). Compra slots adicionales desde Configuración.` };
   }
@@ -37,10 +37,8 @@ export function calculatePrice(
   const basePrice = planPricing.monthly;
 
   let extraCost = 0;
-  if (plan === "BASIC" && extraStaffCount > 0) {
-    extraCost = EXTRA_STAFF_COST.BASIC * extraStaffCount;
-  } else if (plan === "PRO" && extraStaffCount > 0) {
-    extraCost = EXTRA_STAFF_COST.PRO * extraStaffCount;
+  if (plan === "EQUIPO" && extraStaffCount > 0) {
+    extraCost = EXTRA_STAFF_COST.EQUIPO * extraStaffCount;
   }
 
   let total = basePrice + extraCost;

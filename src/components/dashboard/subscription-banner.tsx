@@ -18,7 +18,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#A78BFA]" />
-              <p className="text-sm font-semibold text-[#A78BFA]">Periodo de Prueba · Plan {plan === "INDIVIDUAL" ? "Individual" : plan === "BASIC" ? "Base" : "Pro"}</p>
+              <p className="text-sm font-semibold text-[#A78BFA]">Periodo de Prueba · Plan {plan === "INDIVIDUAL" ? "Individual" : "Equipo"}</p>
             </div>
             <p className="max-w-md text-sm text-muted-foreground">
               Te quedan <span className="font-bold text-foreground">{daysLeft} días</span> de prueba gratuita.
@@ -30,23 +30,9 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
           </div>
           <div className="flex flex-wrap gap-2">
             {plan === "INDIVIDUAL" && (
-              <>
-                <Link href="/dashboard/settings#plan">
-                  <button className="flex items-center gap-1.5 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:border-[#7C3AED]/30">
-                    <Zap className="h-3.5 w-3.5" /> Base · $24.990/mes
-                  </button>
-                </Link>
-                <Link href="/dashboard/settings#plan">
-                  <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-                    <Crown className="h-3.5 w-3.5" /> Pro · $39.990/mes
-                  </button>
-                </Link>
-              </>
-            )}
-            {plan === "BASIC" && (
               <Link href="/dashboard/settings#plan">
                 <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-                  <Crown className="h-3.5 w-3.5" /> Mejorar a Pro <ArrowUpRight className="h-3.5 w-3.5" />
+                  <Crown className="h-3.5 w-3.5" /> Subir a Equipo <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               </Link>
             )}
@@ -56,14 +42,14 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
     );
   }
 
-  // INDIVIDUAL paid: upsell
+  // INDIVIDUAL paid: upsell to Equipo
   if (plan === "INDIVIDUAL" && status === "ACTIVE" && !isTrial) {
     return (
       <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Plan Individual · ¿Listo para crecer?</p>
-            <p className="text-sm text-muted-foreground">Sube a Base ($24.990/mes) o Pro ($39.990/mes) para multi-staff.</p>
+            <p className="text-sm text-muted-foreground">Sube a Equipo ($24.990/mes) para multi-staff y profesionales adicionales.</p>
           </div>
           <Link href="/dashboard/settings#plan">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
@@ -75,31 +61,12 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
     );
   }
 
-  // BASIC paid: upsell to Pro
-  if (plan === "BASIC" && status === "ACTIVE" && !isTrial) {
-    return (
-      <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-[#A78BFA]" />¿Necesitas más funcionalidades?</p>
-            <p className="text-sm text-muted-foreground">Sube a Pro por $15.000 más al mes.</p>
-          </div>
-          <Link href="/dashboard/settings#plan">
-            <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-              <Crown className="h-3.5 w-3.5" /> Mejorar a Pro <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // PRO active badge
-  if (plan === "PRO" && status === "ACTIVE") {
+  // EQUIPO active badge
+  if (plan === "EQUIPO" && status === "ACTIVE") {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5">
         <Crown className="h-4 w-4 text-[#A78BFA]" />
-        <p className="text-sm text-[#A78BFA]">Plan <span className="font-bold">Pro</span> activo</p>
+        <p className="text-sm text-[#A78BFA]">Plan <span className="font-bold">Equipo</span> activo</p>
       </div>
     );
   }

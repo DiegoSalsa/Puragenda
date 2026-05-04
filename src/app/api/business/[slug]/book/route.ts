@@ -41,27 +41,20 @@ export async function POST(
     }
 
     // ── Anti-No-Show: Check if client is blocked ──
-    // Only enforce if the business has a PRO subscription (feature gating)
-    const subscription = await prisma.subscription.findUnique({
-      where: { businessId: business.id },
+    const existingClient = await prisma.client.findUnique({
+      where: {
+        businessId_email: { businessId: business.id, email: customerEmail },
+      },
     });
 
-    if (subscription?.plan === "PRO") {
-      const existingClient = await prisma.client.findUnique({
-        where: {
-          businessId_email: { businessId: business.id, email: customerEmail },
+    if (existingClient && existingClient.noShowCount >= 2) {
+      return Response.json(
+        {
+          error: "Tu cuenta ha sido bloqueada por inasistencias reiteradas. Contacta al negocio para más información.",
+          code: "NO_SHOW_BLOCKED",
         },
-      });
-
-      if (existingClient && existingClient.noShowCount >= 2) {
-        return Response.json(
-          {
-            error: "Tu cuenta ha sido bloqueada por inasistencias reiteradas. Contacta al negocio para más información.",
-            code: "NO_SHOW_BLOCKED",
-          },
-          { status: 403 }
-        );
-      }
+        { status: 403 }
+      );
     }
 
     // Verify primary service belongs to business

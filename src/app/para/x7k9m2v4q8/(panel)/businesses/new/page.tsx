@@ -12,7 +12,7 @@ export default function NewBusinessPage() {
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [plan, setPlan] = useState<"INDIVIDUAL" | "BASIC" | "PRO">("BASIC");
+  const [plan, setPlan] = useState<"INDIVIDUAL" | "EQUIPO">("EQUIPO");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -160,8 +160,8 @@ export default function NewBusinessPage() {
         {/* Plan */}
         <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">Plan de Suscripción</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {(["INDIVIDUAL", "BASIC", "PRO"] as const).map((p) => (
+          <div className="grid grid-cols-2 gap-3">
+            {(["INDIVIDUAL", "EQUIPO"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
@@ -173,10 +173,10 @@ export default function NewBusinessPage() {
                 }`}
               >
                 <p className={`text-sm font-bold ${plan === p ? "text-[#A78BFA]" : "text-white"}`}>
-                  {p === "INDIVIDUAL" ? "Individual" : p === "BASIC" ? "Base" : "Pro"}
+                  {p === "INDIVIDUAL" ? "Individual" : "Equipo"}
                 </p>
                 <p className="mt-1 text-xs text-[#666]">
-                  {p === "INDIVIDUAL" ? "$9.990/mes" : p === "BASIC" ? "$24.990/mes" : "$39.990/mes"}
+                  {p === "INDIVIDUAL" ? "$9.990/mes" : "$24.990/mes"}
                 </p>
               </button>
             ))}

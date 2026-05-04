@@ -65,18 +65,13 @@ export default async function AdminDashboardPage() {
     (s) => s.plan === "INDIVIDUAL" && s.status === "ACTIVE" && !s.isTrial
   ).length;
 
-  const paidBasic = subscriptions.filter(
-    (s) => s.plan === "BASIC" && s.status === "ACTIVE" && !s.isTrial
-  ).length;
-
-  const paidPro = subscriptions.filter(
-    (s) => s.plan === "PRO" && s.status === "ACTIVE"
+  const paidEquipo = subscriptions.filter(
+    (s) => s.plan === "EQUIPO" && s.status === "ACTIVE" && !s.isTrial
   ).length;
 
   const estimatedMRR =
     paidIndividual * PRICING.INDIVIDUAL.monthly +
-    paidBasic * PRICING.BASIC.monthly +
-    paidPro * PRICING.PRO.monthly;
+    paidEquipo * PRICING.EQUIPO.monthly;
 
   // New businesses last 7 days
   const newLast7Days = subscriptions.filter(
@@ -170,8 +165,7 @@ export default async function AdminDashboardPage() {
           <div className="mt-4 space-y-3">
             {[
               { name: "Individual", count: paidIndividual, price: PRICING.INDIVIDUAL.monthly },
-              { name: "Plan Base", count: paidBasic, price: PRICING.BASIC.monthly },
-              { name: "Plan Pro", count: paidPro, price: PRICING.PRO.monthly },
+              { name: "Plan Equipo", count: paidEquipo, price: PRICING.EQUIPO.monthly },
             ].map((item) => (
               <div
                 key={item.name}

@@ -33,7 +33,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
 
     try {
       const result = await updateSubscriptionAction(subscription.id, {
-        plan: plan as "INDIVIDUAL" | "BASIC" | "PRO",
+        plan: plan as "INDIVIDUAL" | "EQUIPO",
         status: status as "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED",
         billingCycle: billingCycle as "MONTHLY" | "ANNUAL",
         extraStaffCount: extraStaff,
@@ -67,8 +67,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
           <label className="text-xs font-medium text-[#888]">Plan</label>
           <select value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
             <option value="INDIVIDUAL">Individual ($9.990/mes)</option>
-            <option value="BASIC">Base ($24.990/mes)</option>
-            <option value="PRO">Pro ($39.990/mes)</option>
+            <option value="EQUIPO">Equipo ($24.990/mes)</option>
           </select>
         </div>
 

@@ -43,7 +43,7 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
 // ─── Staff CRUD ───
 
 // Plan limits: max staff allowed (base, before extras)
-const PLAN_STAFF_LIMITS: Record<string, number> = { INDIVIDUAL: 1, BASIC: 3, PRO: 5 };
+const PLAN_STAFF_LIMITS: Record<string, number> = { INDIVIDUAL: 1, EQUIPO: 3 };
 
 export async function getStaffLimitInfo(businessId: string) {
   const [subscription, currentCount] = await Promise.all([
@@ -83,7 +83,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
   // Enforce staff limit
   const limitInfo = await getStaffLimitInfo(business.id);
   if (!limitInfo.canAdd) {
-    const planLabels: Record<string, string> = { INDIVIDUAL: "Individual", BASIC: "Base", PRO: "Pro" };
+    const planLabels: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo" };
     return { error: `Has alcanzado el límite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para añadir más.` };
   }
 
