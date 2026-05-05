@@ -16,6 +16,10 @@ import {
   Stethoscope,
   Users,
   Zap,
+  Stamp,
+  Mail,
+  Gift,
+  Database
 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
@@ -30,27 +34,33 @@ const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m
 
 const bentoFeatures = [
   {
-    title: "Widget Marca Blanca",
-    description: "Se adapta al estilo de cada negocio. Colores, tipografía y branding personalizables vía URL.",
-    icon: Palette,
+    title: "Timbres Digitales",
+    description: "Programa de lealtad integrado. Premia a tus clientes recurrentes con descuentos automáticos.",
+    icon: Stamp,
     className: "md:col-span-2",
   },
   {
-    title: "Colisiones Inteligentes",
-    description: "El sistema detecta automáticamente solapamientos de horario por profesional.",
-    icon: Shield,
+    title: "Email Marketing",
+    description: "Campañas automáticas para reactivar clientes inactivos o menos frecuentes.",
+    icon: Mail,
     className: "",
   },
   {
-    title: "Multi-Staff",
-    description: "Cada profesional tiene su propia agenda. Sin conflictos entre citas.",
-    icon: Users,
+    title: "Programa Referidos",
+    description: "Invita a otros negocios a usar el sistema y gana meses gratis de suscripción.",
+    icon: Gift,
     className: "",
   },
   {
-    title: "API Abierta",
-    description: "Integra el sistema de reservas en cualquier plataforma con nuestra API REST.",
-    icon: Code2,
+    title: "CRM Integrado",
+    description: "Base de datos con todo el historial de citas, inasistencias y preferencias de cada cliente.",
+    icon: Database,
+    className: "md:col-span-2",
+  },
+  {
+    title: "Widget Marca Blanca",
+    description: "Se adapta al estilo de tu negocio. Colores, tipografía y branding totalmente personalizables.",
+    icon: Palette,
     className: "md:col-span-2",
   },
 ];
@@ -72,9 +82,9 @@ const features = [
     icon: Users,
   },
   {
-    title: "Soporte humano directo — sin bots ni tickets eternos",
-    description: "Te acompaña un equipo real que conoce negocios locales. Configuración asistida, soporte por WhatsApp y actualizaciones constantes.",
-    icon: Headset,
+    title: "Marketing y Win-Back Automático",
+    description: "Envía recordatorios o promociones a clientes que no han vuelto en un tiempo. Recupera ingresos que de otro modo estarían perdidos.",
+    icon: Mail,
   },
 ];
 
@@ -179,8 +189,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:text-xl relative z-10">
-              Convierte visitas en reservas confirmadas sin llamadas perdidas.
-              Sistema de citas con detección de colisiones, widget marca blanca y panel de gestión completo.
+              Mucho más que un software de reservas. Agendamiento, fidelización de clientes, marketing automático y widget marca blanca en un solo lugar.
             </p>
 
             {/* Lead Capture Form / CTA */}
@@ -436,6 +445,64 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* ─── Herramientas de Crecimiento ─── */}
+          <div className="mt-24 space-y-8 relative">
+            <div className="text-center">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#E91E8C]">
+                Retención & Marketing
+              </p>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
+                Crea clientes leales, en automático
+              </h2>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2 relative">
+              {/* Fidelización */}
+              <div className="relative overflow-hidden rounded-3xl border border-[#E91E8C]/20 bg-card/40 backdrop-blur-2xl p-6 shadow-xl shadow-[#E91E8C]/5 group hover:border-[#E91E8C]/40 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#E91E8C]/5 to-transparent opacity-50" />
+                <div className="relative">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E91E8C]/10 text-[#E91E8C] mb-4">
+                    <Stamp className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Timbres Digitales</h3>
+                  <p className="text-muted-foreground text-sm mb-6">Reemplaza la tarjeta de cartón. Cada vez que un cliente asiste a una cita, gana un timbre. Al completarlos, se genera un código de descuento automático.</p>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E91E8C] bg-[#E91E8C]/20 text-[#E91E8C]">
+                        <Stamp className="h-5 w-5" />
+                      </div>
+                    ))}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-border text-muted-foreground">
+                      5
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Email Marketing */}
+              <div className="relative overflow-hidden rounded-3xl border border-[#3b82f6]/20 bg-card/40 backdrop-blur-2xl p-6 shadow-xl shadow-[#3b82f6]/5 group hover:border-[#3b82f6]/40 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#3b82f6]/5 to-transparent opacity-50" />
+                <div className="relative">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3b82f6]/10 text-[#3b82f6] mb-4">
+                    <Mail className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Campañas Win-Back</h3>
+                  <p className="text-muted-foreground text-sm mb-6">No pierdas clientes. El sistema detecta automáticamente a quienes no han agendado en meses y les envía una invitación con descuento para que vuelvan.</p>
+                  <div className="space-y-2">
+                    <div className="rounded-lg bg-background/80 p-3 border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-[10px] font-bold">Campaña "Te extrañamos"</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>Audiencia: 45 clientes</span>
+                        <span className="text-[#3b82f6]">12 reservas nuevas</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* ─── Bento Grid ─── */}
           <div className="stagger-children mt-16 grid gap-4 md:grid-cols-4 relative">
             {bentoFeatures.map((feature) => (
@@ -456,37 +523,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ─── Social Proof ─── */}
-        <section className="border-y border-border bg-muted/30">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16">
-            <div className="grid items-center gap-8 md:grid-cols-3">
-              <div className="space-y-2 text-center">
-                <p className="text-4xl font-bold tracking-tight text-[#7C3AED]">500+</p>
-                <p className="text-sm text-muted-foreground">Negocios confían en Puragenda</p>
-              </div>
-              <div className="space-y-2 text-center">
-                <p className="text-4xl font-bold tracking-tight">12.000+</p>
-                <p className="text-sm text-muted-foreground">Citas procesadas al mes</p>
-              </div>
-              <div className="space-y-2 text-center">
-                <p className="text-4xl font-bold tracking-tight">99.9%</p>
-                <p className="text-sm text-muted-foreground">Uptime garantizado</p>
-              </div>
-            </div>
 
-            {/* Testimonial */}
-            <div className="mx-auto mt-12 max-w-2xl">
-              <div className="glass rounded-2xl p-6 text-center">
-                <p className="text-sm leading-relaxed text-white/60 italic">
-                  &ldquo;Antes perdía reservas fuera de horario. Ahora el sistema toma citas solo y yo me enfoco en atender. En una semana recuperé la inversión.&rdquo;
-                </p>
-                <p className="mt-3 text-xs font-medium text-white/40">
-                  — Cliente real, rubro belleza y estética
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* ─── Features / Beneficios ─── */}
         <section id="caracteristicas" className="mx-auto w-full max-w-6xl px-6 py-20">

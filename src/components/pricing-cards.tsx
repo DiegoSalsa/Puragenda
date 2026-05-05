@@ -48,8 +48,8 @@ const plans: {
       "Widget para tu web y redes",
       "Fidelización con timbres",
       "CRM y anti-inasistencias",
-      "Recordatorios automáticos",
-      "Logo propio en el widget",
+      "Recordatorios y Win-Back",
+      "Programa de Referidos",
     ],
   },
   {
@@ -64,7 +64,7 @@ const plans: {
       "Todo de Individual",
       `${STAFF_LIMITS.EQUIPO} profesionales incluidos`,
       "Roles: Recepcionista y Staff",
-      "Servicios por profesional",
+      "Doble capacidad de Marketing",
       "Profesionales extra a $3.000/mes",
     ],
   },
@@ -254,6 +254,9 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       </p>
                       <span className="text-sm font-normal text-muted-foreground">/mes</span>
                     </div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold pb-1">
+                      IVA incluido
+                    </p>
 
                     {cycle === "annual" && (
                       <div className="space-y-0.5 animate-fade-in">

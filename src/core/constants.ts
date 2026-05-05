@@ -29,8 +29,8 @@ export const PLANS = { INDIVIDUAL: "INDIVIDUAL", EQUIPO: "EQUIPO" } as const;
 
 // Pricing (CLP/month)
 export const PRICING = {
-  INDIVIDUAL: { monthly: 9990, name: "Individual" },
-  EQUIPO:     { monthly: 24990, name: "Equipo" },
+  INDIVIDUAL: { monthly: 12990, name: "Individual" },
+  EQUIPO:     { monthly: 29990, name: "Equipo" },
 } as const;
 
 // Which plan offers a free trial
