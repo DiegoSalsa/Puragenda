@@ -17,6 +17,8 @@ interface BookingEmailData {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
 }
 
 // ═══════════════════════════════════════════
@@ -67,6 +69,63 @@ function detailsTable(data: BookingEmailData): string {
     ${detailRow("👤 Profesional", data.staffName)}
     ${detailRow("📞 Teléfono", data.customerPhone || "No proporcionado")}
   </table>`;
+}
+
+// ═══════════════════════════════════════════
+// ENTERPRISE STYLES (NO EMOJIS, NEUTRAL)
+// ═══════════════════════════════════════════
+
+function enterpriseLayout(title: string, body: string): string {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title></head>
+<body style="margin:0;padding:0;background:#F9FAFB;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;padding:40px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);">
+  <tr><td style="padding:40px 40px 32px;">${body}</td></tr>
+  <tr><td style="padding:24px 40px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center;">
+    <p style="margin:0;font-size:12px;color:#9CA3AF;">Desarrollado por Puragenda</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): string {
+  const date = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const time = `${formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm")} - ${formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm")}`;
+  
+  let html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">`;
+  
+  const row = (label: string, value: string, isLast = false) => `
+    <tr>
+      <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:${isLast ? 'none' : '1px solid #E5E7EB'};width:35%;">${label}</td>
+      <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:${isLast ? 'none' : '1px solid #E5E7EB'};">${value}</td>
+    </tr>
+  `;
+
+  html += row("Fecha", date);
+  html += row("Hora", time);
+  html += row("Servicio", data.serviceName);
+  html += row("Profesional", data.staffName, true);
+  
+  html += `</table>`;
+
+  if (data.businessAddress) {
+    html += `<div style="margin:0 0 24px;padding:20px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;">
+      <p style="margin:0 0 8px;font-size:12px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Ubicación</p>
+      <p style="margin:0;font-size:14px;color:#111827;font-weight:500;line-height:1.5;">${data.businessAddress}</p>`;
+    if (data.businessMapsUrl) {
+      html += `<div style="margin-top:16px;">
+        <a href="${data.businessMapsUrl}" style="display:inline-block;padding:8px 16px;background:#E5E7EB;color:#374151;text-decoration:none;font-size:13px;font-weight:600;border-radius:9999px;">Ver en Google Maps &rarr;</a>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  return html;
 }
 
 // ═══════════════════════════════════════════
@@ -124,22 +183,17 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
 
 /** Email to client when booking is CONFIRMED */
 export function confirmedBookingClientEmail(data: BookingEmailData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM", { locale: es });
-  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
   return {
-    subject: `¡Reserva Confirmada! Te esperamos — ${data.businessName}`,
-    html: layout("Reserva Confirmada", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Tu cita está confirmada! ✅</h2>
-      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, te confirmamos tu cita en <strong style="color:${BRAND};">${data.businessName}</strong>.
+    subject: `Reserva confirmada en ${data.businessName}`,
+    html: enterpriseLayout("Reserva Confirmada", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Su cita ha sido confirmada</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, su cita en <strong style="color:#111827;">${data.businessName}</strong> ha sido agendada exitosamente.
       </p>
-      ${detailsTable(data)}
-      <div style="margin:20px 0;padding:16px;background:linear-gradient(135deg,${BRAND}10,${BRAND}05);border-radius:10px;border:1px solid ${BRAND}30;">
-        <p style="margin:0;font-size:15px;color:${BRAND_DARK};text-align:center;font-weight:600;">
-          Te esperamos el ${dateStr} a las ${timeStr} 🎉
-        </p>
-      </div>
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Si necesitas cancelar o reprogramar, contacta directamente a ${data.businessName}.</p>
+      ${enterpriseDetailsTable(data)}
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
+        Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${data.businessName}.
+      </p>
     `),
   };
 }
@@ -237,19 +291,16 @@ export function staffInviteEmail(data: StaffInviteEmailData): { subject: string;
 /** Email to client when booking is CANCELLED */
 export function cancellationClientEmail(data: BookingEmailData): { subject: string; html: string } {
   return {
-    subject: `Tu cita ha sido cancelada — ${data.businessName}`,
-    html: layout("Cita Cancelada", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Cita cancelada</h2>
-      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, lamentamos informarte que tu cita en <strong style="color:${BRAND};">${data.businessName}</strong> ha sido cancelada.
+    subject: `Cita cancelada en ${data.businessName}`,
+    html: enterpriseLayout("Cita Cancelada", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Cita cancelada</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, le informamos que su cita en <strong style="color:#111827;">${data.businessName}</strong> ha sido cancelada.
       </p>
-      ${detailsTable(data)}
-      <div style="margin:20px 0;padding:16px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;">
-        <p style="margin:0;font-size:13px;color:#991b1b;">
-          <strong>Estado: Cancelada</strong> — Si deseas reagendar, visita nuestro sitio web o contacta directamente a ${data.businessName}.
-        </p>
-      </div>
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Disculpa las molestias. Esperamos verte pronto.</p>
+      ${enterpriseDetailsTable(data)}
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
+        Lamentamos los inconvenientes. Si desea reagendar su cita, por favor contáctenos directamente.
+      </p>
     `),
   };
 }
@@ -475,6 +526,8 @@ interface ReminderEmailData {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
 }
 
 /** Email to client the day before their appointment */

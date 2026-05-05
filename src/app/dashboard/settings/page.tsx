@@ -1,10 +1,11 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
-import { Key, Link2, Code2, Clock, Store, ImageIcon } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
+import { BusinessLocationEditor } from "./business-location-editor";
 import { LogoUploader } from "./logo-uploader";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,13 @@ export default async function SettingsPage() {
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
           </div>
           <LogoUploader currentLogoUrl={business.logoUrl} />
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <MapPin className="h-4 w-4 text-[#7C3AED]" /> Ubicación del Negocio
+          </div>
+          <BusinessLocationEditor initialAddress={business.address} initialMapsUrl={business.mapsUrl} />
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">

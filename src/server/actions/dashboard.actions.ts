@@ -471,3 +471,22 @@ export async function saveLoyaltyConfigAction(data: {
   revalidatePath("/dashboard/loyalty");
   return { success: true };
 }
+
+// ─── Business Location ───
+export async function updateBusinessLocationAction(data: { address: string; mapsUrl: string }) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      address: data.address.trim() || null,
+      mapsUrl: data.mapsUrl.trim() || null,
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}

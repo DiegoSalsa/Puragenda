@@ -111,6 +111,8 @@ model Business {
   slug                  String   @unique
   apiKey                String   @unique
   logoUrl               String?
+  address               String?
+  mapsUrl               String?
   primaryColor          String   @default("#7C3AED")
   secondaryColor        String   @default("#5B21B6")
   backgroundColor       String   @default("#0A0A0A")
