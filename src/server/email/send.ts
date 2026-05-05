@@ -29,6 +29,8 @@ interface AppointmentWithRelations {
   business: {
     name: string;
     owner?: { email: string; name: string } | null;
+    address?: string | null;
+    mapsUrl?: string | null;
   };
 }
 
@@ -54,6 +56,8 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    businessAddress: appointment.business.address,
+    businessMapsUrl: appointment.business.mapsUrl,
   };
 
   const tasks: Promise<unknown>[] = [];
@@ -114,6 +118,8 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    businessAddress: appointment.business.address,
+    businessMapsUrl: appointment.business.mapsUrl,
   };
 
   const { subject, html } = confirmedBookingClientEmail(data);
@@ -148,6 +154,8 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    businessAddress: appointment.business.address,
+    businessMapsUrl: appointment.business.mapsUrl,
   };
 
   const { subject, html } = cancellationClientEmail(data);

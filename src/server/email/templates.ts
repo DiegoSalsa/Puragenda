@@ -63,11 +63,11 @@ function detailsTable(data: BookingEmailData): string {
   const date = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
   const time = `${formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm")} - ${formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm")}`;
   return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
-    ${detailRow("📅 Fecha", date)}
-    ${detailRow("🕐 Hora", time)}
-    ${detailRow("💇 Servicio", data.serviceName)}
-    ${detailRow("👤 Profesional", data.staffName)}
-    ${detailRow("📞 Teléfono", data.customerPhone || "No proporcionado")}
+    ${detailRow(" Fecha", date)}
+    ${detailRow(" Hora", time)}
+    ${detailRow(" Servicio", data.serviceName)}
+    ${detailRow(" Profesional", data.staffName)}
+    ${detailRow(" Teléfono", data.customerPhone || "No proporcionado")}
   </table>`;
 }
 
@@ -136,13 +136,15 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
 export function newBookingOwnerEmail(data: BookingEmailData): { subject: string; html: string } {
   return {
     subject: `Nueva reserva de ${data.customerName} — ${data.businessName}`,
-    html: layout("Nueva Reserva", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Nueva reserva recibida</h2>
-      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        <strong style="color:#0f172a;">${data.customerName}</strong> (${data.customerEmail}) ha solicitado una cita.
+    html: enterpriseLayout("Nueva Reserva", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Nueva reserva recibida</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) ha solicitado una cita.
       </p>
-      ${detailsTable(data)}
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Revisa tu dashboard para confirmar o gestionar esta cita.</p>
+      ${enterpriseDetailsTable(data)}
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
+        Revisa tu dashboard para confirmar o gestionar esta cita.
+      </p>
     `),
   };
 }
@@ -151,13 +153,15 @@ export function newBookingOwnerEmail(data: BookingEmailData): { subject: string;
 export function newBookingStaffEmail(data: BookingEmailData): { subject: string; html: string } {
   return {
     subject: `Nuevo compromiso: ${data.serviceName} con ${data.customerName}`,
-    html: layout("Nuevo Compromiso", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tienes una nueva cita asignada</h2>
-      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Se ha agendado una cita con <strong style="color:#0f172a;">${data.customerName}</strong>.
+    html: enterpriseLayout("Nuevo Compromiso", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tienes una nueva cita asignada</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Se ha agendado una cita con <strong style="color:#111827;">${data.customerName}</strong>.
       </p>
-      ${detailsTable(data)}
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Revisa tu agenda para más detalles.</p>
+      ${enterpriseDetailsTable(data)}
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
+        Revisa tu agenda para más detalles.
+      </p>
     `),
   };
 }
@@ -165,16 +169,16 @@ export function newBookingStaffEmail(data: BookingEmailData): { subject: string;
 /** Email to client when booking is requested (PENDING status) */
 export function newBookingClientEmail(data: BookingEmailData): { subject: string; html: string } {
   return {
-    subject: `Tu reserva ha sido solicitada — ${data.businessName}`,
-    html: layout("Reserva Solicitada", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Reserva recibida!</h2>
-      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-        Hola <strong style="color:#0f172a;">${data.customerName}</strong>, hemos recibido tu solicitud de reserva en <strong style="color:${BRAND};">${data.businessName}</strong>.
+    subject: `Reserva solicitada en ${data.businessName}`,
+    html: enterpriseLayout("Reserva Solicitada", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Solicitud de reserva recibida</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, hemos recibido su solicitud de reserva en <strong style="color:#111827;">${data.businessName}</strong>.
       </p>
-      ${detailsTable(data)}
-      <div style="margin:20px 0;padding:16px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
-        <p style="margin:0;font-size:13px;color:#92400e;">
-          <strong>Estado: Pendiente</strong> — Tu cita será confirmada por el equipo de ${data.businessName}. Te avisaremos cuando esté confirmada.
+      ${enterpriseDetailsTable(data)}
+      <div style="margin:24px 0;padding:16px;background:#FEF3C7;border-radius:8px;border:1px solid #FDE68A;">
+        <p style="margin:0;font-size:14px;color:#92400E;line-height:1.5;">
+          <strong>Estado: Pendiente</strong> — Su cita será confirmada por el equipo de ${data.businessName}. Le avisaremos en cuanto sea aprobada.
         </p>
       </div>
     `),
@@ -213,7 +217,7 @@ export function welcomeEmail(data: WelcomeEmailData): { subject: string; html: s
   return {
     subject: "¡Bienvenido a Puragenda!",
     html: layout("¡Bienvenido!", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.ownerName}! 🎉</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.ownerName}! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         Tu negocio <strong style="color:${BRAND};">${data.businessName}</strong> ha sido creado exitosamente en Puragenda.
       </p>
@@ -253,7 +257,7 @@ export function staffInviteEmail(data: StaffInviteEmailData): { subject: string;
   return {
     subject: `Te han invitado a ${data.businessName} — Puragenda`,
     html: layout("Invitación", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.staffName}! 👋</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Hola ${data.staffName}! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         <strong style="color:${BRAND};">${data.businessName}</strong> te ha agregado como profesional en Puragenda.
       </p>
@@ -261,18 +265,18 @@ export function staffInviteEmail(data: StaffInviteEmailData): { subject: string;
         <p style="margin:0 0 12px;font-size:14px;color:#0f172a;font-weight:600;">Tus credenciales de acceso:</p>
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td style="padding:6px 0;font-size:13px;color:#64748b;">📧 Email:</td>
+            <td style="padding:6px 0;font-size:13px;color:#64748b;"> Email:</td>
             <td style="padding:6px 0;font-size:13px;color:#0f172a;font-weight:600;">${data.email}</td>
           </tr>
           <tr>
-            <td style="padding:6px 0;font-size:13px;color:#64748b;">🔑 Contraseña temporal:</td>
+            <td style="padding:6px 0;font-size:13px;color:#64748b;"> Contraseña temporal:</td>
             <td style="padding:6px 0;font-size:15px;color:#0f172a;font-weight:700;font-family:monospace;letter-spacing:1px;">${data.tempPassword}</td>
           </tr>
         </table>
       </div>
       <div style="margin:16px 0;padding:14px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
         <p style="margin:0;font-size:13px;color:#92400e;">
-          <strong>⚠️ Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.
+          <strong> Importante:</strong> Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.
         </p>
       </div>
       <div style="text-align:center;margin:24px 0;">
@@ -353,37 +357,37 @@ interface NewRegistrationData {
 /** Email to platform admins when a new business registers */
 export function newRegistrationAdminEmail(data: NewRegistrationData): { subject: string; html: string } {
   const trialBadge = data.hasTrial
-    ? `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:12px;font-weight:600;">🆓 Trial 30 días</span>`
-    : `<span style="display:inline-block;padding:4px 10px;background:#dcfce7;color:#166534;border-radius:6px;font-size:12px;font-weight:600;">💰 Directo a pago</span>`;
+    ? `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:12px;font-weight:600;"> Trial 30 días</span>`
+    : `<span style="display:inline-block;padding:4px 10px;background:#dcfce7;color:#166534;border-radius:6px;font-size:12px;font-weight:600;"> Directo a pago</span>`;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   return {
-    subject: `🚀 Nuevo registro: ${data.businessName} — Puragenda`,
+    subject: ` Nuevo registro: ${data.businessName} — Puragenda`,
     html: layout("Nuevo Registro", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo negocio registrado! 🎉</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo negocio registrado! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         Un nuevo negocio se ha registrado en Puragenda. Aquí los detalles:
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
         <tr>
-          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">🏢 Negocio</td>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Negocio</td>
           <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:600;">${data.businessName}</td>
         </tr>
         <tr>
-          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">👤 Dueño</td>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Dueño</td>
           <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerName}</td>
         </tr>
         <tr>
-          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">📧 Email</td>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Email</td>
           <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.ownerEmail}</td>
         </tr>
         <tr>
-          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">📦 Plan</td>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Plan</td>
           <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${data.plan}</td>
         </tr>
         <tr>
-          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;">🎫 Estado</td>
+          <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Estado</td>
           <td style="padding:10px 14px;">${trialBadge}</td>
         </tr>
       </table>
@@ -425,9 +429,9 @@ export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject:
   }).join("");
 
   return {
-    subject: `¡Ganaste un nuevo timbre en ${data.businessName}! 🌟`,
+    subject: `¡Ganaste un nuevo timbre en ${data.businessName}! `,
     html: layout("Nuevo Timbre", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo timbre sumado! 🌟</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Nuevo timbre sumado! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         Hola <strong style="color:#0f172a;">${data.clientName}</strong>, gracias por tu visita.
         Acabas de sumar un timbre en <strong style="color:${BRAND};">${data.businessName}</strong>.
@@ -480,9 +484,9 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
       : `$${data.discountValue.toLocaleString()} de descuento`;
 
   return {
-    subject: `¡Llegaste a la meta! Aquí tienes tu premio de ${data.businessName} 🎁`,
+    subject: `¡Llegaste a la meta! Aquí tienes tu premio de ${data.businessName} `,
     html: layout("¡Premio Ganado!", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Felicidades, completaste tu tarjeta! 🎉</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¡Felicidades, completaste tu tarjeta! </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         <strong style="color:#0f172a;">${data.clientName}</strong>, completaste tus <strong>${data.stampsRequired} visitas</strong> en
         <strong style="color:${BRAND};">${data.businessName}</strong>. ¡Aquí tienes tu premio!
@@ -501,7 +505,7 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
 
       <div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
         <p style="margin:0;font-size:13px;color:#166534;">
-          <strong>📋 ¿Cómo canjearlo?</strong> Presenta este código en tu próxima reserva en ${data.businessName}.
+          <strong> ¿Cómo canjearlo?</strong> Presenta este código en tu próxima reserva en ${data.businessName}.
         </p>
       </div>
 
@@ -539,19 +543,19 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
   return {
     subject: `Recordatorio de tu cita en ${data.businessName}`,
     html: layout("Recordatorio de Cita", `
-      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Recordatorio de tu cita de mañana 🔔</h2>
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Recordatorio de tu cita de mañana </h2>
       <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
         Hola <strong style="color:#0f172a;">${data.customerName}</strong>, te recordamos que mañana tienes una cita en <strong style="color:${BRAND};">${data.businessName}</strong>.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
-        ${detailRow("📅 Fecha", dateStr)}
-        ${detailRow("🕐 Hora", `${timeStr} - ${timeEnd}`)}
-        ${detailRow("💇 Servicio", data.serviceName)}
-        ${detailRow("👤 Profesional", data.staffName)}
+        ${detailRow(" Fecha", dateStr)}
+        ${detailRow(" Hora", `${timeStr} - ${timeEnd}`)}
+        ${detailRow(" Servicio", data.serviceName)}
+        ${detailRow(" Profesional", data.staffName)}
       </table>
       <div style="margin:20px 0;padding:16px;background:linear-gradient(135deg,${BRAND}10,${BRAND}05);border-radius:10px;border:1px solid ${BRAND}30;">
         <p style="margin:0;font-size:15px;color:${BRAND_DARK};text-align:center;font-weight:600;">
-          Te esperamos mañana a las ${timeStr} 🎉
+          Te esperamos mañana a las ${timeStr} 
         </p>
       </div>
       <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Si necesitas cancelar o reprogramar, contacta directamente a ${data.businessName}.</p>
@@ -603,7 +607,7 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
 
   <!-- Greeting -->
   <tr><td style="padding:8px 32px 0;">
-    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;font-weight:700;">¡Hola ${data.clientName}! 👋</h2>
+    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;font-weight:700;">¡Hola ${data.clientName}! </h2>
     <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Te extrañamos en ${data.businessName}</p>
     <div style="width:40px;height:3px;background:linear-gradient(90deg,${BRAND},${BRAND_DARK});border-radius:2px;margin:16px 0;"></div>
   </td></tr>
