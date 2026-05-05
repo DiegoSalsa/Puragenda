@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Calendar, ExternalLink, Gift, LayoutDashboard, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, Stamp, X } from "lucide-react";
+import { Calendar, ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, Stamp, X } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
   { href: "/dashboard/loyalty", label: "Fidelización", icon: Stamp },
+  { href: "/dashboard/marketing", label: "Marketing", icon: Mail },
   { href: "/dashboard/appearance", label: "Apariencia", icon: Palette },
   { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },

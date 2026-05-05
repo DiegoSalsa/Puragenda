@@ -505,3 +505,87 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
     `),
   };
 }
+
+// ═══════════════════════════════════════════
+// MARKETING CAMPAIGN EMAIL
+// ═══════════════════════════════════════════
+
+interface MarketingCampaignEmailData {
+  clientName: string;
+  businessName: string;
+  subject: string;
+  body: string;
+  widgetUrl: string;
+}
+
+/**
+ * Premium marketing campaign email with business branding.
+ * Uses a custom layout with the business name prominently displayed.
+ */
+export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subject: string; html: string } {
+  // Convert newlines in body to <br> for HTML
+  const htmlBody = data.body.replace(/\n/g, "<br>");
+
+  return {
+    subject: data.subject,
+    html: `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${data.subject}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(124,58,237,0.08);">
+  <!-- Premium Header with Business Branding -->
+  <tr><td style="background:linear-gradient(135deg,${BRAND},${BRAND_DARK});padding:0;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:32px 32px 24px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:2px;">Un mensaje especial de</p>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px;">${data.businessName}</h1>
+      </td></tr>
+      <!-- Decorative wave -->
+      <tr><td style="height:24px;background:#ffffff;border-radius:24px 24px 0 0;"></td></tr>
+    </table>
+  </td></tr>
+
+  <!-- Greeting -->
+  <tr><td style="padding:8px 32px 0;">
+    <h2 style="margin:0 0 4px;font-size:20px;color:#0f172a;font-weight:700;">¡Hola ${data.clientName}! 👋</h2>
+    <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;">Te extrañamos en ${data.businessName}</p>
+    <div style="width:40px;height:3px;background:linear-gradient(90deg,${BRAND},${BRAND_DARK});border-radius:2px;margin:16px 0;"></div>
+  </td></tr>
+
+  <!-- Campaign Message -->
+  <tr><td style="padding:0 32px 24px;">
+    <div style="font-size:15px;line-height:1.7;color:#334155;">
+      ${htmlBody}
+    </div>
+  </td></tr>
+
+  <!-- CTA Button -->
+  <tr><td style="padding:0 32px 32px;text-align:center;">
+    <a href="${data.widgetUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 40px;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(124,58,237,0.35);letter-spacing:0.3px;">
+      Agendar mi cita ahora →
+    </a>
+    <p style="margin:12px 0 0;font-size:12px;color:#94a3b8;">Reserva en pocos clics</p>
+  </td></tr>
+
+  <!-- Divider -->
+  <tr><td style="padding:0 32px;">
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#e2e8f0,transparent);"></div>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:20px 32px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;">
+      Enviado por <strong>${data.businessName}</strong> vía Puragenda
+    </p>
+    <p style="margin:0;font-size:11px;color:#cbd5e1;">
+      Si no deseas recibir estos correos, contacta directamente a ${data.businessName}.
+    </p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`,
+  };
+}

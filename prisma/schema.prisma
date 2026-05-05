@@ -143,6 +143,7 @@ model Business {
   businessHours      BusinessHours[]
   blockedDates       BlockedDate[]
   loyaltyCodes       LoyaltyCode[]
+  marketingCampaigns MarketingCampaign[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -287,16 +288,17 @@ model Appointment {
 // ==========================================
 
 model Client {
-  id             String   @id @default(cuid())
-  name           String
-  email          String
-  phone          String?
-  totalSpent     Float    @default(0)
-  noShowCount    Int      @default(0)
-  currentStamps  Int      @default(0)
-  businessId     String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  phone            String?
+  totalSpent       Float    @default(0)
+  noShowCount      Int      @default(0)
+  currentStamps    Int      @default(0)
+  acceptsMarketing Boolean  @default(true)
+  businessId       String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]
@@ -343,4 +345,22 @@ model Affiliate {
   referredBusinesses Business[] @relation("ReferredBy")
 
   @@index([referralCode])
+}
+
+// ==========================================
+// MARKETING CAMPAIGNS
+// ==========================================
+
+model MarketingCampaign {
+  id           String   @id @default(cuid())
+  businessId   String
+  subject      String
+  body         String
+  audienceSize Int
+  sentAt       DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([businessId, sentAt])
 }

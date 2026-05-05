@@ -69,3 +69,20 @@ export interface WidgetBusiness {
 export interface WidgetService { id: string; name: string; description: string | null; duration: number; price: number; }
 export interface TimeSlot { start: Date; end: Date; }
 export interface BlockedSlot { startTime: string; endTime: string; }
+
+export interface MarketingCampaign {
+  id: string;
+  businessId: string;
+  subject: string;
+  body: string;
+  audienceSize: number;
+  sentAt: Date;
+}
+
+export interface MarketingStatus {
+  campaignsSentThisMonth: number;
+  maxCampaignsPerMonth: number;
+  maxAudienceSize: number;
+  plan: SubscriptionPlan;
+  lastCampaign: { subject: string; audienceSize: number; sentAt: string } | null;
+}

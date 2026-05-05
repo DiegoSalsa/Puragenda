@@ -53,6 +53,12 @@ export const STAFF_LIMITS = {
   EQUIPO: 3,     // 3 included, extras purchasable
 } as const;
 
+// Marketing email limits per plan
+export const MARKETING_LIMITS = {
+  INDIVIDUAL: { maxEmails: 50, maxCampaignsPerMonth: 1 },
+  EQUIPO: { maxEmails: 100, maxCampaignsPerMonth: 1 },
+} as const;
+
 // Appointment statuses
 export const APPOINTMENT_STATUS = {
   PENDING: "PENDING",
