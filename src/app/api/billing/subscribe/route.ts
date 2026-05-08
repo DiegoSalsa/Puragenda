@@ -108,10 +108,16 @@ export async function POST(request: NextRequest) {
 
     // 8. Return the payment URL
     return NextResponse.json({ init_point: result.init_point });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[billing/subscribe] Error:", error);
+    
+    // Extract MercadoPago error details if present
+    let errorMsg = "Error interno al procesar la suscripción.";
+    if (error.message) errorMsg += ` Detalles: ${error.message}`;
+    if (error.cause) errorMsg += ` (Causa: ${JSON.stringify(error.cause)})`;
+
     return NextResponse.json(
-      { error: "Error interno al procesar la suscripción." },
+      { error: errorMsg },
       { status: 500 }
     );
   }
