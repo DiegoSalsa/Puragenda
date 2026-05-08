@@ -101,7 +101,7 @@ export function LoginForm() {
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         ¿Aún no tienes cuenta?{" "}
-        <Link href="/register" className="text-[#7C3AED] hover:underline">
+        <Link href="/pricing" className="text-[#7C3AED] hover:underline">
           Crear cuenta
         </Link>
       </p>
