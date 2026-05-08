@@ -1,5 +1,6 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { prisma } from "@/server/db/prisma";
 import { getAffiliateInfo, getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { Gift } from "lucide-react";
 import { ReferralsClient } from "./referrals-client";
@@ -20,6 +21,7 @@ export default async function ReferralsPage() {
   // Ensure affiliate record exists
   const affiliate = await getOrCreateAffiliate(business.id);
   const info = await getAffiliateInfo(business.id);
+  const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id } });
 
   return (
     <div className="space-y-8">
@@ -35,6 +37,7 @@ export default async function ReferralsPage() {
       <ReferralsClient
         referralCode={affiliate.referralCode}
         paidReferrals={affiliate.paidReferrals}
+        discountPercentage={subscription?.pendingDiscountPercentage || 0}
         referredBusinesses={info?.referredBusinesses.map((b) => ({
           id: b.id,
           name: b.name,

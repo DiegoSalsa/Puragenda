@@ -13,16 +13,18 @@ interface ReferredBusiness {
 export function ReferralsClient({
   referralCode,
   paidReferrals,
+  discountPercentage,
   referredBusinesses,
 }: {
   referralCode: string;
   paidReferrals: number;
+  discountPercentage: number;
   referredBusinesses: ReferredBusiness[];
 }) {
   const [copied, setCopied] = useState(false);
-  const threshold = 10;
-  const progress = Math.min((paidReferrals / threshold) * 100, 100);
-  const discountActive = paidReferrals >= threshold;
+  const threshold = 3;
+  const progress = Math.min(((paidReferrals % threshold) / threshold) * 100, 100);
+  const discountActive = discountPercentage > 0;
 
   function handleCopy() {
     navigator.clipboard.writeText(referralCode);
@@ -93,9 +95,9 @@ export function ReferralsClient({
             </div>
             <div>
               <p className="text-2xl font-bold" style={{ color: discountActive ? "#7C3AED" : undefined }}>
-                {discountActive ? "15%" : "0%"}
+                {discountActive ? `${discountPercentage}%` : "0%"}
               </p>
-              <p className="text-xs text-muted-foreground">Descuento activo</p>
+              <p className="text-xs text-muted-foreground">Descuento pendiente</p>
             </div>
           </div>
         </div>
@@ -105,22 +107,22 @@ export function ReferralsClient({
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Progreso hacia el descuento</p>
+            <p className="text-sm font-medium">Progreso hacia el próximo descuento</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {discountActive
-                ? "¡Felicidades! Tienes un 15% de descuento aplicable a tu próximo pago."
-                : `Consigue ${threshold - paidReferrals} referido(s) pagado(s) más para desbloquear un 15% de descuento en tu próximo pago.`}
+                ? `¡Felicidades! Tienes un ${discountPercentage}% de descuento aplicable a tu próximo pago.`
+                : `Consigue ${threshold - (paidReferrals % threshold)} referido(s) pagado(s) más para desbloquear un 50% de descuento en tu próximo pago.`}
             </p>
           </div>
           <span className="text-sm font-mono font-bold" style={{ color: discountActive ? "#22c55e" : "#7C3AED" }}>
-            {paidReferrals}/{threshold}
+            {paidReferrals % threshold}/{threshold}
           </span>
         </div>
         <div className="relative h-2.5 overflow-hidden rounded-full bg-muted">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
             style={{
-              width: `${progress}%`,
+              width: discountActive ? "100%" : `${progress}%`,
               background: discountActive
                 ? "linear-gradient(90deg, #22c55e, #16a34a)"
                 : "linear-gradient(90deg, #7C3AED, #a855f7)",
@@ -139,7 +141,7 @@ export function ReferralsClient({
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">1</div>
             <p className="font-medium text-foreground">Comparte tu código</p>
-            <p>Envía tu código de referido a otros negocios que quieran usar PurAgenda.</p>
+            <p>Envía tu código de referido a otros negocios. ¡Ellos reciben un 25% de descuento en su primer mes!</p>
           </div>
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">2</div>
@@ -149,7 +151,7 @@ export function ReferralsClient({
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">3</div>
             <p className="font-medium text-foreground">Ganas descuento</p>
-            <p>Cuando 10 referidos paguen su suscripción, obtienes un 15% de descuento en tu próximo pago.</p>
+            <p>Por cada 3 referidos que paguen su suscripción, obtienes un 50% de descuento en tu próximo mes.</p>
           </div>
         </div>
       </div>
