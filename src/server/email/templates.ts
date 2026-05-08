@@ -213,7 +213,7 @@ interface WelcomeEmailData {
 
 /** Email to owner when they register their account */
 export function welcomeEmail(data: WelcomeEmailData): { subject: string; html: string } {
-  const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const dashboardUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   return {
     subject: "¡Bienvenido a Puragenda!",
     html: layout("¡Bienvenido!", `
@@ -253,7 +253,7 @@ interface StaffInviteEmailData {
 
 /** Email to staff member when they are added to a business */
 export function staffInviteEmail(data: StaffInviteEmailData): { subject: string; html: string } {
-  const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const loginUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   return {
     subject: `Te han invitado a ${data.businessName} — Puragenda`,
     html: layout("Invitación", `
@@ -360,7 +360,7 @@ export function newRegistrationAdminEmail(data: NewRegistrationData): { subject:
     ? `<span style="display:inline-block;padding:4px 10px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:12px;font-weight:600;"> Trial 30 días</span>`
     : `<span style="display:inline-block;padding:4px 10px;background:#dcfce7;color:#166534;border-radius:6px;font-size:12px;font-weight:600;"> Directo a pago</span>`;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
 
   return {
     subject: ` Nuevo registro: ${data.businessName} — Puragenda`,

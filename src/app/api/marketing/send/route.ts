@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 6. Build widget URL for CTA ──
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
     const widgetUrl = `${appUrl}/widget/${business.slug}`;
 
     // ── 7. Build email batch ──

@@ -232,7 +232,7 @@ export async function sendStaffInviteEmail(
  * Send forgot password email with reset link.
  */
 export async function sendForgotPasswordEmail(email: string, token: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const resetLink = `${appUrl}/auth/new-password?token=${token}`;
   const { subject, html } = forgotPasswordEmail({ resetLink });
 
@@ -297,7 +297,7 @@ export async function sendLoyaltyStampEmail(data: {
   businessName: string;
   clientId: string;
 }) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
 
   const { subject, html } = loyaltyStampEarnedEmail({
@@ -336,7 +336,7 @@ export async function sendLoyaltyRewardEmail(data: {
   businessName: string;
   clientId: string;
 }) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
 
   const { subject, html } = loyaltyRewardWonEmail({
