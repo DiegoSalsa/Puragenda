@@ -91,7 +91,7 @@ model Subscription {
   isTrial               Boolean            @default(false)
   trialEndsAt           DateTime?
   extraStaffCount       Int                @default(0)
-  nextBillingDiscount   Float              @default(0)
+  pendingDiscountPercentage Int?
   businessId            String             @unique
   mpCustomerId          String?
   mpSubscriptionId      String?

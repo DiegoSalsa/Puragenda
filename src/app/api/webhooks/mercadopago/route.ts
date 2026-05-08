@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import { addDays } from "date-fns";
+import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
@@ -51,13 +52,39 @@ export async function POST(request: NextRequest) {
 
     // Update subscription based on MercadoPago status
     if (mpStatus === "authorized") {
-      // Payment successful — upgrade to EQUIPO ACTIVE
+      // If the subscription had a pending discount, the payment was already charged with it.
+      // We must now revert the MP subscription transaction_amount to the base price for the NEXT month.
+      if (subscription.pendingDiscountPercentage !== null) {
+        try {
+          const basePrice = PRICING[subscription.plan].monthly;
+          let totalBasePrice = basePrice;
+          if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
+            totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
+          }
+
+          await preapproval.update({
+            id: mpSubscriptionId,
+            body: {
+              auto_recurring: {
+                transaction_amount: totalBasePrice,
+                currency_id: "CLP",
+              },
+            },
+          });
+          console.log(`[webhook/mp] Reverted discount for subscription ${mpSubscriptionId} back to ${totalBasePrice}`);
+        } catch (error) {
+          console.error(`[webhook/mp] Failed to revert discount for ${mpSubscriptionId}:`, error);
+        }
+      }
+
+      // Payment successful — upgrade to ACTIVE and clear the discount flag
       await prisma.subscription.update({
         where: { id: subscription.id },
         data: {
           status: "ACTIVE",
           isTrial: false,
           currentPeriodEnd: addDays(new Date(), 30),
+          pendingDiscountPercentage: null, // Clean up the discount
         },
       });
       console.log(`[webhook/mp] Subscription ${mpSubscriptionId} activated for business ${subscription.businessId}`);

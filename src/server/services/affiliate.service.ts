@@ -90,7 +90,7 @@ export async function incrementPaidReferrals(businessId: string) {
   if (affiliate.paidReferrals >= 10) {
     await prisma.subscription.updateMany({
       where: { businessId: affiliate.businessId },
-      data: { nextBillingDiscount: 0.15 },
+      data: { pendingDiscountPercentage: 15 },
     });
   }
 }
