@@ -67,19 +67,6 @@ const plans: {
       "Profesionales extra a $3.000/mes",
     ],
   },
-  {
-    key: "TEST",
-    name: "Test",
-    description: "Plan de prueba para pagos ($1.000).",
-    highlighted: false,
-    badge: "Solo pruebas",
-    icon: Zap,
-    staffLabel: `1 profesional incluido`,
-    items: [
-      "Plan de pruebas",
-      "Pago real de $1.000",
-    ],
-  },
 ];
 
 // ═══════════════════════════════════════════
