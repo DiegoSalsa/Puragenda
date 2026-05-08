@@ -66,7 +66,8 @@ export async function GET(
         endTime: slot.endTime.toISOString(),
       }))
     );
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 }

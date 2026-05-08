@@ -86,7 +86,8 @@ export async function POST(
       discountValue: loyaltyCode.discountValue,
       rewardName: loyaltyCode.rewardName,
     });
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 }

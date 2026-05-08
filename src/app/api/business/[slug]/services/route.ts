@@ -15,7 +15,8 @@ export async function GET(
     }
 
     return Response.json(business.services);
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 }

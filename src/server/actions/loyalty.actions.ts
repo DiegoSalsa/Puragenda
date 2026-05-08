@@ -69,9 +69,16 @@ export async function processLoyaltyStamps(appointmentId: string) {
 
     // Step 2: Check if the client reached the reward threshold
     if (newStamps >= business.stampsRequired) {
-      // Generate unique reward code: PREMIO-XXXXXX
-      const randomHex = crypto.randomBytes(3).toString("hex").toUpperCase();
-      const code = `PREMIO-${randomHex}`;
+    // Generate unique reward code: PREMIO-XXXXXXXXXX (5 bytes = 1B combinations)
+    let code: string = "";
+    let attempts = 0;
+    do {
+      const randomHex = crypto.randomBytes(5).toString("hex").toUpperCase();
+      code = `PREMIO-${randomHex}`;
+      const exists = await prisma.loyaltyCode.findFirst({ where: { code } });
+      if (!exists) break;
+      attempts++;
+    } while (attempts < 5);
 
       // Create the loyalty code record
       await tx.loyaltyCode.create({

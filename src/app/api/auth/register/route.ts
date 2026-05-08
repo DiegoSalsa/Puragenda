@@ -6,10 +6,25 @@ import {
 } from "@/server/auth/session";
 import { registerSchema } from "@/server/validations/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { registerLimiter } from "@/server/lib/rate-limit";
+
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const blocked = registerLimiter.check(request);
+    if (blocked) return blocked;
+
     const body = await request.json();
+
+    // Honeypot: if a hidden field is filled, it's a bot
+    if (body.website) {
+      // Silently reject — bots think registration succeeded
+      return NextResponse.json(
+        { message: "Usuario registrado exitosamente" },
+        { status: 201 }
+      );
+    }
 
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
@@ -51,7 +66,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
     return response;
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

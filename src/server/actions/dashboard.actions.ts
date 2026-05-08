@@ -9,7 +9,7 @@ import crypto from "crypto";
 import { SALT_ROUNDS } from "@/core/constants";
 import { sendStaffInviteEmail } from "@/server/email/send";
 
-// ─── Appointment Status ───
+// â”€â”€â”€ Appointment Status â”€â”€â”€
 export async function updateAppointmentStatusAction(appointmentId: string, status: "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW") {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -22,7 +22,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
   return { success: true };
 }
 
-// ─── Business Hours ───
+// â”€â”€â”€ Business Hours â”€â”€â”€
 export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -40,7 +40,7 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
   return { success: true };
 }
 
-// ─── Staff CRUD ───
+// â”€â”€â”€ Staff CRUD â”€â”€â”€
 
 // Plan limits: max staff allowed (base, before extras)
 const PLAN_STAFF_LIMITS: Record<string, number> = { INDIVIDUAL: 1, EQUIPO: 3 };
@@ -71,20 +71,20 @@ export async function createStaffAction(data: { name: string; email: string; rol
   // Validate email
   const email = data.email.trim().toLowerCase();
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Debes proporcionar un email válido" };
+    return { error: "Debes proporcionar un email vÃ¡lido" };
   }
 
   // Validate role
   const assignedRole = data.role || "STAFF";
   if (!["ADMIN", "RECEPTIONIST", "STAFF"].includes(assignedRole)) {
-    return { error: "Rol inválido" };
+    return { error: "Rol invÃ¡lido" };
   }
 
   // Enforce staff limit
   const limitInfo = await getStaffLimitInfo(business.id);
   if (!limitInfo.canAdd) {
     const planLabels: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo" };
-    return { error: `Has alcanzado el límite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para añadir más.` };
+    return { error: `Has alcanzado el lÃ­mite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para aÃ±adir mÃ¡s.` };
   }
 
   // Check if user with this email already exists
@@ -129,7 +129,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
     // Send invite email with temporary password (fire and forget)
     sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword).catch(() => {});
   } catch {
-    return { error: "Error al crear. ¿Email duplicado?" };
+    return { error: "Error al crear. Â¿Email duplicado?" };
   }
 
   revalidatePath("/dashboard/staff");
@@ -167,7 +167,7 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
   return { success: true };
 }
 
-// ─── Appearance ───
+// â”€â”€â”€ Appearance â”€â”€â”€
 export async function saveAppearanceAction(data: {
   primaryColor: string;
   secondaryColor: string;
@@ -199,7 +199,7 @@ export async function saveAppearanceAction(data: {
   return { success: true };
 }
 
-// ─── Max Services Per Booking ───
+// â”€â”€â”€ Max Services Per Booking â”€â”€â”€
 export async function updateMaxServicesAction(maxServices: number) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -215,7 +215,7 @@ export async function updateMaxServicesAction(maxServices: number) {
   return { success: true };
 }
 
-// ─── Staff Deletion (Soft Delete) ───
+// â”€â”€â”€ Staff Deletion (Soft Delete) â”€â”€â”€
 export async function deleteStaffAction(staffId: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -238,7 +238,7 @@ export async function deleteStaffAction(staffId: string) {
   return { success: true };
 }
 
-// ─── Business Name ───
+// â”€â”€â”€ Business Name â”€â”€â”€
 export async function updateBusinessNameAction(name: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -260,7 +260,7 @@ export async function updateBusinessNameAction(name: string) {
   return { success: true };
 }
 
-// ── Update Staff → Service assignments ──
+// â”€â”€ Update Staff â†’ Service assignments â”€â”€
 export async function updateStaffServicesAction(staffId: string, serviceIds: string[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -282,7 +282,7 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
   return { success: true };
 }
 
-// ─── Business Logo Upload (Cloudinary) ───
+// â”€â”€â”€ Business Logo Upload (Cloudinary) â”€â”€â”€
 
 export async function updateBusinessLogoAction(formData: FormData) {
   const user = await getCurrentSessionUser();
@@ -293,7 +293,7 @@ export async function updateBusinessLogoAction(formData: FormData) {
   if (!business) return { error: "No tienes un negocio" };
 
   const file = formData.get("logo") as File | null;
-  if (!file || file.size === 0) return { error: "No se recibió ninguna imagen" };
+  if (!file || file.size === 0) return { error: "No se recibiÃ³ ninguna imagen" };
 
   // Validate file type
   const allowed = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
@@ -303,7 +303,7 @@ export async function updateBusinessLogoAction(formData: FormData) {
 
   // Validate size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    return { error: "La imagen es muy pesada. Máximo 5MB." };
+    return { error: "La imagen es muy pesada. MÃ¡ximo 5MB." };
   }
 
   try {
@@ -343,7 +343,7 @@ export async function updateBusinessLogoAction(formData: FormData) {
     return { success: true, url: result.secure_url };
   } catch (err) {
     console.error("Cloudinary upload error:", err);
-    return { error: "Error al subir la imagen. Verifica tu configuración de Cloudinary." };
+    return { error: "Error al subir la imagen. Verifica tu configuraciÃ³n de Cloudinary." };
   }
 }
 
@@ -363,7 +363,7 @@ export async function removeBusinessLogoAction() {
   return { success: true };
 }
 
-// ─── Schedule Blocks (Breaks / Manual Blocks) ───
+// â”€â”€â”€ Schedule Blocks (Breaks / Manual Blocks) â”€â”€â”€
 
 export async function createScheduleBlockAction(data: {
   staffId: string;
@@ -385,7 +385,7 @@ export async function createScheduleBlockAction(data: {
   const start = new Date(`${data.date}T${data.startTime}:00`);
   const end = new Date(`${data.date}T${data.endTime}:00`);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora invÃ¡lida" };
   if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
 
   // Check for overlapping blocks
@@ -429,7 +429,7 @@ export async function deleteScheduleBlockAction(blockId: string) {
   return { success: true };
 }
 
-// ─── Loyalty / Fidelización Config ───
+// â”€â”€â”€ Loyalty / FidelizaciÃ³n Config â”€â”€â”€
 
 export async function saveLoyaltyConfigAction(data: {
   isLoyaltyEnabled: boolean;
@@ -441,7 +441,7 @@ export async function saveLoyaltyConfigAction(data: {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar la fidelización" };
+    return { error: "Solo el administrador puede configurar la fidelizaciÃ³n" };
   }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
@@ -450,7 +450,7 @@ export async function saveLoyaltyConfigAction(data: {
   const discountVal = Math.max(0, Math.floor(data.discountValue || 0));
 
   if (data.discountType && !["PERCENTAGE", "FIXED"].includes(data.discountType)) {
-    return { error: "Tipo de descuento inválido" };
+    return { error: "Tipo de descuento invÃ¡lido" };
   }
 
   if (data.discountType === "PERCENTAGE" && discountVal > 100) {
@@ -472,7 +472,7 @@ export async function saveLoyaltyConfigAction(data: {
   return { success: true };
 }
 
-// ─── Business Location ───
+// â”€â”€â”€ Business Location â”€â”€â”€
 export async function updateBusinessLocationAction(data: { address: string; mapsUrl: string }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };

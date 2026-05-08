@@ -10,7 +10,6 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
 
 export const viewport: Viewport = {
   themeColor: [

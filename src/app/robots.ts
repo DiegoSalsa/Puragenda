@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard/", "/api/", "/admin/", "/auth/"],
+        disallow: ["/dashboard/", "/api/", "/admin/", "/auth/", "/para/"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

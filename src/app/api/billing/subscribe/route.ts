@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { billingLimiter } from "@/server/lib/rate-limit";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
-import { MercadoPagoConfig, PreApproval } from "mercadopago";
-
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-});
+import { PreApproval } from "mercadopago";
+import { mpClient } from "@/server/lib/mercadopago";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const blocked = billingLimiter.check(request);
+    if (blocked) return blocked;
+
     // 1. Verify authenticated session
     const user = await getApiSessionUser(request);
     if (!user) {
@@ -119,9 +121,9 @@ export async function POST(request: NextRequest) {
     console.error("[billing/subscribe] Error:", error);
     
     // Extract MercadoPago error details if present
-    let errorMsg = "Error interno al procesar la suscripción.";
-    if (error.message) errorMsg += ` Detalles: ${error.message}`;
-    if (error.cause) errorMsg += ` (Causa: ${JSON.stringify(error.cause)})`;
+    const errorMsg = "Error al procesar la suscripcion. Intenta de nuevo o contacta soporte.";
+
+
 
     return NextResponse.json(
       { error: errorMsg },

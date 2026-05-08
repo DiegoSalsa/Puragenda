@@ -6,9 +6,15 @@ import {
 } from "@/server/auth/session";
 import { loginSchema } from "@/server/validations/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { loginLimiter } from "@/server/lib/rate-limit";
+
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const blocked = loginLimiter.check(request);
+    if (blocked) return blocked;
+
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
 
@@ -45,7 +51,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
     return response;
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

@@ -91,6 +91,17 @@ export async function incrementPaidReferrals(businessId: string) {
     where: { id: business.referredByAffiliateId },
     data: { paidReferrals: { increment: 1 } },
   });
+
+  // Check if a new reward threshold was reached
+  const earned = calculateEarnedRewards(affiliate.paidReferrals);
+  const available = earned - affiliate.redeemedRewards;
+  if (available > 0) {
+    console.log(
+      `[affiliate] Affiliate ${affiliate.id} reached threshold: ${earned} earned, ${available} available to redeem`
+    );
+    // Rewards are redeemed manually from the affiliate dashboard.
+    // Future enhancement: send notification email here.
+  }
 }
 
 import { applyDiscount } from "@/server/services/discount.service";

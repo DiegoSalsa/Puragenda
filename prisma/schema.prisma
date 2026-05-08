@@ -28,9 +28,13 @@ model User {
   registrationIp   String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  tokenVersion     Int       @default(1)
+  deletedAt        DateTime?
+  termsAcceptedAt  DateTime?
 
   businesses Business[]
   staff      Staff[]
+  auditLogs  AuditLog[]
 }
 
 // ==========================================
@@ -127,7 +131,7 @@ model Business {
   timezone              String   @default("America/Santiago")
   ownerId               String?
   referredByAffiliateId String?
-  // ── Loyalty / Fidelización ──
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Loyalty / FidelizaciÃƒÂ³n Ã¢â€â‚¬Ã¢â€â‚¬
   isLoyaltyEnabled      Boolean  @default(false)
   stampsRequired        Int      @default(5)
   rewardName            String?
@@ -135,6 +139,7 @@ model Business {
   discountValue         Int?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  deletedAt             DateTime?
 
   owner              User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   referredByAffiliate Affiliate?    @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
@@ -288,7 +293,7 @@ model Appointment {
 }
 
 // ==========================================
-// CRM — CLIENTS
+// CRM Ã¢â‚¬â€ CLIENTS
 // ==========================================
 
 model Client {
@@ -313,7 +318,7 @@ model Client {
 }
 
 // ==========================================
-// LOYALTY / FIDELIZACIÓN
+// LOYALTY / FIDELIZACIÃƒâ€œN
 // ==========================================
 
 model LoyaltyCode {
@@ -368,4 +373,36 @@ model MarketingCampaign {
 
   @@index([businessId])
   @@index([businessId, sentAt])
+}
+
+
+// ==========================================
+// AUDIT LOG (WORM: Write Once, Read Many)
+// ==========================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  details     String?  // JSON stringified payload
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+model SystemError {
+  id        String   @id @default(cuid())
+  source    String
+  message   String
+  stack     String?
+  userId    String?
+  details   String?  // JSON string
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([source])
 }

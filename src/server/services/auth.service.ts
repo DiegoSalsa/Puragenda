@@ -87,6 +87,7 @@ export async function registerUser(data: {
         isSuperAdmin,
         registrationIp: ip,
         trialUsedAt: trialBlocked ? null : now,
+        termsAcceptedAt: now,
       },
       select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, createdAt: true },
     });
@@ -114,17 +115,17 @@ export async function registerUser(data: {
     let trialEndsAt: Date | null = null;
 
     if (planIntent && !givesTrial) {
-      // User chose a specific plan → INACTIVE until they pay via MercadoPago
+      // User chose a specific plan Ã¢â€ â€™ INACTIVE until they pay via MercadoPago
       plan = planIntent;
       status = "INACTIVE";
     } else if (givesTrial && (!planIntent || planIntent === "EQUIPO")) {
-      // Eligible for trial → EQUIPO TRIALING
+      // Eligible for trial Ã¢â€ â€™ EQUIPO TRIALING
       plan = "EQUIPO";
       status = "TRIALING";
       isTrial = true;
       trialEndsAt = addDays(now, TRIAL_DURATION_DAYS);
     } else {
-      // No trial, no plan intent → INDIVIDUAL INACTIVE (must pay)
+      // No trial, no plan intent Ã¢â€ â€™ INDIVIDUAL INACTIVE (must pay)
       plan = "INDIVIDUAL";
       status = "INACTIVE";
     }
@@ -170,7 +171,7 @@ export async function registerUser(data: {
  */
 export async function verifyCredentials(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return null;
+  if (!user || user.deletedAt !== null) return null;
 
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) return null;

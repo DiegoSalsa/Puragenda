@@ -1,13 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { MercadoPagoConfig, PreApproval } from "mercadopago";
+import { PreApproval } from "mercadopago";
+import { mpClient } from "@/server/lib/mercadopago";
 import { addDays } from "date-fns";
 import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
+import crypto from "crypto";
 
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-});
+/**
+ * Verify MercadoPago webhook signature.
+ * MercadoPago sends x-signature header with format: "ts=TIMESTAMP,v1=HASH"
+ * The hash is HMAC-SHA256 of a manifest string using the webhook secret.
+ *
+ * @see https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks#verificarsignature
+ */
+function verifyWebhookSignature(
+  xSignature: string | null,
+  xRequestId: string | null,
+  dataId: string | undefined
+): boolean {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+
+  // If no secret configured, skip verification (log warning)
+  if (!secret) {
+    console.warn("[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET not set — skipping signature verification");
+    return true;
+  }
+
+  if (!xSignature || !xRequestId) return false;
+
+  // Parse "ts=...,v1=..." format
+  const parts: Record<string, string> = {};
+  for (const part of xSignature.split(",")) {
+    const [key, ...valueParts] = part.trim().split("=");
+    if (key && valueParts.length > 0) {
+      parts[key] = valueParts.join("=");
+    }
+  }
+
+  const ts = parts["ts"];
+  const v1 = parts["v1"];
+  if (!ts || !v1) return false;
+
+  // Build manifest and compute HMAC
+  const manifest = `id:${dataId || ""};request-id:${xRequestId};ts:${ts};`;
+  const hmac = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+
+  return hmac === v1;
+}
 
 /**
  * Webhook endpoint for MercadoPago subscription notifications.
@@ -18,10 +58,29 @@ const mpClient = new MercadoPagoConfig({
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Read body as text first for signature verification
+    const rawBody = await request.text();
+    let body: Record<string, unknown>;
+
+    try {
+      body = JSON.parse(rawBody);
+    } catch (error) {
+      console.error("[route] Error:", error);
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    // ── Verify webhook signature ──
+    const xSignature = request.headers.get("x-signature");
+    const xRequestId = request.headers.get("x-request-id");
+    const dataId = (body.data as Record<string, unknown>)?.id as string | undefined;
+
+    if (!verifyWebhookSignature(xSignature, xRequestId, dataId)) {
+      console.error("[webhook/mp] Invalid signature — rejecting request");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
     const notificationType = body.type as string | undefined;
-    const resourceId = body.data?.id as string | undefined;
+    const resourceId = dataId;
 
     // Only process subscription_preapproval notifications
     if (notificationType !== "subscription_preapproval" || !resourceId) {

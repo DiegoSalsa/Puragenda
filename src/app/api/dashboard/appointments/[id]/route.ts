@@ -99,7 +99,8 @@ export async function PATCH(
     }
 
     return Response.json(appointment);
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json(
       { error: "Error al actualizar la cita" },
       { status: 500 }

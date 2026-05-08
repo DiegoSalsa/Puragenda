@@ -1,10 +1,7 @@
 import { prisma } from "@/server/db/prisma";
-import { MercadoPagoConfig, PreApproval } from "mercadopago";
+import { PreApproval } from "mercadopago";
+import { mpClient } from "@/server/lib/mercadopago";
 import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
-
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-});
 
 /**
  * Applies a one-time percentage discount to the next billing cycle of a subscription.

@@ -45,7 +45,8 @@ export async function PUT(
     });
 
     return Response.json(service);
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json({ error: "Error al actualizar" }, { status: 500 });
   }
 }
@@ -68,7 +69,8 @@ export async function DELETE(
 
     await deleteService(id);
     return Response.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json({ error: "Error al eliminar" }, { status: 500 });
   }
 }

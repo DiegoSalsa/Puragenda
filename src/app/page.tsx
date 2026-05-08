@@ -107,14 +107,14 @@ export default async function HomePage() {
     name: "Puragenda",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
-    url: "https://puragenda.cl",
+    url: "https://www.puragenda.cl",
     description:
       "Sistema de agendamiento online para peluquerías, estética, consultas y servicios. Reservas 24/7, widget marca blanca y multi-profesional.",
     offers: [
       {
         "@type": "Offer",
         name: "Plan Base",
-        price: "9990",
+        price: "12990",
         priceCurrency: "CLP",
         priceValidUntil: "2027-12-31",
         availability: "https://schema.org/InStock",
@@ -122,7 +122,7 @@ export default async function HomePage() {
       {
         "@type": "Offer",
         name: "Plan Pro",
-        price: "19990",
+        price: "29990",
         priceCurrency: "CLP",
         priceValidUntil: "2027-12-31",
         availability: "https://schema.org/InStock",
@@ -144,8 +144,8 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Puragenda",
-    url: "https://puragenda.cl",
-    logo: "https://puragenda.cl/icon-512x512.png",
+    url: "https://www.puragenda.cl",
+    logo: "https://www.puragenda.cl/icon-512x512.png",
     description: "Plataforma SaaS de agendamiento online para negocios de servicios en Latinoamérica.",
     sameAs: [],
     contactPoint: {
@@ -568,7 +568,7 @@ export default async function HomePage() {
               <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                 Planes para crecer a tu ritmo
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-white/45">
+              <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
                 Prueba gratis en Plan Base. Sin tarjeta. Cancela cuando quieras.
               </p>
             </div>

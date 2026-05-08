@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Sobre Nosotros | Puragenda",
   description: "Conoce a PuroCode, el equipo detrás de Puragenda. Desarrollamos software SaaS de alta calidad para negocios locales en Chile y Latinoamérica.",
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/sobre-nosotros`,
+    canonical: `${process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl"}/sobre-nosotros`,
   },
 };
 
@@ -18,7 +18,7 @@ export default function AboutPage() {
     "@type": "Organization",
     name: "PuroCode",
     url: "https://purocode.com",
-    logo: "https://puragenda.cl/icon-512x512.png",
+    logo: "https://www.puragenda.cl/icon-512x512.png",
     description: "Agencia de desarrollo de software y creadores de Puragenda.",
     founder: {
       "@type": "Person",

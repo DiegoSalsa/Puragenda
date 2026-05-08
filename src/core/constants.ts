@@ -13,10 +13,10 @@ export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 export const AUTH_COOKIE_NAME = "puragenda_session";
 
 // SuperAdmin emails
-export const SUPERADMIN_EMAILS = ["admin@purocode.com", "diego@purocode.com", "contacto@purocode.com"];
+export const SUPERADMIN_EMAILS = (process.env.SUPERADMIN_EMAILS || "admin@purocode.com,diego@purocode.com,contacto@purocode.com").split(",").map(e => e.trim());
 
 // Emails that receive notifications when a new business registers
-export const ADMIN_NOTIFICATION_EMAILS = ["contacto@purocode.com"];
+export const ADMIN_NOTIFICATION_EMAILS = (process.env.ADMIN_NOTIFICATION_EMAILS || "contacto@purocode.com").split(",").map(e => e.trim());
 
 // Secret admin panel path (must match the folder in src/app/para/)
 export const ADMIN_SECRET_PATH = "/para/x7k9m2v4q8";

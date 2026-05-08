@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { marketingLimiter } from "@/server/lib/rate-limit";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getSubscriptionByBusinessId } from "@/server/services/subscription.service";
@@ -14,6 +15,9 @@ import type { SubscriptionPlan } from "@/core/entities";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const blocked = marketingLimiter.check(request);
+    if (blocked) return blocked;
     // ── 1. Auth ──
     const user = await getApiSessionUser(request);
     if (!user) {

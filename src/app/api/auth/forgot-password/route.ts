@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/server/db/prisma";
+import { sendForgotPasswordEmail } from "@/server/email/send";
+import crypto from "crypto";
+import { loginLimiter } from "@/server/lib/rate-limit";
+
+/**
+ * POST /api/auth/forgot-password
+ * Receives { email } and sends a password reset link.
+ * Always returns 200 to prevent email enumeration.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Rate limiting (reuse login limiter — same sensitivity)
+    const blocked = loginLimiter.check(request);
+    if (blocked) return blocked;
+
+    const body = await request.json();
+    const email = body.email?.trim()?.toLowerCase();
+
+    if (!email) {
+      return NextResponse.json(
+        { message: "Si el email existe, recibirás un enlace para restablecer tu contraseña." },
+        { status: 200 }
+      );
+    }
+
+    // Check if user exists (don't reveal if they don't)
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      // Delete any existing tokens for this email
+      await prisma.passwordResetToken.deleteMany({ where: { email } });
+
+      // Generate secure token
+      const token = crypto.randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Save token
+      await prisma.passwordResetToken.create({
+        data: { email, token, expires },
+      });
+
+      // Send email (fire and forget)
+      sendForgotPasswordEmail(email, token).catch(() => {});
+    }
+
+    // Always return success to prevent email enumeration
+    return NextResponse.json(
+      { message: "Si el email existe, recibirás un enlace para restablecer tu contraseña." },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[auth/forgot-password] Error:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}

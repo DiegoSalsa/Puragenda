@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
 
     const services = await getServicesByBusinessId(business.id);
     return Response.json(services);
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json({ error: "Error del servidor" }, { status: 500 });
   }
 }
@@ -58,7 +59,8 @@ export async function POST(request: NextRequest) {
     });
 
     return Response.json(service, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

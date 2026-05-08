@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ industry:
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) return {};
 
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl"}/para/${data.slug}`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl"}/para/${data.slug}`;
 
   return {
     title: data.title,

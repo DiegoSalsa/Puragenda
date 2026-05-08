@@ -44,7 +44,13 @@ export async function GET(req: Request) {
     // We query appointments whose startTime falls on tomorrow (Chile time).
     // Using a generous window: tomorrow 00:00 Chile → day after 00:00 Chile.
     // Chile is UTC-3 or UTC-4, so tomorrow 00:00 Chile = tomorrow 03:00-04:00 UTC.
-    const tomorrowStartUTC = new Date(`${tomorrowStr}T00:00:00-04:00`); // CLT (winter)
+    // Dynamically get Chile offset (handles CLT=-04:00 and CLST=-03:00 automatically)
+    const offsetParts = new Intl.DateTimeFormat("en", { timeZone: chileTz, timeZoneName: "shortOffset" }).formatToParts(new Date(`${tomorrowStr}T12:00:00Z`));
+    const tzPart = offsetParts.find(p => p.type === "timeZoneName")?.value || "GMT-4";
+    const offsetMatch = tzPart.match(/GMT([+-]\d+)/);
+    const offsetHours = offsetMatch ? parseInt(offsetMatch[1]) : -4;
+    const offsetStr = `${offsetHours >= 0 ? "+" : ""}${String(Math.abs(offsetHours)).padStart(2, "0")}:00`;
+    const tomorrowStartUTC = new Date(`${tomorrowStr}T00:00:00${offsetStr}`);
     const dayAfter = new Date(tomorrowStartUTC);
     dayAfter.setDate(dayAfter.getDate() + 1);
 

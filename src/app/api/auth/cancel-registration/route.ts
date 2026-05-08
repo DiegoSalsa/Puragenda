@@ -1,3 +1,4 @@
+import { createAuditLog } from "@/server/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
@@ -24,31 +25,29 @@ export async function DELETE(request: NextRequest) {
     // Only allow cancellation if the subscription is pending payment (INACTIVE)
     if (subscription && subscription.status !== "INACTIVE") {
       return NextResponse.json(
-        { error: "No puedes cancelar una cuenta que ya está activa. Ve a configuración." },
+        { error: "No puedes cancelar una cuenta que ya estÃ¡ activa. Ve a configuraciÃ³n." },
         { status: 400 }
       );
     }
 
-    // Perform cascade delete safely in a transaction
+        // Perform cascade delete safely in a transaction
     await prisma.$transaction(async (tx) => {
-      // 1. Delete Staff records associated with this user
-      await tx.staff.deleteMany({
-        where: { userId: user.id },
-      });
-
-      // 2. Delete the Subscription
-      await tx.subscription.deleteMany({
+      // 1. Mark subscription as CANCELLED
+      await tx.subscription.updateMany({
         where: { businessId: business.id },
+        data: { status: "CANCELLED" }
       });
 
-      // 3. Delete the Business
-      await tx.business.delete({
+      // 2. Mark the Business as deleted
+      await tx.business.update({
         where: { id: business.id },
+        data: { deletedAt: new Date() }
       });
 
-      // 4. Delete the User
-      await tx.user.delete({
+      // 3. Mark the User as deleted
+      await tx.user.update({
         where: { id: user.id },
+        data: { deletedAt: new Date() }
       });
     });
 

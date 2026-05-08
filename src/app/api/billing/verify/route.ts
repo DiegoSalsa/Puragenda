@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
-import { MercadoPagoConfig, PreApproval } from "mercadopago";
+import { PreApproval } from "mercadopago";
 import { addDays } from "date-fns";
-
-const mpClient = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-});
+import { mpClient } from "@/server/lib/mercadopago";
+import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
+import { incrementPaidReferrals } from "@/server/services/affiliate.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +41,29 @@ export async function POST(request: NextRequest) {
     }
 
     if (mpSubscription.status === "authorized") {
+      // ── Revert discount if pending (same logic as webhook) ──
+      if (subscription.pendingDiscountPercentage !== null) {
+        try {
+          const basePrice = PRICING[subscription.plan].monthly;
+          let totalBasePrice = basePrice;
+          if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
+            totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
+          }
+          await preapproval.update({
+            id: subscription.mpSubscriptionId,
+            body: {
+              auto_recurring: {
+                transaction_amount: totalBasePrice,
+                currency_id: "CLP",
+              },
+            },
+          });
+          console.log(`[billing/verify] Reverted discount for subscription back to ${totalBasePrice}`);
+        } catch (e) {
+          console.error("[billing/verify] Failed to revert discount:", e);
+        }
+      }
+
       // Payment successful — activate immediately
       await prisma.subscription.update({
         where: { id: subscription.id },
@@ -49,8 +71,16 @@ export async function POST(request: NextRequest) {
           status: "ACTIVE",
           isTrial: false,
           currentPeriodEnd: addDays(new Date(), 30),
+          pendingDiscountPercentage: null,
+          hasCountedAsPaidReferral: true,
         },
       });
+
+      // ── Count for affiliate (same logic as webhook) ──
+      if (!subscription.hasCountedAsPaidReferral) {
+        await incrementPaidReferrals(subscription.businessId);
+      }
+
       return NextResponse.json({ status: "ACTIVE" }, { status: 200 });
     }
 

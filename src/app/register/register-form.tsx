@@ -20,6 +20,7 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<"register" | "payment" | null>(null);
@@ -28,8 +29,13 @@ export function RegisterForm() {
     event.preventDefault();
     setError(null);
 
+        if (!termsAccepted) {
+      setError("Debes aceptar los Términos de Servicio y Políticas de Privacidad");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError("Las contraseÃ±as no coinciden");
       return;
     }
 
@@ -48,6 +54,7 @@ export function RegisterForm() {
           password,
           referralCode: referralCode.trim() || undefined,
           planIntent: isDirectSubscription ? wantsPlan : undefined,
+          termsAccepted,
         }),
       });
 
@@ -82,7 +89,7 @@ export function RegisterForm() {
         return;
       }
 
-      // Step 3: Normal flow (trial or individual) → go to dashboard
+      // Step 3: Normal flow (trial or individual) â†’ go to dashboard
       window.location.href = "/dashboard";
     } finally {
       setLoading(false);
@@ -102,7 +109,7 @@ export function RegisterForm() {
             <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
               <Crown className="h-4 w-4 text-[#7C3AED]" />
               <span className="text-sm font-medium text-[#A78BFA]">
-                Plan {planLabel} — ${planPrice.toLocaleString("es-CL")}/mes
+                Plan {planLabel} â€” ${planPrice.toLocaleString("es-CL")}/mes
               </span>
             </div>
           </div>
@@ -114,7 +121,7 @@ export function RegisterForm() {
             <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
               <Sparkles className="h-4 w-4 text-emerald-400" />
               <span className="text-sm font-medium text-emerald-400">
-                {TRIAL_DURATION_DAYS} días gratis · Plan Equipo
+                {TRIAL_DURATION_DAYS} dÃ­as gratis Â· Plan Equipo
               </span>
             </div>
           </div>
@@ -144,7 +151,7 @@ export function RegisterForm() {
           <input
             id="businessName"
             type="text"
-            placeholder="Ej: Barbería El Corte"
+            placeholder="Ej: BarberÃ­a El Corte"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             required
@@ -166,11 +173,11 @@ export function RegisterForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
+          <label htmlFor="password" className="text-sm text-muted-foreground">ContraseÃ±a</label>
           <input
             id="password"
             type="password"
-            placeholder="Mínimo 8 caracteres"
+            placeholder="MÃ­nimo 8 caracteres"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
@@ -181,12 +188,12 @@ export function RegisterForm() {
 
         <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
-            Confirmar contraseña
+            Confirmar contraseÃ±a
           </label>
           <input
             id="confirmPassword"
             type="password"
-            placeholder="Repite tu contraseña"
+            placeholder="Repite tu contraseÃ±a"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -199,7 +206,7 @@ export function RegisterForm() {
         <div className="space-y-1.5">
           <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-            Código de Referido <span className="text-muted-foreground/50">(opcional)</span>
+            CÃ³digo de Referido <span className="text-muted-foreground/50">(opcional)</span>
           </label>
           <input
             id="referralCode"
@@ -210,6 +217,20 @@ export function RegisterForm() {
             maxLength={20}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
           />
+        </div>
+
+                {/* Terms and Conditions */}
+        <div className="flex items-start gap-2 pt-2">
+          <input
+            type="checkbox"
+            id="terms"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-border bg-muted text-[#7C3AED] focus:ring-[#7C3AED]"
+          />
+          <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug">
+            He leído y acepto los <a href="#" className="text-[#7C3AED] hover:underline">Términos de Servicio</a> y las <a href="#" className="text-[#7C3AED] hover:underline">Políticas de Privacidad</a>.
+          </label>
         </div>
 
         {error && (
@@ -245,15 +266,15 @@ export function RegisterForm() {
 
         {isDirectSubscription && (
           <p className="text-center text-xs text-muted-foreground">
-            Serás redirigido a MercadoPago para completar el pago.
+            SerÃ¡s redirigido a MercadoPago para completar el pago.
           </p>
         )}
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        ¿Ya tienes cuenta?{" "}
+        Â¿Ya tienes cuenta?{" "}
         <Link href="/login" className="text-[#7C3AED] hover:underline">
-          Iniciar sesión
+          Iniciar sesiÃ³n
         </Link>
       </p>
     </div>

@@ -5,6 +5,8 @@ import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
+import { bookingLimiter } from "@/server/lib/rate-limit";
+
 
 export async function POST(
   request: NextRequest,
@@ -13,6 +15,10 @@ export async function POST(
   const { slug } = await params;
 
   try {
+    // Rate limiting
+    const blocked = bookingLimiter.check(request);
+    if (blocked) return blocked;
+
     const body = await request.json();
 
     const parsed = bookingSchema.safeParse(body);
@@ -169,7 +175,8 @@ export async function POST(
     }
 
     return Response.json(result.appointment, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("[route] Error:", error);
     return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 }

@@ -15,7 +15,13 @@ function getAuthSecret(): string {
   if (configured && configured.length >= 32) {
     return configured;
   }
-  return "dev-only-auth-secret-change-in-production-32+chars";
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "FATAL: AUTH_SECRET environment variable must be set in production (minimum 32 characters). " +
+      "Generate one with: openssl rand -base64 32"
+    );
+  }
+  return "dev-only-auth-secret-do-not-use-in-production!!";
 }
 
 function toBase64Url(value: Buffer | string): string {
@@ -90,6 +96,12 @@ export function verifySessionToken(token: string): SessionUser | null {
   }
 }
 
+/**
+ * Cookie options for session management.
+ * Note: 'domain' is intentionally omitted. The browser defaults to the exact
+ * host (www.puragenda.cl), which is more secure than setting domain explicitly.
+ * Only add 'domain' if subdomain cookie sharing is needed in the future.
+ */
 export function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
   return {
     httpOnly: true,
