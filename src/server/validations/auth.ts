@@ -32,6 +32,11 @@ export const registerSchema = z.object({
     .toUpperCase()
     .optional()
     .nullable(),
+
+  planIntent: z
+    .enum(["INDIVIDUAL", "EQUIPO", "TEST"])
+    .optional()
+    .nullable(),
 });
 
 export const loginSchema = z.object({

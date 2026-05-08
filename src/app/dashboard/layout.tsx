@@ -1,7 +1,9 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { prisma } from "@/server/db/prisma";
 import { redirect } from "next/navigation";
+import { PaymentWall } from "@/components/dashboard/payment-wall";
 
 export default async function DashboardLayout({
   children,
@@ -15,6 +17,17 @@ export default async function DashboardLayout({
   }
 
   const business = await getBusinessForUser(user.id);
+
+  // Check subscription status — block access if INACTIVE (pending payment)
+  if (business && user.role !== "SUPERADMIN") {
+    const subscription = await prisma.subscription.findUnique({
+      where: { businessId: business.id },
+    });
+
+    if (subscription?.status === "INACTIVE") {
+      return <PaymentWall userEmail={user.email} businessId={business.id} plan={subscription.plan} />;
+    }
+  }
 
   return (
     <div className="flex min-h-screen">

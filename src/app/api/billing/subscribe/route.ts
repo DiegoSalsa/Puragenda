@@ -9,7 +9,7 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
 
-type ValidPlan = "INDIVIDUAL" | "EQUIPO";
+type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     let targetPlan: ValidPlan = "EQUIPO";
     try {
       const body = await request.json();
-      if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO") {
+      if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
         targetPlan = body.plan;
       }
     } catch {

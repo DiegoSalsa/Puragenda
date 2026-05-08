@@ -14,7 +14,7 @@ import {
 // TYPES
 // ═══════════════════════════════════════════
 
-type PlanKey = "INDIVIDUAL" | "EQUIPO";
+type PlanKey = "INDIVIDUAL" | "EQUIPO" | "TEST";
 type BillingCycle = "monthly" | "annual";
 
 interface PricingCardsProps {
@@ -65,6 +65,19 @@ const plans: {
       "Roles: Recepcionista y Staff",
       "Doble capacidad de Marketing",
       "Profesionales extra a $3.000/mes",
+    ],
+  },
+  {
+    key: "TEST",
+    name: "Test",
+    description: "Plan de prueba para pagos ($1.000).",
+    highlighted: false,
+    badge: "Solo pruebas",
+    icon: Zap,
+    staffLabel: `1 profesional incluido`,
+    items: [
+      "Plan de pruebas",
+      "Pago real de $1.000",
     ],
   },
 ];
@@ -145,6 +158,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   const [extras, setExtras] = useState<Record<PlanKey, number>>({
     INDIVIDUAL: 0,
     EQUIPO: 0,
+    TEST: 0,
   });
   const [isLoggedIn, setIsLoggedIn] = useState(mode === "selection");
 
@@ -411,6 +425,20 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                       Suscribirse
+                    </button>
+                  )}
+
+                  {plan.key === "TEST" && (
+                    <button
+                      onClick={() => handlePlanAction("TEST", false)}
+                      disabled={loading === "TEST"}
+                      className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {loading === "TEST" ? (
+                        <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
+                      ) : (
+                        "Probar Pago Real ($1.000)"
+                      )}
                     </button>
                   )}
 

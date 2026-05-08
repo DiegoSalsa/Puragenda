@@ -24,13 +24,14 @@ export const ADMIN_SECRET_PATH = "/para/x7k9m2v4q8";
 // Roles
 export const ROLES = { ADMIN: "ADMIN", RECEPTIONIST: "RECEPTIONIST", STAFF: "STAFF", SUPERADMIN: "SUPERADMIN" } as const;
 
-// Plans (only two: INDIVIDUAL = 1 person, EQUIPO = team)
-export const PLANS = { INDIVIDUAL: "INDIVIDUAL", EQUIPO: "EQUIPO" } as const;
+// Plans
+export const PLANS = { INDIVIDUAL: "INDIVIDUAL", EQUIPO: "EQUIPO", TEST: "TEST" } as const;
 
 // Pricing (CLP/month)
 export const PRICING = {
   INDIVIDUAL: { monthly: 12990, name: "Individual" },
   EQUIPO:     { monthly: 29990, name: "Equipo" },
+  TEST:       { monthly: 1000, name: "Test" },
 } as const;
 
 // Which plan offers a free trial
@@ -51,12 +52,14 @@ export const TRIAL_DURATION_DAYS = 30;
 export const STAFF_LIMITS = {
   INDIVIDUAL: 1,
   EQUIPO: 3,     // 3 included, extras purchasable
+  TEST: 1,
 } as const;
 
 // Marketing email limits per plan
 export const MARKETING_LIMITS = {
   INDIVIDUAL: { maxEmails: 50, maxCampaignsPerMonth: 1 },
   EQUIPO: { maxEmails: 100, maxCampaignsPerMonth: 1 },
+  TEST: { maxEmails: 10, maxCampaignsPerMonth: 1 },
 } as const;
 
 // Appointment statuses

@@ -64,6 +64,7 @@ export async function registerUser(data: {
   businessName: string;
   ip?: string | null;
   referralCode?: string | null;
+  planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
@@ -103,16 +104,33 @@ export async function registerUser(data: {
       data: { name: data.name, email: data.email, businessId: business.id, userId: user.id, isActive: true },
     });
 
-    // Subscription: trial gets EQUIPO, no trial gets INDIVIDUAL
-    const givesTrial = !trialBlocked;
+    // Determine subscription plan and status
+    const planIntent = data.planIntent;
+    const givesTrial = !trialBlocked && (!planIntent || planIntent === "EQUIPO");
+
+    let plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
+    let status: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
+    let isTrial = false;
+    let trialEndsAt: Date | null = null;
+
+    if (planIntent && !givesTrial) {
+      // User chose a specific plan → INACTIVE until they pay via MercadoPago
+      plan = planIntent;
+      status = "INACTIVE";
+    } else if (givesTrial && (!planIntent || planIntent === "EQUIPO")) {
+      // Eligible for trial → EQUIPO TRIALING
+      plan = "EQUIPO";
+      status = "TRIALING";
+      isTrial = true;
+      trialEndsAt = addDays(now, TRIAL_DURATION_DAYS);
+    } else {
+      // No trial, no plan intent → INDIVIDUAL INACTIVE (must pay)
+      plan = "INDIVIDUAL";
+      status = "INACTIVE";
+    }
+
     await tx.subscription.create({
-      data: {
-        businessId: business.id,
-        plan: givesTrial ? "EQUIPO" : "INDIVIDUAL",
-        status: givesTrial ? "TRIALING" : "ACTIVE",
-        isTrial: givesTrial,
-        trialEndsAt: givesTrial ? addDays(now, TRIAL_DURATION_DAYS) : null,
-      },
+      data: { businessId: business.id, plan, status, isTrial, trialEndsAt },
     });
 
     // Record IP for future fraud detection

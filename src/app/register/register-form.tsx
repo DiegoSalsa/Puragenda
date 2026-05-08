@@ -8,11 +8,11 @@ import { PRICING, TRIAL_DURATION_DAYS } from "@/core/constants";
 
 export function RegisterForm() {
   const searchParams = useSearchParams();
-  const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", or null
+  const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
   const wantsTrial = searchParams.get("trial") === "1";
-  const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL") && !wantsTrial;
-  const planLabel = wantsPlan === "EQUIPO" ? "Equipo" : wantsPlan === "INDIVIDUAL" ? "Individual" : null;
-  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : 0;
+  const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
+  const planLabel = wantsPlan === "EQUIPO" ? "Equipo" : wantsPlan === "INDIVIDUAL" ? "Individual" : wantsPlan === "TEST" ? "Test" : null;
+  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -47,6 +47,7 @@ export function RegisterForm() {
           email: email.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
+          planIntent: isDirectSubscription ? wantsPlan : undefined,
         }),
       });
 
