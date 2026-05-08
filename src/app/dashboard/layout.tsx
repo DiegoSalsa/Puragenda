@@ -25,7 +25,15 @@ export default async function DashboardLayout({
     });
 
     if (subscription?.status === "INACTIVE") {
-      return <PaymentWall userEmail={user.email} businessId={business.id} plan={subscription.plan} />;
+      return (
+        <PaymentWall 
+          userEmail={user.email} 
+          userName={user.name}
+          businessId={business.id} 
+          businessName={business.name}
+          plan={subscription.plan} 
+        />
+      );
     }
   }
 

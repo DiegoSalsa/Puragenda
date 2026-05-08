@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreditCard, Loader2, Shield, ArrowRight } from "lucide-react";
+import { CreditCard, Loader2, Shield, ArrowRight, UserX, Store, User } from "lucide-react";
 import { PRICING } from "@/core/constants";
 
 interface PaymentWallProps {
   userEmail: string;
+  userName: string;
   businessId: string;
+  businessName: string;
   plan: string;
 }
 
-export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
+export function PaymentWall({ userEmail, userName, businessName, plan }: PaymentWallProps) {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const planName = plan === "EQUIPO" ? "Equipo" : plan === "INDIVIDUAL" ? "Individual" : "Test";
@@ -63,6 +66,32 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
     }
   }
 
+  async function handleCancelRegistration() {
+    if (!window.confirm("¿Estás seguro de que quieres cancelar el registro? Tu cuenta será eliminada y tendrás que registrarte nuevamente.")) {
+      return;
+    }
+
+    setCancelling(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/auth/cancel-registration", {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        window.location.href = "/register"; // Back to registration
+      } else {
+        const data = await res.json();
+        setError(data.error || "Error al cancelar el registro.");
+        setCancelling(false);
+      }
+    } catch {
+      setError("Error de conexión al intentar cancelar.");
+      setCancelling(false);
+    }
+  }
+
   if (verifying) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -75,7 +104,7 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       {/* Background effect */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-44 left-1/2 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-[#7C3AED]/8 blur-[120px]" />
@@ -95,7 +124,7 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl">
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl">
           <div className="mb-6 text-center space-y-3">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#7C3AED]/10">
               <Shield className="h-8 w-8 text-[#7C3AED]" />
@@ -106,13 +135,27 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
             </p>
           </div>
 
-          {/* Plan info */}
-          <div className="mb-6 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Plan {planName}</span>
-              <span className="text-lg font-bold text-[#7C3AED]">${planPrice.toLocaleString("es-CL")}/mes</span>
+          {/* User & Business Info */}
+          <div className="mb-6 space-y-3">
+            <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-3">
+              <div className="flex items-center gap-3 text-sm">
+                <Store className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{businessName}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>{userName}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-muted-foreground text-xs ml-7">{userEmail}</span>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">{userEmail}</p>
+          </div>
+
+          {/* Plan info */}
+          <div className="mb-6 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4 flex items-center justify-between">
+            <span className="text-sm font-medium">Plan {planName}</span>
+            <span className="text-lg font-bold text-[#7C3AED]">${planPrice.toLocaleString("es-CL")}/mes</span>
           </div>
 
           {error && (
@@ -124,7 +167,7 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
           <div className="space-y-3">
             <button
               onClick={handlePayment}
-              disabled={loading}
+              disabled={loading || cancelling}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:shadow-xl hover:shadow-[#7C3AED]/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
@@ -136,16 +179,29 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
             
             <button
               onClick={verifyPayment}
-              disabled={loading}
+              disabled={loading || cancelling}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground transition-all hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Ya pagué, verificar estado
             </button>
           </div>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Serás redirigido a MercadoPago para completar el pago de forma segura.
-          </p>
+          <div className="mt-8 pt-6 border-t border-border">
+            <button
+              onClick={handleCancelRegistration}
+              disabled={loading || cancelling}
+              className="flex w-full items-center justify-center gap-2 text-sm font-medium text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              {cancelling ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Cancelando...</>
+              ) : (
+                <><UserX className="h-4 w-4" /> Cancelar y borrar cuenta</>
+              )}
+            </button>
+            <p className="mt-2 text-center text-xs text-muted-foreground/80">
+              Si elegiste el plan equivocado, puedes cancelar para empezar de cero.
+            </p>
+          </div>
         </div>
 
         <p className="text-center text-xs text-muted-foreground/60">
