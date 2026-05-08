@@ -129,15 +129,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
       {/* ─── Hero Header ─── */}
       <div className="relative overflow-hidden">
-        {/* Multi-layer gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[rgb(var(--color-primary)/0.3)] via-[rgb(var(--color-secondary)/0.15)] to-transparent" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-[#D4AF37]/8 blur-[100px]" />
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 h-64 w-[120%] bg-[conic-gradient(from_90deg_at_50%_0%,rgb(var(--color-primary)/0.8)_0%,transparent_50%,rgb(var(--color-primary))_100%)] blur-[80px] opacity-20" />
-        <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-[rgb(var(--color-primary)/0.5)] blur-[80px] opacity-20" />
-
-        {/* Top glow line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[rgb(var(--color-primary)/0.6)] to-transparent" />
+        {/* Subtle grid background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(var(--color-text)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgb(var(--color-text)/0.03)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,black_70%,transparent_100%)]" />
 
         <div className="relative max-w-xl mx-auto px-5 pt-10 pb-6 sm:pt-14 sm:pb-8">
           {/* Business logo / name */}
@@ -161,7 +154,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
           {/* Greeting */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-primary)/0.8)] to-[#D4AF37]">{client.name.split(" ")[0]}</span> 👋
+            Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-primary)/0.8)] to-[rgb(var(--color-primary))]">{client.name.split(" ")[0]}</span> 👋
           </h1>
           <p className="mt-3 text-base text-[rgb(var(--color-text)/0.5)] font-medium leading-relaxed max-w-sm">
             {motivationalCopy}
@@ -185,8 +178,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
                   <p className="text-[11px] text-[rgb(var(--color-text)/0.35)]">{client.currentStamps} de {business.stampsRequired} completados</p>
                 </div>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[rgb(var(--color-primary)/0.1)] border border-[#D4AF37]/15">
-                <span className="text-sm font-extrabold text-[#D4AF37]">{percentage}%</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[rgb(var(--color-primary)/0.2)] to-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)]">
+                <span className="text-sm font-extrabold text-[rgb(var(--color-primary))]">{percentage}%</span>
               </div>
             </div>
 
@@ -198,7 +191,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
             {remaining > 0 && (
               <p className="mt-4 text-center text-sm font-medium text-[rgb(var(--color-text)/0.4)]">
                 {remaining === 1
-                  ? <span className="text-[#D4AF37]">¡Solo 1 visita más! 🔥</span>
+                  ? <span className="text-[rgb(var(--color-primary))]">¡Solo 1 visita más! 🔥</span>
                   : <>{remaining} visitas para tu premio</>
                 }
               </p>
@@ -207,8 +200,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
           {/* ── Card 2: Stats - Visits (Half) ── */}
           <div className="rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-4 sm:p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/15 mb-3">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-secondary)/0.15)] mb-3">
+              <TrendingUp className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
             </div>
             <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{completedVisits.length}</p>
             <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5">Visitas completadas</p>
@@ -216,8 +209,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
           {/* ── Card 3: Stats - Rewards (Half) ── */}
           <div className="rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-4 sm:p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/15 mb-3">
-              <Trophy className="h-4 w-4 text-[#D4AF37]" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)] mb-3">
+              <Trophy className="h-4 w-4 text-[rgb(var(--color-primary))]" />
             </div>
             <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{availableRewards.length}</p>
             <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5">Premios disponibles</p>
@@ -225,17 +218,17 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
           {/* ── Card 4: Prize Info (Full Width) ── */}
           {business.rewardName && (
-            <div className="col-span-2 relative overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.06] via-[rgb(var(--color-text)/0.01)] to-[rgb(var(--color-primary)/0.04)] p-5 transition-all duration-300 hover:border-[#D4AF37]/30">
-              <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-bl from-[#D4AF37]/8 to-transparent rounded-bl-3xl" />
+            <div className="col-span-2 relative overflow-hidden rounded-2xl border border-[rgb(var(--color-primary)/0.2)] bg-gradient-to-br from-[rgb(var(--color-primary)/0.06)] via-[rgb(var(--color-text)/0.01)] to-[rgb(var(--color-primary)/0.04)] p-5 transition-all duration-300 hover:border-[rgb(var(--color-primary)/0.3)]">
+              <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-bl from-[rgb(var(--color-primary)/0.08)] to-transparent rounded-bl-3xl" />
               <div className="relative z-10 flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/25 to-[#F5E6A3]/10 border border-[#D4AF37]/25">
-                  <Gift className="h-5 w-5 text-[#D4AF37]" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[rgb(var(--color-primary)/0.25)] to-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-primary)/0.25)]">
+                  <Gift className="h-5 w-5 text-[rgb(var(--color-primary))]" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-[#D4AF37]/60 font-semibold mb-1">Premio al completar</p>
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-[rgb(var(--color-primary)/0.6)] font-semibold mb-1">Premio al completar</p>
                   <p className="text-base font-bold text-[rgb(var(--color-text))]">{business.rewardName}</p>
                   {business.discountType && business.discountValue && (
-                    <p className="text-sm text-[#D4AF37]/80 font-medium mt-0.5">
+                    <p className="text-sm text-[rgb(var(--color-primary)/0.8)] font-medium mt-0.5">
                       {business.discountType === "PERCENTAGE"
                         ? `${business.discountValue}% de descuento`
                         : `$${business.discountValue.toLocaleString()} de descuento`}
@@ -249,10 +242,10 @@ export default async function MisPremiosPage({ params }: PageProps) {
           {/* ── Card 5: Available Rewards (Full Width) ── */}
           <div className="col-span-2 space-y-3">
             <div className="flex items-center gap-2.5 px-1">
-              <Gift className="h-4.5 w-4.5 text-[#D4AF37]" />
+              <Gift className="h-4.5 w-4.5 text-[rgb(var(--color-primary))]" />
               <p className="text-sm font-bold">Tus Premios</p>
               {availableRewards.length > 0 && (
-                <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-[#D4AF37]/20 text-[11px] font-bold text-[#D4AF37]">
+                <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--color-primary)/0.2)] text-[11px] font-bold text-[rgb(var(--color-primary))]">
                   {availableRewards.length}
                 </span>
               )}
@@ -288,8 +281,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
           {completedVisits.length > 0 && (
             <div className="col-span-2 rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/15">
-                  <Calendar className="h-4 w-4 text-blue-400" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-secondary)/0.15)]">
+                  <Calendar className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
                 </div>
                 <p className="text-sm font-bold">Últimas Visitas</p>
               </div>
@@ -303,8 +296,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
                       className="flex items-center justify-between rounded-xl border border-[rgb(var(--color-text)/0.04)] bg-[rgb(var(--color-text)/0.02)] px-4 py-3 text-sm"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/15">
-                          <Stamp className="h-3.5 w-3.5 text-[#D4AF37]/70" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)]">
+                          <Stamp className="h-3.5 w-3.5 text-[rgb(var(--color-primary)/0.7)]" />
                         </div>
                         <div>
                           <p className="text-xs font-medium text-[rgb(var(--color-text)/0.8)]">{visit.service.name}</p>
@@ -313,7 +306,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-medium text-emerald-400/60 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-medium text-[rgb(var(--color-secondary)/0.8)] bg-[rgb(var(--color-secondary)/0.1)] px-2 py-0.5 rounded-full border border-[rgb(var(--color-secondary)/0.15)]">
                         +1 timbre
                       </span>
                     </div>

@@ -23,7 +23,7 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
               className={`
                 group relative flex aspect-square items-center justify-center rounded-2xl border-2 transition-all duration-500
                 ${isActive
-                  ? "border-[#D4AF37]/50 bg-gradient-to-br from-[#D4AF37]/25 via-[#F5E6A3]/15 to-[#D4AF37]/10 shadow-[0_0_20px_rgba(212,175,55,0.25)] scale-100"
+                  ? "border-[rgb(var(--color-primary)/0.5)] bg-gradient-to-br from-[rgb(var(--color-primary)/0.25)] via-[rgb(var(--color-secondary)/0.15)] to-[rgb(var(--color-primary)/0.1)] shadow-[0_0_20px_rgb(var(--color-primary)/0.25)] scale-100"
                   : isNext
                     ? "border-[rgb(var(--color-primary)/0.4)] bg-[rgb(var(--color-primary)/0.1)] animate-pulse shadow-[0_0_12px_rgb(var(--color-primary)/0.15)]"
                     : "border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.02)] hover:border-[rgb(var(--color-text)/0.1)]"
@@ -33,13 +33,13 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
             >
               {/* Sparkle effect for active stamps */}
               {isActive && (
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#F5E6A3]/10 to-transparent opacity-60" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-secondary)/0.1)] to-transparent opacity-60" />
               )}
 
               <Stamp
                 className={`relative z-10 h-6 w-6 sm:h-7 sm:w-7 transition-all duration-500 ${
                   isActive
-                    ? "text-[#D4AF37] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+                    ? "text-[rgb(var(--color-primary))] drop-shadow-[0_0_8px_rgb(var(--color-primary)/0.6)]"
                     : isNext
                       ? "text-[rgb(var(--color-primary)/0.6)]"
                       : "text-[rgb(var(--color-text)/0.08)]"
@@ -49,7 +49,7 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
               {/* Stamp number */}
               <span
                 className={`absolute bottom-1 text-[9px] font-bold tracking-tight ${
-                  isActive ? "text-[#D4AF37]/80" : isNext ? "text-[rgb(var(--color-primary)/0.4)]" : "text-[rgb(var(--color-text)/0.06)]"
+                  isActive ? "text-[rgb(var(--color-primary)/0.8)]" : isNext ? "text-[rgb(var(--color-primary)/0.4)]" : "text-[rgb(var(--color-text)/0.06)]"
                 }`}
               >
                 {i + 1}
@@ -57,7 +57,7 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
 
               {/* Active glow ring */}
               {isActive && (
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#F5E6A3]/5 blur-sm -z-10" />
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-[rgb(var(--color-primary)/0.2)] to-[rgb(var(--color-secondary)/0.05)] blur-sm -z-10" />
               )}
             </div>
           );
@@ -70,8 +70,8 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
           className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
             width: `${percentage}%`,
-            background: "linear-gradient(90deg, rgb(var(--color-primary)) 0%, #D4AF37 60%, #F5E6A3 100%)",
-            boxShadow: "0 0 12px rgba(212,175,55,0.4)",
+            background: "linear-gradient(90deg, rgb(var(--color-secondary)) 0%, rgb(var(--color-primary)) 100%)",
+            boxShadow: "0 0 12px rgb(var(--color-primary)/0.4)",
           }}
         />
         {/* Shimmer effect */}
