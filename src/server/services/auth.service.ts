@@ -148,11 +148,6 @@ export async function registerUser(data: {
   // Apply referral code if provided (outside transaction for affiliate service calls)
   if (data.referralCode && data.referralCode.trim()) {
     await applyReferralCode(created.business.id, data.referralCode.trim());
-
-    // If registered without trial (direct paid), count as paid referral immediately
-    if (!created.givesTrial) {
-      await incrementPaidReferrals(created.business.id);
-    }
   }
 
   // Send welcome email (fire and forget)

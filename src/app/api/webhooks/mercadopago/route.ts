@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { MercadoPagoConfig, PreApproval } from "mercadopago";
 import { addDays } from "date-fns";
 import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
+import { incrementPaidReferrals } from "@/server/services/affiliate.service";
 
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
@@ -85,8 +86,15 @@ export async function POST(request: NextRequest) {
           isTrial: false,
           currentPeriodEnd: addDays(new Date(), 30),
           pendingDiscountPercentage: null, // Clean up the discount
+          hasCountedAsPaidReferral: true,  // Mark as counted
         },
       });
+
+      // If it's the first time they pay, count it for the affiliate
+      if (!subscription.hasCountedAsPaidReferral) {
+        await incrementPaidReferrals(subscription.businessId);
+      }
+
       console.log(`[webhook/mp] Subscription ${mpSubscriptionId} activated for business ${subscription.businessId}`);
     } else if (mpStatus === "cancelled") {
       // Subscription cancelled — downgrade

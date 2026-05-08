@@ -92,6 +92,7 @@ model Subscription {
   trialEndsAt           DateTime?
   extraStaffCount       Int                @default(0)
   pendingDiscountPercentage Int?
+  hasCountedAsPaidReferral  Boolean        @default(false)
   businessId            String             @unique
   mpCustomerId          String?
   mpSubscriptionId      String?
