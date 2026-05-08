@@ -7,6 +7,7 @@ import { es } from "date-fns/locale";
 import { Calendar, Clock, UserCheck, Users } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
+import { CopyWidgetLink } from "./copy-widget-link";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +51,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-muted-foreground">
-          Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-muted-foreground">
+            Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
+          </p>
+        </div>
+        <CopyWidgetLink slug={business.slug} />
       </div>
 
       <SubscriptionBanner businessId={business.id} />
