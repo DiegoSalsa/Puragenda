@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, Loader2, Shield, ArrowRight } from "lucide-react";
 import { PRICING } from "@/core/constants";
 
@@ -12,10 +12,31 @@ interface PaymentWallProps {
 
 export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const planName = plan === "EQUIPO" ? "Equipo" : plan === "INDIVIDUAL" ? "Individual" : "Test";
   const planPrice = plan === "EQUIPO" ? PRICING.EQUIPO.monthly : plan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : PRICING.TEST.monthly;
+
+  // Auto-verify on mount
+  useEffect(() => {
+    verifyPayment();
+  }, []);
+
+  async function verifyPayment() {
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/billing/verify", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.status === "ACTIVE") {
+        window.location.reload(); // Refresh to enter dashboard
+      } else {
+        setVerifying(false);
+      }
+    } catch {
+      setVerifying(false);
+    }
+  }
 
   async function handlePayment() {
     setLoading(true);
@@ -40,6 +61,17 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
       setError("Error de conexión. Intenta de nuevo.");
       setLoading(false);
     }
+  }
+
+  if (verifying) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+          <p className="text-sm font-medium text-muted-foreground">Verificando estado de tu pago...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -89,19 +121,29 @@ export function PaymentWall({ userEmail, plan }: PaymentWallProps) {
             </div>
           )}
 
-          <button
-            onClick={handlePayment}
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:shadow-xl hover:shadow-[#7C3AED]/30 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo a MercadoPago...</>
-            ) : (
-              <><CreditCard className="h-4 w-4" /> Pagar y activar mi cuenta <ArrowRight className="h-4 w-4" /></>
-            )}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handlePayment}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:shadow-xl hover:shadow-[#7C3AED]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo a MercadoPago...</>
+              ) : (
+                <><CreditCard className="h-4 w-4" /> Pagar y activar mi cuenta <ArrowRight className="h-4 w-4" /></>
+              )}
+            </button>
+            
+            <button
+              onClick={verifyPayment}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground transition-all hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Ya pagué, verificar estado
+            </button>
+          </div>
 
-          <p className="mt-3 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Serás redirigido a MercadoPago para completar el pago de forma segura.
           </p>
         </div>
