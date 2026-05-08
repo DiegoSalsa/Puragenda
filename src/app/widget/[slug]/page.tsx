@@ -1,8 +1,29 @@
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateViewport({ params, searchParams }: { 
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ bg?: string }>;
+}): Promise<Viewport> {
+  const { slug } = await params;
+  const sp = await searchParams;
+  
+  if (sp.bg) {
+    return { themeColor: `#${sp.bg}` };
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { slug },
+    select: { backgroundColor: true },
+  });
+
+  return {
+    themeColor: business?.backgroundColor || "#0A0A0A",
+  };
+}
 
 // ── Dynamic SEO per business ──
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

@@ -13,7 +13,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://puragenda.cl";
 
 export const viewport: Viewport = {
-  themeColor: "#7C3AED",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
 };
 
 export const metadata: Metadata = {

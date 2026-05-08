@@ -3,10 +3,22 @@ import { notFound } from "next/navigation";
 import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "lucide-react";
 import { StampProgress } from "./stamp-progress";
 import { RewardCard } from "./reward-card";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 interface PageProps {
   params: Promise<{ clientId: string }>;
+}
+
+export async function generateViewport({ params }: PageProps): Promise<Viewport> {
+  const { clientId } = await params;
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    include: { business: { select: { backgroundColor: true } } },
+  });
+
+  return {
+    themeColor: client?.business?.backgroundColor || "#0A0A0A",
+  };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
