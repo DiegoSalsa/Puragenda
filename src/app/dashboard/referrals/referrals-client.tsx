@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useTransition } from "react";
 import { Copy, Check, Gift, Users, TrendingUp, Star, Loader2 } from "lucide-react";
 import { redeemRewardAction } from "./actions";
