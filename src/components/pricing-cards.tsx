@@ -198,44 +198,16 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   const [error, setError] = useState<string | null>(null);
 
   async function handlePlanAction(key: PlanKey, isTrial: boolean) {
-    // If user is NOT logged in, redirect to register with plan info
-    if (!isLoggedIn) {
-      if (key === "EQUIPO" && isTrial) {
-        window.location.href = "/register?plan=EQUIPO&trial=1";
-      } else {
-        window.location.href = `/register?plan=${key}`;
-      }
+    if (isLoggedIn) {
+      window.location.href = "/dashboard";
       return;
     }
 
-    // Logged in — initiate MercadoPago checkout for any plan
-    setLoading(key);
-    setError(null);
-
-    try {
-      const res = await fetch("/api/billing/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: key }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Error al iniciar el proceso de pago.");
-        setLoading(null);
-        return;
-      }
-
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        setError("No se recibió la URL de pago. Intenta de nuevo.");
-        setLoading(null);
-      }
-    } catch {
-      setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
-      setLoading(null);
+    // If user is NOT logged in, redirect to register with plan info
+    if (key === "EQUIPO" && isTrial) {
+      window.location.href = "/register?plan=EQUIPO&trial=1";
+    } else {
+      window.location.href = `/register?plan=${key}`;
     }
   }
 
