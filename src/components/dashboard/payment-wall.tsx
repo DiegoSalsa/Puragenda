@@ -80,7 +80,7 @@ export function PaymentWall({ userEmail, userName, businessName, plan }: Payment
       });
 
       if (res.ok) {
-        window.location.href = "/register"; // Back to registration
+        window.location.href = "/"; // Back to landing page
       } else {
         const data = await res.json();
         setError(data.error || "Error al cancelar el registro.");
