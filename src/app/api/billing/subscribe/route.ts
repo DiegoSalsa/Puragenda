@@ -63,13 +63,20 @@ export async function POST(request: NextRequest) {
 
     // 6. Create MercadoPago Preapproval (subscription)
     const preapproval = new PreApproval(mpClient);
+    
+    // Calculate initial price (apply discount if any)
+    let transactionAmount: number = PRICING[targetPlan].monthly;
+    if (subscription?.pendingDiscountPercentage) {
+      transactionAmount = Math.round(transactionAmount * (1 - subscription.pendingDiscountPercentage / 100));
+    }
+
     const result = await preapproval.create({
       body: {
         reason: `Puragenda — Plan ${PRICING[targetPlan].name} (${business.name})`,
         auto_recurring: {
           frequency: 1,
           frequency_type: "months",
-          transaction_amount: PRICING[targetPlan].monthly,
+          transaction_amount: transactionAmount,
           currency_id: "CLP",
         },
         payer_email: user.email,
