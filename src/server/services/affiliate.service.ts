@@ -62,6 +62,12 @@ export async function applyReferralCode(newBusinessId: string, referralCode: str
     data: { referredByAffiliateId: affiliate.id },
   });
 
+  // Give the new business a 25% discount on their first payment
+  await prisma.subscription.updateMany({
+    where: { businessId: newBusinessId },
+    data: { pendingDiscountPercentage: 25 },
+  });
+
   return { success: true as const, affiliateBusinessName: affiliate.business.name };
 }
 
@@ -70,7 +76,7 @@ export async function applyReferralCode(newBusinessId: string, referralCode: str
  * Called when a referred business becomes a paying customer
  * (either TRIALING → ACTIVE transition, or direct ACTIVE registration without trial).
  *
- * At 10 paid referrals, activates a 15% discount on the affiliate's next billing.
+ * Every 3 paid referrals, activates a 50% discount on the affiliate's next billing.
  */
 export async function incrementPaidReferrals(businessId: string) {
   // Find the business and check if it was referred
@@ -86,11 +92,11 @@ export async function incrementPaidReferrals(businessId: string) {
     data: { paidReferrals: { increment: 1 } },
   });
 
-  // Check if they've reached the threshold for discount
-  if (affiliate.paidReferrals >= 10) {
+  // Check if they've reached the threshold for discount (every 3 referrals)
+  if (affiliate.paidReferrals > 0 && affiliate.paidReferrals % 3 === 0) {
     await prisma.subscription.updateMany({
       where: { businessId: affiliate.businessId },
-      data: { pendingDiscountPercentage: 15 },
+      data: { pendingDiscountPercentage: 50 },
     });
   }
 }
