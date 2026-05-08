@@ -188,21 +188,13 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     if (!isLoggedIn) {
       if (key === "EQUIPO" && isTrial) {
         window.location.href = "/register?plan=EQUIPO&trial=1";
-      } else if (key === "EQUIPO") {
-        window.location.href = "/register?plan=EQUIPO";
       } else {
-        window.location.href = "/register";
+        window.location.href = `/register?plan=${key}`;
       }
       return;
     }
 
-    // Logged in + Individual — already on it, go to settings
-    if (key === "INDIVIDUAL") {
-      window.location.href = "/dashboard/settings";
-      return;
-    }
-
-    // Logged in + EQUIPO — initiate MercadoPago checkout
+    // Logged in — initiate MercadoPago checkout for any plan
     setLoading(key);
     setError(null);
 
@@ -210,6 +202,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
       const res = await fetch("/api/billing/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: key }),
       });
 
       const data = await res.json();

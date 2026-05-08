@@ -8,9 +8,11 @@ import { PRICING, TRIAL_DURATION_DAYS } from "@/core/constants";
 
 export function RegisterForm() {
   const searchParams = useSearchParams();
-  const wantsPlan = searchParams.get("plan"); // "EQUIPO" or null
+  const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", or null
   const wantsTrial = searchParams.get("trial") === "1";
-  const isDirectSubscription = wantsPlan === "EQUIPO" && !wantsTrial;
+  const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL") && !wantsTrial;
+  const planLabel = wantsPlan === "EQUIPO" ? "Equipo" : wantsPlan === "INDIVIDUAL" ? "Individual" : null;
+  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : 0;
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -62,6 +64,7 @@ export function RegisterForm() {
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: wantsPlan }),
         });
 
         const billingData = await billingRes.json();
@@ -93,12 +96,12 @@ export function RegisterForm() {
         {isDirectSubscription ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Registra tu negocio y activa el Plan Equipo.
+              Registra tu negocio y activa el Plan {planLabel}.
             </p>
             <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
               <Crown className="h-4 w-4 text-[#7C3AED]" />
               <span className="text-sm font-medium text-[#A78BFA]">
-                Plan Equipo — ${PRICING.EQUIPO.monthly.toLocaleString("es-CL")}/mes
+                Plan {planLabel} — ${planPrice.toLocaleString("es-CL")}/mes
               </span>
             </div>
           </div>

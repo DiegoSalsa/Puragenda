@@ -9,6 +9,8 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
 
+type ValidPlan = "INDIVIDUAL" | "EQUIPO";
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Verify authenticated session
@@ -29,34 +31,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Check existing subscription
+    // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
+    let targetPlan: ValidPlan = "EQUIPO";
+    try {
+      const body = await request.json();
+      if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO") {
+        targetPlan = body.plan;
+      }
+    } catch {
+      // No body or invalid JSON — default to EQUIPO
+    }
+
+    // 4. Check existing subscription
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
 
-    if (subscription?.plan === "EQUIPO" && subscription.status === "ACTIVE" && !subscription.isTrial) {
+    if (subscription?.plan === targetPlan && subscription.status === "ACTIVE" && !subscription.isTrial) {
       return NextResponse.json(
-        { error: "Ya tienes el plan Equipo activo." },
+        { error: `Ya tienes el plan ${PRICING[targetPlan].name} activo.` },
         { status: 400 }
       );
     }
 
-    // 4. Determine back_url based on environment
+    // 5. Determine back_url based on environment
     const isProduction = process.env.NODE_ENV === "production";
     const baseUrl = isProduction
       ? "https://www.puragenda.cl"
       : "http://localhost:3000";
     const backUrl = `${baseUrl}/dashboard/settings`;
 
-    // 5. Create MercadoPago Preapproval (subscription)
+    // 6. Create MercadoPago Preapproval (subscription)
     const preapproval = new PreApproval(mpClient);
     const result = await preapproval.create({
       body: {
-        reason: `Puragenda — Plan Equipo (${business.name})`,
+        reason: `Puragenda — Plan ${PRICING[targetPlan].name} (${business.name})`,
         auto_recurring: {
           frequency: 1,
           frequency_type: "months",
-          transaction_amount: PRICING.EQUIPO.monthly,
+          transaction_amount: PRICING[targetPlan].monthly,
           currency_id: "CLP",
         },
         payer_email: user.email,
@@ -73,13 +86,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Upsert subscription in our DB with PENDING status
+    // 7. Upsert subscription in our DB with INACTIVE status (pending payment)
     await prisma.subscription.upsert({
       where: { businessId: business.id },
       update: {
         mpSubscriptionId: result.id,
         mpCustomerId: result.payer_id?.toString() ?? null,
-        plan: "EQUIPO",
+        plan: targetPlan,
         status: "INACTIVE",
         isTrial: false,
       },
@@ -87,13 +100,13 @@ export async function POST(request: NextRequest) {
         businessId: business.id,
         mpSubscriptionId: result.id,
         mpCustomerId: result.payer_id?.toString() ?? null,
-        plan: "EQUIPO",
+        plan: targetPlan,
         status: "INACTIVE",
         isTrial: false,
       },
     });
 
-    // 7. Return the payment URL
+    // 8. Return the payment URL
     return NextResponse.json({ init_point: result.init_point });
   } catch (error) {
     console.error("[billing/subscribe] Error:", error);
