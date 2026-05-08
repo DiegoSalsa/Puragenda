@@ -2,11 +2,16 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Loader2, UserPlus, Gift } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-react";
+import { PRICING, TRIAL_DURATION_DAYS } from "@/core/constants";
 
 export function RegisterForm() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const wantsPlan = searchParams.get("plan"); // "EQUIPO" or null
+  const wantsTrial = searchParams.get("trial") === "1";
+  const isDirectSubscription = wantsPlan === "EQUIPO" && !wantsTrial;
+
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,6 +20,7 @@ export function RegisterForm() {
   const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<"register" | "payment" | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,6 +34,8 @@ export function RegisterForm() {
     setLoading(true);
 
     try {
+      // Step 1: Create account
+      setLoadingStep("register");
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,10 +56,33 @@ export function RegisterForm() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // Step 2: If direct subscription, redirect to MercadoPago checkout
+      if (isDirectSubscription) {
+        setLoadingStep("payment");
+        const billingRes = await fetch("/api/billing/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const billingData = await billingRes.json();
+
+        if (billingRes.ok && billingData.init_point) {
+          // Redirect to MercadoPago checkout
+          window.location.href = billingData.init_point;
+          return;
+        }
+
+        // If billing fails, still send to dashboard (account was created)
+        console.error("[register] Billing error:", billingData.error);
+        window.location.href = "/dashboard";
+        return;
+      }
+
+      // Step 3: Normal flow (trial or individual) → go to dashboard
+      window.location.href = "/dashboard";
     } finally {
       setLoading(false);
+      setLoadingStep(null);
     }
   }
 
@@ -59,9 +90,35 @@ export function RegisterForm() {
     <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">Crear cuenta</h2>
-        <p className="text-sm text-muted-foreground">
-          Registra tu negocio y empieza a recibir reservas hoy.
-        </p>
+        {isDirectSubscription ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Registra tu negocio y activa el Plan Equipo.
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
+              <Crown className="h-4 w-4 text-[#7C3AED]" />
+              <span className="text-sm font-medium text-[#A78BFA]">
+                Plan Equipo — ${PRICING.EQUIPO.monthly.toLocaleString("es-CL")}/mes
+              </span>
+            </div>
+          </div>
+        ) : wantsTrial ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Registra tu negocio y empieza tu prueba gratis.
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
+              <Sparkles className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-400">
+                {TRIAL_DURATION_DAYS} días gratis · Plan Equipo
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Registra tu negocio y empieza a recibir reservas hoy.
+          </p>
+        )}
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -160,14 +217,33 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
+          className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50 ${
+            isDirectSubscription
+              ? "bg-gradient-to-r from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] shadow-lg shadow-[#7C3AED]/25 hover:shadow-xl hover:shadow-[#7C3AED]/30"
+              : "bg-[#7C3AED] hover:bg-[#5B21B6]"
+          }`}
         >
           {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Creando cuenta...</>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {loadingStep === "register" ? "Creando cuenta..." : "Redirigiendo al pago..."}
+            </>
+          ) : isDirectSubscription ? (
+            <>
+              <CreditCard className="h-4 w-4" /> Crear cuenta y pagar
+            </>
           ) : (
-            <><UserPlus className="h-4 w-4" /> Crear cuenta</>
+            <>
+              <UserPlus className="h-4 w-4" /> Crear cuenta
+            </>
           )}
         </button>
+
+        {isDirectSubscription && (
+          <p className="text-center text-xs text-muted-foreground">
+            Serás redirigido a MercadoPago para completar el pago.
+          </p>
+        )}
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">

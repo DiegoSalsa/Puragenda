@@ -184,19 +184,25 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   const [error, setError] = useState<string | null>(null);
 
   async function handlePlanAction(key: PlanKey, isTrial: boolean) {
-    // If user is NOT logged in, redirect to register
+    // If user is NOT logged in, redirect to register with plan info
     if (!isLoggedIn) {
-      window.location.href = "/register";
+      if (key === "EQUIPO" && isTrial) {
+        window.location.href = "/register?plan=EQUIPO&trial=1";
+      } else if (key === "EQUIPO") {
+        window.location.href = "/register?plan=EQUIPO";
+      } else {
+        window.location.href = "/register";
+      }
       return;
     }
 
-    // Individual plan — user is already on it, redirect to dashboard
+    // Logged in + Individual — already on it, go to settings
     if (key === "INDIVIDUAL") {
       window.location.href = "/dashboard/settings";
       return;
     }
 
-    // EQUIPO — initiate MercadoPago checkout
+    // Logged in + EQUIPO — initiate MercadoPago checkout
     setLoading(key);
     setError(null);
 

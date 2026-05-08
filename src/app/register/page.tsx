@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { CalendarClock } from "lucide-react";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { RegisterForm } from "./register-form";
 
@@ -26,7 +26,9 @@ export default async function RegisterPage() {
           </span>
         </Link>
 
-        <RegisterForm />
+        <Suspense>
+          <RegisterForm />
+        </Suspense>
       </div>
     </main>
   );
