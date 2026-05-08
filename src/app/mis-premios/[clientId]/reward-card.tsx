@@ -32,10 +32,10 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
   });
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[#D4AF37]/25 bg-gradient-to-br from-[#D4AF37]/[0.08] via-white/[0.02] to-[#7C3AED]/[0.05] p-5 transition-all duration-500 hover:border-[#D4AF37]/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.12)]">
+    <div className="group relative overflow-hidden rounded-2xl border border-[#D4AF37]/25 bg-gradient-to-br from-[#D4AF37]/[0.08] via-[rgb(var(--color-text)/0.02)] to-[rgb(var(--color-primary)/0.05)] p-5 transition-all duration-500 hover:border-[#D4AF37]/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.12)]">
       {/* Decorative corner accent */}
       <div className="absolute top-0 right-0 h-20 w-20 bg-gradient-to-bl from-[#D4AF37]/10 to-transparent rounded-bl-3xl" />
-      <div className="absolute bottom-0 left-0 h-16 w-16 bg-gradient-to-tr from-[#7C3AED]/10 to-transparent rounded-tr-3xl" />
+      <div className="absolute bottom-0 left-0 h-16 w-16 bg-gradient-to-tr from-[rgb(var(--color-primary)/0.1)] to-transparent rounded-tr-3xl" />
 
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
@@ -45,7 +45,7 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
                 <Gift className="h-4 w-4 text-[#D4AF37]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">
+                <p className="text-sm font-bold text-[rgb(var(--color-text))]">
                   {rewardName || "Premio de fidelización"}
                 </p>
                 <p className="text-xs text-[#D4AF37]/80 font-medium">{discountLabel}</p>
@@ -54,7 +54,7 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <Sparkles className="h-3 w-3 text-[#D4AF37]/50" />
-            <span className="text-[10px] text-white/25">{dateStr}</span>
+            <span className="text-[10px] text-[rgb(var(--color-text)/0.25)]">{dateStr}</span>
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
           </button>
         </div>
 
-        <p className="mt-3 text-[11px] text-white/30 text-center">
+        <p className="mt-3 text-[11px] text-[rgb(var(--color-text)/0.3)] text-center">
           {copied ? "✓ Código copiado al portapapeles" : "Presenta este código al agendar tu próxima cita"}
         </p>
       </div>

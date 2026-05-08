@@ -25,8 +25,8 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
                 ${isActive
                   ? "border-[#D4AF37]/50 bg-gradient-to-br from-[#D4AF37]/25 via-[#F5E6A3]/15 to-[#D4AF37]/10 shadow-[0_0_20px_rgba(212,175,55,0.25)] scale-100"
                   : isNext
-                    ? "border-[#7C3AED]/40 bg-[#7C3AED]/10 animate-pulse shadow-[0_0_12px_rgba(124,58,237,0.15)]"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1]"
+                    ? "border-[rgb(var(--color-primary)/0.4)] bg-[rgb(var(--color-primary)/0.1)] animate-pulse shadow-[0_0_12px_rgb(var(--color-primary)/0.15)]"
+                    : "border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.02)] hover:border-[rgb(var(--color-text)/0.1)]"
                 }
               `}
               style={{ animationDelay: `${i * 80}ms`, animationDuration: isNext ? "2s" : undefined }}
@@ -41,15 +41,15 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
                   isActive
                     ? "text-[#D4AF37] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]"
                     : isNext
-                      ? "text-[#7C3AED]/60"
-                      : "text-white/[0.08]"
+                      ? "text-[rgb(var(--color-primary)/0.6)]"
+                      : "text-[rgb(var(--color-text)/0.08)]"
                 }`}
               />
 
               {/* Stamp number */}
               <span
                 className={`absolute bottom-1 text-[9px] font-bold tracking-tight ${
-                  isActive ? "text-[#D4AF37]/80" : isNext ? "text-[#7C3AED]/40" : "text-white/[0.06]"
+                  isActive ? "text-[#D4AF37]/80" : isNext ? "text-[rgb(var(--color-primary)/0.4)]" : "text-[rgb(var(--color-text)/0.06)]"
                 }`}
               >
                 {i + 1}
@@ -65,12 +65,12 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
       </div>
 
       {/* Progress bar */}
-      <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/[0.04] border border-white/[0.06]">
+      <div className="relative h-3 w-full overflow-hidden rounded-full bg-[rgb(var(--color-text)/0.04)] border border-[rgb(var(--color-text)/0.06)]">
         <div
           className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
             width: `${percentage}%`,
-            background: "linear-gradient(90deg, #7C3AED 0%, #D4AF37 60%, #F5E6A3 100%)",
+            background: "linear-gradient(90deg, rgb(var(--color-primary)) 0%, #D4AF37 60%, #F5E6A3 100%)",
             boxShadow: "0 0 12px rgba(212,175,55,0.4)",
           }}
         />
@@ -78,7 +78,7 @@ export function StampProgress({ currentStamps, stampsRequired }: StampProgressPr
         <div
           className="absolute inset-0 rounded-full opacity-30"
           style={{
-            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+            background: "linear-gradient(90deg, transparent 0%, rgb(var(--color-text)/0.3) 50%, transparent 100%)",
             animation: "shimmer 2s infinite",
           }}
         />
