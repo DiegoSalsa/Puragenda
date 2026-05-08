@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Minus, Plus, Sparkles, Users, Crown, Zap } from "lucide-react";
+import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "lucide-react";
 import {
   PRICING,
   EXTRA_STAFF_COST,
@@ -172,24 +172,44 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     return getDisplayMonthlyPrice(PRICING[key].monthly, cycle);
   }
 
-  function handlePlanAction(key: PlanKey, isTrial: boolean) {
-    const data = {
-      plan: key,
-      billingCycle: cycle,
-      extraStaff: extras[key],
-      totalMonthly: getTotalPrice(key),
-      totalAnnual: cycle === "annual" ? getTotalPrice(key) * 12 : undefined,
-      isTrial,
-    };
-    console.log("[Puragenda] Plan selected:", data);
-    alert(
-      `Plan ${PRICING[key].name} seleccionado.\n` +
-      `Ciclo: ${cycle === "monthly" ? "Mensual" : "Anual"}\n` +
-      `Profesionales extra: ${extras[key]}\n` +
-      `${cycle === "monthly" ? `Total: ${formatCLP(data.totalMonthly)}/mes` : `Total: ${formatCLP(data.totalMonthly)}/mes (${formatCLP(data.totalMonthly * 12)}/año)`}\n` +
-      `${isTrial ? `Prueba gratis de ${TRIAL_DURATION_DAYS} días` : "Suscripción directa"}\n\n` +
-      `(Checkout próximamente)`
-    );
+  const [loading, setLoading] = useState<PlanKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handlePlanAction(key: PlanKey, isTrial: boolean) {
+    // Individual plan doesn't need MercadoPago — just register
+    if (key === "INDIVIDUAL") {
+      window.location.href = "/register";
+      return;
+    }
+
+    // EQUIPO — initiate MercadoPago checkout
+    setLoading(key);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/billing/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Error al iniciar el proceso de pago.");
+        setLoading(null);
+        return;
+      }
+
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        setError("No se recibió la URL de pago. Intenta de nuevo.");
+        setLoading(null);
+      }
+    } catch {
+      setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
+      setLoading(null);
+    }
   }
 
   return (
@@ -356,10 +376,14 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       ) : (
                         <button
                           onClick={() => handlePlanAction("EQUIPO", true)}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35"
+                          disabled={loading === "EQUIPO"}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          <Sparkles className="h-4 w-4" />
-                          Iniciar Prueba Gratis de {TRIAL_DURATION_DAYS} Días
+                          {loading === "EQUIPO" ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
+                          ) : (
+                            <><Sparkles className="h-4 w-4" /> Iniciar Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
+                          )}
                         </button>
                       )}
                       {mode === "landing" ? (
@@ -371,9 +395,14 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       ) : (
                         <button
                           onClick={() => handlePlanAction("EQUIPO", false)}
-                          className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground"
+                          disabled={loading === "EQUIPO"}
+                          className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          Suscribirse
+                          {loading === "EQUIPO" ? (
+                            <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
+                          ) : (
+                            "Suscribirse"
+                          )}
                         </button>
                       )}
                     </>
@@ -390,12 +419,20 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       ) : (
                         <button
                           onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                          className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35"
+                          disabled={loading === "INDIVIDUAL"}
+                          className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                           Suscribirse
                         </button>
                       )}
                     </>
+                  )}
+
+                  {/* Error message */}
+                  {error && mode === "selection" && (
+                    <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-center text-sm text-red-400 animate-fade-in">
+                      {error}
+                    </p>
                   )}
                 </div>
               </div>
