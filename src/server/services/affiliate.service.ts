@@ -91,14 +91,79 @@ export async function incrementPaidReferrals(businessId: string) {
     where: { id: business.referredByAffiliateId },
     data: { paidReferrals: { increment: 1 } },
   });
+}
 
-  // Check if they've reached the threshold for discount (every 3 referrals)
-  if (affiliate.paidReferrals > 0 && affiliate.paidReferrals % 3 === 0) {
-    await prisma.subscription.updateMany({
-      where: { businessId: affiliate.businessId },
-      data: { pendingDiscountPercentage: 50 },
-    });
+import { applyDiscount } from "@/server/services/discount.service";
+
+/**
+ * Calculates how many 50% discount rewards have been earned based on paid referrals.
+ * Thresholds: 3, 5, 10, 15, and every 15 after that (30, 45, 60...).
+ */
+export function calculateEarnedRewards(paidReferrals: number) {
+  let earned = 0;
+  if (paidReferrals >= 3) earned++;
+  if (paidReferrals >= 5) earned++;
+  if (paidReferrals >= 10) earned++;
+  if (paidReferrals >= 15) {
+    earned++;
+    const beyond15 = paidReferrals - 15;
+    if (beyond15 > 0) {
+      earned += Math.floor(beyond15 / 15);
+    }
   }
+  return earned;
+}
+
+export function getNextThreshold(paidReferrals: number) {
+  if (paidReferrals < 3) return 3;
+  if (paidReferrals < 5) return 5;
+  if (paidReferrals < 10) return 10;
+  if (paidReferrals < 15) return 15;
+  
+  return Math.floor(paidReferrals / 15) * 15 + 15;
+}
+
+export function getPreviousThreshold(paidReferrals: number) {
+  if (paidReferrals < 3) return 0;
+  if (paidReferrals < 5) return 3;
+  if (paidReferrals < 10) return 5;
+  if (paidReferrals < 15) return 10;
+  
+  return Math.floor(paidReferrals / 15) * 15;
+}
+
+/**
+ * Redeem an earned affiliate reward (50% discount)
+ */
+export async function redeemAffiliateReward(businessId: string) {
+  const affiliate = await prisma.affiliate.findUnique({ where: { businessId } });
+  if (!affiliate) return { success: false, error: "Afiliado no encontrado" };
+
+  const earned = calculateEarnedRewards(affiliate.paidReferrals);
+  const available = earned - affiliate.redeemedRewards;
+
+  if (available <= 0) {
+    return { success: false, error: "No tienes recompensas disponibles" };
+  }
+
+  // Check if they already have a pending discount
+  const subscription = await prisma.subscription.findUnique({ where: { businessId } });
+  if (!subscription) return { success: false, error: "No tienes una suscripción activa" };
+  if (subscription.pendingDiscountPercentage !== null) {
+    return { success: false, error: "Ya tienes un descuento activo para el próximo cobro" };
+  }
+
+  // Apply the 50% discount
+  const result = await applyDiscount(businessId, 50);
+  if (!result.success) return result;
+
+  // Mark reward as redeemed
+  await prisma.affiliate.update({
+    where: { id: affiliate.id },
+    data: { redeemedRewards: { increment: 1 } },
+  });
+
+  return { success: true };
 }
 
 /**

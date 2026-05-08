@@ -343,6 +343,7 @@ model Affiliate {
   referralCode       String     @unique
   businessId         String     @unique
   paidReferrals      Int        @default(0)
+  redeemedRewards    Int        @default(0)
   createdAt          DateTime   @default(now())
 
   business           Business   @relation("AffiliateOwner", fields: [businessId], references: [id], onDelete: Cascade)

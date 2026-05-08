@@ -1,7 +1,6 @@
-"use client";
-
-import { useState } from "react";
-import { Copy, Check, Gift, Users, TrendingUp, Star } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Copy, Check, Gift, Users, TrendingUp, Star, Loader2 } from "lucide-react";
+import { redeemRewardAction } from "./actions";
 
 interface ReferredBusiness {
   id: string;
@@ -13,23 +12,44 @@ interface ReferredBusiness {
 export function ReferralsClient({
   referralCode,
   paidReferrals,
+  availableRewards,
+  nextThreshold,
+  previousThreshold,
   discountPercentage,
   referredBusinesses,
 }: {
   referralCode: string;
   paidReferrals: number;
+  availableRewards: number;
+  nextThreshold: number;
+  previousThreshold: number;
   discountPercentage: number;
   referredBusinesses: ReferredBusiness[];
 }) {
   const [copied, setCopied] = useState(false);
-  const threshold = 3;
-  const progress = Math.min(((paidReferrals % threshold) / threshold) * 100, 100);
-  const discountActive = discountPercentage > 0;
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const currentLevelProgress = paidReferrals - previousThreshold;
+  const currentLevelGoal = nextThreshold - previousThreshold;
+  const progress = Math.min((currentLevelProgress / currentLevelGoal) * 100, 100);
+  
+  const hasActiveDiscount = discountPercentage > 0;
 
   function handleCopy() {
     navigator.clipboard.writeText(referralCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleRedeem() {
+    setError(null);
+    startTransition(async () => {
+      const result = await redeemRewardAction();
+      if (!result.success) {
+        setError(result.error || "Error al canjear el premio");
+      }
+    });
   }
 
   const statusLabels: Record<string, { label: string; color: string }> = {
@@ -90,14 +110,14 @@ export function ReferralsClient({
 
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
-            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${discountActive ? "" : "bg-muted"}`} style={discountActive ? { background: "rgba(124,58,237,0.15)" } : undefined}>
-              <Star className={`h-4 w-4 ${discountActive ? "" : "text-muted-foreground"}`} style={discountActive ? { color: "#7C3AED" } : undefined} />
+            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${availableRewards > 0 ? "" : "bg-muted"}`} style={availableRewards > 0 ? { background: "rgba(124,58,237,0.15)" } : undefined}>
+              <Star className={`h-4 w-4 ${availableRewards > 0 ? "" : "text-muted-foreground"}`} style={availableRewards > 0 ? { color: "#7C3AED" } : undefined} />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: discountActive ? "#7C3AED" : undefined }}>
-                {discountActive ? `${discountPercentage}%` : "0%"}
+              <p className="text-2xl font-bold" style={{ color: availableRewards > 0 ? "#7C3AED" : undefined }}>
+                {availableRewards}
               </p>
-              <p className="text-xs text-muted-foreground">Descuento pendiente</p>
+              <p className="text-xs text-muted-foreground">Premios disponibles</p>
             </div>
           </div>
         </div>
@@ -107,28 +127,48 @@ export function ReferralsClient({
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Progreso hacia el próximo descuento</p>
+            <p className="text-sm font-medium">Progreso hacia el próximo premio (50% off)</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {discountActive
-                ? `¡Felicidades! Tienes un ${discountPercentage}% de descuento aplicable a tu próximo pago.`
-                : `Consigue ${threshold - (paidReferrals % threshold)} referido(s) pagado(s) más para desbloquear un 50% de descuento en tu próximo pago.`}
+              Consigue {nextThreshold - paidReferrals} referido(s) pagado(s) más para desbloquear tu próximo premio.
             </p>
           </div>
-          <span className="text-sm font-mono font-bold" style={{ color: discountActive ? "#22c55e" : "#7C3AED" }}>
-            {paidReferrals % threshold}/{threshold}
+          <span className="text-sm font-mono font-bold" style={{ color: "#7C3AED" }}>
+            {currentLevelProgress}/{currentLevelGoal}
           </span>
         </div>
+        
         <div className="relative h-2.5 overflow-hidden rounded-full bg-muted">
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
             style={{
-              width: discountActive ? "100%" : `${progress}%`,
-              background: discountActive
-                ? "linear-gradient(90deg, #22c55e, #16a34a)"
-                : "linear-gradient(90deg, #7C3AED, #a855f7)",
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, #7C3AED, #a855f7)",
             }}
           />
         </div>
+
+        {/* Redeem Reward Section */}
+        {availableRewards > 0 && (
+          <div className="pt-4 mt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Tienes {availableRewards} premio(s) por canjear</p>
+              <p className="text-xs text-muted-foreground">Cada premio aplica un 50% de descuento en tu próximo cobro.</p>
+              {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            </div>
+            <button
+              onClick={handleRedeem}
+              disabled={isPending || hasActiveDiscount}
+              className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                hasActiveDiscount
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-[#7C3AED] text-white hover:bg-[#5B21B6]"
+              }`}
+            >
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {hasActiveDiscount ? "Premio en espera - 1 activo" : "Canjear premio (50% off)"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* How it works */}
@@ -145,13 +185,13 @@ export function ReferralsClient({
           </div>
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">2</div>
-            <p className="font-medium text-foreground">Ellos se registran</p>
-            <p>Al crear su cuenta, ingresan tu código en el campo &quot;Código de Referido&quot;.</p>
+            <p className="font-medium text-foreground">Alcanza los niveles</p>
+            <p>Gana premios al llegar a 3, 5, 10 y 15 referidos pagados. (Luego, cada 15 referidos adicionales).</p>
           </div>
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">3</div>
-            <p className="font-medium text-foreground">Ganas descuento</p>
-            <p>Por cada 3 referidos que paguen su suscripción, obtienes un 50% de descuento en tu próximo mes.</p>
+            <p className="font-medium text-foreground">Canjea tus premios</p>
+            <p>Cada premio equivale a un 50% de descuento en tu próximo mes. Úsalos manualmente cuando quieras.</p>
           </div>
         </div>
       </div>

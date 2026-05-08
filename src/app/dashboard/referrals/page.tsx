@@ -23,6 +23,13 @@ export default async function ReferralsPage() {
   const info = await getAffiliateInfo(business.id);
   const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id } });
 
+  const { calculateEarnedRewards, getNextThreshold, getPreviousThreshold } = await import("@/server/services/affiliate.service");
+  
+  const earned = calculateEarnedRewards(affiliate.paidReferrals);
+  const availableRewards = earned - affiliate.redeemedRewards;
+  const nextThreshold = getNextThreshold(affiliate.paidReferrals);
+  const previousThreshold = getPreviousThreshold(affiliate.paidReferrals);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
@@ -37,6 +44,9 @@ export default async function ReferralsPage() {
       <ReferralsClient
         referralCode={affiliate.referralCode}
         paidReferrals={affiliate.paidReferrals}
+        availableRewards={availableRewards}
+        nextThreshold={nextThreshold}
+        previousThreshold={previousThreshold}
         discountPercentage={subscription?.pendingDiscountPercentage || 0}
         referredBusinesses={info?.referredBusinesses.map((b) => ({
           id: b.id,
