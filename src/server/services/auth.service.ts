@@ -103,12 +103,12 @@ export async function registerUser(data: {
       data: { name: data.name, email: data.email, businessId: business.id, userId: user.id, isActive: true },
     });
 
-    // Subscription: trial only if not blocked
+    // Subscription: trial gets EQUIPO, no trial gets INDIVIDUAL
     const givesTrial = !trialBlocked;
     await tx.subscription.create({
       data: {
         businessId: business.id,
-        plan: "EQUIPO",
+        plan: givesTrial ? "EQUIPO" : "INDIVIDUAL",
         status: givesTrial ? "TRIALING" : "ACTIVE",
         isTrial: givesTrial,
         trialEndsAt: givesTrial ? addDays(now, TRIAL_DURATION_DAYS) : null,
@@ -145,7 +145,7 @@ export async function registerUser(data: {
     ownerName: created.user.name,
     ownerEmail: created.user.email,
     businessName: created.business.name,
-    plan: "EQUIPO",
+    plan: created.givesTrial ? "EQUIPO" : "INDIVIDUAL",
     hasTrial: created.givesTrial,
   }).catch(() => {});
 
