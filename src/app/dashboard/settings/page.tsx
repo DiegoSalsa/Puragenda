@@ -1,12 +1,15 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin } from "lucide-react";
+import { prisma } from "@/server/db/prisma";
+import { PRICING } from "@/core/constants";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
 import { BusinessLocationEditor } from "./business-location-editor";
 import { LogoUploader } from "./logo-uploader";
+import { UpgradeButton } from "@/components/dashboard/upgrade-button";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +23,22 @@ export default async function SettingsPage() {
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
-  const hours = await getBusinessHours(business.id);
+  const [hours, subscription] = await Promise.all([
+    getBusinessHours(business.id),
+    prisma.subscription.findUnique({ where: { businessId: business.id } }),
+  ]);
+
   const isProduction = process.env.NODE_ENV === "production";
   const widgetUrl = isProduction
     ? `https://www.puragenda.cl/widget/${business.slug}`
     : `http://localhost:3000/widget/${business.slug}`;
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
+
+  const planName = subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planPrice = subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
+  const isActive = subscription?.status === "ACTIVE";
+  const isTrial = subscription?.isTrial ?? false;
+  const showUpgrade = !subscription || subscription.plan === "INDIVIDUAL" || (subscription.plan === "EQUIPO" && isTrial);
 
   return (
     <div className="space-y-8">
@@ -35,6 +48,45 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* ── Plan / Suscripción ── */}
+        <div id="plan" className="rounded-2xl border border-[#7C3AED]/20 bg-gradient-to-br from-[#7C3AED]/5 via-card to-card p-6">
+          <div className="mb-5 flex items-center gap-2 text-sm font-medium">
+            <Crown className="h-4 w-4 text-[#7C3AED]" /> Tu Plan
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold">Plan {planName}</h3>
+                {isActive && !isTrial && (
+                  <span className="flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3" /> Activo
+                  </span>
+                )}
+                {isTrial && (
+                  <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+                    <AlertCircle className="h-3 w-3" /> Prueba
+                  </span>
+                )}
+                {subscription?.status === "INACTIVE" && (
+                  <span className="flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-400">
+                    <AlertCircle className="h-3 w-3" /> Inactivo
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                ${planPrice.toLocaleString("es-CL")}/mes
+                {subscription?.currentPeriodEnd && (
+                  <> · Próxima renovación: {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
+                )}
+              </p>
+            </div>
+            {showUpgrade && (
+              <div className="w-full sm:w-auto sm:min-w-[220px]">
+                <UpgradeButton />
+              </div>
+            )}
+          </div>
+        </div>
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Store className="h-4 w-4 text-[#7C3AED]" /> Nombre del Negocio

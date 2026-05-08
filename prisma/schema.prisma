@@ -92,8 +92,8 @@ model Subscription {
   extraStaffCount       Int                @default(0)
   nextBillingDiscount   Float              @default(0)
   businessId            String             @unique
-  stripeCustomerId      String?
-  stripeSubscriptionId  String?
+  mpCustomerId          String?
+  mpSubscriptionId      String?
   currentPeriodEnd      DateTime?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt

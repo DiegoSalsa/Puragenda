@@ -52,7 +52,7 @@ export interface Subscription {
   id: string; plan: SubscriptionPlan; status: SubscriptionStatus;
   billingCycle: BillingCycle; isTrial: boolean; trialEndsAt: Date | null;
   extraStaffCount: number; businessId: string;
-  stripeCustomerId: string | null; stripeSubscriptionId: string | null;
+  mpCustomerId: string | null; mpSubscriptionId: string | null;
   currentPeriodEnd: Date | null; createdAt: Date; updatedAt: Date;
 }
 
