@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
 // Dynamic imports for below-the-fold components (better TTI)
 const PricingCards = dynamic(() => import("@/components/pricing-cards").then((m) => m.PricingCards), { ssr: true });
 const FAQSection = dynamic(() => import("@/components/landing/faq-section").then((m) => m.FAQSection), { ssr: true });
@@ -96,7 +98,9 @@ const features = [
 // COMPONENT
 // ═══════════════════════════════════════════
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getCurrentSessionUser();
+  const business = user ? await getBusinessForUser(user.id) : null;
   const jsonLdSoftware = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -177,7 +181,7 @@ export default function HomePage() {
         <div className="absolute bottom-[10%] left-[0%] md:left-[10%] h-[20rem] w-[20rem] md:h-[40rem] md:w-[40rem] rounded-full bg-[#3b82f6]/5 md:bg-[#3b82f6]/10 blur-[40px] md:blur-[100px] lg:blur-[130px] dark:bg-[#3b82f6]/10 dark:md:bg-[#3b82f6]/15" />
       </div>
 
-      <Navbar />
+      <Navbar user={user} business={business} />
 
       <main className="relative z-10">
         <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pt-40 lg:pt-48">

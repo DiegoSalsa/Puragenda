@@ -13,7 +13,14 @@ const navLinks = [
   { href: "#faq", label: "FAQ" },
 ];
 
-export function Navbar() {
+import { Store } from "lucide-react";
+
+interface NavbarProps {
+  user?: { name: string } | null;
+  business?: { name: string; logoUrl?: string | null } | null;
+}
+
+export function Navbar({ user, business }: NavbarProps = {}) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -47,16 +54,31 @@ export function Navbar() {
           {/* Desktop actions */}
           <div className="hidden flex-1 items-center justify-end gap-3 md:flex">
             <ThemeToggle />
-            <Link href="/login">
-              <button className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground">
-                Entrar
-              </button>
-            </Link>
-            <Link href="/pricing">
-              <button className="group flex items-center gap-2 rounded-full bg-[#7C3AED] px-5 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
-                Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </button>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <button className="group flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-2 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
+                  {business?.logoUrl ? (
+                    <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded-md object-cover" />
+                  ) : (
+                    <Store className="h-4 w-4 text-[#7C3AED]" />
+                  )}
+                  <span className="font-semibold text-foreground">{business?.name || user.name}</span>
+                </button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <button className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground">
+                    Entrar
+                  </button>
+                </Link>
+                <Link href="/pricing">
+                  <button className="group flex items-center gap-2 rounded-full bg-[#7C3AED] px-5 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
+                    Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -116,16 +138,31 @@ export function Navbar() {
                   <span className="text-sm font-medium text-muted-foreground">Tema visual</span>
                   <ThemeToggle />
                 </div>
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
-                  <button className="w-full rounded-2xl border border-border/50 py-3 text-sm font-medium text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground">
-                    Entrar
-                  </button>
-                </Link>
-                <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block">
-                  <button className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20 transition-all hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
-                    Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </button>
-                </Link>
+                {user ? (
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block">
+                    <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border/50 bg-card/60 py-3 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
+                      {business?.logoUrl ? (
+                        <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded-md object-cover" />
+                      ) : (
+                        <Store className="h-4 w-4 text-[#7C3AED]" />
+                      )}
+                      <span className="font-semibold text-foreground">{business?.name || user.name}</span>
+                    </button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
+                      <button className="w-full rounded-2xl border border-border/50 py-3 text-sm font-medium text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground">
+                        Entrar
+                      </button>
+                    </Link>
+                    <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block">
+                      <button className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20 transition-all hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
+                        Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      </button>
+                    </Link>
+                  </>
+                )}
               </div>
             </aside>
           </div>,

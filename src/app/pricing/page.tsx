@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { PricingCards } from "@/components/pricing-cards";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
@@ -11,6 +12,7 @@ export const metadata = {
 
 export default async function PricingPage() {
   const user = await getCurrentSessionUser();
+  const business = user ? await getBusinessForUser(user.id) : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -20,7 +22,7 @@ export default async function PricingPage() {
         <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#7C3AED]/5 blur-[120px]" />
       </div>
 
-      <Navbar />
+      <Navbar user={user} business={business} />
 
       {/* Pricing Content */}
       <main className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
