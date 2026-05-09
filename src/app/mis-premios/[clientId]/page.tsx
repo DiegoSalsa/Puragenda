@@ -330,8 +330,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[10px] text-[rgb(var(--color-text)/0.15)] pt-8">
-          Potenciado por <span className="text-[rgb(var(--color-primary)/0.4)] font-medium">Puragenda</span>
+        <p className="text-center text-[10px] text-[rgb(var(--color-text)/0.15)] pt-8 pb-4">
+          Powered by <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="text-[rgb(var(--color-primary)/0.4)] font-medium hover:underline">Puragenda</a>
         </p>
       </div>
     </div>

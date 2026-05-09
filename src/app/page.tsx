@@ -320,7 +320,7 @@ export default async function HomePage() {
                   </div>
                   {/* Footer */}
                   <div className="border-t border-border/50 pt-2 text-center text-[8px] text-muted-foreground/60">
-                    PurAgenda Powered by PuroCode
+                    Powered by Puragenda
                   </div>
                 </div>
               </div>

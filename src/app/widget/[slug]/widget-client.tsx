@@ -570,7 +570,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         </div>
 
         <div className="sticky bottom-0 border-t border-white/[0.06] px-5 py-3 text-center text-xs" style={{ background: bgColor, color: textSecondary }}>
-          <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none", color: "inherit"}}>PurAgenda</a> Powered by <a href="https://www.purocode.cl" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none", color: "inherit"}}>PuroCode</a>
+          Powered by <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none", color: "inherit", fontWeight: 500}} className="hover:underline">Puragenda</a>
         </div>
       </div>
     </div>

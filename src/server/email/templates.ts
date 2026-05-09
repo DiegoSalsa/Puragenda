@@ -45,7 +45,7 @@ function layout(title: string, body: string): string {
   <tr><td style="padding:32px;">${body}</td></tr>
   <!-- Footer -->
   <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e5e7eb;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#94a3b8;">Puragenda by PuroCode · contacto@purocode.com</p>
+    <p style="margin:0;font-size:12px;color:#94a3b8;">Powered by <a href="https://www.puragenda.cl" style="color:#94a3b8;text-decoration:none;font-weight:600;">Puragenda</a></p>
   </td></tr>
 </table>
 </td></tr></table>
@@ -86,7 +86,7 @@ function enterpriseLayout(title: string, body: string): string {
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);">
   <tr><td style="padding:40px 40px 32px;">${body}</td></tr>
   <tr><td style="padding:24px 40px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">Desarrollado por Puragenda</p>
+    <p style="margin:0;font-size:12px;color:#9CA3AF;">Powered by <a href="https://www.puragenda.cl" style="color:#9CA3AF;text-decoration:none;font-weight:600;">Puragenda</a></p>
   </td></tr>
 </table>
 </td></tr></table>
