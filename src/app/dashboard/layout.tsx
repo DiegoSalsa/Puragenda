@@ -38,7 +38,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex fixed inset-0 overflow-hidden bg-background">
       <DashboardSidebar
         userName={user.name}
         widgetSlug={business?.slug}

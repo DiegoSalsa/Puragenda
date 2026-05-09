@@ -129,7 +129,7 @@ export function DashboardSidebar({
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-sidebar">
+      <aside className="hidden md:flex w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar">
         <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} />
       </aside>
     </>
