@@ -2,27 +2,31 @@
 
 import { useState, useEffect } from "react";
 
-const phrases = [
+const defaultPhrases = [
   "Puragenda.",
   "Marca Blanca.",
   "Automático.",
   "24/7 Online.",
 ];
 
-export function WordCarousel() {
+interface WordCarouselProps {
+  words?: string[];
+}
+
+export function WordCarousel({ words = defaultPhrases }: WordCarouselProps) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % phrases.length);
+      setIndex((prevIndex) => (prevIndex + 1) % words.length);
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [words.length]);
 
   return (
     <span className="inline-grid">
-      {phrases.map((phrase, i) => (
+      {words.map((phrase, i) => (
         <span
           key={i}
           className={`col-start-1 row-start-1 whitespace-nowrap transition-all duration-700 ease-in-out ${

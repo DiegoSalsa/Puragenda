@@ -96,7 +96,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
               <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Software de</span>
               <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Reservas</span>
               <span className="mt-4 block inline-block border-[6px] border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-[#7C3AED] dark:text-[#85E3FF] shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] transform -rotate-2">
-                <WordCarousel />
+                <WordCarousel words={["PURAGENDA.", "INTELIGENTE.", "AUTOMÁTICO.", "24/7 ONLINE.", "SIN ESTRÉS."]} />
               </span>
             </h1>
 

@@ -58,7 +58,7 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
             <h1 className="mx-auto max-w-5xl text-6xl font-black leading-[1.05] tracking-tighter sm:text-7xl lg:text-[6.5rem] uppercase" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
               <span className="inline-block transform -rotate-1 text-[#FF4500] drop-shadow-[4px_4px_0_#000] dark:drop-shadow-[4px_4px_0_#FFFDD0] filter">Puragenda.</span><br />
               <span className="inline-block transform rotate-1 mt-2 text-black bg-[#FFDB58] px-4 border-[4px] border-black dark:border-[#FFFDD0] shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFDD0]">
-                <WordCarousel words={["Marca Blanca.", "Automático.", "24/7 Online.", "Cero estrés."]} />
+                <WordCarousel words={["Pura Agenda.", "Automático.", "24/7 Online.", "Cero estrés."]} />
               </span>
             </h1>
             
