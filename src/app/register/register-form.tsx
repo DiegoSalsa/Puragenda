@@ -53,7 +53,7 @@ export function RegisterForm() {
           email: email.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
-          planIntent: isDirectSubscription ? wantsPlan : undefined,
+          planIntent: wantsPlan || undefined,
           termsAccepted,
         }),
       });
