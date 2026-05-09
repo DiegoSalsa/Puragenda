@@ -25,7 +25,7 @@ export async function DELETE(request: NextRequest) {
     // Only allow cancellation if the subscription is pending payment (INACTIVE)
     if (subscription && subscription.status !== "INACTIVE") {
       return NextResponse.json(
-        { error: "No puedes cancelar una cuenta que ya estÃ¡ activa. Ve a configuraciÃ³n." },
+        { error: "No puedes cancelar una cuenta que ya está activa. Ve a configuración." },
         { status: 400 }
       );
     }

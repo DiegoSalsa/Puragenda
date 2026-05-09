@@ -40,6 +40,7 @@ const plans: {
     name: "Individual",
     description: "Para profesionales independientes que trabajan solos.",
     highlighted: false,
+    badge: `${TRIAL_DURATION_DAYS} días gratis`,
     icon: Zap,
     staffLabel: `${STAFF_LIMITS.INDIVIDUAL} profesional incluido`,
     items: [
@@ -191,8 +192,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     }
 
     // If user is NOT logged in, redirect to register with plan info
-    if (key === "EQUIPO" && isTrial) {
-      window.location.href = "/register?plan=EQUIPO&trial=1";
+    if (isTrial) {
+      window.location.href = `/register?plan=${key}&trial=1`;
     } else {
       window.location.href = `/register?plan=${key}`;
     }
@@ -230,8 +231,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     Más popular
                   </div>
                 )}
-                {plan.badge && !plan.highlighted && (
-                  <div className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-3 py-1 text-xs font-semibold text-white">
+                {plan.badge && (
+                  <div className={`absolute rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-3 py-1 text-xs font-semibold text-white ${plan.highlighted ? "-top-3 right-6" : "-top-3 left-6"}`}>
                     {plan.badge}
                   </div>
                 )}
@@ -353,20 +354,9 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   {plan.key === "EQUIPO" && (
                     <>
                       <button
-                        onClick={() => handlePlanAction("EQUIPO", true)}
-                        disabled={loading === "EQUIPO"}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {loading === "EQUIPO" ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
-                        ) : (
-                          <><Sparkles className="h-4 w-4" /> Iniciar Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
-                        )}
-                      </button>
-                      <button
                         onClick={() => handlePlanAction("EQUIPO", false)}
                         disabled={loading === "EQUIPO"}
-                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {loading === "EQUIPO" ? (
                           <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
@@ -374,17 +364,45 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                           "Suscribirse"
                         )}
                       </button>
+                      <button
+                        onClick={() => handlePlanAction("EQUIPO", true)}
+                        disabled={loading === "EQUIPO"}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {loading === "EQUIPO" ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
+                        )}
+                      </button>
                     </>
                   )}
 
                   {plan.key === "INDIVIDUAL" && (
-                    <button
-                      onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                      disabled={loading === "INDIVIDUAL"}
-                      className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      Suscribirse
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handlePlanAction("INDIVIDUAL", false)}
+                        disabled={loading === "INDIVIDUAL"}
+                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {loading === "INDIVIDUAL" ? (
+                          <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
+                        ) : (
+                          "Suscribirse"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handlePlanAction("INDIVIDUAL", true)}
+                        disabled={loading === "INDIVIDUAL"}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {loading === "INDIVIDUAL" ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
+                        )}
+                      </button>
+                    </>
                   )}
 
                   {plan.key === "TEST" && (

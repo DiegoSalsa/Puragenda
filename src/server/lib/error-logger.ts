@@ -16,7 +16,7 @@ export async function logCriticalError({
   details,
 }: LogCriticalErrorParams) {
   try {
-    // 1. Guardar el error en la base de datos (HistÃ³rico)
+    // 1. Guardar el error en la base de datos (Histórico)
     await prisma.systemError.create({
       data: {
         source,
@@ -31,7 +31,7 @@ export async function logCriticalError({
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (webhookUrl) {
       const embed = {
-        title: "ðŸš¨ Error CrÃ­tico en Puragenda",
+        title: "🚨 Error Crítico en Puragenda",
         color: 0xff0000, // Rojo Fuego
         fields: [
           { name: "Fuente", value: source, inline: true },
@@ -41,7 +41,7 @@ export async function logCriticalError({
         timestamp: new Date().toISOString(),
       };
 
-      // Si hay detalles extra (ej: req payload), aÃ±adir un bloque de cÃ³digo
+      // Si hay detalles extra (ej: req payload), añadir un bloque de código
       if (details) {
         embed.fields.push({
           name: "Detalles",
@@ -57,6 +57,6 @@ export async function logCriticalError({
     }
   } catch (error) {
     // Si el propio logger falla (muy raro), al menos tiramos un console
-    console.error("Fallo crÃ­tico en el Error Logger:", error);
+    console.error("Fallo crítico en el Error Logger:", error);
   }
 }

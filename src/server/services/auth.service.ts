@@ -107,25 +107,27 @@ export async function registerUser(data: {
 
     // Determine subscription plan and status
     const planIntent = data.planIntent;
-    const givesTrial = !trialBlocked && (!planIntent || planIntent === "EQUIPO");
+    const trialEligiblePlans = ["INDIVIDUAL", "EQUIPO"] as const;
+    const isTrialPlan = !planIntent || (trialEligiblePlans as readonly string[]).includes(planIntent);
+    const givesTrial = !trialBlocked && isTrialPlan;
 
     let plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
     let status: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
     let isTrial = false;
     let trialEndsAt: Date | null = null;
 
-    if (planIntent && !givesTrial) {
-      // User chose a specific plan Ã¢â€ â€™ INACTIVE until they pay via MercadoPago
-      plan = planIntent;
-      status = "INACTIVE";
-    } else if (givesTrial && (!planIntent || planIntent === "EQUIPO")) {
-      // Eligible for trial Ã¢â€ â€™ EQUIPO TRIALING
-      plan = "EQUIPO";
+    if (givesTrial) {
+      // Eligible for trial → keep chosen plan (default EQUIPO) in TRIALING
+      plan = planIntent === "INDIVIDUAL" ? "INDIVIDUAL" : "EQUIPO";
       status = "TRIALING";
       isTrial = true;
       trialEndsAt = addDays(now, TRIAL_DURATION_DAYS);
+    } else if (planIntent) {
+      // User chose a specific plan → INACTIVE until they pay via MercadoPago
+      plan = planIntent;
+      status = "INACTIVE";
     } else {
-      // No trial, no plan intent Ã¢â€ â€™ INDIVIDUAL INACTIVE (must pay)
+      // No trial, no plan intent → INDIVIDUAL INACTIVE (must pay)
       plan = "INDIVIDUAL";
       status = "INACTIVE";
     }
@@ -143,7 +145,7 @@ export async function registerUser(data: {
       });
     }
 
-    return { user, business, givesTrial };
+    return { user, business, givesTrial, plan };
   });
 
   // Apply referral code if provided (outside transaction for affiliate service calls)
@@ -159,7 +161,7 @@ export async function registerUser(data: {
     ownerName: created.user.name,
     ownerEmail: created.user.email,
     businessName: created.business.name,
-    plan: created.givesTrial ? "EQUIPO" : "INDIVIDUAL",
+    plan: created.plan,
     hasTrial: created.givesTrial,
   }).catch(() => {});
 

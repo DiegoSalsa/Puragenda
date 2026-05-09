@@ -97,6 +97,7 @@ model Subscription {
   extraStaffCount       Int                @default(0)
   pendingDiscountPercentage Int?
   hasCountedAsPaidReferral  Boolean        @default(false)
+  trialWarningEmailSent Boolean            @default(false)
   businessId            String             @unique
   mpCustomerId          String?
   mpSubscriptionId      String?
@@ -278,6 +279,7 @@ model Appointment {
   staffId              String?
   clientId             String?
   reminderSent         Boolean           @default(false)
+  actionToken          String?           @unique
   createdAt            DateTime          @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

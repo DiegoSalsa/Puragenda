@@ -45,7 +45,7 @@ function layout(title: string, body: string): string {
   <tr><td style="padding:32px;">${body}</td></tr>
   <!-- Footer -->
   <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e5e7eb;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#94a3b8;">Puragenda by PuroCode · contacto@purocode.com</p>
+    <p style="margin:0;font-size:12px;color:#94a3b8;">Powered by <a href="https://www.puragenda.cl" style="color:#94a3b8;text-decoration:none;font-weight:600;">Puragenda</a></p>
   </td></tr>
 </table>
 </td></tr></table>
@@ -86,7 +86,7 @@ function enterpriseLayout(title: string, body: string): string {
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);">
   <tr><td style="padding:40px 40px 32px;">${body}</td></tr>
   <tr><td style="padding:24px 40px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center;">
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">Desarrollado por Puragenda</p>
+    <p style="margin:0;font-size:12px;color:#9CA3AF;">Powered by <a href="https://www.puragenda.cl" style="color:#9CA3AF;text-decoration:none;font-weight:600;">Puragenda</a></p>
   </td></tr>
 </table>
 </td></tr></table>
@@ -532,6 +532,8 @@ interface ReminderEmailData {
   businessName: string;
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
+  confirmUrl: string;
+  cancelUrl: string;
 }
 
 /** Email to client the day before their appointment */
@@ -558,7 +560,24 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
           Te esperamos mañana a las ${timeStr} 
         </p>
       </div>
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Si necesitas cancelar o reprogramar, contacta directamente a ${data.businessName}.</p>
+
+      <!-- Action Buttons -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+        <tr>
+          <td align="center" style="padding:0 4px;">
+            <a href="${data.confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(16,185,129,0.25);">
+              ✓ Confirmar Asistencia
+            </a>
+          </td>
+          <td align="center" style="padding:0 4px;">
+            <a href="${data.cancelUrl}" style="display:inline-block;background:#fff;color:#ef4444;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;border:2px solid #fecaca;">
+              ✕ Cancelar Cita
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">Si tienes dudas, contacta directamente a ${data.businessName}.</p>
     `),
   };
 }
@@ -646,3 +665,162 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
 </body></html>`,
   };
 }
+
+// ═══════════════════════════════════════════
+// TRIAL EXPIRING WARNING (3 days before)
+// ═══════════════════════════════════════════
+
+interface TrialExpiringEmailData {
+  ownerName: string;
+  businessName: string;
+  plan: string;
+  daysLeft: number;
+}
+
+/** Email to owner when trial is about to expire */
+export function trialExpiringEmail(data: TrialExpiringEmailData): { subject: string; html: string } {
+  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
+
+  return {
+    subject: `Tu prueba gratuita expira en ${data.daysLeft} días — Puragenda`,
+    html: layout("Prueba por Expirar", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita está por terminar</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, tu periodo de prueba del
+        <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
+        <strong style="color:#0f172a;">${data.businessName}</strong> expira en
+        <strong style="color:#ef4444;">${data.daysLeft} días</strong>.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#fef3c7;border-radius:12px;border:1px solid #fde68a;">
+        <p style="margin:0;font-size:14px;color:#92400e;line-height:1.6;">
+          <strong>⚠️ Importante:</strong> Al finalizar tu prueba, tu cuenta será pausada hasta que actives tu suscripción.
+          No perderás tus datos, pero no podrás acceder al dashboard.
+        </p>
+      </div>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Para mantener tu acceso sin interrupciones, activa tu plan ahora:
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${pricingUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Activar mi Plan ${planLabel} →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Tienes dudas? Responde a este email y te ayudamos.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// TRIAL EXPIRED
+// ═══════════════════════════════════════════
+
+interface TrialExpiredEmailData {
+  ownerName: string;
+  businessName: string;
+  plan: string;
+}
+
+/** Email to owner when trial has expired */
+export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: string; html: string } {
+  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
+
+  return {
+    subject: `Tu prueba gratuita ha finalizado — Puragenda`,
+    html: layout("Prueba Finalizada", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita ha finalizado</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, el periodo de prueba del
+        <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
+        <strong style="color:#0f172a;">${data.businessName}</strong> ha finalizado.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#fef2f2;border-radius:12px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:14px;color:#991b1b;line-height:1.6;">
+          Tu cuenta ha sido pausada. Para volver a acceder a tu dashboard y seguir recibiendo reservas,
+          activa tu suscripción al <strong>Plan ${planLabel}</strong>.
+        </p>
+      </div>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        No te preocupes — todos tus datos, clientes y configuraciones están guardados y listos para cuando actives tu plan.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${pricingUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Activar mi Plan ${planLabel} →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Necesitas ayuda? Responde a este email.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// APPOINTMENT ACTION — OWNER NOTIFICATION
+// ═══════════════════════════════════════════
+
+interface AppointmentActionEmailData {
+  action: "confirmed" | "cancelled";
+  customerName: string;
+  serviceName: string;
+  staffName: string;
+  startTime: Date;
+  endTime: Date;
+  businessName: string;
+}
+
+/** Email to business owner when customer confirms or cancels via reminder link */
+export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+
+  const isConfirm = data.action === "confirmed";
+  const title = isConfirm ? "Asistencia confirmada" : "Cita cancelada por el cliente";
+  const subtitle = isConfirm
+    ? `<strong style="color:#0f172a;">${data.customerName}</strong> ha confirmado su asistencia a la siguiente cita:`
+    : `<strong style="color:#0f172a;">${data.customerName}</strong> ha cancelado la siguiente cita:`;
+  const statusBadge = isConfirm
+    ? `<div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+        <p style="margin:0;font-size:14px;color:#166534;text-align:center;font-weight:600;">✓ Asistencia Confirmada</p>
+       </div>`
+    : `<div style="margin:16px 0;padding:14px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:14px;color:#991b1b;text-align:center;font-weight:600;">✕ Cita Cancelada</p>
+       </div>`;
+
+  const dashboardUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/dashboard" : "http://localhost:3000/dashboard";
+
+  return {
+    subject: `${isConfirm ? "✓" : "✕"} ${data.customerName} ${isConfirm ? "confirmó" : "canceló"} su cita — ${data.businessName}`,
+    html: enterpriseLayout(title, `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">${title}</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        ${subtitle}
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Fecha</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Hora</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${timeStr} - ${timeEnd}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Servicio</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${data.serviceName}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;width:35%;">Profesional</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${data.staffName}</td>
+        </tr>
+      </table>
+      ${statusBadge}
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#E5E7EB;color:#374151;text-decoration:none;font-size:14px;font-weight:600;border-radius:10px;">
+          Ver en Dashboard →
+        </a>
+      </div>
+    `),
+  };
+}
+
