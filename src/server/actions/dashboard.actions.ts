@@ -381,9 +381,11 @@ export async function createScheduleBlockAction(data: {
   const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
-  // Build DateTimes from date + time
-  const start = new Date(`${data.date}T${data.startTime}:00`);
-  const end = new Date(`${data.date}T${data.endTime}:00`);
+  // Build DateTimes from date + time in America/Santiago timezone
+  // Instead of new Date(`${date}T${time}:00`) which parses as UTC on Vercel
+  const { fromZonedTime } = await import("date-fns-tz");
+  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, "America/Santiago");
+  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, "America/Santiago");
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
   if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
