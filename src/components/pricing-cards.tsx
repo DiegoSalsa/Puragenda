@@ -106,14 +106,14 @@ function BillingToggle({
 }) {
   return (
     <div className="flex items-center justify-center gap-1">
-      <div className="flex items-center rounded-full border border-border bg-muted p-1">
+      <div className="flex items-center rounded-2xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-black p-1 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
         <button
           type="button"
           onClick={() => onChange("monthly")}
-          className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 ${
+          className={`rounded-xl px-6 py-3 text-sm font-black uppercase tracking-wider transition-all duration-200 ${
             cycle === "monthly"
-              ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-black text-white dark:bg-white dark:text-black border-2 border-transparent"
+              : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
           }`}
         >
           Mensual
@@ -121,14 +121,14 @@ function BillingToggle({
         <button
           type="button"
           onClick={() => onChange("annual")}
-          className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 ${
+          className={`flex items-center gap-3 rounded-xl px-6 py-3 text-sm font-black uppercase tracking-wider transition-all duration-200 ${
             cycle === "annual"
-              ? "bg-[#7C3AED] text-white shadow-lg shadow-[#7C3AED]/25"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-black text-white dark:bg-white dark:text-black border-2 border-transparent"
+              : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
           }`}
         >
           Anual
-          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+          <span className={`rounded-md border-2 border-black dark:border-white px-2 py-0.5 text-[10px] font-black shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF] ${cycle === 'annual' ? 'bg-[#BFFCC6] text-black dark:bg-[#BFFCC6]' : 'bg-[#BFFCC6] text-black'}`}>
             -{getSavingsPercent()}%
           </span>
         </button>
@@ -218,214 +218,216 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
           return (
             <div
               key={plan.key}
-              className={`relative rounded-3xl p-[1px] transition-all duration-500 flex flex-col h-full ${
+              className={`relative flex flex-col h-full rounded-[32px] border-4 border-black dark:border-white p-6 sm:p-10 transition-transform duration-300 ${
                 plan.highlighted
-                  ? "shadow-2xl shadow-[#7C3AED]/30 hover:shadow-[#7C3AED]/50 z-10 ring-2 ring-[#7C3AED]"
-                  : "bg-border/40 hover:bg-border/80 shadow-lg hover:shadow-xl dark:shadow-none"
+                  ? "bg-[#B28DFF] dark:bg-[#111111] shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#B28DFF] -translate-y-2"
+                  : "bg-white dark:bg-[#000000] shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF] hover:-translate-y-1 hover:shadow-[10px_10px_0_#000] dark:hover:shadow-[10px_10px_0_#FFF]"
               }`}
             >
-              <div className={`relative flex h-full flex-col rounded-[23px] bg-card p-6 sm:p-8 ${plan.highlighted ? "bg-card/95 backdrop-blur-2xl" : "bg-card/70 backdrop-blur-xl"}`}>
-                {/* Badges */}
-                {plan.highlighted && (
-                  <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-[#7C3AED]/30 border border-white/20">
-                    Más popular
-                  </div>
-                )}
-                {plan.badge && (
-                  <div className={`absolute rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA] px-3 py-1 text-xs font-semibold text-white ${plan.highlighted ? "-top-3 right-6" : "-top-3 left-6"}`}>
-                    {plan.badge}
-                  </div>
-                )}
+              {/* Badges */}
+              {plan.highlighted && (
+                <div className="absolute -top-6 left-0 right-0 mx-auto w-fit rounded-full border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-sm font-black uppercase tracking-widest text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
+                  Más popular
+                </div>
+              )}
+              {plan.badge && (
+                <div className={`absolute rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-4 py-1.5 text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] ${plan.highlighted ? "-top-5 right-4 lg:-right-4" : "-top-5 left-4 lg:-left-4"}`}>
+                  {plan.badge}
+                </div>
+              )}
 
-                {/* Header */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${plan.highlighted ? "bg-[#7C3AED]/20" : "bg-muted"}`}>
-                      <PlanIcon className={`h-5 w-5 ${plan.highlighted ? "text-[#A78BFA]" : "text-muted-foreground"}`} />
-                    </div>
-                    <p className="text-2xl font-bold">{plan.name}</p>
+              {/* Header */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-4 border-black dark:border-white ${plan.highlighted ? "bg-[#FFF5BA] dark:bg-black" : "bg-[#85E3FF] dark:bg-black"} shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]`}>
+                    <PlanIcon className="h-7 w-7 text-black dark:text-white" />
                   </div>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                  <p className="text-4xl font-black uppercase">{plan.name}</p>
+                </div>
+                <p className="text-base font-bold opacity-80">{plan.description}</p>
 
-                  {/* Staff count */}
-                  <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 px-3 py-2">
-                    <Users className="h-4 w-4 text-[#A78BFA]" />
-                    <span className="text-sm font-medium text-[#A78BFA]">{plan.staffLabel}</span>
-                  </div>
-
-                  {/* Price display */}
-                  <div className="space-y-1">
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-4xl font-bold tracking-tight">
-                        {formatCLP(totalPrice)}
-                      </p>
-                      <span className="text-sm font-normal text-muted-foreground">/mes</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold pb-1">
-                      IVA incluido
-                    </p>
-
-                    {cycle === "annual" && (
-                      <div className="space-y-0.5 animate-fade-in">
-                        <p className="text-xs text-muted-foreground line-through">
-                          {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0))}/mes
-                        </p>
-                        <p className="text-xs text-emerald-400 font-medium">
-                          {formatCLP(getAnnualTotal(monthlyFull) + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO * ANNUAL_MULTIPLIER : 0))}/año · Ahorras {formatCLP((monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0)) * 2)}
-                        </p>
-                      </div>
-                    )}
-
-                    {hasExtras && (
-                      <p className="text-xs text-[#A78BFA] animate-fade-in">
-                        {formatCLP(basePrice)} base + {formatCLP(totalPrice - basePrice)} extras
-                      </p>
-                    )}
-                  </div>
+                {/* Staff count */}
+                <div className="flex items-center gap-3 rounded-xl border-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-black px-4 py-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
+                  <Users className="h-6 w-6 text-black dark:text-[#BFFCC6]" />
+                  <span className="text-sm font-black uppercase tracking-wide text-black dark:text-[#BFFCC6]">{plan.staffLabel}</span>
                 </div>
 
-                {/* Features */}
-                <ul className="mt-6 space-y-3">
-                  {plan.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
-                      {item}
-                    </li>
-                  ))}
-                  {cycle === "annual" && (
-                    <li className="flex items-start gap-2.5 text-sm text-emerald-400 animate-fade-in">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-                      Paga 10 meses, obtén 12
-                    </li>
-                  )}
-                </ul>
-
-                {/* Extra Staff Selector — Equipo only */}
-                {plan.key === "EQUIPO" && (
-                  <div className="mt-6 rounded-xl border border-border bg-muted/50 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-[#7C3AED]" />
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Profesionales extra
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleExtraChange("EQUIPO", -1)}
-                          disabled={extras.EQUIPO === 0}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground transition-all hover:border-[#7C3AED]/30 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label="Quitar profesional extra"
-                        >
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-8 text-center text-sm font-bold tabular-nums">
-                          {extras.EQUIPO}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleExtraChange("EQUIPO", 1)}
-                          disabled={extras.EQUIPO >= 20}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground transition-all hover:border-[#7C3AED]/30 hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                          aria-label="Añadir profesional extra"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    {extras.EQUIPO > 0 && (
-                      <p className="mt-2 text-xs text-muted-foreground animate-fade-in">
-                        +{formatCLP(
-                          cycle === "annual"
-                            ? Math.round((EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER) / 12)
-                            : EXTRA_STAFF_COST.EQUIPO
-                        )}/mes por profesional ·{" "}
-                        <span className="text-[#A78BFA] font-medium">
-                          {formatCLP(totalPrice - basePrice)}/mes total extras
-                        </span>
-                      </p>
-                    )}
+                {/* Price display */}
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-6xl font-black tracking-tighter">
+                      {formatCLP(totalPrice)}
+                    </p>
+                    <span className="text-xl font-bold opacity-70">/mes</span>
                   </div>
+                  <p className="text-sm font-black uppercase tracking-widest pb-1 opacity-70">
+                    IVA incluido
+                  </p>
+
+                  {cycle === "annual" && (
+                    <div className="space-y-2 animate-fade-in mt-4 border-t-4 border-black dark:border-white pt-4">
+                      <p className="text-sm font-bold line-through opacity-60">
+                        {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0))}/mes
+                      </p>
+                      <p className="text-sm font-black bg-[#BFFCC6] dark:bg-black text-black dark:text-white border-2 border-black dark:border-white rounded-lg px-3 py-1.5 inline-block shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF]">
+                        {formatCLP(getAnnualTotal(monthlyFull) + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO * ANNUAL_MULTIPLIER : 0))}/año · Ahorras {formatCLP((monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0)) * 2)}
+                      </p>
+                    </div>
+                  )}
+
+                  {hasExtras && (
+                    <p className="text-sm font-black uppercase mt-2 opacity-80 animate-fade-in">
+                      {formatCLP(basePrice)} base + {formatCLP(totalPrice - basePrice)} extras
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Features */}
+              <ul className="mt-10 space-y-4">
+                {plan.items.map((item) => (
+                  <li key={item} className="flex items-center gap-4 text-base font-bold">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-black dark:border-white bg-[#FFF5BA] dark:bg-[#7C3AED]">
+                      <Check className="h-4 w-4 text-black dark:text-white" strokeWidth={4} />
+                    </div>
+                    {item}
+                  </li>
+                ))}
+                {cycle === "annual" && (
+                  <li className="flex items-center gap-4 text-base font-black text-black dark:text-[#BFFCC6] animate-fade-in">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-black dark:border-white bg-[#FFB5E8] dark:bg-transparent">
+                      <Sparkles className="h-4 w-4 text-black dark:text-[#BFFCC6]" />
+                    </div>
+                    Paga 10 meses, obtén 12
+                  </li>
                 )}
+              </ul>
 
-                {/* Action Buttons */}
-                <div className="mt-auto pt-8 space-y-2.5">
-                  {plan.key === "EQUIPO" && (
-                    <>
+              {/* Extra Staff Selector — Equipo only */}
+              {plan.key === "EQUIPO" && (
+                <div className="mt-8 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-6 w-6 dark:text-white" />
+                      <span className="text-base font-black uppercase dark:text-white">
+                        Staff Extra
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
                       <button
-                        onClick={() => handlePlanAction("EQUIPO", false)}
-                        disabled={loading === "EQUIPO"}
-                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
+                        type="button"
+                        onClick={() => handleExtraChange("EQUIPO", -1)}
+                        disabled={extras.EQUIPO === 0}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
+                        aria-label="Quitar profesional extra"
                       >
-                        {loading === "EQUIPO" ? (
-                          <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
-                        ) : (
-                          "Suscribirse"
-                        )}
+                        <Minus className="h-5 w-5" strokeWidth={4} />
                       </button>
+                      <span className="w-8 text-center text-xl font-black tabular-nums dark:text-white">
+                        {extras.EQUIPO}
+                      </span>
                       <button
-                        onClick={() => handlePlanAction("EQUIPO", true)}
-                        disabled={loading === "EQUIPO"}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                        type="button"
+                        onClick={() => handleExtraChange("EQUIPO", 1)}
+                        disabled={extras.EQUIPO >= 20}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
+                        aria-label="Añadir profesional extra"
                       >
-                        {loading === "EQUIPO" ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
-                        ) : (
-                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
-                        )}
+                        <Plus className="h-5 w-5" strokeWidth={4} />
                       </button>
-                    </>
+                    </div>
+                  </div>
+                  {extras.EQUIPO > 0 && (
+                    <p className="mt-4 text-sm font-bold opacity-80 animate-fade-in">
+                      +{formatCLP(
+                        cycle === "annual"
+                          ? Math.round((EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER) / 12)
+                          : EXTRA_STAFF_COST.EQUIPO
+                      )}/mes por profesional ·{" "}
+                      <span className="font-black uppercase">
+                        {formatCLP(totalPrice - basePrice)} total extras
+                      </span>
+                    </p>
                   )}
+                </div>
+              )}
 
-                  {plan.key === "INDIVIDUAL" && (
-                    <>
-                      <button
-                        onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                        disabled={loading === "INDIVIDUAL"}
-                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {loading === "INDIVIDUAL" ? (
-                          <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
-                        ) : (
-                          "Suscribirse"
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handlePlanAction("INDIVIDUAL", true)}
-                        disabled={loading === "INDIVIDUAL"}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {loading === "INDIVIDUAL" ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
-                        ) : (
-                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
-                        )}
-                      </button>
-                    </>
-                  )}
-
-                  {plan.key === "TEST" && (
+              {/* Action Buttons */}
+              <div className="mt-auto pt-10 space-y-4">
+                {plan.key === "EQUIPO" && (
+                  <>
                     <button
-                      onClick={() => handlePlanAction("TEST", false)}
-                      disabled={loading === "TEST"}
-                      className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={() => handlePlanAction("EQUIPO", false)}
+                      disabled={loading === "EQUIPO"}
+                      className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      {loading === "TEST" ? (
-                        <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
+                      {loading === "EQUIPO" ? (
+                        <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        "Probar Pago Real ($1.000)"
+                        "Suscribirse"
                       )}
                     </button>
-                  )}
+                    <button
+                      onClick={() => handlePlanAction("EQUIPO", true)}
+                      disabled={loading === "EQUIPO"}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black py-4 text-base font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {loading === "EQUIPO" ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
+                      ) : (
+                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {TRIAL_DURATION_DAYS} Días Gratis</>
+                      )}
+                    </button>
+                  </>
+                )}
 
-                  {/* Error message */}
-                  {error && (
-                    <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-center text-sm text-red-400 animate-fade-in">
-                      {error}
-                    </p>
-                  )}
-                </div>
+                {plan.key === "INDIVIDUAL" && (
+                  <>
+                    <button
+                      onClick={() => handlePlanAction("INDIVIDUAL", false)}
+                      disabled={loading === "INDIVIDUAL"}
+                      className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {loading === "INDIVIDUAL" ? (
+                        <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
+                      ) : (
+                        "Suscribirse"
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handlePlanAction("INDIVIDUAL", true)}
+                      disabled={loading === "INDIVIDUAL"}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black py-4 text-base font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {loading === "INDIVIDUAL" ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
+                      ) : (
+                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {TRIAL_DURATION_DAYS} Días Gratis</>
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {plan.key === "TEST" && (
+                  <button
+                    onClick={() => handlePlanAction("TEST", false)}
+                    disabled={loading === "TEST"}
+                    className="w-full rounded-2xl border-4 border-black dark:border-white bg-gray-200 dark:bg-gray-800 py-4 text-lg font-black uppercase text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {loading === "TEST" ? (
+                      <span className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> ...</span>
+                    ) : (
+                      "Probar Pago Real"
+                    )}
+                  </button>
+                )}
+
+                {/* Error message */}
+                {error && (
+                  <p className="rounded-xl border-4 border-black bg-[#FFB5E8] px-4 py-3 text-center text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] animate-fade-in">
+                    {error}
+                  </p>
+                )}
               </div>
             </div>
           );
