@@ -35,7 +35,7 @@ export function RegisterForm() {
     }
 
     if (password !== confirmPassword) {
-      setError("Las contraseÃ±as no coinciden");
+      setError("Las contraseñas no coinciden");
       return;
     }
 
@@ -89,7 +89,7 @@ export function RegisterForm() {
         return;
       }
 
-      // Step 3: Normal flow (trial or individual) â†’ go to dashboard
+      // Step 3: Normal flow (trial or individual) → go to dashboard
       window.location.href = "/dashboard";
     } finally {
       setLoading(false);
@@ -109,7 +109,7 @@ export function RegisterForm() {
             <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
               <Crown className="h-4 w-4 text-[#7C3AED]" />
               <span className="text-sm font-medium text-[#A78BFA]">
-                Plan {planLabel} â€” ${planPrice.toLocaleString("es-CL")}/mes
+                Plan {planLabel} — ${planPrice.toLocaleString("es-CL")}/mes
               </span>
             </div>
           </div>
@@ -151,7 +151,7 @@ export function RegisterForm() {
           <input
             id="businessName"
             type="text"
-            placeholder="Ej: BarberÃ­a El Corte"
+            placeholder="Ej: Barbería El Corte"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             required
@@ -173,11 +173,11 @@ export function RegisterForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-muted-foreground">ContraseÃ±a</label>
+          <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
           <input
             id="password"
             type="password"
-            placeholder="MÃ­nimo 8 caracteres"
+            placeholder="Mínimo 8 caracteres"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
@@ -188,12 +188,12 @@ export function RegisterForm() {
 
         <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
-            Confirmar contraseÃ±a
+            Confirmar contraseña
           </label>
           <input
             id="confirmPassword"
             type="password"
-            placeholder="Repite tu contraseÃ±a"
+            placeholder="Repite tu contraseña"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -206,7 +206,7 @@ export function RegisterForm() {
         <div className="space-y-1.5">
           <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-            CÃ³digo de Referido <span className="text-muted-foreground/50">(opcional)</span>
+            Código de Referido <span className="text-muted-foreground/50">(opcional)</span>
           </label>
           <input
             id="referralCode"
@@ -266,15 +266,15 @@ export function RegisterForm() {
 
         {isDirectSubscription && (
           <p className="text-center text-xs text-muted-foreground">
-            SerÃ¡s redirigido a MercadoPago para completar el pago.
+            Serás redirigido a MercadoPago para completar el pago.
           </p>
         )}
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Â¿Ya tienes cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Link href="/login" className="text-[#7C3AED] hover:underline">
-          Iniciar sesiÃ³n
+          Iniciar sesión
         </Link>
       </p>
     </div>
