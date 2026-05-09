@@ -34,8 +34,8 @@ export const PRICING = {
   TEST:       { monthly: 1000, name: "Test" },
 } as const;
 
-// Which plan offers a free trial
-export const TRIAL_PLAN = PLANS.EQUIPO;
+// Which plans offer a free trial
+export const TRIAL_PLANS = [PLANS.INDIVIDUAL, PLANS.EQUIPO] as const;
 
 // Extra staff cost (CLP/month) — same rate for Equipo
 export const EXTRA_STAFF_COST = {
