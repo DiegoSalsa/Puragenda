@@ -13,6 +13,7 @@ import {
   loyaltyRewardWonEmail,
   trialExpiringEmail,
   trialExpiredEmail,
+  appointmentActionOwnerEmail,
 } from "./templates";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 
@@ -415,5 +416,37 @@ export async function sendTrialExpiredEmail(data: {
     console.log(`[Email] Trial expired notification sent to ${data.ownerEmail}`);
   } catch (err) {
     console.error("[Email] Error sending trial expired email:", err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// APPOINTMENT ACTION NOTIFICATION (confirm/cancel by client)
+// ═══════════════════════════════════════════
+
+/**
+ * Notify business owner when a customer confirms or cancels via email link.
+ */
+export async function sendAppointmentActionNotification(data: {
+  action: "confirmed" | "cancelled";
+  customerName: string;
+  serviceName: string;
+  staffName: string;
+  startTime: Date;
+  endTime: Date;
+  businessName: string;
+  ownerEmail: string;
+}) {
+  const { subject, html } = appointmentActionOwnerEmail(data);
+
+  try {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: data.ownerEmail,
+      subject,
+      html,
+    });
+    console.log(`[Email] Appointment ${data.action} notification sent to ${data.ownerEmail}`);
+  } catch (err) {
+    console.error(`[Email] Error sending appointment action notification:`, err);
   }
 }

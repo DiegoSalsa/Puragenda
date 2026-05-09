@@ -532,6 +532,8 @@ interface ReminderEmailData {
   businessName: string;
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
+  confirmUrl: string;
+  cancelUrl: string;
 }
 
 /** Email to client the day before their appointment */
@@ -558,7 +560,24 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
           Te esperamos mañana a las ${timeStr} 
         </p>
       </div>
-      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;">Si necesitas cancelar o reprogramar, contacta directamente a ${data.businessName}.</p>
+
+      <!-- Action Buttons -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+        <tr>
+          <td align="center" style="padding:0 4px;">
+            <a href="${data.confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 2px 8px rgba(16,185,129,0.25);">
+              ✓ Confirmar Asistencia
+            </a>
+          </td>
+          <td align="center" style="padding:0 4px;">
+            <a href="${data.cancelUrl}" style="display:inline-block;background:#fff;color:#ef4444;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;border:2px solid #fecaca;">
+              ✕ Cancelar Cita
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">Si tienes dudas, contacta directamente a ${data.businessName}.</p>
     `),
   };
 }
@@ -731,6 +750,76 @@ export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: strin
         </a>
       </div>
       <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Necesitas ayuda? Responde a este email.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// APPOINTMENT ACTION — OWNER NOTIFICATION
+// ═══════════════════════════════════════════
+
+interface AppointmentActionEmailData {
+  action: "confirmed" | "cancelled";
+  customerName: string;
+  serviceName: string;
+  staffName: string;
+  startTime: Date;
+  endTime: Date;
+  businessName: string;
+}
+
+/** Email to business owner when customer confirms or cancels via reminder link */
+export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+
+  const isConfirm = data.action === "confirmed";
+  const title = isConfirm ? "Asistencia confirmada" : "Cita cancelada por el cliente";
+  const subtitle = isConfirm
+    ? `<strong style="color:#0f172a;">${data.customerName}</strong> ha confirmado su asistencia a la siguiente cita:`
+    : `<strong style="color:#0f172a;">${data.customerName}</strong> ha cancelado la siguiente cita:`;
+  const statusBadge = isConfirm
+    ? `<div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+        <p style="margin:0;font-size:14px;color:#166534;text-align:center;font-weight:600;">✓ Asistencia Confirmada</p>
+       </div>`
+    : `<div style="margin:16px 0;padding:14px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:14px;color:#991b1b;text-align:center;font-weight:600;">✕ Cita Cancelada</p>
+       </div>`;
+
+  const dashboardUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/dashboard" : "http://localhost:3000/dashboard";
+
+  return {
+    subject: `${isConfirm ? "✓" : "✕"} ${data.customerName} ${isConfirm ? "confirmó" : "canceló"} su cita — ${data.businessName}`,
+    html: enterpriseLayout(title, `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">${title}</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">
+        ${subtitle}
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Fecha</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Hora</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${timeStr} - ${timeEnd}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Servicio</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${data.serviceName}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;width:35%;">Profesional</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${data.staffName}</td>
+        </tr>
+      </table>
+      ${statusBadge}
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#E5E7EB;color:#374151;text-decoration:none;font-size:14px;font-weight:600;border-radius:10px;">
+          Ver en Dashboard →
+        </a>
+      </div>
     `),
   };
 }

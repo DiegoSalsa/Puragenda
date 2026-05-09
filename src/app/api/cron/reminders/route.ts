@@ -84,9 +84,13 @@ export async function GET(req: Request) {
     // ── Send reminders ──
     let sent = 0;
     const errors: string[] = [];
+    const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
 
     for (const apt of appointments) {
       try {
+        // Generate unique action token for confirm/cancel links
+        const actionToken = `${apt.id}-${crypto.randomUUID()}`;
+
         const email = reminderEmail({
           customerName: apt.customerName,
           serviceName: apt.service.name,
@@ -94,6 +98,8 @@ export async function GET(req: Request) {
           startTime: apt.startTime,
           endTime: apt.endTime,
           businessName: apt.business.name,
+          confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
+          cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
         });
 
         const { error } = await resend.emails.send({
@@ -108,10 +114,10 @@ export async function GET(req: Request) {
           continue;
         }
 
-        // Mark as sent to prevent duplicates
+        // Mark as sent and store action token
         await prisma.appointment.update({
           where: { id: apt.id },
-          data: { reminderSent: true },
+          data: { reminderSent: true, actionToken },
         });
 
         sent++;
