@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
@@ -22,10 +22,29 @@ interface NavbarProps {
 
 export function Navbar({ user, business }: NavbarProps = {}) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") {
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+          setIsVisible(false);
+        } else {
+          setIsVisible(true);
+        }
+        setLastScrollY(currentScrollY);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   return (
     <>
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl z-50 rounded-full border border-border/40 bg-background/70 backdrop-blur-md shadow-sm transition-all duration-300">
+      <header className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl z-50 rounded-full border border-border/40 bg-background/70 backdrop-blur-md shadow-sm transition-all duration-300 ${isVisible ? 'top-4 translate-y-0' : 'top-4 -translate-y-[150%]'}`}>
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
           {/* Logo */}
           <div className="flex flex-1 items-center justify-start">

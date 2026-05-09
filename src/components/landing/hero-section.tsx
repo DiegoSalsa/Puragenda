@@ -1,0 +1,107 @@
+import Link from "next/link";
+import { ArrowRight, Scissors, Sparkles, Stethoscope } from "lucide-react";
+import { WordCarousel } from "@/components/landing/word-carousel";
+
+export function HeroSection() {
+  return (
+    <section className="relative mx-auto w-full max-w-7xl px-6 pb-20 pt-32 md:pt-40 lg:pt-48">
+      
+      {/* Background Orbs & Glow - Kept within Hero for modularity */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-[5%] md:top-[10%] -left-20 md:-left-10 h-[20rem] w-[20rem] md:h-[35rem] md:w-[35rem] rounded-full bg-[#7C3AED]/15 md:bg-[#7C3AED]/20 blur-[40px] md:blur-[80px] lg:blur-[110px] dark:bg-[#7C3AED]/15 dark:md:bg-[#7C3AED]/25" />
+        <div className="absolute top-[30%] -right-20 md:-right-10 h-[25rem] w-[25rem] md:h-[45rem] md:w-[45rem] rounded-full bg-[#E91E8C]/5 md:bg-[#E91E8C]/10 blur-[40px] md:blur-[100px] lg:blur-[130px] dark:bg-[#E91E8C]/10 dark:md:bg-[#E91E8C]/15" />
+      </div>
+
+      <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
+        
+        {/* Left Column: Content */}
+        <div className="animate-fade-up space-y-8 lg:w-1/2 relative z-10 text-center lg:text-left">
+          
+          <div className="inline-flex items-center rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-3 py-1 text-sm font-medium text-[#7C3AED] backdrop-blur-sm shadow-[0_0_15px_rgba(124,58,237,0.15)] mb-4">
+            <span className="flex h-2 w-2 rounded-full bg-[#7C3AED] mr-2 animate-pulse" />
+            La nueva era de agendamiento
+          </div>
+
+          <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl drop-shadow-sm">
+            <span className="bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent">Software de</span><br/>
+            <span className="bg-gradient-to-br from-[#7C3AED] to-[#E91E8C] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(124,58,237,0.3)]">Reservas</span> <br />
+            <WordCarousel />
+          </h1>
+
+          <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:text-xl mx-auto lg:mx-0">
+            Mucho más que un software de reservas. Agendamiento, fidelización de clientes, marketing automático y widget marca blanca en un solo lugar.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <Link href="/register" className="w-full sm:w-auto">
+              <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
+                <span className="relative z-10 flex items-center gap-2">
+                  Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </button>
+            </Link>
+            <Link href="/widget/purocode-demo" className="w-full sm:w-auto">
+              <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-3.5 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
+                Ver Demo
+              </button>
+            </Link>
+          </div>
+
+          <p className="text-xs text-muted-foreground/60 font-medium">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-2">
+            {[
+              { icon: Scissors, label: "Peluquerías" },
+              { icon: Sparkles, label: "Estética" },
+              { icon: Stethoscope, label: "Clínicas" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2 rounded-full border border-border/50 bg-card/30 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm hover:border-[#7C3AED]/30 transition-colors cursor-default">
+                <item.icon className="h-4 w-4 text-[#7C3AED]" />
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Hero Visual / Mockup (Glassmorphism card) */}
+        <div className="lg:w-1/2 w-full relative perspective-[2000px]">
+          <div className="relative w-full aspect-[4/3] rounded-2xl border border-white/10 bg-white/5 backdrop-blur-3xl shadow-2xl overflow-hidden transform rotate-y-[-10deg] rotate-x-[5deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-700 ease-out flex items-center justify-center group">
+            {/* Glossy overlay */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            
+            {/* Mockup content */}
+            <div className="w-4/5 h-4/5 rounded-xl border border-border/40 bg-background/80 shadow-inner flex flex-col overflow-hidden">
+              <div className="h-10 w-full border-b border-border/40 bg-muted/20 flex items-center px-4 gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                </div>
+                <div className="mx-auto w-1/2 h-4 rounded bg-background border border-border/50" />
+              </div>
+              <div className="flex-1 p-6 flex flex-col gap-4">
+                <div className="w-1/3 h-6 rounded bg-[#7C3AED]/20 animate-pulse" />
+                <div className="w-full h-24 rounded-lg bg-card border border-border/50 shadow-sm flex items-center p-4 gap-4">
+                   <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                   <div className="space-y-2 flex-1">
+                     <div className="w-1/2 h-4 rounded bg-muted animate-pulse" />
+                     <div className="w-1/4 h-3 rounded bg-muted/50 animate-pulse" />
+                   </div>
+                </div>
+                <div className="w-full h-24 rounded-lg bg-card border border-border/50 shadow-sm flex items-center p-4 gap-4">
+                   <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                   <div className="space-y-2 flex-1">
+                     <div className="w-3/4 h-4 rounded bg-muted animate-pulse" />
+                     <div className="w-1/3 h-3 rounded bg-muted/50 animate-pulse" />
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+}

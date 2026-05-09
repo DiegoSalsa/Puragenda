@@ -217,11 +217,11 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
 
         {/* Limit warning */}
         {atLimit && (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-xl border-[3px] border-black dark:border-white bg-[#FFDB58] px-4 py-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-black mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-amber-300">Límite alcanzado</p>
-              <p className="text-xs text-amber-400/70">Tu plan {PLAN_LABELS[limitInfo.plan]} permite máximo {limitInfo.maxAllowed} profesional(es). Mejora tu plan para agregar más.</p>
+              <p className="text-sm font-black text-black uppercase tracking-wider">Límite alcanzado</p>
+              <p className="text-xs font-bold text-black/80 mt-1">Tu plan {PLAN_LABELS[limitInfo.plan]} permite máximo {limitInfo.maxAllowed} profesional(es). Mejora tu plan para agregar más.</p>
             </div>
           </div>
         )}
@@ -231,8 +231,8 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
           <button
             onClick={() => { if (!atLimit) setShowForm(true); }}
             disabled={atLimit}
-            className={`flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm w-full justify-center transition-all ${
-              atLimit ? "border-border/50 text-muted-foreground/30 cursor-not-allowed" : "border-border text-muted-foreground hover:border-[#7C3AED]/30 hover:text-foreground"
+            className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm w-full justify-center transition-all ${
+              atLimit ? "border-[3px] border-dashed border-black/30 dark:border-white/30 text-black/50 dark:text-white/50 cursor-not-allowed bg-black/5 dark:bg-white/5 font-bold" : "border-[3px] border-black dark:border-white bg-[#85E3FF] text-black font-black uppercase tracking-wider shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] hover:translate-y-1 hover:translate-x-1 hover:shadow-none"
             }`}
           >
             <Plus className="h-4 w-4" /> {atLimit ? "Límite de profesionales alcanzado" : "Agregar profesional"}
