@@ -388,33 +388,55 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
 
                   {/* ── Section: Schedule ── */}
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> Horario laboral
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                        <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> Horario laboral
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const activeDays = sched.filter(s => s.isWorking);
+                          if (activeDays.length === 0) return;
+                          const source = activeDays[0];
+                          setSchedules(prev => ({
+                            ...prev,
+                            [s.id]: (prev[s.id] || defaultSchedule()).map(ds => ({
+                              ...ds,
+                              isWorking: ds.dayOfWeek === 0 ? false : true, // Dom (0) libre by default
+                              startTime: source.startTime,
+                              endTime: source.endTime,
+                            }))
+                          }));
+                        }}
+                        className="text-[10px] font-bold uppercase underline decoration-2 underline-offset-2 hover:text-[#7C3AED]"
+                      >
+                        Copiar horario a todos
+                      </button>
+                    </div>
                     {sched.map((entry) => (
-                      <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border p-2.5 ${entry.isWorking ? "border-border bg-muted/50" : "border-border/50 opacity-40"}`}>
+                      <div key={entry.dayOfWeek} className={`flex items-center gap-3 rounded-lg border-2 p-2.5 transition-all ${entry.isWorking ? "border-black dark:border-white bg-[#FFF5BA] dark:bg-[#222]" : "border-black/30 dark:border-white/30 bg-black/5 dark:bg-white/5"}`}>
                         <button type="button" onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${entry.isWorking ? "bg-[#7C3AED]" : "bg-muted"}`}>
-                          <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${entry.isWorking ? "left-[22px]" : "left-0.5"}`} />
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors border-2 border-black dark:border-white ${entry.isWorking ? "bg-[#BFFCC6]" : "bg-white dark:bg-black"}`}>
+                          <div className={`absolute top-[2px] h-4 w-4 rounded-full border-2 border-black dark:border-white transition-transform ${entry.isWorking ? "left-[20px] bg-white dark:bg-black" : "left-[2px] bg-black/20 dark:bg-white/20"}`} />
                         </button>
-                        <span className="w-12 text-xs font-medium">{DAYS[entry.dayOfWeek]}</span>
+                        <span className={`w-12 text-xs font-bold uppercase tracking-wider ${entry.isWorking ? "text-black dark:text-white" : "text-black/50 dark:text-white/50"}`}>{DAYS[entry.dayOfWeek]}</span>
                         {entry.isWorking ? (
                           <div className="flex items-center gap-1.5">
                             <select value={entry.startTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "startTime", e.target.value)}
-                              className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white">
                               {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-black font-bold dark:text-white">-</span>
                             <select value={entry.endTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "endTime", e.target.value)}
-                              className="rounded-lg border border-border bg-muted px-2 py-1 text-xs outline-none [&>option]:bg-muted [&>option]:text-foreground">
+                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white">
                               {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
                           </div>
-                        ) : <span className="text-xs text-muted-foreground">Libre</span>}
+                        ) : <span className="text-xs font-bold uppercase text-black/50 dark:text-white/50">Libre</span>}
                       </div>
                     ))}
                     <button onClick={() => handleSaveSchedule(s.id)} disabled={savingSchedule === s.id}
-                      className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
+                      className="flex items-center gap-2 rounded-xl bg-[#BFFCC6] border-2 border-black px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-[#BFFCC6] dark:text-black">
                       {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Guardar horario
                     </button>
