@@ -33,35 +33,34 @@ export function CookieBanner() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[9998] animate-slide-up"
-      style={{ backgroundColor: "var(--background, #0A0A0A)" }}
+      className="fixed bottom-4 left-4 right-4 z-[9998] animate-slide-up sm:left-6 sm:right-auto sm:max-w-md"
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 border-t border-border px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl border-4 border-black bg-[#FFF5BA] p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-[#111] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-            <Cookie className="h-4 w-4 text-[#7C3AED]" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-black bg-white dark:border-white dark:bg-black">
+            <Cookie className="h-5 w-5 text-black dark:text-white" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Usamos cookies</p>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Utilizamos cookies esenciales para el funcionamiento del sitio y cookies analíticas para mejorar tu experiencia.
-              Puedes leer más en nuestra{" "}
-              <Link href="/politica-de-privacidad" className="text-[#7C3AED] underline underline-offset-2 hover:text-[#5B21B6]">
+            <p className="text-base font-bold uppercase text-black dark:text-white">Usamos cookies</p>
+            <p className="text-sm font-medium text-black/80 dark:text-white/80">
+              Utilizamos cookies esenciales y analíticas para mejorar tu experiencia.
+              <br />
+              <Link href="/politica-de-privacidad" className="font-bold underline underline-offset-2 hover:text-[#7C3AED]">
                 Política de Privacidad
               </Link>.
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 pt-2 sm:justify-end">
           <button
             onClick={handleReject}
-            className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
+            className="flex-1 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] sm:flex-none"
           >
             Rechazar
           </button>
           <button
             onClick={handleAccept}
-            className="rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6]"
+            className="flex-1 rounded-lg border-2 border-black bg-[#BFFCC6] px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none sm:flex-none"
           >
             Aceptar
           </button>
