@@ -354,25 +354,25 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   {plan.key === "EQUIPO" && (
                     <>
                       <button
-                        onClick={() => handlePlanAction("EQUIPO", true)}
-                        disabled={loading === "EQUIPO"}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {loading === "EQUIPO" ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
-                        ) : (
-                          <><Sparkles className="h-4 w-4" /> Iniciar Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
-                        )}
-                      </button>
-                      <button
                         onClick={() => handlePlanAction("EQUIPO", false)}
                         disabled={loading === "EQUIPO"}
-                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {loading === "EQUIPO" ? (
                           <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
                         ) : (
                           "Suscribirse"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handlePlanAction("EQUIPO", true)}
+                        disabled={loading === "EQUIPO"}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {loading === "EQUIPO" ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
                         )}
                       </button>
                     </>
@@ -381,25 +381,25 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   {plan.key === "INDIVIDUAL" && (
                     <>
                       <button
-                        onClick={() => handlePlanAction("INDIVIDUAL", true)}
-                        disabled={loading === "INDIVIDUAL"}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {loading === "INDIVIDUAL" ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
-                        ) : (
-                          <><Sparkles className="h-4 w-4" /> Iniciar Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
-                        )}
-                      </button>
-                      <button
                         onClick={() => handlePlanAction("INDIVIDUAL", false)}
                         disabled={loading === "INDIVIDUAL"}
-                        className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/25 transition-all hover:bg-[#5B21B6] hover:shadow-[#7C3AED]/35 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
                         {loading === "INDIVIDUAL" ? (
                           <span className="flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</span>
                         ) : (
                           "Suscribirse"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handlePlanAction("INDIVIDUAL", true)}
+                        disabled={loading === "INDIVIDUAL"}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/40 py-3 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#A78BFA] hover:bg-[#A78BFA]/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {loading === "INDIVIDUAL" ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Redirigiendo…</>
+                        ) : (
+                          <><Sparkles className="h-4 w-4" /> Prueba Gratis de {TRIAL_DURATION_DAYS} Días</>
                         )}
                       </button>
                     </>
