@@ -646,3 +646,92 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
 </body></html>`,
   };
 }
+
+// ═══════════════════════════════════════════
+// TRIAL EXPIRING WARNING (3 days before)
+// ═══════════════════════════════════════════
+
+interface TrialExpiringEmailData {
+  ownerName: string;
+  businessName: string;
+  plan: string;
+  daysLeft: number;
+}
+
+/** Email to owner when trial is about to expire */
+export function trialExpiringEmail(data: TrialExpiringEmailData): { subject: string; html: string } {
+  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
+
+  return {
+    subject: `Tu prueba gratuita expira en ${data.daysLeft} días — Puragenda`,
+    html: layout("Prueba por Expirar", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita está por terminar</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, tu periodo de prueba del
+        <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
+        <strong style="color:#0f172a;">${data.businessName}</strong> expira en
+        <strong style="color:#ef4444;">${data.daysLeft} días</strong>.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#fef3c7;border-radius:12px;border:1px solid #fde68a;">
+        <p style="margin:0;font-size:14px;color:#92400e;line-height:1.6;">
+          <strong>⚠️ Importante:</strong> Al finalizar tu prueba, tu cuenta será pausada hasta que actives tu suscripción.
+          No perderás tus datos, pero no podrás acceder al dashboard.
+        </p>
+      </div>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Para mantener tu acceso sin interrupciones, activa tu plan ahora:
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${pricingUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Activar mi Plan ${planLabel} →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Tienes dudas? Responde a este email y te ayudamos.</p>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// TRIAL EXPIRED
+// ═══════════════════════════════════════════
+
+interface TrialExpiredEmailData {
+  ownerName: string;
+  businessName: string;
+  plan: string;
+}
+
+/** Email to owner when trial has expired */
+export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: string; html: string } {
+  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
+
+  return {
+    subject: `Tu prueba gratuita ha finalizado — Puragenda`,
+    html: layout("Prueba Finalizada", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu prueba gratuita ha finalizado</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Hola <strong style="color:#0f172a;">${data.ownerName}</strong>, el periodo de prueba del
+        <strong style="color:${BRAND};">Plan ${planLabel}</strong> para
+        <strong style="color:#0f172a;">${data.businessName}</strong> ha finalizado.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#fef2f2;border-radius:12px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:14px;color:#991b1b;line-height:1.6;">
+          Tu cuenta ha sido pausada. Para volver a acceder a tu dashboard y seguir recibiendo reservas,
+          activa tu suscripción al <strong>Plan ${planLabel}</strong>.
+        </p>
+      </div>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        No te preocupes — todos tus datos, clientes y configuraciones están guardados y listos para cuando actives tu plan.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${pricingUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Activar mi Plan ${planLabel} →
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¿Necesitas ayuda? Responde a este email.</p>
+    `),
+  };
+}
+
