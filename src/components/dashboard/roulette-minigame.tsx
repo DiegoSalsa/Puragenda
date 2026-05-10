@@ -501,14 +501,13 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
             {/* Center hub */}
             <circle cx="100" cy="100" r="20" fill="#1a1a2e" stroke="#7C3AED" strokeWidth="2.5" />
             <circle cx="100" cy="100" r="14" fill="url(#hubGrad)" />
-            <text
-              x="100" y="100"
-              fill="#fff" fontSize="7" fontWeight="900"
-              textAnchor="middle" dominantBaseline="central"
-              style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-            >
-              PG
-            </text>
+            <image
+              href="/logos/logo-white.svg"
+              x="88"
+              y="88"
+              width="24"
+              height="24"
+            />
 
             {/* Gradient definition for hub */}
             <defs>
