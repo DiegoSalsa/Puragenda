@@ -294,7 +294,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   return (
     <div
-      className="w-full min-h-screen p-3 sm:p-5 flex justify-center"
+      className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
       style={{
         background: bgColor,
         ["--wp" as string]: pc,
@@ -583,7 +583,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         </div>
 
         <div className="mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium" style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}>
-          <span>Gestionado con</span>
+          <span>Powered by</span>
           <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
             <span style={{ color: pc, fontWeight: 700, letterSpacing: "-0.02em" }}>Puragenda</span>
             <Sparkles className="h-3 w-3" style={{ color: pc }} />
