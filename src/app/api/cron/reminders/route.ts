@@ -49,7 +49,7 @@ export async function GET(req: Request) {
     const tzPart = offsetParts.find(p => p.type === "timeZoneName")?.value || "GMT-4";
     const offsetMatch = tzPart.match(/GMT([+-]\d+)/);
     const offsetHours = offsetMatch ? parseInt(offsetMatch[1]) : -4;
-    const offsetStr = `${offsetHours >= 0 ? "+" : ""}${String(Math.abs(offsetHours)).padStart(2, "0")}:00`;
+    const offsetStr = `${offsetHours >= 0 ? "+" : "-"}${String(Math.abs(offsetHours)).padStart(2, "0")}:00`;
     const tomorrowStartUTC = new Date(`${tomorrowStr}T00:00:00${offsetStr}`);
     const dayAfter = new Date(tomorrowStartUTC);
     dayAfter.setDate(dayAfter.getDate() + 1);
