@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Calendar, ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, Stamp, X } from "lucide-react";
+import { Calendar, ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, Stamp, Trophy, X } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/dashboard/marketing", label: "Marketing", icon: Mail },
   { href: "/dashboard/appearance", label: "Apariencia", icon: Palette },
   { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
+  { href: "/dashboard/rewards", label: "Recompensas", icon: Trophy },
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },
 ];
 
@@ -28,8 +29,8 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
   const visibleItems = navItems.filter((item) => {
     // STAFF: only sees their own agenda
     if (userRole === "STAFF" && item.href !== "/dashboard") return false;
-    // RECEPTIONIST: sees everything except settings & referrals (billing/admin)
-    if (userRole === "RECEPTIONIST" && (item.href === "/dashboard/settings" || item.href === "/dashboard/referrals")) return false;
+    // RECEPTIONIST: sees everything except settings, referrals & rewards (billing/admin)
+    if (userRole === "RECEPTIONIST" && (item.href === "/dashboard/settings" || item.href === "/dashboard/referrals" || item.href === "/dashboard/rewards")) return false;
     return true;
   });
 

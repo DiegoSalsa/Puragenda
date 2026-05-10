@@ -1,7 +1,6 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { prisma } from "@/server/db/prisma";
-import { getAffiliateInfo, getOrCreateAffiliate } from "@/server/services/affiliate.service";
+import { getAffiliateInfo, getOrCreateAffiliate, getTokenBalance } from "@/server/services/affiliate.service";
 import { Gift } from "lucide-react";
 import { ReferralsClient } from "./referrals-client";
 
@@ -18,17 +17,9 @@ export default async function ReferralsPage() {
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
 
-  // Ensure affiliate record exists
   const affiliate = await getOrCreateAffiliate(business.id);
   const info = await getAffiliateInfo(business.id);
-  const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id } });
-
-  const { calculateEarnedRewards, getNextThreshold, getPreviousThreshold } = await import("@/server/services/affiliate.service");
-  
-  const earned = calculateEarnedRewards(affiliate.paidReferrals);
-  const availableRewards = earned - affiliate.redeemedRewards;
-  const nextThreshold = getNextThreshold(affiliate.paidReferrals);
-  const previousThreshold = getPreviousThreshold(affiliate.paidReferrals);
+  const tokenBalance = getTokenBalance(affiliate);
 
   return (
     <div className="space-y-8">
@@ -38,16 +29,13 @@ export default async function ReferralsPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Referidos</h1>
-          <p className="text-sm text-muted-foreground">Invita negocios y gana descuentos en tu suscripción.</p>
+          <p className="text-sm text-muted-foreground">Invita negocios y gana fichas para la ruleta de recompensas.</p>
         </div>
       </div>
       <ReferralsClient
         referralCode={affiliate.referralCode}
         paidReferrals={affiliate.paidReferrals}
-        availableRewards={availableRewards}
-        nextThreshold={nextThreshold}
-        previousThreshold={previousThreshold}
-        discountPercentage={subscription?.pendingDiscountPercentage || 0}
+        tokenBalance={tokenBalance}
         referredBusinesses={info?.referredBusinesses.map((b) => ({
           id: b.id,
           name: b.name,

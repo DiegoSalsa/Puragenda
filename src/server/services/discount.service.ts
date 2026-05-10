@@ -38,7 +38,8 @@ export async function applyDiscount(businessId: string, percentage: number) {
     totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
   }
 
-  const discountedPrice = Math.round(totalBasePrice * (1 - percentage / 100));
+  // MercadoPago has a minimum transaction amount — enforce $10 CLP floor
+  const discountedPrice = Math.max(Math.round(totalBasePrice * (1 - percentage / 100)), 10);
 
   try {
     // 4. Update MercadoPago Preapproval

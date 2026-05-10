@@ -114,39 +114,77 @@ export async function POST(request: NextRequest) {
     if (mpStatus === "authorized") {
       // If the subscription had a pending discount, the payment was already charged with it.
       // We must now revert the MP subscription transaction_amount to the base price for the NEXT month.
-      if (subscription.pendingDiscountPercentage !== null) {
-        try {
-          const basePrice = PRICING[subscription.plan].monthly;
-          let totalBasePrice = basePrice;
-          if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
-            totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
-          }
+      const basePrice = PRICING[subscription.plan].monthly;
+      let totalBasePrice = basePrice;
+      if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
+        totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
+      }
 
-          await preapproval.update({
-            id: mpSubscriptionId,
-            body: {
-              auto_recurring: {
-                transaction_amount: totalBasePrice,
-                currency_id: "CLP",
+      if (subscription.pendingDiscountPercentage !== null) {
+        // Check if there are free months remaining — if so, keep minimum price
+        if (subscription.freeMonthsRemaining > 0) {
+          try {
+            await preapproval.update({
+              id: mpSubscriptionId,
+              body: {
+                auto_recurring: {
+                  transaction_amount: 10, // Minimum CLP
+                  currency_id: "CLP",
+                },
               },
-            },
-          });
-          console.log(`[webhook/mp] Reverted discount for subscription ${mpSubscriptionId} back to ${totalBasePrice}`);
-        } catch (error) {
-          console.error(`[webhook/mp] Failed to revert discount for ${mpSubscriptionId}:`, error);
+            });
+            console.log(`[webhook/mp] Free months remaining: ${subscription.freeMonthsRemaining - 1}, keeping minimum price for ${mpSubscriptionId}`);
+          } catch (error) {
+            console.error(`[webhook/mp] Failed to keep minimum price for ${mpSubscriptionId}:`, error);
+          }
+        } else {
+          // No free months — revert to full price
+          try {
+            await preapproval.update({
+              id: mpSubscriptionId,
+              body: {
+                auto_recurring: {
+                  transaction_amount: totalBasePrice,
+                  currency_id: "CLP",
+                },
+              },
+            });
+            console.log(`[webhook/mp] Reverted discount for subscription ${mpSubscriptionId} back to ${totalBasePrice}`);
+          } catch (error) {
+            console.error(`[webhook/mp] Failed to revert discount for ${mpSubscriptionId}:`, error);
+          }
         }
       }
 
-      // Payment successful — upgrade to ACTIVE and clear the discount flag
+      // Consume active prize if exists (ACTIVE → USED)
+      const updateData: Record<string, unknown> = {
+        status: "ACTIVE",
+        isTrial: false,
+        currentPeriodEnd: addDays(new Date(), 30),
+        pendingDiscountPercentage: subscription.freeMonthsRemaining > 0 ? 100 : null,
+        hasCountedAsPaidReferral: true,
+        freeMonthsRemaining: subscription.freeMonthsRemaining > 0
+          ? subscription.freeMonthsRemaining - 1
+          : 0,
+      };
+
+      // If there was an active prize and no more free months, mark it used
+      if (subscription.activePrizeId && subscription.freeMonthsRemaining <= 0) {
+        await prisma.prize.update({
+          where: { id: subscription.activePrizeId },
+          data: { status: "USED" },
+        });
+        updateData.activePrizeId = null;
+        updateData.pendingDiscountPercentage = null;
+      } else if (subscription.activePrizeId && subscription.freeMonthsRemaining > 0) {
+        // Keep the prize active for remaining free months
+        updateData.pendingDiscountPercentage = 100;
+      }
+
+      // Payment successful — upgrade to ACTIVE and clean up
       await prisma.subscription.update({
         where: { id: subscription.id },
-        data: {
-          status: "ACTIVE",
-          isTrial: false,
-          currentPeriodEnd: addDays(new Date(), 30),
-          pendingDiscountPercentage: null, // Clean up the discount
-          hasCountedAsPaidReferral: true,  // Mark as counted
-        },
+        data: updateData,
       });
 
       // If it's the first time they pay, count it for the affiliate

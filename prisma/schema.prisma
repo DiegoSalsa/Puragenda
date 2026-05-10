@@ -98,6 +98,8 @@ model Subscription {
   pendingDiscountPercentage Int?
   hasCountedAsPaidReferral  Boolean        @default(false)
   trialWarningEmailSent Boolean            @default(false)
+  freeMonthsRemaining   Int                @default(0)
+  activePrizeId         String?
   businessId            String             @unique
   mpCustomerId          String?
   mpSubscriptionId      String?
@@ -350,13 +352,36 @@ model Affiliate {
   referralCode       String     @unique
   businessId         String     @unique
   paidReferrals      Int        @default(0)
-  redeemedRewards    Int        @default(0)
+  spentTokens        Int        @default(0)
   createdAt          DateTime   @default(now())
 
   business           Business   @relation("AffiliateOwner", fields: [businessId], references: [id], onDelete: Cascade)
   referredBusinesses Business[] @relation("ReferredBy")
+  prizes             Prize[]
 
   @@index([referralCode])
+}
+
+enum PrizeStatus {
+  AVAILABLE
+  ACTIVE
+  USED
+}
+
+model Prize {
+  id          String      @id @default(cuid())
+  affiliateId String
+  type        String      // 'PERCENTAGE' | 'FREE_MONTH'
+  percentage  Int?        // 10, 15, 20, 30, 50
+  freeMonths  Int?        // 1 or 3
+  name        String      // "El Fix Rápido", "Modo Dios", etc.
+  status      PrizeStatus @default(AVAILABLE)
+  createdAt   DateTime    @default(now())
+
+  affiliate   Affiliate   @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@index([affiliateId, status])
 }
 
 // ==========================================
