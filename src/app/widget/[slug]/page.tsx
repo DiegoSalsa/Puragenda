@@ -94,10 +94,13 @@ export default async function WidgetPage({
 
   if (!business) {
     return (
-      <div className="flex w-full min-h-screen items-center justify-center p-5" style={{ background: "#000" }}>
-        <div className="w-full max-w-lg rounded-2xl border border-white/[0.06] bg-[#111] p-8 text-center">
-          <p className="text-xl font-semibold text-white">Negocio no encontrado</p>
-          <p className="mt-2 text-sm text-white/40">El identificador &ldquo;{slug}&rdquo; no existe.</p>
+      <div className="flex w-full min-h-screen items-center justify-center p-5 bg-[#FFFAEB] dark:bg-[#111111]">
+        <div className="w-full max-w-lg rounded-[1.25rem] border border-black/10 dark:border-white/10 bg-white/50 dark:bg-black/50 p-10 text-center shadow-xl backdrop-blur-xl">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#7C3AED]/10 mb-4">
+            <span className="text-[#7C3AED] text-2xl font-bold">!</span>
+          </div>
+          <p className="text-xl font-bold text-black dark:text-white">Negocio no encontrado</p>
+          <p className="mt-2 text-sm text-black/60 dark:text-white/60">El enlace no es válido o el negocio ya no existe en Puragenda.</p>
         </div>
       </div>
     );

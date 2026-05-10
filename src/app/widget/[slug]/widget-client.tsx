@@ -294,22 +294,25 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   return (
     <div
-      className="w-full min-h-screen p-3 sm:p-5"
+      className="w-full min-h-screen p-3 sm:p-5 flex justify-center"
       style={{
         background: bgColor,
         ["--wp" as string]: pc,
         ["--wbg" as string]: bgColor,
         ["--wtext" as string]: textColor,
         ["--wtext-secondary" as string]: textSecondary,
+        ["--wborder" as string]: `${textColor}1A`,
+        ["--wsubtle" as string]: `${textColor}08`,
         ["--wfont-size" as string]: `${fontSize}px`,
         fontSize: `${fontSize}px`,
         color: textColor,
       }}
     >
-      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-white/[0.06] shadow-2xl" style={{ background: bgColor, color: textColor }}>
+      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-[1.25rem] border shadow-2xl transition-all duration-500 flex flex-col" style={{ background: bgColor, color: textColor, borderColor: "var(--wborder)" }}>
         {/* Header */}
-        <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6" style={{ background: `${bgColor}CC` }}>
-          <div className="flex items-center justify-between gap-2">
+        <div className="border-b px-5 py-4 sm:px-6 relative overflow-hidden" style={{ background: `${bgColor}F2`, borderColor: "var(--wborder)", backdropFilter: "blur(12px)" }}>
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc}40 100%)` }} />
+          <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
               <div>
@@ -340,24 +343,25 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
                   return (
                   <button key={s.id} type="button" onClick={() => handleSelectService(s)}
-                    className="group rounded-xl border bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                    style={{ borderColor: isSelected ? `${pc}40` : "rgba(255,255,255,0.06)" }}
-                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = `${pc}40`; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
-                    <div className="flex items-start justify-between gap-3">
+                    className="group rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden"
+                    style={{ borderColor: isSelected ? `${pc}60` : "var(--wborder)", background: isSelected ? `${pc}08` : "var(--wsubtle)" }}
+                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = `${pc}40`; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = "var(--wborder)"; }}>
+                    {isSelected && <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc} 100%)` }} />}
+                    <div className="relative flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <p className="font-medium">{s.name}</p>
                         {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-1"><Clock3 className="h-3 w-3" />{s.duration} min</span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] px-2 py-1">{formatPrice(s.price)}</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}><Clock3 className="h-3.5 w-3.5" />{s.duration} min</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
                         </div>
                       </div>
                       {isMultiService ? (
-                        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all" style={isSelected ? { borderColor: pc, background: pc } : { borderColor: "rgba(255,255,255,0.15)" }}>
-                          {isSelected && <span className="text-xs text-white font-bold">✓</span>}
+                        <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all duration-300 shadow-sm" style={isSelected ? { borderColor: pc, background: pc } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}>
+                          {isSelected && <span className="text-sm text-white font-bold drop-shadow-md">✓</span>}
                         </div>
                       ) : (
-                        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-white/20 transition-transform group-hover:translate-x-0.5" />
+                        <ChevronRight className="mt-1 h-5 w-5 shrink-0 opacity-40 transition-transform group-hover:translate-x-1" style={{ color: textColor }} />
                       )}
                     </div>
                   </button>
@@ -365,14 +369,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 })}
               </div>
               {isMultiService && selectedServices.length > 0 && (
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-sm space-y-1">
+                <div className="space-y-4 pt-2">
+                  <div className="rounded-2xl border p-4 text-sm space-y-1.5 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Servicios:</span><span className="font-medium" style={{ color: textColor }}>{selectedServices.length}</span></div>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Duración total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice)}</span></div>
                   </div>
                   <button type="button" onClick={handleMultiServiceContinue}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all" style={{ background: pc, color: getContrastColor(pc) }}>
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98]" style={{ background: pc, color: getContrastColor(pc) }}>
                     Continuar <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -391,8 +395,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <div className="grid gap-3">
                 {filteredStaff.map((staff) => (
                   <button key={staff.id} type="button" onClick={() => { setSelectedStaff(staff); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
-                    className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}>
+                    className="group rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                    style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--wborder)")}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
@@ -428,9 +433,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     return (
                       <button key={day.toISOString()} type="button" disabled={!staffWorking}
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
-                        className={`rounded-xl border px-2 py-2 text-left transition-all ${!staffWorking ? "opacity-30 cursor-not-allowed" : ""}`}
-                        style={sel ? { borderColor: `${pc}40`, background: `${pc}15` } : { borderColor: "rgba(255,255,255,0.06)" }}>
-                        <p className="text-[11px] uppercase" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: es }))}</p>
+                        className={`rounded-2xl border px-2 py-3 text-center transition-all duration-200 ${!staffWorking ? "opacity-30 cursor-not-allowed" : "hover:-translate-y-1 hover:shadow-md"}`}
+                        style={sel ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                        <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: es }))}</p>
                         <p className="text-lg font-bold leading-none">{format(day, "d")}</p>
                         <p className="text-xs" style={{ color: textSecondary }}>{capitalize(format(day, "MMMM", { locale: es }))}</p>
                       </button>
@@ -450,8 +455,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
                         return (
                           <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => setSelectedSlot(slot)}
-                            className={`rounded-full border px-3 py-2 text-sm transition-all ${blocked ? "cursor-not-allowed opacity-20 line-through" : ""}`}
-                            style={active && !blocked ? { borderColor: `${pc}50`, background: `${pc}20`, color: pc, fontWeight: 600 } : blocked ? {} : { borderColor: "rgba(255,255,255,0.06)" }}>
+                            className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${blocked ? "cursor-not-allowed opacity-20 line-through" : "hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5"}`}
+                            style={active && !blocked ? { borderColor: `${pc}60`, background: `${pc}20`, color: pc, fontWeight: 700 } : blocked ? { borderColor: "var(--wborder)" } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                             {format(slot.start, "HH:mm")}
                           </button>
                         );
@@ -461,7 +466,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
               )}
               <button type="button" disabled={!selectedSlot} onClick={() => setStep("details")}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-30" style={{ background: pc, color: getContrastColor(pc) }}>
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none mt-6" style={{ background: pc, color: getContrastColor(pc) }}>
                 Continuar con mis datos <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -475,11 +480,19 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <span className="rounded-lg px-2.5 py-1 text-xs" style={{ background: `${pc}15`, color: pc }}>Paso final</span>
               </div>
               <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm" style={{ color: textSecondary }}>Te enviaremos la confirmación.</p></div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-sm space-y-2">
-                <div className="flex justify-between"><span style={{ color: textSecondary }}>Servicio</span><span className="font-medium">{selectedService.name}</span></div>
+              <div className="rounded-2xl border p-5 text-sm space-y-3 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: "var(--wborder)" }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: `${pc}15`, color: pc }}>
+                    <CalendarDays className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p>
+                    <p style={{ color: textSecondary }}>{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between pt-1"><span style={{ color: textSecondary }}>Servicio</span><span className="font-medium text-right max-w-[60%] truncate">{selectedService.name}</span></div>
                 {selectedStaff && <div className="flex justify-between"><span style={{ color: textSecondary }}>Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}
-                <div className="flex justify-between"><span style={{ color: textSecondary }}>Fecha</span><span className="font-medium">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</span></div>
-                <div className="flex justify-between"><span style={{ color: textSecondary }}>Hora</span><span className="font-medium">{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</span></div>
+
                 <div className="flex justify-between items-center">
                   <span style={{ color: textSecondary }}>Total</span>
                   <span className="font-medium">
@@ -497,14 +510,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <div key={field} className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
                     <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder}
-                      className="w-full rounded-xl border px-4 py-2.5 text-sm min-h-[44px] outline-none transition-colors"
-                      style={!touched[field] ? { borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" } : validation[field] ? { borderColor: `${pc}30`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)" }} />
+                      className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
+                      style={!touched[field] ? { borderColor: "var(--wborder)", background: "var(--wsubtle)" } : validation[field] ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
                     {touched[field] && !validation[field] && <p className="text-xs text-red-400">Campo inválido</p>}
                   </div>
                 ))}
                 {/* ── Reward Code Input ── */}
-                <div className="space-y-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                  <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}>
+                <div className="space-y-2 rounded-2xl border p-4 transition-all" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                  <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" />¿Tienes un código de premio?
                   </label>
                   <div className="flex gap-2">
@@ -513,14 +526,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       value={rewardCode}
                       onChange={(e) => { setRewardCode(e.target.value.toUpperCase()); if (rewardStatus !== "idle") { setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null); } }}
                       placeholder="PREMIO-XXXXXX"
-                      className="flex-1 rounded-lg border px-3 py-2 text-sm font-mono tracking-wider uppercase outline-none transition-colors"
-                      style={rewardStatus === "valid" ? { borderColor: "#22c55e40", background: "#22c55e08" } : rewardStatus === "invalid" ? { borderColor: "rgba(220,38,38,0.3)", background: "rgba(220,38,38,0.05)" } : { borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                      className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-mono tracking-wider uppercase outline-none transition-colors"
+                      style={rewardStatus === "valid" ? { borderColor: "#22c55e60", background: "#22c55e0A" } : rewardStatus === "invalid" ? { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
                     />
                     <button
                       type="button"
                       disabled={!rewardCode.trim() || !form.email || rewardStatus === "loading" || rewardStatus === "valid"}
                       onClick={handleValidateReward}
-                      className="shrink-0 rounded-lg px-4 py-2 min-h-[44px] text-sm font-medium transition-all disabled:opacity-30"
+                      className="shrink-0 rounded-xl px-5 py-2.5 min-h-[44px] text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
                       style={{ background: `${pc}20`, color: pc }}
                     >
                       {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}
@@ -539,9 +552,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <p className="text-xs text-amber-400/70">Ingresa tu correo electrónico primero para validar el código.</p>
                   )}
                 </div>
-                {apiError && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{apiError}</div>}
-                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-30" style={{ background: pc, color: getContrastColor(pc) }}>
-                  {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Confirmando...</> : <>Confirmar reserva <ChevronRight className="h-4 w-4" /></>}
+                {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
+                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
+                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />Confirmando...</> : <>Confirmar reserva <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
             </div>
@@ -550,12 +563,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {/* Step 4: Success */}
           {step === "success" && selectedService && selectedSlot && (
             <div className="animate-scale-in space-y-6 py-4 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ background: `${pc}20` }}>
-                <CheckCircle2 className="h-9 w-9" style={{ color: pc }} />
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full" style={{ background: `${pc}15` }}>
+                <CheckCircle2 className="h-10 w-10" style={{ color: pc }} />
               </div>
-              <div><h2 className="text-2xl font-bold">Reserva confirmada</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>Ya quedó agendada tu cita.</p></div>
-              <div className="mx-auto max-w-md rounded-xl p-4 text-left text-sm" style={{ background: `${pc}10`, border: `1px solid ${pc}25` }}>
-                <p className="mb-2 flex items-center gap-1 font-medium" style={{ color: pc }}><Sparkles className="h-4 w-4" />Resumen</p>
+              <div><h2 className="text-2xl font-bold tracking-tight">¡Reserva confirmada!</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>Tu cita ha sido agendada con éxito.</p></div>
+              <div className="mx-auto max-w-md rounded-2xl p-5 text-left text-sm shadow-sm" style={{ background: "var(--wsubtle)", borderColor: "var(--wborder)", borderWidth: "1px" }}>
+                <p className="mb-3 flex items-center gap-1.5 font-semibold text-base" style={{ color: pc }}><Sparkles className="h-4 w-4" />Resumen de tu cita</p>
                 <div className="space-y-1 opacity-80" style={{ color: textColor }}>
                   <p><span style={{ color: textSecondary }}>Servicio:</span> {selectedService.name}</p>
                   {selectedStaff && <p><span style={{ color: textSecondary }}>Profesional:</span> {selectedStaff.name}</p>}
@@ -564,13 +577,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <p><span style={{ color: textSecondary }}>Cliente:</span> {form.name}</p>
                 </div>
               </div>
-              <button type="button" onClick={restart} className="rounded-xl border px-5 py-2.5 text-sm opacity-60 transition-all hover:opacity-100" style={{ color: textColor, borderColor: `${textColor}15` }}>Agendar otra reserva</button>
+              <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>Agendar otra cita</button>
             </div>
           )}
         </div>
 
-        <div className="sticky bottom-0 border-t border-white/[0.06] px-5 py-3 text-center text-xs" style={{ background: bgColor, color: textSecondary }}>
-          Powered by <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" style={{textDecoration: "none", color: "inherit", fontWeight: 500}} className="hover:underline">Puragenda</a>
+        <div className="mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium" style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}>
+          <span>Gestionado con</span>
+          <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+            <span style={{ color: pc, fontWeight: 700, letterSpacing: "-0.02em" }}>Puragenda</span>
+            <Sparkles className="h-3 w-3" style={{ color: pc }} />
+          </a>
         </div>
       </div>
     </div>
