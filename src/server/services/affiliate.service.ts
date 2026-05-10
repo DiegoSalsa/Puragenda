@@ -9,13 +9,13 @@ import crypto from "crypto";
 export const ROULETTE_PRIZES = [
   { id: "nada",             name: "Más Suerte la Próxima", type: "NONE"       as const, percentage: null, freeMonths: null, probability: 0.10,   displayProb: "10%", color: "#4B5563" }, // Gray
   { id: "una_ficha",        name: "1 Ficha Gratis",        type: "FREE_SPIN"  as const, percentage: null, freeMonths: null, probability: 0.10,   displayProb: "15%", color: "#3B82F6" }, // Blue
-  { id: "fix_rapido",       name: "El Fix Rápido",         type: "PERCENTAGE" as const, percentage: 10,   freeMonths: null, probability: 0.25,   displayProb: "25%", color: "#10B981" }, // Emerald
-  { id: "boost_diseno",     name: "Boost de Diseño",       type: "PERCENTAGE" as const, percentage: 15,   freeMonths: null, probability: 0.20,   displayProb: "20%", color: "#0EA5E9" }, // Sky
-  { id: "impacto_visual",   name: "Impacto Visual",        type: "PERCENTAGE" as const, percentage: 20,   freeMonths: null, probability: 0.15,   displayProb: "13%", color: "#8B5CF6" }, // Violet
-  { id: "neo_brutalismo",   name: "Neo-Brutalismo",        type: "PERCENTAGE" as const, percentage: 30,   freeMonths: null, probability: 0.10,   displayProb: "10%", color: "#D946EF" }, // Fuchsia
-  { id: "modo_dios",        name: "Modo Dios",             type: "PERCENTAGE" as const, percentage: 50,   freeMonths: null, probability: 0.05,   displayProb: "4%",  color: "#F43F5E" }, // Rose
-  { id: "jackpot",          name: "Jackpot Easter Egg",    type: "FREE_MONTH" as const, percentage: null, freeMonths: 1,    probability: 0.0489, displayProb: "2%",  color: "#F59E0B" }, // Amber
-  { id: "santo_grial",      name: "El Santo Grial",        type: "FREE_MONTH" as const, percentage: null, freeMonths: 3,    probability: 0.0011, displayProb: "1%",  color: "#EF4444" }, // Red
+  { id: "fix_rapido",       name: "Descuento Bronce",         type: "PERCENTAGE" as const, percentage: 10,   freeMonths: null, probability: 0.25,   displayProb: "25%", color: "#10B981" }, // Emerald
+  { id: "boost_diseno",     name: "Descuento Plata",       type: "PERCENTAGE" as const, percentage: 15,   freeMonths: null, probability: 0.20,   displayProb: "20%", color: "#0EA5E9" }, // Sky
+  { id: "impacto_visual",   name: "Descuento Oro",        type: "PERCENTAGE" as const, percentage: 20,   freeMonths: null, probability: 0.15,   displayProb: "13%", color: "#8B5CF6" }, // Violet
+  { id: "neo_brutalismo",   name: "Descuento Platino",        type: "PERCENTAGE" as const, percentage: 30,   freeMonths: null, probability: 0.10,   displayProb: "10%", color: "#D946EF" }, // Fuchsia
+  { id: "modo_dios",        name: "Descuento Diamante",             type: "PERCENTAGE" as const, percentage: 50,   freeMonths: null, probability: 0.05,   displayProb: "4%",  color: "#F43F5E" }, // Rose
+  { id: "jackpot",          name: "Mes de Regalo",    type: "FREE_MONTH" as const, percentage: null, freeMonths: 1,    probability: 0.0489, displayProb: "2%",  color: "#F59E0B" }, // Amber
+  { id: "santo_grial",      name: "Trimestre Invencible",        type: "FREE_MONTH" as const, percentage: null, freeMonths: 3,    probability: 0.0011, displayProb: "1%",  color: "#EF4444" }, // Red
 ] as const;
 
 export type RoulettePrize = (typeof ROULETTE_PRIZES)[number];

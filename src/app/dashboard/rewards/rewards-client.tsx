@@ -174,13 +174,13 @@ export function RewardsClient({
                     {[
                       { name: "Más Suerte", prob: "10%", color: "#4B5563" },
                       { name: "1 Ficha Gratis", prob: "15%", color: "#3B82F6" },
-                      { name: "10% OFF", prob: "25%", color: "#10B981" },
-                      { name: "15% OFF", prob: "20%", color: "#0EA5E9" },
-                      { name: "20% OFF", prob: "13%", color: "#8B5CF6" },
-                      { name: "30% OFF", prob: "10%", color: "#D946EF" },
-                      { name: "50% OFF", prob: "4%", color: "#F43F5E" },
-                      { name: "1 Mes Gratis", prob: "2%", color: "#F59E0B" },
-                      { name: "3 Meses Gratis", prob: "1%", color: "#EF4444" },
+                      { name: "Bronce (10% OFF)", prob: "25%", color: "#10B981" },
+                      { name: "Plata (15% OFF)", prob: "20%", color: "#0EA5E9" },
+                      { name: "Oro (20% OFF)", prob: "13%", color: "#8B5CF6" },
+                      { name: "Platino (30% OFF)", prob: "10%", color: "#D946EF" },
+                      { name: "Diamante (50% OFF)", prob: "4%", color: "#F43F5E" },
+                      { name: "Mes de Regalo", prob: "2%", color: "#F59E0B" },
+                      { name: "Trimestre Invencible", prob: "1%", color: "#EF4444" },
                     ].map((p, i) => (
                       <div key={i} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
                         <div className="flex items-center gap-2">

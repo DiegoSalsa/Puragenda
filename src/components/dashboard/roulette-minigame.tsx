@@ -9,13 +9,13 @@ import { useRef, useState, useEffect, useCallback } from "react";
 const SEGMENTS = [
   { id: "nada",           name: "Más Suerte",     label: "---",       color: "#4B5563", textColor: "#D1D5DB" }, // Gray
   { id: "una_ficha",      name: "1 Ficha",        label: "+1 Ficha",  color: "#3B82F6", textColor: "#fff" },    // Blue
-  { id: "fix_rapido",     name: "Fix Rápido",     label: "10% OFF",   color: "#10B981", textColor: "#fff" },    // Emerald
-  { id: "boost_diseno",   name: "Boost Diseño",   label: "15% OFF",   color: "#0EA5E9", textColor: "#fff" },    // Sky
-  { id: "impacto_visual", name: "Impacto Visual", label: "20% OFF",   color: "#8B5CF6", textColor: "#fff" },    // Violet
-  { id: "neo_brutalismo", name: "Neo-Brutalismo", label: "30% OFF",   color: "#D946EF", textColor: "#fff" },    // Fuchsia
-  { id: "modo_dios",      name: "Modo Dios",      label: "50% OFF",   color: "#F43F5E", textColor: "#fff" },    // Rose
-  { id: "jackpot",        name: "Jackpot",        label: "1 Mes",     color: "#F59E0B", textColor: "#1a1a2e" }, // Amber
-  { id: "santo_grial",    name: "Santo Grial",    label: "3 Meses",   color: "#EF4444", textColor: "#fff" },    // Red
+  { id: "fix_rapido",     name: "Bronce",     label: "10% OFF",   color: "#10B981", textColor: "#fff" },    // Emerald
+  { id: "boost_diseno",   name: "Plata",   label: "15% OFF",   color: "#0EA5E9", textColor: "#fff" },    // Sky
+  { id: "impacto_visual", name: "Oro", label: "20% OFF",   color: "#8B5CF6", textColor: "#fff" },    // Violet
+  { id: "neo_brutalismo", name: "Platino", label: "30% OFF",   color: "#D946EF", textColor: "#fff" },    // Fuchsia
+  { id: "modo_dios",      name: "Diamante",      label: "50% OFF",   color: "#F43F5E", textColor: "#fff" },    // Rose
+  { id: "jackpot",        name: "Mes Regalo",        label: "1 Mes",     color: "#F59E0B", textColor: "#1a1a2e" }, // Amber
+  { id: "santo_grial",    name: "Trimestre",    label: "3 Meses",   color: "#EF4444", textColor: "#fff" },    // Red
 ];
 
 const NUM_SEGMENTS = SEGMENTS.length;
