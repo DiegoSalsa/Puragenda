@@ -16,6 +16,10 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },
   ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export const metadata: Metadata = {
@@ -105,9 +109,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={plusJakarta.variable} suppressHydrationWarning>
+    <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
       <body
-        className={`${plusJakarta.className} min-h-screen overflow-x-clip bg-background text-foreground antialiased`}
+        className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <RegisterSW />

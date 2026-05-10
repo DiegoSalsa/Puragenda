@@ -146,7 +146,7 @@ export function ServicesClient({
                 max={10}
                 value={maxServices}
                 onChange={(e) => handleSaveMaxServices(parseInt(e.target.value, 10))}
-                className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer"
+                className="flex-1 h-1.5 appearance-none rounded-full bg-black/10 dark:bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer"
               />
               <span className="rounded-lg border border-border bg-muted px-3 py-1 font-mono text-xs min-w-[3rem] text-center">
                 {savingMax ? "..." : maxServices}
@@ -255,7 +255,7 @@ export function ServicesClient({
         <div className="p-6">
           {loading ? (
             <div className="py-12 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/30" />
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground/30" />
             </div>
           ) : services.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
@@ -298,13 +298,13 @@ export function ServicesClient({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEdit(service)}
-                            className="rounded-lg p-2 text-white/30 transition-colors hover:bg-white/[0.05] hover:text-white/70"
+                            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(service.id)}
-                            className="rounded-lg p-2 text-white/30 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

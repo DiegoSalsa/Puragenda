@@ -47,7 +47,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#FFFAEB] text-black dark:bg-[#111111] dark:text-white font-sans selection:bg-[#B28DFF] dark:selection:text-black transition-colors duration-300" style={neoVars}>
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#FFFAEB] text-black dark:bg-[#111111] dark:text-white font-sans selection:bg-[#B28DFF] dark:selection:text-black transition-colors duration-300" style={neoVars}>
       <Navbar user={user} business={business} />
       <main className="relative z-10">
         {/* HERO SECTION */}

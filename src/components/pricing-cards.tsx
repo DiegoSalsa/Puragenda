@@ -225,15 +225,23 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               }`}
             >
               {/* Badges */}
-              {plan.highlighted && (
-                <div className="absolute -top-6 left-0 right-0 mx-auto w-fit rounded-full border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-sm font-black uppercase tracking-widest text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
-                  Más popular
+              {plan.highlighted ? (
+                <div className="absolute -top-6 sm:-top-6 left-0 right-0 w-full flex justify-center items-center gap-2 px-2 z-10">
+                  <div className="rounded-full border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
+                    Más popular
+                  </div>
+                  {plan.badge && (
+                    <div className="rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-3 sm:px-4 py-1.5 text-[10px] sm:text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
+                      {plan.badge}
+                    </div>
+                  )}
                 </div>
-              )}
-              {plan.badge && (
-                <div className={`absolute rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-4 py-1.5 text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] ${plan.highlighted ? "-top-5 right-4 lg:-right-4" : "-top-5 left-4 lg:-left-4"}`}>
-                  {plan.badge}
-                </div>
+              ) : (
+                plan.badge && (
+                  <div className="absolute -top-5 left-4 lg:-left-4 z-10 rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-4 py-1.5 text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
+                    {plan.badge}
+                  </div>
+                )
               )}
 
               {/* Header */}

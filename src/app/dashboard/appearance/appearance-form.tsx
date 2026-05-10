@@ -183,7 +183,7 @@ export function AppearanceForm({
                 step={1}
                 value={data.fontSize}
                 onChange={(e) => update("fontSize", parseInt(e.target.value, 10))}
-                className="flex-1 h-1.5 appearance-none rounded-full bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
+                className="flex-1 h-1.5 appearance-none rounded-full bg-black/10 dark:bg-white/10 outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
               />
               <span className="text-xs text-muted-foreground">18</span>
             </div>
@@ -203,26 +203,7 @@ export function AppearanceForm({
           </div>
         </div>
 
-        {/* Logo */}
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4">
-          <h3 className="text-sm font-medium flex items-center gap-2">
-            <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
-          </h3>
-          <p className="text-[11px] text-muted-foreground">URL de la imagen de tu logo. Se muestra en la cabecera del widget de reservas.</p>
-          <input
-            type="text"
-            value={data.logoUrl}
-            onChange={(e) => update("logoUrl", e.target.value)}
-            placeholder="https://ejemplo.com/logo.png"
-            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/30 transition-colors"
-          />
-          {data.logoUrl && (
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
-              <img src={data.logoUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              <p className="text-xs text-muted-foreground">Vista previa del logo</p>
-            </div>
-          )}
-        </div>
+
 
         <button
           onClick={handleSave}

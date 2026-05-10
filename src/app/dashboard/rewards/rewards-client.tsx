@@ -29,6 +29,7 @@ export function RewardsClient({
   const [activeTab, setActiveTab] = useState<"ruleta" | "premios">("ruleta");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [activatingPrizeId, setActivatingPrizeId] = useState<string | null>(null);
 
   const availablePrizes = prizes.filter((p) => p.status === "AVAILABLE");
@@ -41,10 +42,13 @@ export function RewardsClient({
 
   function handleRedeemFixed() {
     setError(null);
+    setSuccessMsg(null);
     startTransition(async () => {
       const result = await redeemFixedDiscountAction();
       if (!result.success) {
         setError(result.error || "Error al canjear");
+      } else {
+        setSuccessMsg("¡Fichas canjeadas con éxito! Tienes un descuento de 50% OFF disponible en la pestaña 'Mis Premios' para activarlo cuando quieras.");
       }
     });
   }
@@ -135,6 +139,11 @@ export function RewardsClient({
       </div>
 
       {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+      {successMsg && (
+        <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
+          <p className="text-sm font-medium text-green-600 dark:text-green-400">{successMsg}</p>
+        </div>
+      )}
 
       {/* ═══════════════════════════════════ */}
       {/* TAB: RULETA Y CANJE                */}
