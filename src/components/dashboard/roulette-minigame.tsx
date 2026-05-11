@@ -277,17 +277,13 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
   const totalRotationRef = useRef(0);
   const tickCancelRef = useRef<(() => void) | null>(null);
   const musicCancelRef = useRef<(() => void) | null>(null);
-  const animStartRef = useRef(0);
 
   const SPIN_DURATION = 4500;
-  const PREFETCH_SPEED = 400; // ms per rotation during pre-spin
 
   const handleSpin = useCallback(async () => {
     if (isSpinning || isFetching || disabled || tokenBalance < 1) return;
 
-    // Start visual spin immediately, before the network call
     setIsFetching(true);
-    animStartRef.current = Date.now();
     setWonPrize(null);
     setError(null);
     setShowResult(false);
@@ -302,33 +298,22 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         return;
       }
 
-      // Calculate where the pre-spin animation is right now
-      const elapsed = Date.now() - animStartRef.current;
-      const currentAngle = ((elapsed % PREFETCH_SPEED) / PREFETCH_SPEED) * 360;
-
-      // Snap wheel to current animation angle (instant, no transition)
-      setIsFetching(false);
-      totalRotationRef.current = currentAngle;
-      setRotation(currentAngle);
-
-      // Start audio
-      tickCancelRef.current = startTickScheduler(SPIN_DURATION);
-      musicCancelRef.current = startSpinMusic(SPIN_DURATION);
-
-      // Calculate final landing rotation
+      // Calculate target rotation
       const prizeIndex = result.prize.index;
       const segmentCenter = prizeIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
       const randomOffset = (Math.random() - 0.5) * SEGMENT_ANGLE * 0.5;
       const targetAngle = ((360 - segmentCenter + randomOffset) % 360 + 360) % 360;
       const extraSpins = (Math.floor(Math.random() * 3) + 6) * 360;
-      const newRotation = currentAngle + extraSpins + targetAngle;
+      const newRotation = totalRotationRef.current + extraSpins + targetAngle;
       totalRotationRef.current = newRotation;
 
-      // Next frame: start landing transition from currentAngle → newRotation
-      requestAnimationFrame(() => {
-        setIsSpinning(true);
-        setRotation(newRotation);
-      });
+      // Start audio
+      tickCancelRef.current = startTickScheduler(SPIN_DURATION);
+      musicCancelRef.current = startSpinMusic(SPIN_DURATION);
+
+      setIsFetching(false);
+      setIsSpinning(true);
+      setRotation(newRotation);
 
       setTimeout(() => {
         if (tickCancelRef.current) tickCancelRef.current();
@@ -351,14 +336,13 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
           freeMonths: result.prize!.freeMonths,
         });
         setShowResult(true);
-        // Normalize rotation to prevent accumulation across spins
         const finalNorm = newRotation % 360;
         totalRotationRef.current = finalNorm;
         setIsSpinning(false);
         setRotation(finalNorm);
       }, SPIN_DURATION);
     } catch {
-      setError("Error de conexión. Intenta de nuevo.");
+      setError("Error de conexi\u00f3n. Intenta de nuevo.");
     } finally {
       setIsFetching(false);
     }
@@ -382,7 +366,6 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
 
   return (
     <div className="relative flex flex-col items-center gap-4">
-      <style>{"@keyframes rouletteSpin { to { transform: rotate(360deg); } }"}</style>
       {/* Confetti overlay */}
       <canvas
         ref={confettiRef}
@@ -403,10 +386,10 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         <div
           className="absolute -inset-1 rounded-full"
           style={{
-            background: (isSpinning || isFetching)
+            background: isSpinning
               ? "conic-gradient(from 0deg, #7C3AED, #D946EF, #F59E0B, #EF4444, #7C3AED)"
               : "transparent",
-            opacity: (isSpinning || isFetching) ? 0.6 : 0,
+            opacity: isSpinning ? 0.6 : 0,
             filter: "blur(6px)",
             transition: "opacity 0.5s",
           }}
@@ -426,7 +409,6 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
           className="absolute inset-[4px] rounded-full overflow-hidden"
           style={{
             transform: `rotate(${rotation}deg)`,
-            animation: isFetching ? `rouletteSpin ${PREFETCH_SPEED}ms linear infinite` : "none",
             transition: isSpinning
               ? `transform ${SPIN_DURATION}ms cubic-bezier(0.15, 0.60, 0.10, 1.00)`
               : "none",
@@ -583,12 +565,19 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         }}
       >
         <span className="relative z-10 flex items-center justify-center gap-2">
-          {(isSpinning || isFetching) ? (
+          {isSpinning ? (
             <>
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2a10 10 0 1 0 10 10" strokeLinecap="round" />
               </svg>
               Girando...
+            </>
+          ) : isFetching ? (
+            <>
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2a10 10 0 1 0 10 10" strokeLinecap="round" />
+              </svg>
+              Cargando...
             </>
           ) : (
             "Girar Ruleta · 1 ficha"
