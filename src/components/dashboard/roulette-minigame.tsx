@@ -209,48 +209,36 @@ function startTickScheduler(durationMs: number): () => void {
 // BACKGROUND MUSIC — Fast arpeggio while spinning
 // ═══════════════════════════════════════════
 
-function startSpinMusic(): () => void {
+function startSpinMusic(durationMs: number): () => void {
   try {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    
-    // Triangle wave for a bouncy synth feel
     osc.type = "triangle";
-    
-    let cancelled = false;
-    let nextNoteTime = ctx.currentTime + 0.05;
-    let noteIndex = 0;
-    // Fast, tense ascending/descending pattern (A harmonic minor ish)
-    const sequence = [440, 523.25, 659.25, 880, 659.25, 523.25]; 
-    const speed = 0.08; // 80ms per note
-
-    gain.gain.value = 0.03; // Keep music in background so ticks stand out
+    const sequence = [440, 523.25, 659.25, 880, 659.25, 523.25];
+    const speed = 0.08;
+    const startTime = ctx.currentTime + 0.05;
+    const endTime = startTime + durationMs / 1000;
+    gain.gain.value = 0.03;
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-
-    function schedule() {
-        if (cancelled) return;
-        while (nextNoteTime < ctx.currentTime + 0.2) {
-            osc.frequency.setValueAtTime(sequence[noteIndex % sequence.length], nextNoteTime);
-            // Envelopes per note for a rhythmic pulse
-            gain.gain.setValueAtTime(0.04, nextNoteTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, nextNoteTime + speed - 0.01);
-            
-            nextNoteTime += speed;
-            noteIndex++;
-        }
-        requestAnimationFrame(schedule);
+    // Schedule all notes upfront — no rAF loop needed
+    let t = startTime;
+    let noteIndex = 0;
+    while (t < endTime) {
+      osc.frequency.setValueAtTime(sequence[noteIndex % sequence.length], t);
+      gain.gain.setValueAtTime(0.04, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + speed - 0.01);
+      t += speed;
+      noteIndex++;
     }
-    
-    schedule();
-
+    osc.start(startTime);
+    osc.stop(endTime);
     return () => {
-        cancelled = true;
-        // Fade out
+      try {
         gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-        setTimeout(() => { try { osc.stop(); } catch {} }, 150);
+        osc.stop(ctx.currentTime + 0.1);
+      } catch {}
     };
   } catch {
     return () => {};
@@ -276,6 +264,7 @@ interface RouletteMinigameProps {
 
 export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMinigameProps) {
   const [isSpinning, setIsSpinning] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [wonPrize, setWonPrize] = useState<{
     name: string; type: string;
@@ -288,71 +277,92 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
   const totalRotationRef = useRef(0);
   const tickCancelRef = useRef<(() => void) | null>(null);
   const musicCancelRef = useRef<(() => void) | null>(null);
+  const animStartRef = useRef(0);
 
   const SPIN_DURATION = 4500;
+  const PREFETCH_SPEED = 400; // ms per rotation during pre-spin
 
   const handleSpin = useCallback(async () => {
-    if (isSpinning || disabled || tokenBalance < 1) return;
+    if (isSpinning || isFetching || disabled || tokenBalance < 1) return;
 
-    setIsSpinning(true);
+    // Start visual spin immediately, before the network call
+    setIsFetching(true);
+    animStartRef.current = Date.now();
     setWonPrize(null);
     setError(null);
     setShowResult(false);
     setResultType(null);
 
-    // Initialize audio context on user gesture
-    getAudioContext();
+    try {
+      getAudioContext();
+      const result = await onSpin();
 
-    // Call backend first
-    const result = await onSpin();
-
-    if (!result.success || !result.prize) {
-      setError(result.error || "Error al girar la ruleta");
-      setIsSpinning(false);
-      return;
-    }
-
-    // Start tick sounds & background music
-    tickCancelRef.current = startTickScheduler(SPIN_DURATION);
-    musicCancelRef.current = startSpinMusic();
-
-    // Calculate target rotation
-    const prizeIndex = result.prize.index;
-    const segmentCenter = prizeIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-    const randomOffset = (Math.random() - 0.5) * SEGMENT_ANGLE * 0.5;
-    const targetAngle = 360 - segmentCenter + randomOffset;
-    const extraSpins = (Math.floor(Math.random() * 3) + 6) * 360;
-    const newRotation = totalRotationRef.current + extraSpins + targetAngle - (totalRotationRef.current % 360);
-    totalRotationRef.current = newRotation;
-
-    setRotation(newRotation);
-
-    // Wait for animation to finish
-    setTimeout(() => {
-      // Stop ticks and music
-      if (tickCancelRef.current) tickCancelRef.current();
-      if (musicCancelRef.current) musicCancelRef.current();
-
-      const isLoss = result.prize!.type === "NONE";
-      setResultType(isLoss ? "lose" : "win");
-
-      if (isLoss) {
-        playLoseSound();
-      } else {
-        playVictorySound();
-        if (confettiRef.current) launchConfetti(confettiRef.current);
+      if (!result.success || !result.prize) {
+        setError(result.error || "Error al girar la ruleta");
+        return;
       }
 
-      setWonPrize({
-        name: result.prize!.name,
-        type: result.prize!.type,
-        percentage: result.prize!.percentage,
-        freeMonths: result.prize!.freeMonths,
+      // Calculate where the pre-spin animation is right now
+      const elapsed = Date.now() - animStartRef.current;
+      const currentAngle = ((elapsed % PREFETCH_SPEED) / PREFETCH_SPEED) * 360;
+
+      // Snap wheel to current animation angle (instant, no transition)
+      setIsFetching(false);
+      totalRotationRef.current = currentAngle;
+      setRotation(currentAngle);
+
+      // Start audio
+      tickCancelRef.current = startTickScheduler(SPIN_DURATION);
+      musicCancelRef.current = startSpinMusic(SPIN_DURATION);
+
+      // Calculate final landing rotation
+      const prizeIndex = result.prize.index;
+      const segmentCenter = prizeIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+      const randomOffset = (Math.random() - 0.5) * SEGMENT_ANGLE * 0.5;
+      const targetAngle = ((360 - segmentCenter + randomOffset) % 360 + 360) % 360;
+      const extraSpins = (Math.floor(Math.random() * 3) + 6) * 360;
+      const newRotation = currentAngle + extraSpins + targetAngle;
+      totalRotationRef.current = newRotation;
+
+      // Next frame: start landing transition from currentAngle → newRotation
+      requestAnimationFrame(() => {
+        setIsSpinning(true);
+        setRotation(newRotation);
       });
-      setShowResult(true);
-      setIsSpinning(false);
-    }, SPIN_DURATION);
-  }, [isSpinning, disabled, tokenBalance, onSpin]);
+
+      setTimeout(() => {
+        if (tickCancelRef.current) tickCancelRef.current();
+        if (musicCancelRef.current) musicCancelRef.current();
+
+        const isLoss = result.prize!.type === "NONE";
+        setResultType(isLoss ? "lose" : "win");
+
+        if (isLoss) {
+          playLoseSound();
+        } else {
+          playVictorySound();
+          if (confettiRef.current) launchConfetti(confettiRef.current);
+        }
+
+        setWonPrize({
+          name: result.prize!.name,
+          type: result.prize!.type,
+          percentage: result.prize!.percentage,
+          freeMonths: result.prize!.freeMonths,
+        });
+        setShowResult(true);
+        // Normalize rotation to prevent accumulation across spins
+        const finalNorm = newRotation % 360;
+        totalRotationRef.current = finalNorm;
+        setIsSpinning(false);
+        setRotation(finalNorm);
+      }, SPIN_DURATION);
+    } catch {
+      setError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setIsFetching(false);
+    }
+  }, [isSpinning, isFetching, disabled, tokenBalance, onSpin]);
 
   // Auto-hide result
   useEffect(() => {
@@ -372,6 +382,7 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
 
   return (
     <div className="relative flex flex-col items-center gap-4">
+      <style>{"@keyframes rouletteSpin { to { transform: rotate(360deg); } }"}</style>
       {/* Confetti overlay */}
       <canvas
         ref={confettiRef}
@@ -392,10 +403,10 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         <div
           className="absolute -inset-1 rounded-full"
           style={{
-            background: isSpinning
+            background: (isSpinning || isFetching)
               ? "conic-gradient(from 0deg, #7C3AED, #D946EF, #F59E0B, #EF4444, #7C3AED)"
               : "transparent",
-            opacity: isSpinning ? 0.6 : 0,
+            opacity: (isSpinning || isFetching) ? 0.6 : 0,
             filter: "blur(6px)",
             transition: "opacity 0.5s",
           }}
@@ -415,9 +426,11 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
           className="absolute inset-[4px] rounded-full overflow-hidden"
           style={{
             transform: `rotate(${rotation}deg)`,
+            animation: isFetching ? `rouletteSpin ${PREFETCH_SPEED}ms linear infinite` : "none",
             transition: isSpinning
               ? `transform ${SPIN_DURATION}ms cubic-bezier(0.15, 0.60, 0.10, 1.00)`
               : "none",
+            willChange: "transform",
           }}
         >
           <svg viewBox="0 0 200 200" className="w-full h-full">
@@ -560,17 +573,17 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
       {/* Spin button */}
       <button
         onClick={handleSpin}
-        disabled={isSpinning || disabled || tokenBalance < 1}
+        disabled={isSpinning || isFetching || disabled || tokenBalance < 1}
         className="group relative w-full overflow-hidden rounded-xl px-6 py-3 text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          background: isSpinning
+          background: (isSpinning || isFetching)
             ? "linear-gradient(135deg, #4B5563, #374151)"
             : "linear-gradient(135deg, #7C3AED, #D946EF)",
-          boxShadow: isSpinning ? "none" : "0 4px 20px rgba(124, 58, 237, 0.4)",
+          boxShadow: (isSpinning || isFetching) ? "none" : "0 4px 20px rgba(124, 58, 237, 0.4)",
         }}
       >
         <span className="relative z-10 flex items-center justify-center gap-2">
-          {isSpinning ? (
+          {(isSpinning || isFetching) ? (
             <>
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2a10 10 0 1 0 10 10" strokeLinecap="round" />
@@ -581,7 +594,7 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
             "Girar Ruleta · 1 ficha"
           )}
         </span>
-        {!isSpinning && !disabled && tokenBalance >= 1 && (
+        {!isSpinning && !isFetching && !disabled && tokenBalance >= 1 && (
           <div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ background: "linear-gradient(135deg, #6D28D9, #C026D3)" }}
