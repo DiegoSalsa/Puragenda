@@ -38,11 +38,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
     <>
       <div className="border-b border-border p-6 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
-          <span className="text-xl font-bold tracking-tight">
-            Pura<span className="text-[#7C3AED]">genda</span>
-          </span>
+          <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-12 w-auto -my-1 scale-[1.3] origin-left" />
         </Link>
         {onClose && (
           <button onClick={onClose} className="md:hidden rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
@@ -109,11 +105,7 @@ export function DashboardSidebar({
           <Menu className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2.5">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
-          <span className="text-lg font-bold tracking-tight">
-            Pura<span className="text-[#7C3AED]">genda</span>
-          </span>
+          <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-12 w-auto -my-1 scale-[1.25] origin-left" />
         </div>
       </div>
       {/* Spacer for mobile header */}

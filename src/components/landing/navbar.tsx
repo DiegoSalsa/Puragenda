@@ -7,10 +7,12 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 
 const navLinks = [
-  { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#caracteristicas", label: "Características" },
-  { href: "#precios", label: "Precios" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/soluciones", label: "Soluciones" },
+  { href: "/caracteristicas", label: "Características" },
+  { href: "/pricing", label: "Precios" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/sobre-nosotros", label: "Nosotros" },
+  { href: "/contacto", label: "Contacto" },
 ];
 
 import { Store } from "lucide-react";
@@ -49,11 +51,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           {/* Logo */}
           <div className="flex flex-1 items-center justify-start">
             <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]">
-              <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto dark:hidden" />
-              <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto dark:block" />
-              <span className="text-xl font-bold tracking-tight">
-                Pura<span className="text-[#7C3AED]">genda</span>
-              </span>
+              <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-12 sm:h-14 w-auto scale-[1.35] origin-left" />
             </Link>
           </div>
 
@@ -126,11 +124,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/50 p-6">
                 <div className="flex items-center gap-2.5">
-                  <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-8 w-auto dark:hidden" />
-                  <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-8 w-auto dark:block" />
-                  <span className="text-lg font-bold tracking-tight">
-                    Pura<span className="text-[#7C3AED]">genda</span>
-                  </span>
+                  <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-10 sm:h-12 w-auto scale-[1.3] origin-left" />
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <X className="h-5 w-5" />

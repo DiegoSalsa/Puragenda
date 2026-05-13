@@ -341,32 +341,14 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
           </div>
         </section>
 
-        {/* FEATURES */}
-        <section id="caracteristicas" className="mx-auto w-full max-w-6xl px-6 py-16 border-t-4 border-black dark:border-white">
-          <h2 className="text-3xl font-black uppercase tracking-tighter sm:text-5xl text-center mb-12">Funcionalidades que aumentan tus reservas</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            {features.map((f) => (
-              <article key={f.title} className="bg-white dark:bg-black border-4 border-black dark:border-white rounded-2xl p-6 shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:-translate-y-1 hover:shadow-[10px_10px_0px_rgba(0,0,0,1)] dark:hover:shadow-[10px_10px_0px_#FFFFFF] transition-all">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${f.bg} border-2 border-black dark:border-white dark:shadow-[2px_2px_0px_#FFFFFF]`}>
-                  <f.icon className="h-6 w-6 dark:text-black" />
-                </div>
-                <p className="mt-4 text-xl font-black">{f.title}</p>
-                <p className="mt-2 text-sm font-bold opacity-75 dark:text-gray-400">{f.description}</p>
-              </article>
-            ))}
-          </div>
+        {/* Link to see all features */}
+        <section className="flex justify-center pb-16">
+          <Link href="/caracteristicas">
+             <button className="bg-transparent text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
+                Ver todas las características
+             </button>
+          </Link>
         </section>
-
-        {/* PRICING */}
-        <section id="precios" className="border-t-4 border-black dark:border-white bg-[#FFF5BA] dark:bg-black py-20">
-          <div className="mx-auto w-full max-w-6xl px-6">
-            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-center mb-4">Planes para crecer a tu ritmo</h2>
-            <p className="mx-auto mt-4 max-w-xl font-bold text-black/70 dark:text-gray-400 text-center mb-12">Prueba gratis en Plan Base. Sin tarjeta. Cancela cuando quieras.</p>
-            <PricingCards mode="landing" />
-          </div>
-        </section>
-
-        <FAQSection />
 
         {/* CTA FINAL */}
         <section className="border-t-4 border-black dark:border-white py-20 bg-[#85E3FF] dark:bg-[#B28DFF] dark:text-black">

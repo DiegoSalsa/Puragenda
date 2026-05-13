@@ -8,12 +8,8 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-6">
           {/* Brand */}
           <div className="space-y-3">
-            <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-10 w-auto -my-1 dark:hidden" />
-              <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-10 w-auto -my-1 dark:block" />
-              <span className="text-lg font-bold tracking-tight">
-                Pura<span className="text-[#7C3AED]">genda</span>
-              </span>
+            <Link href="/" className="flex items-center gap-2.5 mb-6">
+              <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-12 w-auto scale-[1.3] origin-left" />
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
               Plataforma de agendamiento inteligente para negocios que trabajan por reserva.
@@ -24,8 +20,9 @@ export function Footer() {
           <div className="space-y-3">
             <p className="text-sm font-semibold">Producto</p>
             <nav className="flex flex-col gap-2">
-              <a href="/#caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Características</a>
+              <Link href="/caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Características</Link>
               <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Precios</Link>
+              <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">FAQ</Link>
               <Link href="/widget/purocode-demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Demo</Link>
               <Link href="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Dashboard</Link>
             </nav>

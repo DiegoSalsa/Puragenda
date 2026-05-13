@@ -43,7 +43,68 @@ const faqs = [
     answer:
       "El sistema otorga 'timbres' digitales automáticamente cada vez que una cita pasa a estado 'Completada'. Al llegar a la meta, el sistema genera un código de descuento único y automatizado para asegurar la próxima visita del cliente.",
   },
+  {
+    question: "¿Puragenda tiene prueba gratuita?",
+    answer:
+      "Sí. Tanto el Plan Individual como el Plan Equipo incluyen 30 días de prueba gratuita, sin necesidad de ingresar tarjeta de crédito. Al finalizar la prueba, puedes activar tu suscripción o tu cuenta quedará inactiva.",
+  },
+  {
+    question: "¿Cuánto cuesta Puragenda?",
+    answer:
+      "El Plan Individual tiene un costo de $12.990 CLP/mes y el Plan Equipo $29.990 CLP/mes. No hay comisiones por cita ni costos ocultos. Ambos planes incluyen citas ilimitadas, widget de reservas y marketing win-back.",
+  },
+  {
+    question: "¿Cuál es la diferencia entre el Plan Individual y el Plan Equipo?",
+    answer:
+      "El Plan Individual está pensado para profesionales que trabajan solos (1 profesional). El Plan Equipo permite hasta 3 profesionales incluidos con agendas separadas y roles diferenciados (Admin/Staff), más la posibilidad de agregar profesionales adicionales por $3.000 CLP/mes cada uno.",
+  },
+  {
+    question: "¿Puedo personalizar los colores y el logo del widget de reservas?",
+    answer:
+      "Sí. Desde la sección 'Apariencia' del panel puedes configurar el color primario, secundario, fondo, color de texto y hasta el tamaño de fuente del widget. También puedes subir el logo de tu negocio para que aparezca en el widget.",
+  },
+  {
+    question: "¿Es posible reservar múltiples servicios en una misma cita?",
+    answer:
+      "Sí. Desde el panel de Servicios puedes configurar el número máximo de servicios por reserva. Los clientes podrán seleccionar varios servicios en una sola reserva y el sistema calculará la duración total automáticamente.",
+  },
+  {
+    question: "¿Cómo pueden los clientes confirmar o cancelar su cita?",
+    answer:
+      "Puragenda envía un correo electrónico a cada cliente con enlaces únicos para confirmar o cancelar su cita. Al hacer clic, la acción se procesa automáticamente y el negocio recibe una notificación inmediata del cambio.",
+  },
+  {
+    question: "¿Qué es el Marketing Win-Back de Puragenda?",
+    answer:
+      "Es una herramienta integrada que permite enviar campañas de email inteligentes para reactivar a clientes que no han agendado recientemente. El Plan Individual permite hasta 50 emails por campaña y el Plan Equipo hasta 100.",
+  },
+  {
+    question: "¿Puragenda tiene un CRM de clientes?",
+    answer:
+      "Sí. Cada vez que un cliente agenda, su perfil se crea automáticamente en el CRM. Puedes ver el historial completo de citas, el gasto total acumulado, la cantidad de inasistencias (no-shows) y la fecha de registro de cada cliente.",
+  },
+  {
+    question: "¿Cómo funciona el programa de referidos?",
+    answer:
+      "Cada negocio registrado recibe un código de referido único. Cuando un nuevo negocio se registra usando tu código y activa su suscripción de pago, tú recibes fichas canjeables que puedes usar para girar una ruleta de recompensas con descuentos reales en tu propia suscripción.",
+  },
+  {
+    question: "¿Puedo bloquear horarios específicos de un profesional?",
+    answer:
+      "Sí. Desde la sección de Profesionales puedes crear 'bloqueos de horario' para días u horas específicas (vacaciones, capacitaciones, etc.). Esos bloques quedan automáticamente no disponibles para los clientes en el widget.",
+  },
+  {
+    question: "¿Se puede embeber el widget directamente en mi página web?",
+    answer:
+      "Sí. En la sección de Configuración encontrarás un código iframe listo para copiar y pegar en tu sitio web. El widget se adapta automáticamente al ancho del contenedor y puedes personalizarlo con parámetros de color.",
+  },
+  {
+    question: "¿Puragenda funciona como app en mi celular?",
+    answer:
+      "Puragenda es una Progressive Web App (PWA). Puedes instalarla desde el navegador de tu celular como si fuera una app nativa, con ícono en tu pantalla de inicio y experiencia a pantalla completa, sin necesidad de ir a una tienda de apps.",
+  },
 ];
+
 
 export function FAQSection() {
   const jsonLdFaq = {

@@ -115,11 +115,7 @@ export function PaymentWall({ userEmail, userName, businessName, plan }: Payment
         {/* Logo */}
         <div className="text-center">
           <div className="mx-auto flex w-fit items-center gap-3 mb-2">
-            <img src="/logos/logo-black.svg" alt="Puragenda" className="h-12 w-auto dark:hidden" />
-            <img src="/logos/logo-white.svg" alt="Puragenda" className="hidden h-12 w-auto dark:block" />
-            <span className="text-2xl font-bold tracking-tight">
-              Pura<span className="text-[#7C3AED]">genda</span>
-            </span>
+            <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda" className="h-16 w-auto" />
           </div>
         </div>
 

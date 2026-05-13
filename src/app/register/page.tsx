@@ -19,11 +19,7 @@ export default async function RegisterPage() {
 
       <div className="w-full max-w-md space-y-6">
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
-          <img src="/logos/logo-black.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3 dark:hidden" />
-          <img src="/logos/logo-white.svg" alt="Puragenda Logo" className="hidden h-16 w-auto -my-3 dark:block" />
-          <span className="text-3xl font-bold tracking-tight">
-            Pura<span className="text-[#7C3AED]">genda</span>
-          </span>
+          <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>
 
         <Suspense>

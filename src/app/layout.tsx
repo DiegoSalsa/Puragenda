@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
       "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
     images: [
       {
-        url: "/icon-512x512.png",
+        url: "/android-chrome-512x512.png",
         width: 512,
         height: 512,
         alt: "Puragenda Logo",
@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     title: "Puragenda — Sistema de Reservas Online para Negocios",
     description:
       "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
-    images: ["/icon-512x512.png"],
+    images: ["/android-chrome-512x512.png"],
   },
   alternates: {
     canonical: "/",
