@@ -3,19 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Calendar, ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, CalendarClock, Users, UsersRound, Palette, Stamp, Trophy, X } from "lucide-react";
+import { ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
 
-const navItems = [
+type NavItem =
+  | { href: string; label: string; icon: React.ElementType; children?: never }
+  | { href?: never; label: string; icon: React.ElementType; children: { href: string; label: string; icon: React.ElementType }[] };
+
+const navItems: NavItem[] = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
   { href: "/dashboard/loyalty", label: "Fidelización", icon: Stamp },
   { href: "/dashboard/marketing", label: "Marketing", icon: Mail },
-  { href: "/dashboard/appearance", label: "Apariencia", icon: Palette },
+  {
+    label: "Apariencia",
+    icon: Palette,
+    children: [
+      { href: "/dashboard/appearance/personalizado", label: "Personalizar", icon: Paintbrush },
+      { href: "/dashboard/appearance/temas", label: "Temas", icon: Layers },
+    ],
+  },
   { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
   { href: "/dashboard/rewards", label: "Recompensas", icon: Trophy },
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },
@@ -26,11 +37,13 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
 
+  const isOnAppearance = pathname.startsWith("/dashboard/appearance");
+  const [appearanceOpen, setAppearanceOpen] = useState(isOnAppearance);
+
   const visibleItems = navItems.filter((item) => {
-    // STAFF: only sees their own agenda
-    if (userRole === "STAFF" && item.href !== "/dashboard") return false;
-    // RECEPTIONIST: sees everything except settings, referrals & rewards (billing/admin)
-    if (userRole === "RECEPTIONIST" && (item.href === "/dashboard/settings" || item.href === "/dashboard/referrals" || item.href === "/dashboard/rewards")) return false;
+    const href = "href" in item ? item.href : item.children?.[0]?.href ?? "";
+    if (userRole === "STAFF" && href !== "/dashboard") return false;
+    if (userRole === "RECEPTIONIST" && (href === "/dashboard/settings" || href === "/dashboard/referrals" || href === "/dashboard/rewards")) return false;
     return true;
   });
 
@@ -49,6 +62,50 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
 
       <nav className="flex-1 space-y-1 p-4">
         {visibleItems.map((item) => {
+          if (item.children) {
+            // Dropdown item (Apariencia)
+            const isGroupActive = item.children.some((c) => pathname.startsWith(c.href));
+            const isOpen = appearanceOpen || isGroupActive;
+            return (
+              <div key={item.label}>
+                <button
+                  onClick={() => setAppearanceOpen((o) => !o)}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isGroupActive
+                      ? "border-[#7C3AED]/20 bg-[#7C3AED]/10 text-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-accent/5 hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isOpen && (
+                  <div className="ml-4 mt-1 space-y-0.5 border-l border-border pl-3">
+                    {item.children.map((child) => {
+                      const isChildActive = pathname.startsWith(child.href);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onClose}
+                          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                            isChildActive
+                              ? "font-medium text-[#7C3AED]"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <child.icon className="h-3.5 w-3.5" />
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link

@@ -298,13 +298,18 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         return;
       }
 
-      // Calculate target rotation
+      // Calculate target rotation.
+      // absoluteTarget = the wheel rotation (mod 360) that places prizeIndex under the pointer.
+      // We compute delta = how many degrees forward to rotate from the current position
+      // to reach absoluteTarget, so that accumulated mod-360 offsets don't stack up.
       const prizeIndex = result.prize.index;
       const segmentCenter = prizeIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
       const randomOffset = (Math.random() - 0.5) * SEGMENT_ANGLE * 0.5;
-      const targetAngle = ((360 - segmentCenter + randomOffset) % 360 + 360) % 360;
+      const absoluteTarget = ((360 - segmentCenter + randomOffset) % 360 + 360) % 360;
+      const currentPos = ((totalRotationRef.current % 360) + 360) % 360;
+      const delta = ((absoluteTarget - currentPos) % 360 + 360) % 360;
       const extraSpins = (Math.floor(Math.random() * 3) + 6) * 360;
-      const newRotation = totalRotationRef.current + extraSpins + targetAngle;
+      const newRotation = totalRotationRef.current + (delta === 0 ? 360 : delta) + extraSpins;
       totalRotationRef.current = newRotation;
 
       // Start audio
