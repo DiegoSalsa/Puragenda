@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
+import { sendDepositConfirmedNotifications } from "@/server/email/send";
 
 /**
  * GET /api/mercadopago/deposit-return
  *
  * Handles the redirect from MercadoPago after the user completes (or fails) 
  * a deposit payment. Redirects to a status page in the widget.
+ * Also triggers email notifications when payment is approved.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -22,7 +24,10 @@ export async function GET(request: NextRequest) {
   try {
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
-      include: { business: { select: { slug: true, name: true } }, service: { select: { name: true } } },
+      include: {
+        business: { select: { slug: true, name: true } },
+        service: { select: { name: true } },
+      },
     });
 
     if (!appointment) {
@@ -39,6 +44,21 @@ export async function GET(request: NextRequest) {
           status: "CONFIRMED",
         },
       });
+
+      // Send email notifications (owner, staff, client)
+      const fullAppointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        include: {
+          service: true,
+          staff: true,
+          business: {
+            include: { owner: { select: { email: true, name: true } } },
+          },
+        },
+      });
+      if (fullAppointment) {
+        sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+      }
 
       // Redirect to widget with success
       const successUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
@@ -68,3 +88,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}?error=server_error`);
   }
 }
+

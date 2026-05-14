@@ -109,6 +109,77 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
 }
 
 /**
+ * Send notifications when an appointment is confirmed via deposit payment.
+ * This handles the case where the appointment goes AWAITING_PAYMENT → CONFIRMED
+ * (skipping the manual PENDING → CONFIRMED flow).
+ *
+ * Sends 3 emails:
+ * 1. To the business owner (new booking notification — they now know it's paid & confirmed)
+ * 2. To the assigned staff member (if has email)
+ * 3. To the customer (confirmed booking email — they already paid, so it's confirmed)
+ *
+ * Errors are logged but never thrown.
+ */
+export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations) {
+  const data = {
+    customerName: appointment.customerName,
+    customerEmail: appointment.customerEmail,
+    customerPhone: appointment.customerPhone,
+    serviceName: appointment.service.name,
+    staffName: appointment.staff?.name || "Sin asignar",
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    businessName: appointment.business.name,
+    businessAddress: appointment.business.address,
+    businessMapsUrl: appointment.business.mapsUrl,
+  };
+
+  const tasks: Promise<unknown>[] = [];
+
+  // 1. Email to business owner — notify about the new confirmed + paid booking
+  if (appointment.business.owner?.email) {
+    const { subject, html } = newBookingOwnerEmail(data);
+    tasks.push(
+      resend.emails.send({
+        from: EMAIL_FROM,
+        to: appointment.business.owner.email,
+        subject,
+        html,
+      }).catch((err) => console.error("[Email] Error sending deposit confirmed to owner:", err))
+    );
+  }
+
+  // 2. Email to staff
+  if (appointment.staff?.email) {
+    const { subject, html } = newBookingStaffEmail(data);
+    tasks.push(
+      resend.emails.send({
+        from: EMAIL_FROM,
+        to: appointment.staff.email,
+        subject,
+        html,
+      }).catch((err) => console.error("[Email] Error sending deposit confirmed to staff:", err))
+    );
+  }
+
+  // 3. Email to customer — use CONFIRMED template (they paid, so it's confirmed immediately)
+  {
+    const { subject, html } = confirmedBookingClientEmail(data);
+    tasks.push(
+      resend.emails.send({
+        from: EMAIL_FROM,
+        to: appointment.customerEmail,
+        subject,
+        html,
+      }).catch((err) => console.error("[Email] Error sending deposit confirmed to client:", err))
+    );
+  }
+
+  await Promise.allSettled(tasks);
+  console.log(`[Email] Deposit-confirmed notifications sent for appointment with ${data.customerName}`);
+}
+
+/**
  * Send confirmation email to the customer when appointment status changes to CONFIRMED.
  */
 export async function sendConfirmationEmail(appointment: AppointmentWithRelations) {

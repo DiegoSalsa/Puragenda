@@ -1,15 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { MercadoPagoConfig, Payment } from "mercadopago";
+import { sendDepositConfirmedNotifications } from "@/server/email/send";
 
 /**
  * POST /api/webhooks/deposit
  *
  * Webhook endpoint for MercadoPago deposit payment notifications.
- * When a deposit payment is approved, the appointment is auto-confirmed.
+ * When a deposit payment is approved, the appointment is auto-confirmed
+ * and notification emails are sent to owner, staff, and client.
  *
  * MercadoPago sends: { type: "payment", data: { id: "PAYMENT_ID" }, ... }
  */
+
+/** Fetch appointment with all relations needed for email notifications */
+async function getAppointmentForEmail(appointmentId: string) {
+  return prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      service: true,
+      staff: true,
+      business: {
+        include: { owner: { select: { email: true, name: true } } },
+      },
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -72,6 +89,12 @@ export async function POST(request: NextRequest) {
             },
           });
           console.log(`[webhook/deposit] ✅ Appointment ${appointmentByPayment.id} auto-confirmed via business token`);
+
+          // Send email notifications
+          const fullAppointment = await getAppointmentForEmail(appointmentByPayment.id);
+          if (fullAppointment) {
+            sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+          }
         }
         return NextResponse.json({ received: true }, { status: 200 });
       }
@@ -110,6 +133,12 @@ export async function POST(request: NextRequest) {
         },
       });
       console.log(`[webhook/deposit] ✅ Appointment ${appointment.id} auto-confirmed`);
+
+      // Send email notifications to owner, staff, and client
+      const fullAppointment = await getAppointmentForEmail(appointment.id);
+      if (fullAppointment) {
+        sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+      }
     } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
       await prisma.appointment.update({
         where: { id: appointment.id },
