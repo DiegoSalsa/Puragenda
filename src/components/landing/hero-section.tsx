@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scissors, Sparkles, Stethoscope } from "lucide-react";
+import { ArrowRight, Scissors, Sparkles, Stethoscope, ShieldCheck } from "lucide-react";
 import { WordCarousel } from "@/components/landing/word-carousel";
 
 export function HeroSection() {
@@ -61,6 +61,15 @@ export function HeroSection() {
                 {item.label}
               </div>
             ))}
+          </div>
+
+          {/* MercadoPago trust badge */}
+          <div className="flex items-center justify-center lg:justify-start gap-2 pt-1">
+            <div className="flex items-center gap-2.5 rounded-full border border-[#009EE3]/25 bg-[#009EE3]/8 px-4 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm">
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#009EE3]" />
+              Cobros de planes integrados con
+              <span className="font-bold text-[#009EE3]">MercadoPago</span>
+            </div>
           </div>
         </div>
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Stamp, Mail, Gift, Database, Palette, LayoutTemplate, Shield } from "lucide-react";
+import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Stamp, Mail, Gift, Database, Palette, LayoutTemplate, Shield, CreditCard } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
 import { Theme70s } from "@/components/landing/Theme70s";
@@ -17,6 +17,7 @@ const bentoFeatures = [
   { title: "Programa Referidos", description: "Invita a otros negocios y gana meses gratis.", icon: Gift, className: "bg-[#BFFCC6] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#BFFCC6] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#BFFCC6] dark:text-white", darkIconBg: "dark:bg-[#BFFCC6]" },
   { title: "CRM Integrado", description: "Historial de citas, inasistencias y preferencias de cada cliente.", icon: Database, className: "md:col-span-2 bg-[#FFF5BA] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#FFF5BA] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#FFF5BA] dark:text-white", darkIconBg: "dark:bg-[#FFF5BA]" },
   { title: "Widget Marca Blanca", description: "Se adapta al estilo de tu negocio. Colores y branding personalizables.", icon: Palette, className: "md:col-span-2 bg-[#B28DFF] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#B28DFF] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#B28DFF] dark:text-white", darkIconBg: "dark:bg-[#B28DFF]" },
+  { title: "Abonos con MercadoPago", description: "Tus clientes pagan sus paquetes y abonos online directo desde el widget. Sin cobrar en mano.", icon: CreditCard, className: "md:col-span-3 bg-[#009EE3]/15 dark:bg-black border-[#009EE3] dark:border-[#009EE3] shadow-[8px_8px_0px_#009EE3] hover:shadow-[14px_14px_0px_#009EE3] dark:text-white", darkIconBg: "dark:bg-[#009EE3]/30", iconColor: "text-[#009EE3]" },
 ];
 
 const features = [
@@ -134,6 +135,8 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                   <Stethoscope className="h-5 w-5" /> Clínicas
                 </div>
               </div>
+
+
             </div>
           </div>
         </section>
@@ -288,8 +291,8 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
             </div>
           </div>
 
-          {/* Secondary showcase: 3 feature cards */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* Secondary showcase: feature cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 dark:text-white" />
@@ -336,6 +339,20 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                   <span className="text-black line-through">10:30 - 11:30</span>
                   <span className="ml-auto text-black/60">Bloqueada</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border-4 border-[#009EE3] bg-[#009EE3]/10 dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#009EE3] hover:-translate-y-1 transition-transform">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-[#009EE3]" />
+                <p className="text-base font-black uppercase text-[#009EE3]">Abonos online</p>
+              </div>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">Tus clientes pagan paquetes y abonos directo desde el widget. Sin cobrar en mano.</p>
+              <div className="flex items-center gap-2 rounded-lg border-2 border-[#009EE3] bg-white dark:bg-black px-2.5 py-2 shadow-[2px_2px_0_#009EE3]">
+                <div className="h-5 w-5 rounded bg-[#009EE3] flex items-center justify-center shrink-0">
+                  <span className="text-white text-[8px] font-black">MP</span>
+                </div>
+                <span className="text-[11px] font-black text-black dark:text-white">Integrado con MercadoPago</span>
               </div>
             </div>
           </div>
