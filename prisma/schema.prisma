@@ -134,7 +134,12 @@ model Business {
   timezone              String   @default("America/Santiago")
   ownerId               String?
   referredByAffiliateId String?
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Loyalty / FidelizaciÃƒÂ³n Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── Mercado Pago OAuth (Marketplace) ──
+  mpAccessToken         String?
+  mpRefreshToken        String?
+  mpUserId              String?
+  mpTokenExpiresAt      DateTime?
+  // ── Loyalty / Fidelización ──
   isLoyaltyEnabled      Boolean  @default(false)
   stampsRequired        Int      @default(5)
   rewardName            String?
