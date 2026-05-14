@@ -82,7 +82,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
         orderBy: { createdAt: "desc" },
       },
       appointments: {
-        where: { status: "COMPLETED" },
+        where: { status: { in: ["CHECKED_IN", "COMPLETED"] } },
         orderBy: { startTime: "desc" },
         take: 5,
         select: {
