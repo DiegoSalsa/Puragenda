@@ -347,12 +347,10 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                 <CreditCard className="h-5 w-5 text-[#009EE3]" />
                 <p className="text-base font-black uppercase text-[#009EE3]">Abonos online</p>
               </div>
-              <p className="text-sm font-bold text-black/70 dark:text-white/70">Tus clientes pagan paquetes y abonos directo desde el widget. Sin cobrar en mano.</p>
-              <div className="flex items-center gap-2 rounded-lg border-2 border-[#009EE3] bg-white dark:bg-black px-2.5 py-2 shadow-[2px_2px_0_#009EE3]">
-                <div className="h-5 w-5 rounded bg-[#009EE3] flex items-center justify-center shrink-0">
-                  <span className="text-white text-[8px] font-black">MP</span>
-                </div>
-                <span className="text-[11px] font-black text-black dark:text-white">Integrado con MercadoPago</span>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">Cobra abonos al momento de la reserva, directo desde el Widget.</p>
+              {/* MercadoPago official logo */}
+              <div className="flex items-center justify-center rounded-lg border-2 border-[#009EE3] bg-white px-5 py-3.5 shadow-[2px_2px_0_#009EE3]">
+                <img src="/logos/mercadopago.svg" alt="Mercado Pago" className="h-16 w-auto" />
               </div>
             </div>
           </div>
