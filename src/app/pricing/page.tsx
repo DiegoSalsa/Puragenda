@@ -25,7 +25,8 @@ export default async function PricingPage() {
       <section className="mx-auto w-full max-w-4xl px-6 py-16">
         <h3 className="text-3xl font-black uppercase tracking-tighter text-center mb-12">Comparación de Planes</h3>
         <div className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-2xl overflow-hidden shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF]">
-          <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[520px]">
             <thead>
               <tr className="bg-[#FFF5BA] dark:bg-black border-b-4 border-black dark:border-white text-black dark:text-white">
                 <th className="p-4 font-black uppercase border-r-4 border-black dark:border-white">Característica</th>
@@ -71,6 +72,7 @@ export default async function PricingPage() {
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </section>
       
