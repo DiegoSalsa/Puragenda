@@ -121,7 +121,7 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq" className="mx-auto w-full max-w-3xl px-6 py-24 relative">
+    <section id="faq" className="mx-auto w-full max-w-6xl px-6 py-24 relative">
       {/* Schema JSON-LD for Generative Engine Optimization */}
       <script
         type="application/ld+json"
@@ -140,12 +140,30 @@ export function FAQSection() {
         </h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left column */}
         <Accordion className="w-full space-y-4">
-          {faqs.map((faq, index) => (
+          {faqs.filter((_, i) => i % 2 === 0).map((faq, index) => (
             <AccordionItem
               key={index}
-              value={`item-${index}`}
+              value={`item-left-${index}`}
+              className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
+            >
+              <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-5">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        {/* Right column */}
+        <Accordion className="w-full space-y-4">
+          {faqs.filter((_, i) => i % 2 === 1).map((faq, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-right-${index}`}
               className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
             >
               <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
