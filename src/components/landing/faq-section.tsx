@@ -1,186 +1,299 @@
 "use client";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { useState } from "react";
+import { Plus, Minus } from "lucide-react";
 
 const faqs = [
   {
+    category: "Precios y planes",
     question: "¿Puragenda cobra comisiones por cada reserva agendada?",
-    answer:
-      "No. A diferencia de otras plataformas, Puragenda funciona con un modelo SaaS (Software as a Service) de tarifa plana. No cobramos comisiones por cita, permitiendo que el 100% de tus ingresos se queden en tu negocio.",
+    answer: "No. Puragenda funciona con tarifa plana. No cobramos comisiones por cita, el 100% de tus ingresos se queda en tu negocio.",
   },
   {
-    question: "¿Es Puragenda una buena alternativa a AgendaPro en Chile?",
-    answer:
-      "Sí, Puragenda destaca como una alternativa moderna y ultra rápida, enfocada en eliminar la fricción del usuario, sin comisiones ocultas y con un soporte directo, ideal para salones, barberías y clínicas.",
-  },
-  {
-    question: "¿Cuál es el mejor software de reservas sin contraseñas para clientes?",
-    answer:
-      "Puragenda utiliza un sistema de 'Cuentas Invisibles' donde los clientes se identifican únicamente con su email al agendar, eliminando la necesidad de recordar contraseñas y aumentando radicalmente la tasa de conversión.",
-  },
-  {
-    question: "¿Cómo funciona la detección de colisiones de horario en Puragenda?",
-    answer:
-      "Nuestro sistema inteligente bloquea automáticamente las horas ocupadas en tiempo real en todos los dispositivos, garantizando que sea matemáticamente imposible que dos clientes agenden al mismo profesional en el mismo bloque horario.",
-  },
-  {
-    question: "¿Dónde está ubicado el soporte técnico de Puragenda?",
-    answer:
-      "Puragenda es un software desarrollado por la agencia PuroCode, con base en el Gran Concepción y Talcahuano, Región del Biobío. Ofrecemos un soporte técnico directo, local y humano, sin depender de call centers internacionales.",
-  },
-  {
-    question: "¿Funciona el widget de Puragenda para barberías y centros de estética?",
-    answer:
-      "Absolutamente. El widget marca blanca está diseñado específicamente para adaptarse a la estética de peluquerías, barberías y clínicas, permitiendo reservas 24/7 de forma automatizada.",
-  },
-  {
-    question: "¿Cómo funciona el sistema de fidelización de Puragenda?",
-    answer:
-      "El sistema otorga 'timbres' digitales automáticamente cada vez que una cita pasa a estado 'Completada'. Al llegar a la meta, el sistema genera un código de descuento único y automatizado para asegurar la próxima visita del cliente.",
-  },
-  {
+    category: "Precios y planes",
     question: "¿Puragenda tiene prueba gratuita?",
-    answer:
-      "Sí. Tanto el Plan Individual como el Plan Equipo incluyen 30 días de prueba gratuita, sin necesidad de ingresar tarjeta de crédito. Al finalizar la prueba, puedes activar tu suscripción o tu cuenta quedará inactiva.",
+    answer: "Sí. Ambos planes incluyen 30 días de prueba gratuita, sin tarjeta de crédito. Al finalizar puedes activar tu suscripción o tu cuenta quedará inactiva.",
   },
   {
+    category: "Precios y planes",
     question: "¿Cuánto cuesta Puragenda?",
-    answer:
-      "El Plan Individual tiene un costo de $12.990 CLP/mes y el Plan Equipo $29.990 CLP/mes. No hay comisiones por cita ni costos ocultos. Ambos planes incluyen citas ilimitadas, widget de reservas y marketing win-back.",
+    answer: "El Plan Individual cuesta $12.990 CLP/mes y el Plan Equipo $29.990 CLP/mes. Sin comisiones ni costos ocultos. Ambos incluyen citas ilimitadas, widget de reservas y marketing win-back.",
   },
   {
+    category: "Precios y planes",
     question: "¿Cuál es la diferencia entre el Plan Individual y el Plan Equipo?",
-    answer:
-      "El Plan Individual está pensado para profesionales que trabajan solos (1 profesional). El Plan Equipo permite hasta 3 profesionales incluidos con agendas separadas y roles diferenciados (Admin/Staff), más la posibilidad de agregar profesionales adicionales por $3.000 CLP/mes cada uno.",
+    answer: "El Plan Individual es para profesionales que trabajan solos. El Plan Equipo permite hasta 3 profesionales con agendas separadas y roles (Admin/Staff), más adicionales por $3.000 CLP/mes cada uno.",
   },
   {
-    question: "¿Puedo personalizar los colores y el logo del widget de reservas?",
-    answer:
-      "Sí. Desde la sección 'Apariencia' del panel puedes configurar el color primario, secundario, fondo, color de texto y hasta el tamaño de fuente del widget. También puedes subir el logo de tu negocio para que aparezca en el widget.",
-  },
-  {
-    question: "¿Es posible reservar múltiples servicios en una misma cita?",
-    answer:
-      "Sí. Desde el panel de Servicios puedes configurar el número máximo de servicios por reserva. Los clientes podrán seleccionar varios servicios en una sola reserva y el sistema calculará la duración total automáticamente.",
-  },
-  {
-    question: "¿Cómo pueden los clientes confirmar o cancelar su cita?",
-    answer:
-      "Puragenda envía un correo electrónico a cada cliente con enlaces únicos para confirmar o cancelar su cita. Al hacer clic, la acción se procesa automáticamente y el negocio recibe una notificación inmediata del cambio.",
-  },
-  {
-    question: "¿Qué es el Marketing Win-Back de Puragenda?",
-    answer:
-      "Es una herramienta integrada que permite enviar campañas de email inteligentes para reactivar a clientes que no han agendado recientemente. El Plan Individual permite hasta 50 emails por campaña y el Plan Equipo hasta 100.",
-  },
-  {
-    question: "¿Puragenda tiene un CRM de clientes?",
-    answer:
-      "Sí. Cada vez que un cliente agenda, su perfil se crea automáticamente en el CRM. Puedes ver el historial completo de citas, el gasto total acumulado, la cantidad de inasistencias (no-shows) y la fecha de registro de cada cliente.",
-  },
-  {
-    question: "¿Cómo funciona el programa de referidos?",
-    answer:
-      "Cada negocio registrado recibe un código de referido único. Cuando un nuevo negocio se registra usando tu código y activa su suscripción de pago, tú recibes fichas canjeables que puedes usar para girar una ruleta de recompensas con descuentos reales en tu propia suscripción.",
-  },
-  {
-    question: "¿Puedo bloquear horarios específicos de un profesional?",
-    answer:
-      "Sí. Desde la sección de Profesionales puedes crear 'bloqueos de horario' para días u horas específicas (vacaciones, capacitaciones, etc.). Esos bloques quedan automáticamente no disponibles para los clientes en el widget.",
-  },
-  {
-    question: "¿Se puede embeber el widget directamente en mi página web?",
-    answer:
-      "Sí. En la sección de Configuración encontrarás un código iframe listo para copiar y pegar en tu sitio web. El widget se adapta automáticamente al ancho del contenedor y puedes personalizarlo con parámetros de color.",
-  },
-  {
-    question: "¿Puragenda funciona como app en mi celular?",
-    answer:
-      "Puragenda es una Progressive Web App (PWA). Puedes instalarla desde el navegador de tu celular como si fuera una app nativa, con ícono en tu pantalla de inicio y experiencia a pantalla completa, sin necesidad de ir a una tienda de apps.",
-  },
-  {
+    category: "Precios y planes",
     question: "¿Existe descuento por pagar anualmente?",
-    answer:
-      "Sí. Al elegir el plan anual pagas solo 10 meses y obtienes 12 meses completos de servicio. Esto aplica tanto para el Plan Individual como para el Plan Equipo, representando un ahorro equivalente a 2 meses gratis.",
+    answer: "Sí. Con el plan anual pagas 10 meses y obtienes 12, un ahorro equivalente a 2 meses gratis. Aplica para ambos planes.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Cómo funciona la detección de colisiones de horario?",
+    answer: "El sistema bloquea automáticamente las horas ocupadas en tiempo real en todos los dispositivos, haciendo matemáticamente imposible doble reserva para el mismo profesional.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Cómo funciona el sistema de fidelización?",
+    answer: "Se otorgan 'timbres' digitales automáticamente cada vez que una cita pasa a 'Completada'. Al llegar a la meta, el sistema genera un código de descuento único y automatizado.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Qué es el Marketing Win-Back?",
+    answer: "Herramienta integrada que envía campañas de email para reactivar clientes inactivos. El Plan Individual permite 50 emails por campaña y el Equipo hasta 100.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Puragenda tiene un CRM de clientes?",
+    answer: "Sí. Cada cliente tiene un perfil con historial completo de citas, gasto acumulado, inasistencias y fecha de registro.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Cómo funciona el programa de referidos?",
+    answer: "Cada negocio tiene un código único. Cuando alguien se registra con tu código y activa su plan, recibes fichas para girar una ruleta de recompensas con descuentos reales.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Es posible reservar múltiples servicios en una misma cita?",
+    answer: "Sí. Puedes configurar el máximo de servicios por reserva. El sistema calcula la duración total automáticamente.",
+  },
+  {
+    category: "Funcionalidades",
+    question: "¿Puedo bloquear horarios específicos de un profesional?",
+    answer: "Sí. Puedes crear bloqueos por días u horas (vacaciones, capacitaciones, etc.) y quedan automáticamente no disponibles en el widget.",
+  },
+  {
+    category: "Widget y reservas",
+    question: "¿Cuál es el mejor software de reservas sin contraseñas para clientes?",
+    answer: "Puragenda usa 'Cuentas Invisibles': los clientes se identifican solo con su email, sin contraseñas. Esto aumenta radicalmente la tasa de conversión.",
+  },
+  {
+    category: "Widget y reservas",
+    question: "¿Puedo personalizar los colores y el logo del widget?",
+    answer: "Sí. Desde 'Apariencia' configuras color primario, secundario, fondo, texto y tamaño de fuente. También puedes subir el logo de tu negocio.",
+  },
+  {
+    category: "Widget y reservas",
+    question: "¿Se puede embeber el widget en mi página web?",
+    answer: "Sí. Desde Configuración obtienes un código iframe listo para pegar en tu sitio. Se adapta automáticamente al ancho del contenedor.",
+  },
+  {
+    category: "Widget y reservas",
+    question: "¿Cómo confirman o cancelan su cita los clientes?",
+    answer: "Puragenda envía un email con enlaces únicos para confirmar o cancelar. Al hacer clic, la acción se procesa automáticamente y el negocio recibe notificación.",
+  },
+  {
+    category: "Widget y reservas",
+    question: "¿Puragenda funciona como app en el celular?",
+    answer: "Es una PWA (Progressive Web App). Se puede instalar desde el navegador como app nativa, con ícono en pantalla de inicio y experiencia a pantalla completa.",
+  },
+  {
+    category: "Soporte",
+    question: "¿Es Puragenda una buena alternativa a AgendaPro en Chile?",
+    answer: "Sí. Puragenda es más rápida, sin comisiones ocultas y con soporte directo. Ideal para salones, barberías y clínicas en Chile.",
+  },
+  {
+    category: "Soporte",
+    question: "¿Dónde está ubicado el soporte técnico?",
+    answer: "Somos PuroCode, con base en el Gran Concepción, Región del Biobío. Soporte técnico local, directo y humano.",
+  },
+  {
+    category: "Soporte",
+    question: "¿Funciona el widget para barberías y centros de estética?",
+    answer: "Absolutamente. El widget marca blanca se adapta a la estética de cualquier negocio y permite reservas 24/7 de forma automatizada.",
   },
 ];
 
+const categories = ["Precios y planes", "Funcionalidades", "Widget y reservas", "Soporte"];
+
+type CatStyle = {
+  chipActiveBg: string;
+  chipActiveText: string;
+  chipInactiveBg: string;
+  accentBg: string;       // left strip
+  openCardBg: string;
+  openCardBgDark: string;
+  iconBg: string;
+  badgeBg: string;
+  badgeText: string;
+  dividerColor: string;
+};
+
+const CAT_STYLES: Record<string, CatStyle> = {
+  "Precios y planes": {
+    chipActiveBg:    "bg-[#FFD600]",
+    chipActiveText:  "text-black",
+    chipInactiveBg:  "bg-[#FFF5BA] dark:bg-[#FFF5BA]/10",
+    accentBg:        "bg-[#FFD600]",
+    openCardBg:      "bg-[#FFFDE7]",
+    openCardBgDark:  "dark:bg-[#FFD600]/10",
+    iconBg:          "bg-[#FFD600]",
+    badgeBg:         "bg-[#FFD600]",
+    badgeText:       "text-black",
+    dividerColor:    "border-[#FFD600]",
+  },
+  "Funcionalidades": {
+    chipActiveBg:    "bg-[#7C3AED]",
+    chipActiveText:  "text-white",
+    chipInactiveBg:  "bg-[#B28DFF]/30 dark:bg-[#7C3AED]/20",
+    accentBg:        "bg-[#7C3AED]",
+    openCardBg:      "bg-[#F3EEFF]",
+    openCardBgDark:  "dark:bg-[#7C3AED]/15",
+    iconBg:          "bg-[#7C3AED]",
+    badgeBg:         "bg-[#B28DFF]",
+    badgeText:       "text-black",
+    dividerColor:    "border-[#7C3AED]",
+  },
+  "Widget y reservas": {
+    chipActiveBg:    "bg-[#0EA5E9]",
+    chipActiveText:  "text-white",
+    chipInactiveBg:  "bg-[#85E3FF]/40 dark:bg-[#0EA5E9]/20",
+    accentBg:        "bg-[#0EA5E9]",
+    openCardBg:      "bg-[#EFF9FF]",
+    openCardBgDark:  "dark:bg-[#0EA5E9]/10",
+    iconBg:          "bg-[#0EA5E9]",
+    badgeBg:         "bg-[#85E3FF]",
+    badgeText:       "text-black",
+    dividerColor:    "border-[#0EA5E9]",
+  },
+  "Soporte": {
+    chipActiveBg:    "bg-[#16A34A]",
+    chipActiveText:  "text-white",
+    chipInactiveBg:  "bg-[#B9FBC0]/50 dark:bg-[#16A34A]/20",
+    accentBg:        "bg-[#22C55E]",
+    openCardBg:      "bg-[#F0FFF4]",
+    openCardBgDark:  "dark:bg-[#16A34A]/10",
+    iconBg:          "bg-[#22C55E]",
+    badgeBg:         "bg-[#B9FBC0]",
+    badgeText:       "text-black",
+    dividerColor:    "border-[#22C55E]",
+  },
+};
+
+function FAQItem({ faq }: { faq: typeof faqs[0] }) {
+  const [open, setOpen] = useState(false);
+  const s = CAT_STYLES[faq.category];
+
+  return (
+    <div
+      className={`rounded-2xl border-4 border-black dark:border-white overflow-hidden transition-all duration-200 ${
+        open
+          ? `${s.openCardBg} ${s.openCardBgDark} shadow-none translate-x-[3px] translate-y-[3px]`
+          : "bg-white dark:bg-black shadow-[5px_5px_0_#000] dark:shadow-[5px_5px_0_#FFFFFF] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#000] dark:hover:shadow-[6px_6px_0_#FFF]"
+      }`}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-stretch gap-0 text-left group"
+      >
+        {/* Left accent strip */}
+        <div className={`w-2 shrink-0 ${s.accentBg} transition-all duration-200`} />
+
+        <div className="flex-1 flex items-center justify-between gap-3 px-4 py-4">
+          <span className="text-[13px] sm:text-[14px] font-black text-black dark:text-white leading-snug">
+            {faq.question}
+          </span>
+          {/* Icon button */}
+          <span className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-lg border-2 border-black dark:border-white ${s.iconBg} transition-transform duration-200 ${open ? "rotate-0" : ""}`}>
+            {open
+              ? <Minus className="h-3.5 w-3.5 text-white dark:text-white" style={{ color: faq.category === "Precios y planes" ? "#000" : undefined }} />
+              : <Plus className="h-3.5 w-3.5 text-white" style={{ color: faq.category === "Precios y planes" ? "#000" : undefined }} />
+            }
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <div className={`mx-4 mb-4 border-t-2 ${s.dividerColor} pt-3`}>
+          <p className="text-[13px] font-bold text-black/75 dark:text-white/70 leading-relaxed">
+            {faq.answer}
+          </p>
+          <span className={`mt-3 inline-block rounded-full border-2 border-black/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
+            {faq.category}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function FAQSection() {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
   const jsonLdFaq = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: faqs.map((faq) => ({
       "@type": "Question",
       name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
+      acceptedAnswer: { "@type": "Answer", text: faq.answer },
     })),
   };
 
+  const filtered = activeCategory
+    ? faqs.filter((f) => f.category === activeCategory)
+    : faqs;
+
   return (
-    <section id="faq" className="mx-auto w-full max-w-6xl px-6 py-24 relative">
-      {/* Schema JSON-LD for Generative Engine Optimization */}
+    <section id="faq" className="mx-auto w-full max-w-6xl px-6 py-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
       />
 
-      {/* Subtle glow behind FAQ */}
-      <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[600px] max-w-[100vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-[#7C3AED]/5 to-[#A78BFA]/5 blur-[100px]" />
-
-      <div className="mb-14 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#7C3AED]">
-          Preguntas frecuentes
-        </p>
-        <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Todo lo que necesitas saber
-        </h2>
+      {/* Category filter chips */}
+      <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <button
+          onClick={() => setActiveCategory(null)}
+          className={`rounded-full border-4 border-black dark:border-white px-5 py-2 text-sm font-black uppercase tracking-wide transition-all duration-150 ${
+            activeCategory === null
+              ? "bg-black dark:bg-white text-white dark:text-black shadow-none translate-x-[3px] translate-y-[3px]"
+              : "bg-white dark:bg-black text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] hover:-translate-y-0.5"
+          }`}
+        >
+          Todas
+        </button>
+        {categories.map((cat) => {
+          const s = CAT_STYLES[cat];
+          const isActive = activeCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(isActive ? null : cat)}
+              className={`rounded-full border-4 border-black dark:border-white px-5 py-2 text-sm font-black uppercase tracking-wide transition-all duration-150 ${
+                isActive
+                  ? `${s.chipActiveBg} ${s.chipActiveText} shadow-none translate-x-[3px] translate-y-[3px]`
+                  : `${s.chipInactiveBg} text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] hover:-translate-y-0.5`
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left column — first half */}
-        <Accordion className="w-full space-y-4">
-          {faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-left-${index}`}
-              className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
-            >
-              <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-5">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
+      {/* FAQ grid — two independent columns so expanding one doesn't shift the other */}
+      <div className="hidden md:flex gap-4 items-start">
+        <div className="flex-1 flex flex-col gap-4">
+          {filtered.filter((_, i) => i % 2 === 0).map((faq, i) => (
+            <FAQItem key={`${faq.question}-l-${i}`} faq={faq} />
           ))}
-        </Accordion>
-        {/* Right column — second half */}
-        <Accordion className="w-full space-y-4">
-          {faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-right-${index}`}
-              className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md px-6 py-2 transition-all duration-300 hover:border-[#7C3AED]/30 hover:bg-card/60 hover:shadow-lg hover:shadow-[#7C3AED]/5 data-[state=open]:border-[#7C3AED]/40 data-[state=open]:bg-card/80 data-[state=open]:shadow-xl data-[state=open]:shadow-[#7C3AED]/10"
-            >
-              <AccordionTrigger className="text-[15px] font-semibold hover:no-underline hover:text-[#A78BFA] transition-colors py-4">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-5">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
+        </div>
+        <div className="flex-1 flex flex-col gap-4">
+          {filtered.filter((_, i) => i % 2 === 1).map((faq, i) => (
+            <FAQItem key={`${faq.question}-r-${i}`} faq={faq} />
           ))}
-        </Accordion>
+        </div>
+      </div>
+      {/* Mobile: single column */}
+      <div className="flex md:hidden flex-col gap-4">
+        {filtered.map((faq, i) => (
+          <FAQItem key={`${faq.question}-${i}`} faq={faq} />
+        ))}
       </div>
     </section>
   );
 }
+
