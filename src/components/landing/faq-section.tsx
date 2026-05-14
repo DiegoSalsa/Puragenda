@@ -103,6 +103,11 @@ const faqs = [
     answer:
       "Puragenda es una Progressive Web App (PWA). Puedes instalarla desde el navegador de tu celular como si fuera una app nativa, con ícono en tu pantalla de inicio y experiencia a pantalla completa, sin necesidad de ir a una tienda de apps.",
   },
+  {
+    question: "¿Existe descuento por pagar anualmente?",
+    answer:
+      "Sí. Al elegir el plan anual pagas solo 10 meses y obtienes 12 meses completos de servicio. Esto aplica tanto para el Plan Individual como para el Plan Equipo, representando un ahorro equivalente a 2 meses gratis.",
+  },
 ];
 
 
@@ -141,9 +146,9 @@ export function FAQSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left column */}
+        {/* Left column — first half */}
         <Accordion className="w-full space-y-4">
-          {faqs.filter((_, i) => i % 2 === 0).map((faq, index) => (
+          {faqs.slice(0, Math.ceil(faqs.length / 2)).map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-left-${index}`}
@@ -158,9 +163,9 @@ export function FAQSection() {
             </AccordionItem>
           ))}
         </Accordion>
-        {/* Right column */}
+        {/* Right column — second half */}
         <Accordion className="w-full space-y-4">
-          {faqs.filter((_, i) => i % 2 === 1).map((faq, index) => (
+          {faqs.slice(Math.ceil(faqs.length / 2)).map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-right-${index}`}
