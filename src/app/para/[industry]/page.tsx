@@ -2,9 +2,10 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { Navbar } from "@/components/landing/navbar";
-import { Footer } from "@/components/landing/footer";
+import { LandingLayout } from "@/components/landing/landing-layout";
 import { industriesData } from "@/lib/data/industries";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
 import {
   Accordion,
   AccordionContent,
@@ -48,6 +49,9 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
 
+  const user = await getCurrentSessionUser();
+  const business = user ? await getBusinessForUser(user.id) : null;
+
   // JSON-LD specific for the industry SoftwareApplication + FAQ
   const jsonLdFaq = {
     "@context": "https://schema.org",
@@ -70,98 +74,106 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
     description: data.description,
   };
 
+  // Rotate accent colors for benefit cards
+  const accentColors = ["bg-[#B28DFF]", "bg-[#FFB5E8]", "bg-[#85E3FF]", "bg-[#BFFCC6]"];
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <LandingLayout user={user} business={business}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
-      
-      <Navbar />
 
-      <main>
-        {/* HERO */}
-        <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-20 lg:pt-28">
-          <div className="animate-fade-up space-y-8 text-center">
-            <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-7xl">
-              {data.heroHeadline}
-            </h1>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              {data.heroSubheadline}
-            </p>
+      {/* HERO */}
+      <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">
+        <div className="inline-block bg-[#B28DFF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
+          {data.name}
+        </div>
+        <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-7xl mb-6">
+          {data.heroHeadline}
+        </h1>
+        <p className="text-xl font-bold opacity-80 max-w-3xl mx-auto mb-10">
+          {data.heroSubheadline}
+        </p>
 
-            <div className="mx-auto mt-8 flex max-w-md flex-col justify-center gap-4 sm:flex-row">
-              <Link href="/register">
-                <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] sm:w-auto">
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
-                  <span className="relative z-10 flex items-center gap-2">
-                    Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </button>
-              </Link>
-              <Link href="/widget/purocode-demo">
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card/50 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur-sm transition-all hover:bg-muted sm:w-auto">
-                  Ver Demo
-                </button>
-              </Link>
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Link href="/register">
+            <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all flex items-center gap-3 mx-auto sm:mx-0">
+              Empezar Gratis <ArrowRight className="h-5 w-5" />
+            </button>
+          </Link>
+          <Link href="/widget/purocode-demo">
+            <button className="bg-white dark:bg-black text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all mx-auto sm:mx-0">
+              Ver Demo
+            </button>
+          </Link>
+        </div>
+        <p className="mt-8 text-sm font-bold opacity-50">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+      </section>
+
+      {/* BENEFITS */}
+      <section className="border-t-4 border-black dark:border-white bg-[#FFF5BA] dark:bg-black py-20">
+        <div className="mx-auto w-full max-w-6xl px-6">
+          <div className="text-center mb-16">
+            <div className="inline-block bg-[#85E3FF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
+              Diseñado para {data.name}
             </div>
-            <p className="mt-6 text-xs text-muted-foreground/60">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-black dark:text-white">
+              ¿Por qué usar Puragenda?
+            </h2>
           </div>
-        </section>
 
-        {/* BENEFITS */}
-        <section className="border-y border-border bg-card">
-          <div className="mx-auto w-full max-w-6xl px-6 py-20">
-            <div className="mb-12 text-center">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#7C3AED]">
-                Diseñado para {data.name}
-              </p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-                ¿Por qué usar Puragenda en tu {data.name.toLowerCase()}?
-              </h2>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {data.benefits.map((benefit, i) => (
-                <article key={i} className="rounded-2xl border border-border bg-background p-6">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED]">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-xl font-semibold">{benefit.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{benefit.description}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="mx-auto w-full max-w-3xl px-6 py-20">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Preguntas Frecuentes</h2>
-          </div>
-          <Accordion className="w-full space-y-3">
-            {data.faq.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="rounded-2xl border border-border bg-card px-5">
-                <AccordionTrigger className="text-sm font-medium hover:no-underline">{faq.question}</AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground">{faq.answer}</AccordionContent>
-              </AccordionItem>
+          <div className="grid gap-8 md:grid-cols-3">
+            {data.benefits.map((benefit, i) => (
+              <article key={i} className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-3xl p-8 shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] hover:-translate-y-2 transition-transform">
+                <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-black ${accentColors[i % accentColors.length]} text-black mb-6 shadow-[4px_4px_0_#000]`}>
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <h3 className="text-2xl font-black uppercase mb-3 text-black dark:text-white">{benefit.title}</h3>
+                <p className="font-bold opacity-80 text-black dark:text-white">{benefit.description}</p>
+              </article>
             ))}
-          </Accordion>
-        </section>
-
-        {/* CTA */}
-        <section className="border-t border-border py-20">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Empieza a digitalizar tu {data.name.toLowerCase()} hoy</h2>
-            <Link href="/pricing">
-              <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6]">
-                Probar Gratis <ArrowRight className="h-4 w-4" />
-              </button>
-            </Link>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      <Footer />
-    </div>
+      {/* FAQ */}
+      <section className="mx-auto w-full max-w-4xl px-6 py-20">
+        <div className="text-center mb-12">
+          <div className="inline-block bg-[#FFB5E8] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
+            Dudas
+          </div>
+          <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Preguntas Frecuentes</h2>
+        </div>
+        <Accordion className="w-full space-y-4">
+          {data.faq.map((faq, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-2xl px-6 py-2 shadow-[4px_4px_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_#FFFFFF] transition-all hover:-translate-y-1"
+            >
+              <AccordionTrigger className="text-[15px] font-black uppercase hover:no-underline py-4 text-black dark:text-white">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-sm font-bold opacity-80 pb-5">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t-4 border-black dark:border-white py-24 bg-[#BFFCC6] dark:bg-black text-center">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-5xl font-black uppercase tracking-tighter mb-8 text-black dark:text-white">
+            Digitaliza tu {data.name.toLowerCase()} hoy
+          </h2>
+          <Link href="/pricing">
+            <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-10 py-5 font-black uppercase text-2xl shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF] hover:translate-y-2 hover:shadow-none transition-all flex items-center gap-4 mx-auto">
+              Probar Gratis <ArrowRight className="h-8 w-8" />
+            </button>
+          </Link>
+        </div>
+      </section>
+    </LandingLayout>
   );
 }
