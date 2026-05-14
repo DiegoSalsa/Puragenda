@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
@@ -23,6 +24,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, business }: NavbarProps = {}) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -57,15 +59,22 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
+                      : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </a>
+              );
+            })}
           </nav>
 
           {/* Desktop actions */}
@@ -133,16 +142,23 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
               {/* Nav links */}
               <nav className="flex-1 space-y-2 p-6">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-2xl px-4 py-3 text-sm sm:text-base font-medium text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground hover:translate-x-1"
-                  >
-                    {link.label}
-                  </a>
-                ))}
+                {navLinks.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-2xl px-4 py-3 text-sm sm:text-base font-medium transition-all hover:translate-x-1 ${
+                        isActive
+                          ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
+                          : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      }`}
+                    >
+                      {link.label}
+                    </a>
+                  );
+                })}
               </nav>
 
               {/* Bottom actions */}
