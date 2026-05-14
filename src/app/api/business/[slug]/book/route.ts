@@ -6,6 +6,7 @@ import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 import { bookingLimiter } from "@/server/lib/rate-limit";
+import { MercadoPagoConfig, Preference } from "mercadopago";
 
 
 export async function POST(
@@ -115,6 +116,9 @@ export async function POST(
       },
     });
 
+    // ── Check deposit requirements ──
+    const depositRequired = business.depositRequired && business.depositAmount > 0 && !!business.mpAccessToken;
+
     // Create appointment with collision detection
     const result = await createAppointment({
       customerName,
@@ -129,24 +133,78 @@ export async function POST(
       totalDuration: allServiceIds.length > 1 ? totalDuration : undefined,
       totalPrice: allServiceIds.length > 1 ? totalPrice : undefined,
       clientId: client.id,
+      depositRequired,
+      depositAmount: business.depositAmount,
     });
 
     if (!result.success) {
       return Response.json({ error: result.error }, { status: 409 });
     }
 
-    // Send email notifications asynchronously (don't block the response)
-    const appointmentWithRelations = await prisma.appointment.findUnique({
-      where: { id: result.appointment.id },
-      include: {
-        service: true,
-        staff: true,
-        business: { include: { owner: { select: { email: true, name: true } } } },
-      },
-    });
+    // ── If deposit required, create MP payment preference ──
+    let paymentUrl: string | null = null;
 
-    if (appointmentWithRelations) {
-      sendBookingNotifications(appointmentWithRelations).catch(() => {});
+    if (depositRequired && business.mpAccessToken) {
+      try {
+        const mpClient = new MercadoPagoConfig({
+          accessToken: business.mpAccessToken,
+        });
+
+        const preference = new Preference(mpClient);
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+        const prefResult = await preference.create({
+          body: {
+            items: [
+              {
+                id: result.appointment.id,
+                title: `Abono - ${service.name} en ${business.name}`,
+                description: `Reserva para ${customerName}`,
+                quantity: 1,
+                unit_price: business.depositAmount,
+                currency_id: "CLP",
+              },
+            ],
+            back_urls: {
+              success: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=approved`,
+              failure: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=rejected`,
+              pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=pending`,
+            },
+            auto_return: "approved",
+            external_reference: result.appointment.id,
+            notification_url: `${baseUrl}/api/webhooks/deposit`,
+            statement_descriptor: "PURAGENDA",
+          },
+        });
+
+        paymentUrl = prefResult.init_point || null;
+
+        // Save preference ID
+        await prisma.appointment.update({
+          where: { id: result.appointment.id },
+          data: { mpPreferenceId: prefResult.id || null },
+        });
+      } catch (err) {
+        console.error("[Book] Error creating MP preference:", err);
+        // Don't block booking if preference creation fails — appointment is still created
+      }
+    }
+
+    // Send email notifications asynchronously (don't block the response)
+    // Only send if no deposit required (otherwise wait for payment)
+    if (!depositRequired) {
+      const appointmentWithRelations = await prisma.appointment.findUnique({
+        where: { id: result.appointment.id },
+        include: {
+          service: true,
+          staff: true,
+          business: { include: { owner: { select: { email: true, name: true } } } },
+        },
+      });
+
+      if (appointmentWithRelations) {
+        sendBookingNotifications(appointmentWithRelations).catch(() => {});
+      }
     }
 
     // ── Redeem reward code if provided ──
@@ -174,7 +232,14 @@ export async function POST(
       }
     }
 
-    return Response.json(result.appointment, { status: 201 });
+    return Response.json(
+      {
+        ...result.appointment,
+        depositRequired,
+        paymentUrl,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("[route] Error:", error);
     return Response.json(
@@ -187,3 +252,4 @@ export async function POST(
 export async function OPTIONS() {
   return new Response(null, { status: 204 });
 }
+

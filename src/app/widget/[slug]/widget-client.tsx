@@ -21,9 +21,11 @@ interface Props {
   businessHours?: BusinessHour[];
   staffMembers?: StaffMember[];
   maxServicesPerBooking?: number;
+  depositRequired?: boolean;
+  depositAmount?: number;
 }
 
-type Step = "service" | "staff" | "datetime" | "details" | "success";
+type Step = "service" | "staff" | "datetime" | "details" | "success" | "payment";
 type FormState = { name: string; email: string; phone: string };
 type BlockedSlot = { startTime: string; endTime: string };
 
@@ -104,7 +106,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1 }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, depositAmount = 0 }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -279,6 +281,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         }),
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
+      const data = await res.json();
+      // If deposit is required and we have a payment URL, redirect to MP
+      if (data.depositRequired && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+        return;
+      }
       setStep("success");
     } catch (err) { setApiError(err instanceof Error ? err.message : "Error inesperado."); } finally { setSubmitting(false); }
   }
@@ -552,9 +560,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <p className="text-xs text-amber-400/70">Ingresa tu correo electrónico primero para validar el código.</p>
                   )}
                 </div>
+                {/* Deposit notice */}
+                {depositRequired && depositAmount > 0 && (
+                  <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
+                    <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(depositAmount)}</p>
+                    <p className="text-xs mt-1" style={{ color: textSecondary }}>Serás redirigido a Mercado Pago para pagar el abono. Tu cita se confirmará automáticamente al completar el pago.</p>
+                  </div>
+                )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
                 <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />Confirmando...</> : <>Confirmar reserva <ChevronRight className="h-5 w-5" /></>}
+                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{depositRequired ? 'Redirigiendo al pago...' : 'Confirmando...'}</> : <>{depositRequired ? 'Pagar abono y confirmar' : 'Confirmar reserva'} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
             </div>

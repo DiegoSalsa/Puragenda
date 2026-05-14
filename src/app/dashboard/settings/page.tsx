@@ -3,17 +3,19 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
 import { BusinessLocationEditor } from "./business-location-editor";
 import { LogoUploader } from "./logo-uploader";
 import { UpgradeButton } from "@/components/dashboard/upgrade-button";
+import { MercadoPagoConnect } from "./mercadopago-connect";
+import { DepositConfig } from "./deposit-config";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ mp_connected?: string; mp_error?: string }> }) {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
   if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
@@ -28,6 +30,10 @@ export default async function SettingsPage() {
     prisma.subscription.findUnique({ where: { businessId: business.id } }),
   ]);
 
+  const params = await searchParams;
+  const mpConnectedSuccess = params.mp_connected === "true";
+  const mpError = params.mp_error;
+
   const isProduction = process.env.NODE_ENV === "production";
   const widgetUrl = isProduction
     ? `https://www.puragenda.cl/widget/${business.slug}`
@@ -40,12 +46,34 @@ export default async function SettingsPage() {
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade = !subscription || subscription.plan === "INDIVIDUAL" || (subscription.plan === "EQUIPO" && isTrial);
 
+  const isMpConnected = !!business.mpAccessToken;
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
-        <p className="mt-1 text-muted-foreground">Datos de integración y horarios del negocio.</p>
+        <p className="mt-1 text-muted-foreground">Datos de integración, horarios y pagos del negocio.</p>
       </div>
+
+      {/* ── MP Connection Success/Error banners ── */}
+      {mpConnectedSuccess && (
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3 text-sm font-medium text-emerald-400">
+          <CheckCircle2 className="h-5 w-5" />
+          ¡Mercado Pago conectado exitosamente!
+        </div>
+      )}
+      {mpError && (
+        <div className="flex items-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-3 text-sm font-medium text-red-400">
+          <AlertCircle className="h-5 w-5" />
+          {mpError === "denied" && "No se otorgaron los permisos de Mercado Pago."}
+          {mpError === "token_exchange" && "Error al intercambiar el código de autorización."}
+          {mpError === "invalid_params" && "Parámetros de respuesta inválidos."}
+          {mpError === "invalid_state" && "Estado de seguridad inválido."}
+          {mpError === "server_config" && "Error de configuración del servidor."}
+          {mpError === "no_token" && "No se recibió un token de acceso."}
+          {mpError === "unexpected" && "Error inesperado al conectar Mercado Pago."}
+        </div>
+      )}
 
       <div className="grid gap-6">
         {/* ── Plan / Suscripción ── */}
@@ -87,6 +115,27 @@ export default async function SettingsPage() {
             )}
           </div>
         </div>
+
+        {/* ── Mercado Pago Connection ── */}
+        <div id="mercadopago" className="rounded-2xl border border-[#009EE3]/20 bg-gradient-to-br from-[#009EE3]/5 via-card to-card p-6">
+          <div className="mb-5 flex items-center gap-2 text-sm font-medium">
+            <CreditCard className="h-4 w-4 text-[#009EE3]" /> Mercado Pago
+          </div>
+          <MercadoPagoConnect isConnected={isMpConnected} mpUserId={business.mpUserId} />
+        </div>
+
+        {/* ── Deposit / Abono Config ── */}
+        <div id="abonos" className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-5 flex items-center gap-2 text-sm font-medium">
+            <Banknote className="h-4 w-4 text-[#7C3AED]" /> Abonos / Depósitos
+          </div>
+          <DepositConfig
+            initialDepositRequired={business.depositRequired}
+            initialDepositAmount={business.depositAmount}
+            isMpConnected={isMpConnected}
+          />
+        </div>
+
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Store className="h-4 w-4 text-[#7C3AED]" /> Nombre del Negocio

@@ -15,15 +15,16 @@ interface CalendarAppointment {
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7:00-18:00
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  PENDING:    { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  CONFIRMED:  { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
-  CANCELLED:  { bg: "bg-red-500/8", border: "border-red-500/15", text: "text-red-400/60", dot: "bg-red-400" },
-  CHECKED_IN: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
-  NO_SHOW:    { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
+  PENDING:          { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
+  AWAITING_PAYMENT: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-300", dot: "bg-orange-400" },
+  CONFIRMED:        { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
+  CANCELLED:        { bg: "bg-red-500/8", border: "border-red-500/15", text: "text-red-400/60", dot: "bg-red-400" },
+  CHECKED_IN:       { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
+  NO_SHOW:          { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Pendiente", CONFIRMED: "Confirmada", CANCELLED: "Cancelada",
+  PENDING: "Pendiente", AWAITING_PAYMENT: "Esperando pago", CONFIRMED: "Confirmada", CANCELLED: "Cancelada",
   CHECKED_IN: "Asistió", NO_SHOW: "Inasistencia",
 };
 

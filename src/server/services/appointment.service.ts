@@ -59,6 +59,8 @@ export async function createAppointment(data: {
   additionalServiceIds?: string[];
   totalDuration?: number;
   totalPrice?: number;
+  depositRequired?: boolean;
+  depositAmount?: number;
 }) {
   // Check collision for the specific staff member (or business-wide if no staff)
   const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
@@ -92,6 +94,9 @@ export async function createAppointment(data: {
     }
   }
 
+  // Determine initial status based on deposit config
+  const initialStatus = data.depositRequired ? "AWAITING_PAYMENT" : "PENDING";
+
   const appointment = await prisma.appointment.create({
     data: {
       customerName: data.customerName,
@@ -99,7 +104,7 @@ export async function createAppointment(data: {
       customerPhone: data.customerPhone,
       startTime: data.startTime,
       endTime: data.endTime,
-      status: "PENDING",
+      status: initialStatus,
       businessId: data.businessId,
       serviceId: data.serviceId,
       staffId: data.staffId,
@@ -107,12 +112,15 @@ export async function createAppointment(data: {
       additionalServiceIds: data.additionalServiceIds || [],
       totalDuration: data.totalDuration,
       totalPrice: data.totalPrice,
+      depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
+      paymentStatus: data.depositRequired ? "PENDING" : "NONE",
     },
     include: { service: true },
   });
 
   return { success: true as const, appointment };
 }
+
 
 /**
  * Get appointments for a business with optional filters.
@@ -194,7 +202,7 @@ export async function getAppointmentByIdAndBusiness(
  */
 export async function updateAppointmentStatus(
   appointmentId: string,
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW"
+  status: "PENDING" | "AWAITING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "COMPLETED" | "NO_SHOW"
 ) {
   return prisma.appointment.update({
     where: { id: appointmentId },

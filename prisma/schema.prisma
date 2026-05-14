@@ -130,6 +130,9 @@ model Business {
   widgetFontSize        Int      @default(14)
   brandColor            String?
   maxServicesPerBooking Int      @default(1)
+  // ── Abono (Deposit) Config ──
+  depositRequired       Boolean  @default(false)
+  depositAmount         Int      @default(0)     // CLP amount for deposit
   allowedOrigins        String[] @default([])
   timezone              String   @default("America/Santiago")
   ownerId               String?
@@ -263,11 +266,19 @@ model Service {
 
 enum AppointmentStatus {
   PENDING
+  AWAITING_PAYMENT
   CONFIRMED
   CANCELLED
   CHECKED_IN
   COMPLETED
   NO_SHOW
+}
+
+enum PaymentStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Appointment {
@@ -287,6 +298,11 @@ model Appointment {
   clientId             String?
   reminderSent         Boolean           @default(false)
   actionToken          String?           @unique
+  // ── Deposit Payment ──
+  depositAmount        Int?              // CLP amount charged as deposit
+  paymentStatus        PaymentStatus     @default(NONE)
+  mpPaymentId          String?           // MercadoPago payment ID
+  mpPreferenceId       String?           // MercadoPago preference ID
   createdAt            DateTime          @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

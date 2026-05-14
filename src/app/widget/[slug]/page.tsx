@@ -172,6 +172,8 @@ export default async function WidgetPage({
         })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
+      depositRequired={business.depositRequired && business.depositAmount > 0 && !!business.mpAccessToken}
+      depositAmount={business.depositAmount}
     />
     </>
   );

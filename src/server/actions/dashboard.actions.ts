@@ -492,3 +492,63 @@ export async function updateBusinessLocationAction(data: { address: string; maps
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
+
+// ─── Deposit / Abono Config ───
+
+export async function saveDepositConfigAction(data: {
+  depositRequired: boolean;
+  depositAmount: number;
+}) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "Solo el administrador puede configurar los abonos" };
+  }
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const amount = Math.max(0, Math.floor(data.depositAmount || 0));
+
+  // If enabling deposits, check that MP is connected
+  if (data.depositRequired && !business.mpAccessToken) {
+    return { error: "Debes conectar tu cuenta de Mercado Pago antes de activar abonos." };
+  }
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      depositRequired: data.depositRequired,
+      depositAmount: amount,
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// ─── Disconnect Mercado Pago ───
+
+export async function disconnectMercadoPagoAction() {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "Solo el administrador puede desconectar Mercado Pago" };
+  }
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      mpAccessToken: null,
+      mpRefreshToken: null,
+      mpUserId: null,
+      mpTokenExpiresAt: null,
+      depositRequired: false,
+      depositAmount: 0,
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
