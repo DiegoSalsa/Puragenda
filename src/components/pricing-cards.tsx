@@ -207,7 +207,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
 
       {/* Plan Cards — 2 columns */}
-      <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2 pt-6 sm:pt-8">
         {plans.map((plan) => {
           const totalPrice = getTotalPrice(plan.key);
           const basePrice = getBasePriceDisplay(plan.key);

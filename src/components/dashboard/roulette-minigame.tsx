@@ -500,17 +500,22 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
 
             {/* Center hub */}
             <circle cx="100" cy="100" r="20" fill="#1a1a2e" stroke="#7C3AED" strokeWidth="2.5" />
-            <circle cx="100" cy="100" r="14" fill="url(#hubGrad)" />
-            <image
-              href="/logos/logo-white.svg"
-              x="88"
-              y="88"
-              width="24"
-              height="24"
-            />
+            <circle cx="100" cy="100" r="15" fill="url(#hubGrad)" />
+            <g clipPath="url(#hubClip)">
+              <image
+                href="/icon-512x512.png"
+                x="85"
+                y="85"
+                width="30"
+                height="30"
+              />
+            </g>
 
             {/* Gradient definition for hub */}
             <defs>
+              <clipPath id="hubClip">
+                <circle cx="100" cy="100" r="15" />
+              </clipPath>
               <radialGradient id="hubGrad" cx="50%" cy="40%">
                 <stop offset="0%" stopColor="#A855F7" />
                 <stop offset="100%" stopColor="#7C3AED" />
