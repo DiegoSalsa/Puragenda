@@ -116,15 +116,23 @@ export default async function SolucionesPage() {
 
       {/* CTA */}
       <section className="py-24 text-center">
-        <h2 className="text-3xl font-black uppercase mb-6">¿No ves tu rubro aquí?</h2>
-        <p className="font-bold opacity-80 mb-8 max-w-xl mx-auto">
+        <h2 className="text-3xl font-black uppercase mb-6">¿Listo para probarlo?</h2>
+        <p className="font-bold opacity-80 mb-10 max-w-xl mx-auto">
           Si ofreces servicios que requieren agendar tiempo (abogados, consultores, psicólogos), Puragenda también es para ti.
         </p>
-        <Link href="/contacto">
-          <button className="bg-black text-white dark:bg-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 transition-all">
-            Hablemos de tu negocio
-          </button>
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/register">
+            <button className="bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 transition-all">
+              Empezar 30 días gratis →
+            </button>
+          </Link>
+          <Link href="/contacto">
+            <button className="bg-black text-white dark:bg-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 transition-all">
+              Hablemos de tu negocio
+            </button>
+          </Link>
+        </div>
+        <p className="mt-6 text-sm font-bold opacity-60">Sin tarjeta de crédito · Cancela cuando quieras</p>
       </section>
     </LandingLayout>
   );

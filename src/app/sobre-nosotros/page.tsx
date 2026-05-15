@@ -117,12 +117,21 @@ export default async function AboutPage() {
           </div>
         </article>
 
-        <div className="mt-20 flex justify-center border-t-4 border-black dark:border-white pt-12">
-          <Link href="/pricing">
-            <button className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
-              Únete a Puragenda <ArrowRight className="h-5 w-5" />
-            </button>
-          </Link>
+        <div className="mt-20 border-t-4 border-black dark:border-white pt-12 text-center space-y-6">
+          <p className="text-xl font-black uppercase opacity-70">¿Listo para empezar?</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/register">
+              <button className="flex items-center gap-2 bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
+                Empezar 30 días gratis <ArrowRight className="h-5 w-5" />
+              </button>
+            </Link>
+            <Link href="/pricing">
+              <button className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
+                Ver precios
+              </button>
+            </Link>
+          </div>
+          <p className="text-sm font-bold opacity-60">Sin tarjeta de crédito · Cancela cuando quieras</p>
         </div>
       </main>
     </LandingLayout>

@@ -50,12 +50,10 @@ export default function NewBusinessPage() {
   if (success) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-            <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-white">¡Negocio creado!</h2>
-          <p className="text-sm text-[#888]">Redirigiendo a la lista de negocios...</p>
+        <div className="border-4 border-black bg-[#BFFCC6] p-12 shadow-[8px_8px_0_#000] space-y-4 text-center">
+          <CheckCircle2 className="h-12 w-12 text-black mx-auto" />
+          <h2 className="text-3xl font-black uppercase tracking-tight text-black">Negocio creado!</h2>
+          <p className="text-sm font-bold text-black/60">Redirigiendo a la lista de negocios...</p>
         </div>
       </div>
     );
@@ -67,29 +65,22 @@ export default function NewBusinessPage() {
       <div>
         <Link
           href="/para/x7k9m2v4q8/businesses"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-[#7C3AED] hover:underline"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-black uppercase text-black hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Volver a negocios
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]">
-            <Building2 className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Agregar Negocio</h1>
-            <p className="text-sm text-[#888]">Crear un nuevo negocio manualmente</p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-black">Agregar Negocio</h1>
+        <p className="text-sm font-bold text-black/50">Crear un nuevo negocio manualmente</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Business Info */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">Información del Negocio</h3>
+        <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Información del Negocio</h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="businessName" className="text-xs font-medium text-[#888]">
+              <label htmlFor="businessName" className="text-xs font-black uppercase text-black/60">
                 Nombre del negocio
               </label>
               <input
@@ -99,18 +90,18 @@ export default function NewBusinessPage() {
                 onChange={(e) => setBusinessName(e.target.value)}
                 required
                 placeholder="Ej: Barbería Santiago"
-                className="w-full rounded-xl border border-white/[0.06] bg-[#141418] px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-[#555] focus:border-[#7C3AED]/40"
+                className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
             </div>
           </div>
         </div>
 
         {/* Owner Info */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">Datos del Dueño</h3>
+        <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Datos del Dueño</h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="ownerName" className="text-xs font-medium text-[#888]">
+              <label htmlFor="ownerName" className="text-xs font-black uppercase text-black/60">
                 Nombre completo
               </label>
               <input
@@ -120,12 +111,12 @@ export default function NewBusinessPage() {
                 onChange={(e) => setOwnerName(e.target.value)}
                 required
                 placeholder="Ej: Carlos Ruiz"
-                className="w-full rounded-xl border border-white/[0.06] bg-[#141418] px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-[#555] focus:border-[#7C3AED]/40"
+                className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="ownerEmail" className="text-xs font-medium text-[#888]">
+              <label htmlFor="ownerEmail" className="text-xs font-black uppercase text-black/60">
                 Email
               </label>
               <input
@@ -135,12 +126,12 @@ export default function NewBusinessPage() {
                 onChange={(e) => setOwnerEmail(e.target.value)}
                 required
                 placeholder="carlos@negocio.cl"
-                className="w-full rounded-xl border border-white/[0.06] bg-[#141418] px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-[#555] focus:border-[#7C3AED]/40"
+                className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="ownerPassword" className="text-xs font-medium text-[#888]">
+              <label htmlFor="ownerPassword" className="text-xs font-black uppercase text-black/60">
                 Contraseña
               </label>
               <input
@@ -150,32 +141,32 @@ export default function NewBusinessPage() {
                 onChange={(e) => setOwnerPassword(e.target.value)}
                 required
                 placeholder="Contraseña temporal"
-                className="w-full rounded-xl border border-white/[0.06] bg-[#141418] px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-[#555] focus:border-[#7C3AED]/40"
+                className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
-              <p className="text-xs text-[#555]">El dueño podrá cambiar esta contraseña después.</p>
+              <p className="text-xs font-bold text-black/40">El dueño podrá cambiar esta contraseña después.</p>
             </div>
           </div>
         </div>
 
         {/* Plan */}
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">Plan de Suscripción</h3>
+        <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Plan de Suscripción</h3>
           <div className="grid grid-cols-2 gap-3">
             {(["INDIVIDUAL", "EQUIPO"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setPlan(p)}
-                className={`rounded-xl border p-4 text-left transition-all ${
+                className={`border-4 border-black p-4 text-left transition-all ${
                   plan === p
-                    ? "border-[#7C3AED]/40 bg-[#7C3AED]/10"
-                    : "border-white/[0.06] bg-[#141418] hover:border-white/[0.12]"
+                    ? "bg-[#FFF5BA] shadow-[3px_3px_0_#000]"
+                    : "bg-white shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
                 }`}
               >
-                <p className={`text-sm font-bold ${plan === p ? "text-[#A78BFA]" : "text-white"}`}>
+                <p className="text-sm font-black uppercase text-black">
                   {p === "INDIVIDUAL" ? "Individual" : "Equipo"}
                 </p>
-                <p className="mt-1 text-xs text-[#666]">
+                <p className="mt-1 text-xs font-bold text-black/50">
                   {p === "INDIVIDUAL" ? "$9.990/mes" : "$24.990/mes"}
                 </p>
               </button>
@@ -184,7 +175,7 @@ export default function NewBusinessPage() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div className="border-4 border-black bg-[#FFB5E8] px-4 py-3 text-sm font-black text-black">
             {error}
           </div>
         )}
@@ -192,14 +183,14 @@ export default function NewBusinessPage() {
         <div className="flex gap-3">
           <Link
             href="/para/x7k9m2v4q8/businesses"
-            className="rounded-xl border border-white/[0.06] bg-[#141418] px-6 py-2.5 text-sm font-medium text-[#888] transition-all hover:text-white"
+            className="border-4 border-black bg-white px-6 py-2.5 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
           >
             Cancelar
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#7C3AED]/20 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 border-4 border-black bg-black py-2.5 text-sm font-black uppercase text-white shadow-[3px_3px_0_#7C3AED] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
           >
             {loading ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Creando...</>

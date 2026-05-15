@@ -34,18 +34,18 @@ export function DeleteBusinessButton({
   if (confirming) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-red-400">¿Eliminar &quot;{businessName}&quot;?</span>
+        <span className="text-xs font-black text-black">¿Eliminar &quot;{businessName}&quot;?</span>
         <button
           onClick={handleDelete}
           disabled={loading}
-          className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition-all hover:bg-red-500/20 disabled:opacity-50"
+          className="flex items-center gap-1 border-2 border-black bg-[#FFB5E8] px-3 py-1.5 text-xs font-black uppercase text-black shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
           Sí, eliminar
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="rounded-lg border border-white/[0.06] px-3 py-1.5 text-xs text-[#888] hover:text-white"
+          className="border-2 border-black bg-white px-3 py-1.5 text-xs font-black uppercase text-black shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
         >
           Cancelar
         </button>
@@ -56,7 +56,7 @@ export function DeleteBusinessButton({
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="flex items-center gap-1 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs font-medium text-red-400 transition-all hover:bg-red-500/10"
+      className="flex items-center gap-1 border-2 border-black bg-[#FFB5E8] px-3 py-1.5 text-xs font-black uppercase text-black shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
     >
       <Trash2 className="h-3 w-3" />
       Eliminar

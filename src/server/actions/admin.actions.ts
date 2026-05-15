@@ -194,3 +194,201 @@ export async function deleteBusinessAction(businessId: string) {
     return { error: "Error al eliminar el negocio" };
   }
 }
+
+// ═══════════════════════════════════════════
+// EXTEND TRIAL
+// ═══════════════════════════════════════════
+
+export async function extendTrialAction(subscriptionId: string, days: number) {
+  await requireSuperAdmin();
+
+  if (days < 1 || days > 365) return { error: "Días inválidos (1-365)" };
+
+  try {
+    const sub = await prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      select: { trialEndsAt: true, status: true },
+    });
+
+    if (!sub) return { error: "Suscripción no encontrada" };
+
+    const base = sub.trialEndsAt && sub.trialEndsAt > new Date() ? sub.trialEndsAt : new Date();
+    const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+
+    await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        trialEndsAt: newTrialEndsAt,
+        isTrial: true,
+        status: "TRIALING",
+        trialWarningEmailSent: false,
+      },
+    });
+
+    revalidatePath("/para/x7k9m2v4q8");
+    return { success: true, newTrialEndsAt: newTrialEndsAt.toISOString() };
+  } catch (err) {
+    console.error("[Admin] Error extending trial:", err);
+    return { error: "Error al extender el trial" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// RESET USER PASSWORD
+// ═══════════════════════════════════════════
+
+export async function resetUserPasswordAction(userId: string, newPassword: string) {
+  await requireSuperAdmin();
+
+  if (!newPassword || newPassword.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
+
+  try {
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed, tokenVersion: { increment: 1 } },
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error resetting password:", err);
+    return { error: "Error al resetear la contraseña" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// DEACTIVATE USER
+// ═══════════════════════════════════════════
+
+export async function deactivateUserAction(userId: string) {
+  await requireSuperAdmin();
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { isSuperAdmin: true } });
+    if (!user) return { error: "Usuario no encontrado" };
+    if (user.isSuperAdmin) return { error: "No se puede desactivar un superadmin" };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
+    });
+
+    revalidatePath("/para/x7k9m2v4q8");
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error deactivating user:", err);
+    return { error: "Error al desactivar el usuario" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// REACTIVATE USER
+// ═══════════════════════════════════════════
+
+export async function reactivateUserAction(userId: string) {
+  await requireSuperAdmin();
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: null },
+    });
+    revalidatePath("/para/x7k9m2v4q8");
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error reactivating user:", err);
+    return { error: "Error al reactivar el usuario" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// SEND MASS EMAIL
+// ═══════════════════════════════════════════
+
+export async function sendMassEmailAction(data: {
+  segment: "ALL" | "TRIALING" | "ACTIVE" | "CANCELLED";
+  subject: string;
+  body: string;
+}) {
+  await requireSuperAdmin();
+
+  if (!data.subject.trim() || !data.body.trim()) return { error: "Asunto y cuerpo son requeridos" };
+
+  try {
+    // Get users based on segment
+    let users: { email: string; name: string }[] = [];
+
+    if (data.segment === "ALL") {
+      users = await prisma.user.findMany({
+        where: { deletedAt: null, role: "ADMIN" },
+        select: { email: true, name: true },
+      });
+    } else {
+      const status = data.segment as "TRIALING" | "ACTIVE" | "CANCELLED";
+      const businesses = await prisma.business.findMany({
+        where: {
+          subscription: { status },
+          owner: { deletedAt: null },
+        },
+        select: { owner: { select: { email: true, name: true } } },
+      });
+      users = businesses
+        .map((b) => b.owner)
+        .filter((o): o is { email: string; name: string } => !!o?.email);
+    }
+
+    // Deduplicate by email
+    const unique = Array.from(new Map(users.map((u) => [u.email, u])).values());
+
+    const { resend, EMAIL_FROM } = await import("@/server/email/resend");
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of unique) {
+      const result = await resend.emails.send({
+        from: EMAIL_FROM,
+        to: user.email,
+        subject: data.subject,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
+            <h2 style="color: #7C3AED;">Hola ${user.name},</h2>
+            <div style="margin-top: 16px; line-height: 1.6; color: #333;">
+              ${data.body.replace(/\n/g, "<br/>")}
+            </div>
+            <hr style="margin-top: 32px; border-color: #eee;" />
+            <p style="color: #999; font-size: 12px;">Puragenda · Tu agenda online</p>
+          </div>
+        `,
+      });
+      if (result.error) failed++;
+      else sent++;
+    }
+
+    return { success: true, sent, failed, total: unique.length };
+  } catch (err) {
+    console.error("[Admin] Error sending mass email:", err);
+    return { error: "Error al enviar los emails" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// ADD ADMIN NOTE TO BUSINESS
+// ═══════════════════════════════════════════
+
+export async function addAdminNoteAction(businessId: string, note: string) {
+  const user = await requireSuperAdmin();
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action: "ADMIN_NOTE",
+        details: JSON.stringify({ businessId, note }),
+        userId: user.id,
+      },
+    });
+    revalidatePath(`/para/x7k9m2v4q8/businesses/${businessId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error adding note:", err);
+    return { error: "Error al guardar la nota" };
+  }
+}
