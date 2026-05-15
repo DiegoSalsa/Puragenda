@@ -132,7 +132,6 @@ model Business {
   maxServicesPerBooking Int      @default(1)
   // ── Abono (Deposit) Config ──
   depositRequired       Boolean  @default(false)
-  depositAmount         Int      @default(0)     // CLP amount for deposit
   allowedOrigins        String[] @default([])
   timezone              String   @default("America/Santiago")
   ownerId               String?
@@ -246,12 +245,13 @@ model ScheduleBlock {
 }
 
 model Service {
-  id          String  @id @default(cuid())
-  name        String
-  description String?
-  duration    Int
-  price       Float
-  businessId  String
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  duration      Int
+  price         Float
+  depositAmount Int     @default(0)  // CLP amount for deposit; 0 = no deposit
+  businessId    String
 
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments Appointment[]

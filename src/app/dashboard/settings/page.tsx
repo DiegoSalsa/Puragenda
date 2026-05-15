@@ -131,7 +131,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
           <DepositConfig
             initialDepositRequired={business.depositRequired}
-            initialDepositAmount={business.depositAmount}
             isMpConnected={isMpConnected}
           />
         </div>

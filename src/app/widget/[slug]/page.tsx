@@ -157,7 +157,7 @@ export default async function WidgetPage({
         fontSize,
       }}
       services={business.services.map((s) => ({
-        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price,
+        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
       }))}
       primaryColor={widgetColor}
       businessHours={business.businessHours.map((h) => ({
@@ -172,8 +172,7 @@ export default async function WidgetPage({
         })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
-      depositRequired={business.depositRequired && business.depositAmount > 0 && !!business.mpAccessToken}
-      depositAmount={business.depositAmount}
+      depositRequired={business.depositRequired && !!business.mpAccessToken}
     />
     </>
   );

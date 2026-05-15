@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check deposit is required
-    if (!appointment.business.depositRequired || appointment.business.depositAmount <= 0) {
+    // Check deposit is required (use appointment's stored deposit amount)
+    const depositAmt = appointment.depositAmount || 0;
+    if (!appointment.business.depositRequired || depositAmt <= 0) {
       return Response.json(
         { error: "Este negocio no requiere abono" },
         { status: 400 }
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
             title: `Abono - ${appointment.service.name} en ${appointment.business.name}`,
             description: `Reserva para ${appointment.customerName}`,
             quantity: 1,
-            unit_price: appointment.business.depositAmount,
+            unit_price: depositAmt,
             currency_id: "CLP",
           },
         ],
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       where: { id: appointment.id },
       data: {
         mpPreferenceId: result.id || null,
-        depositAmount: appointment.business.depositAmount,
+        depositAmount: depositAmt,
         paymentStatus: "PENDING",
       },
     });

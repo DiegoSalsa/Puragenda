@@ -497,7 +497,6 @@ export async function updateBusinessLocationAction(data: { address: string; maps
 
 export async function saveDepositConfigAction(data: {
   depositRequired: boolean;
-  depositAmount: number;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -506,8 +505,6 @@ export async function saveDepositConfigAction(data: {
   }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
-
-  const amount = Math.max(0, Math.floor(data.depositAmount || 0));
 
   // If enabling deposits, check that MP is connected
   if (data.depositRequired && !business.mpAccessToken) {
@@ -518,7 +515,6 @@ export async function saveDepositConfigAction(data: {
     where: { id: business.id },
     data: {
       depositRequired: data.depositRequired,
-      depositAmount: amount,
     },
   });
 
@@ -545,7 +541,6 @@ export async function disconnectMercadoPagoAction() {
       mpUserId: null,
       mpTokenExpiresAt: null,
       depositRequired: false,
-      depositAmount: 0,
     },
   });
 

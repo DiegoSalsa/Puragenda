@@ -28,5 +28,11 @@ export default async function ServicesPage() {
 
   const services = await getServicesByBusinessId(business.id);
 
-  return <ServicesClient initialServices={services} maxServicesPerBooking={business.maxServicesPerBooking} />;
+  return (
+    <ServicesClient
+      initialServices={services}
+      maxServicesPerBooking={business.maxServicesPerBooking}
+      depositEnabled={business.depositRequired && !!business.mpAccessToken}
+    />
+  );
 }

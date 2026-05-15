@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { updateMaxServicesAction } from "@/server/actions/dashboard.actions";
 
@@ -11,14 +11,17 @@ interface Service {
   description: string | null;
   duration: number;
   price: number;
+  depositAmount: number;
 }
 
 export function ServicesClient({
   initialServices,
   maxServicesPerBooking = 1,
+  depositEnabled = false,
 }: {
   initialServices: Service[];
   maxServicesPerBooking?: number;
+  depositEnabled?: boolean;
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
   const [loading, setLoading] = useState(false);
@@ -33,6 +36,7 @@ export function ServicesClient({
     description: "",
     duration: "",
     price: "",
+    depositAmount: "",
   });
 
   async function handleSaveMaxServices(val: number) {
@@ -57,7 +61,7 @@ export function ServicesClient({
 
   function openCreate() {
     setEditingService(null);
-    setForm({ name: "", description: "", duration: "", price: "" });
+    setForm({ name: "", description: "", duration: "", price: "", depositAmount: "" });
     setDialogOpen(true);
   }
 
@@ -68,6 +72,7 @@ export function ServicesClient({
       description: service.description || "",
       duration: String(service.duration),
       price: String(service.price),
+      depositAmount: String(service.depositAmount || 0),
     });
     setDialogOpen(true);
   }
@@ -220,6 +225,31 @@ export function ServicesClient({
                   />
                 </div>
               </div>
+
+              {/* Deposit Amount */}
+              {depositEnabled && (
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
+                    Abono / Depósito (CLP)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.depositAmount}
+                    onChange={(e) =>
+                      setForm({ ...form, depositAmount: e.target.value })
+                    }
+                    placeholder="0 = sin abono"
+                    min="0"
+                    step="500"
+                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                  />
+                  <p className="text-[11px] text-muted-foreground/70">
+                    Monto que el cliente debe pagar al reservar este servicio. Déjalo en 0 para no requerir abono.
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -271,6 +301,7 @@ export function ServicesClient({
                     <th className="pb-3 pr-4">Descripción</th>
                     <th className="pb-3 pr-4">Duración</th>
                     <th className="pb-3 pr-4">Precio</th>
+                    {depositEnabled && <th className="pb-3 pr-4">Abono</th>}
                     <th className="pb-3 text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -294,6 +325,18 @@ export function ServicesClient({
                       <td className="py-3.5 pr-4 font-mono text-sm">
                         {formatPrice(service.price)}
                       </td>
+                      {depositEnabled && (
+                        <td className="py-3.5 pr-4">
+                          {service.depositAmount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg border border-[#009EE3]/20 bg-[#009EE3]/10 px-2 py-0.5 text-xs font-medium text-[#009EE3]">
+                              <Banknote className="h-3 w-3" />
+                              {formatPrice(service.depositAmount)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Sin abono</span>
+                          )}
+                        </td>
+                      )}
                       <td className="py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button

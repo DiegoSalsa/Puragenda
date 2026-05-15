@@ -63,6 +63,13 @@ export const serviceSchema = z.object({
   price: z
     .number({ message: "El precio es obligatorio" })
     .min(0, "El precio no puede ser negativo"),
+
+  depositAmount: z
+    .number()
+    .int("El abono debe ser un número entero")
+    .min(0, "El abono no puede ser negativo")
+    .optional()
+    .default(0),
 });
 
 export type ServiceInput = z.infer<typeof serviceSchema>;

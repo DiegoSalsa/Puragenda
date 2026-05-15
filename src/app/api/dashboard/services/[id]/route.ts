@@ -24,10 +24,11 @@ export async function PUT(
     if (!existing) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, duration, price } = body;
+    const { name, description, duration, price, depositAmount } = body;
 
     const parsedDuration = duration !== undefined ? Number(duration) : undefined;
     const parsedPrice = price !== undefined ? Number(price) : undefined;
+    const parsedDeposit = depositAmount !== undefined ? Number(depositAmount) : undefined;
 
     if (parsedDuration !== undefined && Number.isNaN(parsedDuration)) {
       return Response.json({ error: "Duración inválida" }, { status: 400 });
@@ -37,11 +38,16 @@ export async function PUT(
       return Response.json({ error: "Precio inválido" }, { status: 400 });
     }
 
+    if (parsedDeposit !== undefined && (Number.isNaN(parsedDeposit) || parsedDeposit < 0)) {
+      return Response.json({ error: "Monto de abono inválido" }, { status: 400 });
+    }
+
     const service = await updateService(id, {
       ...(name && { name }),
       ...(description !== undefined && { description }),
       ...(parsedDuration !== undefined && { duration: parsedDuration }),
       ...(parsedPrice !== undefined && { price: parsedPrice }),
+      ...(parsedDeposit !== undefined && { depositAmount: parsedDeposit }),
     });
 
     return Response.json(service);

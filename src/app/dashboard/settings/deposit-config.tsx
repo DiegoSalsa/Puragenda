@@ -2,26 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, DollarSign } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { saveDepositConfigAction } from "@/server/actions/dashboard.actions";
 
 interface Props {
   initialDepositRequired: boolean;
-  initialDepositAmount: number;
   isMpConnected: boolean;
 }
 
-export function DepositConfig({ initialDepositRequired, initialDepositAmount, isMpConnected }: Props) {
+export function DepositConfig({ initialDepositRequired, isMpConnected }: Props) {
   const router = useRouter();
   const [depositRequired, setDepositRequired] = useState(initialDepositRequired);
-  const [depositAmount, setDepositAmount] = useState(initialDepositAmount);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   async function handleSave() {
     setSaving(true);
     setMessage("");
-    const result = await saveDepositConfigAction({ depositRequired, depositAmount });
+    const result = await saveDepositConfigAction({ depositRequired });
     if (result.error) {
       setMessage(result.error);
     } else {
@@ -44,28 +42,13 @@ export function DepositConfig({ initialDepositRequired, initialDepositAmount, is
           />
           <div className="h-6 w-11 rounded-full border border-border bg-muted transition-all after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-border after:bg-background after:transition-all after:content-[''] peer-checked:bg-[#7C3AED] peer-checked:after:translate-x-full peer-checked:after:border-transparent peer-focus:outline-none" />
         </label>
-        <span className="text-sm font-medium">Requerir abono para confirmar reservas</span>
+        <span className="text-sm font-medium">Activar sistema de abonos</span>
       </div>
 
       {depositRequired && (
         <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4">
-          <label className="block text-sm font-medium">
-            Monto del abono (CLP)
-          </label>
-          <div className="relative">
-            <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="number"
-              min={0}
-              step={500}
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(parseInt(e.target.value) || 0)}
-              className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-4 text-sm outline-none transition-colors focus:border-[#7C3AED]/50"
-              placeholder="5000"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Este monto se cobrará al cliente antes de confirmar su cita. La cita quedará en estado "Esperando pago" hasta que el cliente pague.
+          <p className="text-sm text-muted-foreground">
+            El monto de abono se configura individualmente en cada servicio desde la sección <strong>Servicios</strong>.
           </p>
           {!isMpConnected && (
             <p className="text-xs text-amber-400">

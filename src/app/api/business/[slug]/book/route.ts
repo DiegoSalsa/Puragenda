@@ -116,8 +116,18 @@ export async function POST(
       },
     });
 
-    // ── Check deposit requirements ──
-    const depositRequired = business.depositRequired && business.depositAmount > 0 && !!business.mpAccessToken;
+    // ── Check deposit requirements (per-service) ──
+    let totalDepositAmount = service.depositAmount || 0;
+    if (additionalIds.length > 0) {
+      const additionalServicesForDeposit = await prisma.service.findMany({
+        where: { id: { in: additionalIds }, businessId: business.id },
+        select: { depositAmount: true },
+      });
+      for (const s of additionalServicesForDeposit) {
+        totalDepositAmount += s.depositAmount || 0;
+      }
+    }
+    const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!business.mpAccessToken;
 
     // Create appointment with collision detection
     const result = await createAppointment({
@@ -134,7 +144,7 @@ export async function POST(
       totalPrice: allServiceIds.length > 1 ? totalPrice : undefined,
       clientId: client.id,
       depositRequired,
-      depositAmount: business.depositAmount,
+      depositAmount: totalDepositAmount,
     });
 
     if (!result.success) {
@@ -161,7 +171,7 @@ export async function POST(
                 title: `Abono - ${service.name} en ${business.name}`,
                 description: `Reserva para ${customerName}`,
                 quantity: 1,
-                unit_price: business.depositAmount,
+                unit_price: totalDepositAmount,
                 currency_id: "CLP",
               },
             ],

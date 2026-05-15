@@ -30,9 +30,10 @@ export async function createService(data: {
   description: string;
   duration: number;
   price: number;
+  depositAmount?: number;
   businessId: string;
 }) {
-  return prisma.service.create({ data });
+  return prisma.service.create({ data: { ...data, depositAmount: data.depositAmount ?? 0 } });
 }
 
 /**
@@ -40,7 +41,7 @@ export async function createService(data: {
  */
 export async function updateService(
   serviceId: string,
-  data: { name?: string; description?: string; duration?: number; price?: number }
+  data: { name?: string; description?: string; duration?: number; price?: number; depositAmount?: number }
 ) {
   return prisma.service.update({
     where: { id: serviceId },

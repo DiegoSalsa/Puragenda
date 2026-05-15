@@ -6,7 +6,7 @@ import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, Phone, Sparkles, UserRound, Users } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 
-interface Service { id: string; name: string; description: string | null; duration: number; price: number; }
+interface Service { id: string; name: string; description: string | null; duration: number; price: number; depositAmount: number; }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
 interface StaffMember { id: string; name: string; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
@@ -22,7 +22,6 @@ interface Props {
   staffMembers?: StaffMember[];
   maxServicesPerBooking?: number;
   depositRequired?: boolean;
-  depositAmount?: number;
 }
 
 type Step = "service" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -106,7 +105,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, depositAmount = 0 }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -144,6 +143,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     // FIXED discount
     return Math.max(0, rawTotalPrice - rewardDiscount.value);
   }, [rawTotalPrice, rewardDiscount]);
+
+  // Compute deposit amount dynamically from selected service(s)
+  const depositAmount = useMemo(() => {
+    if (!depositRequired) return 0;
+    if (isMultiService) {
+      return selectedServices.reduce((sum, sv) => sum + (sv.depositAmount || 0), 0);
+    }
+    return selectedService?.depositAmount || 0;
+  }, [depositRequired, isMultiService, selectedServices, selectedService]);
+
+  const showDeposit = depositRequired && depositAmount > 0;
 
   const hasMultipleStaff = staffMembers && staffMembers.length > 1;
 
@@ -561,7 +571,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   )}
                 </div>
                 {/* Deposit notice */}
-                {depositRequired && depositAmount > 0 && (
+                {showDeposit && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
                     <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(depositAmount)}</p>
                     <p className="text-xs mt-1" style={{ color: textSecondary }}>Serás redirigido a Mercado Pago para pagar el abono. Tu cita se confirmará automáticamente al completar el pago.</p>
@@ -569,7 +579,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
                 <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{depositRequired ? 'Redirigiendo al pago...' : 'Confirmando...'}</> : <>{depositRequired ? 'Pagar abono y confirmar' : 'Confirmar reserva'} <ChevronRight className="h-5 w-5" /></>}
+                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? 'Redirigiendo al pago...' : 'Confirmando...'}</> : <>{showDeposit ? 'Pagar abono y confirmar' : 'Confirmar reserva'} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
             </div>
