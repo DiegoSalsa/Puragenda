@@ -4,8 +4,8 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Puragenda - El software de reservas más poderoso",
-  description: "Agenda, fidelización, email marketing y widget de marca blanca en un solo lugar.",
+  title: "Puragenda - Reservas online para tu negocio",
+  description: "Recibe reservas sin tocar el WhatsApp, cobra abonos online y lleva el control de tu negocio desde un solo lugar. Gratis 30 días, sin contrato.",
 };
 
 export default async function HomePage() {

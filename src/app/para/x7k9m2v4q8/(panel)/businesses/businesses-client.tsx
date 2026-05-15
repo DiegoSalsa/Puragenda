@@ -1,0 +1,281 @@
+"use client";
+
+import { useState, useMemo, useTransition } from "react";
+import { format, differenceInDays } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  Building2,
+  Plus,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  AlertTriangle,
+  ArrowUpRight,
+  Search,
+  Download,
+  Filter,
+} from "lucide-react";
+import Link from "next/link";
+import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { extendTrialAction } from "@/server/actions/admin.actions";
+
+type Business = {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: Date;
+  owner: { name: string; email: string } | null;
+  subscription: {
+    id: string;
+    plan: string;
+    status: string;
+    isTrial: boolean;
+    trialEndsAt: Date | null;
+  } | null;
+  _count: { staff: number; services: number; appointments: number };
+};
+
+export function BusinessesClient({ businesses }: { businesses: Business[] }) {
+  const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [extending, setExtending] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const filtered = useMemo(() => {
+    return businesses.filter((biz) => {
+      const q = search.toLowerCase();
+      const matchSearch =
+        !q ||
+        biz.name.toLowerCase().includes(q) ||
+        biz.slug.toLowerCase().includes(q) ||
+        biz.owner?.email.toLowerCase().includes(q) ||
+        biz.owner?.name.toLowerCase().includes(q);
+
+      const matchPlan =
+        planFilter === "ALL" || biz.subscription?.plan === planFilter;
+
+      const matchStatus =
+        statusFilter === "ALL" || biz.subscription?.status === statusFilter;
+
+      return matchSearch && matchPlan && matchStatus;
+    });
+  }, [businesses, search, planFilter, statusFilter]);
+
+  function downloadCSV() {
+    const headers = ["Nombre", "Slug", "Dueno", "Email", "Plan", "Estado", "Staff", "Servicios", "Citas", "Creado"];
+    const rows = filtered.map((biz) => [
+      biz.name,
+      biz.slug,
+      biz.owner?.name || "",
+      biz.owner?.email || "",
+      biz.subscription?.plan || "",
+      biz.subscription?.status || "",
+      biz._count.staff,
+      biz._count.services,
+      biz._count.appointments,
+      format(new Date(biz.createdAt), "dd/MM/yyyy"),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `negocios-${format(new Date(), "yyyyMMdd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExtendTrial(subscriptionId: string) {
+    setExtending(subscriptionId);
+    startTransition(async () => {
+      await extendTrialAction(subscriptionId, 7);
+      setExtending(null);
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-black uppercase tracking-tighter text-black">Negocios</h1>
+          <p className="text-sm font-bold text-black/50">
+            {filtered.length} de {businesses.length} negocios
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={downloadCSV}
+            className="flex items-center gap-2 border-4 border-black bg-[#FFF5BA] px-4 py-2.5 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all"
+          >
+            <Download className="h-4 w-4" />
+            CSV
+          </button>
+          <Link
+            href={`${ADMIN_SECRET_PATH}/businesses/new`}
+            className="flex items-center gap-2 border-4 border-black bg-[#B28DFF] px-5 py-2.5 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar
+          </Link>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3 border-4 border-black bg-white p-4 shadow-[4px_4px_0_#000]">
+        <Filter className="h-4 w-4 text-black/50 shrink-0" />
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, slug, email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border-2 border-black bg-white pl-9 pr-4 py-2 text-sm font-bold text-black placeholder:text-black/30 focus:outline-none focus:border-[#B28DFF]"
+          />
+        </div>
+        <select
+          value={planFilter}
+          onChange={(e) => setPlanFilter(e.target.value)}
+          className="border-2 border-black bg-white px-3 py-2 text-sm font-black uppercase text-black focus:outline-none focus:border-[#B28DFF]"
+        >
+          <option value="ALL">Todos los planes</option>
+          <option value="INDIVIDUAL">Individual</option>
+          <option value="EQUIPO">Equipo</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border-2 border-black bg-white px-3 py-2 text-sm font-black uppercase text-black focus:outline-none focus:border-[#B28DFF]"
+        >
+          <option value="ALL">Todos los estados</option>
+          <option value="ACTIVE">Activo</option>
+          <option value="TRIALING">Trial</option>
+          <option value="CANCELLED">Cancelado</option>
+          <option value="INACTIVE">Inactivo</option>
+        </select>
+        {(search || planFilter !== "ALL" || statusFilter !== "ALL") && (
+          <button
+            onClick={() => { setSearch(""); setPlanFilter("ALL"); setStatusFilter("ALL"); }}
+            className="border-2 border-black bg-[#FFB5E8] px-3 py-2 text-xs font-black uppercase text-black hover:bg-black hover:text-[#FFB5E8] transition-colors"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase tracking-wider text-black font-black">
+              <th className="px-6 py-4">Negocio</th>
+              <th className="px-4 py-4">Dueno</th>
+              <th className="px-4 py-4">Plan</th>
+              <th className="px-4 py-4">Estado</th>
+              <th className="px-4 py-4 text-center">Staff</th>
+              <th className="px-4 py-4 text-center">Servicios</th>
+              <th className="px-4 py-4 text-center">Citas</th>
+              <th className="px-4 py-4">Creado</th>
+              <th className="px-4 py-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((biz) => {
+              const sub = biz.subscription;
+              const daysLeft =
+                sub?.isTrial && sub?.trialEndsAt
+                  ? differenceInDays(new Date(sub.trialEndsAt), new Date())
+                  : null;
+
+              return (
+                <tr key={biz.id} className="border-b-2 border-black/10 hover:bg-[#FFFAEB] transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="font-black text-black">{biz.name}</p>
+                    <p className="font-mono text-xs font-bold text-black/40">/{biz.slug}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-sm font-bold text-black">{biz.owner?.name || "Sin dueno"}</p>
+                    <p className="text-xs font-bold text-black/40">{biz.owner?.email || ""}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span
+                      className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${
+                        sub?.plan === "EQUIPO" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"
+                      }`}
+                    >
+                      {sub?.plan === "EQUIPO"
+                        ? "Equipo"
+                        : sub?.plan === "INDIVIDUAL"
+                        ? "Individual"
+                        : sub?.plan || "N/A"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`inline-flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${
+                          sub?.status === "ACTIVE"
+                            ? "bg-[#BFFCC6]"
+                            : sub?.status === "TRIALING"
+                            ? "bg-[#FFF5BA]"
+                            : sub?.status === "CANCELLED"
+                            ? "bg-[#FFB5E8]"
+                            : "bg-black/10"
+                        }`}
+                      >
+                        {sub?.status === "ACTIVE" && <CheckCircle2 className="h-3 w-3" />}
+                        {sub?.status === "TRIALING" && <Clock className="h-3 w-3" />}
+                        {sub?.status === "CANCELLED" && <XCircle className="h-3 w-3" />}
+                        {sub?.status === "INACTIVE" && <AlertTriangle className="h-3 w-3" />}
+                        {sub?.status || "N/A"}
+                        {daysLeft !== null && daysLeft >= 0 && (
+                          <span className="ml-1 opacity-60">({daysLeft}d)</span>
+                        )}
+                      </span>
+                      {sub?.status === "TRIALING" && sub?.id && (
+                        <button
+                          disabled={extending === sub.id || isPending}
+                          onClick={() => handleExtendTrial(sub.id)}
+                          className="border border-black bg-[#BFFCC6] px-2 py-0.5 text-xs font-black uppercase text-black hover:bg-black hover:text-[#BFFCC6] transition-colors disabled:opacity-40 w-fit"
+                        >
+                          {extending === sub.id ? "..." : "+7 dias"}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-center font-black text-black">{biz._count.staff}</td>
+                  <td className="px-4 py-4 text-center font-black text-black">{biz._count.services}</td>
+                  <td className="px-4 py-4 text-center font-black text-black">{biz._count.appointments}</td>
+                  <td className="px-4 py-4 font-bold text-black/50 text-xs">
+                    {format(new Date(biz.createdAt), "dd/MM/yy", { locale: es })}
+                  </td>
+                  <td className="px-4 py-4">
+                    <Link
+                      href={`${ADMIN_SECRET_PATH}/businesses/${biz.id}`}
+                      className="flex items-center gap-1 border-2 border-black bg-black px-3 py-1.5 text-xs font-black uppercase text-white shadow-[2px_2px_0_#7C3AED] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
+                    >
+                      Detalle <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Building2 className="h-10 w-10 text-black/20" />
+            <p className="mt-3 text-sm font-bold text-black/40">
+              {businesses.length === 0
+                ? "No hay negocios registrados"
+                : "Sin resultados para esa busqueda"}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

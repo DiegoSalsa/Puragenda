@@ -67,18 +67,18 @@ export default async function BusinessDetailPage({ params }: PageProps) {
       <div>
         <Link
           href={`${ADMIN_SECRET_PATH}/businesses`}
-          className="mb-4 inline-flex items-center gap-1 text-sm text-[#7C3AED] hover:underline"
+          className="mb-4 inline-flex items-center gap-1 text-sm font-black uppercase text-black hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Volver a negocios
         </Link>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#5B21B6]">
-              <Building2 className="h-6 w-6 text-white" />
+            <div className="flex h-12 w-12 items-center justify-center border-4 border-black bg-[#B28DFF] shadow-[4px_4px_0_#000]">
+              <Building2 className="h-6 w-6 text-black" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">{business.name}</h1>
-              <p className="font-mono text-sm text-[#555]">/{business.slug}</p>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-black">{business.name}</h1>
+              <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
             </div>
           </div>
           <DeleteBusinessButton businessId={business.id} businessName={business.name} />
@@ -89,102 +89,95 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         {/* Left column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Owner */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
               <Mail className="h-4 w-4" /> Dueño
             </h3>
             {business.owner ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#666]">Nombre</span>
-                  <span className="text-sm font-medium text-white">{business.owner.name}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#666]">Email</span>
-                  <span className="text-sm text-[#A78BFA]">{business.owner.email}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#666]">Rol</span>
-                  <span className="text-sm text-[#888]">{business.owner.role}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#666]">Registrado</span>
-                  <span className="text-sm text-[#888]">
-                    {format(new Date(business.owner.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
-                  </span>
-                </div>
+                {[
+                  { label: "Nombre", value: business.owner.name },
+                  { label: "Email", value: business.owner.email },
+                  { label: "Rol", value: business.owner.role },
+                  { label: "Registrado", value: format(new Date(business.owner.createdAt), "dd/MM/yyyy HH:mm", { locale: es }) },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between border-b border-black/10 pb-2">
+                    <span className="text-xs font-black uppercase text-black/40">{row.label}</span>
+                    <span className="text-sm font-bold text-black">{row.value}</span>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="text-sm text-[#666]">Sin dueño asignado</p>
+              <p className="text-sm font-bold text-black/40">Sin dueño asignado</p>
             )}
           </div>
 
           {/* Staff */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
               <Users className="h-4 w-4" /> Profesionales ({business.staff.length})
             </h3>
             <div className="space-y-2">
               {business.staff.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-[#141418] p-3">
+                <div key={s.id} className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000]">
                   <div>
-                    <p className="text-sm font-medium text-white">{s.name}</p>
-                    <p className="text-xs text-[#555]">{s.email || "Sin email"}</p>
+                    <p className="text-sm font-black text-black">{s.name}</p>
+                    <p className="text-xs font-bold text-black/40">{s.email || "Sin email"}</p>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.isActive ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border border-red-500/20 bg-red-500/10 text-red-400"}`}>
+                  <span className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${s.isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
                     {s.isActive ? "Activo" : "Inactivo"}
                   </span>
                 </div>
               ))}
-              {business.staff.length === 0 && <p className="py-4 text-center text-sm text-[#666]">Sin profesionales</p>}
+              {business.staff.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin profesionales</p>}
             </div>
           </div>
 
           {/* Services */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
               <Briefcase className="h-4 w-4" /> Servicios ({business.services.length})
             </h3>
             <div className="space-y-2">
               {business.services.map((svc) => (
-                <div key={svc.id} className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-[#141418] p-3">
+                <div key={svc.id} className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000]">
                   <div>
-                    <p className="text-sm font-medium text-white">{svc.name}</p>
-                    <p className="text-xs text-[#555]">{svc.duration} min</p>
+                    <p className="text-sm font-black text-black">{svc.name}</p>
+                    <p className="text-xs font-bold text-black/40">{svc.duration} min</p>
                   </div>
-                  <p className="font-mono text-sm font-bold text-white">${svc.price.toLocaleString("es-CL")}</p>
+                  <p className="font-black text-black">${svc.price.toLocaleString("es-CL")}</p>
                 </div>
               ))}
-              {business.services.length === 0 && <p className="py-4 text-center text-sm text-[#666]">Sin servicios</p>}
+              {business.services.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin servicios</p>}
             </div>
           </div>
 
           {/* Recent Appointments */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
               <Calendar className="h-4 w-4" /> Citas Recientes ({business._count.appointments} total)
             </h3>
             <div className="space-y-2">
               {recentAppointments.map((apt) => (
-                <div key={apt.id} className="flex items-center justify-between rounded-xl border border-white/[0.04] bg-[#141418] p-3">
+                <div key={apt.id} className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000]">
                   <div>
-                    <p className="text-sm font-medium text-white">{apt.customerName}</p>
-                    <p className="text-xs text-[#555]">
+                    <p className="text-sm font-black text-black">{apt.customerName}</p>
+                    <p className="text-xs font-bold text-black/40">
                       {apt.service.name} · {apt.staff?.name || "Sin asignar"} · {format(new Date(apt.startTime), "dd/MM HH:mm", { locale: es })}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    apt.status === "CONFIRMED" ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                    : apt.status === "PENDING" ? "border border-amber-500/20 bg-amber-500/10 text-amber-400"
-                    : apt.status === "CANCELLED" ? "border border-red-500/20 bg-red-500/10 text-red-400"
-                    : apt.status === "CHECKED_IN" ? "border border-blue-500/20 bg-blue-500/10 text-blue-400"
-                    : "border border-white/[0.08] bg-[#1a1a22] text-[#666]"
+                  <span className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${
+                    apt.status === "CONFIRMED" ? "bg-[#BFFCC6]"
+                    : apt.status === "PENDING" ? "bg-[#FFF5BA]"
+                    : apt.status === "CANCELLED" ? "bg-[#FFB5E8]"
+                    : apt.status === "CHECKED_IN" ? "bg-[#85E3FF]"
+                    : "bg-black/10"
                   }`}>
                     {apt.status}
                   </span>
                 </div>
               ))}
-              {recentAppointments.length === 0 && <p className="py-4 text-center text-sm text-[#666]">Sin citas</p>}
+              {recentAppointments.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin citas</p>}
             </div>
           </div>
         </div>
@@ -203,14 +196,14 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               createdAt: sub.createdAt.toISOString(),
             }} />
           ) : (
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-              <p className="text-sm text-[#666]">Sin suscripción</p>
+            <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+              <p className="text-sm font-bold text-black/40">Sin suscripción</p>
             </div>
           )}
 
           {/* Quick Stats */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">Resumen</h3>
+          <div className="border-4 border-black bg-[#85E3FF] p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Resumen</h3>
             <div className="space-y-3">
               {[
                 { label: "Clientes", value: business._count.clients, icon: Users },
@@ -218,36 +211,36 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                 { label: "Profesionales", value: business.staff.length, icon: Users },
                 { label: "Servicios", value: business.services.length, icon: Briefcase },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs text-[#666]">
+                <div key={item.label} className="flex items-center justify-between border-b border-black/20 pb-2">
+                  <span className="flex items-center gap-2 text-xs font-black uppercase text-black/60">
                     <item.icon className="h-3.5 w-3.5" /> {item.label}
                   </span>
-                  <span className="text-sm font-bold text-white">{item.value}</span>
+                  <span className="text-lg font-black text-black">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Widget Info */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#7C3AED]">
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
               <Palette className="h-4 w-4" /> Widget
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#666]">Color primario</span>
+              <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                <span className="text-xs font-black uppercase text-black/40">Color primario</span>
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border border-white/10" style={{ backgroundColor: business.primaryColor }} />
-                  <span className="font-mono text-xs text-[#888]">{business.primaryColor}</span>
+                  <div className="h-5 w-5 border-2 border-black" style={{ backgroundColor: business.primaryColor }} />
+                  <span className="font-mono text-xs font-bold text-black">{business.primaryColor}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#666]">URL del widget</span>
-                <span className="font-mono text-xs text-[#A78BFA]">/widget/{business.slug}</span>
+              <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                <span className="text-xs font-black uppercase text-black/40">URL del widget</span>
+                <span className="font-mono text-xs font-bold text-black">/widget/{business.slug}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#666]">API Key</span>
-                <span className="font-mono text-xs text-[#555]">{business.apiKey.slice(0, 12)}...</span>
+                <span className="text-xs font-black uppercase text-black/40">API Key</span>
+                <span className="font-mono text-xs font-bold text-black/50">{business.apiKey.slice(0, 12)}...</span>
               </div>
             </div>
           </div>

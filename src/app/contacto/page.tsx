@@ -1,8 +1,9 @@
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { Metadata } from "next";
+import { ContactForm } from "@/components/landing/contact-form";
 
 export const metadata: Metadata = {
   title: "Contacto | Puragenda",
@@ -26,41 +27,24 @@ export default async function ContactoPage() {
         <div className="grid gap-8 md:grid-cols-2">
           {/* Contact Info */}
           <div className="space-y-6">
-            <div className="bg-[#BFFCC6] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#BFFCC6] text-black dark:text-white">
+            <a href="mailto:contacto@purocode.com" className="block bg-[#BFFCC6] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#BFFCC6] text-black dark:text-white hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-4 mb-2">
                 <Mail className="h-6 w-6" />
                 <h3 className="text-xl font-black uppercase">Email</h3>
               </div>
               <p className="font-bold opacity-80">contacto@purocode.com</p>
-            </div>
+            </a>
             
-            <div className="bg-[#FFF5BA] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF5BA] text-black dark:text-white">
+            <a href="https://wa.me/56949255006" target="_blank" rel="noopener noreferrer" className="block bg-[#FFF5BA] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF5BA] text-black dark:text-white hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-4 mb-2">
                 <Phone className="h-6 w-6" />
                 <h3 className="text-xl font-black uppercase">WhatsApp</h3>
               </div>
               <p className="font-bold opacity-80">+56 9 4925 5006</p>
-            </div>
+            </a>
           </div>
 
-          {/* Fake Form */}
-          <form className="bg-white dark:bg-black border-4 border-black dark:border-white p-8 rounded-2xl shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF] space-y-4">
-            <div>
-              <label className="block text-sm font-black uppercase mb-1">Nombre</label>
-              <input type="text" className="w-full border-2 border-black dark:border-white bg-transparent p-3 font-bold focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" placeholder="Tu nombre" />
-            </div>
-            <div>
-              <label className="block text-sm font-black uppercase mb-1">Email</label>
-              <input type="email" className="w-full border-2 border-black dark:border-white bg-transparent p-3 font-bold focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" placeholder="tu@email.com" />
-            </div>
-            <div>
-              <label className="block text-sm font-black uppercase mb-1">Mensaje</label>
-              <textarea rows={4} className="w-full border-2 border-black dark:border-white bg-transparent p-3 font-bold focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" placeholder="¿En qué podemos ayudarte?"></textarea>
-            </div>
-            <button type="button" className="w-full bg-[#7C3AED] text-white border-4 border-black dark:border-white px-6 py-4 font-black uppercase text-lg shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:translate-y-1 transition-transform mt-4">
-              Enviar Mensaje
-            </button>
-          </form>
+          <ContactForm />
         </div>
 
         {/* SLA and Sales FAQ */}

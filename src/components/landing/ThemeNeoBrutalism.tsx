@@ -93,9 +93,15 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
           </div>
 
           <div className="relative z-10 w-full flex flex-col items-center justify-center">
+            {/* Differentiator tags */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              <span className="bg-[#BFFCC6] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ Sin comisiones</span>
+              <span className="bg-[#FFF5BA] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] rotate-1 tracking-wide">✓ 30 días gratis</span>
+              <span className="bg-[#FFB5E8] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ Sin contrato</span>
+            </div>
             <h1 className="text-6xl font-black uppercase tracking-tighter sm:text-8xl lg:text-9xl">
-              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Software de</span>
-              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Reservas</span>
+              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Tu Agenda</span>
+              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Online</span>
               <span className="mt-4 block inline-block border-[6px] border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-[#7C3AED] dark:text-[#85E3FF] shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] transform -rotate-2">
                 <WordCarousel words={["PURAGENDA.", "INTELIGENTE.", "AUTOMÁTICO.", "24/7 ONLINE.", "SIN ESTRÉS."]} />
               </span>
@@ -104,7 +110,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
             {/* CTAs and badges */}
             <div className="mt-12 flex flex-col items-center gap-8 z-20">
               <p className="max-w-2xl text-xl font-bold sm:text-2xl dark:text-white drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">
-                Mucho más que un software de reservas. Agendamiento, fidelización, marketing automático y widget marca blanca en un solo lugar.
+                Recibe reservas sin tocar el WhatsApp, cobra abonos online y lleva el control de tu negocio desde un solo lugar.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto justify-center">
@@ -113,9 +119,13 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                     Empezar Gratis <ArrowRight className="h-6 w-6 stroke-[3px]" />
                   </button>
                 </Link>
-                <Link href="/widget/purocode-demo" className="w-full sm:w-auto">
-                  <button className="w-full bg-black text-white dark:bg-white dark:text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center">
-                    Ver Demo
+                <Link href="/widget/purocode-demo" className="w-full sm:w-auto group relative">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#BFFCC6] border-2 border-black text-black text-xs font-black uppercase px-2 py-0.5 shadow-[2px_2px_0_#000] whitespace-nowrap z-10">
+                    <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse inline-block" />
+                    En vivo
+                  </span>
+                  <button className="w-full bg-[#85E3FF] text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center gap-2">
+                    ▶ Ver Demo
                   </button>
                 </Link>
               </div>
@@ -363,6 +373,51 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                 Ver todas las características
              </button>
           </Link>
+        </section>
+
+        {/* TESTIMONIALS */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Negocios reales. Resultados reales.</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Card 1 - amarillo, rotada levemente */}
+            <div className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
+              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Coordinaba todo por WhatsApp y era un caos. Ahora mis clientas reservan solas de noche y yo me entero a la mañana. No volveria atrás.</p>
+              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">V</div>
+                <div>
+                  <p className="text-sm font-black text-black dark:text-white">Valentina R.</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Centro de estética, Stgo</p>
+                </div>
+              </div>
+            </div>
+            {/* Card 2 - verde, un poco mas grande visualmente */}
+            <div className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
+              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">4 kinesiológos con horarios distintos y nunca hay cruces. Los recordatorios solos bajaron mucho las inasistencias. El equipo ya no toca el teléfono para confirmar citas.</p>
+              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">M</div>
+                <div>
+                  <p className="text-sm font-black text-black dark:text-white">Marcelo T.</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Clínica de kinesiología</p>
+                </div>
+              </div>
+            </div>
+            {/* Card 3 - cyan, rotada al otro lado */}
+            <div className="rounded-2xl border-4 border-black bg-[#85E3FF] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#85E3FF] flex flex-col gap-4 rotate-[0.8deg]">
+              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Los timbres son lo mejor. Los clientes acumulan y vuelven a canjear. Sin pagar publicidad, las visitas repetidas subieron un montón en pocos meses.</p>
+              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#B28DFF] flex items-center justify-center text-lg font-black text-black shrink-0">C</div>
+                <div>
+                  <p className="text-sm font-black text-black dark:text-white">Carolina S.</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Peluquería &amp; barbería</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* CTA FINAL */}
