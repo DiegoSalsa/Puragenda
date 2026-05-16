@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       ...body,
       duration: Number(body.duration),
       price: Number(body.price),
+      depositAmount: body.depositAmount !== undefined ? Number(body.depositAmount) : 0,
     });
 
     if (!parsed.success) {

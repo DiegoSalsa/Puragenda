@@ -266,12 +266,13 @@ model ScheduleBlock {
 }
 
 model Service {
-  id          String  @id @default(cuid())
-  name        String
-  description String?
-  duration    Int
-  price       Float
-  businessId  String
+  id             String  @id @default(cuid())
+  name           String
+  description    String?
+  duration       Int
+  price          Float
+  depositAmount  Int     @default(0)   // CLP amount for per-service deposit
+  businessId     String
 
   business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
