@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Zona horaria por defecto para formatear fechas en emails
@@ -19,6 +20,7 @@ interface BookingEmailData {
   businessName: string;
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
+  rescheduleUrl?: string;
 }
 
 // ═══════════════════════════════════════════
@@ -187,6 +189,13 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
 
 /** Email to client when booking is CONFIRMED */
 export function confirmedBookingClientEmail(data: BookingEmailData): { subject: string; html: string } {
+  const rescheduleBlock = data.rescheduleUrl ? `
+      <div style="text-align:center;margin:24px 0 0;">
+        <a href="${data.rescheduleUrl}" style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">Reagendar cita →</a>
+      </div>
+      <p style="margin:8px 0 0;font-size:12px;color:#9CA3AF;text-align:center;">Si necesitas cambiar la hora de tu cita, usa el botón de arriba.</p>
+  ` : '';
+
   return {
     subject: `Reserva confirmada en ${data.businessName}`,
     html: enterpriseLayout("Reserva Confirmada", `
@@ -198,6 +207,7 @@ export function confirmedBookingClientEmail(data: BookingEmailData): { subject: 
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
         Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${data.businessName}.
       </p>
+      ${rescheduleBlock}
     `),
   };
 }
@@ -824,3 +834,371 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
   };
 }
 
+// ═══════════════════════════════════════════
+// RECURRING BOOKING EMAILS
+// ═══════════════════════════════════════════
+
+const DAY_NAMES: Record<number, string> = {
+  0: "Domingo", 1: "Lunes", 2: "Martes", 3: "Miercoles",
+  4: "Jueves", 5: "Viernes", 6: "Sabado",
+};
+
+function recurringSessionsTable(
+  selectedDays: number[],
+  selectedTimes: Record<string, string>,
+  startDate: Date,
+  endDate: Date
+): string {
+  const rows = selectedDays.map((day) => {
+    const time = selectedTimes[String(day)] ?? "";
+    return `<tr>
+      <td style="padding:12px 16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${DAY_NAMES[day] ?? day}</td>
+      <td style="padding:12px 16px;font-size:14px;color:#374151;border-bottom:1px solid #E5E7EB;">${time}</td>
+    </tr>`;
+  }).join("");
+
+  const start = formatInTimeZone(startDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  const end = formatInTimeZone(endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
+      <thead>
+        <tr style="background:#F3F4F6;">
+          <th style="padding:10px 16px;text-align:left;font-size:12px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Dia</th>
+          <th style="padding:10px 16px;text-align:left;font-size:12px;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">Hora</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="margin:0 0 16px;font-size:13px;color:#6B7280;">Periodo: <strong style="color:#111827;">${start}</strong> al <strong style="color:#111827;">${end}</strong></p>
+  `;
+}
+
+interface RecurringCreatedClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  selectedDays: number[];
+  selectedTimes: Record<string, string>;
+  startDate: Date;
+  endDate: Date;
+  durationMonths: number;
+  conflicts: Date[];
+  managementToken: string;
+  businessName: string;
+}
+
+export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientData): { subject: string; html: string } {
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
+
+  const conflictsHtml = data.conflicts.length > 0
+    ? `<div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
+        <p style="margin:0 0 8px;font-size:13px;color:#92400E;font-weight:700;">Atencion: hay ${data.conflicts.length} sesion(es) con conflicto de horario</p>
+        <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5;">
+          Las siguientes fechas no pudieron ser agendadas porque ya tenian turnos ocupados: 
+          ${data.conflicts.map(d => formatInTimeZone(d, BUSINESS_TZ, "d MMM", { locale: es })).join(", ")}.
+          El negocio te contactara para coordinar esas sesiones.
+        </p>
+      </div>`
+    : "";
+
+  return {
+    subject: `Tu plan recurrente en ${data.businessName} esta confirmado`,
+    html: enterpriseLayout("Plan Recurrente Confirmado", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu suscripcion esta activa</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
+        <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>
+        en <strong style="color:#111827;">${data.businessName}</strong> ha sido confirmado.
+      </p>
+      <p style="margin:0 0 8px;font-size:14px;color:#374151;font-weight:600;">Tus sesiones semanales:</p>
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate)}
+      ${conflictsHtml}
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${portalUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+          Ver y gestionar mi plan
+        </a>
+      </div>
+      <p style="margin:0;font-size:12px;color:#9CA3AF;text-align:center;">Desde ese link puedes cambiar horarios, pausar o cancelar tu plan.</p>
+    `),
+  };
+}
+
+interface RecurringPendingApprovalBusinessData {
+  ownerEmail: string;
+  ownerName: string | null | undefined;
+  customerName: string;
+  customerEmail: string;
+  serviceName: string;
+  selectedDays: number[];
+  selectedTimes: Record<string, string>;
+  startDate: Date;
+  endDate: Date;
+  durationMonths: number;
+  healthAnswers?: Record<string, string>;
+  healthFreeText?: string;
+  businessName: string;
+}
+
+export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPendingApprovalBusinessData): { subject: string; html: string } {
+  const dashboardUrl = process.env.NODE_ENV === "production"
+    ? "https://www.puragenda.cl/dashboard/recurring"
+    : "http://localhost:3000/dashboard/recurring";
+
+  const healthHtml = (data.healthAnswers && Object.keys(data.healthAnswers).length > 0) || data.healthFreeText
+    ? `<div style="margin:16px 0;padding:16px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;">
+        <p style="margin:0 0 8px;font-size:13px;color:#0369A1;font-weight:700;">Informacion de salud del cliente</p>
+        ${Object.entries(data.healthAnswers ?? {}).map(([q, a]) =>
+          `<p style="margin:0 0 4px;font-size:13px;color:#374151;"><strong>${q}:</strong> ${a}</p>`
+        ).join("")}
+        ${data.healthFreeText ? `<p style="margin:8px 0 0;font-size:13px;color:#374151;"><strong>Comentarios:</strong> ${data.healthFreeText}</p>` : ""}
+      </div>`
+    : "";
+
+  return {
+    subject: `Nueva solicitud de plan recurrente de ${data.customerName} - requiere aprobacion`,
+    html: enterpriseLayout("Nueva Solicitud de Plan Recurrente", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Nueva solicitud de suscripcion</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) solicito un plan recurrente de
+        <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
+      </p>
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate)}
+      ${healthHtml}
+      <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
+        <p style="margin:0;font-size:13px;color:#92400E;font-weight:600;">Esta solicitud requiere tu aprobacion antes de activarse.</p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+          Revisar en el Dashboard
+        </a>
+      </div>
+    `),
+  };
+}
+
+interface RecurringApprovedClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  startDate: Date;
+  endDate: Date;
+  managementToken: string;
+  businessName: string;
+}
+
+export function recurringBookingApprovedClientEmail(data: RecurringApprovedClientData): { subject: string; html: string } {
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
+  const start = formatInTimeZone(data.startDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  const end = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+
+  return {
+    subject: `Tu plan en ${data.businessName} fue aprobado`,
+    html: enterpriseLayout("Plan Aprobado", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu solicitud fue aprobada</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, 
+        <strong style="color:#111827;">${data.businessName}</strong> aprobo tu plan de 
+        <strong style="color:#111827;">${data.serviceName}</strong>.
+      </p>
+      <div style="margin:16px 0;padding:16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;">
+        <p style="margin:0 0 4px;font-size:14px;color:#166534;font-weight:700;">Plan activo</p>
+        <p style="margin:0;font-size:13px;color:#166534;">${start} al ${end}</p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${portalUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+          Ver mi plan
+        </a>
+      </div>
+    `),
+  };
+}
+
+interface RecurringRejectedClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  reason: string;
+  businessName: string;
+}
+
+export function recurringBookingRejectedClientEmail(data: RecurringRejectedClientData): { subject: string; html: string } {
+  return {
+    subject: `Solicitud de plan no aprobada - ${data.businessName}`,
+    html: enterpriseLayout("Solicitud No Aprobada", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu solicitud no fue aprobada</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, lamentablemente tu solicitud de plan de
+        <strong style="color:#111827;">${data.serviceName}</strong> en 
+        <strong style="color:#111827;">${data.businessName}</strong> no fue aprobada.
+      </p>
+      ${data.reason ? `<div style="margin:16px 0;padding:16px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;">
+        <p style="margin:0 0 4px;font-size:13px;color:#991B1B;font-weight:700;">Motivo:</p>
+        <p style="margin:0;font-size:13px;color:#991B1B;line-height:1.5;">${data.reason}</p>
+      </div>` : ""}
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
+        Si tienes dudas, por favor contacta directamente a ${data.businessName}.
+      </p>
+    `),
+  };
+}
+
+interface RecurringCancelledClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  businessName: string;
+}
+
+export function recurringBookingCancelledClientEmail(data: RecurringCancelledClientData): { subject: string; html: string } {
+  return {
+    subject: `Tu plan en ${data.businessName} fue cancelado`,
+    html: enterpriseLayout("Plan Cancelado", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu plan ha sido cancelado</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
+        <strong style="color:#111827;">${data.serviceName}</strong> en 
+        <strong style="color:#111827;">${data.businessName}</strong> ha sido cancelado.
+        Todos los turnos futuros fueron eliminados de la agenda.
+      </p>
+      <p style="margin:0;font-size:14px;color:#6B7280;">Si necesitas mas informacion, contacta a ${data.businessName}.</p>
+    `),
+  };
+}
+
+interface RecurringSessionCancelledClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  sessionDate: Date;
+  businessName: string;
+}
+
+export function recurringSessionCancelledClientEmail(data: RecurringSessionCancelledClientData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.sessionDate, BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+
+  return {
+    subject: `Tu sesion del ${dateStr} fue cancelada - ${data.businessName}`,
+    html: enterpriseLayout("Sesion Cancelada", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Una sesion de tu plan fue cancelada</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, la sesion de 
+        <strong style="color:#111827;">${data.serviceName}</strong> del dia 
+        <strong style="color:#111827;">${dateStr}</strong> fue cancelada porque el profesional no esta disponible ese dia.
+      </p>
+      <p style="margin:0;font-size:14px;color:#6B7280;">El resto de tus sesiones del plan continuan con normalidad. Para mas informacion contacta a ${data.businessName}.</p>
+    `),
+  };
+}
+
+interface RecurringExpiringClientData {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  endDate: Date;
+  daysLeft: number;
+  renewalMessage?: string | null;
+  managementToken: string;
+  businessName: string;
+}
+
+export function recurringExpiringClientEmail(data: RecurringExpiringClientData): { subject: string; html: string } {
+  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
+  const endStr = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+
+  return {
+    subject: `Tu plan en ${data.businessName} vence en ${data.daysLeft} dias`,
+    html: enterpriseLayout("Plan por Vencer", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Tu plan esta por terminar</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, tu plan de 
+        <strong style="color:#111827;">${data.serviceName}</strong> en 
+        <strong style="color:#111827;">${data.businessName}</strong> vence el 
+        <strong style="color:#111827;">${endStr}</strong> (en ${data.daysLeft} dias).
+      </p>
+      ${data.renewalMessage
+        ? `<div style="margin:16px 0;padding:16px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;">
+            <p style="margin:0;font-size:14px;color:#0369A1;line-height:1.6;">${data.renewalMessage}</p>
+          </div>`
+        : ""}
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${portalUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+          Ver mi plan
+        </a>
+      </div>
+    `),
+  };
+}
+
+interface RecurringExpiringBusinessData {
+  ownerEmail: string;
+  customerName: string;
+  serviceName: string;
+  endDate: Date;
+  daysLeft: number;
+  businessName: string;
+}
+
+export function recurringExpiringBusinessEmail(data: RecurringExpiringBusinessData): { subject: string; html: string } {
+  const dashboardUrl = process.env.NODE_ENV === "production"
+    ? "https://www.puragenda.cl/dashboard/recurring"
+    : "http://localhost:3000/dashboard/recurring";
+  const endStr = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+
+  return {
+    subject: `El plan de ${data.customerName} vence en ${data.daysLeft} dias`,
+    html: enterpriseLayout("Plan de Cliente por Vencer", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Un plan esta por terminar</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        El plan de <strong style="color:#111827;">${data.customerName}</strong> para 
+        <strong style="color:#111827;">${data.serviceName}</strong> vence el 
+        <strong style="color:#111827;">${endStr}</strong> (en ${data.daysLeft} dias).
+      </p>
+      <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">Podes contactarlo para ofrecerle renovar su plan.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
+          Ver Suscripciones
+        </a>
+      </div>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
+// RECURRING — CONFLICT WARNING (Email 8)
+// ═══════════════════════════════════════════
+
+interface RecurringConflictWarningClientData {
+  customerName: string;
+  serviceName: string;
+  originalDate: Date;
+  businessName: string;
+}
+
+/** Email to client warning about a conflict/override on a specific recurring session */
+export function recurringConflictWarningClientEmail(data: RecurringConflictWarningClientData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.originalDate, BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+
+  return {
+    subject: `Tu sesion del ${dateStr} tiene un cambio pendiente - ${data.businessName}`,
+    html: enterpriseLayout("Cambio en tu Sesion", `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">Cambio en una de tus sesiones</h2>
+      <p style="margin:0 0 16px;font-size:15px;color:#4B5563;line-height:1.6;">
+        Hola <strong style="color:#111827;">${data.customerName}</strong>, te informamos que tu sesion de
+        <strong style="color:#111827;">${data.serviceName}</strong> programada para el dia
+        <strong style="color:#111827;">${dateStr}</strong> en
+        <strong style="color:#111827;">${data.businessName}</strong> tiene un cambio pendiente.
+      </p>
+      <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
+        <p style="margin:0;font-size:14px;color:#92400E;line-height:1.5;">
+          <strong>Aviso:</strong> Es posible que esta sesion haya sido reprogramada o cancelada
+          debido a un cambio en la disponibilidad del profesional. Revisa el detalle de tu plan para mas informacion.
+        </p>
+      </div>
+      <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">El resto de tus sesiones continuan con normalidad. Si tienes dudas, contacta directamente a ${data.businessName}.</p>
+    `),
+  };
+}
