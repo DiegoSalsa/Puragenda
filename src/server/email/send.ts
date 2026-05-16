@@ -1,4 +1,5 @@
 import { resend, EMAIL_FROM } from "./resend";
+import { prisma } from "@/server/db/prisma";
 import {
   newBookingOwnerEmail,
   newBookingStaffEmail,
@@ -14,6 +15,15 @@ import {
   trialExpiringEmail,
   trialExpiredEmail,
   appointmentActionOwnerEmail,
+  recurringBookingCreatedClientEmail,
+  recurringBookingPendingApprovalBusinessEmail,
+  recurringBookingApprovedClientEmail,
+  recurringBookingRejectedClientEmail,
+  recurringBookingCancelledClientEmail,
+  recurringSessionCancelledClientEmail,
+  recurringExpiringClientEmail,
+  recurringExpiringBusinessEmail,
+  recurringConflictWarningClientEmail,
 } from "./templates";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 
@@ -22,6 +32,9 @@ import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 // ═══════════════════════════════════════════
 
 interface AppointmentWithRelations {
+  id?: string;
+  businessId?: string;
+  recurringBookingId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
@@ -183,6 +196,19 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
  * Send confirmation email to the customer when appointment status changes to CONFIRMED.
  */
 export async function sendConfirmationEmail(appointment: AppointmentWithRelations) {
+  // Check if business allows rescheduling
+  let rescheduleUrl: string | undefined;
+  if (!appointment.recurringBookingId && appointment.businessId && appointment.id) {
+    const business = await prisma.business.findUnique({
+      where: { id: appointment.businessId },
+      select: { allowRescheduling: true },
+    });
+    if (business?.allowRescheduling) {
+      const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+      rescheduleUrl = `${appUrl}/reagendar/${appointment.id}`;
+    }
+  }
+
   const data = {
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
@@ -194,6 +220,7 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     businessName: appointment.business.name,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
+    rescheduleUrl,
   };
 
   const { subject, html } = confirmedBookingClientEmail(data);
@@ -519,5 +546,172 @@ export async function sendAppointmentActionNotification(data: {
     console.log(`[Email] Appointment ${data.action} notification sent to ${data.ownerEmail}`);
   } catch (err) {
     console.error(`[Email] Error sending appointment action notification:`, err);
+  }
+}
+
+// ═══════════════════════════════════════════
+// RECURRING BOOKING EMAILS
+// ═══════════════════════════════════════════
+
+export async function sendRecurringBookingCreatedClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  selectedDays: number[];
+  selectedTimes: Record<string, string>;
+  startDate: Date;
+  endDate: Date;
+  durationMonths: number;
+  conflicts: Date[];
+  managementToken: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringBookingCreatedClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring created sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring created:", err);
+  }
+}
+
+export async function sendRecurringBookingPendingApprovalBusiness(data: {
+  ownerEmail: string;
+  ownerName: string | null | undefined;
+  customerName: string;
+  customerEmail: string;
+  serviceName: string;
+  selectedDays: number[];
+  selectedTimes: Record<string, string>;
+  startDate: Date;
+  endDate: Date;
+  durationMonths: number;
+  healthAnswers?: Record<string, string>;
+  healthFreeText?: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringBookingPendingApprovalBusinessEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
+    console.log(`[Email] Recurring pending approval sent to ${data.ownerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring pending approval:", err);
+  }
+}
+
+export async function sendRecurringBookingApprovedClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  startDate: Date;
+  endDate: Date;
+  managementToken: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringBookingApprovedClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring approved sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring approved:", err);
+  }
+}
+
+export async function sendRecurringBookingRejectedClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  reason: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringBookingRejectedClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring rejected sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring rejected:", err);
+  }
+}
+
+export async function sendRecurringBookingCancelledClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringBookingCancelledClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring cancelled sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring cancelled:", err);
+  }
+}
+
+export async function sendRecurringSessionCancelledClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  sessionDate: Date;
+  businessName: string;
+}) {
+  const { subject, html } = recurringSessionCancelledClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring session cancelled sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring session cancelled:", err);
+  }
+}
+
+export async function sendRecurringExpiringClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  endDate: Date;
+  daysLeft: number;
+  renewalMessage?: string | null;
+  managementToken: string;
+  businessName: string;
+}) {
+  const { subject, html } = recurringExpiringClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring expiring sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring expiring client:", err);
+  }
+}
+
+export async function sendRecurringExpiringBusiness(data: {
+  ownerEmail: string;
+  customerName: string;
+  serviceName: string;
+  endDate: Date;
+  daysLeft: number;
+  businessName: string;
+}) {
+  const { subject, html } = recurringExpiringBusinessEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
+    console.log(`[Email] Recurring expiring business sent to ${data.ownerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring expiring business:", err);
+  }
+}
+
+export async function sendRecurringConflictWarningClient(data: {
+  customerEmail: string;
+  customerName: string;
+  serviceName: string;
+  originalDate: Date;
+  businessName: string;
+}) {
+  const { subject, html } = recurringConflictWarningClientEmail(data);
+  try {
+    await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
+    console.log(`[Email] Recurring conflict warning sent to ${data.customerEmail}`);
+  } catch (err) {
+    console.error("[Email] Error sending recurring conflict warning:", err);
   }
 }

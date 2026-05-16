@@ -400,7 +400,7 @@ export async function createScheduleBlockAction(data: {
   });
   if (overlap) return { error: "Ya existe un bloqueo en ese rango horario" };
 
-  await prisma.scheduleBlock.create({
+  const block = await prisma.scheduleBlock.create({
     data: {
       staffId: data.staffId,
       startTime: start,
@@ -408,6 +408,60 @@ export async function createScheduleBlockAction(data: {
       reason: data.reason?.trim() || null,
     },
   });
+
+  // ── Logic 3: Check if this block collides with any active recurring appointments ──
+  try {
+    const collidingAppointments = await prisma.appointment.findMany({
+      where: {
+        staffId: data.staffId,
+        startTime: { lt: block.endTime },
+        endTime: { gt: block.startTime },
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        recurringBookingId: { not: null },
+      },
+      include: {
+        recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
+        service: { select: { name: true } },
+        business: { select: { name: true } },
+      },
+    });
+
+    if (collidingAppointments.length > 0) {
+      const { sendRecurringSessionCancelledClient } = await import("@/server/email/send");
+
+      for (const apt of collidingAppointments) {
+        // Cancel the appointment
+        await prisma.appointment.update({
+          where: { id: apt.id },
+          data: { status: "CANCELLED" },
+        });
+
+        // Create a session override record
+        await prisma.recurringSessionOverride.create({
+          data: {
+            recurringBookingId: apt.recurringBookingId!,
+            originalDate: apt.startTime,
+            action: "CANCELLED",
+            reason: "Bloqueo de agenda",
+            requestedByClient: false,
+          },
+        });
+
+        // Notify the client
+        await sendRecurringSessionCancelledClient({
+          customerEmail: apt.recurringBooking!.customerEmail,
+          customerName: apt.recurringBooking!.customerName,
+          serviceName: apt.service.name,
+          sessionDate: apt.startTime,
+          businessName: apt.business.name,
+        });
+      }
+
+      console.log(`[ScheduleBlock] Cancelled ${collidingAppointments.length} recurring appointments due to block`);
+    }
+  } catch (err) {
+    console.error("[ScheduleBlock] Error checking recurring collisions:", err);
+  }
 
   revalidatePath("/dashboard/staff");
   return { success: true };
@@ -515,6 +569,36 @@ export async function saveDepositConfigAction(data: {
     where: { id: business.id },
     data: {
       depositRequired: data.depositRequired,
+    },
+  });
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// ─── Business Policies (recurring) ───
+
+export async function updateBusinessPoliciesAction(data: {
+  allowRescheduling: boolean;
+  rescheduleHoursLimit: number;
+  requiresClientRut: boolean;
+}) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "Solo el administrador puede configurar las politicas" };
+  }
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const hoursLimit = Math.max(1, Math.min(168, Math.floor(data.rescheduleHoursLimit)));
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      allowRescheduling: data.allowRescheduling,
+      rescheduleHoursLimit: hoursLimit,
+      requiresClientRut: data.requiresClientRut,
     },
   });
 

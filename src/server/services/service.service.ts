@@ -7,6 +7,10 @@ export async function getServicesByBusinessId(businessId: string) {
   return prisma.service.findMany({
     where: { businessId },
     orderBy: { name: "asc" },
+    include: {
+      recurringPlan: true,
+      _count: { select: { recurringBookings: true } },
+    },
   });
 }
 

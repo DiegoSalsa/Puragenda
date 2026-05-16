@@ -87,6 +87,20 @@ enum BillingCycle {
   ANNUAL
 }
 
+enum RecurringMode {
+  FIXED_DAYS      // El negocio fija exactamente que dias (ej: L/M/V)
+  DAYS_WITH_REST  // N dias/semana con minimo de descanso entre sesiones
+  FREE_MINIMUM    // Libre con minimo de dias semanales, cliente elige
+}
+
+enum RecurringStatus {
+  PENDING_APPROVAL  // Esperando que el negocio apruebe
+  ACTIVE            // Corriendo normalmente
+  PAUSED            // Pausada temporalmente
+  CANCELLED         // Cancelada por el negocio o el cliente
+  COMPLETED         // Termino el periodo natural
+}
+
 model Subscription {
   id                    String             @id @default(cuid())
   plan                  SubscriptionPlan   @default(INDIVIDUAL)
@@ -147,6 +161,10 @@ model Business {
   rewardName            String?
   discountType          String?  // 'PERCENTAGE' | 'FIXED'
   discountValue         Int?
+  // ── Politicas del negocio ──
+  requiresClientRut     Boolean  @default(false)  // Pedir RUT en el widget
+  allowRescheduling     Boolean  @default(false)  // Permitir que clientes reagenden
+  rescheduleHoursLimit  Int      @default(24)     // Horas minimas de anticipacion para reagendar
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   deletedAt             DateTime?
@@ -163,6 +181,7 @@ model Business {
   blockedDates       BlockedDate[]
   loyaltyCodes       LoyaltyCode[]
   marketingCampaigns MarketingCampaign[]
+  recurringBookings  RecurringBooking[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -205,12 +224,13 @@ model Staff {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  appointments   Appointment[]
-  schedule       StaffSchedule[]
-  scheduleBlocks ScheduleBlock[]
-  services       Service[]
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments      Appointment[]
+  schedule          StaffSchedule[]
+  scheduleBlocks    ScheduleBlock[]
+  services          Service[]
+  recurringBookings RecurringBooking[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -245,19 +265,131 @@ model ScheduleBlock {
 }
 
 model Service {
-  id            String  @id @default(cuid())
-  name          String
-  description   String?
-  duration      Int
-  price         Float
-  depositAmount Int     @default(0)  // CLP amount for deposit; 0 = no deposit
-  businessId    String
+  id             String  @id @default(cuid())
+  name           String
+  description    String?
+  duration       Int
+  price          Float
+  depositAmount  Int     @default(0)   // CLP amount for per-service deposit
+  businessId     String
 
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-  staff        Staff[]
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments      Appointment[]
+  staff             Staff[]
+  recurringPlan     RecurringPlan?
+  recurringBookings RecurringBooking[]
 
   @@index([businessId])
+}
+
+// ==========================================
+// RECURRING BOOKINGS
+// ==========================================
+
+model RecurringPlan {
+  id                    String        @id @default(cuid())
+  serviceId             String        @unique
+  mode                  RecurringMode @default(FIXED_DAYS)
+  // FIXED_DAYS: dias exactos de la semana (0=Dom, 1=Lun, ... 6=Sab)
+  fixedDays             Int[]         @default([])
+  // DAYS_WITH_REST / FREE_MINIMUM
+  daysPerWeek           Int?          // cuantos dias por semana
+  minRestDays           Int?          // minimo dias de descanso entre sesiones
+  // Opciones de duracion que el cliente puede elegir (en meses, ej: [1,2,3])
+  durationOptions       Int[]         @default([1])
+  // Rango maximo de dias desde hoy que el cliente puede elegir como fecha de inicio
+  startDateRangeDays    Int           @default(14)
+  // Aprobacion manual del negocio antes de activar
+  requiresApproval      Boolean       @default(false)
+  // Formulario de salud/condiciones
+  requiresHealthForm    Boolean       @default(false)
+  healthQuestions       String[]      @default([])
+  // Pedir RUT al cliente
+  requiresRut           Boolean       @default(false)
+  // Mensaje personalizado para el email de renovacion
+  renewalMessage        String?
+  // Dias antes del vencimiento para avisar al cliente
+  expirationWarningDays Int           @default(7)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  service           Service            @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  recurringBookings RecurringBooking[]
+
+  @@index([serviceId])
+}
+
+model RecurringBooking {
+  id               String          @id @default(cuid())
+  businessId       String
+  serviceId        String
+  recurringPlanId  String
+  staffId          String?
+  clientId         String?
+  customerName     String
+  customerEmail    String
+  customerPhone    String?
+  customerRut      String?
+  status           RecurringStatus @default(PENDING_APPROVAL)
+  // Dias elegidos por el cliente (0=Dom, 1=Lun, ... 6=Sab)
+  selectedDays     Int[]
+  // Hora por dia: JSON { "1": "08:00", "3": "10:00", "5": "09:00" }
+  selectedTimes    Json
+  startDate        DateTime
+  endDate          DateTime
+  durationMonths   Int
+  // Formulario de salud
+  healthAnswers    Json?           // Respuestas a healthQuestions
+  healthFreeText   String?         // Texto libre del cliente
+  healthAccepted   Boolean         @default(false) // Acepto que pueden rechazar
+  // Estado de pausa
+  pausedUntil      DateTime?
+  // Notas internas del negocio (solo lo ve el negocio)
+  internalNotes    String?
+  // Control de emails automaticos ya enviados
+  expirationWarningSent Boolean    @default(false)
+  renewalOffered        Boolean    @default(false)
+  // Token para el link de gestion del cliente (/mi-plan/[token])
+  managementToken  String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  business       Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service        Service                   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  recurringPlan  RecurringPlan             @relation(fields: [recurringPlanId], references: [id], onDelete: Cascade)
+  staff          Staff?                    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  client         Client?                   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  appointments   Appointment[]
+  sessionOverrides RecurringSessionOverride[]
+
+  @@index([businessId])
+  @@index([serviceId])
+  @@index([staffId])
+  @@index([clientId])
+  @@index([status])
+  @@index([businessId, status])
+}
+
+model RecurringSessionOverride {
+  id                  String          @id @default(cuid())
+  recurringBookingId  String
+  // Fecha original del turno que se modifica
+  originalDate        DateTime
+  // CANCELLED o TIME_CHANGED
+  action              String
+  // Si es TIME_CHANGED, la nueva hora ("10:00")
+  newTime             String?
+  reason              String?
+  requestedByClient   Boolean         @default(false)
+  // Control de email de aviso enviado
+  warningSent         Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+
+  recurringBooking RecurringBooking @relation(fields: [recurringBookingId], references: [id], onDelete: Cascade)
+
+  @@index([recurringBookingId])
+  @@index([originalDate])
+  @@index([recurringBookingId, originalDate])
 }
 
 // ==========================================
@@ -303,18 +435,22 @@ model Appointment {
   paymentStatus        PaymentStatus     @default(NONE)
   mpPaymentId          String?           // MercadoPago payment ID
   mpPreferenceId       String?           // MercadoPago preference ID
+  // ── Recurring ──
+  recurringBookingId   String?           // FK a RecurringBooking si es parte de un plan
   createdAt            DateTime          @default(now())
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  staff    Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  client   Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service          Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff            Staff?            @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  client           Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  recurringBooking RecurringBooking? @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
   @@index([serviceId])
   @@index([staffId, startTime, endTime])
   @@index([startTime])
   @@index([clientId])
+  @@index([recurringBookingId])
 }
 
 // ==========================================
@@ -326,17 +462,20 @@ model Client {
   name             String
   email            String
   phone            String?
+  rut              String?  // RUT del cliente (opcional, configurable por negocio)
   totalSpent       Float    @default(0)
   noShowCount      Int      @default(0)
   currentStamps    Int      @default(0)
   acceptsMarketing Boolean  @default(true)
+  privateNotes     String?  // Notas privadas del negocio sobre este cliente (CRM light)
   businessId       String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-  loyaltyCodes LoyaltyCode[]
+  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments      Appointment[]
+  loyaltyCodes      LoyaltyCode[]
+  recurringBookings RecurringBooking[]
 
   @@unique([businessId, email])
   @@index([businessId])

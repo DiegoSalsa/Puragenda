@@ -66,8 +66,8 @@ export const serviceSchema = z.object({
 
   depositAmount: z
     .number()
-    .int("El abono debe ser un número entero")
-    .min(0, "El abono no puede ser negativo")
+    .int("El monto de abono debe ser un número entero")
+    .min(0, "El monto de abono no puede ser negativo")
     .optional()
     .default(0),
 });

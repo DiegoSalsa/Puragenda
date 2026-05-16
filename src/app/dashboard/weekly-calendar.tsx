@@ -4,12 +4,14 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2 } from "lucide-react";
 
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
   serviceName: string; staffName: string;
+  recurringBookingId?: string | null;
+  clientNotes?: string | null;
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7:00-18:00
@@ -32,6 +34,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const [cancellingSession, setCancellingSession] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDayIdx, setSelectedDayIdx] = useState<number>(0);
   const touchStartX = useRef<number | null>(null);
@@ -110,6 +113,29 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
       router.refresh();
     } catch (e) { console.error(e); }
     finally { setLoading(null); }
+  }
+
+  async function handleCancelRecurringSession(mode: "single" | "future") {
+    if (!selected) return;
+    setCancellingSession(true);
+    try {
+      await fetch(`/api/dashboard/appointments/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      // If cancelling all future, cancel them via the recurring service
+      if (mode === "future" && selected.recurringBookingId) {
+        await fetch(`/api/dashboard/recurring/${selected.recurringBookingId}/cancel-future`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromDate: selected.startTime }),
+        });
+      }
+      setSelected(null);
+      router.refresh();
+    } catch (e) { console.error(e); }
+    finally { setCancellingSession(false); }
   }
 
   function getAptsForDayHour(day: Date, hour: number) {
@@ -216,6 +242,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                               <div className="flex items-center gap-1.5">
                                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                                 <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
+                                {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-[#7C3AED] opacity-70" />}
                               </div>
                               <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
                             </button>
@@ -244,6 +271,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                         <div className="flex items-center gap-2">
                           <div className={`h-2 w-2 shrink-0 rounded-full ${sc.dot}`} />
                           <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
+                          {apt.recurringBookingId && <RefreshCw className="h-3 w-3 shrink-0 text-[#7C3AED] opacity-70" />}
                           <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
                         </div>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{apt.serviceName} · {apt.staffName}</p>
@@ -269,6 +297,11 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${(STATUS_COLORS[selected.status] || STATUS_COLORS.PENDING).dot}`} />
                 <span className="text-sm font-medium">{STATUS_LABELS[selected.status] || selected.status}</span>
+                {selected.recurringBookingId && (
+                  <span className="ml-auto flex items-center gap-1 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 px-2 py-0.5 text-[10px] font-medium text-[#A78BFA]">
+                    <RefreshCw className="h-2.5 w-2.5" /> Recurrente
+                  </span>
+                )}
               </div>
               <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Cliente:</span><span className="font-medium">{selected.customerName}</span></div>
@@ -277,6 +310,47 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                 <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Servicio:</span><span>{selected.serviceName}</span></div>
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Staff:</span><span>{selected.staffName}</span></div>
               </div>
+
+              {/* Client private notes (CRM Light) */}
+              {selected.clientNotes && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <FileText className="h-3 w-3 text-amber-400" />
+                    <span className="text-[11px] font-medium text-amber-400">Nota del cliente</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{selected.clientNotes}</p>
+                </div>
+              )}
+
+              {/* Recurring-specific section */}
+              {selected.recurringBookingId && (
+                <div className="space-y-2">
+                  <a href="/dashboard/recurring" className="flex items-center gap-1.5 text-xs font-medium text-[#A78BFA] hover:text-[#C4B5FD] transition-colors">
+                    <Link2 className="h-3 w-3" /> Ver todas las sesiones de este plan
+                  </a>
+                  {!["CANCELLED", "NO_SHOW"].includes(selected.status) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleCancelRecurringSession("single")}
+                        disabled={cancellingSession}
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
+                      >
+                        {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                        Cancelar esta sesion
+                      </button>
+                      <button
+                        onClick={() => handleCancelRecurringSession("future")}
+                        disabled={cancellingSession}
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
+                      >
+                        {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                        Cancelar siguientes
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {!["CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(selected.status) && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">Cambiar estado:</p>
@@ -286,7 +360,7 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
                       <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancelar</button>
                     </>)}
                     {selected.status === "CONFIRMED" && (<>
-                      <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} Asistió</button>
+                      <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} Asistio</button>
                       <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} Inasistencia</button>
                       <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancelar cita</button>
                     </>)}

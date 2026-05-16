@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ExternalLink, Gift, LayoutDashboard, Mail, Menu, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
+import { ExternalLink, Gift, LayoutDashboard, Mail, Menu, RefreshCw, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
+  { href: "/dashboard/recurring", label: "Suscripciones", icon: RefreshCw },
   { href: "/dashboard/loyalty", label: "Fidelización", icon: Stamp },
   { href: "/dashboard/marketing", label: "Marketing", icon: Mail },
   {

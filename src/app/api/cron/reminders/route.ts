@@ -126,11 +126,148 @@ export async function GET(req: Request) {
       }
     }
 
+    // ── LOGIC 1: Recurring plan expiration warnings ──
+    let expiringWarnings = 0;
+    try {
+      const { addDays } = await import("date-fns");
+      const { sendRecurringExpiringClient, sendRecurringExpiringBusiness } = await import("@/server/email/send");
+
+      // Find active bookings whose endDate is within their plan's expirationWarningDays
+      const expiringBookings = await prisma.recurringBooking.findMany({
+        where: {
+          status: "ACTIVE",
+          expirationWarningSent: false,
+        },
+        include: {
+          service: {
+            select: {
+              name: true,
+              recurringPlan: { select: { expirationWarningDays: true, renewalMessage: true } },
+            },
+          },
+          business: { select: { name: true, owner: { select: { email: true } } } },
+        },
+      });
+
+      const idsToMark: string[] = [];
+      for (const booking of expiringBookings) {
+        const warningDays = booking.service.recurringPlan?.expirationWarningDays ?? 7;
+        const threshold = addDays(now, warningDays);
+        if (booking.endDate <= threshold) {
+          const daysLeft = Math.max(1, Math.ceil((booking.endDate.getTime() - now.getTime()) / 86400000));
+          const renewalMessage = booking.service.recurringPlan?.renewalMessage ?? null;
+
+          await sendRecurringExpiringClient({
+            customerEmail: booking.customerEmail,
+            customerName: booking.customerName,
+            serviceName: booking.service.name,
+            endDate: booking.endDate,
+            daysLeft,
+            renewalMessage,
+            managementToken: booking.managementToken || "",
+            businessName: booking.business.name,
+          });
+
+          if (booking.business.owner?.email) {
+            await sendRecurringExpiringBusiness({
+              ownerEmail: booking.business.owner.email,
+              customerName: booking.customerName,
+              serviceName: booking.service.name,
+              endDate: booking.endDate,
+              daysLeft,
+              businessName: booking.business.name,
+            });
+          }
+
+          idsToMark.push(booking.id);
+          expiringWarnings++;
+        }
+      }
+
+      if (idsToMark.length > 0) {
+        await prisma.recurringBooking.updateMany({
+          where: { id: { in: idsToMark } },
+          data: { expirationWarningSent: true },
+        });
+      }
+    } catch (err) {
+      console.error("[Cron] Error in recurring expiration warnings:", err);
+    }
+
+    // ── LOGIC 2: Conflict/override warnings (Email 8) ──
+    let conflictWarnings = 0;
+    try {
+      const { addDays } = await import("date-fns");
+      const { sendRecurringConflictWarningClient } = await import("@/server/email/send");
+
+      const overrides = await prisma.recurringSessionOverride.findMany({
+        where: {
+          warningSent: false,
+          originalDate: {
+            gte: addDays(now, 6),
+            lte: addDays(now, 8),
+          },
+        },
+        include: {
+          recurringBooking: {
+            include: {
+              service: { select: { name: true } },
+              business: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      for (const override of overrides) {
+        await sendRecurringConflictWarningClient({
+          customerEmail: override.recurringBooking.customerEmail,
+          customerName: override.recurringBooking.customerName,
+          serviceName: override.recurringBooking.service.name,
+          originalDate: override.originalDate,
+          businessName: override.recurringBooking.business.name,
+        });
+
+        await prisma.recurringSessionOverride.update({
+          where: { id: override.id },
+          data: { warningSent: true },
+        });
+
+        conflictWarnings++;
+      }
+    } catch (err) {
+      console.error("[Cron] Error in recurring conflict warnings:", err);
+    }
+
+    // ── LOGIC 3: Auto-complete expired recurring plans ──
+    let autoCompleted = 0;
+    try {
+      const expiredBookings = await prisma.recurringBooking.findMany({
+        where: {
+          status: { in: ["ACTIVE", "PAUSED"] },
+          endDate: { lt: now },
+        },
+        select: { id: true },
+      });
+
+      if (expiredBookings.length > 0) {
+        await prisma.recurringBooking.updateMany({
+          where: { id: { in: expiredBookings.map((b) => b.id) } },
+          data: { status: "COMPLETED" },
+        });
+        autoCompleted = expiredBookings.length;
+      }
+    } catch (err) {
+      console.error("[Cron] Error in recurring auto-complete:", err);
+    }
+
     return NextResponse.json({
       ok: true,
       message: `Recordatorios enviados: ${sent}/${appointments.length}`,
       sent,
       total: appointments.length,
+      expiringWarnings,
+      conflictWarnings,
+      autoCompleted,
       ...(errors.length > 0 && { errors }),
     });
   } catch (err) {

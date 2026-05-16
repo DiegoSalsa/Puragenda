@@ -2,28 +2,70 @@
 
 import React from "react";
 
-import { useState, useMemo } from "react";
-import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown } from "lucide-react";
+import { useState, useMemo, useTransition } from "react";
+import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, StickyNote, RefreshCw, Edit2, Check, X } from "lucide-react";
+import { updateClientNotesAction, updateClientRutAction } from "@/server/actions/client.actions";
+import { useRouter } from "next/navigation";
+
+interface RecurringBookingSummary {
+  id: string;
+  status: string;
+  serviceName: string;
+  durationMonths: number;
+  startDate: string;
+  endDate: string;
+}
 
 interface ClientData {
   id: string;
   name: string;
   email: string;
   phone: string | null;
+  rut: string | null;
+  privateNotes: string | null;
   totalSpent: number;
   noShowCount: number;
   totalAppointments: number;
   completedAppointments: number;
   createdAt: string;
+  recurringBookings: RecurringBookingSummary[];
 }
 
 function formatCLP(amount: number) {
   return `$${Math.round(amount).toLocaleString("es-CL")}`;
 }
 
+const RECURRING_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Activa",
+  PENDING_APPROVAL: "Pendiente",
+  PAUSED: "Pausada",
+};
+
 export function ClientsTable({ clients }: { clients: ClientData[] }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingRut, setEditingRut] = useState<string | null>(null);
+  const [rutValue, setRutValue] = useState("");
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [notesValue, setNotesValue] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  function saveRut(clientId: string) {
+    startTransition(async () => {
+      await updateClientRutAction(clientId, rutValue.trim());
+      router.refresh();
+      setEditingRut(null);
+    });
+  }
+
+  function saveNotes(clientId: string) {
+    startTransition(async () => {
+      await updateClientNotesAction(clientId, notesValue.trim());
+      router.refresh();
+      setEditingNotes(null);
+    });
+  }
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
@@ -199,26 +241,131 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       </td>
                     </tr>
 
-                    {/* Expandable detail row (accordion) - shows on mobile */}
+                    {/* Expandable detail row */}
                     {expandedId === client.id && (
-                      <tr className="border-b border-border/50 sm:hidden">
-                        <td colSpan={6} className="px-3 py-3 bg-muted/30">
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Mail className="h-3.5 w-3.5 shrink-0" />
-                              <span className="font-medium text-foreground">{client.email}</span>
-                            </div>
-                            {client.phone && (
+                      <tr className="border-b border-border/50">
+                        <td colSpan={6} className="px-3 sm:px-5 py-4 bg-muted/20">
+                          <div className="space-y-4 text-sm">
+                            {/* Contact details */}
+                            <div className="flex flex-wrap gap-4">
                               <div className="flex items-center gap-2 text-muted-foreground">
-                                <Phone className="h-3.5 w-3.5 shrink-0" />
-                                <span className="font-medium text-foreground">{client.phone}</span>
+                                <Mail className="h-3.5 w-3.5 shrink-0" />
+                                <span className="font-medium text-foreground">{client.email}</span>
+                              </div>
+                              {client.phone && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Phone className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="font-medium text-foreground">{client.phone}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>Gastado: <span className="font-mono font-medium text-foreground">{client.totalSpent > 0 ? formatCLP(client.totalSpent) : "$0"}</span></span>
+                                <span>Citas: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
+                              </div>
+                            </div>
+
+                            {/* RUT */}
+                            <div className="flex items-start gap-2">
+                              <span className="shrink-0 mt-0.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-12">RUT</span>
+                              {editingRut === client.id ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <input
+                                    autoFocus
+                                    value={rutValue}
+                                    onChange={(e) => setRutValue(e.target.value)}
+                                    placeholder="12.345.678-9"
+                                    className="flex-1 rounded-xl border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
+                                  />
+                                  <button disabled={pending} onClick={() => saveRut(client.id)} className="rounded-lg bg-[#7C3AED] p-1.5 text-white hover:bg-[#6d28d9] disabled:opacity-50">
+                                    <Check className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button onClick={() => setEditingRut(null)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground">
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 flex-1">
+                                  <span className={client.rut ? "font-medium text-foreground" : "text-muted-foreground italic"}>
+                                    {client.rut ?? "Sin RUT registrado"}
+                                  </span>
+                                  <button
+                                    onClick={() => { setEditingRut(client.id); setRutValue(client.rut ?? ""); }}
+                                    className="rounded-lg p-1 text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Private Notes */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                  <StickyNote className="h-3.5 w-3.5" />
+                                  Notas privadas
+                                </div>
+                                {editingNotes !== client.id && (
+                                  <button
+                                    onClick={() => { setEditingNotes(client.id); setNotesValue(client.privateNotes ?? ""); }}
+                                    className="text-xs text-[#7C3AED] hover:underline"
+                                  >
+                                    {client.privateNotes ? "Editar" : "Agregar nota"}
+                                  </button>
+                                )}
+                              </div>
+                              {editingNotes === client.id ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    autoFocus
+                                    value={notesValue}
+                                    onChange={(e) => setNotesValue(e.target.value)}
+                                    rows={2}
+                                    placeholder="Notas privadas sobre este cliente..."
+                                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
+                                  />
+                                  <div className="flex gap-2">
+                                    <button disabled={pending} onClick={() => saveNotes(client.id)} className="rounded-xl bg-[#7C3AED] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#6d28d9] disabled:opacity-50">
+                                      {pending ? "Guardando..." : "Guardar"}
+                                    </button>
+                                    <button onClick={() => setEditingNotes(null)} className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : client.privateNotes ? (
+                                <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                                  {client.privateNotes}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground italic">Sin notas</p>
+                              )}
+                            </div>
+
+                            {/* Recurring subscriptions */}
+                            {client.recurringBookings.length > 0 && (
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                  <RefreshCw className="h-3.5 w-3.5" />
+                                  Suscripciones ({client.recurringBookings.length})
+                                </div>
+                                <div className="space-y-1">
+                                  {client.recurringBookings.map((r) => (
+                                    <div key={r.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs">
+                                      <span className="font-medium">{r.serviceName || "Servicio"} · {r.durationMonths} {r.durationMonths === 1 ? "mes" : "meses"}</span>
+                                      <span className={`rounded-lg px-2 py-0.5 font-medium ${
+                                        r.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600" :
+                                        r.status === "PENDING_APPROVAL" ? "bg-amber-500/10 text-amber-600" :
+                                        "bg-blue-500/10 text-blue-600"
+                                      }`}>
+                                        {RECURRING_STATUS_LABELS[r.status] ?? r.status}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
-                            <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
-                              <span>Gastado: <span className="font-mono font-medium text-foreground">{client.totalSpent > 0 ? formatCLP(client.totalSpent) : "$0"}</span></span>
-                              <span>Citas: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
-                              <span>Completadas: <span className="font-medium text-emerald-500">{client.completedAppointments}</span></span>
-                            </div>
+
                             {client.noShowCount > 0 && (
                               <div className="flex items-center gap-1.5 text-xs">
                                 <AlertTriangle className="h-3 w-3 text-amber-500" />

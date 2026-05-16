@@ -28,7 +28,7 @@ export async function PUT(
 
     const parsedDuration = duration !== undefined ? Number(duration) : undefined;
     const parsedPrice = price !== undefined ? Number(price) : undefined;
-    const parsedDeposit = depositAmount !== undefined ? Number(depositAmount) : undefined;
+    const parsedDeposit = depositAmount !== undefined ? Math.max(0, Math.floor(Number(depositAmount) || 0)) : undefined;
 
     if (parsedDuration !== undefined && Number.isNaN(parsedDuration)) {
       return Response.json({ error: "Duración inválida" }, { status: 400 });

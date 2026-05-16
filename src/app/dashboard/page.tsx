@@ -1,5 +1,5 @@
 import { getBusinessForUser } from "@/server/services/business.service";
-import { getAppointments } from "@/server/services/appointment.service";
+// appointment.service import removed — using direct prisma query for richer includes
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { format, startOfWeek, endOfWeek, addDays, isSameDay, parseISO } from "date-fns";
@@ -8,6 +8,7 @@ import { Calendar, Clock, UserCheck, Users } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
+import { PendingRecurringPanel } from "./pending-recurring-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const weekAppointments = await getAppointments(business.id, { from: weekStart, to: addDays(weekEnd, 1), staffId: userStaffId });
+  const weekAppointments = await prisma.appointment.findMany({
+    where: {
+      businessId: business.id,
+      ...(userStaffId && { staffId: userStaffId }),
+      startTime: { gte: weekStart, lt: addDays(weekEnd, 1) },
+    },
+    include: {
+      service: true,
+      staff: true,
+      client: { select: { privateNotes: true } },
+    },
+    orderBy: { startTime: "asc" },
+  });
   const todayCount = weekAppointments.filter((a) => isSameDay(new Date(a.startTime), today)).length;
   const totalServices = await prisma.service.count({ where: { businessId: business.id } });
   const pendingCount = weekAppointments.filter((a) => a.status === "PENDING").length;
@@ -47,6 +60,34 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     id: a.id, customerName: a.customerName, customerEmail: a.customerEmail,
     startTime: a.startTime.toISOString(), endTime: a.endTime.toISOString(),
     status: a.status, serviceName: a.service.name, staffName: a.staff?.name || "Sin asignar",
+    recurringBookingId: a.recurringBookingId ?? null,
+    clientNotes: a.client?.privateNotes ?? null,
+  }));
+
+  // Pending recurring approvals
+  const pendingRecurring = await prisma.recurringBooking.findMany({
+    where: { businessId: business.id, status: "PENDING_APPROVAL" },
+    orderBy: { createdAt: "asc" },
+    include: {
+      service: { select: { id: true, name: true } },
+      staff: { select: { id: true, name: true } },
+    },
+  });
+
+  const pendingSerialized = pendingRecurring.map((b) => ({
+    id: b.id,
+    customerName: b.customerName,
+    customerEmail: b.customerEmail,
+    serviceName: b.service.name,
+    staffName: b.staff?.name ?? null,
+    selectedDays: b.selectedDays,
+    selectedTimes: b.selectedTimes as Record<string, string>,
+    startDate: b.startDate.toISOString(),
+    endDate: b.endDate.toISOString(),
+    durationMonths: b.durationMonths,
+    healthAnswers: b.healthAnswers as Record<string, string> | null,
+    healthFreeText: b.healthFreeText,
+    createdAt: b.createdAt.toISOString(),
   }));
 
   return (
@@ -62,6 +103,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <SubscriptionBanner businessId={business.id} />
+
+      {pendingSerialized.length > 0 && (
+        <PendingRecurringPanel bookings={pendingSerialized} />
+      )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[

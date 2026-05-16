@@ -33,6 +33,10 @@ export default async function ServicesPage() {
       initialServices={services}
       maxServicesPerBooking={business.maxServicesPerBooking}
       depositEnabled={business.depositRequired && !!business.mpAccessToken}
+      businessPolicies={{
+        requiresClientRut: business.requiresClientRut,
+        allowRescheduling: business.allowRescheduling,
+      }}
     />
   );
 }
