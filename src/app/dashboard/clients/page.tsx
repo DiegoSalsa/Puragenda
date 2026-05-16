@@ -28,6 +28,10 @@ export default async function ClientsPage() {
         where: { status: "CHECKED_IN" },
         select: { id: true },
       },
+      recurringBookings: {
+        where: { status: { in: ["ACTIVE", "PENDING_APPROVAL", "PAUSED"] } },
+        select: { id: true, status: true, durationMonths: true, startDate: true, endDate: true, service: { select: { name: true } } },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -37,11 +41,21 @@ export default async function ClientsPage() {
     name: c.name,
     email: c.email,
     phone: c.phone,
+    rut: c.rut,
+    privateNotes: c.privateNotes,
     totalSpent: c.totalSpent,
     noShowCount: c.noShowCount,
     totalAppointments: c._count.appointments,
     completedAppointments: c.appointments.length,
     createdAt: c.createdAt.toISOString(),
+    recurringBookings: c.recurringBookings.map((r) => ({
+      id: r.id,
+      status: r.status as string,
+      serviceName: r.service.name,
+      durationMonths: r.durationMonths,
+      startDate: r.startDate.toISOString(),
+      endDate: r.endDate.toISOString(),
+    })),
   }));
 
   return (

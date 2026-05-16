@@ -3,7 +3,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
@@ -12,6 +12,7 @@ import { LogoUploader } from "./logo-uploader";
 import { UpgradeButton } from "@/components/dashboard/upgrade-button";
 import { MercadoPagoConnect } from "./mercadopago-connect";
 import { DepositConfig } from "./deposit-config";
+import { BusinessPoliciesEditor } from "./business-policies-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -198,6 +199,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <p className="mt-2 text-xs text-muted-foreground">
             Agrega <code className="text-foreground/60">?color=HEX</code> para personalizar colores.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <RefreshCw className="h-4 w-4 text-[#7C3AED]" /> Politicas de Suscripciones
+          </div>
+          <BusinessPoliciesEditor
+            initialAllowRescheduling={business.allowRescheduling}
+            initialRescheduleHoursLimit={business.rescheduleHoursLimit}
+            initialRequiresClientRut={business.requiresClientRut}
+          />
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
