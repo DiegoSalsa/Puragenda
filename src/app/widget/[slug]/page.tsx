@@ -80,7 +80,10 @@ export default async function WidgetPage({
   const business = await prisma.business.findUnique({
     where: { slug },
     include: {
-      services: { orderBy: { name: "asc" } },
+      services: {
+        orderBy: { name: "asc" },
+        include: { recurringPlan: true },
+      },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
       staff: {
         where: { isActive: true },
@@ -157,7 +160,21 @@ export default async function WidgetPage({
         fontSize,
       }}
       services={business.services.map((s) => ({
-        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price,
+        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        recurringPlan: s.recurringPlan ? {
+          mode: s.recurringPlan.mode as "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM",
+          fixedDays: s.recurringPlan.fixedDays,
+          daysPerWeek: s.recurringPlan.daysPerWeek,
+          minRestDays: s.recurringPlan.minRestDays,
+          durationOptions: s.recurringPlan.durationOptions,
+          startDateRangeDays: s.recurringPlan.startDateRangeDays,
+          requiresApproval: s.recurringPlan.requiresApproval,
+          requiresHealthForm: s.recurringPlan.requiresHealthForm,
+          healthQuestions: s.recurringPlan.healthQuestions,
+          requiresRut: s.recurringPlan.requiresRut,
+          renewalMessage: s.recurringPlan.renewalMessage,
+          expirationWarningDays: s.recurringPlan.expirationWarningDays,
+        } : null,
       }))}
       primaryColor={widgetColor}
       businessHours={business.businessHours.map((h) => ({
@@ -172,8 +189,7 @@ export default async function WidgetPage({
         })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
-      depositRequired={business.depositRequired && business.depositAmount > 0 && !!business.mpAccessToken}
-      depositAmount={business.depositAmount}
+      depositRequired={business.depositRequired && !!business.mpAccessToken}
     />
     </>
   );
