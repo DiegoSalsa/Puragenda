@@ -34,7 +34,7 @@ async function main() {
     { name: "Matías Silva", email: "matias@lucasdev.cl" },
   ];
 
-  const staffMembers = [];
+  const staffMembers: any[] = [];
   for (const s of staffData) {
     const existing = await prisma.staff.findFirst({ where: { businessId: business.id, email: s.email } });
     if (existing) { staffMembers.push(existing); continue; }
@@ -71,7 +71,7 @@ async function main() {
     { name: "Masaje Descontracturante", description: "Masaje terapéutico para aliviar tensiones", duration: 60, price: 35000, depositAmount: 0 },
   ];
 
-  const services = [];
+  const services: any[] = [];
   for (const s of servicesData) {
     const existing = await prisma.service.findFirst({ where: { businessId: business.id, name: s.name } });
     if (existing) {
@@ -154,7 +154,7 @@ async function main() {
     { name: "Andrés Herrera", email: "andres.herrera@email.com", phone: "+56967890123", privateNotes: "Deportista amateur. Entrena para maratón." },
   ];
 
-  const clients = [];
+  const clients: any[] = [];
   for (const c of clientsData) {
     const existing = await prisma.client.findFirst({ where: { businessId: business.id, email: c.email } });
     if (existing) { clients.push(existing); continue; }
