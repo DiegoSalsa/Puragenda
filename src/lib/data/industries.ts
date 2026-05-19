@@ -123,7 +123,7 @@ export const industriesData: IndustrySEOData[] = [
   {
     slug: "clinicas",
     name: "Clínicas y Consultas",
-    singularName: "Clínica",
+    singularName: "clínica o consulta",
     title: "Software de Agendamiento Médico y Consultas",
     description: "Agenda electrónica para profesionales de la salud. Organiza pacientes, médicos y consultas con máxima confiabilidad y seguridad.",
     heroHeadline: "Agendamiento Médico Confiable e Inteligente",

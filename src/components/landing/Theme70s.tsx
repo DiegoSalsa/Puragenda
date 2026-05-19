@@ -196,7 +196,7 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
                       <CalendarClock className="h-5 w-5 text-white" />
                     </div>
                     <span className="text-lg font-black uppercase tracking-tight text-black dark:text-[#FFFDD0]" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-                      Pura<span className="text-[#FF1493]">genda</span>
+                      Puragenda
                     </span>
                     <div className="ml-auto flex gap-2">
                       {["Citas", "Staff", "Servicios"].map((t) => (

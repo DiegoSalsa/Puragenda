@@ -250,7 +250,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                     <CalendarClock className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-sm font-black">
-                    Pura<span className="text-[#7C3AED]">genda</span>
+                    Puragenda
                   </span>
                   <div className="ml-auto flex gap-2">
                     {["Citas", "Staff", "Servicios"].map((t) => (
