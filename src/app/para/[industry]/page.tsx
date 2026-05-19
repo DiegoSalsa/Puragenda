@@ -156,6 +156,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
               <AccordionContent className="text-sm font-bold opacity-80 pb-5">
                 {faq.answer}
               </AccordionContent>
+              <div className="sr-only" aria-hidden="true">{faq.answer}</div>
             </AccordionItem>
           ))}
         </Accordion>

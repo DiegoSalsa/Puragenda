@@ -99,13 +99,14 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
               <span className="bg-[#FFF5BA] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] rotate-1 tracking-wide">✓ 30 días gratis</span>
               <span className="bg-[#FFB5E8] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ Sin contrato</span>
             </div>
-            <h1 className="text-6xl font-black uppercase tracking-tighter sm:text-8xl lg:text-9xl">
+            <h1 className="sr-only">Tu agenda online inteligente, automática y disponible 24/7</h1>
+            <div aria-hidden="true" className="text-6xl font-black uppercase tracking-tighter sm:text-8xl lg:text-9xl">
               <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Tu Agenda</span>
               <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Online</span>
               <span className="mt-4 block inline-block border-[6px] border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-[#7C3AED] dark:text-[#85E3FF] shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] transform -rotate-2">
                 <WordCarousel words={["PURAGENDA.", "INTELIGENTE.", "AUTOMÁTICO.", "24/7 ONLINE.", "SIN ESTRÉS."]} />
               </span>
-            </h1>
+            </div>
 
             {/* CTAs and badges */}
             <div className="mt-12 flex flex-col items-center gap-8 z-20">

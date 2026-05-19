@@ -54,7 +54,7 @@ export default async function ContactoPage() {
             <div className="space-y-6">
               <div className="bg-[#BFFCC6] text-black border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0_#000]">
                 <h3 className="text-xl font-black uppercase mb-2">Tiempos de Respuesta</h3>
-                <p className="font-bold opacity-80">Garantizamos una respuesta inicial en menos de <strong>10 minutos</strong> en horario hábil para clientes del Plan Equipo.</p>
+                <p className="font-bold opacity-80">Priorizamos la respuesta rápida para todos nuestros clientes.</p>
               </div>
               <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF]">
                 <h3 className="text-xl font-black uppercase mb-2">Migración Gratuita</h3>

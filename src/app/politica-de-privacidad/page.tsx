@@ -156,7 +156,7 @@ export default function PrivacidadPage() {
               <h2>11. Contacto</h2>
               <p>
                 Para consultas sobre privacidad y protección de datos, contáctenos en{" "}
-                <a href="mailto:contacto@puragenda.cl">contacto@puragenda.cl</a>.
+                <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
             </article>
           </div>

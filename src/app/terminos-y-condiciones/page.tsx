@@ -133,8 +133,8 @@ export default function TerminosPage() {
 
               <h2>11. Contacto</h2>
               <p>
-                Para consultas sobre estos términos, puede contactarnos a través del correo electrónico{" "}
-                <a href="mailto:contacto@puragenda.cl">contacto@puragenda.cl</a>.
+                Para consultas sobre estos términos, puede contactarnos a través de correo electrónico
+                en <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
             </article>
           </div>
