@@ -205,16 +205,14 @@ function FAQItem({ faq }: { faq: typeof faqs[0] }) {
         </div>
       </button>
 
-      {open && (
-        <div className={`mx-4 mb-4 border-t-2 ${s.dividerColor} pt-3`}>
-          <p className="text-[13px] font-bold text-black/75 dark:text-white/70 leading-relaxed">
-            {faq.answer}
-          </p>
-          <span className={`mt-3 inline-block rounded-full border-2 border-black/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
-            {faq.category}
-          </span>
-        </div>
-      )}
+      <div className={`mx-4 mb-4 border-t-2 ${s.dividerColor} pt-3 ${open ? "block" : "hidden"}`}>
+        <p className="text-[13px] font-bold text-black/75 dark:text-white/70 leading-relaxed">
+          {faq.answer}
+        </p>
+        <span className={`mt-3 inline-block rounded-full border-2 border-black/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
+          {faq.category}
+        </span>
+      </div>
     </div>
   );
 }
