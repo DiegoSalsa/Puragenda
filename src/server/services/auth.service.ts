@@ -37,8 +37,9 @@ async function isTrialBlocked(email: string, ip: string | null): Promise<boolean
   });
   if (existingUser) return true;
 
-  // Check if IP is blacklisted (ignore local/unknown IPs)
-  const LOCAL_IPS = ["unknown", "::1", "127.0.0.1", "localhost"];
+  // Check if IP is blacklisted (ignore local/unknown/whitelisted IPs)
+  const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(i => i.trim()).filter(Boolean);
+  const LOCAL_IPS = ["unknown", "::1", "127.0.0.1", "localhost", ...WHITELISTED_IPS];
   if (ip && !LOCAL_IPS.includes(ip)) {
     const blacklisted = await prisma.blacklistedIp.findUnique({ where: { ip } });
     if (blacklisted) return true;
@@ -138,7 +139,8 @@ export async function registerUser(data: {
     });
 
     // Record IP for future fraud detection
-    const LOCAL_IPS = ["unknown", "::1", "127.0.0.1", "localhost"];
+    const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(i => i.trim()).filter(Boolean);
+    const LOCAL_IPS = ["unknown", "::1", "127.0.0.1", "localhost", ...WHITELISTED_IPS];
     if (ip && givesTrial && !LOCAL_IPS.includes(ip)) {
       await tx.blacklistedIp.upsert({
         where: { ip },
