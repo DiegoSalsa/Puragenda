@@ -1,6 +1,7 @@
 export type IndustrySEOData = {
   slug: string;
   name: string;
+  singularName: string;
   title: string;
   description: string;
   heroHeadline: string;
@@ -20,6 +21,7 @@ export const industriesData: IndustrySEOData[] = [
   {
     slug: "peluquerias",
     name: "Peluquerías",
+    singularName: "Peluquería",
     title: "Software de Reservas para Peluquerías y Salones",
     description: "La agenda online perfecta para peluquerías. Tus clientes agendan 24/7, evitas llamadas perdidas y coordinas a tus estilistas sin solapamientos.",
     heroHeadline: "Agenda más cortes, contesta menos llamadas",
@@ -53,6 +55,7 @@ export const industriesData: IndustrySEOData[] = [
   {
     slug: "barberias",
     name: "Barberías",
+    singularName: "Barbería",
     title: "Software y Agenda Online para Barberías",
     description: "Moderniza tu barbería con una agenda digital profesional. Organiza a tus barberos y permite reservas automáticas desde Instagram.",
     heroHeadline: "Lleva tu Barbería al siguiente nivel",
@@ -86,6 +89,7 @@ export const industriesData: IndustrySEOData[] = [
   {
     slug: "estetica",
     name: "Centros de Estética",
+    singularName: "Centro de Estética",
     title: "Software de Gestión para Centros de Estética y Spa",
     description: "Gestiona cabinas, profesionales y tratamientos estéticos con un sistema de reservas que proyecta la misma elegancia que tu marca.",
     heroHeadline: "Gestión Premium para tu Centro de Estética",
@@ -119,6 +123,7 @@ export const industriesData: IndustrySEOData[] = [
   {
     slug: "clinicas",
     name: "Clínicas y Consultas",
+    singularName: "Clínica",
     title: "Software de Agendamiento Médico y Consultas",
     description: "Agenda electrónica para profesionales de la salud. Organiza pacientes, médicos y consultas con máxima confiabilidad y seguridad.",
     heroHeadline: "Agendamiento Médico Confiable e Inteligente",

@@ -165,7 +165,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
       <section className="border-t-4 border-black dark:border-white py-24 bg-[#BFFCC6] dark:bg-black text-center">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-5xl font-black uppercase tracking-tighter mb-8 text-black dark:text-white">
-            Digitaliza tu {data.name.toLowerCase()} hoy
+            Digitaliza tu {data.singularName.toLowerCase()} hoy
           </h2>
           <Link href="/pricing">
             <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-10 py-5 font-black uppercase text-2xl shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF] hover:translate-y-2 hover:shadow-none transition-all flex items-center gap-4 mx-auto">

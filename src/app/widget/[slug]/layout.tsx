@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Reserva Online",
   description: "Agenda tu cita en línea.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function WidgetLayout({ children }: { children: React.ReactNode }) {

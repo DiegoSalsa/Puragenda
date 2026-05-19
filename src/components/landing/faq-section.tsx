@@ -272,23 +272,12 @@ export function FAQSection() {
         })}
       </div>
 
-      {/* FAQ grid — two independent columns so expanding one doesn't shift the other */}
-      <div className="hidden md:flex gap-4 items-start">
-        <div className="flex-1 flex flex-col gap-4">
-          {filtered.filter((_, i) => i % 2 === 0).map((faq, i) => (
-            <FAQItem key={`${faq.question}-l-${i}`} faq={faq} />
-          ))}
-        </div>
-        <div className="flex-1 flex flex-col gap-4">
-          {filtered.filter((_, i) => i % 2 === 1).map((faq, i) => (
-            <FAQItem key={`${faq.question}-r-${i}`} faq={faq} />
-          ))}
-        </div>
-      </div>
-      {/* Mobile: single column */}
-      <div className="flex md:hidden flex-col gap-4">
+      {/* FAQ grid */}
+      <div className="columns-1 md:columns-2 gap-4">
         {filtered.map((faq, i) => (
-          <FAQItem key={`${faq.question}-${i}`} faq={faq} />
+          <div key={`${faq.question}-${i}`} className="break-inside-avoid mb-4">
+            <FAQItem faq={faq} />
+          </div>
         ))}
       </div>
     </section>
