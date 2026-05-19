@@ -17,7 +17,7 @@ export default async function PricingPage() {
     <LandingLayout user={user} business={business}>
       <section className="mx-auto w-full max-w-6xl px-6 pt-10 pb-16">
         <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-center mb-4">Planes para crecer a tu ritmo</h2>
-        <p className="mx-auto mt-4 max-w-xl font-bold text-black/70 dark:text-gray-400 text-center mb-4">Prueba gratis en Plan Base. Sin tarjeta. Cancela cuando quieras.</p>
+        <p className="mx-auto mt-4 max-w-xl font-bold text-black/70 dark:text-gray-400 text-center mb-4">Prueba gratis por 30 días. Sin tarjeta. Cancela cuando quieras.</p>
         <PricingCards mode="landing" />
       </section>
 
