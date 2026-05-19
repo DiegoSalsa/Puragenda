@@ -39,6 +39,8 @@ function getClientIp(request: NextRequest): string {
   );
 }
 
+const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(ip => ip.trim()).filter(Boolean);
+
 export function rateLimit(options: RateLimitOptions) {
   const { windowMs, max, message } = options;
 
@@ -54,6 +56,12 @@ export function rateLimit(options: RateLimitOptions) {
      */
     check(request: NextRequest): NextResponse | null {
       const ip = getClientIp(request);
+
+      // Bypass rate limit for whitelisted IPs
+      if (ip !== "unknown" && WHITELISTED_IPS.includes(ip)) {
+        return null;
+      }
+
       const now = Date.now();
 
       // Cleanup expired entries (prevent memory leak in long-running serverless)
