@@ -75,7 +75,7 @@ export default async function ContactoPage() {
                 </div>
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
                   <h4 className="font-black uppercase mb-1">¿Puedo probarlo antes de pagar?</h4>
-                  <p className="text-sm font-bold opacity-80">Sí. Tienes 30 días gratuitos en el Plan Base para convencerte.</p>
+                  <p className="text-sm font-bold opacity-80">Sí. Tienes 30 días gratuitos en cualquiera de nuestros planes para convencerte.</p>
                 </div>
               </div>
             </div>
