@@ -167,7 +167,7 @@ export default function NewBusinessPage() {
                   {p === "INDIVIDUAL" ? "Individual" : "Equipo"}
                 </p>
                 <p className="mt-1 text-xs font-bold text-black/50">
-                  {p === "INDIVIDUAL" ? "$9.990/mes" : "$24.990/mes"}
+                  {p === "INDIVIDUAL" ? "$12.990/mes" : "$29.990/mes"}
                 </p>
               </button>
             ))}

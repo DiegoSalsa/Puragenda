@@ -111,6 +111,9 @@ export default async function SolucionesPage() {
               </div>
             ))}
           </div>
+          <p className="mt-8 text-center text-sm font-bold opacity-60">
+            * Métricas basadas en resultados promedio observados en clientes piloto iniciales.
+          </p>
         </div>
       </section>
 

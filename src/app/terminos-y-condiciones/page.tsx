@@ -84,6 +84,11 @@ export default function TerminosPage() {
                 plan están detallados en nuestra página de precios. La Empresa se reserva el derecho de modificar
                 los precios con previo aviso de 30 días.
               </p>
+              <p>
+                <strong>Procesamiento de Pagos:</strong> Todos los pagos de suscripciones y abonos de clientes
+                son procesados de forma segura a través de nuestra integración oficial con <strong>Mercado Pago</strong>. 
+                Puragenda no almacena ni procesa directamente la información de tarjetas de crédito o débito.
+              </p>
 
               <h2>5. Uso Aceptable</h2>
               <p>El usuario se compromete a:</p>
@@ -128,8 +133,8 @@ export default function TerminosPage() {
 
               <h2>11. Contacto</h2>
               <p>
-                Para consultas sobre estos términos, puede contactarnos a través de nuestro sitio web
-                en <a href="https://purocode.com">purocode.com</a>.
+                Para consultas sobre estos términos, puede contactarnos a través del correo electrónico{" "}
+                <a href="mailto:contacto@puragenda.cl">contacto@puragenda.cl</a>.
               </p>
             </article>
           </div>

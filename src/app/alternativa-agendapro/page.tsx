@@ -137,7 +137,7 @@ export default function AlternativaAgendaProPage() {
                     <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
                       <div className="flex items-start gap-2.5">
                         <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Desde $9.990 CLP/mes</span>
+                        <span className="text-foreground font-medium">Desde $12.990 CLP/mes</span>
                       </div>
                     </td>
                     <td className="p-6 border-l border-border/50">

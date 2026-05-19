@@ -66,8 +66,8 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60">Plan</label>
           <select value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
-            <option value="INDIVIDUAL">Individual ($9.990/mes)</option>
-            <option value="EQUIPO">Equipo ($24.990/mes)</option>
+            <option value="INDIVIDUAL">Individual ($12.990/mes)</option>
+            <option value="EQUIPO">Equipo ($29.990/mes)</option>
           </select>
         </div>
 

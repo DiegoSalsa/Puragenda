@@ -250,8 +250,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                     <CalendarClock className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-sm font-black">
-                    <span className="sr-only">Puragenda</span>
-                    <span aria-hidden="true">Pura<span className="text-[#7C3AED]">genda</span></span>
+                    Pura<span className="text-[#7C3AED]">genda</span>
                   </span>
                   <div className="ml-auto flex gap-2">
                     {["Citas", "Staff", "Servicios"].map((t) => (
@@ -399,7 +398,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
             {/* Card 2 - verde, un poco mas grande visualmente */}
             <div className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
               <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">4 kinesiológos con horarios distintos y nunca hay cruces. Los recordatorios solos bajaron mucho las inasistencias. El equipo ya no toca el teléfono para confirmar citas.</p>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">4 kinesiólogos con horarios distintos y nunca hay cruces. Los recordatorios solos bajaron mucho las inasistencias. El equipo ya no toca el teléfono para confirmar citas.</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">M</div>
                 <div>
