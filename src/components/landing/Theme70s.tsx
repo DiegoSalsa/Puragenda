@@ -195,7 +195,10 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl border-[4px] border-black dark:border-[#FFFDD0] bg-[#FF1493] shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#2A2A2E] rotate-[-5deg]">
                       <CalendarClock className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-lg font-black uppercase tracking-tight text-black dark:text-[#FFFDD0]" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>Pura<span className="text-[#FF1493]">genda</span></span>
+                    <span className="text-lg font-black uppercase tracking-tight text-black dark:text-[#FFFDD0]" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                      <span className="sr-only">Puragenda</span>
+                      <span aria-hidden="true">Pura<span className="text-[#FF1493]">genda</span></span>
+                    </span>
                     <div className="ml-auto flex gap-2">
                       {["Citas", "Staff", "Servicios"].map((t) => (
                         <span key={t} className={`rounded-full border-[4px] border-black dark:border-[#FFFDD0] px-3 py-1.5 text-[10px] font-black uppercase ${t === "Citas" ? "bg-[#FFDB58] text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#2A2A2E]" : "bg-white dark:bg-[#2A2A2E] text-black dark:text-[#FFFDD0]"}`}>{t}</span>
@@ -348,7 +351,7 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
               Empieza hoy mismo
             </h2>
             <p className="text-2xl font-black text-black bg-[#FFDB58] px-8 py-3 rounded-full border-[4px] border-black dark:border-[#FFFDD0] shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFDD0] rotate-[-2deg]">
-              Te acompanamos en la configuracion inicial.
+              Te acompañamos en la configuración inicial.
             </p>
             <Link href="/pricing" className="mt-8">
               <button className="rounded-full border-[4px] border-black dark:border-[#FFFDD0] bg-[#FFFDD0] dark:bg-[#1A1A1D] px-14 py-6 text-2xl font-black text-black dark:text-[#FFFDD0] shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#FFFDD0] hover:translate-x-2 hover:translate-y-2 hover:shadow-[4px_4px_0_#000] dark:hover:shadow-[4px_4px_0_#FFFDD0] transition-all rotate-2">

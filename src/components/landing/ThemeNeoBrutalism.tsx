@@ -249,7 +249,10 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl border-2 border-black dark:border-white bg-[#7C3AED]">
                     <CalendarClock className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-sm font-black">Pura<span className="text-[#7C3AED]">genda</span></span>
+                  <span className="text-sm font-black">
+                    <span className="sr-only">Puragenda</span>
+                    <span aria-hidden="true">Pura<span className="text-[#7C3AED]">genda</span></span>
+                  </span>
                   <div className="ml-auto flex gap-2">
                     {["Citas", "Staff", "Servicios"].map((t) => (
                       <span key={t} className={`rounded-md border-2 border-black dark:border-white px-2 py-1 text-[10px] font-black ${t === "Citas" ? "bg-[#FFF5BA] text-black shadow-[2px_2px_0_#000]" : "dark:text-white"}`}>{t}</span>
@@ -384,7 +387,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
             {/* Card 1 - amarillo, rotada levemente */}
             <div className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
               <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Coordinaba todo por WhatsApp y era un caos. Ahora mis clientas reservan solas de noche y yo me entero a la mañana. No volveria atrás.</p>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Coordinaba todo por WhatsApp y era un caos. Ahora mis clientas reservan solas de noche y yo me entero a la mañana. No volvería atrás.</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">V</div>
                 <div>
@@ -424,7 +427,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
         <section className="border-t-4 border-black dark:border-white py-20 bg-[#85E3FF] dark:bg-[#B28DFF] dark:text-black">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
             <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Tu agenda online lista en minutos</h2>
-            <p className="max-w-xl font-bold text-black/70">Te acompanamos desde la configuracion inicial hasta la publicacion en tu sitio.</p>
+            <p className="max-w-xl font-bold text-black/70">Te acompañamos desde la configuración inicial hasta la publicación en tu sitio.</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/pricing">
                 <button className="bg-black text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,0.3)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all flex items-center gap-2">
