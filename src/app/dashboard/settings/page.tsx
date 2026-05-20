@@ -222,6 +222,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <PageTutorial
         tutorialKey="configuracion_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

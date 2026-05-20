@@ -85,6 +85,7 @@ export default async function RecurringPage() {
 
       <PageTutorial
         tutorialKey="suscripciones_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

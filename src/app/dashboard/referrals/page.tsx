@@ -47,6 +47,7 @@ export default async function ReferralsPage() {
 
       <PageTutorial
         tutorialKey="referidos_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {
@@ -56,7 +57,7 @@ export default async function ReferralsPage() {
             }
           },
           {
-            element: ".space-y-8 > div:nth-child(2)",
+            element: "#referral-code-card",
             popover: {
               title: "TU CÓDIGO",
               description: "Copia este enlace o código y compártelo. Por cada referido exitoso sumarás más fichas.",

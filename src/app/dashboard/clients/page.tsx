@@ -71,6 +71,7 @@ export default async function ClientsPage() {
 
       <PageTutorial
         tutorialKey="clientes_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

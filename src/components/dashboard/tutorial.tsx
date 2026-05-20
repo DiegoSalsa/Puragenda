@@ -11,7 +11,7 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
     if (initialized.current) return;
     initialized.current = true;
 
-    const hasSeen = localStorage.getItem("hasSeenDashboardTutorial");
+    const hasSeen = localStorage.getItem("hasSeenTutorial_general");
     const isDemo = userEmail === "vale@esteticabella.cl";
 
     if (hasSeen && !isDemo) {
@@ -62,7 +62,13 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
       ],
       onDestroyStarted: () => {
         if (!isDemo) {
-          localStorage.setItem("hasSeenDashboardTutorial", "true");
+          localStorage.setItem("hasSeenTutorial_general", "true");
+        } else {
+          // If demo, we might need a way to tell the sub-tutorials that this is done for the current session.
+          // Since the demo resets, we can set it to true temporarily and clear it on unmount or just let it be true for the session?
+          // The issue is, for the demo account, hasSeenTutorial is NEVER set, so PageTutorial dependsOnKey will loop forever.
+          // Let's set a session-level flag to tell PageTutorials we finished the general one.
+          window.sessionStorage.setItem("hasSeenTutorial_general", "true");
         }
         driverObj.destroy();
       }

@@ -131,12 +131,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       <PageTutorial
         tutorialKey="citas_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {
             popover: {
-              title: "TUS CITAS",
-              description: "Bienvenido al centro de control. Aquí puedes ver un resumen de tu semana y todas tus citas agendadas.",
+              title: "CALENDARIO DE CITAS",
+              description: "Aquí verás todas las reservas en tiempo real. Puedes cambiar a vista de mes, semana o día, y ver a todo tu equipo.",
             }
           },
           {
@@ -148,15 +149,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               align: "start"
             }
           },
-          {
-            element: "button[title='Nueva cita']",
-            popover: {
-              title: "AGENDAR CITA MANUAL",
-              description: "Puedes agendar una cita manualmente para clientes que te llamen por teléfono desde el calendario.",
-              side: "left",
-              align: "end"
-            }
-          }
         ]}
       />
     </div>

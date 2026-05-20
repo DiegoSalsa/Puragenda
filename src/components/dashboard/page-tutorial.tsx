@@ -8,15 +8,16 @@ interface PageTutorialProps {
   tutorialKey: string;
   userEmail?: string | null;
   steps: DriveStep[];
+  dependsOnKey?: string;
 }
 
-export function PageTutorial({ tutorialKey, userEmail, steps }: PageTutorialProps) {
+export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: PageTutorialProps) {
   const initialized = useRef(false);
 
   useEffect(() => {
     if (initialized.current) return;
-    initialized.current = true;
-
+    
+    // Check if it's already seen
     const hasSeen = localStorage.getItem(`hasSeenTutorial_${tutorialKey}`);
     const isDemo = userEmail === "vale@esteticabella.cl";
 
@@ -24,28 +25,45 @@ export function PageTutorial({ tutorialKey, userEmail, steps }: PageTutorialProp
       return;
     }
 
-    const driverObj = driver({
-      showProgress: true,
-      nextBtnText: "Siguiente",
-      prevBtnText: "Atrás",
-      doneBtnText: "Finalizar",
-      progressText: "GUÍA PASO {{current}} DE {{total}}",
-      popoverClass: "neo-brutalism-driver",
-      steps,
-      onDestroyStarted: () => {
-        if (!isDemo) {
-          localStorage.setItem(`hasSeenTutorial_${tutorialKey}`, "true");
+    const startDriver = () => {
+      initialized.current = true;
+      const driverObj = driver({
+        showProgress: true,
+        nextBtnText: "Siguiente",
+        prevBtnText: "Atrás",
+        doneBtnText: "Finalizar",
+        progressText: "GUÍA PASO {{current}} DE {{total}}",
+        popoverClass: "neo-brutalism-driver",
+        steps,
+        onDestroyStarted: () => {
+          if (!isDemo) {
+            localStorage.setItem(`hasSeenTutorial_${tutorialKey}`, "true");
+          }
+          driverObj.destroy();
         }
-        driverObj.destroy();
-      }
-    });
+      });
 
-    // Timeout to ensure the DOM is fully rendered
-    setTimeout(() => {
-      driverObj.drive();
-    }, 800);
+      setTimeout(() => {
+        driverObj.drive();
+      }, 800);
+    };
 
-  }, [tutorialKey, userEmail, steps]);
+    if (dependsOnKey) {
+      // Poll for the dependency
+      const interval = setInterval(() => {
+        const isDone = localStorage.getItem(`hasSeenTutorial_${dependsOnKey}`) === "true" ||
+                       window.sessionStorage.getItem(`hasSeenTutorial_${dependsOnKey}`) === "true";
+        if (isDone) {
+          clearInterval(interval);
+          startDriver();
+        }
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      startDriver();
+    }
+
+  }, [tutorialKey, userEmail, steps, dependsOnKey]);
 
   return null;
 }

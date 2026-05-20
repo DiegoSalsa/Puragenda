@@ -28,6 +28,7 @@ export default async function PersonalizadoPage() {
       />
       <PageTutorial
         tutorialKey="apariencia_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

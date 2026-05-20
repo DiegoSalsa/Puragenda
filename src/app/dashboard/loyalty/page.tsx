@@ -61,6 +61,7 @@ export default async function LoyaltyPage() {
 
       <PageTutorial
         tutorialKey="fidelizacion_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

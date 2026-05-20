@@ -61,6 +61,7 @@ export default async function MarketingPage() {
 
       <PageTutorial
         tutorialKey="marketing_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

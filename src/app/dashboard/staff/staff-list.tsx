@@ -229,6 +229,7 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
         {/* ═══ ADD STAFF FORM ═══ */}
         {!showForm ? (
           <button
+            id="btn-add-staff"
             onClick={() => { if (!atLimit) setShowForm(true); }}
             disabled={atLimit}
             className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm w-full justify-center transition-all ${

@@ -54,6 +54,7 @@ export default async function RewardsPage() {
 
       <PageTutorial
         tutorialKey="recompensas_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {

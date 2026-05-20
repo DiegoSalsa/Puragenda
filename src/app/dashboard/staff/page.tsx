@@ -64,6 +64,7 @@ export default async function StaffPage() {
 
       <PageTutorial
         tutorialKey="profesionales_v1"
+        dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {
@@ -73,7 +74,7 @@ export default async function StaffPage() {
             }
           },
           {
-            element: "button[title='Añadir profesional']",
+            element: "#btn-add-staff",
             popover: {
               title: "NUEVO PROFESIONAL",
               description: "Haz clic aquí para agregar a un nuevo miembro del equipo. Se enviará una invitación a su correo opcionalmente.",
@@ -82,7 +83,7 @@ export default async function StaffPage() {
             }
           },
           {
-            element: ".space-y-8 > div:last-child",
+            element: ".space-y-4",
             popover: {
               title: "GESTIÓN DE HORARIOS",
               description: "Al hacer clic en un profesional, podrás configurar sus horarios, qué servicios realiza, y bloquear días u horas específicas.",
