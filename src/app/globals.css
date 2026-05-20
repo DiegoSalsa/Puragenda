@@ -374,11 +374,21 @@
 .neo-brutalism-driver .driver-popover-prev-btn:hover {
   transform: translate(1px, 1px);
   box-shadow: 2px 2px 0px #000;
+  color: #FFF !important;
+  text-shadow: none !important;
+}
+
+.neo-brutalism-driver .driver-popover-prev-btn:hover {
+  color: #000 !important;
 }
 
 .dark .neo-brutalism-driver .driver-popover-next-btn:hover,
 .dark .neo-brutalism-driver .driver-popover-prev-btn:hover {
   box-shadow: 2px 2px 0px #FFFFFF;
+}
+
+.dark .neo-brutalism-driver .driver-popover-prev-btn:hover {
+  color: #FFF !important;
 }
 
 .neo-brutalism-driver .driver-popover-next-btn {

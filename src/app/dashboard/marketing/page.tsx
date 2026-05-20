@@ -70,7 +70,7 @@ export default async function MarketingPage() {
             }
           },
           {
-            element: "button:contains('Nueva Campaña')", // We can select a button dynamically but using a general popover if it fails
+            element: "#btn-nueva-campana",
             popover: {
               title: "NUEVA CAMPAÑA",
               description: "Puedes crear una campaña filtrando a tu audiencia, por ejemplo: 'Clientes que no asisten hace más de 60 días'.",

@@ -302,6 +302,7 @@ export function ServicesClient({
         </div>
 
         <button
+          id="btn-nuevo-servicio"
           onClick={openCreate}
           className="flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#5B21B6]"
         >

@@ -299,6 +299,7 @@ export function MarketingDashboard({
 
           {/* Submit */}
           <button
+            id="btn-nueva-campana"
             type="submit"
             disabled={
               isLoading ||

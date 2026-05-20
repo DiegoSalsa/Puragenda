@@ -137,28 +137,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-name" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Store className="h-4 w-4 text-[#7C3AED]" /> Nombre del Negocio
           </div>
           <BusinessNameEditor initialName={business.name} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-logo" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
           </div>
           <LogoUploader currentLogoUrl={business.logoUrl} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-location" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <MapPin className="h-4 w-4 text-[#7C3AED]" /> Ubicación del Negocio
           </div>
           <BusinessLocationEditor initialAddress={business.address} initialMapsUrl={business.mapsUrl} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-hours" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Clock className="h-4 w-4 text-[#7C3AED]" /> Horario de Atención
           </div>
@@ -167,7 +167,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           }))} />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-slug" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Link2 className="h-4 w-4 text-[#7C3AED]" /> Slug del Negocio
           </div>
@@ -177,7 +177,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-api" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Key className="h-4 w-4 text-[#7C3AED]" /> API Key
             <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]">Secreta</span>
@@ -188,7 +188,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-embed" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Code2 className="h-4 w-4 text-[#7C3AED]" /> Código de Embebido
           </div>
@@ -253,6 +253,42 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             popover: {
               title: "REGLA DE ABONOS",
               description: "Activa la protección contra inasistencias exigiendo un pago por adelantado obligatorio.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: "#business-logo",
+            popover: {
+              title: "LOGOTIPO",
+              description: "Sube el logo de tu marca para que se muestre en tu widget de reservas.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: "#business-hours",
+            popover: {
+              title: "HORARIOS DE APERTURA",
+              description: "Define el horario general en el que tu negocio atiende al público.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: "#business-slug",
+            popover: {
+              title: "ENLACE AL WIDGET",
+              description: "Este es el link que debes enviar a tus clientes o colocar en tu Instagram para que reserven.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: "#business-embed",
+            popover: {
+              title: "CÓDIGO WEB",
+              description: "Si tienes tu propia página web, copia este código HTML para incrustar el calendario directamente allí.",
               side: "top",
               align: "start"
             }

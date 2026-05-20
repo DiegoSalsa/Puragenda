@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { getOrCreateAffiliate, getUserPrizes, getTokenBalance } from "@/server/services/affiliate.service";
 import { Trophy } from "lucide-react";
 import { RewardsClient } from "./rewards-client";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,28 @@ export default async function RewardsPage() {
           status: p.status,
           createdAt: p.createdAt.toISOString(),
         }))}
+      />
+
+      <PageTutorial
+        tutorialKey="recompensas_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "RECOMPENSAS Y RULETA",
+              description: "Utiliza las fichas doradas que has ganado invitando a otros negocios para obtener descuentos reales en tu suscripción de Puragenda.",
+            }
+          },
+          {
+            element: ".space-y-8 > div:nth-child(2)",
+            popover: {
+              title: "GIRA LA RULETA",
+              description: "Puedes arriesgar tus fichas en la ruleta de la suerte, o si lo prefieres, canjear un descuento seguro.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
       />
     </div>
   );

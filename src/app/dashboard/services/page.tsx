@@ -51,12 +51,12 @@ export default async function ServicesPage() {
             }
           },
           {
-            element: "button[title='Añadir servicio']",
+            element: "#btn-nuevo-servicio",
             popover: {
               title: "AÑADIR SERVICIO",
               description: "Haz clic aquí para crear un nuevo servicio en tu catálogo.",
-              side: "bottom",
-              align: "end"
+              side: "left",
+              align: "start"
             }
           },
           {

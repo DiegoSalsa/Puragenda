@@ -3,6 +3,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getAffiliateInfo, getOrCreateAffiliate, getTokenBalance } from "@/server/services/affiliate.service";
 import { Gift } from "lucide-react";
 import { ReferralsClient } from "./referrals-client";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,28 @@ export default async function ReferralsPage() {
           createdAt: b.createdAt.toISOString(),
           status: b.subscription?.status || "INACTIVE",
         })) || []}
+      />
+
+      <PageTutorial
+        tutorialKey="referidos_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "PROGRAMA DE REFERIDOS",
+              description: "Comparte tu código de invitación con otros negocios. Cuando se suscriban, ganarás fichas doradas.",
+            }
+          },
+          {
+            element: ".space-y-8 > div:nth-child(2)",
+            popover: {
+              title: "TU CÓDIGO",
+              description: "Copia este enlace o código y compártelo. Por cada referido exitoso sumarás más fichas.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
       />
     </div>
   );
