@@ -61,7 +61,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 p-4">
+      <nav id="tutorial-nav" className="flex-1 space-y-1 p-4">
         {visibleItems.map((item) => {
           if (item.children) {
             // Dropdown item (Apariencia)
@@ -127,7 +127,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
       </nav>
 
       <div className="border-t border-border p-4">
-        <Link href={widgetHref} target="_blank" className="flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <Link id="tutorial-widget" href={widgetHref} target="_blank" className="flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
           <ExternalLink className="h-4 w-4" /> Ver widget
         </Link>
         <div className="mt-3 px-3">

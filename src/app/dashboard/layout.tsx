@@ -4,6 +4,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { redirect } from "next/navigation";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
+import { DashboardTutorial } from "@/components/dashboard/tutorial";
 
 export default async function DashboardLayout({
   children,
@@ -44,9 +45,10 @@ export default async function DashboardLayout({
         widgetSlug={business?.slug}
         userRole={user.role}
       />
-      <main className="flex-1 overflow-auto">
+      <main id="tutorial-main" className="flex-1 overflow-auto">
         <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
       </main>
+      <DashboardTutorial userEmail={user.email} />
     </div>
   );
 }

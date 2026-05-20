@@ -41,11 +41,11 @@ export function HeroSection() {
                 </span>
               </button>
             </Link>
-            <Link href="/widget/purocode-demo" className="w-full sm:w-auto">
+            <a href="/api/auth/demo" className="w-full sm:w-auto">
               <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-3.5 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
                 Ver Demo
               </button>
-            </Link>
+            </a>
           </div>
 
           <p className="text-xs text-muted-foreground/60 font-medium">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>

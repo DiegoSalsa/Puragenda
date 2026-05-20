@@ -23,7 +23,7 @@ export function Footer() {
               <Link href="/caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Características</Link>
               <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Precios</Link>
               <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">FAQ</Link>
-              <Link href="/widget/purocode-demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Demo</Link>
+              <a href="/api/auth/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Demo</a>
               <Link href="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Dashboard</Link>
             </nav>
           </div>

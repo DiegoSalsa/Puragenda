@@ -74,7 +74,7 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
                   Empezar Gratis <ArrowRight className="h-6 w-6 stroke-[3px]" />
                 </button>
               </Link>
-              <Link href="/widget/purocode-demo" className="w-full sm:w-auto group relative">
+              <a href="/api/auth/demo" className="w-full sm:w-auto group relative">
                 <span className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#32CD32] border-[3px] border-black dark:border-[#FFFDD0] text-black text-xs font-black uppercase px-3 py-1 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFDD0] whitespace-nowrap z-10 rotate-3">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse inline-block" />
                   En vivo
@@ -82,7 +82,7 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
                 <button className="w-full sm:w-auto rounded-full border-[4px] border-black dark:border-[#FFFDD0] bg-[#FFFDD0] dark:bg-[#1A1A1D] px-10 py-5 text-xl font-black uppercase text-black dark:text-[#FFFDD0] shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFDD0] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0_#000] dark:hover:shadow-[4px_4px_0_#FFFDD0] transition-all hover:bg-[#1A1A1D] dark:hover:bg-white hover:text-white dark:hover:text-black flex items-center justify-center gap-2">
                   ▶ Ver Demo
                 </button>
-              </Link>
+              </a>
             </div>
 
             <p className="mt-8 text-base font-bold text-black/80 dark:text-[#FFFDD0]/80 uppercase tracking-wide text-center">
@@ -401,11 +401,11 @@ export function Theme70s({ user, business }: { user: any; business: any }) {
                   Empezar Gratis <ArrowRight className="h-6 w-6" />
                 </button>
               </Link>
-              <Link href="/widget/purocode-demo">
+              <a href="/api/auth/demo">
                 <button className="rounded-full border-[4px] border-black dark:border-[#FFFDD0] bg-[#FF4500] px-10 py-5 text-xl font-black text-white shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFDD0] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0_#000] dark:hover:shadow-[4px_4px_0_#FFFDD0] transition-all -rotate-1 flex items-center gap-3">
                   Ver Demo
                 </button>
-              </Link>
+              </a>
             </div>
           </div>
         </section>

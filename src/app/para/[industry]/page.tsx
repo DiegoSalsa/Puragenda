@@ -100,11 +100,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
               Empezar Gratis <ArrowRight className="h-5 w-5" />
             </button>
           </Link>
-          <Link href="/widget/purocode-demo">
+          <a href="/api/auth/demo">
             <button className="bg-white dark:bg-black text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all mx-auto sm:mx-0">
               Ver Demo
             </button>
-          </Link>
+          </a>
         </div>
         <p className="mt-8 text-sm font-bold opacity-50">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
       </section>

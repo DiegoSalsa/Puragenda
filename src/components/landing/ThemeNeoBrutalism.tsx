@@ -120,7 +120,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                     Empezar Gratis <ArrowRight className="h-6 w-6 stroke-[3px]" />
                   </button>
                 </Link>
-                <Link href="/widget/purocode-demo" className="w-full sm:w-auto group relative">
+                <a href="/api/auth/demo" className="w-full sm:w-auto group relative">
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#BFFCC6] border-2 border-black text-black text-xs font-black uppercase px-2 py-0.5 shadow-[2px_2px_0_#000] whitespace-nowrap z-10">
                     <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse inline-block" />
                     En vivo
@@ -128,7 +128,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                   <button className="w-full bg-[#85E3FF] text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center gap-2">
                     ▶ Ver Demo
                   </button>
-                </Link>
+                </a>
               </div>
 
               <p className="text-base font-bold dark:text-gray-300">
@@ -434,11 +434,11 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                   Empezar Gratis <ArrowRight className="h-5 w-5" />
                 </button>
               </Link>
-              <Link href="/widget/purocode-demo">
+              <a href="/api/auth/demo">
                 <button className="bg-white text-black border-4 border-black px-8 py-4 font-black uppercase text-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_#000000] hover:bg-gray-100 transition-colors">
                   Ver Demo
                 </button>
-              </Link>
+              </a>
             </div>
           </div>
         </section>
