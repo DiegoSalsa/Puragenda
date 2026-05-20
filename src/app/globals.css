@@ -350,8 +350,8 @@
   gap: 12px;
 }
 
-.neo-brutalism-driver .driver-popover-next-btn,
-.neo-brutalism-driver .driver-popover-prev-btn {
+/* Base button styles */
+.driver-popover.neo-brutalism-driver .driver-popover-footer button {
   font-weight: 800;
   border: 2px solid #000;
   border-radius: 8px;
@@ -364,47 +364,61 @@
   text-shadow: none;
 }
 
-.dark .neo-brutalism-driver .driver-popover-next-btn,
-.dark .neo-brutalism-driver .driver-popover-prev-btn {
+/* Base hover state for ALL buttons inside footer */
+.driver-popover.neo-brutalism-driver .driver-popover-footer button:hover {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 2px 2px 0px #000 !important;
+  text-shadow: none !important;
+}
+
+/* Specific styling for NEXT and DONE buttons (last child) */
+.driver-popover.neo-brutalism-driver .driver-popover-next-btn,
+.driver-popover.neo-brutalism-driver .driver-popover-footer button:last-child {
+  background-color: #7C3AED !important;
+  color: #FFFFFF !important;
+  border-color: #000 !important;
+}
+
+.driver-popover.neo-brutalism-driver .driver-popover-next-btn:hover,
+.driver-popover.neo-brutalism-driver .driver-popover-footer button:last-child:hover {
+  background-color: #6D28D9 !important;
+  color: #FFFFFF !important;
+  border-color: #000 !important;
+}
+
+/* Specific styling for PREV button (not last child) */
+.driver-popover.neo-brutalism-driver .driver-popover-prev-btn {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #000 !important;
+}
+
+.driver-popover.neo-brutalism-driver .driver-popover-prev-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #000000 !important;
+  border-color: #000 !important;
+}
+
+/* Dark mode overwrites */
+.dark .driver-popover.neo-brutalism-driver .driver-popover-footer button {
   border-color: #FFFFFF;
   box-shadow: 3px 3px 0px #FFFFFF;
 }
 
-.neo-brutalism-driver .driver-popover-next-btn:hover,
-.neo-brutalism-driver .driver-popover-prev-btn:hover {
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0px #000;
-  color: #FFF !important;
-  text-shadow: none !important;
+.dark .driver-popover.neo-brutalism-driver .driver-popover-footer button:hover {
+  box-shadow: 2px 2px 0px #FFFFFF !important;
 }
 
-.neo-brutalism-driver .driver-popover-prev-btn:hover {
-  color: #000 !important;
+.dark .driver-popover.neo-brutalism-driver .driver-popover-prev-btn {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
 }
 
-.dark .neo-brutalism-driver .driver-popover-next-btn:hover,
-.dark .neo-brutalism-driver .driver-popover-prev-btn:hover {
-  box-shadow: 2px 2px 0px #FFFFFF;
-}
-
-.dark .neo-brutalism-driver .driver-popover-prev-btn:hover {
-  color: #FFF !important;
-}
-
-.neo-brutalism-driver .driver-popover-next-btn {
-  background-color: #7C3AED;
-  color: #FFF;
-  border-color: #000;
-}
-
-.neo-brutalism-driver .driver-popover-prev-btn {
-  background-color: #FFF;
-  color: #000;
-}
-
-.dark .neo-brutalism-driver .driver-popover-prev-btn {
-  background-color: #000;
-  color: #FFF;
+.dark .driver-popover.neo-brutalism-driver .driver-popover-prev-btn:hover {
+  background-color: #1e293b !important;
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
 }
 
 .neo-brutalism-driver .driver-popover-close-btn {
