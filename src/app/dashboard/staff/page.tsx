@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { Users } from "lucide-react";
 import { StaffList } from "./staff-list";
 import { getStaffLimitInfo } from "@/server/actions/dashboard.actions";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,37 @@ export default async function StaffPage() {
         </div>
       </div>
       <StaffList staff={serialized} limitInfo={limitInfo} allServices={allServices} />
+
+      <PageTutorial
+        tutorialKey="profesionales_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "PROFESIONALES",
+              description: "Aquí gestionas a todo tu equipo. Puedes agregar nuevos profesionales si tu plan lo permite.",
+            }
+          },
+          {
+            element: "button[title='Añadir profesional']",
+            popover: {
+              title: "NUEVO PROFESIONAL",
+              description: "Haz clic aquí para agregar a un nuevo miembro del equipo. Se enviará una invitación a su correo opcionalmente.",
+              side: "bottom",
+              align: "end"
+            }
+          },
+          {
+            element: ".space-y-8 > div:last-child",
+            popover: {
+              title: "GESTIÓN DE HORARIOS",
+              description: "Al hacer clic en un profesional, podrás configurar sus horarios, qué servicios realiza, y bloquear días u horas específicas.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }

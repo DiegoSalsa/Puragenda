@@ -10,6 +10,7 @@ import {
 } from "@/server/services/marketing.service";
 import { MarketingDashboard } from "./marketing-dashboard";
 import type { SubscriptionPlan } from "@/core/entities";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export default async function MarketingPage() {
   const user = await getCurrentSessionUser();
@@ -56,6 +57,37 @@ export default async function MarketingPage() {
           audienceSize: c.audienceSize,
           sentAt: c.sentAt.toISOString(),
         }))}
+      />
+
+      <PageTutorial
+        tutorialKey="marketing_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "MARKETING INTELIGENTE",
+              description: "Envía correos masivos a tus clientes para reactivar ventas, anunciar promociones o informar sobre nuevos servicios.",
+            }
+          },
+          {
+            element: "button:contains('Nueva Campaña')", // We can select a button dynamically but using a general popover if it fails
+            popover: {
+              title: "NUEVA CAMPAÑA",
+              description: "Puedes crear una campaña filtrando a tu audiencia, por ejemplo: 'Clientes que no asisten hace más de 60 días'.",
+              side: "left",
+              align: "start"
+            }
+          },
+          {
+            element: ".space-y-6 > div:last-child",
+            popover: {
+              title: "MÉTRICAS Y LIMITES",
+              description: "Revisa tu límite mensual de correos según tu plan y observa el historial de las campañas que ya has enviado.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
       />
     </div>
   );

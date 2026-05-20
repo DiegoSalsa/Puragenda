@@ -2,6 +2,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { Stamp } from "lucide-react";
 import { LoyaltyConfigForm } from "./loyalty-config-form";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,37 @@ export default async function LoyaltyPage() {
           </li>
         </ul>
       </div>
+
+      <PageTutorial
+        tutorialKey="fidelizacion_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "FIDELIZACIÓN DE CLIENTES",
+              description: "Activa una tarjeta de timbres digital automática. Premia a tus clientes más leales para que siempre vuelvan.",
+            }
+          },
+          {
+            element: "form",
+            popover: {
+              title: "CONFIGURACIÓN DEL PREMIO",
+              description: "Define cuántas visitas se necesitan para ganar un premio y de qué trata el descuento o servicio gratuito.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: ".space-y-8 > div:last-child",
+            popover: {
+              title: "AUTOMATIZACIÓN",
+              description: "No tienes que hacer nada manual. El sistema sumará un timbre por cada cita completada y le notificará al cliente.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }

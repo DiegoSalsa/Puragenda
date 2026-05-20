@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { ClientsTable } from "./clients-table";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export default async function ClientsPage() {
   const user = await getCurrentSessionUser();
@@ -67,6 +68,37 @@ export default async function ClientsPage() {
         </p>
       </div>
       <ClientsTable clients={clientsData} />
+
+      <PageTutorial
+        tutorialKey="clientes_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "BASE DE DATOS CRM",
+              description: "Aquí se guardan automáticamente todos los clientes que agendan contigo. Puedes ver su información de contacto y comportamiento.",
+            }
+          },
+          {
+            element: "table",
+            popover: {
+              title: "HISTORIAL Y MÉTRICAS",
+              description: "Observa cuántas veces han asistido, el dinero total que han gastado en tu negocio, y si han faltado a citas (Inasistencias).",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: ".space-y-6 > div:last-child",
+            popover: {
+              title: "NOTAS PRIVADAS",
+              description: "Puedes hacer clic en cualquier cliente para ver sus detalles y dejar notas privadas que el cliente nunca verá.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }

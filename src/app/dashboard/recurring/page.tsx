@@ -2,6 +2,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { RecurringClient } from "./recurring-client";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,28 @@ export default async function RecurringPage() {
         </p>
       </div>
       <RecurringClient bookings={serialized} />
+
+      <PageTutorial
+        tutorialKey="suscripciones_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "PLANES RECURRENTES",
+              description: "Si ofreces planes mensuales (por ejemplo, 4 sesiones al mes), aquí podrás gestionar a los clientes suscritos.",
+            }
+          },
+          {
+            element: ".space-y-4", // Targeting the list container inside RecurringClient
+            popover: {
+              title: "GESTIÓN DE PLANES",
+              description: "Verás las solicitudes pendientes de aprobación, y podrás pausar o cancelar suscripciones activas.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }

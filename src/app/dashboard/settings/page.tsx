@@ -13,6 +13,7 @@ import { UpgradeButton } from "@/components/dashboard/upgrade-button";
 import { MercadoPagoConnect } from "./mercadopago-connect";
 import { DepositConfig } from "./deposit-config";
 import { BusinessPoliciesEditor } from "./business-policies-editor";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -218,6 +219,46 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
       </div>
+
+      <PageTutorial
+        tutorialKey="configuracion_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "CONFIGURACIÓN GENERAL",
+              description: "Aquí puedes ajustar todos los detalles esenciales de tu negocio y la información de tu cuenta.",
+            }
+          },
+          {
+            element: "#plan",
+            popover: {
+              title: "TU SUSCRIPCIÓN",
+              description: "Revisa tu plan actual, la fecha de renovación y cambia de plan si tu negocio necesita crecer.",
+              side: "bottom",
+              align: "start"
+            }
+          },
+          {
+            element: "#mercadopago",
+            popover: {
+              title: "PAGOS ONLINE",
+              description: "Conecta tu cuenta de Mercado Pago para poder cobrar abonos o el total del servicio cuando un cliente reserve.",
+              side: "top",
+              align: "start"
+            }
+          },
+          {
+            element: "#abonos",
+            popover: {
+              title: "REGLA DE ABONOS",
+              description: "Activa la protección contra inasistencias exigiendo un pago por adelantado obligatorio.",
+              side: "top",
+              align: "start"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }

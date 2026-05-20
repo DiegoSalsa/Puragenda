@@ -9,6 +9,7 @@ import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
 import { PendingRecurringPanel } from "./pending-recurring-panel";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,37 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <WeeklyCalendar appointments={serialized} weekStartISO={format(weekStart, "yyyy-MM-dd")} />
+
+      <PageTutorial
+        tutorialKey="citas_v1"
+        userEmail={user.email}
+        steps={[
+          {
+            popover: {
+              title: "TUS CITAS",
+              description: "Bienvenido al centro de control. Aquí puedes ver un resumen de tu semana y todas tus citas agendadas.",
+            }
+          },
+          {
+            element: ".grid-cols-2",
+            popover: {
+              title: "MÉTRICAS RÁPIDAS",
+              description: "Un vistazo a las citas de hoy, pendientes por confirmar, y el rendimiento de la semana.",
+              side: "bottom",
+              align: "start"
+            }
+          },
+          {
+            element: "button[title='Nueva cita']",
+            popover: {
+              title: "AGENDAR CITA MANUAL",
+              description: "Puedes agendar una cita manualmente para clientes que te llamen por teléfono desde el calendario.",
+              side: "left",
+              align: "end"
+            }
+          }
+        ]}
+      />
     </div>
   );
 }
