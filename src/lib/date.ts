@@ -58,7 +58,8 @@ export function buildTimeSlots(
   timezone: string = DEFAULT_TIMEZONE,
   blockedSlots: BlockedSlot[] = [],
   workStartHour: number = DEFAULT_WORK_START_HOUR,
-  workEndHour: number = DEFAULT_WORK_END_HOUR
+  workEndHour: number = DEFAULT_WORK_END_HOUR,
+  slotStepMinutes: number = SLOT_STEP_MINUTES
 ): Array<TimeSlot & { blocked: boolean }> {
   const slots: Array<TimeSlot & { blocked: boolean }> = [];
 
@@ -85,7 +86,7 @@ export function buildTimeSlots(
       blocked,
     });
 
-    current = addMinutes(current, SLOT_STEP_MINUTES);
+    current = addMinutes(current, slotStepMinutes);
   }
 
   return slots;

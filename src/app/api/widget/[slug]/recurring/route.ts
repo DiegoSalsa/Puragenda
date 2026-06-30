@@ -19,7 +19,7 @@ export async function GET(
   try {
     const business = await prisma.business.findUnique({
       where: { slug },
-      select: { id: true },
+      select: { id: true, slotInterval: true },
     });
 
     if (!business) {
@@ -59,6 +59,7 @@ export async function GET(
       startDate,
       endDate,
       serviceDurationMinutes,
+      slotInterval: business.slotInterval,
     });
 
     return Response.json(slots);

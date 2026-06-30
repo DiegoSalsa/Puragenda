@@ -165,6 +165,10 @@ model Business {
   requiresClientRut     Boolean  @default(false)  // Pedir RUT en el widget
   allowRescheduling     Boolean  @default(false)  // Permitir que clientes reagenden
   rescheduleHoursLimit  Int      @default(24)     // Horas minimas de anticipacion para reagendar
+  // ── Configuración de agenda ──
+  allowSameDayBookings      Boolean  @default(false)  // Permite agendar para hoy
+  slotInterval              Int      @default(60)     // Minutos entre cada bloque de hora disponible
+  minAdvanceBookingMinutes  Int      @default(120)    // Minutos de anticipación (solo si allowSameDayBookings=true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   deletedAt             DateTime?

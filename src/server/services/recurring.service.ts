@@ -505,6 +505,7 @@ export async function getRecurringAvailableSlots(params: {
   startDate: Date;
   endDate: Date;
   serviceDurationMinutes: number;
+  slotInterval?: number;
 }): Promise<string[]> {
   // Get staff schedule for this day
   const schedule = await prisma.staffSchedule.findFirst({
@@ -519,7 +520,8 @@ export async function getRecurringAvailableSlots(params: {
 
   // Generate all possible slots
   const [schedStart, schedEnd] = [schedule.startTime, schedule.endTime];
-  const allSlots = generateTimeSlots(schedStart, schedEnd, params.serviceDurationMinutes);
+  const stepMinutes = params.slotInterval ?? params.serviceDurationMinutes;
+  const allSlots = generateTimeSlots(schedStart, schedEnd, params.serviceDurationMinutes, stepMinutes);
 
   // Find all appointments on this dayOfWeek across the entire recurring period
   const existingAppointments = await prisma.appointment.findMany({
@@ -548,20 +550,22 @@ export async function getRecurringAvailableSlots(params: {
 /**
  * Generates time slots between startTime and endTime with a given duration interval.
  * startTime / endTime are "HH:MM" strings.
+ * stepMinutes controls the interval between slot starts (defaults to durationMinutes).
  */
-function generateTimeSlots(startTime: string, endTime: string, durationMinutes: number): string[] {
+function generateTimeSlots(startTime: string, endTime: string, durationMinutes: number, stepMinutes?: number): string[] {
   const slots: string[] = [];
   const { hours: sh, minutes: sm } = parseTime(startTime);
   const { hours: eh, minutes: em } = parseTime(endTime);
 
   let current = sh * 60 + sm;
   const end = eh * 60 + em - durationMinutes;
+  const step = stepMinutes ?? durationMinutes;
 
   while (current <= end) {
     const h = Math.floor(current / 60);
     const m = current % 60;
     slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    current += durationMinutes;
+    current += step;
   }
 
   return slots;

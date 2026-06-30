@@ -582,6 +582,9 @@ export async function updateBusinessPoliciesAction(data: {
   allowRescheduling: boolean;
   rescheduleHoursLimit: number;
   requiresClientRut: boolean;
+  allowSameDayBookings: boolean;
+  slotInterval: number;
+  minAdvanceBookingMinutes: number;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -593,12 +596,22 @@ export async function updateBusinessPoliciesAction(data: {
 
   const hoursLimit = Math.max(1, Math.min(168, Math.floor(data.rescheduleHoursLimit)));
 
+  // Validate slotInterval against allowed values
+  const ALLOWED_INTERVALS = [15, 30, 45, 60, 90, 120];
+  const slotInterval = ALLOWED_INTERVALS.includes(data.slotInterval) ? data.slotInterval : 60;
+
+  // Clamp minAdvanceBookingMinutes between 0 and 1440 (24h)
+  const minAdvance = Math.max(0, Math.min(1440, Math.floor(data.minAdvanceBookingMinutes)));
+
   await prisma.business.update({
     where: { id: business.id },
     data: {
       allowRescheduling: data.allowRescheduling,
       rescheduleHoursLimit: hoursLimit,
       requiresClientRut: data.requiresClientRut,
+      allowSameDayBookings: data.allowSameDayBookings,
+      slotInterval,
+      minAdvanceBookingMinutes: minAdvance,
     },
   });
 

@@ -8,12 +8,34 @@ interface Props {
   initialAllowRescheduling: boolean;
   initialRescheduleHoursLimit: number;
   initialRequiresClientRut: boolean;
+  initialAllowSameDayBookings: boolean;
+  initialSlotInterval: number;
+  initialMinAdvanceBookingMinutes: number;
 }
 
-export function BusinessPoliciesEditor({ initialAllowRescheduling, initialRescheduleHoursLimit, initialRequiresClientRut }: Props) {
+const SLOT_INTERVAL_OPTIONS = [
+  { value: 15, label: "15 minutos" },
+  { value: 30, label: "30 minutos" },
+  { value: 45, label: "45 minutos" },
+  { value: 60, label: "60 minutos" },
+  { value: 90, label: "90 minutos" },
+  { value: 120, label: "120 minutos" },
+];
+
+export function BusinessPoliciesEditor({
+  initialAllowRescheduling,
+  initialRescheduleHoursLimit,
+  initialRequiresClientRut,
+  initialAllowSameDayBookings,
+  initialSlotInterval,
+  initialMinAdvanceBookingMinutes,
+}: Props) {
   const [allowRescheduling, setAllowRescheduling] = useState(initialAllowRescheduling);
   const [rescheduleHoursLimit, setRescheduleHoursLimit] = useState(initialRescheduleHoursLimit);
   const [requiresClientRut, setRequiresClientRut] = useState(initialRequiresClientRut);
+  const [allowSameDayBookings, setAllowSameDayBookings] = useState(initialAllowSameDayBookings);
+  const [slotInterval, setSlotInterval] = useState(initialSlotInterval);
+  const [minAdvanceBookingMinutes, setMinAdvanceBookingMinutes] = useState(initialMinAdvanceBookingMinutes);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -24,6 +46,9 @@ export function BusinessPoliciesEditor({ initialAllowRescheduling, initialResche
         allowRescheduling,
         rescheduleHoursLimit,
         requiresClientRut,
+        allowSameDayBookings,
+        slotInterval,
+        minAdvanceBookingMinutes,
       });
       if ("error" in res && res.error) {
         setResult({ ok: false, msg: res.error as string });
@@ -93,6 +118,70 @@ export function BusinessPoliciesEditor({ initialAllowRescheduling, initialResche
             }`}
           />
         </button>
+      </div>
+
+      {/* ── Booking Policies Divider ── */}
+      <div className="border-t border-border pt-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Configuración de agenda</p>
+      </div>
+
+      {/* Allow same-day bookings toggle */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium">Aceptar reservas el mismo día</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Permite a los clientes agendar citas para el día de hoy</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAllowSameDayBookings((v) => !v)}
+          className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
+            allowSameDayBookings ? "bg-[#7C3AED]" : "bg-muted"
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+              allowSameDayBookings ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Min advance booking minutes (visible only when same-day is enabled) */}
+      {allowSameDayBookings && (
+        <div className="ml-0 space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Tiempo mínimo de anticipación (minutos)</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              max={1440}
+              value={minAdvanceBookingMinutes}
+              onChange={(e) => setMinAdvanceBookingMinutes(parseInt(e.target.value) || 0)}
+              className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
+            />
+            <span className="text-sm text-muted-foreground">minutos</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Solo se mostrarán horarios con al menos esta anticipación desde la hora actual.</p>
+        </div>
+      )}
+
+      {/* Slot interval select */}
+      <div className="space-y-1.5">
+        <div>
+          <p className="text-sm font-medium">Intervalo de horarios</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Cada cuántos minutos se genera un bloque de hora disponible en el widget</p>
+        </div>
+        <select
+          value={slotInterval}
+          onChange={(e) => setSlotInterval(parseInt(e.target.value))}
+          className="w-48 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
+        >
+          {SLOT_INTERVAL_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Save button */}

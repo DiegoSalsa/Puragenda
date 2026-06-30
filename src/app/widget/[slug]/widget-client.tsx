@@ -37,6 +37,9 @@ interface Props {
   staffMembers?: StaffMember[];
   maxServicesPerBooking?: number;
   depositRequired?: boolean;
+  allowSameDayBookings?: boolean;
+  slotInterval?: number;
+  minAdvanceBookingMinutes?: number;
 }
 
 type Step = "service" | "mode-select" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -49,22 +52,25 @@ const WEEK_DAYS = [
 ];
 const WEEK_NAMES: Record<number, string> = { 0: "Domingo", 1: "Lunes", 2: "Martes", 3: "Miercoles", 4: "Jueves", 5: "Viernes", 6: "Sabado" };
 
-function buildDays(businessHours?: BusinessHour[]) {
+function buildDays(businessHours?: BusinessHour[], allowSameDayBookings?: boolean) {
   const days: Date[] = [];
   let d = new Date();
+  // If same-day bookings are allowed, start from today; otherwise from tomorrow
+  const startOffset = allowSameDayBookings ? 0 : 1;
+  d = addDays(d, startOffset);
   while (days.length < 10) {
-    d = addDays(d, 1);
     const dow = d.getDay();
     if (businessHours && businessHours.length > 0) {
       const bh = businessHours.find((h) => h.dayOfWeek === dow);
-      if (bh && !bh.isOpen) continue;
+      if (bh && !bh.isOpen) { d = addDays(d, 1); continue; }
     }
     days.push(new Date(d));
+    d = addDays(d, 1);
   }
   return days;
 }
 
-function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[]) {
+function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30) {
   const dow = date.getDay();
   let startH = 9, startM = 0, endH = 19, endM = 0;
 
@@ -93,7 +99,7 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
   const end = setMinutes(setHours(date, endH), endM);
   while (addMinutes(current, duration) <= end) {
     slots.push({ start: current, end: addMinutes(current, duration) });
-    current = addMinutes(current, 30);
+    current = addMinutes(current, slotInterval);
   }
   return slots;
 }
@@ -126,7 +132,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120 }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -208,13 +214,28 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
-  const days = useMemo(() => buildDays(businessHours), [businessHours]);
+  const days = useMemo(() => buildDays(businessHours, allowSameDayBookings), [businessHours, allowSameDayBookings]);
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
     const staffSched = selectedStaff?.schedule;
-    return buildSlots(selectedDate, dur, businessHours, staffSched);
-  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService]);
+    let generated = buildSlots(selectedDate, dur, businessHours, staffSched, slotInterval);
+
+    // Same-day filtering logic
+    const now = new Date();
+    const isToday = selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
+      selectedDate.getDate() === now.getDate();
+
+    if (isToday) {
+      if (!allowSameDayBookings) return [];
+      // Filter slots that are at least minAdvanceBookingMinutes in the future
+      const cutoff = addMinutes(now, minAdvanceBookingMinutes);
+      generated = generated.filter((slot) => slot.start > cutoff);
+    }
+
+    return generated;
+  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes]);
 
   // Filter available staff for a given day
   const availableStaff = useMemo(() => {
@@ -655,7 +676,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
                     // Calculate typical slots for this day based on standard hours
                     const dummyDate = new Date(2024, 0, d.value === 0 ? 7 : d.value);
-                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, businessHours, selectedStaff?.schedule || undefined).map(s => format(s.start, "HH:mm"));
+                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, businessHours, selectedStaff?.schedule || undefined, slotInterval).map(s => format(s.start, "HH:mm"));
 
                     return (
                       <div key={d.value} className="rounded-2xl border transition-all duration-300 overflow-hidden" 

@@ -209,6 +209,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             initialAllowRescheduling={business.allowRescheduling}
             initialRescheduleHoursLimit={business.rescheduleHoursLimit}
             initialRequiresClientRut={business.requiresClientRut}
+            initialAllowSameDayBookings={business.allowSameDayBookings}
+            initialSlotInterval={business.slotInterval}
+            initialMinAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
           />
         </div>
 

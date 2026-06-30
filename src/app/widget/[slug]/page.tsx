@@ -190,6 +190,9 @@ export default async function WidgetPage({
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
       depositRequired={business.depositRequired && !!business.mpAccessToken}
+      allowSameDayBookings={business.allowSameDayBookings}
+      slotInterval={business.slotInterval}
+      minAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
     />
     </>
   );
