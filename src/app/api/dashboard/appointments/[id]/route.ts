@@ -4,7 +4,11 @@ import {
   getAppointmentByIdAndBusiness,
   updateAppointmentStatus,
 } from "@/server/services/appointment.service";
-import { sendConfirmationEmail, sendCancellationEmail } from "@/server/email/send";
+import {
+  sendConfirmationEmail,
+  sendCancellationEmail,
+  sendAppointmentActionStaffNotification,
+} from "@/server/email/send";
 import { processLoyaltyStamps } from "@/server/actions/loyalty.actions";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
@@ -83,7 +87,19 @@ export async function PATCH(
       });
 
       if (fullAppointment) {
-        sendConfirmationEmail(fullAppointment).catch(() => {});
+        await sendConfirmationEmail(fullAppointment);
+        if (fullAppointment.staff?.email) {
+          await sendAppointmentActionStaffNotification({
+            action: "confirmed",
+            customerName: fullAppointment.customerName,
+            serviceName: fullAppointment.service.name,
+            staffName: fullAppointment.staff.name,
+            staffEmail: fullAppointment.staff.email,
+            startTime: fullAppointment.startTime,
+            endTime: fullAppointment.endTime,
+            businessName: fullAppointment.business.name,
+          });
+        }
       }
     }
 
@@ -99,7 +115,19 @@ export async function PATCH(
       });
 
       if (fullAppointment) {
-        sendCancellationEmail(fullAppointment).catch(() => {});
+        await sendCancellationEmail(fullAppointment);
+        if (fullAppointment.staff?.email) {
+          await sendAppointmentActionStaffNotification({
+            action: "cancelled",
+            customerName: fullAppointment.customerName,
+            serviceName: fullAppointment.service.name,
+            staffName: fullAppointment.staff.name,
+            staffEmail: fullAppointment.staff.email,
+            startTime: fullAppointment.startTime,
+            endTime: fullAppointment.endTime,
+            businessName: fullAppointment.business.name,
+          });
+        }
       }
     }
 

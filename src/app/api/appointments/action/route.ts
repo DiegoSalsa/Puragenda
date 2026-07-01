@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { sendAppointmentActionNotification } from "@/server/email/send";
+import {
+  sendAppointmentActionNotification,
+  sendAppointmentActionStaffNotification,
+} from "@/server/email/send";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +20,7 @@ export async function POST(req: Request) {
       where: { actionToken: token },
       include: {
         service: { select: { name: true } },
-        staff: { select: { name: true } },
+        staff: { select: { name: true, email: true } },
         business: {
           select: {
             name: true,
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
 
       // Notify business owner
       if (appointment.business.owner?.email) {
-        sendAppointmentActionNotification({
+        await sendAppointmentActionNotification({
           action: "confirmed",
           customerName: appointment.customerName,
           serviceName: appointment.service.name,
@@ -57,7 +60,20 @@ export async function POST(req: Request) {
           endTime: appointment.endTime,
           businessName: appointment.business.name,
           ownerEmail: appointment.business.owner.email,
-        }).catch(() => {});
+        });
+      }
+
+      if (appointment.staff?.email) {
+        await sendAppointmentActionStaffNotification({
+          action: "confirmed",
+          customerName: appointment.customerName,
+          serviceName: appointment.service.name,
+          staffName: appointment.staff.name,
+          staffEmail: appointment.staff.email,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          businessName: appointment.business.name,
+        });
       }
 
       return NextResponse.json({
@@ -76,7 +92,7 @@ export async function POST(req: Request) {
 
       // Notify business owner
       if (appointment.business.owner?.email) {
-        sendAppointmentActionNotification({
+        await sendAppointmentActionNotification({
           action: "cancelled",
           customerName: appointment.customerName,
           serviceName: appointment.service.name,
@@ -85,7 +101,20 @@ export async function POST(req: Request) {
           endTime: appointment.endTime,
           businessName: appointment.business.name,
           ownerEmail: appointment.business.owner.email,
-        }).catch(() => {});
+        });
+      }
+
+      if (appointment.staff?.email) {
+        await sendAppointmentActionStaffNotification({
+          action: "cancelled",
+          customerName: appointment.customerName,
+          serviceName: appointment.service.name,
+          staffName: appointment.staff.name,
+          staffEmail: appointment.staff.email,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          businessName: appointment.business.name,
+        });
       }
 
       return NextResponse.json({

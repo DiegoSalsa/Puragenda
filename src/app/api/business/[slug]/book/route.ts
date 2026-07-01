@@ -213,7 +213,7 @@ export async function POST(
       });
 
       if (appointmentWithRelations) {
-        sendBookingNotifications(appointmentWithRelations).catch(() => {});
+        await sendBookingNotifications(appointmentWithRelations);
       }
     }
 

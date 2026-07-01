@@ -7,6 +7,7 @@ import { addDays } from "date-fns";
 import { mpClient } from "@/server/lib/mercadopago";
 import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
+import { markPlatformDiscountApplied } from "@/server/services/platform-discount.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
           hasCountedAsPaidReferral: true,
         },
       });
+
+      await markPlatformDiscountApplied(subscription.id);
 
       // ── Count for affiliate (same logic as webhook) ──
       if (!subscription.hasCountedAsPaidReferral) {

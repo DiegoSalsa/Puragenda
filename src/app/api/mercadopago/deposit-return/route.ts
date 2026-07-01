@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         },
       });
       if (fullAppointment) {
-        sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+        await sendDepositConfirmedNotifications(fullAppointment);
       }
 
       // Redirect to widget with success

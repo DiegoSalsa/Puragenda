@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlertTriangle, AtSign, CheckCircle2, FileText, Mail, Send, Users } from "lucide-react";
+import { AlertTriangle, AtSign, CheckCircle2, FileText, Mail, MousePointerClick, Send, Users } from "lucide-react";
 import { sendMassEmailAction } from "@/server/actions/admin.actions";
 
 type Segment = "ALL" | "TRIALING" | "ACTIVE" | "CANCELLED";
 type RecipientMode = "SEGMENT" | "SINGLE_EMAIL";
 type TemplateKey = "blank" | "satisfaction" | "referral" | "activeReminder";
+type InteractiveType = "NONE" | "SATISFACTION" | "FORM";
 
 const SEGMENTS: { value: Segment; label: string; bg: string }[] = [
   { value: "ALL", label: "Todos los negocios", bg: "bg-[#85E3FF]" },
@@ -30,7 +31,7 @@ const TEMPLATES: { key: TemplateKey; label: string; subject: string; body: strin
 
 Tu opinion nos ayuda a mejorar el producto y priorizar lo que realmente necesitan los negocios.
 
-Puedes responder este mismo correo con una nota del 1 al 7 y cualquier comentario que quieras dejarnos.`,
+Marca tu nota directamente en este correo. Tu respuesta nos llega automaticamente.`,
   },
   {
     key: "referral",
@@ -67,6 +68,9 @@ export default function CommunicationsPage() {
   const [templateKey, setTemplateKey] = useState<TemplateKey>("blank");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [interactiveType, setInteractiveType] = useState<InteractiveType>("NONE");
+  const [interactiveQuestion, setInteractiveQuestion] = useState("Del 1 al 7, que nota le pones a tu experiencia con Puragenda?");
+  const [formQuestions, setFormQuestions] = useState("Que es lo que mas te ha servido de Puragenda?\nQue te gustaria que mejoraramos?\nHay alguna funcionalidad que estes esperando?");
   const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -79,6 +83,10 @@ export default function CommunicationsPage() {
     setTemplateKey(key);
     setSubject(template.subject);
     setBody(template.body);
+    if (key === "satisfaction") {
+      setInteractiveType("SATISFACTION");
+      setInteractiveQuestion("Del 1 al 7, que nota le pones a tu experiencia con Puragenda?");
+    }
   }
 
   function handleSend() {
@@ -101,6 +109,12 @@ export default function CommunicationsPage() {
         targetEmail,
         subject,
         body,
+        interactive: {
+          type: interactiveType,
+          title: subject,
+          question: interactiveQuestion,
+          formQuestions: formQuestions.split("\n").map((question) => question.trim()).filter(Boolean),
+        },
       });
 
       if (res.success) {
@@ -210,6 +224,59 @@ export default function CommunicationsPage() {
                 className="w-full resize-y border-4 border-black bg-white px-4 py-3 text-sm font-bold text-black placeholder:text-black/30 focus:border-[#B28DFF] focus:outline-none"
               />
               <p className="text-xs font-bold text-black/40">Acepta HTML basico y variables dinamicas.</p>
+            </div>
+
+            <div className="border-4 border-black bg-[#FFFAEB] p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <MousePointerClick className="h-4 w-4" />
+                <p className="text-xs font-black uppercase tracking-widest text-black/60">Interaccion</p>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                {[
+                  { value: "NONE" as const, label: "Sin interaccion" },
+                  { value: "SATISFACTION" as const, label: "Nota 1 a 7" },
+                  { value: "FORM" as const, label: "Formulario" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setInteractiveType(option.value)}
+                    className={`border-2 border-black px-3 py-2 text-xs font-black uppercase shadow-[2px_2px_0_#000] transition-all ${
+                      interactiveType === option.value ? "translate-x-[2px] translate-y-[2px] bg-[#B28DFF] shadow-none" : "bg-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              {interactiveType !== "NONE" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-black uppercase text-black/60">Pregunta principal</label>
+                    <input
+                      type="text"
+                      value={interactiveQuestion}
+                      onChange={(event) => setInteractiveQuestion(event.target.value)}
+                      className="w-full border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black focus:outline-none"
+                    />
+                  </div>
+
+                  {interactiveType === "FORM" && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-black uppercase text-black/60">Preguntas del formulario</label>
+                      <textarea
+                        value={formQuestions}
+                        onChange={(event) => setFormQuestions(event.target.value)}
+                        rows={5}
+                        className="w-full resize-y border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black focus:outline-none"
+                      />
+                      <p className="text-xs font-bold text-black/40">Una pregunta por linea. Las respuestas llegan a contacto@purocode.com.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {error && (

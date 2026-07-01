@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           // Send email notifications
           const fullAppointment = await getAppointmentForEmail(appointmentByPayment.id);
           if (fullAppointment) {
-            sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+            await sendDepositConfirmedNotifications(fullAppointment);
           }
         }
         return NextResponse.json({ received: true }, { status: 200 });
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       // Send email notifications to owner, staff, and client
       const fullAppointment = await getAppointmentForEmail(appointment.id);
       if (fullAppointment) {
-        sendDepositConfirmedNotifications(fullAppointment).catch(() => {});
+        await sendDepositConfirmedNotifications(fullAppointment);
       }
     } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
       await prisma.appointment.update({

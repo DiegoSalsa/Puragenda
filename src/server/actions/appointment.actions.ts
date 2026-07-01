@@ -1,7 +1,10 @@
 "use server";
 
 import { prisma } from "@/server/db/prisma";
-import { sendConfirmationEmail } from "@/server/email/send";
+import {
+  sendAppointmentActionStaffNotification,
+  sendConfirmationEmail,
+} from "@/server/email/send";
 
 /**
  * Public action: reschedule an appointment.
@@ -117,6 +120,18 @@ export async function rescheduleAppointmentAction(
       staff: newApt.staff,
       business: newApt.business,
     });
+    if (newApt.staff?.email) {
+      await sendAppointmentActionStaffNotification({
+        action: "confirmed",
+        customerName: newApt.customerName,
+        serviceName: newApt.service.name,
+        staffName: newApt.staff.name,
+        staffEmail: newApt.staff.email,
+        startTime: newApt.startTime,
+        endTime: newApt.endTime,
+        businessName: newApt.business.name,
+      });
+    }
   } catch (err) {
     console.error("[Reschedule] Error sending confirmation:", err);
   }

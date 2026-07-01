@@ -316,6 +316,13 @@ type MassEmailRecipient = {
   subscriptionStatus?: string;
 };
 
+type InteractiveEmailConfig = {
+  type: "NONE" | "SATISFACTION" | "FORM";
+  title?: string;
+  question?: string;
+  formQuestions?: string[];
+};
+
 const ADMIN_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function appBaseUrl() {
@@ -351,7 +358,36 @@ function replaceRecipientTokens(value: string, recipient: MassEmailRecipient) {
   }, value);
 }
 
-function adminCampaignHtml(recipient: MassEmailRecipient, body: string) {
+function interactiveEmailHtml(config: InteractiveEmailConfig | undefined, token: string) {
+  if (!config || config.type === "NONE") return "";
+
+  const question = escapeHtml(config.question?.trim() || "Queremos conocer tu experiencia.");
+
+  if (config.type === "SATISFACTION") {
+    const buttons = Array.from({ length: 7 }, (_, index) => index + 1).map((rating) => {
+      const href = `${appBaseUrl()}/api/admin-interactions/rating?token=${encodeURIComponent(token)}&rating=${rating}`;
+      return `<a href="${href}" style="display:inline-block;margin:4px;padding:12px 14px;background:#7C3AED;color:#fff;text-decoration:none;border-radius:10px;font-weight:800;">${rating}</a>`;
+    }).join("");
+
+    return `
+      <div style="margin:24px 0;padding:18px;border:1px solid #ddd6fe;border-radius:16px;background:#f5f3ff;">
+        <p style="margin:0 0 12px;color:#111827;font-size:16px;font-weight:800;">${question}</p>
+        <p style="margin:0 0 10px;color:#6b7280;font-size:13px;">Marca una nota del 1 al 7:</p>
+        <div>${buttons}</div>
+      </div>
+    `;
+  }
+
+  const formHref = `${appBaseUrl()}/responder/${encodeURIComponent(token)}`;
+  return `
+    <div style="margin:24px 0;padding:18px;border:1px solid #ddd6fe;border-radius:16px;background:#f5f3ff;">
+      <p style="margin:0 0 12px;color:#111827;font-size:16px;font-weight:800;">${question}</p>
+      <a href="${formHref}" style="display:inline-block;padding:13px 18px;background:#7C3AED;color:#fff;text-decoration:none;border-radius:12px;font-weight:900;">Responder formulario</a>
+    </div>
+  `;
+}
+
+function adminCampaignHtml(recipient: MassEmailRecipient, body: string, interactionHtml = "") {
   const renderedBody = replaceRecipientTokens(body, recipient).replace(/\n/g, "<br/>");
 
   return `
@@ -363,6 +399,7 @@ function adminCampaignHtml(recipient: MassEmailRecipient, body: string) {
       <div style="font-size:15px;line-height:1.7;color:#374151;">
         ${renderedBody}
       </div>
+      ${interactionHtml}
       <hr style="margin:32px 0 18px;border:none;border-top:1px solid #e5e7eb;" />
       <p style="margin:0;color:#9ca3af;font-size:12px;">Puragenda - Tu agenda online</p>
     </div>
@@ -415,8 +452,9 @@ export async function sendMassEmailAction(data: {
   targetEmail?: string;
   subject: string;
   body: string;
+  interactive?: InteractiveEmailConfig;
 }) {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   if (!data.subject.trim() || !data.body.trim()) return { error: "Asunto y cuerpo son requeridos" };
 
@@ -434,17 +472,55 @@ export async function sendMassEmailAction(data: {
     const unique = deduplicateMassEmailRecipients(recipients);
     if (unique.length === 0) return { error: "No hay destinatarios para esta seleccion" };
 
+    const interactive = data.interactive?.type && data.interactive.type !== "NONE" ? data.interactive : undefined;
+    const campaign = interactive
+      ? await prisma.adminInteractiveCampaign.create({
+          data: {
+            title: interactive.title?.trim() || data.subject.trim(),
+            type: interactive.type,
+            question: interactive.question?.trim() || "Queremos conocer tu experiencia.",
+            fields: interactive.type === "FORM"
+              ? (interactive.formQuestions || [])
+                  .map((question, index) => question.trim())
+                  .filter(Boolean)
+                  .map((question, index) => ({
+                    id: `q${index + 1}`,
+                    label: question,
+                    type: "textarea",
+                    required: true,
+                  }))
+              : undefined,
+            createdById: user.id,
+          },
+        })
+      : null;
+
     const { resend, EMAIL_FROM } = await import("@/server/email/resend");
 
     let sent = 0;
     let failed = 0;
 
     for (const recipient of unique) {
+      let interactionHtml = "";
+      if (campaign && interactive) {
+        const campaignRecipient = await prisma.adminInteractiveRecipient.create({
+          data: {
+            campaignId: campaign.id,
+            email: recipient.email,
+            name: recipient.name,
+            businessName: recipient.businessName,
+            businessSlug: recipient.businessSlug,
+            token: crypto.randomBytes(24).toString("hex"),
+          },
+        });
+        interactionHtml = interactiveEmailHtml(interactive, campaignRecipient.token);
+      }
+
       const result = await resend.emails.send({
         from: EMAIL_FROM,
         to: recipient.email,
         subject: replaceRecipientTokens(data.subject.trim(), recipient),
-        html: adminCampaignHtml(recipient, data.body.trim()),
+        html: adminCampaignHtml(recipient, data.body.trim(), interactionHtml),
       });
       if (result.error) failed++;
       else sent++;
@@ -476,5 +552,79 @@ export async function addAdminNoteAction(businessId: string, note: string) {
   } catch (err) {
     console.error("[Admin] Error adding note:", err);
     return { error: "Error al guardar la nota" };
+  }
+}
+
+// ═══════════════════════════════════════════
+// PLATFORM DISCOUNT CODES
+// ═══════════════════════════════════════════
+
+function normalizeDiscountCode(code: string) {
+  return code.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+export async function createPlatformDiscountCodeAction(data: {
+  code: string;
+  name: string;
+  discountType: "PERCENTAGE" | "FIXED";
+  discountValue: number;
+  maxRedemptions?: number | null;
+  expiresAt?: string | null;
+  appliesToPlans: string[];
+}) {
+  const user = await requireSuperAdmin();
+
+  const code = normalizeDiscountCode(data.code);
+  const name = data.name.trim();
+  const discountValue = Math.floor(Number(data.discountValue));
+  const maxRedemptions = data.maxRedemptions ? Math.floor(Number(data.maxRedemptions)) : null;
+  const appliesToPlans = data.appliesToPlans.filter((plan) => ["INDIVIDUAL", "EQUIPO", "TEST"].includes(plan));
+
+  if (!code || code.length < 3 || code.length > 32) return { error: "El codigo debe tener entre 3 y 32 caracteres" };
+  if (!/^[A-Z0-9_-]+$/.test(code)) return { error: "Usa solo letras, numeros, guion o guion bajo" };
+  if (!name) return { error: "El nombre interno es obligatorio" };
+  if (!["PERCENTAGE", "FIXED"].includes(data.discountType)) return { error: "Tipo de descuento invalido" };
+  if (discountValue <= 0) return { error: "El descuento debe ser mayor a 0" };
+  if (data.discountType === "PERCENTAGE" && discountValue > 100) return { error: "El porcentaje no puede superar 100%" };
+  if (maxRedemptions !== null && maxRedemptions <= 0) return { error: "El limite de usos debe ser mayor a 0" };
+
+  const expiresAt = data.expiresAt ? new Date(`${data.expiresAt}T23:59:59.999`) : null;
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) return { error: "Fecha de expiracion invalida" };
+
+  try {
+    await prisma.platformDiscountCode.create({
+      data: {
+        code,
+        name,
+        discountType: data.discountType,
+        discountValue,
+        maxRedemptions,
+        expiresAt,
+        appliesToPlans,
+        createdById: user.id,
+      },
+    });
+
+    revalidatePath("/para/x7k9m2v4q8/discounts");
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error creating platform discount:", err);
+    return { error: "No se pudo crear el codigo. Revisa si ya existe." };
+  }
+}
+
+export async function togglePlatformDiscountCodeAction(id: string, isActive: boolean) {
+  await requireSuperAdmin();
+
+  try {
+    await prisma.platformDiscountCode.update({
+      where: { id },
+      data: { isActive },
+    });
+    revalidatePath("/para/x7k9m2v4q8/discounts");
+    return { success: true };
+  } catch (err) {
+    console.error("[Admin] Error toggling platform discount:", err);
+    return { error: "No se pudo actualizar el codigo" };
   }
 }

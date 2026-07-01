@@ -35,6 +35,8 @@ model User {
   businesses Business[]
   staff      Staff[]
   auditLogs  AuditLog[]
+  platformDiscountCodes PlatformDiscountCode[] @relation("PlatformDiscountCreatedBy")
+  adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
 }
 
 // ==========================================
@@ -122,6 +124,7 @@ model Subscription {
   updatedAt             DateTime           @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  platformDiscountRedemptions PlatformDiscountRedemption[]
 }
 
 // ==========================================
@@ -186,9 +189,114 @@ model Business {
   loyaltyCodes       LoyaltyCode[]
   marketingCampaigns MarketingCampaign[]
   recurringBookings  RecurringBooking[]
+  platformDiscountRedemptions PlatformDiscountRedemption[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
+}
+
+// ==========================================
+// PLATFORM DISCOUNT CODES
+// ==========================================
+
+model PlatformDiscountCode {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  discountType     String   // 'PERCENTAGE' | 'FIXED'
+  discountValue    Int
+  maxRedemptions   Int?
+  redeemedCount    Int      @default(0)
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  isActive         Boolean  @default(true)
+  appliesToPlans   String[] @default([])
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy   User?                        @relation("PlatformDiscountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  redemptions PlatformDiscountRedemption[]
+
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model PlatformDiscountRedemption {
+  id               String    @id @default(cuid())
+  discountCodeId   String
+  businessId       String
+  subscriptionId   String?
+  status           String    @default("PENDING") // 'PENDING' | 'APPLIED'
+  originalAmount   Int
+  discountedAmount Int
+  createdAt        DateTime  @default(now())
+  appliedAt        DateTime?
+
+  discountCode PlatformDiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+  business     Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription Subscription?         @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@unique([discountCodeId, businessId])
+  @@index([businessId])
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+// ==========================================
+// SUPERADMIN INTERACTIVE EMAILS
+// ==========================================
+
+model AdminInteractiveCampaign {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // 'SATISFACTION' | 'FORM'
+  question    String
+  fields      Json?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy  User?                         @relation("AdminInteractiveCampaignCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  recipients AdminInteractiveRecipient[]
+  responses  AdminInteractiveResponse[]
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AdminInteractiveRecipient {
+  id           String    @id @default(cuid())
+  campaignId   String
+  email        String
+  name         String
+  businessName String?
+  businessSlug String?
+  token        String    @unique
+  createdAt    DateTime  @default(now())
+  respondedAt  DateTime?
+
+  campaign AdminInteractiveCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  response AdminInteractiveResponse?
+
+  @@index([campaignId])
+  @@index([email])
+}
+
+model AdminInteractiveResponse {
+  id          String   @id @default(cuid())
+  campaignId  String
+  recipientId String   @unique
+  rating      Int?
+  answers     Json?
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  campaign  AdminInteractiveCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient AdminInteractiveRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([createdAt])
 }
 
 model BusinessHours {

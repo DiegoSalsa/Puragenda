@@ -20,6 +20,7 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [discountCode, setDiscountCode] = useState(searchParams.get("discount")?.toUpperCase() || "");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,7 +73,7 @@ export function RegisterForm() {
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: wantsPlan }),
+          body: JSON.stringify({ plan: wantsPlan, discountCode: discountCode.trim() || undefined }),
         });
 
         const billingData = await billingRes.json();
@@ -83,9 +84,8 @@ export function RegisterForm() {
           return;
         }
 
-        // If billing fails, still send to dashboard (account was created)
         console.error("[register] Billing error:", billingData.error);
-        window.location.href = "/dashboard";
+        setError(billingData.error || "La cuenta fue creada, pero no se pudo iniciar el pago. Intenta desde Configuracion.");
         return;
       }
 
@@ -218,6 +218,24 @@ export function RegisterForm() {
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
           />
         </div>
+
+        {isDirectSubscription && (
+          <div className="space-y-1.5">
+            <label htmlFor="discountCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
+              Codigo de descuento <span className="text-muted-foreground/50">(opcional)</span>
+            </label>
+            <input
+              id="discountCode"
+              type="text"
+              placeholder="Ej: LANZAMIENTO50"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+              maxLength={32}
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
+            />
+          </div>
+        )}
 
                 {/* Terms and Conditions */}
         <div className="flex items-start gap-2 pt-2">

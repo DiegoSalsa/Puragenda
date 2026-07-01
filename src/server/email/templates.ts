@@ -834,6 +834,51 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
   };
 }
 
+export function appointmentActionStaffEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
+  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+  const isConfirm = data.action === "confirmed";
+  const title = isConfirm ? "Cita confirmada" : "Cita cancelada";
+  const message = isConfirm
+    ? `La cita de ${data.customerName} que tienes asignada fue confirmada.`
+    : `La cita de ${data.customerName} que tienes asignada fue cancelada.`;
+  const badge = isConfirm
+    ? `<div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+        <p style="margin:0;font-size:14px;color:#166534;text-align:center;font-weight:600;">Cita confirmada</p>
+       </div>`
+    : `<div style="margin:16px 0;padding:14px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;">
+        <p style="margin:0;font-size:14px;color:#991b1b;text-align:center;font-weight:600;">Cita cancelada</p>
+       </div>`;
+
+  return {
+    subject: `${title}: ${data.serviceName} con ${data.customerName}`,
+    html: enterpriseLayout(title, `
+      <h2 style="margin:0 0 8px;font-size:20px;color:#111827;font-weight:700;">${title}</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#4B5563;line-height:1.6;">${message}</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Fecha</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Hora</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${timeStr} - ${timeEnd}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;border-bottom:1px solid #E5E7EB;width:35%;">Servicio</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #E5E7EB;">${data.serviceName}</td>
+        </tr>
+        <tr>
+          <td style="padding:16px;background:#F9FAFB;font-size:13px;color:#6B7280;font-weight:500;width:35%;">Negocio</td>
+          <td style="padding:16px;font-size:14px;color:#111827;font-weight:600;">${data.businessName}</td>
+        </tr>
+      </table>
+      ${badge}
+    `),
+  };
+}
+
 // ═══════════════════════════════════════════
 // RECURRING BOOKING EMAILS
 // ═══════════════════════════════════════════

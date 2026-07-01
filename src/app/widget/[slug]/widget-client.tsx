@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
@@ -151,6 +151,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [apiError, setApiError] = useState("");
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const blockedRequestRef = useRef(0);
 
   // ── Reward / Discount code state ──
   const [rewardCode, setRewardCode] = useState("");
@@ -248,16 +249,31 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const isFormValid = validation.name && validation.email && validation.phone;
 
   const fetchBlocked = useCallback(async (date: Date, staffId?: string) => {
+    const requestId = blockedRequestRef.current + 1;
+    blockedRequestRef.current = requestId;
+    setBlockedSlots([]);
     setLoadingSlots(true);
     try {
       const dateStr = format(date, "yyyy-MM-dd");
       const staffParam = staffId ? `&staffId=${staffId}` : "";
       const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}`, { headers: { "x-api-key": business.apiKey } });
-      if (res.ok) { const data = await res.json(); setBlockedSlots(data); }
-    } catch { /* ignore */ } finally { setLoadingSlots(false); }
+      if (res.ok && blockedRequestRef.current === requestId) {
+        const data = await res.json();
+        setBlockedSlots(data);
+      }
+    } catch { /* ignore */ } finally {
+      if (blockedRequestRef.current === requestId) setLoadingSlots(false);
+    }
   }, [business.slug, business.apiKey]);
 
   useEffect(() => { if (selectedDate) fetchBlocked(selectedDate, selectedStaff?.id); }, [selectedDate, selectedStaff, fetchBlocked]);
+
+  useEffect(() => {
+    if (selectedSlot && isBlocked(selectedSlot, blockedSlots)) {
+      setSelectedSlot(null);
+      setStep("datetime");
+    }
+  }, [selectedSlot, blockedSlots]);
 
   // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
   function getStaffForServices(serviceIds: string[]): StaffMember[] {
@@ -336,6 +352,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     e.preventDefault();
     setTouched({ name: true, email: true, phone: true });
     if (!selectedService || !selectedSlot || !isFormValid) return;
+    if (loadingSlots) {
+      setApiError("Estamos revisando la disponibilidad de ese horario. Intenta nuevamente en unos segundos.");
+      return;
+    }
+    if (isBlocked(selectedSlot, blockedSlots)) {
+      setSelectedSlot(null);
+      setStep("datetime");
+      setApiError("Ese horario ya no esta disponible. Selecciona otra hora.");
+      return;
+    }
     setSubmitting(true); setApiError("");
     try {
       const serviceIds = isMultiService && selectedServices.length > 0

@@ -15,6 +15,7 @@ import {
   trialExpiringEmail,
   trialExpiredEmail,
   appointmentActionOwnerEmail,
+  appointmentActionStaffEmail,
   recurringBookingCreatedClientEmail,
   recurringBookingPendingApprovalBusinessEmail,
   recurringBookingApprovedClientEmail,
@@ -50,6 +51,22 @@ interface AppointmentWithRelations {
   };
 }
 
+async function deliverEmail(
+  context: string,
+  params: Parameters<typeof resend.emails.send>[0]
+) {
+  try {
+    const result = await resend.emails.send(params);
+    if (result.error) {
+      console.error(`[Email] Resend rejected ${context}:`, result.error);
+      return;
+    }
+    console.log(`[Email] Sent ${context}: ${result.data?.id ?? "no-id"}`);
+  } catch (err) {
+    console.error(`[Email] Error sending ${context}:`, err);
+  }
+}
+
 // ═══════════════════════════════════════════
 // BOOKING NOTIFICATIONS
 // ═══════════════════════════════════════════
@@ -82,12 +99,12 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
   if (appointment.business.owner?.email) {
     const { subject, html } = newBookingOwnerEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`new booking to owner ${appointment.business.owner.email}`, {
         from: EMAIL_FROM,
         to: appointment.business.owner.email,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending to owner:", err))
+      })
     );
   }
 
@@ -95,25 +112,27 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
   if (appointment.staff?.email) {
     const { subject, html } = newBookingStaffEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`new booking to staff ${appointment.staff.email}`, {
         from: EMAIL_FROM,
         to: appointment.staff.email,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending to staff:", err))
+      })
     );
+  } else {
+    console.warn(`[Email] New booking ${appointment.id ?? "unknown"} has no staff email`);
   }
 
   // 3. Email to customer
   {
     const { subject, html } = newBookingClientEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`new booking to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
         to: appointment.customerEmail,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending to client:", err))
+      })
     );
   }
 
@@ -153,12 +172,12 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
   if (appointment.business.owner?.email) {
     const { subject, html } = newBookingOwnerEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`deposit confirmed to owner ${appointment.business.owner.email}`, {
         from: EMAIL_FROM,
         to: appointment.business.owner.email,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending deposit confirmed to owner:", err))
+      })
     );
   }
 
@@ -166,25 +185,27 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
   if (appointment.staff?.email) {
     const { subject, html } = newBookingStaffEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`deposit confirmed to staff ${appointment.staff.email}`, {
         from: EMAIL_FROM,
         to: appointment.staff.email,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending deposit confirmed to staff:", err))
+      })
     );
+  } else {
+    console.warn(`[Email] Deposit-confirmed booking ${appointment.id ?? "unknown"} has no staff email`);
   }
 
   // 3. Email to customer — use CONFIRMED template (they paid, so it's confirmed immediately)
   {
     const { subject, html } = confirmedBookingClientEmail(data);
     tasks.push(
-      resend.emails.send({
+      deliverEmail(`deposit confirmed to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
         to: appointment.customerEmail,
         subject,
         html,
-      }).catch((err) => console.error("[Email] Error sending deposit confirmed to client:", err))
+      })
     );
   }
 
@@ -225,17 +246,12 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
 
   const { subject, html } = confirmedBookingClientEmail(data);
 
-  try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
-      to: appointment.customerEmail,
-      subject,
-      html,
-    });
-    console.log(`[Email] Confirmation sent to ${appointment.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending confirmation:", err);
-  }
+  await deliverEmail(`confirmation to client ${appointment.customerEmail}`, {
+    from: EMAIL_FROM,
+    to: appointment.customerEmail,
+    subject,
+    html,
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -261,17 +277,12 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
 
   const { subject, html } = cancellationClientEmail(data);
 
-  try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
-      to: appointment.customerEmail,
-      subject,
-      html,
-    });
-    console.log(`[Email] Cancellation sent to ${appointment.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending cancellation:", err);
-  }
+  await deliverEmail(`cancellation to client ${appointment.customerEmail}`, {
+    from: EMAIL_FROM,
+    to: appointment.customerEmail,
+    subject,
+    html,
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -536,17 +547,32 @@ export async function sendAppointmentActionNotification(data: {
 }) {
   const { subject, html } = appointmentActionOwnerEmail(data);
 
-  try {
-    await resend.emails.send({
-      from: EMAIL_FROM,
-      to: data.ownerEmail,
-      subject,
-      html,
-    });
-    console.log(`[Email] Appointment ${data.action} notification sent to ${data.ownerEmail}`);
-  } catch (err) {
-    console.error(`[Email] Error sending appointment action notification:`, err);
-  }
+  await deliverEmail(`appointment ${data.action} to owner ${data.ownerEmail}`, {
+    from: EMAIL_FROM,
+    to: data.ownerEmail,
+    subject,
+    html,
+  });
+}
+
+export async function sendAppointmentActionStaffNotification(data: {
+  action: "confirmed" | "cancelled";
+  customerName: string;
+  serviceName: string;
+  staffName: string;
+  staffEmail: string;
+  startTime: Date;
+  endTime: Date;
+  businessName: string;
+}) {
+  const { subject, html } = appointmentActionStaffEmail(data);
+
+  await deliverEmail(`appointment ${data.action} to staff ${data.staffEmail}`, {
+    from: EMAIL_FROM,
+    to: data.staffEmail,
+    subject,
+    html,
+  });
 }
 
 // ═══════════════════════════════════════════

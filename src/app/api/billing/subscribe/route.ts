@@ -6,6 +6,7 @@ import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
+import { quotePlatformDiscount, reservePlatformDiscount } from "@/server/services/platform-discount.service";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -35,10 +36,14 @@ export async function POST(request: NextRequest) {
 
     // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
     let targetPlan: ValidPlan = "EQUIPO";
+    let discountCode: string | undefined;
     try {
       const body = await request.json();
       if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
         targetPlan = body.plan;
+      }
+      if (typeof body.discountCode === "string") {
+        discountCode = body.discountCode;
       }
     } catch {
       // No body or invalid JSON — default to EQUIPO
@@ -68,8 +73,32 @@ export async function POST(request: NextRequest) {
     
     // Calculate initial price (apply discount if any)
     let transactionAmount: number = PRICING[targetPlan].monthly;
+    let platformDiscount: Awaited<ReturnType<typeof quotePlatformDiscount>>["discount"];
     if (subscription?.pendingDiscountPercentage) {
       transactionAmount = Math.round(transactionAmount * (1 - subscription.pendingDiscountPercentage / 100));
+    }
+
+    if (discountCode?.trim()) {
+      if (subscription?.pendingDiscountPercentage) {
+        return NextResponse.json(
+          { error: "Ya tienes un descuento pendiente. No puedes combinar codigos." },
+          { status: 400 }
+        );
+      }
+
+      const quote = await quotePlatformDiscount({
+        code: discountCode,
+        plan: targetPlan,
+        businessId: business.id,
+        amount: transactionAmount,
+      });
+
+      if (quote.error || !quote.discount) {
+        return NextResponse.json({ error: quote.error || "Codigo invalido" }, { status: 400 });
+      }
+
+      platformDiscount = quote.discount;
+      transactionAmount = platformDiscount.discountedAmount;
     }
 
     const result = await preapproval.create({
@@ -96,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Upsert subscription in our DB with INACTIVE status (pending payment)
-    await prisma.subscription.upsert({
+    const savedSubscription = await prisma.subscription.upsert({
       where: { businessId: business.id },
       update: {
         mpSubscriptionId: result.id,
@@ -115,8 +144,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (platformDiscount) {
+      await reservePlatformDiscount({
+        discountCodeId: platformDiscount.id,
+        businessId: business.id,
+        subscriptionId: savedSubscription.id,
+        originalAmount: platformDiscount.originalAmount,
+        discountedAmount: platformDiscount.discountedAmount,
+      });
+    }
+
     // 8. Return the payment URL
-    return NextResponse.json({ init_point: result.init_point });
+    return NextResponse.json({ init_point: result.init_point, discount: platformDiscount ?? null });
   } catch (error: any) {
     console.error("[billing/subscribe] Error:", error);
     

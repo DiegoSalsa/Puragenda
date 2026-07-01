@@ -1,7 +1,7 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, BarChart3, Building2, CalendarClock, Users, CreditCard, Mail } from "lucide-react";
+import { Shield, BarChart3, Building2, CalendarClock, Users, CreditCard, Mail, Tag } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 
@@ -42,6 +42,7 @@ export default async function AdminLayout({
           <NavLink href={`${ADMIN_SECRET_PATH}/businesses`} icon={Building2} label="Negocios" />
           <NavLink href={`${ADMIN_SECRET_PATH}/users`} icon={Users} label="Usuarios" />
           <NavLink href={`${ADMIN_SECRET_PATH}/subscriptions`} icon={CreditCard} label="Suscripciones" />
+          <NavLink href={`${ADMIN_SECRET_PATH}/discounts`} icon={Tag} label="Descuentos" />
           <NavLink href={`${ADMIN_SECRET_PATH}/communications`} icon={Mail} label="Comunicaciones" />
           <div className="my-4 border-t-2 border-black/20" />
           <p className="mb-3 px-1 text-[10px] font-black uppercase tracking-widest text-black/40">Accesos rápidos</p>

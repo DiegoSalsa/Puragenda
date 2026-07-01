@@ -5,6 +5,7 @@ import { mpClient } from "@/server/lib/mercadopago";
 import { addDays } from "date-fns";
 import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
+import { markPlatformDiscountApplied } from "@/server/services/platform-discount.service";
 import crypto from "crypto";
 
 /**
@@ -186,6 +187,8 @@ export async function POST(request: NextRequest) {
         where: { id: subscription.id },
         data: updateData,
       });
+
+      await markPlatformDiscountApplied(subscription.id);
 
       // If it's the first time they pay, count it for the affiliate
       if (!subscription.hasCountedAsPaidReferral) {
