@@ -42,7 +42,7 @@ export function useWidgetWizard() {
     () => ({
       name: state.form.name.trim().length >= 3,
       email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.form.email),
-      phone: state.form.phone.length === 0 || /^\+?[0-9\s()-]{8,18}$/.test(state.form.phone),
+      phone: /^\+?[0-9\s()-]{8,18}$/.test(state.form.phone.trim()),
     }),
     [state.form]
   );

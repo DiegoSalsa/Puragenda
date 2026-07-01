@@ -49,7 +49,7 @@ export async function checkAppointmentCollision(
 export async function createAppointment(data: {
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
+  customerPhone: string;
   startTime: Date;
   endTime: Date;
   businessId: string;

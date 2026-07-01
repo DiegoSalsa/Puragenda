@@ -244,7 +244,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return staffMembers.filter((s) => isStaffWorkingOnDay(s, dow));
   }, [staffMembers, selectedDate]);
 
-  const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: form.phone.length === 0 || /^\+?[0-9\s()-]{8,18}$/.test(form.phone) };
+  const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()) };
   const isFormValid = validation.name && validation.email && validation.phone;
 
   const fetchBlocked = useCallback(async (date: Date, staffId?: string) => {
@@ -346,8 +346,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
         body: JSON.stringify({
           serviceId: serviceIds[0], serviceIds,
-          customerName: form.name, customerEmail: form.email,
-          customerPhone: form.phone || undefined, startTime: selectedSlot.start.toISOString(),
+          customerName: form.name.trim(), customerEmail: form.email.trim(),
+          customerPhone: form.phone.trim(), startTime: selectedSlot.start.toISOString(),
           endTime: selectedSlot.end.toISOString(), staffId: selectedStaff?.id,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
         }),
@@ -438,6 +438,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   async function handleRecurringConfirm() {
+    if (!isFormValid) {
+      setTouched({ name: true, email: true, phone: true });
+      setRecurringError("Completa nombre, correo y teléfono antes de confirmar.");
+      return;
+    }
     setRecurringSubmitting(true);
     setRecurringError("");
     try {
@@ -451,9 +456,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           selectedTimes: recurringTimes,
           startDate: recurringStartDate,
           durationMonths: recurringDurationMonths,
-          customerName: form.name,
-          customerEmail: form.email,
-          customerPhone: form.phone || undefined,
+          customerName: form.name.trim(),
+          customerEmail: form.email.trim(),
+          customerPhone: form.phone.trim(),
           rut: rut || undefined,
           healthAnswers: Object.keys(healthAnswers).length > 0 ? healthAnswers : undefined,
           healthExtra: healthExtra || undefined,
@@ -888,7 +893,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               {/* Client data mini-form */}
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Tus datos</p>
-                {([["name", "Nombre y apellido", UserRound, "text"] as const, ["email", "Correo electronico", Mail, "email"] as const, ["phone", "Telefono (opcional)", Phone, "tel"] as const]).map(([field, label, Icon, type]) => (
+                {([["name", "Nombre y apellido", UserRound, "text"] as const, ["email", "Correo electronico", Mail, "email"] as const, ["phone", "Telefono", Phone, "tel"] as const]).map(([field, label, Icon, type]) => (
                   <div key={field} className="space-y-1">
                     <label className="flex items-center gap-1.5 text-xs opacity-70" style={{ color: textColor }}><Icon className="h-3 w-3" />{label}</label>
                     <input type={type} value={form[field as keyof FormState]}
@@ -899,7 +904,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         }
                       }}
                       placeholder={label}
-                      required={field !== "phone"}
+                      required
                       className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                       style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }}
                     />
@@ -918,7 +923,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               {recurringError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{recurringError}</div>}
 
               <button type="button"
-                disabled={recurringSubmitting || !form.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) || (selectedService.recurringPlan.requiresRut && !rut.trim())}
+                disabled={recurringSubmitting || !isFormValid || (selectedService.recurringPlan.requiresRut && !rut.trim())}
                 onClick={handleRecurringConfirm}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-30 disabled:pointer-events-none"
                 style={{ background: pc, color: getContrastColor(pc) }}>
@@ -1049,10 +1054,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
               </div>
               <form onSubmit={handleConfirm} className="space-y-4">
-                {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono (opcional)", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
+                {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
                   <div key={field} className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
-                    <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder}
+                    <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} required
                       className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
                       style={!touched[field] ? { borderColor: "var(--wborder)", background: "var(--wsubtle)" } : validation[field] ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
                     {touched[field] && !validation[field] && <p className="text-xs text-red-400">Campo inválido</p>}

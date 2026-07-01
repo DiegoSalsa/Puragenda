@@ -26,9 +26,10 @@ export const bookingSchema = z
       .toLowerCase(),
 
     customerPhone: z
-      .string()
-      .regex(/^\+?[0-9\s()-]{8,18}$/, "Teléfono inválido")
-      .optional(),
+      .string({ message: "El teléfono es obligatorio" })
+      .trim()
+      .min(1, "El teléfono es obligatorio")
+      .regex(/^\+?[0-9\s()-]{8,18}$/, "Teléfono inválido"),
 
     startTime: z
       .string({ message: "La hora de inicio es obligatoria" })

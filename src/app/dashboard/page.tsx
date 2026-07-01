@@ -1,4 +1,5 @@
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
+import { getBusinessHours } from "@/server/services/businessHours.service";
 // appointment.service import removed — using direct prisma query for richer includes
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
@@ -47,21 +48,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const weekAppointments = await prisma.appointment.findMany({
-    where: {
-      businessId: business.id,
-      ...scopedStaffFilter,
-      startTime: { gte: weekStart, lt: addDays(weekEnd, 1) },
-    },
-    include: {
-      service: true,
-      staff: true,
-      client: { select: { privateNotes: true } },
-    },
-    orderBy: { startTime: "asc" },
-  });
+  const [weekAppointments, totalServices, businessHours] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        businessId: business.id,
+        ...scopedStaffFilter,
+        startTime: { gte: weekStart, lt: addDays(weekEnd, 1) },
+      },
+      include: {
+        service: true,
+        staff: true,
+        client: { select: { privateNotes: true } },
+      },
+      orderBy: { startTime: "asc" },
+    }),
+    prisma.service.count({ where: { businessId: business.id } }),
+    getBusinessHours(business.id),
+  ]);
   const todayCount = weekAppointments.filter((a) => isSameDay(new Date(a.startTime), today)).length;
-  const totalServices = await prisma.service.count({ where: { businessId: business.id } });
   const pendingCount = weekAppointments.filter((a) => a.status === "PENDING").length;
   const checkedInCount = weekAppointments.filter((a) => a.status === "CHECKED_IN").length;
 
@@ -167,6 +171,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         appointments={serialized}
         weekStartISO={format(weekStart, "yyyy-MM-dd")}
         agendaMode={showingOwnAgenda ? "mine" : undefined}
+        businessHours={businessHours.map((h) => ({
+          dayOfWeek: h.dayOfWeek,
+          startTime: h.startTime,
+          endTime: h.endTime,
+          isOpen: h.isOpen,
+        }))}
       />
 
       <PageTutorial

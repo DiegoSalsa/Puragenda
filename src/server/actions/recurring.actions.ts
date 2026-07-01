@@ -153,7 +153,7 @@ export async function createRecurringBookingAction(data: {
   staffId?: string;
   customerName: string;
   customerEmail: string;
-  customerPhone?: string;
+  customerPhone: string;
   customerRut?: string;
   selectedDays: number[];
   selectedTimes: SelectedTimes;
@@ -173,6 +173,11 @@ export async function createRecurringBookingAction(data: {
     },
   });
   if (!business) return { error: "Negocio no encontrado" };
+
+  const normalizedPhone = data.customerPhone.trim();
+  if (!/^\+?[0-9\s()-]{8,18}$/.test(normalizedPhone)) {
+    return { error: "Telefono invalido" };
+  }
 
   // Load service + plan
   const service = await prisma.service.findFirst({
@@ -263,14 +268,19 @@ export async function createRecurringBookingAction(data: {
         businessId: business.id,
         name: data.customerName,
         email: data.customerEmail.toLowerCase().trim(),
-        phone: data.customerPhone ?? null,
+        phone: normalizedPhone,
         rut: data.customerRut ?? null,
       },
     });
   } else if (data.customerRut && !client.rut) {
     await prisma.client.update({
       where: { id: client.id },
-      data: { rut: data.customerRut },
+      data: { phone: normalizedPhone, rut: data.customerRut },
+    });
+  } else if (client.phone !== normalizedPhone) {
+    await prisma.client.update({
+      where: { id: client.id },
+      data: { phone: normalizedPhone },
     });
   }
 
@@ -291,7 +301,7 @@ export async function createRecurringBookingAction(data: {
         clientId: client!.id,
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
-        customerPhone: data.customerPhone ?? null,
+        customerPhone: normalizedPhone,
         customerRut: data.customerRut ?? null,
         status: initialStatus,
         selectedDays: data.selectedDays,
@@ -316,7 +326,7 @@ export async function createRecurringBookingAction(data: {
         clientId: client!.id,
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
-        customerPhone: data.customerPhone ?? null,
+        customerPhone: normalizedPhone,
         startDate: data.startDate,
         endDate,
         selectedDays: data.selectedDays,

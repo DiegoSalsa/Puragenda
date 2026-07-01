@@ -106,12 +106,12 @@ export async function POST(
       },
       update: {
         name: customerName,
-        phone: customerPhone || undefined,
+        phone: customerPhone,
       },
       create: {
         name: customerName,
         email: customerEmail,
-        phone: customerPhone || undefined,
+        phone: customerPhone,
         businessId: business.id,
       },
     });

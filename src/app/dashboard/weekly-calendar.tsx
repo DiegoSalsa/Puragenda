@@ -14,7 +14,52 @@ interface CalendarAppointment {
   clientNotes?: string | null;
 }
 
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7:00-18:00
+interface CalendarBusinessHour {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isOpen: boolean;
+}
+
+function timeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+}
+
+function buildVisibleHours(businessHours: CalendarBusinessHour[], appointments: CalendarAppointment[]) {
+  const openHours = businessHours.filter((h) => h.isOpen);
+  // Keep the previous dashboard range as a floor, then expand it with configured
+  // business hours and any appointments that already exist.
+  let minMinutes = 7 * 60;
+  let maxMinutes = 18 * 60;
+
+  if (openHours.length > 0) {
+    minMinutes = Math.min(minMinutes,
+      Math.min(...openHours.map((h) => timeToMinutes(h.startTime) ?? 9 * 60))
+    );
+    maxMinutes = Math.max(maxMinutes,
+      Math.max(...openHours.map((h) => timeToMinutes(h.endTime) ?? 19 * 60))
+    );
+  }
+
+  for (const apt of appointments) {
+    const start = parseISO(apt.startTime);
+    const end = parseISO(apt.endTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
+    minMinutes = Math.min(minMinutes, start.getHours() * 60 + start.getMinutes());
+    maxMinutes = Math.max(maxMinutes, end.getHours() * 60 + end.getMinutes());
+  }
+
+  const startHour = Math.max(0, Math.floor(minMinutes / 60));
+  const endHour = Math.min(24, Math.ceil(maxMinutes / 60));
+  const length = Math.max(1, endHour - startHour + 1);
+  return Array.from({ length }, (_, i) => startHour + i);
+}
+
+function formatHour(hour: number) {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
   PENDING:          { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
@@ -34,10 +79,12 @@ export function WeeklyCalendar({
   appointments,
   weekStartISO,
   agendaMode,
+  businessHours = [],
 }: {
   appointments: CalendarAppointment[];
   weekStartISO: string;
   agendaMode?: "mine";
+  businessHours?: CalendarBusinessHour[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
@@ -145,6 +192,7 @@ export function WeeklyCalendar({
   const isCurrentWeek = isSameDay(startOfWeek(today, { weekStartsOn: 1 }), weekStart);
   const selectedDay = days[selectedDayIdx] ?? days[0];
   const isDayToday = isSameDay(selectedDay, today);
+  const visibleHours = useMemo(() => buildVisibleHours(businessHours, appointments), [businessHours, appointments]);
 
   return (
     <>
@@ -222,10 +270,10 @@ export function WeeklyCalendar({
                 })}
               </div>
               {/* Time grid */}
-              {HOURS.map((hour) => (
+              {visibleHours.map((hour) => (
                 <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/30">
                   <div className="flex items-start justify-end pr-2 pt-2 text-[11px] text-muted-foreground/60 font-mono">
-                    {String(hour).padStart(2, "0")}:00
+                    {formatHour(hour)}
                   </div>
                   {days.map((day) => {
                     const apts = getAptsForDayHour(day, hour);
@@ -255,10 +303,10 @@ export function WeeklyCalendar({
         ) : (
           /* ── Day view ── */
           <div className="select-none" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            {HOURS.map((hour) => (
+            {visibleHours.map((hour) => (
               <div key={hour} className="grid grid-cols-[56px_1fr] border-b border-border/30">
                 <div className="flex items-start justify-end pr-2 pt-2 text-[10px] sm:text-[11px] text-muted-foreground/60 font-mono">
-                  {String(hour).padStart(2, "0")}:00
+                  {formatHour(hour)}
                 </div>
                 <div className={`border-l border-border min-h-[56px] p-1.5 ${isDayToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
                   {getAptsForDayHour(selectedDay, hour).map((apt) => {
