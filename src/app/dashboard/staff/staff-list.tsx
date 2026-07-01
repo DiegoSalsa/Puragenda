@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff } from "lucide-react";
-import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, createScheduleBlockAction, deleteScheduleBlockAction } from "@/server/actions/dashboard.actions";
+import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -13,7 +13,20 @@ for (let h = 6; h <= 23; h++) { TIMES.push(`${String(h).padStart(2, "0")}:00`); 
 
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
 interface BlockEntry { id: string; startTime: string; endTime: string; reason: string | null; }
-interface StaffMember { id: string; name: string; email: string | null; isActive: boolean; schedule: ScheduleEntry[]; serviceIds: string[]; blocks?: BlockEntry[]; }
+type EditableStaffRole = "ADMIN" | "RECEPTIONIST" | "STAFF";
+type StaffAccessRole = EditableStaffRole | "SUPERADMIN";
+interface StaffMember {
+  id: string;
+  name: string;
+  email: string | null;
+  isActive: boolean;
+  role: StaffAccessRole | null;
+  userId: string | null;
+  isOwner: boolean;
+  schedule: ScheduleEntry[];
+  serviceIds: string[];
+  blocks?: BlockEntry[];
+}
 interface LimitInfo { plan: string; currentCount: number; maxAllowed: number; canAdd: boolean; }
 interface ServiceOption { id: string; name: string; }
 
@@ -29,6 +42,12 @@ function generateCode(): string {
 }
 
 const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo" };
+const ROLE_LABELS: Record<StaffAccessRole, string> = {
+  ADMIN: "Admin",
+  RECEPTIONIST: "Recepcionista",
+  STAFF: "Trabajador",
+  SUPERADMIN: "Superadmin",
+};
 
 // ─── Delete Confirmation Modal ───
 function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: string; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
@@ -94,7 +113,17 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
 }
 
 // ─── Staff List ───
-export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: { staff: StaffMember[]; limitInfo: LimitInfo; allServices?: ServiceOption[] }) {
+export function StaffList({
+  staff: initialStaff,
+  limitInfo,
+  allServices = [],
+  canManageRoles = false,
+}: {
+  staff: StaffMember[];
+  limitInfo: LimitInfo;
+  allServices?: ServiceOption[];
+  canManageRoles?: boolean;
+}) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -119,6 +148,8 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
     return map;
   });
   const [savingServices, setSavingServices] = useState<string | null>(null);
+  const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
+  const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
 
   // Block form state
   const [blockStaffId, setBlockStaffId] = useState<string | null>(null);
@@ -195,6 +226,17 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
     setSavingServices(staffId);
     await updateStaffServicesAction(staffId, staffServices[staffId] || []);
     setSavingServices(null);
+    router.refresh();
+  }
+
+  async function handleRoleChange(staffId: string, nextRole: EditableStaffRole) {
+    setSavingRoleId(staffId);
+    setRoleErrors((prev) => ({ ...prev, [staffId]: "" }));
+    const result = await updateStaffRoleAction(staffId, nextRole);
+    if (result.error) {
+      setRoleErrors((prev) => ({ ...prev, [staffId]: result.error }));
+    }
+    setSavingRoleId(null);
     router.refresh();
   }
 
@@ -324,6 +366,9 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
                     {togglingId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : s.isActive ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
                     {s.isActive ? "Activo" : "Inactivo"}
                   </button>
+                  <span className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    {s.role ? ROLE_LABELS[s.role] : "Sin cuenta"}
+                  </span>
                   <button onClick={() => setExpandedId(expanded ? null : s.id)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                     <Settings2 className="h-3 w-3" /> Configurar {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </button>
@@ -354,6 +399,45 @@ export function StaffList({ staff: initialStaff, limitInfo, allServices = [] }: 
               {/* ── Expanded Panel ── */}
               {expanded && (
                 <div className="border-t border-border/50 p-5 space-y-6">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                      <ShieldAlert className="h-3.5 w-3.5 text-[#7C3AED]" /> Rol de acceso
+                    </p>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {s.role ? ROLE_LABELS[s.role] : "Sin cuenta vinculada"}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Admin y recepcionista pueden ver la agenda completa. Trabajador ve solo sus citas.
+                          </p>
+                        </div>
+                        <select
+                          value={s.role && s.role !== "SUPERADMIN" ? s.role : "STAFF"}
+                          disabled={!canManageRoles || !s.userId || s.isOwner || savingRoleId === s.id}
+                          onChange={(e) => handleRoleChange(s.id, e.target.value as EditableStaffRole)}
+                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:w-[190px]"
+                        >
+                          <option value="ADMIN">Admin</option>
+                          <option value="RECEPTIONIST">Recepcionista</option>
+                          <option value="STAFF">Trabajador</option>
+                        </select>
+                      </div>
+                      {!canManageRoles && (
+                        <p className="mt-3 text-xs text-muted-foreground">Solo la cuenta owner puede cambiar roles.</p>
+                      )}
+                      {s.isOwner && (
+                        <p className="mt-3 text-xs text-muted-foreground">La cuenta owner no se puede cambiar desde aqui.</p>
+                      )}
+                      {!s.userId && (
+                        <p className="mt-3 text-xs text-amber-400">Este profesional no tiene una cuenta de acceso vinculada.</p>
+                      )}
+                      {roleErrors[s.id] && (
+                        <p className="mt-3 text-xs text-red-400">{roleErrors[s.id]}</p>
+                      )}
+                    </div>
+                  </div>
                   {/* ── Section: Services ── */}
                   {allServices.length > 0 && (
                     <div className="space-y-3">

@@ -1,5 +1,5 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import {
   getAppointmentByIdAndBusiness,
   updateAppointmentStatus,
@@ -24,6 +24,11 @@ export async function PATCH(
 
     const existing = await getAppointmentByIdAndBusiness(id, business.id);
     if (!existing) return Response.json({ error: "Cita no encontrada" }, { status: 404 });
+
+    const agendaScope = await getStaffAgendaScope(user, business);
+    if (!agendaScope.canSeeAllAgendas && (!agendaScope.staffId || existing.staffId !== agendaScope.staffId)) {
+      return Response.json({ error: "Cita no encontrada" }, { status: 404 });
+    }
 
     const body = await request.json();
     const { status } = body;

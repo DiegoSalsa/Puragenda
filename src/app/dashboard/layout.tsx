@@ -3,8 +3,10 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
 import { DashboardTutorial } from "@/components/dashboard/tutorial";
+import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 
 export default async function DashboardLayout({
   children,
@@ -38,6 +40,8 @@ export default async function DashboardLayout({
     }
   }
 
+  const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
+
   return (
     <div className="flex fixed inset-0 overflow-hidden bg-background">
       <DashboardSidebar
@@ -49,6 +53,15 @@ export default async function DashboardLayout({
         <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
       </main>
       <DashboardTutorial userEmail={user.email} />
+      <ChangelogPopup
+        seenVersion={changelogSeenVersion}
+        isDemoAccount={
+          business?.slug?.toLowerCase().includes("esteticabella") ||
+          business?.slug?.toLowerCase().includes("estetica-bella") ||
+          user.email.toLowerCase().includes("esteticabella") ||
+          user.email.toLowerCase().includes("diego")
+        }
+      />
     </div>
   );
 }

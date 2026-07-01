@@ -1,5 +1,5 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { RecurringClient } from "./recurring-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
@@ -13,8 +13,13 @@ export default async function RecurringPage() {
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
 
+  const agendaScope = await getStaffAgendaScope(user, business);
+  const scopedStaffFilter = agendaScope.canSeeAllAgendas
+    ? {}
+    : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
+
   const bookings = await prisma.recurringBooking.findMany({
-    where: { businessId: business.id },
+    where: { businessId: business.id, ...scopedStaffFilter },
     orderBy: { createdAt: "desc" },
     include: {
       service: { select: { id: true, name: true, duration: true } },

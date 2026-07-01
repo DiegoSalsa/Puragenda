@@ -1,10 +1,11 @@
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 // appointment.service import removed — using direct prisma query for richer includes
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { format, startOfWeek, endOfWeek, addDays, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, Clock, UserCheck, Users } from "lucide-react";
+import Link from "next/link";
+import { Building2, Calendar, Clock, UserCheck, UserRound, Users } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
@@ -13,22 +14,29 @@ import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string }> }) {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión para acceder al dashboard</div>;
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
-  // Resolve staffId for role-based filtering
-  let userStaffId: string | undefined;
-  if (user.role === "STAFF") {
-    const staffRecord = await prisma.staff.findFirst({ where: { userId: user.id, businessId: business.id, isActive: true } });
-    userStaffId = staffRecord?.id;
-  }
-
+  const agendaScope = await getStaffAgendaScope(user, business);
   const params = await searchParams;
+  const canToggleOwnAgenda = agendaScope.canSeeAllAgendas && !!agendaScope.ownStaffId;
+  const showingOwnAgenda = canToggleOwnAgenda && params.agenda === "mine";
+  const scopedStaffFilter = agendaScope.canSeeAllAgendas
+    ? (showingOwnAgenda ? { staffId: agendaScope.ownStaffId ?? "__no_staff_access__" } : {})
+    : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
   const today = new Date();
+
+  function dashboardHref(agenda?: "mine") {
+    const query = new URLSearchParams();
+    if (params.date) query.set("date", params.date);
+    if (agenda) query.set("agenda", agenda);
+    const queryString = query.toString();
+    return queryString ? `/dashboard?${queryString}` : "/dashboard";
+  }
 
   // URL-based week navigation
   let targetDate = today;
@@ -42,7 +50,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekAppointments = await prisma.appointment.findMany({
     where: {
       businessId: business.id,
-      ...(userStaffId && { staffId: userStaffId }),
+      ...scopedStaffFilter,
       startTime: { gte: weekStart, lt: addDays(weekEnd, 1) },
     },
     include: {
@@ -67,7 +75,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   // Pending recurring approvals
   const pendingRecurring = await prisma.recurringBooking.findMany({
-    where: { businessId: business.id, status: "PENDING_APPROVAL" },
+    where: { businessId: business.id, status: "PENDING_APPROVAL", ...scopedStaffFilter },
     orderBy: { createdAt: "asc" },
     include: {
       service: { select: { id: true, name: true } },
@@ -100,7 +108,35 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
           </p>
         </div>
-        <CopyWidgetLink slug={business.slug} />
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <CopyWidgetLink slug={business.slug} />
+          {canToggleOwnAgenda && (
+            <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+              <Link
+                href={dashboardHref()}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  !showingOwnAgenda
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                Todo el negocio
+              </Link>
+              <Link
+                href={dashboardHref("mine")}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  showingOwnAgenda
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <UserRound className="h-4 w-4" />
+                Mi agenda
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
       <SubscriptionBanner businessId={business.id} />
@@ -127,7 +163,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
-      <WeeklyCalendar appointments={serialized} weekStartISO={format(weekStart, "yyyy-MM-dd")} />
+      <WeeklyCalendar
+        appointments={serialized}
+        weekStartISO={format(weekStart, "yyyy-MM-dd")}
+        agendaMode={showingOwnAgenda ? "mine" : undefined}
+      />
 
       <PageTutorial
         tutorialKey="citas_v1"

@@ -3,7 +3,9 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
@@ -78,6 +80,25 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       )}
 
       <div className="grid gap-6">
+        <Link
+          href="/dashboard/changelog"
+          className="rounded-2xl border border-[#7C3AED]/20 bg-card p-6 transition-colors hover:bg-muted/40"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Version de la app
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Estas usando Puragenda {LATEST_CHANGELOG_VERSION}. Revisa las novedades de esta version.
+              </p>
+            </div>
+            <span className="inline-flex w-fit items-center rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1 text-sm font-semibold text-[#7C3AED]">
+              {LATEST_CHANGELOG_VERSION}
+            </span>
+          </div>
+        </Link>
+
         {/* ── Plan / Suscripción ── */}
         <div id="plan" className="rounded-2xl border border-[#7C3AED]/20 bg-gradient-to-br from-[#7C3AED]/5 via-card to-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +23,17 @@ export async function POST(
     const { fromDate } = await req.json();
     if (!fromDate) return NextResponse.json({ error: "fromDate requerido" }, { status: 400 });
 
+    const agendaScope = await getStaffAgendaScope(user, business);
+
     // Verify the recurring booking belongs to this business
     const booking = await prisma.recurringBooking.findFirst({
-      where: { id, businessId: business.id },
+      where: {
+        id,
+        businessId: business.id,
+        ...(agendaScope.canSeeAllAgendas
+          ? {}
+          : { staffId: agendaScope.staffId ?? "__no_staff_access__" }),
+      },
     });
     if (!booking) return NextResponse.json({ error: "Plan no encontrado" }, { status: 404 });
 

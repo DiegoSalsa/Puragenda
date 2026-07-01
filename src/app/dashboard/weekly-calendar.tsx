@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
@@ -30,7 +30,15 @@ const STATUS_LABELS: Record<string, string> = {
   CHECKED_IN: "Asistió", NO_SHOW: "Inasistencia",
 };
 
-export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: CalendarAppointment[]; weekStartISO: string }) {
+export function WeeklyCalendar({
+  appointments,
+  weekStartISO,
+  agendaMode,
+}: {
+  appointments: CalendarAppointment[];
+  weekStartISO: string;
+  agendaMode?: "mine";
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -50,24 +58,12 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
   function navigateWeek(direction: "prev" | "next") {
     const target = direction === "next" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1);
     const dateStr = format(target, "yyyy-MM-dd");
-    router.push(`/dashboard?date=${dateStr}`);
+    router.push(`/dashboard?date=${dateStr}${agendaMode === "mine" ? "&agenda=mine" : ""}`);
   }
 
   function goToday() {
-    router.push("/dashboard");
+    router.push(agendaMode === "mine" ? "/dashboard?agenda=mine" : "/dashboard");
   }
-
-  // Sync selected day index when week changes (e.g. after URL navigation)
-  useEffect(() => {
-    const t = new Date();
-    for (let i = 0; i < 7; i++) {
-      if (isSameDay(addDays(weekStart, i), t)) {
-        setSelectedDayIdx(i);
-        return;
-      }
-    }
-    setSelectedDayIdx(0);
-  }, [weekStartISO]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function prevDay() {
     if (selectedDayIdx > 0) {
@@ -95,7 +91,8 @@ export function WeeklyCalendar({ appointments, weekStartISO }: { appointments: C
     if (touchStartX.current === null) return;
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(delta) > 50) {
-      delta < 0 ? nextDay() : prevDay();
+      if (delta < 0) nextDay();
+      else prevDay();
     }
     touchStartX.current = null;
   }

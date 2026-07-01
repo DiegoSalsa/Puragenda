@@ -19,6 +19,7 @@ export default async function StaffPage() {
     prisma.staff.findMany({
       where: { businessId: business.id },
       include: {
+        user: { select: { id: true, role: true } },
         schedule: { orderBy: { dayOfWeek: "asc" } },
         services: { select: { id: true } },
         scheduleBlocks: {
@@ -39,6 +40,9 @@ export default async function StaffPage() {
 
   const serialized = staffMembers.map((s) => ({
     id: s.id, name: s.name, email: s.email, isActive: s.isActive,
+    role: s.user?.role ?? null,
+    userId: s.user?.id ?? null,
+    isOwner: s.user?.id === business.ownerId,
     schedule: s.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking })),
     serviceIds: s.services.map((sv) => sv.id),
     blocks: s.scheduleBlocks.map((b) => ({
@@ -60,7 +64,12 @@ export default async function StaffPage() {
           <p className="text-sm text-muted-foreground">Gestiona tu equipo y sus horarios individuales.</p>
         </div>
       </div>
-      <StaffList staff={serialized} limitInfo={limitInfo} allServices={allServices} />
+      <StaffList
+        staff={serialized}
+        limitInfo={limitInfo}
+        allServices={allServices}
+        canManageRoles={business.ownerId === user.id}
+      />
 
       <PageTutorial
         tutorialKey="profesionales_v1"

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { addMonths } from "date-fns";
@@ -23,6 +23,25 @@ import {
   sendRecurringBookingRejectedClient,
   sendRecurringBookingCancelledClient,
 } from "@/server/email/send";
+
+type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
+type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
+
+async function recurringBookingWhereForAgenda(
+  user: CurrentUser,
+  business: BusinessForUser,
+  recurringBookingId?: string
+) {
+  const agendaScope = await getStaffAgendaScope(user, business);
+
+  return {
+    ...(recurringBookingId ? { id: recurringBookingId } : {}),
+    businessId: business.id,
+    ...(agendaScope.canSeeAllAgendas
+      ? {}
+      : { staffId: agendaScope.staffId ?? "__no_staff_access__" }),
+  };
+}
 
 // ==========================================
 // PLAN CONFIG (negocio)
@@ -390,7 +409,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
     include: { service: true },
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
@@ -476,7 +495,7 @@ export async function rejectRecurringBookingAction(recurringBookingId: string, r
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
     include: { service: true },
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
@@ -516,7 +535,7 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
     include: { service: true },
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
@@ -559,7 +578,7 @@ export async function cancelFutureRecurringAction(recurringBookingId: string) {
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
 
@@ -582,7 +601,7 @@ export async function cancelSpecificSessionsAction(recurringBookingId: string, d
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
 
@@ -666,7 +685,7 @@ export async function pauseRecurringAction(recurringBookingId: string, pauseUnti
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
   if (booking.status !== "ACTIVE") return { error: "Solo se puede pausar una suscripcion activa" };
@@ -692,7 +711,7 @@ export async function resumeRecurringAction(recurringBookingId: string) {
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
     include: { service: true },
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
@@ -749,7 +768,7 @@ export async function addInternalNoteAction(recurringBookingId: string, note: st
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
 
@@ -774,7 +793,7 @@ export async function getRecurringBookingsForBusinessAction() {
   if (!business) return { error: "No tienes un negocio" };
 
   const bookings = await prisma.recurringBooking.findMany({
-    where: { businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business),
     orderBy: { createdAt: "desc" },
     include: {
       service: { select: { id: true, name: true, duration: true } },
@@ -800,7 +819,7 @@ export async function getRecurringBookingDetailAction(recurringBookingId: string
   if (!business) return { error: "No tienes un negocio" };
 
   const booking = await prisma.recurringBooking.findFirst({
-    where: { id: recurringBookingId, businessId: business.id },
+    where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
     include: {
       service: { select: { id: true, name: true, duration: true } },
       staff: { select: { id: true, name: true, email: true } },

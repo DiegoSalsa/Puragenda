@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import type { UserRole } from "@/core/entities";
 
 /**
  * Get a business by its slug.
@@ -46,6 +47,31 @@ export async function getBusinessForUser(userId: string) {
     },
     orderBy: { createdAt: "asc" },
   });
+}
+
+export async function getStaffAgendaScope(
+  user: { id: string; role: UserRole | string },
+  business: { id: string; ownerId: string | null }
+) {
+  const staff = await prisma.staff.findFirst({
+    where: { userId: user.id, businessId: business.id, isActive: true },
+    select: { id: true },
+  });
+
+  if (
+    user.role === "SUPERADMIN" ||
+    user.role === "ADMIN" ||
+    user.role === "RECEPTIONIST" ||
+    business.ownerId === user.id
+  ) {
+    return { canSeeAllAgendas: true, staffId: null, ownStaffId: staff?.id ?? null };
+  }
+
+  return {
+    canSeeAllAgendas: false,
+    staffId: staff?.id ?? null,
+    ownStaffId: staff?.id ?? null,
+  };
 }
 
 /**

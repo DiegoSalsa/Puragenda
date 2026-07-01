@@ -2,8 +2,9 @@
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
+import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS } from "@/core/constants";
@@ -17,6 +18,10 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
   if (!business) return { error: "No tienes un negocio" };
   const apt = await prisma.appointment.findFirst({ where: { id: appointmentId, businessId: business.id } });
   if (!apt) return { error: "Cita no encontrada" };
+  const agendaScope = await getStaffAgendaScope(user, business);
+  if (!agendaScope.canSeeAllAgendas && (!agendaScope.staffId || apt.staffId !== agendaScope.staffId)) {
+    return { error: "Cita no encontrada" };
+  }
   await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
   revalidatePath("/dashboard");
   return { success: true };
@@ -283,6 +288,40 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
 }
 
 // â”€â”€â”€ Business Logo Upload (Cloudinary) â”€â”€â”€
+
+export async function updateStaffRoleAction(staffId: string, role: "ADMIN" | "RECEPTIONIST" | "STAFF") {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (business.ownerId !== user.id) {
+    return { error: "Solo la cuenta owner puede cambiar roles del equipo" };
+  }
+
+  if (!["ADMIN", "RECEPTIONIST", "STAFF"].includes(role)) {
+    return { error: "Rol invalido" };
+  }
+
+  const staff = await prisma.staff.findFirst({
+    where: { id: staffId, businessId: business.id },
+    select: { userId: true },
+  });
+  if (!staff) return { error: "Profesional no encontrado" };
+  if (!staff.userId) return { error: "Este profesional no tiene una cuenta vinculada" };
+  if (staff.userId === business.ownerId) {
+    return { error: "No puedes cambiar el rol de la cuenta owner" };
+  }
+
+  await prisma.user.update({
+    where: { id: staff.userId },
+    data: { role },
+  });
+
+  revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
 
 export async function updateBusinessLogoAction(formData: FormData) {
   const user = await getCurrentSessionUser();
@@ -642,5 +681,21 @@ export async function disconnectMercadoPagoAction() {
   });
 
   revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// ─── Changelog ───
+
+export async function markChangelogSeenAction(version: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+
+  (await cookies()).set("puragenda_changelog_seen", version, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
   return { success: true };
 }
