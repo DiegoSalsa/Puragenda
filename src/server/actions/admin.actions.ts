@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { SALT_ROUNDS, API_KEY_PREFIX, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
 import { revalidatePath } from "next/cache";
+import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -304,8 +305,114 @@ export async function reactivateUserAction(userId: string) {
 // SEND MASS EMAIL
 // ═══════════════════════════════════════════
 
+type MassEmailSegment = "ALL" | "TRIALING" | "ACTIVE" | "CANCELLED";
+
+type MassEmailRecipient = {
+  email: string;
+  name: string;
+  businessName?: string;
+  businessSlug?: string;
+  referralCode?: string;
+  subscriptionStatus?: string;
+};
+
+const ADMIN_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function appBaseUrl() {
+  return (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://www.puragenda.cl").replace(/\/$/, "");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function replaceRecipientTokens(value: string, recipient: MassEmailRecipient) {
+  const baseUrl = appBaseUrl();
+  const widgetUrl = recipient.businessSlug ? `${baseUrl}/widget/${recipient.businessSlug}` : baseUrl;
+  const registerUrl = `${baseUrl}/register`;
+  const tokens: Record<string, string> = {
+    nombre: recipient.name,
+    email: recipient.email,
+    negocio: recipient.businessName || "tu negocio",
+    slug: recipient.businessSlug || "",
+    codigoReferido: recipient.referralCode || "Aun no disponible",
+    estado: recipient.subscriptionStatus || "",
+    linkWidget: widgetUrl,
+    linkRegistro: registerUrl,
+  };
+
+  return Object.entries(tokens).reduce((text, [key, tokenValue]) => {
+    return text.replaceAll(`{{${key}}}`, escapeHtml(tokenValue));
+  }, value);
+}
+
+function adminCampaignHtml(recipient: MassEmailRecipient, body: string) {
+  const renderedBody = replaceRecipientTokens(body, recipient).replace(/\n/g, "<br/>");
+
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#ffffff;color:#111827;">
+      <div style="border-bottom:1px solid #e5e7eb;padding-bottom:18px;margin-bottom:24px;">
+        <p style="margin:0;color:#7C3AED;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Puragenda</p>
+      </div>
+      <h2 style="margin:0 0 18px;color:#111827;font-size:22px;line-height:1.25;">Hola ${escapeHtml(recipient.name)},</h2>
+      <div style="font-size:15px;line-height:1.7;color:#374151;">
+        ${renderedBody}
+      </div>
+      <hr style="margin:32px 0 18px;border:none;border-top:1px solid #e5e7eb;" />
+      <p style="margin:0;color:#9ca3af;font-size:12px;">Puragenda - Tu agenda online</p>
+    </div>
+  `;
+}
+
+async function getMassEmailRecipientsForSegment(segment: MassEmailSegment): Promise<MassEmailRecipient[]> {
+  const businesses = await prisma.business.findMany({
+    where: {
+      deletedAt: null,
+      owner: { deletedAt: null },
+      ...(segment === "ALL" ? {} : { subscription: { status: segment } }),
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      owner: { select: { email: true, name: true } },
+      subscription: { select: { status: true } },
+      affiliate: { select: { referralCode: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const recipients: MassEmailRecipient[] = [];
+
+  for (const business of businesses) {
+    if (!business.owner?.email) continue;
+    const affiliate = business.affiliate ?? (await getOrCreateAffiliate(business.id));
+    recipients.push({
+      email: business.owner.email.trim().toLowerCase(),
+      name: business.owner.name,
+      businessName: business.name,
+      businessSlug: business.slug,
+      referralCode: affiliate.referralCode,
+      subscriptionStatus: business.subscription?.status,
+    });
+  }
+
+  return recipients;
+}
+
+function deduplicateMassEmailRecipients(recipients: MassEmailRecipient[]) {
+  return Array.from(new Map(recipients.map((recipient) => [recipient.email.toLowerCase(), recipient])).values());
+}
+
 export async function sendMassEmailAction(data: {
+  recipientMode?: "SEGMENT" | "SINGLE_EMAIL";
   segment: "ALL" | "TRIALING" | "ACTIVE" | "CANCELLED";
+  targetEmail?: string;
   subject: string;
   body: string;
 }) {
@@ -314,51 +421,30 @@ export async function sendMassEmailAction(data: {
   if (!data.subject.trim() || !data.body.trim()) return { error: "Asunto y cuerpo son requeridos" };
 
   try {
-    // Get users based on segment
-    let users: { email: string; name: string }[] = [];
+    let recipients: MassEmailRecipient[] = [];
 
-    if (data.segment === "ALL") {
-      users = await prisma.user.findMany({
-        where: { deletedAt: null, role: "ADMIN" },
-        select: { email: true, name: true },
-      });
+    if (data.recipientMode === "SINGLE_EMAIL") {
+      const email = data.targetEmail?.trim().toLowerCase() || "";
+      if (!ADMIN_EMAIL_RE.test(email)) return { error: "Debes ingresar un email valido" };
+      recipients = [{ email, name: email.split("@")[0] || "Hola" }];
     } else {
-      const status = data.segment as "TRIALING" | "ACTIVE" | "CANCELLED";
-      const businesses = await prisma.business.findMany({
-        where: {
-          subscription: { status },
-          owner: { deletedAt: null },
-        },
-        select: { owner: { select: { email: true, name: true } } },
-      });
-      users = businesses
-        .map((b) => b.owner)
-        .filter((o): o is { email: string; name: string } => !!o?.email);
+      recipients = await getMassEmailRecipientsForSegment(data.segment);
     }
 
-    // Deduplicate by email
-    const unique = Array.from(new Map(users.map((u) => [u.email, u])).values());
+    const unique = deduplicateMassEmailRecipients(recipients);
+    if (unique.length === 0) return { error: "No hay destinatarios para esta seleccion" };
 
     const { resend, EMAIL_FROM } = await import("@/server/email/resend");
 
     let sent = 0;
     let failed = 0;
 
-    for (const user of unique) {
+    for (const recipient of unique) {
       const result = await resend.emails.send({
         from: EMAIL_FROM,
-        to: user.email,
-        subject: data.subject,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
-            <h2 style="color: #7C3AED;">Hola ${user.name},</h2>
-            <div style="margin-top: 16px; line-height: 1.6; color: #333;">
-              ${data.body.replace(/\n/g, "<br/>")}
-            </div>
-            <hr style="margin-top: 32px; border-color: #eee;" />
-            <p style="color: #999; font-size: 12px;">Puragenda · Tu agenda online</p>
-          </div>
-        `,
+        to: recipient.email,
+        subject: replaceRecipientTokens(data.subject.trim(), recipient),
+        html: adminCampaignHtml(recipient, data.body.trim()),
       });
       if (result.error) failed++;
       else sent++;
