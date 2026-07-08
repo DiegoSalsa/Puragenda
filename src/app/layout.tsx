@@ -113,7 +113,7 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
           <RegisterSW />
           {children}
           <CookieBanner />
