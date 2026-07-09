@@ -5,7 +5,10 @@ const RESPONSE_TO = "contacto@purocode.com";
 type InteractionAnswer = Record<string, string>;
 
 function appBaseUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "https://www.puragenda.cl").replace(/\/$/, "");
+  if (process.env.NODE_ENV === "development") {
+    return (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  }
+  return "https://www.puragenda.cl";
 }
 
 function escapeHtml(value: string) {
