@@ -464,7 +464,33 @@ export async function sendMassEmailAction(data: {
     if (data.recipientMode === "SINGLE_EMAIL") {
       const email = data.targetEmail?.trim().toLowerCase() || "";
       if (!ADMIN_EMAIL_RE.test(email)) return { error: "Debes ingresar un email valido" };
-      recipients = [{ email, name: email.split("@")[0] || "Hola" }];
+
+      // Try to resolve business data for this email
+      const ownerBusiness = await prisma.business.findFirst({
+        where: { owner: { email, deletedAt: null }, deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          owner: { select: { name: true, email: true } },
+          subscription: { select: { status: true } },
+          affiliate: { select: { referralCode: true } },
+        },
+      });
+
+      if (ownerBusiness) {
+        const affiliate = ownerBusiness.affiliate ?? (await getOrCreateAffiliate(ownerBusiness.id));
+        recipients = [{
+          email: ownerBusiness.owner!.email.trim().toLowerCase(),
+          name: ownerBusiness.owner!.name,
+          businessName: ownerBusiness.name,
+          businessSlug: ownerBusiness.slug,
+          referralCode: affiliate.referralCode,
+          subscriptionStatus: ownerBusiness.subscription?.status,
+        }];
+      } else {
+        recipients = [{ email, name: email.split("@")[0] || "Hola" }];
+      }
     } else {
       recipients = await getMassEmailRecipientsForSegment(data.segment);
     }

@@ -65,7 +65,7 @@ export function SubscriptionsClient({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-black">Suscripciones</h1>
+        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-black">Suscripciones</h1>
         <p className="text-sm font-bold text-black/50">{allSubscriptions.length} en total</p>
       </div>
 
@@ -79,16 +79,16 @@ export function SubscriptionsClient({
         ].map((s) => (
           <div key={s.label} className={`border-4 border-black ${s.bg} p-4 shadow-[4px_4px_0_#000]`}>
             <p className="text-xs font-black uppercase tracking-widest text-black/60">{s.label}</p>
-            <p className="text-3xl font-black text-black tracking-tighter">{s.value}</p>
+            <p className="text-2xl sm:text-3xl font-black text-black tracking-tighter">{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Expiring soon */}
       <section>
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-black" />
-          <h2 className="text-xl font-black uppercase tracking-tighter text-black">
+          <h2 className="text-lg sm:text-xl font-black uppercase tracking-tighter text-black">
             Trials por expirar
           </h2>
           <span className="border-2 border-black bg-[#FFF5BA] px-2 py-0.5 text-xs font-black">
@@ -226,7 +226,7 @@ export function SubscriptionsClient({
             return (
               <div key={`${row.plan}-${row.cycle}`} className="flex items-center justify-between border-b-2 border-black/10 py-3 last:border-0">
                 <span className="text-sm font-black uppercase text-black">{row.label}</span>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                   <span className="text-sm font-bold text-black/60">{count} subs</span>
                   <span className="w-28 text-right text-sm font-black text-black">
                     {formatCLP(mrrContrib * count)} / mes

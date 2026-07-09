@@ -140,16 +140,16 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-black">Panel SuperAdmin</h1>
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter text-black">Panel SuperAdmin</h1>
           <p className="text-sm font-bold text-black/50 uppercase tracking-wide mt-1">
             Puragenda · métricas en tiempo real
           </p>
         </div>
         <Link
           href={`${ADMIN_SECRET_PATH}/businesses/new`}
-          className="flex items-center gap-2 border-4 border-black bg-[#B28DFF] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all"
+          className="flex items-center gap-2 border-4 border-black bg-[#B28DFF] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-fit"
         >
           <CalendarPlus className="h-4 w-4" />
           Agregar Negocio
@@ -157,7 +157,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid — 4 principales */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           {
             label: "MRR Estimado",
@@ -195,20 +195,20 @@ export default async function AdminDashboardPage() {
               <p className="text-xs font-black uppercase tracking-widest text-black/60">{stat.label}</p>
               <stat.icon className="h-4 w-4 text-black/50" />
             </div>
-            <p className="text-4xl font-black text-black tracking-tighter">{stat.value}</p>
+            <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{stat.value}</p>
             <p className="mt-1 text-xs font-bold text-black/50">{stat.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Secondary stats row */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000]">
           <div className="flex items-center gap-2 mb-2">
             <CalendarCheck className="h-4 w-4 text-black/50" />
             <p className="text-xs font-black uppercase tracking-widest text-black/60">Citas esta semana</p>
           </div>
-          <p className="text-4xl font-black text-black tracking-tighter">{weeklyAppointments}</p>
+          <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{weeklyAppointments}</p>
           <p className="mt-1 text-xs font-bold text-black/50">
             {format(weekStart, "d MMM", { locale: es })} – {format(weekEnd, "d MMM", { locale: es })}
           </p>
@@ -218,7 +218,7 @@ export default async function AdminDashboardPage() {
             <TrendingUp className="h-4 w-4 text-black/50" />
             <p className="text-xs font-black uppercase tracking-widest text-black/60">Pagando hoy</p>
           </div>
-          <p className="text-4xl font-black text-black tracking-tighter">{paidActive}</p>
+          <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{paidActive}</p>
           <p className="mt-1 text-xs font-bold text-black/50">
             {paidIndividual} Individual · {paidEquipo} Equipo
           </p>
@@ -228,7 +228,7 @@ export default async function AdminDashboardPage() {
             <Sparkles className="h-4 w-4 text-black/50" />
             <p className="text-xs font-black uppercase tracking-widest text-black/60">Nuevos esta semana</p>
           </div>
-          <p className="text-4xl font-black text-black tracking-tighter">{newLast7Days}</p>
+          <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{newLast7Days}</p>
           <p className="mt-1 text-xs font-bold text-black/50">Registros últimos 7 días</p>
         </div>
       </div>

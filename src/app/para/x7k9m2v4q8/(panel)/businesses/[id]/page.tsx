@@ -10,6 +10,9 @@ import {
   Calendar,
   Mail,
   Palette,
+  Share2,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
@@ -39,6 +42,26 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         orderBy: { name: "asc" },
       },
       _count: { select: { appointments: true, clients: true } },
+      affiliate: {
+        include: {
+          referredBusinesses: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              createdAt: true,
+              subscription: { select: { status: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      },
+      referredByAffiliate: {
+        select: {
+          referralCode: true,
+          business: { select: { id: true, name: true } },
+        },
+      },
     },
   });
 
@@ -71,13 +94,13 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Volver a negocios
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border-4 border-black bg-[#B28DFF] shadow-[4px_4px_0_#000]">
-              <Building2 className="h-6 w-6 text-black" />
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center border-4 border-black bg-[#B28DFF] shadow-[4px_4px_0_#000]">
+              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-black" />
             </div>
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-tight text-black">{business.name}</h1>
+              <h1 className="text-xl sm:text-3xl font-black uppercase tracking-tight text-black">{business.name}</h1>
               <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
             </div>
           </div>
@@ -242,6 +265,74 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                 <span className="text-xs font-black uppercase text-black/40">API Key</span>
                 <span className="font-mono text-xs font-bold text-black/50">{business.apiKey.slice(0, 12)}...</span>
               </div>
+            </div>
+          </div>
+
+          {/* Referral Info */}
+          <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
+              <Share2 className="h-4 w-4" /> Referidos
+            </h3>
+            <div className="space-y-3">
+              {business.affiliate ? (
+                <>
+                  <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                    <span className="text-xs font-black uppercase text-black/40">Código</span>
+                    <span className="font-mono text-sm font-black text-black">{business.affiliate.referralCode}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                    <span className="text-xs font-black uppercase text-black/40">Referidos pagados</span>
+                    <span className="text-sm font-black text-black">{business.affiliate.paidReferrals}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                    <span className="text-xs font-black uppercase text-black/40">Fichas gastadas</span>
+                    <span className="text-sm font-black text-black">{business.affiliate.spentTokens}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-black/10 pb-2">
+                    <span className="text-xs font-black uppercase text-black/40">Fichas disponibles</span>
+                    <span className="text-sm font-black text-black">{business.affiliate.paidReferrals - business.affiliate.spentTokens}</span>
+                  </div>
+                  {business.affiliate.referredBusinesses.length > 0 && (
+                    <div className="mt-3">
+                      <p className="mb-2 text-xs font-black uppercase text-black/40">Negocios referidos</p>
+                      <div className="space-y-1.5">
+                        {business.affiliate.referredBusinesses.map((ref) => (
+                          <Link
+                            key={ref.id}
+                            href={`${ADMIN_SECRET_PATH}/businesses/${ref.id}`}
+                            className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-2.5 shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
+                          >
+                            <div>
+                              <p className="text-xs font-black text-black">{ref.name}</p>
+                              <p className="text-[10px] font-bold text-black/40">/{ref.slug}</p>
+                            </div>
+                            <span className={`border border-black px-1.5 py-0.5 text-[10px] font-black uppercase ${
+                              ref.subscription?.status === "ACTIVE" ? "bg-[#BFFCC6]" : ref.subscription?.status === "TRIALING" ? "bg-[#FFF5BA]" : "bg-[#FFB5E8]"
+                            }`}>
+                              {ref.subscription?.status || "N/A"}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm font-bold text-black/40">Sin programa de afiliados</p>
+              )}
+              {business.referredByAffiliate && (
+                <div className="border-t-2 border-black/10 pt-3">
+                  <p className="text-xs font-black uppercase text-black/40 mb-1">Referido por</p>
+                  <Link
+                    href={`${ADMIN_SECRET_PATH}/businesses/${business.referredByAffiliate.business.id}`}
+                    className="inline-flex items-center gap-1.5 border-2 border-black bg-[#B28DFF] px-2.5 py-1.5 text-xs font-black text-black shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
+                  >
+                    <Building2 className="h-3 w-3" />
+                    {business.referredByAffiliate.business.name}
+                    <span className="font-mono text-[10px] opacity-60">({business.referredByAffiliate.referralCode})</span>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

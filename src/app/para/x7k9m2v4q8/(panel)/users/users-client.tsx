@@ -17,6 +17,7 @@ type User = {
   createdAt: Date;
   deletedAt: Date | null;
   businesses: { id: string; name: string; slug: string }[];
+  staff: { business: { id: string; name: string; slug: string } }[];
 };
 
 export function UsersClient({ users }: { users: User[] }) {
@@ -33,7 +34,8 @@ export function UsersClient({ users }: { users: User[] }) {
         !q ||
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        u.businesses[0]?.name.toLowerCase().includes(q);
+        u.businesses[0]?.name.toLowerCase().includes(q) ||
+        u.staff[0]?.business.name.toLowerCase().includes(q);
 
       const matchRole = roleFilter === "ALL" || u.role === roleFilter || (roleFilter === "SUPERADMIN" && u.isSuperAdmin);
 
@@ -129,8 +131,72 @@ export function UsersClient({ users }: { users: User[] }) {
         )}
       </div>
 
-      {/* Table */}
-      <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto">
+      {/* Mobile Cards */}
+      <div className="space-y-3 lg:hidden">
+        {filtered.map((user) => {
+          const isActive = !user.deletedAt;
+          const ownerBiz = user.businesses[0];
+          const staffBiz = user.staff[0]?.business;
+          const linkedBiz = ownerBiz || staffBiz;
+          const isViaStaff = !ownerBiz && !!staffBiz;
+          return (
+            <div key={user.id} className={`border-4 border-black bg-white p-4 shadow-[4px_4px_0_#000] space-y-3 ${!isActive ? "opacity-50" : ""}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center border-2 border-black font-black text-sm ${user.isSuperAdmin ? "bg-[#B28DFF]" : "bg-[#85E3FF]"}`}>
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-black text-sm truncate">{user.name}</p>
+                    <p className="text-xs font-bold text-black/40 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <span className={`shrink-0 border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
+                  {isActive ? "Activo" : "Inactivo"}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${user.isSuperAdmin ? "bg-[#B28DFF]" : user.role === "ADMIN" ? "bg-[#85E3FF]" : "bg-black/10"}`}>
+                  {user.isSuperAdmin && <Shield className="h-3 w-3" />}
+                  {user.isSuperAdmin ? "SuperAdmin" : user.role}
+                </span>
+                {linkedBiz ? (
+                  <Link href={`${ADMIN_SECRET_PATH}/businesses/${linkedBiz.id}`} className="flex items-center gap-1 hover:underline">
+                    <Building2 className="h-3 w-3 text-black/40" />
+                    <span className="text-xs font-bold text-black">{linkedBiz.name}</span>
+                    {isViaStaff && <span className="border border-black/30 bg-black/5 px-1 py-0.5 text-[10px] font-black uppercase text-black/50">Staff</span>}
+                  </Link>
+                ) : (
+                  <span className="text-xs font-bold text-black/30">Sin negocio</span>
+                )}
+                <span className="text-xs font-bold text-black/40">{format(new Date(user.createdAt), "dd/MM/yy", { locale: es })}</span>
+              </div>
+              {!user.isSuperAdmin && (
+                <button
+                  disabled={loadingId === user.id || pending}
+                  onClick={() => handleToggle(user.id, isActive)}
+                  className={`flex items-center gap-1 border-2 border-black px-3 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all disabled:opacity-40 ${isActive ? "bg-[#FFB5E8] text-black" : "bg-[#BFFCC6] text-black"}`}
+                >
+                  {loadingId === user.id ? "..." : isActive ? (
+                    <><UserX className="h-3 w-3" /> Desactivar</>
+                  ) : (
+                    <><UserCheck className="h-3 w-3" /> Activar</>
+                  )}
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 border-4 border-black bg-white shadow-[4px_4px_0_#000]">
+            <Users className="h-10 w-10 text-black/20" />
+            <p className="mt-3 text-sm font-bold text-black/40">Sin resultados</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto hidden lg:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase tracking-wider font-black text-black">
@@ -145,7 +211,6 @@ export function UsersClient({ users }: { users: User[] }) {
           <tbody>
             {filtered.map((user) => {
               const isActive = !user.deletedAt;
-              const biz = user.businesses[0];
               return (
                 <tr key={user.id} className={`border-b-2 border-black/10 transition-colors ${!isActive ? "opacity-50" : "hover:bg-[#FFFAEB]"}`}>
                   <td className="px-6 py-4">
@@ -166,17 +231,22 @@ export function UsersClient({ users }: { users: User[] }) {
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    {biz ? (
-                      <Link
-                        href={`${ADMIN_SECRET_PATH}/businesses/${biz.id}`}
-                        className="flex items-center gap-1.5 hover:underline"
-                      >
-                        <Building2 className="h-3 w-3 text-black/40" />
-                        <span className="text-sm font-bold text-black">{biz.name}</span>
-                      </Link>
-                    ) : (
-                      <span className="text-xs font-bold text-black/30">Sin negocio</span>
-                    )}
+                    {(() => {
+                      const ownerBiz = user.businesses[0];
+                      const staffBiz = user.staff[0]?.business;
+                      const linkedBiz = ownerBiz || staffBiz;
+                      const isViaStaff = !ownerBiz && !!staffBiz;
+                      if (linkedBiz) {
+                        return (
+                          <Link href={`${ADMIN_SECRET_PATH}/businesses/${linkedBiz.id}`} className="flex items-center gap-1.5 hover:underline">
+                            <Building2 className="h-3 w-3 text-black/40" />
+                            <span className="text-sm font-bold text-black">{linkedBiz.name}</span>
+                            {isViaStaff && <span className="border border-black/30 bg-black/5 px-1.5 py-0.5 text-[10px] font-black uppercase text-black/50">Staff</span>}
+                          </Link>
+                        );
+                      }
+                      return <span className="text-xs font-bold text-black/30">Sin negocio</span>;
+                    })()}
                   </td>
                   <td className="px-4 py-4">
                     <span className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
@@ -216,3 +286,4 @@ export function UsersClient({ users }: { users: User[] }) {
     </div>
   );
 }
+

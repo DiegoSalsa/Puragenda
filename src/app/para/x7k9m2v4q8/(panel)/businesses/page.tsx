@@ -16,6 +16,19 @@ export default async function BusinessesPage() {
           trialEndsAt: true,
         },
       },
+      affiliate: {
+        select: {
+          referralCode: true,
+          paidReferrals: true,
+          _count: { select: { referredBusinesses: true } },
+        },
+      },
+      referredByAffiliate: {
+        select: {
+          referralCode: true,
+          business: { select: { name: true } },
+        },
+      },
       _count: {
         select: { staff: true, services: true, appointments: true },
       },

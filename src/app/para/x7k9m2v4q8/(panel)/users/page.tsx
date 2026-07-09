@@ -18,6 +18,12 @@ export default async function UsersPage() {
         select: { id: true, name: true, slug: true },
         take: 1,
       },
+      staff: {
+        select: {
+          business: { select: { id: true, name: true, slug: true } },
+        },
+        take: 1,
+      },
     },
   });
 
