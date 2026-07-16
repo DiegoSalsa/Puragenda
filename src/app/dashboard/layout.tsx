@@ -7,6 +7,8 @@ import { cookies } from "next/headers";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
 import { DashboardTutorial } from "@/components/dashboard/tutorial";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
+import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
+import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 
 export default async function DashboardLayout({
   children,
@@ -41,27 +43,30 @@ export default async function DashboardLayout({
   }
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
+  const isDemoAccount =
+    business?.slug?.toLowerCase().includes("esteticabella") ||
+    business?.slug?.toLowerCase().includes("estetica-bella") ||
+    user.email.toLowerCase().includes("esteticabella") ||
+    user.email.toLowerCase().includes("diego");
+  const shouldShowChangelogPopup = isDemoAccount || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
-    <div className="flex fixed inset-0 overflow-hidden bg-background">
-      <DashboardSidebar
-        userName={user.name}
-        widgetSlug={business?.slug}
-        userRole={user.role}
-      />
-      <main id="tutorial-main" className="flex-1 overflow-auto">
-        <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
-      </main>
-      <DashboardTutorial userEmail={user.email} />
-      <ChangelogPopup
-        seenVersion={changelogSeenVersion}
-        isDemoAccount={
-          business?.slug?.toLowerCase().includes("esteticabella") ||
-          business?.slug?.toLowerCase().includes("estetica-bella") ||
-          user.email.toLowerCase().includes("esteticabella") ||
-          user.email.toLowerCase().includes("diego")
-        }
-      />
-    </div>
+    <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
+      <div className="flex fixed inset-0 overflow-hidden bg-background">
+        <DashboardSidebar
+          userName={user.name}
+          widgetSlug={business?.slug}
+          userRole={user.role}
+        />
+        <main id="tutorial-main" className="flex-1 overflow-auto">
+          <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
+        </main>
+        <DashboardTutorial userEmail={user.email} />
+        <ChangelogPopup
+          seenVersion={changelogSeenVersion}
+          isDemoAccount={isDemoAccount}
+        />
+      </div>
+    </DashboardOverlayProvider>
   );
 }

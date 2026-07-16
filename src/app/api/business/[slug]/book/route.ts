@@ -1,6 +1,6 @@
 import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
 import { getServiceByIdAndBusiness } from "@/server/services/service.service";
-import { createAppointment } from "@/server/services/appointment.service";
+import { checkAppointmentCollision, createAppointment } from "@/server/services/appointment.service";
 import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
@@ -31,7 +31,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId, rewardCode } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId, staffAssignments, rewardCode } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -85,18 +85,114 @@ export async function POST(
       );
     }
 
-    // Calculate totals for multi-service
+    // Calculate totals from canonical service data, including configurable options.
     let totalDuration = service.duration;
     let totalPrice = service.price;
+    const selectedOptionIdSet = new Set(selectedOptionAlternativeIds);
+    const matchedOptionIds = new Set<string>();
+    const serviceTotals = new Map<string, { duration: number; price: number }>();
+    const selectedOptionsSnapshot: {
+      serviceId: string;
+      serviceName: string;
+      categoryId: string;
+      categoryName: string;
+      alternativeId: string;
+      alternativeName: string;
+      priceDelta: number;
+      durationDelta: number;
+    }[] = [];
+    const allSelectedServices = [service];
+    serviceTotals.set(service.id, { duration: service.duration, price: service.price });
 
     if (additionalIds.length > 0) {
       const additionalServices = await prisma.service.findMany({
         where: { id: { in: additionalIds }, businessId: business.id },
+        include: {
+          optionCategories: {
+            orderBy: { position: "asc" },
+            include: { alternatives: { orderBy: { position: "asc" } } },
+          },
+        },
       });
+
+      if (additionalServices.length !== additionalIds.length) {
+        return Response.json(
+          { error: "Uno o mas servicios seleccionados no pertenecen a este negocio" },
+          { status: 400 }
+        );
+      }
+
       for (const s of additionalServices) {
         totalDuration += s.duration;
         totalPrice += s.price;
+        allSelectedServices.push(s);
+        serviceTotals.set(s.id, { duration: s.duration, price: s.price });
       }
+    }
+
+    for (const currentService of allSelectedServices) {
+      for (const category of currentService.optionCategories) {
+        const selectedAlternatives = category.alternatives.filter((alt) =>
+          selectedOptionIdSet.has(alt.id)
+        );
+
+        if (selectedAlternatives.length > 1) {
+          return Response.json(
+            { error: `Selecciona solo una alternativa para ${category.name}` },
+            { status: 400 }
+          );
+        }
+
+        if (category.isRequired && selectedAlternatives.length === 0) {
+          return Response.json(
+            { error: `Debes seleccionar una alternativa para ${category.name}` },
+            { status: 400 }
+          );
+        }
+
+        const alternative = selectedAlternatives[0];
+        if (!alternative) continue;
+
+        matchedOptionIds.add(alternative.id);
+        totalDuration += alternative.durationDelta;
+        totalPrice += alternative.priceDelta;
+        const currentTotals = serviceTotals.get(currentService.id) ?? { duration: currentService.duration, price: currentService.price };
+        serviceTotals.set(currentService.id, {
+          duration: currentTotals.duration + alternative.durationDelta,
+          price: currentTotals.price + alternative.priceDelta,
+        });
+        selectedOptionsSnapshot.push({
+          serviceId: currentService.id,
+          serviceName: currentService.name,
+          categoryId: category.id,
+          categoryName: category.name,
+          alternativeId: alternative.id,
+          alternativeName: alternative.name,
+          priceDelta: alternative.priceDelta,
+          durationDelta: alternative.durationDelta,
+        });
+      }
+    }
+
+    if (matchedOptionIds.size !== selectedOptionIdSet.size) {
+      return Response.json(
+        { error: "Una o mas opciones seleccionadas no son validas para estos servicios" },
+        { status: 400 }
+      );
+    }
+
+    const requestedStart = new Date(startTime);
+    const requestedEnd = new Date(endTime);
+    const hasStaffAssignments = !!staffAssignments && staffAssignments.length > 0;
+    const expectedDuration = hasStaffAssignments
+      ? Math.max(...allSelectedServices.map((s) => serviceTotals.get(s.id)?.duration ?? s.duration))
+      : totalDuration;
+    const expectedEnd = new Date(requestedStart.getTime() + expectedDuration * 60 * 1000);
+    if (Math.abs(requestedEnd.getTime() - expectedEnd.getTime()) > 1000) {
+      return Response.json(
+        { error: "La duracion seleccionada no coincide con las opciones del servicio" },
+        { status: 400 }
+      );
     }
 
     // ── CRM: Upsert Client record ──
@@ -129,19 +225,242 @@ export async function POST(
     }
     const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!business.mpAccessToken;
 
+    if (hasStaffAssignments) {
+      const assignmentServiceIds = new Set(staffAssignments.map((assignment) => assignment.serviceId));
+      if (assignmentServiceIds.size !== allServiceIds.length || allServiceIds.some((id) => !assignmentServiceIds.has(id))) {
+        return Response.json(
+          { error: "Debes asignar un profesional para cada servicio seleccionado" },
+          { status: 400 }
+        );
+      }
+
+      const assignedStaffIds = Array.from(new Set(staffAssignments.map((assignment) => assignment.staffId)));
+      const assignedStaff = await prisma.staff.findMany({
+        where: { id: { in: assignedStaffIds }, businessId: business.id, isActive: true },
+        include: { services: { select: { id: true } } },
+      });
+
+      if (assignedStaff.length !== assignedStaffIds.length) {
+        return Response.json(
+          { error: "Uno o mas profesionales seleccionados no pertenecen a este negocio" },
+          { status: 400 }
+        );
+      }
+
+      const staffById = new Map(assignedStaff.map((staff) => [staff.id, staff]));
+      const serviceById = new Map(allSelectedServices.map((s) => [s.id, s]));
+      const groupedAssignments = new Map<string, typeof staffAssignments>();
+
+      for (const assignment of staffAssignments) {
+        const assigned = staffById.get(assignment.staffId);
+        if (!assigned) continue;
+        const assignedServiceIds = assigned.services.map((s) => s.id);
+        const canPerform = assignedServiceIds.length === 0 || assignedServiceIds.includes(assignment.serviceId);
+        if (!canPerform) {
+          return Response.json(
+            { error: "Uno o mas profesionales no pueden realizar el servicio asignado" },
+            { status: 400 }
+          );
+        }
+        groupedAssignments.set(assignment.staffId, [...(groupedAssignments.get(assignment.staffId) ?? []), assignment]);
+      }
+
+      for (const [assignedStaffId, assignments] of groupedAssignments) {
+        const groupServices = assignments
+          .map((assignment) => serviceById.get(assignment.serviceId))
+          .filter((s): s is NonNullable<typeof s> => Boolean(s));
+        const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
+        const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
+        const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
+          business.id,
+          requestedStart,
+          groupEnd,
+          assignedStaffId
+        );
+
+        if (hasCollision) {
+          return Response.json(
+            { error: `Ya existe una cita en ese horario (cliente: ${conflictingAppointment?.customerName}). Por favor selecciona otro horario.` },
+            { status: 409 }
+          );
+        }
+
+        const blockCollision = await prisma.scheduleBlock.findFirst({
+          where: {
+            staffId: assignedStaffId,
+            startTime: { lt: groupEnd },
+            endTime: { gt: requestedStart },
+          },
+        });
+
+        if (blockCollision) {
+          return Response.json(
+            { error: "Uno de los profesionales tiene un bloqueo de horario en ese rango. Por favor selecciona otro horario." },
+            { status: 409 }
+          );
+        }
+      }
+
+      const createdAppointments = [];
+
+      for (const [assignedStaffId, assignments] of groupedAssignments) {
+        const groupServices = assignments
+          .map((assignment) => serviceById.get(assignment.serviceId))
+          .filter((s): s is NonNullable<typeof s> => Boolean(s));
+        const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
+        const groupPrice = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.price ?? s.price), 0);
+        const groupDeposit = groupServices.reduce((sum, s) => sum + (s.depositAmount || 0), 0);
+        const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
+        const groupPrimary = groupServices[0];
+
+        const result = await createAppointment({
+          customerName,
+          customerEmail,
+          customerPhone,
+          startTime: requestedStart,
+          endTime: groupEnd,
+          businessId: business.id,
+          serviceId: groupPrimary.id,
+          staffId: assignedStaffId,
+          additionalServiceIds: groupServices.slice(1).map((s) => s.id),
+          totalDuration: groupDuration,
+          totalPrice: groupPrice,
+          selectedOptions: selectedOptionsSnapshot.filter((option) => assignments.some((assignment) => assignment.serviceId === option.serviceId)),
+          clientId: client.id,
+          depositRequired,
+          depositAmount: groupDeposit,
+        });
+
+        if (!result.success) {
+          return Response.json({ error: result.error }, { status: 409 });
+        }
+
+        createdAppointments.push(result.appointment);
+      }
+
+      let paymentUrl: string | null = null;
+
+      if (depositRequired && business.mpAccessToken) {
+        try {
+          const mpClient = new MercadoPagoConfig({
+            accessToken: business.mpAccessToken,
+          });
+
+          const preference = new Preference(mpClient);
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+          const primaryAppointmentId = createdAppointments[0].id;
+
+          const prefResult = await preference.create({
+            body: {
+              items: [
+                {
+                  id: primaryAppointmentId,
+                  title: `Abono - Reserva multiple en ${business.name}`,
+                  description: `Reserva para ${customerName} (${createdAppointments.length} profesionales)`,
+                  quantity: 1,
+                  unit_price: totalDepositAmount,
+                  currency_id: "CLP",
+                },
+              ],
+              back_urls: {
+                success: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${primaryAppointmentId}&status=approved`,
+                failure: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${primaryAppointmentId}&status=rejected`,
+                pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${primaryAppointmentId}&status=pending`,
+              },
+              ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
+              external_reference: primaryAppointmentId,
+              notification_url: `${baseUrl}/api/webhooks/deposit`,
+              statement_descriptor: "PURAGENDA",
+            },
+          });
+
+          paymentUrl = prefResult.init_point || prefResult.sandbox_init_point || null;
+
+          if (!paymentUrl) {
+            throw new Error("MercadoPago no devolvio un link de pago");
+          }
+
+          await prisma.appointment.updateMany({
+            where: { id: { in: createdAppointments.map((appointment) => appointment.id) } },
+            data: { mpPreferenceId: prefResult.id || null },
+          });
+        } catch (err) {
+          console.error("[Book] Error creating MP preference for multi-staff booking:", err);
+          await prisma.appointment.updateMany({
+            where: { id: { in: createdAppointments.map((appointment) => appointment.id) } },
+            data: { status: "CANCELLED", paymentStatus: "REJECTED" },
+          });
+          return Response.json(
+            { error: "No se pudo generar el link de pago. Intenta nuevamente." },
+            { status: 502 }
+          );
+        }
+      }
+
+      if (!depositRequired) {
+        for (const appointment of createdAppointments) {
+          const appointmentWithRelations = await prisma.appointment.findUnique({
+            where: { id: appointment.id },
+            include: {
+              service: true,
+              staff: true,
+              business: { include: { owner: { select: { email: true, name: true } } } },
+            },
+          });
+          if (appointmentWithRelations) {
+            await sendBookingNotifications(appointmentWithRelations);
+          }
+        }
+      }
+
+      if (rewardCode) {
+        try {
+          const loyaltyCode = await prisma.loyaltyCode.findUnique({
+            where: { code: rewardCode },
+            include: { client: { select: { email: true } } },
+          });
+
+          if (
+            loyaltyCode &&
+            !loyaltyCode.isUsed &&
+            loyaltyCode.businessId === business.id &&
+            loyaltyCode.client.email.toLowerCase() === customerEmail.toLowerCase()
+          ) {
+            await prisma.loyaltyCode.update({
+              where: { id: loyaltyCode.id },
+              data: { isUsed: true },
+            });
+          }
+        } catch (err) {
+          console.error("[Book] Error redeeming reward code:", err);
+        }
+      }
+
+      return Response.json(
+        {
+          ...createdAppointments[0],
+          relatedAppointments: createdAppointments,
+          depositRequired,
+          paymentUrl,
+        },
+        { status: 201 }
+      );
+    }
+
     // Create appointment with collision detection
     const result = await createAppointment({
       customerName,
       customerEmail,
       customerPhone,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
+      startTime: requestedStart,
+      endTime: expectedEnd,
       businessId: business.id,
       serviceId: service.id,
       staffId,
       additionalServiceIds: additionalIds,
-      totalDuration: allServiceIds.length > 1 ? totalDuration : undefined,
-      totalPrice: allServiceIds.length > 1 ? totalPrice : undefined,
+      totalDuration,
+      totalPrice,
+      selectedOptions: selectedOptionsSnapshot,
       clientId: client.id,
       depositRequired,
       depositAmount: totalDepositAmount,
@@ -180,14 +499,18 @@ export async function POST(
               failure: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=rejected`,
               pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=pending`,
             },
-            auto_return: "approved",
+            ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
             external_reference: result.appointment.id,
             notification_url: `${baseUrl}/api/webhooks/deposit`,
             statement_descriptor: "PURAGENDA",
           },
         });
 
-        paymentUrl = prefResult.init_point || null;
+        paymentUrl = prefResult.init_point || prefResult.sandbox_init_point || null;
+
+        if (!paymentUrl) {
+          throw new Error("MercadoPago no devolvio un link de pago");
+        }
 
         // Save preference ID
         await prisma.appointment.update({
@@ -196,6 +519,14 @@ export async function POST(
         });
       } catch (err) {
         console.error("[Book] Error creating MP preference:", err);
+        await prisma.appointment.update({
+          where: { id: result.appointment.id },
+          data: { status: "CANCELLED", paymentStatus: "REJECTED" },
+        });
+        return Response.json(
+          { error: "No se pudo generar el link de pago. Intenta nuevamente." },
+          { status: 502 }
+        );
         // Don't block booking if preference creation fails — appointment is still created
       }
     }

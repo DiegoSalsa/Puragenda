@@ -10,6 +10,7 @@ interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
   serviceName: string; staffName: string;
+  selectedOptions?: { categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
   recurringBookingId?: string | null;
   clientNotes?: string | null;
 }
@@ -354,6 +355,16 @@ export function WeeklyCalendar({
                 <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Hora:</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
                 <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Servicio:</span><span>{selected.serviceName}</span></div>
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Staff:</span><span>{selected.staffName}</span></div>
+                {(selected.selectedOptions?.length ?? 0) > 0 && (
+                  <div className="space-y-1 border-t border-border pt-3">
+                    {selected.selectedOptions!.map((option) => (
+                      <div key={`${option.categoryName}-${option.alternativeName}`} className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">{option.categoryName}:</span>
+                        <span className="font-medium text-right">{option.alternativeName}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Client private notes (CRM Light) */}

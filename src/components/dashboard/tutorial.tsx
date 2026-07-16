@@ -2,13 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import { driver } from "driver.js";
+import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import "driver.js/dist/driver.css";
 
 export function DashboardTutorial({ userEmail }: { userEmail: string }) {
   const initialized = useRef(false);
+  const { isChangelogOpen } = useDashboardOverlay();
 
   useEffect(() => {
     if (initialized.current) return;
+    if (isChangelogOpen) return;
     initialized.current = true;
 
     const hasSeen = localStorage.getItem("hasSeenTutorial_general");
@@ -79,7 +82,7 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
       driverObj.drive();
     }, 500);
 
-  }, [userEmail]);
+  }, [isChangelogOpen, userEmail]);
 
   return null;
 }

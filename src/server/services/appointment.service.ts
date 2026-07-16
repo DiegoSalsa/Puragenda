@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import type { Prisma } from "@prisma/client";
 
 /**
  * Verifica si existe una cita que colisione con el rango de tiempo dado
@@ -59,6 +60,7 @@ export async function createAppointment(data: {
   additionalServiceIds?: string[];
   totalDuration?: number;
   totalPrice?: number;
+  selectedOptions?: Prisma.InputJsonValue;
   depositRequired?: boolean;
   depositAmount?: number;
 }) {
@@ -112,6 +114,7 @@ export async function createAppointment(data: {
       additionalServiceIds: data.additionalServiceIds || [],
       totalDuration: data.totalDuration,
       totalPrice: data.totalPrice,
+      selectedOptions: data.selectedOptions,
       depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",
     },

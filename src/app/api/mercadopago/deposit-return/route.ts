@@ -34,10 +34,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${baseUrl}?error=not_found`);
     }
 
+    const relatedAppointments = appointment.mpPreferenceId
+      ? await prisma.appointment.findMany({
+          where: {
+            businessId: appointment.businessId,
+            mpPreferenceId: appointment.mpPreferenceId,
+          },
+          select: { id: true },
+        })
+      : [{ id: appointmentId }];
+    const relatedAppointmentIds = relatedAppointments.map((item) => item.id);
+
     if (status === "approved" && paymentId) {
-      // Mark appointment as paid and confirmed
-      await prisma.appointment.update({
-        where: { id: appointmentId },
+      // Mark appointment group as paid and confirmed
+      await prisma.appointment.updateMany({
+        where: { id: { in: relatedAppointmentIds } },
         data: {
           paymentStatus: "APPROVED",
           mpPaymentId: paymentId,
@@ -46,8 +57,8 @@ export async function GET(request: NextRequest) {
       });
 
       // Send email notifications (owner, staff, client)
-      const fullAppointment = await prisma.appointment.findUnique({
-        where: { id: appointmentId },
+      const fullAppointments = await prisma.appointment.findMany({
+        where: { id: { in: relatedAppointmentIds } },
         include: {
           service: true,
           staff: true,
@@ -56,7 +67,7 @@ export async function GET(request: NextRequest) {
           },
         },
       });
-      if (fullAppointment) {
+      for (const fullAppointment of fullAppointments) {
         await sendDepositConfirmedNotifications(fullAppointment);
       }
 
@@ -65,9 +76,9 @@ export async function GET(request: NextRequest) {
       successUrl.searchParams.set("payment", "success");
       return NextResponse.redirect(successUrl.toString());
     } else if (status === "rejected") {
-      // Mark as rejected
-      await prisma.appointment.update({
-        where: { id: appointmentId },
+      // Mark appointment group as rejected
+      await prisma.appointment.updateMany({
+        where: { id: { in: relatedAppointmentIds } },
         data: {
           paymentStatus: "REJECTED",
           mpPaymentId: paymentId || null,

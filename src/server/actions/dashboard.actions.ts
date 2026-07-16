@@ -402,6 +402,102 @@ export async function removeBusinessLogoAction() {
   return { success: true };
 }
 
+const DASHBOARD_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const DASHBOARD_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
+
+async function uploadDashboardImage(file: File | null, folder: string, publicId: string, size = 640) {
+  if (!file || file.size === 0) return { error: "No se recibio ninguna imagen" };
+  if (!DASHBOARD_IMAGE_TYPES.includes(file.type)) {
+    return { error: "Formato no soportado. Usa PNG, JPG o WebP." };
+  }
+  if (file.size > DASHBOARD_IMAGE_MAX_SIZE) {
+    return { error: "La imagen es muy pesada. Maximo 5MB." };
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+  const { cloudinary } = await import("@/server/lib/cloudinary");
+  const result = await cloudinary.uploader.upload(base64, {
+    folder,
+    public_id: publicId,
+    overwrite: true,
+    transformation: [
+      {
+        width: size,
+        height: size,
+        crop: "fill",
+        gravity: "center",
+      },
+    ],
+    fetch_format: "auto",
+    quality: "auto",
+  });
+
+  return { success: true, url: result.secure_url };
+}
+
+export async function uploadServiceImageAssetAction(formData: FormData) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const file = formData.get("image") as File | null;
+  try {
+    return await uploadDashboardImage(
+      file,
+      "puragenda_services",
+      `business_${business.id}_service_${crypto.randomUUID()}`
+    );
+  } catch (err) {
+    console.error("Service image upload error:", err);
+    return { error: "Error al subir la imagen." };
+  }
+}
+
+export async function updateStaffImageAction(staffId: string, formData: FormData) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
+  if (!staff) return { error: "Profesional no encontrado" };
+
+  const file = formData.get("image") as File | null;
+  try {
+    const result = await uploadDashboardImage(file, "puragenda_staff", `staff_${staffId}`);
+    if (result.error || !result.url) return result;
+
+    await prisma.staff.update({ where: { id: staffId }, data: { imageUrl: result.url } });
+    revalidatePath("/dashboard/staff");
+    revalidatePath(`/widget/${business.slug}`);
+    return { success: true, url: result.url };
+  } catch (err) {
+    console.error("Staff image upload error:", err);
+    return { error: "Error al subir la imagen." };
+  }
+}
+
+export async function removeStaffImageAction(staffId: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
+  if (!staff) return { error: "Profesional no encontrado" };
+
+  await prisma.staff.update({ where: { id: staffId }, data: { imageUrl: null } });
+  revalidatePath("/dashboard/staff");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 // â”€â”€â”€ Schedule Blocks (Breaks / Manual Blocks) â”€â”€â”€
 
 export async function createScheduleBlockAction(data: {

@@ -1,4 +1,30 @@
 import { prisma } from "@/server/db/prisma";
+import type { ServiceInput } from "@/server/validations/booking";
+
+const serviceOptionsInclude = {
+  optionCategories: {
+    orderBy: { position: "asc" as const },
+    include: {
+      alternatives: { orderBy: { position: "asc" as const } },
+    },
+  },
+};
+
+function buildOptionCategoryCreates(optionCategories: ServiceInput["optionCategories"]) {
+  return optionCategories.map((category, categoryIndex) => ({
+    name: category.name,
+    isRequired: category.isRequired,
+    position: categoryIndex,
+    alternatives: {
+      create: category.alternatives.map((alternative, alternativeIndex) => ({
+        name: alternative.name,
+        priceDelta: alternative.priceDelta,
+        durationDelta: alternative.durationDelta,
+        position: alternativeIndex,
+      })),
+    },
+  }));
+}
 
 /**
  * Get all services for a business.
@@ -8,6 +34,7 @@ export async function getServicesByBusinessId(businessId: string) {
     where: { businessId },
     orderBy: { name: "asc" },
     include: {
+      ...serviceOptionsInclude,
       recurringPlan: true,
       _count: { select: { recurringBookings: true } },
     },
@@ -23,6 +50,7 @@ export async function getServiceByIdAndBusiness(
 ) {
   return prisma.service.findFirst({
     where: { id: serviceId, businessId },
+    include: serviceOptionsInclude,
   });
 }
 
@@ -32,12 +60,23 @@ export async function getServiceByIdAndBusiness(
 export async function createService(data: {
   name: string;
   description: string;
+  imageUrl?: string | null;
   duration: number;
   price: number;
   depositAmount?: number;
   businessId: string;
+  optionCategories?: ServiceInput["optionCategories"];
 }) {
-  return prisma.service.create({ data: { ...data, depositAmount: data.depositAmount ?? 0 } });
+  const { optionCategories = [], ...serviceData } = data;
+
+  return prisma.service.create({
+    data: {
+      ...serviceData,
+      depositAmount: serviceData.depositAmount ?? 0,
+      optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
+    },
+    include: serviceOptionsInclude,
+  });
 }
 
 /**
@@ -45,11 +84,41 @@ export async function createService(data: {
  */
 export async function updateService(
   serviceId: string,
-  data: { name?: string; description?: string; duration?: number; price?: number; depositAmount?: number }
+  data: { name?: string; description?: string; imageUrl?: string | null; duration?: number; price?: number; depositAmount?: number; optionCategories?: ServiceInput["optionCategories"] }
+) {
+  const { optionCategories, ...serviceData } = data;
+
+  if (optionCategories === undefined) {
+    return prisma.service.update({
+      where: { id: serviceId },
+      data: serviceData,
+      include: serviceOptionsInclude,
+    });
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.serviceOptionCategory.deleteMany({ where: { serviceId } });
+
+    return tx.service.update({
+      where: { id: serviceId },
+      data: {
+        ...serviceData,
+        optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
+      },
+      include: serviceOptionsInclude,
+    });
+  });
+}
+
+export async function updateServiceImage(
+  serviceId: string,
+  businessId: string,
+  imageUrl: string | null
 ) {
   return prisma.service.update({
-    where: { id: serviceId },
-    data,
+    where: { id: serviceId, businessId },
+    data: { imageUrl },
+    include: serviceOptionsInclude,
   });
 }
 

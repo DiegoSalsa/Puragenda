@@ -9,6 +9,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.3.0",
+    date: "2026-07-16",
+    title: "Servicios, Imagenes y Analitica",
+    description:
+      "Esta actualizacion permite vender servicios con opciones variables, mostrar fotos en servicios y profesionales, y entender mejor el rendimiento semanal o mensual del negocio.",
+    features: [
+      "Nueva pagina de Analitica con resumen semanal o mensual, ingresos estimados, citas, ticket promedio y horas reservadas.",
+      "Los servicios ahora pueden tener categorias de opciones, como tamano de mascota, tipo de atencion o extras del servicio.",
+      "Cada alternativa puede sumar precio y minutos a la reserva, manteniendo visible el total antes de elegir horario.",
+      "El dashboard permite subir fotos optimizadas para servicios y profesionales.",
+      "El widget publico muestra un paso de opciones antes del calendario cuando el servicio lo necesita.",
+      "La disponibilidad usa la duracion total del servicio, incluyendo extras, para evitar choques de horario.",
+      "Las reservas guardan el historial de opciones elegidas por el cliente.",
+      "El widget muestra imagenes de servicios y profesionales para que la experiencia de reserva sea mas clara.",
+    ],
+    fixes: [
+      "Se corrigio el guardado de imagenes para que al presionar Guardar cambios no se borren accidentalmente.",
+      "Se corrigio la carga de fotos de profesionales cuando el input se limpiaba despues de subir la imagen.",
+      "Se reforzo la compatibilidad de base de datos para cuentas que aun no tenian las nuevas columnas aplicadas.",
+    ],
+  },
+  {
     version: "v1.2.0",
     date: "2026-07-01",
     title: "Agenda de Equipo y Roles",

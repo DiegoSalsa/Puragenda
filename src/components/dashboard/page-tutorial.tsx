@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { driver, DriveStep } from "driver.js";
+import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import "driver.js/dist/driver.css";
 
 interface PageTutorialProps {
@@ -13,9 +14,11 @@ interface PageTutorialProps {
 
 export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: PageTutorialProps) {
   const initialized = useRef(false);
+  const { isChangelogOpen } = useDashboardOverlay();
 
   useEffect(() => {
     if (initialized.current) return;
+    if (isChangelogOpen) return;
     
     // Check if it's already seen
     const hasSeen = localStorage.getItem(`hasSeenTutorial_${tutorialKey}`);
@@ -63,7 +66,7 @@ export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: Pa
       startDriver();
     }
 
-  }, [tutorialKey, userEmail, steps, dependsOnKey]);
+  }, [isChangelogOpen, tutorialKey, userEmail, steps, dependsOnKey]);
 
   return null;
 }

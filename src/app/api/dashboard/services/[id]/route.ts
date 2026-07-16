@@ -3,8 +3,10 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import {
   getServiceByIdAndBusiness,
   updateService,
+  updateServiceImage,
   deleteService,
 } from "@/server/services/service.service";
+import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
 
 export async function PUT(
@@ -24,30 +26,30 @@ export async function PUT(
     if (!existing) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
 
     const body = await request.json();
-    const { name, description, duration, price, depositAmount } = body;
 
-    const parsedDuration = duration !== undefined ? Number(duration) : undefined;
-    const parsedPrice = price !== undefined ? Number(price) : undefined;
-    const parsedDeposit = depositAmount !== undefined ? Math.max(0, Math.floor(Number(depositAmount) || 0)) : undefined;
+    if (Object.keys(body).length === 1 && "imageUrl" in body) {
+      const parsedImageUrl = body.imageUrl === "" ? null : body.imageUrl;
+      if (parsedImageUrl !== null && typeof parsedImageUrl !== "string") {
+        return Response.json({ error: "URL de imagen invalida" }, { status: 400 });
+      }
 
-    if (parsedDuration !== undefined && Number.isNaN(parsedDuration)) {
-      return Response.json({ error: "Duración inválida" }, { status: 400 });
+      const service = await updateServiceImage(id, business.id, parsedImageUrl);
+      return Response.json(service);
     }
 
-    if (parsedPrice !== undefined && Number.isNaN(parsedPrice)) {
-      return Response.json({ error: "Precio inválido" }, { status: 400 });
-    }
+    const parsed = serviceSchema.safeParse(body);
 
-    if (parsedDeposit !== undefined && (Number.isNaN(parsedDeposit) || parsedDeposit < 0)) {
-      return Response.json({ error: "Monto de abono inválido" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.issues.map((i) => i.message);
+      return Response.json(
+        { error: "Errores de validacion", details: errors },
+        { status: 400 }
+      );
     }
 
     const service = await updateService(id, {
-      ...(name && { name }),
-      ...(description !== undefined && { description }),
-      ...(parsedDuration !== undefined && { duration: parsedDuration }),
-      ...(parsedPrice !== undefined && { price: parsedPrice }),
-      ...(parsedDeposit !== undefined && { depositAmount: parsedDeposit }),
+      ...parsed.data,
+      description: parsed.data.description || "",
     });
 
     return Response.json(service);

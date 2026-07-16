@@ -1,0 +1,2 @@
+-- No-op migration.
+-- The changelog seen state is stored in cookies, so this migration has no database changes.

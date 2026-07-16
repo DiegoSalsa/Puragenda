@@ -330,6 +330,7 @@ model Staff {
   id         String   @id @default(cuid())
   name       String
   email      String?
+  imageUrl   String?
   businessId String
   userId     String?
   isActive   Boolean  @default(true)
@@ -380,6 +381,7 @@ model Service {
   id             String  @id @default(cuid())
   name           String
   description    String?
+  imageUrl       String?
   duration       Int
   price          Float
   depositAmount  Int     @default(0)   // CLP amount for per-service deposit
@@ -390,8 +392,41 @@ model Service {
   staff             Staff[]
   recurringPlan     RecurringPlan?
   recurringBookings RecurringBooking[]
+  optionCategories  ServiceOptionCategory[]
 
   @@index([businessId])
+}
+
+model ServiceOptionCategory {
+  id          String   @id @default(cuid())
+  name        String
+  isRequired  Boolean  @default(false)
+  position    Int      @default(0)
+  serviceId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  service      Service                    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  alternatives ServiceOptionAlternative[]
+
+  @@index([serviceId])
+  @@index([serviceId, position])
+}
+
+model ServiceOptionAlternative {
+  id            String   @id @default(cuid())
+  name          String
+  priceDelta    Float    @default(0)
+  durationDelta Int      @default(0)
+  position      Int      @default(0)
+  categoryId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category ServiceOptionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([categoryId, position])
 }
 
 // ==========================================
@@ -536,6 +571,7 @@ model Appointment {
   additionalServiceIds String[]          @default([])
   totalDuration        Int?
   totalPrice           Float?
+  selectedOptions      Json?
   businessId           String
   serviceId            String
   staffId              String?

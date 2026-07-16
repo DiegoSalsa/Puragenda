@@ -82,7 +82,13 @@ export default async function WidgetPage({
     include: {
       services: {
         orderBy: { name: "asc" },
-        include: { recurringPlan: true },
+        include: {
+          recurringPlan: true,
+          optionCategories: {
+            orderBy: { position: "asc" },
+            include: { alternatives: { orderBy: { position: "asc" } } },
+          },
+        },
       },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
       staff: {
@@ -160,7 +166,18 @@ export default async function WidgetPage({
         fontSize,
       }}
       services={business.services.map((s) => ({
-        id: s.id, name: s.name, description: s.description, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        optionCategories: s.optionCategories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          isRequired: category.isRequired,
+          alternatives: category.alternatives.map((alternative) => ({
+            id: alternative.id,
+            name: alternative.name,
+            priceDelta: alternative.priceDelta,
+            durationDelta: alternative.durationDelta,
+          })),
+        })),
         recurringPlan: s.recurringPlan ? {
           mode: s.recurringPlan.mode as "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM",
           fixedDays: s.recurringPlan.fixedDays,
@@ -183,6 +200,7 @@ export default async function WidgetPage({
       staffMembers={business.staff.map((s) => ({
         id: s.id,
         name: s.name,
+        imageUrl: s.imageUrl,
         serviceIds: s.services.map((sv) => sv.id),
         schedule: s.schedule.map((sc) => ({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,

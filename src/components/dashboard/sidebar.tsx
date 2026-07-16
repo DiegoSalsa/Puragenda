@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ExternalLink, Gift, LayoutDashboard, Mail, Menu, RefreshCw, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
+import { BarChart3, ExternalLink, Gift, LayoutDashboard, Mail, Menu, RefreshCw, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
@@ -14,6 +14,7 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
+  { href: "/dashboard/analytics", label: "Analitica", icon: BarChart3 },
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
   { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
@@ -43,7 +44,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
 
   const visibleItems = navItems.filter((item) => {
     const href = "href" in item ? item.href : item.children?.[0]?.href ?? "";
-    if (userRole === "STAFF" && href !== "/dashboard") return false;
+    if (userRole === "STAFF" && href !== "/dashboard" && href !== "/dashboard/analytics") return false;
     if (userRole === "RECEPTIONIST" && (href === "/dashboard/settings" || href === "/dashboard/referrals" || href === "/dashboard/rewards")) return false;
     return true;
   });

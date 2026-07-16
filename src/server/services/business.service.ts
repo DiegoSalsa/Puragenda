@@ -17,7 +17,15 @@ export async function getBusinessWithServices(slug: string) {
   return prisma.business.findUnique({
     where: { slug },
     include: {
-      services: { orderBy: { name: "asc" } },
+      services: {
+        orderBy: { name: "asc" },
+        include: {
+          optionCategories: {
+            orderBy: { position: "asc" },
+            include: { alternatives: { orderBy: { position: "asc" } } },
+          },
+        },
+      },
       staff: { where: { isActive: true }, orderBy: { name: "asc" } },
     },
   });

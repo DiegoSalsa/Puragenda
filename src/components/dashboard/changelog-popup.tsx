@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
 import { X, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 
@@ -15,9 +16,14 @@ export function ChangelogPopup({ seenVersion, isDemoAccount }: Props) {
   const [open, setOpen] = useState(
     isDemoAccount || seenVersion !== LATEST_CHANGELOG_VERSION
   );
+  const { setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
 
   const latestUpdate = CHANGELOG_DATA[0];
+
+  useEffect(() => {
+    setChangelogOpen(open);
+  }, [open, setChangelogOpen]);
 
   if (!open) return null;
 
@@ -25,8 +31,8 @@ export function ChangelogPopup({ seenVersion, isDemoAccount }: Props) {
     setOpen(false);
     if (!isDemoAccount) {
       await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
+      router.refresh();
     }
-    router.refresh();
   }
 
   async function handleViewDetails() {

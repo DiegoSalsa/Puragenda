@@ -1,12 +1,10 @@
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
-// appointment.service import removed — using direct prisma query for richer includes
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
-import { format, startOfWeek, endOfWeek, addDays, isSameDay, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { addDays, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import Link from "next/link";
-import { Building2, Calendar, Clock, UserCheck, UserRound, Users } from "lucide-react";
+import { Building2, UserRound } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
@@ -17,10 +15,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string }> }) {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión para acceder al dashboard</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion para acceder al dashboard</div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
 
   const agendaScope = await getStaffAgendaScope(user, business);
   const params = await searchParams;
@@ -29,7 +27,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const scopedStaffFilter = agendaScope.canSeeAllAgendas
     ? (showingOwnAgenda ? { staffId: agendaScope.ownStaffId ?? "__no_staff_access__" } : {})
     : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
-  const today = new Date();
 
   function dashboardHref(agenda?: "mine") {
     const query = new URLSearchParams();
@@ -39,16 +36,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     return queryString ? `/dashboard?${queryString}` : "/dashboard";
   }
 
-  // URL-based week navigation
-  let targetDate = today;
+  let targetDate = new Date();
   if (params.date) {
-    try { targetDate = parseISO(params.date); } catch { targetDate = today; }
+    try {
+      targetDate = parseISO(params.date);
+    } catch {
+      targetDate = new Date();
+    }
   }
 
   const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const [weekAppointments, totalServices, businessHours] = await Promise.all([
+  const [weekAppointments, businessHours, pendingRecurring] = await Promise.all([
     prisma.appointment.findMany({
       where: {
         businessId: business.id,
@@ -62,54 +62,54 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       },
       orderBy: { startTime: "asc" },
     }),
-    prisma.service.count({ where: { businessId: business.id } }),
     getBusinessHours(business.id),
+    prisma.recurringBooking.findMany({
+      where: { businessId: business.id, status: "PENDING_APPROVAL", ...scopedStaffFilter },
+      orderBy: { createdAt: "asc" },
+      include: {
+        service: { select: { id: true, name: true } },
+        staff: { select: { id: true, name: true } },
+      },
+    }),
   ]);
-  const todayCount = weekAppointments.filter((a) => isSameDay(new Date(a.startTime), today)).length;
-  const pendingCount = weekAppointments.filter((a) => a.status === "PENDING").length;
-  const checkedInCount = weekAppointments.filter((a) => a.status === "CHECKED_IN").length;
 
-  const serialized = weekAppointments.map((a) => ({
-    id: a.id, customerName: a.customerName, customerEmail: a.customerEmail,
-    startTime: a.startTime.toISOString(), endTime: a.endTime.toISOString(),
-    status: a.status, serviceName: a.service.name, staffName: a.staff?.name || "Sin asignar",
-    recurringBookingId: a.recurringBookingId ?? null,
-    clientNotes: a.client?.privateNotes ?? null,
+  const serialized = weekAppointments.map((appointment) => ({
+    id: appointment.id,
+    customerName: appointment.customerName,
+    customerEmail: appointment.customerEmail,
+    startTime: appointment.startTime.toISOString(),
+    endTime: appointment.endTime.toISOString(),
+    status: appointment.status,
+    serviceName: appointment.service.name,
+    staffName: appointment.staff?.name || "Sin asignar",
+    selectedOptions: (appointment.selectedOptions as { categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[] | null) ?? [],
+    recurringBookingId: appointment.recurringBookingId ?? null,
+    clientNotes: appointment.client?.privateNotes ?? null,
   }));
 
-  // Pending recurring approvals
-  const pendingRecurring = await prisma.recurringBooking.findMany({
-    where: { businessId: business.id, status: "PENDING_APPROVAL", ...scopedStaffFilter },
-    orderBy: { createdAt: "asc" },
-    include: {
-      service: { select: { id: true, name: true } },
-      staff: { select: { id: true, name: true } },
-    },
-  });
-
-  const pendingSerialized = pendingRecurring.map((b) => ({
-    id: b.id,
-    customerName: b.customerName,
-    customerEmail: b.customerEmail,
-    serviceName: b.service.name,
-    staffName: b.staff?.name ?? null,
-    selectedDays: b.selectedDays,
-    selectedTimes: b.selectedTimes as Record<string, string>,
-    startDate: b.startDate.toISOString(),
-    endDate: b.endDate.toISOString(),
-    durationMonths: b.durationMonths,
-    healthAnswers: b.healthAnswers as Record<string, string> | null,
-    healthFreeText: b.healthFreeText,
-    createdAt: b.createdAt.toISOString(),
+  const pendingSerialized = pendingRecurring.map((booking) => ({
+    id: booking.id,
+    customerName: booking.customerName,
+    customerEmail: booking.customerEmail,
+    serviceName: booking.service.name,
+    staffName: booking.staff?.name ?? null,
+    selectedDays: booking.selectedDays,
+    selectedTimes: booking.selectedTimes as Record<string, string>,
+    startDate: booking.startDate.toISOString(),
+    endDate: booking.endDate.toISOString(),
+    durationMonths: booking.durationMonths,
+    healthAnswers: booking.healthAnswers as Record<string, string> | null,
+    healthFreeText: booking.healthFreeText,
+    createdAt: booking.createdAt.toISOString(),
   }));
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Citas</h1>
           <p className="mt-1 text-muted-foreground">
-            Resumen semanal para <span className="font-medium text-[#7C3AED]">{business.name}</span>
+            Calendario de reservas para <span className="font-medium text-[#7C3AED]">{business.name}</span>
           </p>
         </div>
         <div className="flex flex-col items-stretch gap-3 sm:items-end">
@@ -149,33 +149,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <PendingRecurringPanel bookings={pendingSerialized} />
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[
-          { label: "Hoy", value: todayCount, sub: format(today, "EEEE, d MMM", { locale: es }), icon: Calendar },
-          { label: "Pendientes", value: pendingCount, sub: "Por confirmar", icon: Clock },
-          { label: "Asistidos", value: checkedInCount, sub: "Esta semana", icon: UserCheck },
-          { label: "Servicios", value: totalServices, sub: "Activos", icon: Users },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-              <stat.icon className="h-4 w-4 text-muted-foreground/50" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{stat.value}</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">{stat.sub}</p>
-          </div>
-        ))}
-      </div>
-
       <WeeklyCalendar
         appointments={serialized}
         weekStartISO={format(weekStart, "yyyy-MM-dd")}
         agendaMode={showingOwnAgenda ? "mine" : undefined}
-        businessHours={businessHours.map((h) => ({
-          dayOfWeek: h.dayOfWeek,
-          startTime: h.startTime,
-          endTime: h.endTime,
-          isOpen: h.isOpen,
+        businessHours={businessHours.map((hour) => ({
+          dayOfWeek: hour.dayOfWeek,
+          startTime: hour.startTime,
+          endTime: hour.endTime,
+          isOpen: hour.isOpen,
         }))}
       />
 
@@ -187,17 +169,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           {
             popover: {
               title: "CALENDARIO DE CITAS",
-              description: "Aquí verás todas las reservas en tiempo real. Puedes cambiar a vista de mes, semana o día, y ver a todo tu equipo.",
-            }
-          },
-          {
-            element: ".grid-cols-2",
-            popover: {
-              title: "MÉTRICAS RÁPIDAS",
-              description: "Un vistazo a las citas de hoy, pendientes por confirmar, y el rendimiento de la semana.",
-              side: "bottom",
-              align: "start"
-            }
+              description: "Aqui veras todas las reservas en tiempo real. Puedes cambiar a vista de semana o dia y revisar el detalle de cada cita.",
+            },
           },
         ]}
       />

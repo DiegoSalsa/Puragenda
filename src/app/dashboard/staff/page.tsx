@@ -40,6 +40,7 @@ export default async function StaffPage() {
 
   const serialized = staffMembers.map((s) => ({
     id: s.id, name: s.name, email: s.email, isActive: s.isActive,
+    imageUrl: s.imageUrl,
     role: s.user?.role ?? null,
     userId: s.user?.id ?? null,
     isOwner: s.user?.id === business.ownerId,

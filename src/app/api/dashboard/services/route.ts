@@ -38,12 +38,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const parsed = serviceSchema.safeParse({
-      ...body,
-      duration: Number(body.duration),
-      price: Number(body.price),
-      depositAmount: body.depositAmount !== undefined ? Number(body.depositAmount) : 0,
-    });
+    const parsed = serviceSchema.safeParse(body);
 
     if (!parsed.success) {
       const errors = parsed.error.issues.map((i) => i.message);

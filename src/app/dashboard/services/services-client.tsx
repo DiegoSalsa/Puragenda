@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { updateMaxServicesAction } from "@/server/actions/dashboard.actions";
+import { updateMaxServicesAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
 import { createRecurringPlanAction, deleteRecurringPlanAction } from "@/server/actions/recurring.actions";
 
 // ─────────────────────────────────────────────
@@ -25,13 +25,43 @@ interface RecurringPlan {
   expirationWarningDays: number;
 }
 
+interface ServiceOptionAlternative {
+  id: string;
+  name: string;
+  priceDelta: number;
+  durationDelta: number;
+}
+
+interface ServiceOptionCategory {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  alternatives: ServiceOptionAlternative[];
+}
+
+interface OptionAlternativeForm {
+  id?: string;
+  name: string;
+  priceDelta: string;
+  durationDelta: string;
+}
+
+interface OptionCategoryForm {
+  id?: string;
+  name: string;
+  isRequired: boolean;
+  alternatives: OptionAlternativeForm[];
+}
+
 interface Service {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   duration: number;
   price: number;
   depositAmount: number;
+  optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
   _count: { recurringBookings: number };
 }
@@ -78,6 +108,12 @@ const DEFAULT_RECURRING: {
   expirationWarningDays: 7,
 };
 
+const DEFAULT_OPTION_CATEGORY: OptionCategoryForm = {
+  name: "",
+  isRequired: true,
+  alternatives: [{ name: "", priceDelta: "0", durationDelta: "0" }],
+};
+
 // ─────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────
@@ -100,11 +136,15 @@ export function ServicesClient({
   const [saving, setSaving] = useState(false);
   const [maxServices, setMaxServices] = useState(maxServicesPerBooking);
   const [savingMax, setSavingMax] = useState(false);
+  const serviceImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingServiceImage, setUploadingServiceImage] = useState(false);
+  const [serviceImageError, setServiceImageError] = useState("");
 
   // Base service form
   const [form, setForm] = useState({
     name: "",
     description: "",
+    imageUrl: "",
     duration: "",
     price: "",
     depositAmount: "",
@@ -115,6 +155,7 @@ export function ServicesClient({
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [recurringForm, setRecurringForm] = useState({ ...DEFAULT_RECURRING });
   const [newQuestion, setNewQuestion] = useState("");
+  const [optionCategories, setOptionCategories] = useState<OptionCategoryForm[]>([]);
 
   // ──────────────────────────────────────────
   // HELPERS
@@ -142,11 +183,13 @@ export function ServicesClient({
 
   function openCreate() {
     setEditingService(null);
-    setForm({ name: "", description: "", duration: "", price: "", depositAmount: "" });
+    setForm({ name: "", description: "", imageUrl: "", duration: "", price: "", depositAmount: "" });
+    setServiceImageError("");
     setRecurringEnabled(false);
     setRecurringOpen(false);
     setRecurringForm({ ...DEFAULT_RECURRING });
     setNewQuestion("");
+    setOptionCategories([]);
     setDialogOpen(true);
   }
 
@@ -155,10 +198,25 @@ export function ServicesClient({
     setForm({
       name: service.name,
       description: service.description || "",
+      imageUrl: service.imageUrl || "",
       duration: String(service.duration),
       price: String(service.price),
       depositAmount: String(service.depositAmount || 0),
     });
+    setServiceImageError("");
+    setOptionCategories(
+      (service.optionCategories || []).map((category) => ({
+        id: category.id,
+        name: category.name,
+        isRequired: category.isRequired,
+        alternatives: category.alternatives.map((alternative) => ({
+          id: alternative.id,
+          name: alternative.name,
+          priceDelta: String(alternative.priceDelta),
+          durationDelta: String(alternative.durationDelta),
+        })),
+      }))
+    );
     if (service.recurringPlan) {
       setRecurringEnabled(true);
       setRecurringOpen(true);
@@ -191,21 +249,43 @@ export function ServicesClient({
 
     try {
       let serviceId: string;
+      const { imageUrl: _imageUrl, ...formWithoutImage } = form;
+      const payload = {
+        ...(editingService ? formWithoutImage : form),
+        optionCategories: optionCategories
+          .map((category) => ({
+            name: category.name.trim(),
+            isRequired: category.isRequired,
+            alternatives: category.alternatives.map((alternative) => ({
+              name: alternative.name.trim(),
+              priceDelta: alternative.priceDelta,
+              durationDelta: alternative.durationDelta,
+            })),
+          }))
+          .filter((category) => category.name || category.alternatives.some((alternative) => alternative.name)),
+      };
 
       if (editingService) {
-        await fetch(`/api/dashboard/services/${editingService.id}`, {
+        const res = await fetch(`/api/dashboard/services/${editingService.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.details?.join("\n") || data.error || "No se pudo guardar el servicio.");
+        }
         serviceId = editingService.id;
       } else {
         const res = await fetch("/api/dashboard/services", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
         const created = await res.json();
+        if (!res.ok) {
+          throw new Error(created.details?.join("\n") || created.error || "No se pudo crear el servicio.");
+        }
         serviceId = created.id;
       }
 
@@ -243,9 +323,50 @@ export function ServicesClient({
       await fetchServices();
     } catch (error) {
       console.error("Error saving service:", error);
+      alert(error instanceof Error ? error.message : "No se pudo guardar el servicio.");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleServiceImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setServiceImageError("Formato no soportado. Usa PNG, JPG o WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setServiceImageError("La imagen es muy pesada. Maximo 5MB.");
+      return;
+    }
+
+    setUploadingServiceImage(true);
+    setServiceImageError("");
+    const formData = new FormData();
+    formData.append("image", file);
+    const result = await uploadServiceImageAssetAction(formData);
+    if (result.error) {
+      setServiceImageError(result.error);
+    } else if ("url" in result && result.url) {
+      setForm((prev) => ({ ...prev, imageUrl: result.url || "" }));
+      if (editingService) {
+        const res = await fetch(`/api/dashboard/services/${editingService.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: result.url }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setServiceImageError(data.error || "La imagen se subio, pero no se pudo guardar en el servicio.");
+        } else {
+          await fetchServices();
+        }
+      }
+    }
+    setUploadingServiceImage(false);
+    if (serviceImageInputRef.current) serviceImageInputRef.current.value = "";
   }
 
   async function handleDelete(id: string) {
@@ -289,6 +410,74 @@ export function ServicesClient({
       ...prev,
       healthQuestions: prev.healthQuestions.filter((_, i) => i !== index),
     }));
+  }
+
+  function addOptionCategory() {
+    setOptionCategories((prev) => [
+      ...prev,
+      {
+        ...DEFAULT_OPTION_CATEGORY,
+        alternatives: DEFAULT_OPTION_CATEGORY.alternatives.map((alternative) => ({ ...alternative })),
+      },
+    ]);
+  }
+
+  function updateOptionCategory(index: number, patch: Partial<OptionCategoryForm>) {
+    setOptionCategories((prev) =>
+      prev.map((category, i) => (i === index ? { ...category, ...patch } : category))
+    );
+  }
+
+  function removeOptionCategory(index: number) {
+    setOptionCategories((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function addOptionAlternative(categoryIndex: number) {
+    setOptionCategories((prev) =>
+      prev.map((category, i) =>
+        i === categoryIndex
+          ? {
+              ...category,
+              alternatives: [
+                ...category.alternatives,
+                { name: "", priceDelta: "0", durationDelta: "0" },
+              ],
+            }
+          : category
+      )
+    );
+  }
+
+  function updateOptionAlternative(
+    categoryIndex: number,
+    alternativeIndex: number,
+    patch: Partial<OptionAlternativeForm>
+  ) {
+    setOptionCategories((prev) =>
+      prev.map((category, i) =>
+        i === categoryIndex
+          ? {
+              ...category,
+              alternatives: category.alternatives.map((alternative, j) =>
+                j === alternativeIndex ? { ...alternative, ...patch } : alternative
+              ),
+            }
+          : category
+      )
+    );
+  }
+
+  function removeOptionAlternative(categoryIndex: number, alternativeIndex: number) {
+    setOptionCategories((prev) =>
+      prev.map((category, i) =>
+        i === categoryIndex
+          ? {
+              ...category,
+              alternatives: category.alternatives.filter((_, j) => j !== alternativeIndex),
+            }
+          : category
+      )
+    );
   }
 
   return (
@@ -342,7 +531,7 @@ export function ServicesClient({
       {/* Dialog/Modal */}
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl animate-scale-in flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-2xl animate-scale-in flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-border shrink-0">
               <h3 className="text-lg font-semibold">
                 {editingService ? "Editar Servicio" : "Nuevo Servicio"}
@@ -371,6 +560,73 @@ export function ServicesClient({
                     placeholder="Descripcion del servicio..."
                     rows={3}
                     className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                  />
+                </div>
+                <div className="rounded-xl border border-border p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+                      {form.imageUrl ? (
+                        <img src={form.imageUrl} alt="Imagen del servicio" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                      )}
+                      {uploadingServiceImage && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                          <Loader2 className="h-5 w-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div>
+                        <p className="text-sm font-medium">Foto del servicio</p>
+                        <p className="text-xs text-muted-foreground">Se muestra en el widget de reservas.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => serviceImageInputRef.current?.click()}
+                          disabled={uploadingServiceImage}
+                          className="inline-flex items-center gap-2 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          {uploadingServiceImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                          Subir foto
+                        </button>
+                        {form.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setForm((prev) => ({ ...prev, imageUrl: "" }));
+                              if (editingService) {
+                                const res = await fetch(`/api/dashboard/services/${editingService.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ imageUrl: null }),
+                                });
+                                if (!res.ok) {
+                                  const data = await res.json();
+                                  setServiceImageError(data.error || "No se pudo eliminar la foto del servicio.");
+                                } else {
+                                  await fetchServices();
+                                }
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground/60">PNG, JPG o WebP. Maximo 5MB.</p>
+                      {serviceImageError && <p className="text-xs text-red-400">{serviceImageError}</p>}
+                    </div>
+                  </div>
+                  <input
+                    ref={serviceImageInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleServiceImageChange}
+                    className="hidden"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -422,6 +678,110 @@ export function ServicesClient({
                 )}
 
                 {/* ── RESERVAS RECURRENTES ── */}
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium">Opciones del servicio</p>
+                      <p className="text-xs text-muted-foreground">Suma precio y minutos segun lo que elija el cliente.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addOptionCategory}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1.5 text-xs font-medium text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/20"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Categoria
+                    </button>
+                  </div>
+
+                  {optionCategories.length > 0 && (
+                    <div className="space-y-3 border-t border-border bg-muted/20 p-4">
+                      {optionCategories.map((category, categoryIndex) => (
+                        <div key={category.id ?? categoryIndex} className="rounded-xl border border-border bg-background p-3 space-y-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1.5">
+                              <label className="text-xs text-muted-foreground">Categoria</label>
+                              <input
+                                value={category.name}
+                                onChange={(e) => updateOptionCategory(categoryIndex, { name: e.target.value })}
+                                placeholder="Ej: Tamano del perro"
+                                className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
+                              />
+                            </div>
+                            <label className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                checked={category.isRequired}
+                                onChange={(e) => updateOptionCategory(categoryIndex, { isRequired: e.target.checked })}
+                                className="h-3.5 w-3.5 rounded accent-[#7C3AED]"
+                              />
+                              Obligatoria
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeOptionCategory(categoryIndex)}
+                              className="mt-5 rounded-lg p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="hidden sm:grid sm:grid-cols-[1fr_96px_96px_32px] gap-2 px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                              <span>Alternativa</span>
+                              <span>Precio +</span>
+                              <span>Min +</span>
+                              <span />
+                            </div>
+                            {category.alternatives.map((alternative, alternativeIndex) => (
+                              <div key={alternative.id ?? alternativeIndex} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_96px_96px_32px]">
+                                <input
+                                  value={alternative.name}
+                                  onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { name: e.target.value })}
+                                  placeholder="Ej: Mediano"
+                                  className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
+                                />
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={alternative.priceDelta}
+                                  onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { priceDelta: e.target.value })}
+                                  aria-label="Precio adicional"
+                                  className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
+                                />
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={alternative.durationDelta}
+                                  onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { durationDelta: e.target.value })}
+                                  aria-label="Minutos adicionales"
+                                  className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeOptionAlternative(categoryIndex, alternativeIndex)}
+                                  disabled={category.alternatives.length <= 1}
+                                  className="rounded-lg p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => addOptionAlternative(categoryIndex)}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#7C3AED] hover:bg-[#7C3AED]/10"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Alternativa
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="rounded-xl border border-border overflow-hidden">
                   {/* Header — click to expand/collapse, toggle to activate/deactivate */}
                   <div className="flex w-full items-center justify-between px-4 py-3">
@@ -767,11 +1127,13 @@ export function ServicesClient({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+                    <th className="pb-3 pr-4">Foto</th>
                     <th className="pb-3 pr-4">Nombre</th>
                     <th className="pb-3 pr-4">Descripción</th>
                     <th className="pb-3 pr-4">Duración</th>
                     <th className="pb-3 pr-4">Precio</th>
                     {depositEnabled && <th className="pb-3 pr-4">Abono</th>}
+                    <th className="pb-3 pr-4">Opciones</th>
                     <th className="pb-3 pr-4">Recurrente</th>
                     <th className="pb-3 text-right">Acciones</th>
                   </tr>
@@ -782,6 +1144,15 @@ export function ServicesClient({
                       key={service.id}
                       className="border-b border-border/50 transition-colors hover:bg-muted/50"
                     >
+                      <td className="py-3.5 pr-4">
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+                          {service.imageUrl ? (
+                            <img src={service.imageUrl} alt={service.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3.5 pr-4 font-medium">
                         {service.name}
                       </td>
@@ -808,6 +1179,15 @@ export function ServicesClient({
                           )}
                         </td>
                       )}
+                      <td className="py-3.5 pr-4">
+                        {(service.optionCategories?.length ?? 0) > 0 ? (
+                          <span className="inline-flex items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            {service.optionCategories.length} categoria(s)
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </td>
                       <td className="py-3.5 pr-4">
                         {service.recurringPlan ? (
                           <span className="inline-flex items-center gap-1 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">

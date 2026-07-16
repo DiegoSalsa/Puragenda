@@ -21,10 +21,12 @@ interface RecurringPlan {
   expirationWarningDays: number;
 }
 
-interface Service { id: string; name: string; description: string | null; duration: number; price: number; depositAmount: number; recurringPlan: RecurringPlan | null; }
+interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; }
+interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; alternatives: ServiceOptionAlternative[]; }
+interface Service { id: string; name: string; description: string | null; imageUrl: string | null; duration: number; price: number; depositAmount: number; optionCategories: ServiceOptionCategory[]; recurringPlan: RecurringPlan | null; }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
-interface StaffMember { id: string; name: string; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
+interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
 interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
@@ -42,9 +44,10 @@ interface Props {
   minAdvanceBookingMinutes?: number;
 }
 
-type Step = "service" | "mode-select" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
+type Step = "service" | "mode-select" | "options" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
 type FormState = { name: string; email: string; phone: string };
-type BlockedSlot = { startTime: string; endTime: string };
+type BlockedSlot = { startTime: string; endTime: string; staffId?: string };
+type StaffAssignment = { serviceId: string; staffId: string };
 
 const WEEK_DAYS = [
   { value: 1, label: "Lu" }, { value: 2, label: "Ma" }, { value: 3, label: "Mi" },
@@ -118,6 +121,31 @@ function isStaffWorkingOnDay(staff: StaffMember, dow: number): boolean {
   return entry ? entry.isWorking : false;
 }
 
+function timeToMinutes(date: Date) {
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function scheduleTimeToMinutes(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function canStaffPerformService(staff: StaffMember, serviceId: string) {
+  return !staff.serviceIds || staff.serviceIds.length === 0 || staff.serviceIds.includes(serviceId);
+}
+
+function canStaffPerformAllServices(staff: StaffMember, serviceIds: string[]) {
+  return serviceIds.every((serviceId) => canStaffPerformService(staff, serviceId));
+}
+
+function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: Date }) {
+  if (staff.schedule.length === 0) return true;
+  const entry = staff.schedule.find((s) => s.dayOfWeek === slot.start.getDay());
+  if (!entry?.isWorking) return false;
+  return timeToMinutes(slot.start) >= scheduleTimeToMinutes(entry.startTime) &&
+    timeToMinutes(slot.end) <= scheduleTimeToMinutes(entry.endTime);
+}
+
 /**
  * Returns '#000000' or '#FFFFFF' depending on which contrasts better against the given hex color.
  * Uses the YIQ formula for perceptual brightness.
@@ -142,7 +170,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [selectedOptionByCategory, setSelectedOptionByCategory] = useState<Record<string, string>>({});
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [selectedStaffByServiceId, setSelectedStaffByServiceId] = useState<Record<string, string>>({});
+  const [staffSelectionMode, setStaffSelectionMode] = useState<"single" | "split">("single");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "" });
@@ -173,8 +204,58 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringError, setRecurringError] = useState("");
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
 
-  const totalDuration = isMultiService ? selectedServices.reduce((s, sv) => s + sv.duration, 0) : (selectedService?.duration || 0);
-  const rawTotalPrice = isMultiService ? selectedServices.reduce((s, sv) => s + sv.price, 0) : (selectedService?.price || 0);
+  const activeServices = useMemo(
+    () => (isMultiService ? selectedServices : selectedService ? [selectedService] : []),
+    [isMultiService, selectedServices, selectedService]
+  );
+  const servicesNeedOptions = activeServices.some((service) => service.optionCategories.length > 0);
+  const selectedOptionDetails = useMemo(() => {
+    return activeServices.flatMap((service) =>
+      service.optionCategories.flatMap((category) => {
+        const alternativeId = selectedOptionByCategory[category.id];
+        const alternative = category.alternatives.find((item) => item.id === alternativeId);
+        return alternative ? [{ service, category, alternative }] : [];
+      })
+    );
+  }, [activeServices, selectedOptionByCategory]);
+  const selectedOptionAlternativeIds = selectedOptionDetails.map((item) => item.alternative.id);
+  const optionDuration = selectedOptionDetails.reduce((sum, item) => sum + item.alternative.durationDelta, 0);
+  const optionPrice = selectedOptionDetails.reduce((sum, item) => sum + item.alternative.priceDelta, 0);
+  const durationByServiceId = useMemo(() => {
+    const totals = new Map(activeServices.map((service) => [service.id, service.duration]));
+    for (const item of selectedOptionDetails) {
+      totals.set(item.service.id, (totals.get(item.service.id) ?? item.service.duration) + item.alternative.durationDelta);
+    }
+    return totals;
+  }, [activeServices, selectedOptionDetails]);
+  const optionsComplete = activeServices.every((service) =>
+    service.optionCategories.every((category) => !category.isRequired || !!selectedOptionByCategory[category.id])
+  );
+  const sequentialDuration = activeServices.reduce((s, sv) => s + sv.duration, 0) + optionDuration;
+  const selectedServiceIds = activeServices.map((service) => service.id);
+  const commonStaffForSelectedServices = useMemo(() => {
+    if (!staffMembers) return [];
+    if (selectedServiceIds.length === 0) return staffMembers;
+    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, selectedServiceIds));
+  }, [staffMembers, selectedServiceIds]);
+  const canChooseStaffPerService = useMemo(() => {
+    if (!staffMembers || !isMultiService || activeServices.length <= 1) return false;
+    return activeServices.every((service) =>
+      staffMembers.some((staff) => canStaffPerformService(staff, service.id))
+    );
+  }, [activeServices, isMultiService, staffMembers]);
+  const needsStaffPerService = isMultiService && activeServices.length > 1 && commonStaffForSelectedServices.length === 0;
+  const splitStaffMode = canChooseStaffPerService && (needsStaffPerService || staffSelectionMode === "split");
+  const splitStaffAssignments = useMemo(() => activeServices
+    .map((service) => ({ serviceId: service.id, staffId: selectedStaffByServiceId[service.id] }))
+    .filter((assignment): assignment is StaffAssignment => Boolean(assignment.staffId)),
+    [activeServices, selectedStaffByServiceId]
+  );
+  const splitStaffSelectionComplete = !splitStaffMode || splitStaffAssignments.length === activeServices.length;
+  const totalDuration = splitStaffMode
+    ? Math.max(0, ...activeServices.map((service) => durationByServiceId.get(service.id) ?? service.duration))
+    : sequentialDuration;
+  const rawTotalPrice = activeServices.reduce((s, sv) => s + sv.price, 0) + optionPrice;
 
   // Apply discount if a valid reward code is present
   const totalPrice = useMemo(() => {
@@ -206,11 +287,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       ? selectedServices.map((s) => s.id)
       : selectedService ? [selectedService.id] : [];
     if (selectedServiceIds.length === 0) return staffMembers;
-    return staffMembers.filter((staff) => {
-      // Staff with no services assigned = available for all (backwards-compatible)
-      if (!staff.serviceIds || staff.serviceIds.length === 0) return true;
-      return selectedServiceIds.some((sid) => staff.serviceIds.includes(sid));
-    });
+    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, selectedServiceIds));
   }, [staffMembers, selectedService, selectedServices, isMultiService]);
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
@@ -248,45 +325,83 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()) };
   const isFormValid = validation.name && validation.email && validation.phone;
 
-  const fetchBlocked = useCallback(async (date: Date, staffId?: string) => {
+  const assignedStaffIds = useMemo(() => {
+    if (splitStaffMode) {
+      return Array.from(new Set(splitStaffAssignments.map((assignment) => assignment.staffId)));
+    }
+    return selectedStaff?.id ? [selectedStaff.id] : [];
+  }, [splitStaffMode, splitStaffAssignments, selectedStaff]);
+
+  const fetchBlocked = useCallback(async (date: Date, staffIds: string[] = []) => {
     const requestId = blockedRequestRef.current + 1;
     blockedRequestRef.current = requestId;
     setBlockedSlots([]);
     setLoadingSlots(true);
     try {
       const dateStr = format(date, "yyyy-MM-dd");
-      const staffParam = staffId ? `&staffId=${staffId}` : "";
-      const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}`, { headers: { "x-api-key": business.apiKey } });
-      if (res.ok && blockedRequestRef.current === requestId) {
+      const idsToFetch = staffIds.length > 0 ? staffIds : [undefined];
+      const responses = await Promise.all(idsToFetch.map(async (staffId) => {
+        const staffParam = staffId ? `&staffId=${staffId}` : "";
+        const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}`, { headers: { "x-api-key": business.apiKey } });
+        if (!res.ok) return [];
         const data = await res.json();
-        setBlockedSlots(data);
-      }
+        return (data as BlockedSlot[]).map((slot) => ({ ...slot, staffId }));
+      }));
+      if (blockedRequestRef.current === requestId) setBlockedSlots(responses.flat());
     } catch { /* ignore */ } finally {
       if (blockedRequestRef.current === requestId) setLoadingSlots(false);
     }
   }, [business.slug, business.apiKey]);
 
-  useEffect(() => { if (selectedDate) fetchBlocked(selectedDate, selectedStaff?.id); }, [selectedDate, selectedStaff, fetchBlocked]);
+  useEffect(() => {
+    if (selectedDate) fetchBlocked(selectedDate, assignedStaffIds);
+  }, [selectedDate, assignedStaffIds, fetchBlocked]);
+
+  function isSlotUnavailable(slot: { start: Date; end: Date }) {
+    if (!splitStaffMode) return isBlocked(slot, blockedSlots);
+
+    for (const service of activeServices) {
+      const staffId = selectedStaffByServiceId[service.id];
+      const staff = staffMembers?.find((item) => item.id === staffId);
+      if (!staff) return true;
+
+      const serviceEnd = addMinutes(slot.start, durationByServiceId.get(service.id) ?? service.duration);
+      const serviceSlot = { start: slot.start, end: serviceEnd };
+      if (!isStaffAvailableForSlot(staff, serviceSlot)) return true;
+
+      const staffBlockedSlots = blockedSlots.filter((blocked) => blocked.staffId === staffId);
+      if (isBlocked(serviceSlot, staffBlockedSlots)) return true;
+    }
+
+    return false;
+  }
 
   useEffect(() => {
-    if (selectedSlot && isBlocked(selectedSlot, blockedSlots)) {
+    if (selectedSlot && isSlotUnavailable(selectedSlot)) {
       setSelectedSlot(null);
       setStep("datetime");
     }
-  }, [selectedSlot, blockedSlots]);
+  }, [selectedSlot, blockedSlots, selectedStaffByServiceId, splitStaffMode]);
 
   // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
   function getStaffForServices(serviceIds: string[]): StaffMember[] {
     if (!staffMembers) return [];
     if (serviceIds.length === 0) return staffMembers;
-    return staffMembers.filter((staff) => {
-      if (!staff.serviceIds || staff.serviceIds.length === 0) return true;
-      return serviceIds.some((sid) => staff.serviceIds.includes(sid));
-    });
+    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, serviceIds));
+  }
+
+  function getStaffForService(serviceId: string): StaffMember[] {
+    if (!staffMembers) return [];
+    return staffMembers.filter((staff) => canStaffPerformService(staff, serviceId));
   }
 
   function handleSelectService(s: Service) {
     if (isMultiService) {
+      setSelectedStaff(null);
+      setSelectedStaffByServiceId({});
+      setStaffSelectionMode("single");
+      setSelectedDate(null);
+      setSelectedSlot(null);
       setSelectedServices((prev) => {
         const exists = prev.find((x) => x.id === s.id);
         if (exists) return prev.filter((x) => x.id !== s.id);
@@ -295,30 +410,76 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       });
       return;
     }
-    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
+    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null); setSelectedStaffByServiceId({}); setStaffSelectionMode("single"); setSelectedOptionByCategory({});
     // If service has a recurring plan, let the user choose mode
     if (s.recurringPlan) {
       setRecurringMode("single");
       setStep("mode-select");
       return;
     }
-    const nowFiltered = getStaffForServices([s.id]);
-    if (nowFiltered.length > 1) { setStep("staff"); } else {
+    if (s.optionCategories.length > 0) {
+      setStep("options");
+      return;
+    }
+    continueToScheduling([s]);
+  }
+
+  function continueToScheduling(servicesToSchedule: Service[]) {
+    const serviceIds = servicesToSchedule.map((service) => service.id);
+    const nowFiltered = getStaffForServices(serviceIds);
+    const canSplitTheseServices = isMultiService && servicesToSchedule.length > 1 && servicesToSchedule.every((service) => getStaffForService(service.id).length > 0);
+    if (isMultiService && servicesToSchedule.length > 1 && (nowFiltered.length > 0 || canSplitTheseServices)) {
+      setStaffSelectionMode(nowFiltered.length === 0 ? "split" : "single");
+      setSelectedStaff(nowFiltered.length === 1 ? nowFiltered[0] : null);
+      setSelectedStaffByServiceId({});
+      setStep("staff");
+    } else if (nowFiltered.length > 1) { setStep("staff"); } else {
       if (nowFiltered.length === 1) setSelectedStaff(nowFiltered[0]);
       setStep("datetime");
     }
   }
 
+  function handleOptionsContinue() {
+    if (!optionsComplete) return;
+    setSelectedDate(null);
+    setSelectedSlot(null);
+    setSelectedStaff(null);
+    setSelectedStaffByServiceId({});
+    setStaffSelectionMode("single");
+    continueToScheduling(activeServices);
+  }
+
+  function handleOptionsBack() {
+    setSelectedOptionByCategory({});
+    setStep(selectedService?.recurringPlan && recurringMode === "single" ? "mode-select" : "service");
+  }
+
+  function toggleOption(categoryId: string, alternativeId: string) {
+    setSelectedOptionByCategory((prev) => ({
+      ...prev,
+      [categoryId]: prev[categoryId] === alternativeId ? "" : alternativeId,
+    }));
+  }
+
+  function continueSingleSessionFromModeSelect() {
+    if (!selectedService) return;
+    setSelectedOptionByCategory({});
+    if (selectedService.optionCategories.length > 0) {
+      setStep("options");
+      return;
+    }
+    continueToScheduling([selectedService]);
+  }
+
   function handleMultiServiceContinue() {
     if (selectedServices.length === 0) return;
     setSelectedService(selectedServices[0]);
-    setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null);
-    const svcIds = selectedServices.map((sv) => sv.id);
-    const nowFiltered = getStaffForServices(svcIds);
-    if (nowFiltered.length > 1) { setStep("staff"); } else {
-      if (nowFiltered.length === 1) setSelectedStaff(nowFiltered[0]);
-      setStep("datetime");
+    setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null); setSelectedStaffByServiceId({}); setStaffSelectionMode("single"); setSelectedOptionByCategory({});
+    if (selectedServices.some((service) => service.optionCategories.length > 0)) {
+      setStep("options");
+      return;
     }
+    continueToScheduling(selectedServices);
   }
 
   async function handleValidateReward() {
@@ -356,7 +517,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       setApiError("Estamos revisando la disponibilidad de ese horario. Intenta nuevamente en unos segundos.");
       return;
     }
-    if (isBlocked(selectedSlot, blockedSlots)) {
+    if (isSlotUnavailable(selectedSlot)) {
       setSelectedSlot(null);
       setStep("datetime");
       setApiError("Ese horario ya no esta disponible. Selecciona otra hora.");
@@ -372,9 +533,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
         body: JSON.stringify({
           serviceId: serviceIds[0], serviceIds,
+          selectedOptionAlternativeIds,
           customerName: form.name.trim(), customerEmail: form.email.trim(),
           customerPhone: form.phone.trim(), startTime: selectedSlot.start.toISOString(),
-          endTime: selectedSlot.end.toISOString(), staffId: selectedStaff?.id,
+          endTime: selectedSlot.end.toISOString(),
+          staffId: splitStaffMode ? undefined : selectedStaff?.id,
+          staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
         }),
       });
@@ -390,7 +554,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   function restart() {
-    setStep("service"); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedDate(null); setSelectedSlot(null);
+    setStep("service"); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedStaffByServiceId({}); setStaffSelectionMode("single"); setSelectedDate(null); setSelectedSlot(null);
+    setSelectedOptionByCategory({});
     setForm({ name: "", email: "", phone: "" }); setTouched({ name: false, email: false, phone: false }); setApiError(""); setBlockedSlots([]);
     setRewardCode(""); setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null);
     // Reset recurring state
@@ -508,9 +673,27 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
   }
 
-  const isRecurringFlow = selectedService?.recurringPlan && step !== "service" && step !== "mode-select" && step !== "staff";
-  const stepLabels = isMultiService ? ["Servicios", "Fecha y hora", "Tus datos"] : isRecurringFlow ? ["Servicio", "Configurar plan", "Tus datos"] : hasMultipleFilteredStaff ? ["Servicio", "Profesional", "Fecha y hora", "Tus datos"] : ["Servicio", "Fecha y hora", "Tus datos"];
-  const stepIdx = isRecurringFlow ? (step === "recurring-config" || step === "health-form" ? 1 : step === "recurring-confirm" ? 2 : stepLabels.length) : step === "service" ? 0 : step === "staff" ? 1 : step === "datetime" ? (hasMultipleFilteredStaff ? 2 : 1) : step === "details" ? (hasMultipleFilteredStaff ? 3 : 2) : stepLabels.length;
+  const isRecurringFlow = recurringMode === "recurring" && selectedService?.recurringPlan && step !== "service" && step !== "mode-select" && step !== "staff";
+  const optionOffset = servicesNeedOptions ? 1 : 0;
+  const needsStaffStep = hasMultipleFilteredStaff || needsStaffPerService || (canChooseStaffPerService && activeServices.length > 1);
+  const staffOffset = needsStaffStep ? 1 : 0;
+  const stepLabels = isRecurringFlow
+    ? ["Servicio", "Configurar plan", "Tus datos"]
+    : [
+        isMultiService ? "Servicios" : "Servicio",
+        ...(servicesNeedOptions ? ["Opciones"] : []),
+        ...(needsStaffStep ? [needsStaffPerService ? "Profesionales" : "Profesional"] : []),
+        "Fecha y hora",
+        "Tus datos",
+      ];
+  const stepIdx = isRecurringFlow
+    ? (step === "recurring-config" || step === "health-form" ? 1 : step === "recurring-confirm" ? 2 : stepLabels.length)
+    : step === "service" || step === "mode-select" ? 0
+    : step === "options" ? 1
+    : step === "staff" ? 1 + optionOffset
+    : step === "datetime" ? 1 + optionOffset + staffOffset
+    : step === "details" ? 2 + optionOffset + staffOffset
+    : stepLabels.length;
 
   return (
     <div
@@ -568,12 +751,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = `${pc}40`; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = "var(--wborder)"; }}>
                     {isSelected && <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc} 100%)` }} />}
                     <div className="relative flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="font-medium">{s.name}</p>
-                        {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
+                      <div className="flex min-w-0 gap-3">
+                        {s.imageUrl && <img src={s.imageUrl} alt={s.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />}
+                        <div className="min-w-0 space-y-1">
+                          <p className="font-medium">{s.name}</p>
+                          {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
                           <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}><Clock3 className="h-3.5 w-3.5" />{s.duration} min</span>
                           <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
+                        </div>
                         </div>
                       </div>
                       {isMultiService ? (
@@ -605,6 +791,70 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
 
           {/* ── MODE SELECT (single vs recurring) ── */}
+          {step === "options" && activeServices.length > 0 && (
+            <div className="animate-fade-up space-y-5">
+              <div className="flex items-center justify-between gap-3">
+                <button type="button" onClick={handleOptionsBack} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Personaliza</span>
+              </div>
+              <div><h2 className="text-xl font-bold">Elige las opciones</h2><p className="text-sm" style={{ color: textSecondary }}>Ajustaremos el precio y la duracion antes de mostrar horarios.</p></div>
+
+              <div className="space-y-4">
+                {activeServices.map((service) => (
+                  service.optionCategories.length > 0 && (
+                    <div key={service.id} className="space-y-3">
+                      {activeServices.length > 1 && (
+                        <p className="text-sm font-semibold" style={{ color: textColor }}>{service.name}</p>
+                      )}
+                      {service.optionCategories.map((category) => (
+                        <div key={category.id} className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-medium">{category.name}</p>
+                            <span className="rounded-lg border px-2 py-0.5 text-[10px] uppercase tracking-wide" style={{ borderColor: "var(--wborder)", color: textSecondary }}>
+                              {category.isRequired ? "Obligatoria" : "Opcional"}
+                            </span>
+                          </div>
+                          <div className="grid gap-2">
+                            {category.alternatives.map((alternative) => {
+                              const active = selectedOptionByCategory[category.id] === alternative.id;
+                              return (
+                                <button
+                                  key={alternative.id}
+                                  type="button"
+                                  onClick={() => toggleOption(category.id, alternative.id)}
+                                  className="rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                                  style={active ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <span className="font-medium">{alternative.name}</span>
+                                    <span className="text-xs font-semibold" style={{ color: active ? pc : textSecondary }}>
+                                      {alternative.priceDelta > 0 ? `+${formatPrice(alternative.priceDelta)}` : "+$0"}
+                                      {alternative.durationDelta > 0 ? ` / +${alternative.durationDelta} min` : ""}
+                                    </span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ))}
+              </div>
+
+              <div className="rounded-2xl border p-4 text-sm space-y-1.5" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                <div className="flex justify-between" style={{ color: textSecondary }}><span>Duracion total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
+                <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(rawTotalPrice)}</span></div>
+              </div>
+
+              <button type="button" disabled={!optionsComplete} onClick={handleOptionsContinue}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
+                Ver horarios <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           {step === "mode-select" && selectedService?.recurringPlan && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center gap-3">
@@ -614,9 +864,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <div className="grid gap-3">
                 <button type="button" onClick={() => {
                   setRecurringMode("single");
-                  const nowFiltered = getStaffForServices([selectedService.id]);
-                  if (nowFiltered.length > 1) setStep("staff");
-                  else { if (nowFiltered.length === 1) setSelectedStaff(nowFiltered[0]); setStep("datetime"); }
+                  continueSingleSessionFromModeSelect();
                 }}
                   className="rounded-2xl border p-5 text-left transition-all hover:-translate-y-1 hover:shadow-lg"
                   style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
@@ -669,7 +917,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       <button key={st.id} type="button" onClick={() => setSelectedStaff(st)}
                         className="flex items-center gap-3 rounded-2xl border p-4 text-sm transition-all hover:shadow-md hover:-translate-y-0.5"
                         style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }}>
-                        <div className="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-inner" style={{ background: `${pc}15`, color: pc }}>{st.name.charAt(0)}</div>
+                        <div className="h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden text-sm font-bold shadow-inner" style={{ background: `${pc}15`, color: pc }}>
+                          {st.imageUrl ? <img src={st.imageUrl} alt={st.name} className="h-full w-full object-cover" /> : st.name.charAt(0)}
+                        </div>
                         <span className="font-medium text-base">{st.name}</span>
                       </button>
                     ))}
@@ -959,13 +1209,114 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
 
           {/* Step 1.5: Staff (only if multi-staff) */}
-          {step === "staff" && selectedService && filteredStaff.length > 0 && (
+          {step === "staff" && selectedService && splitStaffMode && (
+            <div className="animate-fade-up space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Equipo</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">2. Elige profesionales</h2>
+                <p className="text-sm" style={{ color: textSecondary }}>Asigna un profesional para cada servicio seleccionado.</p>
+              </div>
+              {commonStaffForSelectedServices.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStaffSelectionMode("single");
+                    setSelectedStaffByServiceId({});
+                    setSelectedDate(null);
+                    setSelectedSlot(null);
+                  }}
+                  className="flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
+                >
+                  <div>
+                    <p className="font-semibold">Usar una profesional para todo</p>
+                    <p className="text-sm" style={{ color: textSecondary }}>Volver a elegir entre quienes pueden realizar todos los servicios.</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 opacity-40" style={{ color: textColor }} />
+                </button>
+              )}
+              <div className="space-y-4">
+                {activeServices.map((service) => {
+                  const staffForService = getStaffForService(service.id);
+                  const selectedId = selectedStaffByServiceId[service.id];
+                  return (
+                    <div key={service.id} className="rounded-2xl border p-4 space-y-3" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{service.name}</p>
+                          <p className="text-xs" style={{ color: textSecondary }}>{durationByServiceId.get(service.id) ?? service.duration} min</p>
+                        </div>
+                        {selectedId && <span className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase" style={{ background: `${pc}15`, color: pc }}>Asignado</span>}
+                      </div>
+                      <div className="grid gap-2">
+                        {staffForService.map((staff) => {
+                          const active = selectedId === staff.id;
+                          return (
+                            <button
+                              key={staff.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedStaffByServiceId((prev) => ({ ...prev, [service.id]: staff.id }));
+                                setSelectedDate(null);
+                                setSelectedSlot(null);
+                              }}
+                              className="flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                              style={active ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
+                                  {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
+                                </div>
+                                <span className="font-medium">{staff.name}</span>
+                              </div>
+                              {active && <CheckCircle2 className="h-4 w-4" style={{ color: pc }} />}
+                            </button>
+                          );
+                        })}
+                        {staffForService.length === 0 && (
+                          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">No hay profesionales asignados a este servicio.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button type="button" disabled={!splitStaffSelectionComplete} onClick={() => { setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
+                Ver horarios <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {step === "staff" && selectedService && filteredStaff.length > 0 && !splitStaffMode && (
             <div className="animate-fade-up space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
               </div>
               <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona quién te atenderá.</p></div>
+              {canChooseStaffPerService && activeServices.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStaffSelectionMode("split");
+                    setSelectedStaff(null);
+                    setSelectedDate(null);
+                    setSelectedSlot(null);
+                  }}
+                  className="flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ borderColor: `${pc}40`, background: `${pc}08` }}
+                >
+                  <div>
+                    <p className="font-semibold" style={{ color: pc }}>Asignar por servicio</p>
+                    <p className="text-sm" style={{ color: textSecondary }}>Elige una profesional distinta para cada servicio.</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5" style={{ color: pc }} />
+                </button>
+              )}
               <div className="grid gap-3">
                 {filteredStaff.map((staff) => (
                   <button key={staff.id} type="button" onClick={() => { setSelectedStaff(staff); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
@@ -974,8 +1325,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--wborder)")}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
-                          {staff.name.charAt(0)}
+                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
+                          {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
                         </div>
                         <p className="font-medium">{staff.name}</p>
                       </div>
@@ -991,19 +1342,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "datetime" && selectedService && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep(hasMultipleFilteredStaff ? "staff" : "service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep(needsStaffStep ? "staff" : "service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <div className="flex gap-2">
                   <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
                   {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border opacity-60" style={{ color: textColor, borderColor: `${textColor}15` }}>{selectedStaff.name}</span>}
                 </div>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
+              <div><h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                   {days.map((day) => {
                     const sel = selectedDate?.toDateString() === day.toDateString();
-                    const staffWorking = selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay()) : true;
+                    const staffWorking = splitStaffMode
+                      ? activeServices.every((service) => {
+                          const staff = staffMembers?.find((item) => item.id === selectedStaffByServiceId[service.id]);
+                          return staff ? isStaffWorkingOnDay(staff, day.getDay()) : false;
+                        })
+                      : selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay()) : true;
                     return (
                       <button key={day.toISOString()} type="button" disabled={!staffWorking}
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
@@ -1025,7 +1381,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   ) : (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                       {slots.map((slot) => {
-                        const blocked = isBlocked(slot, blockedSlots);
+                        const blocked = isSlotUnavailable(slot);
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
                         return (
                           <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => setSelectedSlot(slot)}
@@ -1066,6 +1422,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
                 <div className="flex justify-between pt-1"><span style={{ color: textSecondary }}>Servicio</span><span className="font-medium text-right max-w-[60%] truncate">{selectedService.name}</span></div>
                 {selectedStaff && <div className="flex justify-between"><span style={{ color: textSecondary }}>Profesional</span><span className="font-medium">{selectedStaff.name}</span></div>}
+                {selectedOptionDetails.length > 0 && (
+                  <div className="space-y-1 border-t pt-3" style={{ borderColor: "var(--wborder)" }}>
+                    {selectedOptionDetails.map(({ category, alternative }) => (
+                      <div key={category.id} className="flex justify-between gap-3">
+                        <span style={{ color: textSecondary }}>{category.name}</span>
+                        <span className="font-medium text-right">{alternative.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-between"><span style={{ color: textSecondary }}>Duracion</span><span className="font-medium">{totalDuration} min</span></div>
 
                 <div className="flex justify-between items-center">
                   <span style={{ color: textSecondary }}>Total</span>

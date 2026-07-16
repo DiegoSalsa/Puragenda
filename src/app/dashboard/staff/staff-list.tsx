@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff } from "lucide-react";
-import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction } from "@/server/actions/dashboard.actions";
+import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff, Upload, ImageIcon } from "lucide-react";
+import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -19,6 +19,7 @@ interface StaffMember {
   id: string;
   name: string;
   email: string | null;
+  imageUrl: string | null;
   isActive: boolean;
   role: StaffAccessRole | null;
   userId: string | null;
@@ -150,6 +151,8 @@ export function StaffList({
   const [savingServices, setSavingServices] = useState<string | null>(null);
   const [savingRoleId, setSavingRoleId] = useState<string | null>(null);
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
+  const [uploadingStaffImage, setUploadingStaffImage] = useState<string | null>(null);
+  const [staffImageErrors, setStaffImageErrors] = useState<Record<string, string>>({});
 
   // Block form state
   const [blockStaffId, setBlockStaffId] = useState<string | null>(null);
@@ -237,6 +240,44 @@ export function StaffList({
       setRoleErrors((prev) => ({ ...prev, [staffId]: result.error }));
     }
     setSavingRoleId(null);
+    router.refresh();
+  }
+
+  async function handleStaffImageChange(staffId: string, e: React.ChangeEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setStaffImageErrors((prev) => ({ ...prev, [staffId]: "Formato no soportado. Usa PNG, JPG o WebP." }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setStaffImageErrors((prev) => ({ ...prev, [staffId]: "La imagen es muy pesada. Maximo 5MB." }));
+      return;
+    }
+
+    setUploadingStaffImage(staffId);
+    setStaffImageErrors((prev) => ({ ...prev, [staffId]: "" }));
+    const formData = new FormData();
+    formData.append("image", file);
+    const result = await updateStaffImageAction(staffId, formData);
+    if (result.error) {
+      setStaffImageErrors((prev) => ({ ...prev, [staffId]: result.error }));
+    }
+    setUploadingStaffImage(null);
+    input.value = "";
+    router.refresh();
+  }
+
+  async function handleRemoveStaffImage(staffId: string) {
+    setUploadingStaffImage(staffId);
+    setStaffImageErrors((prev) => ({ ...prev, [staffId]: "" }));
+    const result = await removeStaffImageAction(staffId);
+    if (result.error) {
+      setStaffImageErrors((prev) => ({ ...prev, [staffId]: result.error }));
+    }
+    setUploadingStaffImage(null);
     router.refresh();
   }
 
@@ -349,8 +390,12 @@ export function StaffList({
               {/* ── Card Header ── */}
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
-                    {s.name.charAt(0).toUpperCase()}
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
+                    {s.imageUrl ? (
+                      <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" />
+                    ) : (
+                      s.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className={`font-medium truncate ${s.isActive ? "" : "text-muted-foreground line-through"}`}>{s.name}</p>
@@ -399,6 +444,54 @@ export function StaffList({
               {/* ── Expanded Panel ── */}
               {expanded && (
                 <div className="border-t border-border/50 p-5 space-y-6">
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                      <ImageIcon className="h-3.5 w-3.5 text-[#7C3AED]" /> Foto del profesional
+                    </p>
+                    <div className="flex items-start gap-4 rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+                        {s.imageUrl ? (
+                          <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                        )}
+                        {uploadingStaffImage === s.id && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                            <Loader2 className="h-5 w-5 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <p className="text-sm text-muted-foreground">Se muestra cuando el cliente elige profesional en el widget.</p>
+                        <div className="flex flex-wrap gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#6D28D9]">
+                            {uploadingStaffImage === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                            Subir foto
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              onChange={(e) => handleStaffImageChange(s.id, e)}
+                              disabled={uploadingStaffImage === s.id}
+                              className="hidden"
+                            />
+                          </label>
+                          {s.imageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStaffImage(s.id)}
+                              disabled={uploadingStaffImage === s.id}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground/60">PNG, JPG o WebP. Maximo 5MB.</p>
+                        {staffImageErrors[s.id] && <p className="text-xs text-red-400">{staffImageErrors[s.id]}</p>}
+                      </div>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
                       <ShieldAlert className="h-3.5 w-3.5 text-[#7C3AED]" /> Rol de acceso

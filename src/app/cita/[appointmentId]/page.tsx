@@ -37,6 +37,7 @@ export default async function CitaPage({
   }
 
   const pc = appointment.business.primaryColor || "#7C3AED";
+  const selectedOptions = (appointment.selectedOptions as { categoryName: string; alternativeName: string }[] | null) ?? [];
 
   const statusConfig = {
     success: {
@@ -112,6 +113,16 @@ export default async function CitaPage({
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Profesional:</span>
                 <span className="font-medium">{appointment.staff.name}</span>
+              </div>
+            )}
+            {selectedOptions.length > 0 && (
+              <div className="space-y-2 border-t border-border pt-3">
+                {selectedOptions.map((option) => (
+                  <div key={`${option.categoryName}-${option.alternativeName}`} className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">{option.categoryName}:</span>
+                    <span className="font-medium text-right">{option.alternativeName}</span>
+                  </div>
+                ))}
               </div>
             )}
             {appointment.depositAmount && appointment.depositAmount > 0 && (

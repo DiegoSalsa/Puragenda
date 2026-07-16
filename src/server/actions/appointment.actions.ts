@@ -90,6 +90,7 @@ export async function rescheduleAppointmentAction(
         totalDuration: appointment.totalDuration,
         totalPrice: appointment.totalPrice,
         additionalServiceIds: appointment.additionalServiceIds,
+        selectedOptions: appointment.selectedOptions ?? undefined,
       },
       include: {
         business: {
