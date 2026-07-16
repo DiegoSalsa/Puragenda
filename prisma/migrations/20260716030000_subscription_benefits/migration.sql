@@ -1,0 +1,9 @@
+ALTER TABLE "Subscription"
+  ADD COLUMN IF NOT EXISTS "promoName" TEXT,
+  ADD COLUMN IF NOT EXISTS "promoFreeMonthsRemaining" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "promoDiscountPercentage" INTEGER,
+  ADD COLUMN IF NOT EXISTS "promoDiscountMonthsRemaining" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "nextBillingOverrideAmount" INTEGER,
+  ADD COLUMN IF NOT EXISTS "billingNotes" TEXT,
+  ADD COLUMN IF NOT EXISTS "lastBillingSyncAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "lastBillingSyncError" TEXT;

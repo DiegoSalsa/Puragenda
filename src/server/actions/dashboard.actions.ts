@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { SALT_ROUNDS } from "@/core/constants";
+import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
 import { sendStaffInviteEmail } from "@/server/email/send";
 
 // â”€â”€â”€ Appointment Status â”€â”€â”€
@@ -47,16 +47,13 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
 
 // â”€â”€â”€ Staff CRUD â”€â”€â”€
 
-// Plan limits: max staff allowed (base, before extras)
-const PLAN_STAFF_LIMITS: Record<string, number> = { INDIVIDUAL: 1, EQUIPO: 3 };
-
 export async function getStaffLimitInfo(businessId: string) {
   const [subscription, currentCount] = await Promise.all([
     prisma.subscription.findUnique({ where: { businessId } }),
     prisma.staff.count({ where: { businessId } }),
   ]);
   const plan = subscription?.plan || "INDIVIDUAL";
-  const baseLimit = PLAN_STAFF_LIMITS[plan] ?? 1;
+  const baseLimit = STAFF_LIMITS[plan as keyof typeof STAFF_LIMITS] ?? STAFF_LIMITS.INDIVIDUAL;
   const extras = subscription?.extraStaffCount || 0;
   const maxAllowed = baseLimit + extras;
   return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };

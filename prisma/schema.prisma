@@ -116,6 +116,14 @@ model Subscription {
   trialWarningEmailSent Boolean            @default(false)
   freeMonthsRemaining   Int                @default(0)
   activePrizeId         String?
+  promoName             String?
+  promoFreeMonthsRemaining Int             @default(0)
+  promoDiscountPercentage Int?
+  promoDiscountMonthsRemaining Int         @default(0)
+  nextBillingOverrideAmount Int?
+  billingNotes          String?
+  lastBillingSyncAt     DateTime?
+  lastBillingSyncError  String?
   businessId            String             @unique
   mpCustomerId          String?
   mpSubscriptionId      String?

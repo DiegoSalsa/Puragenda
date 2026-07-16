@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
   try {
     const now = new Date();
-    const results = { warned: 0, expired: 0, errors: [] as string[] };
+    const results = { warned: 0, expired: 0, promoExpired: 0, errors: [] as string[] };
 
     // ═══════════════════════════════════════════
     // 1. WARN: trials expiring in 3 days
@@ -117,9 +117,55 @@ export async function GET(req: Request) {
       }
     }
 
+    const expiredNoCardPromos = await prisma.subscription.findMany({
+      where: {
+        status: "ACTIVE",
+        mpSubscriptionId: null,
+        currentPeriodEnd: { lt: now },
+        promoName: { not: null },
+      },
+      include: {
+        business: {
+          select: {
+            name: true,
+            owner: { select: { email: true, name: true } },
+          },
+        },
+      },
+    });
+
+    for (const sub of expiredNoCardPromos) {
+      try {
+        const hasPendingDiscount = (sub.promoDiscountMonthsRemaining ?? 0) > 0;
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: "INACTIVE",
+            currentPeriodEnd: null,
+            promoName: hasPendingDiscount ? sub.promoName : null,
+            promoDiscountPercentage: hasPendingDiscount ? sub.promoDiscountPercentage : null,
+            promoDiscountMonthsRemaining: hasPendingDiscount ? sub.promoDiscountMonthsRemaining : 0,
+          },
+        });
+
+        if (sub.business.owner?.email) {
+          await sendTrialExpiredEmail({
+            ownerEmail: sub.business.owner.email,
+            ownerName: sub.business.owner.name,
+            businessName: sub.business.name,
+            plan: sub.plan,
+          });
+        }
+
+        results.promoExpired++;
+      } catch (err) {
+        results.errors.push(`promo-expire-${sub.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      message: `Trial expiry check: ${results.warned} warned, ${results.expired} expired`,
+      message: `Trial expiry check: ${results.warned} warned, ${results.expired} expired, ${results.promoExpired} promo expired`,
       ...results,
     });
   } catch (err) {

@@ -5,9 +5,9 @@ import { prisma } from "@/server/db/prisma";
 import { PreApproval } from "mercadopago";
 import { addDays } from "date-fns";
 import { mpClient } from "@/server/lib/mercadopago";
-import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
 import { markPlatformDiscountApplied } from "@/server/services/platform-discount.service";
+import { advanceBillingBenefitAfterAuthorized } from "@/server/services/subscription-billing.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,27 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (mpSubscription.status === "authorized") {
       // ── Revert discount if pending (same logic as webhook) ──
-      if (subscription.pendingDiscountPercentage !== null) {
-        try {
-          const basePrice = PRICING[subscription.plan].monthly;
-          let totalBasePrice = basePrice;
-          if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
-            totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
-          }
-          await preapproval.update({
-            id: subscription.mpSubscriptionId,
-            body: {
-              auto_recurring: {
-                transaction_amount: totalBasePrice,
-                currency_id: "CLP",
-              },
-            },
-          });
-          console.log(`[billing/verify] Reverted discount for subscription back to ${totalBasePrice}`);
-        } catch (e) {
-          console.error("[billing/verify] Failed to revert discount:", e);
-        }
-      }
+      
 
       // Payment successful — activate immediately
       await prisma.subscription.update({
@@ -76,6 +56,8 @@ export async function POST(request: NextRequest) {
           hasCountedAsPaidReferral: true,
         },
       });
+
+      await advanceBillingBenefitAfterAuthorized(subscription.id);
 
       await markPlatformDiscountApplied(subscription.id);
 

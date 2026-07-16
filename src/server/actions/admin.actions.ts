@@ -8,6 +8,7 @@ import { SALT_ROUNDS, API_KEY_PREFIX, SUPERADMIN_EMAILS } from "@/core/constants
 import { toSlug } from "@/core/validators/slug";
 import { revalidatePath } from "next/cache";
 import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
+import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscription-billing.service";
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -23,6 +24,33 @@ async function requireSuperAdmin() {
 
 function createApiKey(): string {
   return `${API_KEY_PREFIX}${crypto.randomBytes(24).toString("hex")}`;
+}
+
+function addMonthsFromNow(months: number) {
+  const date = new Date();
+  date.setMonth(date.getMonth() + months);
+  return date;
+}
+
+function getInitialNoCardBenefit(initialBenefit?: "NONE" | SubscriptionBenefitPreset) {
+  if (!initialBenefit || initialBenefit === "NONE") return null;
+
+  if (initialBenefit === "PARTICIPANT_OFFER") {
+    return {
+      promoName: "Sorteo participantes - 2 meses gratis + 2 meses al 50%",
+      currentPeriodEnd: addMonthsFromNow(2),
+      promoDiscountPercentage: 50,
+      promoDiscountMonthsRemaining: 2,
+    };
+  }
+
+  const months = initialBenefit === "PRIZE_12" ? 12 : initialBenefit === "PRIZE_6" ? 6 : 3;
+  return {
+    promoName: `Sorteo - ${months} meses gratis sin tarjeta`,
+    currentPeriodEnd: addMonthsFromNow(months),
+    promoDiscountPercentage: null,
+    promoDiscountMonthsRemaining: 0,
+  };
 }
 
 async function generateUniqueSlug(baseSlug: string): Promise<string> {
@@ -46,6 +74,7 @@ export async function createBusinessAction(data: {
   ownerPassword: string;
   businessName: string;
   plan: "INDIVIDUAL" | "EQUIPO";
+  initialBenefit?: "NONE" | SubscriptionBenefitPreset;
 }) {
   await requireSuperAdmin();
 
@@ -61,6 +90,7 @@ export async function createBusinessAction(data: {
   const isSuperAdmin = SUPERADMIN_EMAILS.includes(trimmedEmail);
   const baseSlug = toSlug(data.businessName);
   const slug = await generateUniqueSlug(baseSlug);
+  const initialBenefit = getInitialNoCardBenefit(data.initialBenefit);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -100,6 +130,13 @@ export async function createBusinessAction(data: {
           plan: data.plan,
           status: "ACTIVE",
           billingCycle: "MONTHLY",
+          isTrial: false,
+          ...(initialBenefit ? {
+            promoName: initialBenefit.promoName,
+            currentPeriodEnd: initialBenefit.currentPeriodEnd,
+            promoDiscountPercentage: initialBenefit.promoDiscountPercentage,
+            promoDiscountMonthsRemaining: initialBenefit.promoDiscountMonthsRemaining,
+          } : {}),
         },
       });
     });
@@ -140,6 +177,7 @@ export async function updateSubscriptionAction(
       },
     });
 
+    await syncMercadoPagoSubscriptionAmount(subscriptionId);
     revalidatePath("/para/x7k9m2v4q8");
     return { success: true };
   } catch (err) {
@@ -237,6 +275,175 @@ export async function extendTrialAction(subscriptionId: string, days: number) {
 // ═══════════════════════════════════════════
 // RESET USER PASSWORD
 // ═══════════════════════════════════════════
+
+type SubscriptionBenefitPreset = "PRIZE_12" | "PRIZE_6" | "PRIZE_3" | "PARTICIPANT_OFFER";
+
+const BENEFIT_PRESETS: Record<SubscriptionBenefitPreset, {
+  promoName: string;
+  promoFreeMonthsRemaining: number;
+  promoDiscountPercentage: number | null;
+  promoDiscountMonthsRemaining: number;
+}> = {
+  PRIZE_12: {
+    promoName: "Sorteo - 12 meses gratis",
+    promoFreeMonthsRemaining: 12,
+    promoDiscountPercentage: null,
+    promoDiscountMonthsRemaining: 0,
+  },
+  PRIZE_6: {
+    promoName: "Sorteo - 6 meses gratis",
+    promoFreeMonthsRemaining: 6,
+    promoDiscountPercentage: null,
+    promoDiscountMonthsRemaining: 0,
+  },
+  PRIZE_3: {
+    promoName: "Sorteo - 3 meses gratis",
+    promoFreeMonthsRemaining: 3,
+    promoDiscountPercentage: null,
+    promoDiscountMonthsRemaining: 0,
+  },
+  PARTICIPANT_OFFER: {
+    promoName: "Sorteo participantes - 2 gratis + 2 al 50%",
+    promoFreeMonthsRemaining: 2,
+    promoDiscountPercentage: 50,
+    promoDiscountMonthsRemaining: 2,
+  },
+};
+
+function revalidateSubscriptionAdmin(subscriptionId?: string) {
+  revalidatePath("/para/x7k9m2v4q8");
+  revalidatePath("/para/x7k9m2v4q8/subscriptions");
+  if (subscriptionId) revalidatePath(`/para/x7k9m2v4q8/subscriptions/${subscriptionId}`);
+}
+
+export async function applySubscriptionBenefitPresetAction(
+  subscriptionId: string,
+  preset: SubscriptionBenefitPreset
+) {
+  await requireSuperAdmin();
+
+  const config = BENEFIT_PRESETS[preset];
+  if (!config) return { error: "Beneficio invalido" };
+
+  try {
+    await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        ...config,
+        nextBillingOverrideAmount: null,
+        pendingDiscountPercentage: null,
+        lastBillingSyncError: null,
+      },
+    });
+
+    const sync = await syncMercadoPagoSubscriptionAmount(subscriptionId);
+    revalidateSubscriptionAdmin(subscriptionId);
+    return {
+      success: true,
+      warning: sync.success ? null : sync.error,
+      preview: sync.preview ?? null,
+    };
+  } catch (err) {
+    console.error("[Admin] Error applying subscription benefit:", err);
+    return { error: "No se pudo aplicar el beneficio" };
+  }
+}
+
+export async function updateSubscriptionBillingRulesAction(
+  subscriptionId: string,
+  data: {
+    promoName?: string | null;
+    promoFreeMonthsRemaining?: number;
+    promoDiscountPercentage?: number | null;
+    promoDiscountMonthsRemaining?: number;
+    nextBillingOverrideAmount?: number | null;
+    billingNotes?: string | null;
+  }
+) {
+  await requireSuperAdmin();
+
+  const freeMonths = Math.max(0, Math.min(36, Math.floor(Number(data.promoFreeMonthsRemaining ?? 0))));
+  const discountMonths = Math.max(0, Math.min(36, Math.floor(Number(data.promoDiscountMonthsRemaining ?? 0))));
+  const discountPercentage =
+    data.promoDiscountPercentage === null || data.promoDiscountPercentage === undefined || discountMonths === 0
+      ? null
+      : Math.max(1, Math.min(100, Math.floor(Number(data.promoDiscountPercentage))));
+  const overrideAmount =
+    data.nextBillingOverrideAmount === null || data.nextBillingOverrideAmount === undefined
+      ? null
+      : Math.max(0, Math.floor(Number(data.nextBillingOverrideAmount)));
+
+  if (discountMonths > 0 && !discountPercentage) {
+    return { error: "Si agregas meses con descuento, indica un porcentaje entre 1 y 100." };
+  }
+
+  try {
+    await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        promoName: data.promoName?.trim() || null,
+        promoFreeMonthsRemaining: freeMonths,
+        promoDiscountPercentage: discountPercentage,
+        promoDiscountMonthsRemaining: discountMonths,
+        nextBillingOverrideAmount: overrideAmount,
+        billingNotes: data.billingNotes?.trim() || null,
+        lastBillingSyncError: null,
+      },
+    });
+
+    const sync = await syncMercadoPagoSubscriptionAmount(subscriptionId);
+    revalidateSubscriptionAdmin(subscriptionId);
+    return {
+      success: true,
+      warning: sync.success ? null : sync.error,
+      preview: sync.preview ?? null,
+    };
+  } catch (err) {
+    console.error("[Admin] Error updating billing rules:", err);
+    return { error: "No se pudieron guardar las reglas de cobro" };
+  }
+}
+
+export async function clearSubscriptionBenefitAction(subscriptionId: string) {
+  await requireSuperAdmin();
+
+  try {
+    await prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        promoName: null,
+        promoFreeMonthsRemaining: 0,
+        promoDiscountPercentage: null,
+        promoDiscountMonthsRemaining: 0,
+        nextBillingOverrideAmount: null,
+        billingNotes: null,
+        pendingDiscountPercentage: null,
+        freeMonthsRemaining: 0,
+        lastBillingSyncError: null,
+      },
+    });
+
+    const sync = await syncMercadoPagoSubscriptionAmount(subscriptionId);
+    revalidateSubscriptionAdmin(subscriptionId);
+    return {
+      success: true,
+      warning: sync.success ? null : sync.error,
+      preview: sync.preview ?? null,
+    };
+  } catch (err) {
+    console.error("[Admin] Error clearing subscription benefit:", err);
+    return { error: "No se pudo limpiar el beneficio" };
+  }
+}
+
+export async function syncSubscriptionBillingAction(subscriptionId: string) {
+  await requireSuperAdmin();
+
+  const sync = await syncMercadoPagoSubscriptionAmount(subscriptionId);
+  revalidateSubscriptionAdmin(subscriptionId);
+  if (!sync.success) return { error: sync.error, preview: sync.preview ?? null };
+  return { success: true, preview: sync.preview };
+}
 
 export async function resetUserPasswordAction(userId: string, newPassword: string) {
   await requireSuperAdmin();

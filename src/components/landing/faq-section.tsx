@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
@@ -6,103 +6,103 @@ import { Plus, Minus } from "lucide-react";
 const faqs = [
   {
     category: "Precios y planes",
-    question: "¿Puragenda cobra comisiones por cada reserva agendada?",
+    question: "Â¿Puragenda cobra comisiones por cada reserva agendada?",
     answer: "No. Puragenda funciona con tarifa plana. No cobramos comisiones por cita, el 100% de tus ingresos se queda en tu negocio.",
   },
   {
     category: "Precios y planes",
-    question: "¿Puragenda tiene prueba gratuita?",
-    answer: "Sí. Ambos planes incluyen 30 días de prueba gratuita, sin tarjeta de crédito. Al finalizar puedes activar tu suscripción o tu cuenta quedará inactiva.",
+    question: "Â¿Puragenda tiene prueba gratuita?",
+    answer: "SÃ­. Ambos planes incluyen 30 dÃ­as de prueba gratuita, sin tarjeta de crÃ©dito. Al finalizar puedes activar tu suscripciÃ³n o tu cuenta quedarÃ¡ inactiva.",
   },
   {
     category: "Precios y planes",
-    question: "¿Cuánto cuesta Puragenda?",
+    question: "Â¿CuÃ¡nto cuesta Puragenda?",
     answer: "El Plan Individual cuesta $12.990 CLP/mes y el Plan Equipo $29.990 CLP/mes. Sin comisiones ni costos ocultos. Ambos incluyen citas ilimitadas, widget de reservas y marketing win-back.",
   },
   {
     category: "Precios y planes",
-    question: "¿Cuál es la diferencia entre el Plan Individual y el Plan Equipo?",
-    answer: "El Plan Individual es para profesionales que trabajan solos. El Plan Equipo permite hasta 3 profesionales con agendas separadas y roles (Admin/Staff), más adicionales por $3.000 CLP/mes cada uno.",
+    question: "Â¿CuÃ¡l es la diferencia entre el Plan Individual y el Plan Equipo?",
+    answer: "El Plan Individual es para profesionales que trabajan solos. El Plan Equipo permite hasta 5 profesionales con agendas separadas y roles (Admin/Staff), más adicionales desde el sexto profesional por $3.000 CLP/mes cada uno.",
   },
   {
     category: "Precios y planes",
-    question: "¿Existe descuento por pagar anualmente?",
-    answer: "Sí. Con el plan anual pagas 10 meses y obtienes 12, un ahorro equivalente a 2 meses gratis. Aplica para ambos planes.",
+    question: "Â¿Existe descuento por pagar anualmente?",
+    answer: "SÃ­. Con el plan anual pagas 10 meses y obtienes 12, un ahorro equivalente a 2 meses gratis. Aplica para ambos planes.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Cómo funciona la detección de colisiones de horario?",
-    answer: "El sistema bloquea automáticamente las horas ocupadas en tiempo real en todos los dispositivos, haciendo matemáticamente imposible doble reserva para el mismo profesional.",
+    question: "Â¿CÃ³mo funciona la detecciÃ³n de colisiones de horario?",
+    answer: "El sistema bloquea automÃ¡ticamente las horas ocupadas en tiempo real en todos los dispositivos, haciendo matemÃ¡ticamente imposible doble reserva para el mismo profesional.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Cómo funciona el sistema de fidelización?",
-    answer: "Se otorgan 'timbres' digitales automáticamente cada vez que una cita pasa a 'Completada'. Al llegar a la meta, el sistema genera un código de descuento único y automatizado.",
+    question: "Â¿CÃ³mo funciona el sistema de fidelizaciÃ³n?",
+    answer: "Se otorgan 'timbres' digitales automÃ¡ticamente cada vez que una cita pasa a 'Completada'. Al llegar a la meta, el sistema genera un cÃ³digo de descuento Ãºnico y automatizado.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Qué es el Marketing Win-Back?",
-    answer: "Herramienta integrada que envía campañas de email para reactivar clientes inactivos. El Plan Individual permite 50 emails por campaña y el Equipo hasta 100.",
+    question: "Â¿QuÃ© es el Marketing Win-Back?",
+    answer: "Herramienta integrada que envÃ­a campaÃ±as de email para reactivar clientes inactivos. El Plan Individual permite 50 emails por campaÃ±a y el Equipo hasta 100.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Puragenda tiene un CRM de clientes?",
-    answer: "Sí. Cada cliente tiene un perfil con historial completo de citas, gasto acumulado, inasistencias y fecha de registro.",
+    question: "Â¿Puragenda tiene un CRM de clientes?",
+    answer: "SÃ­. Cada cliente tiene un perfil con historial completo de citas, gasto acumulado, inasistencias y fecha de registro.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Cómo funciona el programa de referidos?",
-    answer: "Cada negocio tiene un código único. Cuando alguien se registra con tu código y activa su plan, recibes fichas para girar una ruleta de recompensas con descuentos reales.",
+    question: "Â¿CÃ³mo funciona el programa de referidos?",
+    answer: "Cada negocio tiene un cÃ³digo Ãºnico. Cuando alguien se registra con tu cÃ³digo y activa su plan, recibes fichas para girar una ruleta de recompensas con descuentos reales.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Es posible reservar múltiples servicios en una misma cita?",
-    answer: "Sí. Puedes configurar el máximo de servicios por reserva. El sistema calcula la duración total automáticamente.",
+    question: "Â¿Es posible reservar mÃºltiples servicios en una misma cita?",
+    answer: "SÃ­. Puedes configurar el mÃ¡ximo de servicios por reserva. El sistema calcula la duraciÃ³n total automÃ¡ticamente.",
   },
   {
     category: "Funcionalidades",
-    question: "¿Puedo bloquear horarios específicos de un profesional?",
-    answer: "Sí. Puedes crear bloqueos por días u horas (vacaciones, capacitaciones, etc.) y quedan automáticamente no disponibles en el widget.",
+    question: "Â¿Puedo bloquear horarios especÃ­ficos de un profesional?",
+    answer: "SÃ­. Puedes crear bloqueos por dÃ­as u horas (vacaciones, capacitaciones, etc.) y quedan automÃ¡ticamente no disponibles en el widget.",
   },
   {
     category: "Widget y reservas",
-    question: "¿Cuál es el mejor software de reservas sin contraseñas para clientes?",
-    answer: "Puragenda usa 'Cuentas Invisibles': los clientes se identifican solo con su email, sin contraseñas. Esto aumenta radicalmente la tasa de conversión.",
+    question: "Â¿CuÃ¡l es el mejor software de reservas sin contraseÃ±as para clientes?",
+    answer: "Puragenda usa 'Cuentas Invisibles': los clientes se identifican solo con su email, sin contraseÃ±as. Esto aumenta radicalmente la tasa de conversiÃ³n.",
   },
   {
     category: "Widget y reservas",
-    question: "¿Puedo personalizar los colores y el logo del widget?",
-    answer: "Sí. Desde 'Apariencia' configuras color primario, secundario, fondo, texto y tamaño de fuente. También puedes subir el logo de tu negocio.",
+    question: "Â¿Puedo personalizar los colores y el logo del widget?",
+    answer: "SÃ­. Desde 'Apariencia' configuras color primario, secundario, fondo, texto y tamaÃ±o de fuente. TambiÃ©n puedes subir el logo de tu negocio.",
   },
   {
     category: "Widget y reservas",
-    question: "¿Se puede embeber el widget en mi página web?",
-    answer: "Sí. Desde Configuración obtienes un código iframe listo para pegar en tu sitio. Se adapta automáticamente al ancho del contenedor.",
+    question: "Â¿Se puede embeber el widget en mi pÃ¡gina web?",
+    answer: "SÃ­. Desde ConfiguraciÃ³n obtienes un cÃ³digo iframe listo para pegar en tu sitio. Se adapta automÃ¡ticamente al ancho del contenedor.",
   },
   {
     category: "Widget y reservas",
-    question: "¿Cómo confirman o cancelan su cita los clientes?",
-    answer: "Puragenda envía un email con enlaces únicos para confirmar o cancelar. Al hacer clic, la acción se procesa automáticamente y el negocio recibe notificación.",
+    question: "Â¿CÃ³mo confirman o cancelan su cita los clientes?",
+    answer: "Puragenda envÃ­a un email con enlaces Ãºnicos para confirmar o cancelar. Al hacer clic, la acciÃ³n se procesa automÃ¡ticamente y el negocio recibe notificaciÃ³n.",
   },
   {
     category: "Widget y reservas",
-    question: "¿Puragenda funciona como app en el celular?",
-    answer: "Es una PWA (Progressive Web App). Se puede instalar desde el navegador como app nativa, con ícono en pantalla de inicio y experiencia a pantalla completa.",
+    question: "Â¿Puragenda funciona como app en el celular?",
+    answer: "Es una PWA (Progressive Web App). Se puede instalar desde el navegador como app nativa, con Ã­cono en pantalla de inicio y experiencia a pantalla completa.",
   },
   {
     category: "Soporte",
-    question: "¿Es Puragenda una buena alternativa a AgendaPro en Chile?",
-    answer: "Sí. Puragenda es más rápida, sin comisiones ocultas y con soporte directo. Ideal para salones, barberías y clínicas en Chile.",
+    question: "Â¿Es Puragenda una buena alternativa a AgendaPro en Chile?",
+    answer: "SÃ­. Puragenda es mÃ¡s rÃ¡pida, sin comisiones ocultas y con soporte directo. Ideal para salones, barberÃ­as y clÃ­nicas en Chile.",
   },
   {
     category: "Soporte",
-    question: "¿Dónde está ubicado el soporte técnico?",
-    answer: "Somos PuroCode, con base en el Gran Concepción, Región del Biobío. Soporte técnico local, directo y humano.",
+    question: "Â¿DÃ³nde estÃ¡ ubicado el soporte tÃ©cnico?",
+    answer: "Somos PuroCode, con base en el Gran ConcepciÃ³n, RegiÃ³n del BiobÃ­o. Soporte tÃ©cnico local, directo y humano.",
   },
   {
     category: "Soporte",
-    question: "¿Funciona el widget para barberías y centros de estética?",
-    answer: "Absolutamente. El widget marca blanca se adapta a la estética de cualquier negocio y permite reservas 24/7 de forma automatizada.",
+    question: "Â¿Funciona el widget para barberÃ­as y centros de estÃ©tica?",
+    answer: "Absolutamente. El widget marca blanca se adapta a la estÃ©tica de cualquier negocio y permite reservas 24/7 de forma automatizada.",
   },
 ];
 

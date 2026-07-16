@@ -13,6 +13,7 @@ export default function NewBusinessPage() {
   const [ownerPassword, setOwnerPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [plan, setPlan] = useState<"INDIVIDUAL" | "EQUIPO">("EQUIPO");
+  const [initialBenefit, setInitialBenefit] = useState<"NONE" | "PRIZE_12" | "PRIZE_6" | "PRIZE_3" | "PARTICIPANT_OFFER">("NONE");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,6 +30,7 @@ export default function NewBusinessPage() {
         ownerPassword,
         businessName: businessName.trim(),
         plan,
+        initialBenefit,
       });
 
       if (result.error) {
@@ -172,6 +174,38 @@ export default function NewBusinessPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Beneficio inicial</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { value: "NONE", title: "Sin beneficio", detail: "Cuenta normal" },
+              { value: "PRIZE_12", title: "Ganador 12 meses", detail: "Activa sin tarjeta por 12 meses" },
+              { value: "PRIZE_6", title: "Ganador 6 meses", detail: "Activa sin tarjeta por 6 meses" },
+              { value: "PRIZE_3", title: "Ganador 3 meses", detail: "Activa sin tarjeta por 3 meses" },
+              { value: "PARTICIPANT_OFFER", title: "Participante 2+2", detail: "2 meses sin tarjeta y luego 2 meses al 50%" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setInitialBenefit(option.value as typeof initialBenefit)}
+                className={`border-4 border-black p-4 text-left transition-all ${
+                  initialBenefit === option.value
+                    ? "bg-[#BFFCC6] shadow-[3px_3px_0_#000]"
+                    : "bg-white shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                }`}
+              >
+                <p className="text-sm font-black uppercase text-black">{option.title}</p>
+                <p className="mt-1 text-xs font-bold text-black/50">{option.detail}</p>
+              </button>
+            ))}
+          </div>
+          {initialBenefit !== "NONE" && (
+            <div className="mt-4 border-2 border-black bg-[#FFF5BA] px-3 py-2 text-xs font-black text-black">
+              Esta cuenta se crea activa sin pedir tarjeta. Al vencer el beneficio pasara a requerir suscripcion.
+            </div>
+          )}
         </div>
 
         {error && (

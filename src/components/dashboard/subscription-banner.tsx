@@ -3,6 +3,7 @@ import { differenceInDays } from "date-fns";
 import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
+import { PRICING, STAFF_LIMITS } from "@/core/constants";
 
 export async function SubscriptionBanner({ businessId }: { businessId: string }) {
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
@@ -62,7 +63,9 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Plan Individual · ¿Listo para crecer?</p>
-            <p className="text-sm text-muted-foreground">Sube a Equipo ($24.990/mes) para multi-staff y profesionales adicionales.</p>
+            <p className="text-sm text-muted-foreground">
+              Sube a Equipo (${PRICING.EQUIPO.monthly.toLocaleString("es-CL")}/mes) para hasta {STAFF_LIMITS.EQUIPO} profesionales incluidos y extras desde el sexto.
+            </p>
           </div>
           <Link href="/dashboard/settings#plan">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">

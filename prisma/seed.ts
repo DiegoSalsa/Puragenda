@@ -158,7 +158,7 @@ async function main() {
   console.log("\n✅ Seed v5 completado!");
   console.log("═══════════════════════════════════════");
   console.log("  🔐 contacto@purocode.com / 1234       → Platform Admin (SuperAdmin)");
-  console.log("  👑 admin@purocode.cl / purocode123     → EQUIPO (3 staff: mañana/tarde/mixto)");
+  console.log("  👑 admin@purocode.cl / purocode123     → EQUIPO (5 profesionales incluidos)");
   console.log("  👤 vale@esteticabella.cl / purocode123  → EQUIPO Trial (2 staff)");
   console.log("  👤 carlos@barberia.cl / purocode123     → INDIVIDUAL (1 staff)");
   console.log("═══════════════════════════════════════\n");

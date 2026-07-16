@@ -67,6 +67,7 @@ export async function registerUser(data: {
   ip?: string | null;
   referralCode?: string | null;
   planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
+  extraStaffCount?: number;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
@@ -135,7 +136,14 @@ export async function registerUser(data: {
     }
 
     await tx.subscription.create({
-      data: { businessId: business.id, plan, status, isTrial, trialEndsAt },
+      data: {
+        businessId: business.id,
+        plan,
+        status,
+        isTrial,
+        trialEndsAt,
+        extraStaffCount: plan === "EQUIPO" ? Math.max(0, Math.min(20, Math.floor(data.extraStaffCount ?? 0))) : 0,
+      },
     });
 
     // Record IP for future fraud detection

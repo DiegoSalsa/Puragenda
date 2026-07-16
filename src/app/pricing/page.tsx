@@ -3,6 +3,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { PricingCards } from "@/components/pricing-cards";
 import { LandingLayout } from "@/components/landing/landing-layout";
+import { STAFF_LIMITS } from "@/core/constants";
 
 export const metadata = {
   title: "Selecciona tu Plan — Puragenda",
@@ -61,9 +62,9 @@ export default async function PricingPage() {
                 <td className="p-4 text-center text-green-500">✓</td>
               </tr>
               <tr className="border-b-2 border-black dark:border-white/20">
-                <td className="p-4 border-r-2 border-black dark:border-white/20">Múltiples Profesionales</td>
-                <td className="p-4 border-r-2 border-black dark:border-white/20 text-center text-red-500">✗</td>
-                <td className="p-4 text-center text-green-500">✓</td>
+                <td className="p-4 border-r-2 border-black dark:border-white/20">Profesionales incluidos</td>
+                <td className="p-4 border-r-2 border-black dark:border-white/20 text-center">{STAFF_LIMITS.INDIVIDUAL}</td>
+                <td className="p-4 text-center">{STAFF_LIMITS.EQUIPO}</td>
               </tr>
               <tr>
                 <td className="p-4 border-r-2 border-black dark:border-white/20">Roles (Admin/Staff)</td>

@@ -51,7 +51,7 @@ export const TRIAL_DURATION_DAYS = 30;
 // Staff limits per plan
 export const STAFF_LIMITS = {
   INDIVIDUAL: 1,
-  EQUIPO: 3,     // 3 included, extras purchasable
+  EQUIPO: 5,     // 5 included, extras purchasable
   TEST: 1,
 } as const;
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Loader2, CheckCircle2, Save } from "lucide-react";
 import { updateSubscriptionAction } from "@/server/actions/admin.actions";
+import { STAFF_LIMITS } from "@/core/constants";
 
 interface SubscriptionData {
   id: string;
@@ -90,7 +91,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-black uppercase text-black/60">Staff extra</label>
+          <label className="text-xs font-black uppercase text-black/60">Profesionales extra</label>
           <input
             type="number"
             min={0}
@@ -99,6 +100,11 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
             onChange={(e) => setExtraStaff(parseInt(e.target.value) || 0)}
             className="w-full border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black outline-none"
           />
+          {plan === "EQUIPO" && (
+            <p className="text-xs font-bold text-black/50">
+              Equipo incluye {STAFF_LIMITS.EQUIPO}. Este campo cobra desde el profesional {STAFF_LIMITS.EQUIPO + 1}.
+            </p>
+          )}
         </div>
 
         {subscription.isTrial && subscription.trialEndsAt && (

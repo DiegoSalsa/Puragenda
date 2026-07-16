@@ -4,15 +4,19 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-react";
-import { PRICING, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 
 export function RegisterForm() {
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
   const wantsTrial = searchParams.get("trial") === "1";
+  const extraStaffCount = wantsPlan === "EQUIPO"
+    ? Math.max(0, Math.min(20, Number(searchParams.get("extraStaff") || 0) || 0))
+    : 0;
   const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
   const planLabel = wantsPlan === "EQUIPO" ? "Equipo" : wantsPlan === "INDIVIDUAL" ? "Individual" : wantsPlan === "TEST" ? "Test" : null;
-  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
+  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
+  const totalEquipoStaff = STAFF_LIMITS.EQUIPO + extraStaffCount;
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -55,6 +59,7 @@ export function RegisterForm() {
           password,
           referralCode: referralCode.trim() || undefined,
           planIntent: wantsPlan || undefined,
+          extraStaffCount,
           termsAccepted,
         }),
       });
@@ -73,7 +78,7 @@ export function RegisterForm() {
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: wantsPlan, discountCode: discountCode.trim() || undefined }),
+          body: JSON.stringify({ plan: wantsPlan, extraStaffCount, discountCode: discountCode.trim() || undefined }),
         });
 
         const billingData = await billingRes.json();
@@ -112,6 +117,11 @@ export function RegisterForm() {
                 Plan {planLabel} — ${planPrice.toLocaleString("es-CL")}/mes
               </span>
             </div>
+            {wantsPlan === "EQUIPO" && (
+              <p className="text-xs text-muted-foreground">
+                Incluye {STAFF_LIMITS.EQUIPO} profesionales. Total seleccionado: {totalEquipoStaff} profesional(es).
+              </p>
+            )}
           </div>
         ) : wantsTrial ? (
           <div className="space-y-2">
@@ -124,6 +134,11 @@ export function RegisterForm() {
                 {TRIAL_DURATION_DAYS} días gratis · Plan {planLabel || "Equipo"}
               </span>
             </div>
+            {(wantsPlan === "EQUIPO" || !wantsPlan) && (
+              <p className="text-xs text-muted-foreground">
+                Plan Equipo incluye {STAFF_LIMITS.EQUIPO} profesionales{extraStaffCount > 0 ? ` + ${extraStaffCount} extra(s)` : ""}.
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">

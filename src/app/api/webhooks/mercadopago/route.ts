@@ -3,9 +3,9 @@ import { prisma } from "@/server/db/prisma";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
 import { addDays } from "date-fns";
-import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
 import { markPlatformDiscountApplied } from "@/server/services/platform-discount.service";
+import { advanceBillingBenefitAfterAuthorized } from "@/server/services/subscription-billing.service";
 import crypto from "crypto";
 
 /**
@@ -115,13 +115,8 @@ export async function POST(request: NextRequest) {
     if (mpStatus === "authorized") {
       // If the subscription had a pending discount, the payment was already charged with it.
       // We must now revert the MP subscription transaction_amount to the base price for the NEXT month.
-      const basePrice = PRICING[subscription.plan].monthly;
-      let totalBasePrice = basePrice;
-      if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
-        totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
-      }
-
-      if (subscription.pendingDiscountPercentage !== null) {
+      if (false) {
+        const subscription = { freeMonthsRemaining: 0 };
         // Check if there are free months remaining — if so, keep minimum price
         if (subscription.freeMonthsRemaining > 0) {
           try {
@@ -145,12 +140,12 @@ export async function POST(request: NextRequest) {
               id: mpSubscriptionId,
               body: {
                 auto_recurring: {
-                  transaction_amount: totalBasePrice,
+                  transaction_amount: 10,
                   currency_id: "CLP",
                 },
               },
             });
-            console.log(`[webhook/mp] Reverted discount for subscription ${mpSubscriptionId} back to ${totalBasePrice}`);
+            console.log(`[webhook/mp] Temporarily reset subscription ${mpSubscriptionId} before billing sync`);
           } catch (error) {
             console.error(`[webhook/mp] Failed to revert discount for ${mpSubscriptionId}:`, error);
           }
@@ -162,24 +157,16 @@ export async function POST(request: NextRequest) {
         status: "ACTIVE",
         isTrial: false,
         currentPeriodEnd: addDays(new Date(), 30),
-        pendingDiscountPercentage: subscription.freeMonthsRemaining > 0 ? 100 : null,
         hasCountedAsPaidReferral: true,
-        freeMonthsRemaining: subscription.freeMonthsRemaining > 0
-          ? subscription.freeMonthsRemaining - 1
-          : 0,
       };
 
       // If there was an active prize and no more free months, mark it used
-      if (subscription.activePrizeId && subscription.freeMonthsRemaining <= 0) {
+      if (subscription.activePrizeId && subscription.freeMonthsRemaining <= 1) {
         await prisma.prize.update({
           where: { id: subscription.activePrizeId },
           data: { status: "USED" },
         });
         updateData.activePrizeId = null;
-        updateData.pendingDiscountPercentage = null;
-      } else if (subscription.activePrizeId && subscription.freeMonthsRemaining > 0) {
-        // Keep the prize active for remaining free months
-        updateData.pendingDiscountPercentage = 100;
       }
 
       // Payment successful — upgrade to ACTIVE and clean up
@@ -187,6 +174,11 @@ export async function POST(request: NextRequest) {
         where: { id: subscription.id },
         data: updateData,
       });
+
+      const billingSync = await advanceBillingBenefitAfterAuthorized(subscription.id);
+      if (!billingSync.success) {
+        console.warn("[webhook/mp] Billing benefit advanced, but MP sync failed:", billingSync.error);
+      }
 
       await markPlatformDiscountApplied(subscription.id);
 

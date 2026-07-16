@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { SubscriptionsClient } from "./subscriptions-client";
 import { differenceInDays } from "date-fns";
+import { calculateNextBillingPreview } from "@/server/services/subscription-billing.service";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,12 @@ export default async function SubscriptionsPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const expiringSoon = subscriptions
+  const subscriptionsWithBilling = subscriptions.map((subscription) => ({
+    ...subscription,
+    nextBillingPreview: calculateNextBillingPreview(subscription),
+  }));
+
+  const expiringSoon = subscriptionsWithBilling
     .filter(
       (s) =>
         s.isTrial &&
@@ -31,16 +37,16 @@ export default async function SubscriptionsPage() {
       return dA - dB;
     });
 
-  const cancelled = subscriptions.filter((s) => s.status === "CANCELLED");
+  const cancelled = subscriptionsWithBilling.filter((s) => s.status === "CANCELLED");
 
-  const active = subscriptions.filter((s) => s.status === "ACTIVE" && !s.isTrial);
+  const active = subscriptionsWithBilling.filter((s) => s.status === "ACTIVE" && !s.isTrial);
 
   return (
     <SubscriptionsClient
       expiringSoon={expiringSoon}
       cancelled={cancelled}
       active={active}
-      allSubscriptions={subscriptions}
+      allSubscriptions={subscriptionsWithBilling}
     />
   );
 }

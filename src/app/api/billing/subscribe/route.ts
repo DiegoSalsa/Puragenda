@@ -7,6 +7,7 @@ import { PRICING } from "@/core/constants";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
 import { quotePlatformDiscount, reservePlatformDiscount } from "@/server/services/platform-discount.service";
+import { calculateNextBillingPreview } from "@/server/services/subscription-billing.service";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -37,10 +38,14 @@ export async function POST(request: NextRequest) {
     // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
     let targetPlan: ValidPlan = "EQUIPO";
     let discountCode: string | undefined;
+    let requestedExtraStaffCount = 0;
     try {
       const body = await request.json();
       if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
         targetPlan = body.plan;
+      }
+      if (typeof body.extraStaffCount === "number") {
+        requestedExtraStaffCount = Math.max(0, Math.min(20, Math.floor(body.extraStaffCount)));
       }
       if (typeof body.discountCode === "string") {
         discountCode = body.discountCode;
@@ -72,12 +77,20 @@ export async function POST(request: NextRequest) {
     const preapproval = new PreApproval(mpClient);
     
     // Calculate initial price (apply discount if any)
-    let transactionAmount: number = PRICING[targetPlan].monthly;
+    const billingPreview = calculateNextBillingPreview({
+      plan: targetPlan,
+      billingCycle: subscription?.billingCycle ?? "MONTHLY",
+      extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
+      pendingDiscountPercentage: subscription?.pendingDiscountPercentage ?? null,
+      freeMonthsRemaining: subscription?.freeMonthsRemaining ?? 0,
+      promoName: subscription?.promoName ?? null,
+      promoFreeMonthsRemaining: subscription?.promoFreeMonthsRemaining ?? 0,
+      promoDiscountPercentage: subscription?.promoDiscountPercentage ?? null,
+      promoDiscountMonthsRemaining: subscription?.promoDiscountMonthsRemaining ?? 0,
+      nextBillingOverrideAmount: subscription?.nextBillingOverrideAmount ?? null,
+    });
+    let transactionAmount: number = billingPreview.mpAmount;
     let platformDiscount: Awaited<ReturnType<typeof quotePlatformDiscount>>["discount"];
-    if (subscription?.pendingDiscountPercentage) {
-      transactionAmount = Math.round(transactionAmount * (1 - subscription.pendingDiscountPercentage / 100));
-    }
-
     if (discountCode?.trim()) {
       if (subscription?.pendingDiscountPercentage) {
         return NextResponse.json(
@@ -131,6 +144,7 @@ export async function POST(request: NextRequest) {
         mpSubscriptionId: result.id,
         mpCustomerId: result.payer_id?.toString() ?? null,
         plan: targetPlan,
+        extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
         status: "INACTIVE",
         isTrial: false,
       },
@@ -139,6 +153,7 @@ export async function POST(request: NextRequest) {
         mpSubscriptionId: result.id,
         mpCustomerId: result.payer_id?.toString() ?? null,
         plan: targetPlan,
+        extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount : 0,
         status: "INACTIVE",
         isTrial: false,
       },

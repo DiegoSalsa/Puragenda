@@ -192,10 +192,11 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     }
 
     // If user is NOT logged in, redirect to register with plan info
+    const extraParam = key === "EQUIPO" && extras.EQUIPO > 0 ? `&extraStaff=${extras.EQUIPO}` : "";
     if (isTrial) {
-      window.location.href = `/register?plan=${key}&trial=1`;
+      window.location.href = `/register?plan=${key}&trial=1${extraParam}`;
     } else {
-      window.location.href = `/register?plan=${key}`;
+      window.location.href = `/register?plan=${key}${extraParam}`;
     }
   }
 
@@ -318,7 +319,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     <div className="flex items-center gap-3">
                       <Users className="h-6 w-6 dark:text-white" />
                       <span className="text-base font-black uppercase dark:text-white">
-                        Staff Extra
+                        Profesionales extra
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -357,6 +358,9 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       </span>
                     </p>
                   )}
+                  <p className="mt-3 text-xs font-black uppercase opacity-60">
+                    Se cobran desde el profesional {STAFF_LIMITS.EQUIPO + 1}.
+                  </p>
                 </div>
               )}
 

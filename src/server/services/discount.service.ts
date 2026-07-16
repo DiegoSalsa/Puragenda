@@ -1,7 +1,10 @@
 import { prisma } from "@/server/db/prisma";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
-import { PRICING, EXTRA_STAFF_COST } from "@/core/constants";
+import {
+  calculateSubscriptionBaseAmount,
+  MIN_MERCADOPAGO_AMOUNT_CLP,
+} from "@/server/services/subscription-billing.service";
 
 /**
  * Applies a one-time percentage discount to the next billing cycle of a subscription.
@@ -30,16 +33,16 @@ export async function applyDiscount(businessId: string, percentage: number) {
   }
 
   // 3. Calculate new price
-  const basePrice = PRICING[subscription.plan].monthly;
-  let totalBasePrice = basePrice;
+  const totalBasePrice = calculateSubscriptionBaseAmount(subscription);
 
   // Add extra staff costs if applicable
-  if (subscription.plan === "EQUIPO" && subscription.extraStaffCount > 0) {
-    totalBasePrice += subscription.extraStaffCount * EXTRA_STAFF_COST.EQUIPO;
-  }
+  
 
   // MercadoPago has a minimum transaction amount — enforce $10 CLP floor
-  const discountedPrice = Math.max(Math.round(totalBasePrice * (1 - percentage / 100)), 10);
+  const discountedPrice = Math.max(
+    Math.round(totalBasePrice * (1 - percentage / 100)),
+    MIN_MERCADOPAGO_AMOUNT_CLP
+  );
 
   try {
     // 4. Update MercadoPago Preapproval

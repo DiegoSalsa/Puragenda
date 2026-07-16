@@ -33,6 +33,14 @@ export const registerSchema = z.object({
     .optional()
     .nullable(),
 
+  extraStaffCount: z
+    .number()
+    .int()
+    .min(0)
+    .max(20)
+    .optional()
+    .default(0),
+
   planIntent: z
     .enum(["INDIVIDUAL", "EQUIPO", "TEST"])
     .optional()
