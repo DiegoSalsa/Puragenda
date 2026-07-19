@@ -39,6 +39,7 @@ interface AppointmentWithRelations {
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
+  customerAddress?: string | null;
   startTime: Date;
   endTime: Date;
   service: { name: string };
@@ -84,6 +85,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
+    customerAddress: appointment.customerAddress,
     serviceName: appointment.service.name,
     staffName: appointment.staff?.name || "Sin asignar",
     startTime: appointment.startTime,
@@ -157,6 +159,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
+    customerAddress: appointment.customerAddress,
     serviceName: appointment.service.name,
     staffName: appointment.staff?.name || "Sin asignar",
     startTime: appointment.startTime,
@@ -606,6 +609,7 @@ export async function sendRecurringBookingPendingApprovalBusiness(data: {
   ownerName: string | null | undefined;
   customerName: string;
   customerEmail: string;
+  customerAddress?: string;
   serviceName: string;
   selectedDays: number[];
   selectedTimes: Record<string, string>;

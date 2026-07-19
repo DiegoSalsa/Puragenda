@@ -20,6 +20,7 @@ function buildOptionCategoryCreates(optionCategories: ServiceInput["optionCatego
         name: alternative.name,
         priceDelta: alternative.priceDelta,
         durationDelta: alternative.durationDelta,
+        isHomeService: alternative.isHomeService,
         position: alternativeIndex,
       })),
     },

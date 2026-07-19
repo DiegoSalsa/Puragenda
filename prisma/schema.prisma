@@ -426,6 +426,7 @@ model ServiceOptionAlternative {
   name          String
   priceDelta    Float    @default(0)
   durationDelta Int      @default(0)
+  isHomeService Boolean  @default(false)
   position      Int      @default(0)
   categoryId    String
   createdAt     DateTime @default(now())
@@ -484,6 +485,7 @@ model RecurringBooking {
   customerName     String
   customerEmail    String
   customerPhone    String?
+  customerAddress  String?
   customerRut      String?
   status           RecurringStatus @default(PENDING_APPROVAL)
   // Dias elegidos por el cliente (0=Dom, 1=Lun, ... 6=Sab)
@@ -573,6 +575,7 @@ model Appointment {
   customerName         String
   customerEmail        String
   customerPhone        String?
+  customerAddress      String?
   startTime            DateTime
   endTime              DateTime
   status               AppointmentStatus @default(PENDING)

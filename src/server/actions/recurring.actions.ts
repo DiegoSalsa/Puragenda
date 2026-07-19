@@ -154,6 +154,7 @@ export async function createRecurringBookingAction(data: {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerAddress?: string;
   customerRut?: string;
   selectedDays: number[];
   selectedTimes: SelectedTimes;
@@ -302,6 +303,7 @@ export async function createRecurringBookingAction(data: {
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
         customerPhone: normalizedPhone,
+        customerAddress: data.customerAddress ?? null,
         customerRut: data.customerRut ?? null,
         status: initialStatus,
         selectedDays: data.selectedDays,
@@ -327,6 +329,7 @@ export async function createRecurringBookingAction(data: {
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
         customerPhone: normalizedPhone,
+        customerAddress: data.customerAddress,
         startDate: data.startDate,
         endDate,
         selectedDays: data.selectedDays,
@@ -362,6 +365,7 @@ export async function createRecurringBookingAction(data: {
           ownerName: business.owner.name,
           customerName: data.customerName,
           customerEmail: data.customerEmail,
+          customerAddress: data.customerAddress,
           serviceName: service.name,
           selectedDays: data.selectedDays,
           selectedTimes: data.selectedTimes,
@@ -456,6 +460,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
       customerName: booking.customerName,
       customerEmail: booking.customerEmail,
       customerPhone: booking.customerPhone,
+      customerAddress: booking.customerAddress,
       startDate: effectiveStartDate,
       endDate: booking.endDate,
       selectedDays: booking.selectedDays,
@@ -751,6 +756,7 @@ export async function resumeRecurringAction(recurringBookingId: string) {
     customerName: booking.customerName,
     customerEmail: booking.customerEmail,
     customerPhone: booking.customerPhone,
+    customerAddress: booking.customerAddress,
     endDate: booking.endDate,
     selectedDays: booking.selectedDays,
     selectedTimes,

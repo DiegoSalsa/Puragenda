@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 
 interface RecurringPlan {
@@ -21,7 +21,7 @@ interface RecurringPlan {
   expirationWarningDays: number;
 }
 
-interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; }
+interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; isHomeService: boolean; }
 interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; alternatives: ServiceOptionAlternative[]; }
 interface Service { id: string; name: string; description: string | null; imageUrl: string | null; duration: number; price: number; depositAmount: number; optionCategories: ServiceOptionCategory[]; recurringPlan: RecurringPlan | null; }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
@@ -45,7 +45,7 @@ interface Props {
 }
 
 type Step = "service" | "mode-select" | "options" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
-type FormState = { name: string; email: string; phone: string };
+type FormState = { name: string; email: string; phone: string; address: string };
 type BlockedSlot = { startTime: string; endTime: string; staffId?: string };
 type StaffAssignment = { serviceId: string; staffId: string };
 
@@ -176,8 +176,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [staffSelectionMode, setStaffSelectionMode] = useState<"single" | "split">("single");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
-  const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "" });
-  const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false });
+  const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", address: "" });
+  const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false, address: false });
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
@@ -322,8 +322,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return staffMembers.filter((s) => isStaffWorkingOnDay(s, dow));
   }, [staffMembers, selectedDate]);
 
-  const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()) };
-  const isFormValid = validation.name && validation.email && validation.phone;
+  const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
+  const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
+  const isFormValid = validation.name && validation.email && validation.phone && validation.address;
 
   const assignedStaffIds = useMemo(() => {
     if (splitStaffMode) {
@@ -511,7 +512,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
-    setTouched({ name: true, email: true, phone: true });
+    setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
     if (!selectedService || !selectedSlot || !isFormValid) return;
     if (loadingSlots) {
       setApiError("Estamos revisando la disponibilidad de ese horario. Intenta nuevamente en unos segundos.");
@@ -536,6 +537,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           selectedOptionAlternativeIds,
           customerName: form.name.trim(), customerEmail: form.email.trim(),
           customerPhone: form.phone.trim(), startTime: selectedSlot.start.toISOString(),
+          customerAddress: requiresHomeAddress ? form.address.trim() : undefined,
           endTime: selectedSlot.end.toISOString(),
           staffId: splitStaffMode ? undefined : selectedStaff?.id,
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
@@ -556,7 +558,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   function restart() {
     setStep("service"); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedStaffByServiceId({}); setStaffSelectionMode("single"); setSelectedDate(null); setSelectedSlot(null);
     setSelectedOptionByCategory({});
-    setForm({ name: "", email: "", phone: "" }); setTouched({ name: false, email: false, phone: false }); setApiError(""); setBlockedSlots([]);
+    setForm({ name: "", email: "", phone: "", address: "" }); setTouched({ name: false, email: false, phone: false, address: false }); setApiError(""); setBlockedSlots([]);
     setRewardCode(""); setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null);
     // Reset recurring state
     setRecurringMode("single"); setRecurringSelectedDays([]); setRecurringStartDate(""); setRecurringDurationMonths(1);
@@ -618,6 +620,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         const data = await res.json();
         if (data) {
           setForm((prev) => ({
+            ...prev,
             name: prev.name || data.name || "",
             email: prev.email,
             phone: prev.phone || data.phone || "",
@@ -630,7 +633,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   async function handleRecurringConfirm() {
     if (!isFormValid) {
-      setTouched({ name: true, email: true, phone: true });
+      setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
       setRecurringError("Completa nombre, correo y teléfono antes de confirmar.");
       return;
     }
@@ -650,6 +653,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           customerName: form.name.trim(),
           customerEmail: form.email.trim(),
           customerPhone: form.phone.trim(),
+          customerAddress: requiresHomeAddress ? form.address.trim() : undefined,
+          selectedOptionAlternativeIds,
           rut: rut || undefined,
           healthAnswers: Object.keys(healthAnswers).length > 0 ? healthAnswers : undefined,
           healthExtra: healthExtra || undefined,
@@ -826,7 +831,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                                   style={active ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
                                 >
                                   <div className="flex items-start justify-between gap-3">
-                                    <span className="font-medium">{alternative.name}</span>
+                                    <span>
+                                      <span className="font-medium">{alternative.name}</span>
+                                      {alternative.isHomeService && <span className="mt-1 flex items-center gap-1 text-[11px]" style={{ color: pc }}><MapPin className="h-3 w-3" />A domicilio</span>}
+                                    </span>
                                     <span className="text-xs font-semibold" style={{ color: active ? pc : textSecondary }}>
                                       {alternative.priceDelta > 0 ? `+${formatPrice(alternative.priceDelta)}` : "+$0"}
                                       {alternative.durationDelta > 0 ? ` / +${alternative.durationDelta} min` : ""}
@@ -1186,6 +1194,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     />
                   </div>
                 ))}
+                {requiresHomeAddress && (
+                  <div className="space-y-1 rounded-xl border p-3" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
+                    <label className="flex items-center gap-1.5 text-xs font-medium" style={{ color: textColor }}><MapPin className="h-3.5 w-3.5" />Direccion de la visita</label>
+                    <textarea value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder="Calle, numero, comuna y referencias" required maxLength={300} rows={3}
+                      className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
+                  </div>
+                )}
                 {selectedService.recurringPlan.requiresRut && (
                   <div className="space-y-1">
                     <label className="text-xs opacity-70" style={{ color: textColor }}>RUT (ej: 12345678-9)</label>
@@ -1457,6 +1472,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                 ))}
                 {/* ── Reward Code Input ── */}
+                {requiresHomeAddress && (
+                  <div className="space-y-1.5 rounded-2xl border p-4" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
+                    <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}><MapPin className="h-4 w-4" style={{ color: pc }} />Direccion de la visita</label>
+                    <p className="text-xs" style={{ color: textSecondary }}>Indica calle, numero, comuna y cualquier referencia necesaria.</p>
+                    <textarea value={form.address} onBlur={() => setTouched((p) => ({ ...p, address: true }))} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder="Ej: Av. Providencia 1234, depto. 502, Providencia" required maxLength={300} rows={3}
+                      className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
+                      style={!touched.address ? { borderColor: "var(--wborder)", background: "var(--wbg)" } : validation.address ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
+                    {touched.address && !validation.address && <p className="text-xs text-red-400">Ingresa una direccion valida.</p>}
+                  </div>
+                )}
                 <div className="space-y-2 rounded-2xl border p-4 transition-all" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                   <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" />¿Tienes un código de premio?

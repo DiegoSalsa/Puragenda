@@ -51,6 +51,7 @@ export async function createAppointment(data: {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerAddress?: string;
   startTime: Date;
   endTime: Date;
   businessId: string;
@@ -104,6 +105,7 @@ export async function createAppointment(data: {
       customerName: data.customerName,
       customerEmail: data.customerEmail,
       customerPhone: data.customerPhone,
+      customerAddress: data.customerAddress,
       startTime: data.startTime,
       endTime: data.endTime,
       status: initialStatus,

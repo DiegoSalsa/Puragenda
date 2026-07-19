@@ -18,6 +18,8 @@ export const optionAlternativeSchema = z.object({
     .min(0, "El ajuste de duracion no puede ser negativo")
     .max(480, "El ajuste maximo de duracion es 480 minutos")
     .default(0),
+
+  isHomeService: z.coerce.boolean().optional().default(false),
 });
 
 export const optionCategorySchema = z.object({
@@ -74,6 +76,12 @@ export const bookingSchema = z
       .trim()
       .min(1, "El telefono es obligatorio")
       .regex(/^\+?[0-9\s()-]{8,18}$/, "Telefono invalido"),
+
+    customerAddress: z
+      .string()
+      .trim()
+      .max(300, "La direccion no debe exceder 300 caracteres")
+      .optional(),
 
     startTime: z
       .string({ message: "La hora de inicio es obligatoria" })

@@ -104,6 +104,7 @@ export async function generateAppointments(params: {
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
+  customerAddress?: string | null;
   startDate: Date;
   endDate: Date;
   selectedDays: number[];
@@ -129,6 +130,7 @@ export async function generateAppointments(params: {
       customerName: params.customerName,
       customerEmail: params.customerEmail,
       customerPhone: params.customerPhone ?? undefined,
+      customerAddress: params.customerAddress ?? undefined,
       startTime: s.startTime,
       endTime: s.endTime,
       status: "CONFIRMED" as const,
@@ -296,6 +298,7 @@ export async function regenerateFromDate(params: {
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
+  customerAddress?: string | null;
   endDate: Date;
   selectedDays: number[];
   selectedTimes: SelectedTimes;
@@ -416,6 +419,7 @@ export async function applyTimePermanent(params: {
     customerName: booking.customerName,
     customerEmail: booking.customerEmail,
     customerPhone: booking.customerPhone,
+    customerAddress: booking.customerAddress,
     startDate: params.fromDate,
     endDate: booking.endDate,
     selectedDays: booking.selectedDays,

@@ -38,6 +38,8 @@ export async function POST(
       customerName,
       customerEmail,
       customerPhone,
+      customerAddress,
+      selectedOptionAlternativeIds,
       rut,
       healthAnswers,
       healthExtra,
@@ -54,6 +56,47 @@ export async function POST(
       return Response.json({ error: "Telefono invalido" }, { status: 400 });
     }
 
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, businessId: business.id },
+      include: {
+        optionCategories: { include: { alternatives: true } },
+      },
+    });
+    if (!service) {
+      return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
+    }
+
+    const selectedOptionIds = new Set<string>(
+      Array.isArray(selectedOptionAlternativeIds)
+        ? selectedOptionAlternativeIds.filter((id): id is string => typeof id === "string")
+        : []
+    );
+    const matchedOptionIds = new Set<string>();
+    let requiresHomeAddress = false;
+
+    for (const category of service.optionCategories) {
+      const selectedAlternatives = category.alternatives.filter((alternative) => selectedOptionIds.has(alternative.id));
+      if (selectedAlternatives.length > 1) {
+        return Response.json({ error: `Selecciona solo una alternativa para ${category.name}` }, { status: 400 });
+      }
+      if (category.isRequired && selectedAlternatives.length === 0) {
+        return Response.json({ error: `Debes seleccionar una alternativa para ${category.name}` }, { status: 400 });
+      }
+      if (selectedAlternatives[0]) {
+        matchedOptionIds.add(selectedAlternatives[0].id);
+        requiresHomeAddress ||= selectedAlternatives[0].isHomeService;
+      }
+    }
+
+    if (matchedOptionIds.size !== selectedOptionIds.size) {
+      return Response.json({ error: "Una o mas opciones seleccionadas no son validas para este servicio" }, { status: 400 });
+    }
+
+    const normalizedAddress = typeof customerAddress === "string" ? customerAddress.trim() : "";
+    if (requiresHomeAddress && normalizedAddress.length < 5) {
+      return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
+    }
+
     const result = await createRecurringBookingAction({
       businessSlug: slug,
       serviceId,
@@ -65,6 +108,7 @@ export async function POST(
       customerName,
       customerEmail,
       customerPhone: normalizedPhone,
+      customerAddress: requiresHomeAddress ? normalizedAddress : undefined,
       customerRut: rut || undefined,
       healthAnswers: healthAnswers || undefined,
       healthFreeText: healthExtra || undefined,

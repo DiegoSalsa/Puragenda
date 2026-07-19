@@ -31,7 +31,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, startTime, endTime, staffId, staffAssignments, rewardCode } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -100,6 +100,7 @@ export async function POST(
       alternativeName: string;
       priceDelta: number;
       durationDelta: number;
+      isHomeService: boolean;
     }[] = [];
     const allSelectedServices = [service];
     serviceTotals.set(service.id, { duration: service.duration, price: service.price });
@@ -170,6 +171,7 @@ export async function POST(
           alternativeName: alternative.name,
           priceDelta: alternative.priceDelta,
           durationDelta: alternative.durationDelta,
+          isHomeService: alternative.isHomeService,
         });
       }
     }
@@ -179,6 +181,11 @@ export async function POST(
         { error: "Una o mas opciones seleccionadas no son validas para estos servicios" },
         { status: 400 }
       );
+    }
+
+    const requiresHomeAddress = selectedOptionsSnapshot.some((selected) => selected.isHomeService);
+    if (requiresHomeAddress && (!customerAddress || customerAddress.trim().length < 5)) {
+      return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
 
     const requestedStart = new Date(startTime);
@@ -317,6 +324,7 @@ export async function POST(
           customerName,
           customerEmail,
           customerPhone,
+          customerAddress: requiresHomeAddress ? customerAddress : undefined,
           startTime: requestedStart,
           endTime: groupEnd,
           businessId: business.id,
@@ -452,6 +460,7 @@ export async function POST(
       customerName,
       customerEmail,
       customerPhone,
+      customerAddress: requiresHomeAddress ? customerAddress : undefined,
       startTime: requestedStart,
       endTime: expectedEnd,
       businessId: business.id,

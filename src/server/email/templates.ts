@@ -5,6 +5,16 @@ import { es } from "date-fns/locale";
 // Zona horaria por defecto para formatear fechas en emails
 const BUSINESS_TZ = "America/Santiago";
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[character] ?? character);
+}
+
 // ═══════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════
@@ -13,6 +23,7 @@ interface BookingEmailData {
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
+  customerAddress?: string | null;
   serviceName: string;
   staffName: string;
   startTime: Date;
@@ -111,7 +122,9 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   html += row("Fecha", date);
   html += row("Hora", time);
   html += row("Servicio", data.serviceName);
-  html += row("Profesional", data.staffName, true);
+  const customerAddress = "customerAddress" in data && data.customerAddress ? escapeHtml(data.customerAddress) : null;
+  html += row("Profesional", data.staffName, !customerAddress);
+  if (customerAddress) html += row("Direccion de la visita", customerAddress, true);
   
   html += `</table>`;
 
@@ -975,6 +988,7 @@ interface RecurringPendingApprovalBusinessData {
   ownerName: string | null | undefined;
   customerName: string;
   customerEmail: string;
+  customerAddress?: string;
   serviceName: string;
   selectedDays: number[];
   selectedTimes: Record<string, string>;
@@ -1010,6 +1024,7 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
         <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
       </p>
       ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate)}
+      ${data.customerAddress ? `<div style="margin:0 0 16px;padding:16px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;"><p style="margin:0 0 6px;font-size:12px;color:#6B7280;text-transform:uppercase;font-weight:600;">Direccion de las visitas</p><p style="margin:0;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.customerAddress)}</p></div>` : ""}
       ${healthHtml}
       <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
         <p style="margin:0;font-size:13px;color:#92400E;font-weight:600;">Esta solicitud requiere tu aprobacion antes de activarse.</p>

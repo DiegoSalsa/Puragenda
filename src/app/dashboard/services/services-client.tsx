@@ -30,6 +30,7 @@ interface ServiceOptionAlternative {
   name: string;
   priceDelta: number;
   durationDelta: number;
+  isHomeService: boolean;
 }
 
 interface ServiceOptionCategory {
@@ -44,6 +45,7 @@ interface OptionAlternativeForm {
   name: string;
   priceDelta: string;
   durationDelta: string;
+  isHomeService: boolean;
 }
 
 interface OptionCategoryForm {
@@ -111,7 +113,7 @@ const DEFAULT_RECURRING: {
 const DEFAULT_OPTION_CATEGORY: OptionCategoryForm = {
   name: "",
   isRequired: true,
-  alternatives: [{ name: "", priceDelta: "0", durationDelta: "0" }],
+  alternatives: [{ name: "", priceDelta: "0", durationDelta: "0", isHomeService: false }],
 };
 
 // ─────────────────────────────────────────────
@@ -214,6 +216,7 @@ export function ServicesClient({
           name: alternative.name,
           priceDelta: String(alternative.priceDelta),
           durationDelta: String(alternative.durationDelta),
+          isHomeService: alternative.isHomeService,
         })),
       }))
     );
@@ -260,6 +263,7 @@ export function ServicesClient({
               name: alternative.name.trim(),
               priceDelta: alternative.priceDelta,
               durationDelta: alternative.durationDelta,
+              isHomeService: alternative.isHomeService,
             })),
           }))
           .filter((category) => category.name || category.alternatives.some((alternative) => alternative.name)),
@@ -440,7 +444,7 @@ export function ServicesClient({
               ...category,
               alternatives: [
                 ...category.alternatives,
-                { name: "", priceDelta: "0", durationDelta: "0" },
+                { name: "", priceDelta: "0", durationDelta: "0", isHomeService: false },
               ],
             }
           : category
@@ -727,14 +731,15 @@ export function ServicesClient({
                           </div>
 
                           <div className="space-y-2">
-                            <div className="hidden sm:grid sm:grid-cols-[1fr_96px_96px_32px] gap-2 px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            <div className="hidden sm:grid sm:grid-cols-[1fr_96px_96px_110px_32px] gap-2 px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                               <span>Alternativa</span>
                               <span>Precio +</span>
                               <span>Min +</span>
+                              <span>Modalidad</span>
                               <span />
                             </div>
                             {category.alternatives.map((alternative, alternativeIndex) => (
-                              <div key={alternative.id ?? alternativeIndex} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_96px_96px_32px]">
+                              <div key={alternative.id ?? alternativeIndex} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_96px_96px_110px_32px]">
                                 <input
                                   value={alternative.name}
                                   onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { name: e.target.value })}
@@ -757,6 +762,15 @@ export function ServicesClient({
                                   aria-label="Minutos adicionales"
                                   className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                                 />
+                                <label className="flex items-center gap-2 rounded-lg border border-border bg-muted px-2 py-2 text-xs text-muted-foreground">
+                                  <input
+                                    type="checkbox"
+                                    checked={alternative.isHomeService}
+                                    onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { isHomeService: e.target.checked })}
+                                    className="h-3.5 w-3.5 accent-[#7C3AED]"
+                                  />
+                                  A domicilio
+                                </label>
                                 <button
                                   type="button"
                                   onClick={() => removeOptionAlternative(categoryIndex, alternativeIndex)}

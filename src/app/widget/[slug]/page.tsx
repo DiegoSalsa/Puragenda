@@ -176,6 +176,7 @@ export default async function WidgetPage({
             name: alternative.name,
             priceDelta: alternative.priceDelta,
             durationDelta: alternative.durationDelta,
+            isHomeService: alternative.isHomeService,
           })),
         })),
         recurringPlan: s.recurringPlan ? {
