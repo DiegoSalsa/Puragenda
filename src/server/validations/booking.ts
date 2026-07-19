@@ -31,10 +31,20 @@ export const optionCategorySchema = z.object({
 
   isRequired: z.coerce.boolean().default(false),
 
+  maxSelections: z.coerce
+    .number({ message: "El maximo de selecciones debe ser numerico" })
+    .int("El maximo de selecciones debe ser un numero entero")
+    .min(1, "Debe permitirse al menos una seleccion")
+    .max(20, "No se pueden permitir mas de 20 selecciones")
+    .default(1),
+
   alternatives: z
     .array(optionAlternativeSchema)
     .min(1, "Cada categoria debe tener al menos una alternativa")
     .max(20, "Cada categoria puede tener hasta 20 alternativas"),
+}).refine((category) => category.maxSelections <= category.alternatives.length, {
+  message: "El maximo de selecciones no puede superar la cantidad de alternativas",
+  path: ["maxSelections"],
 });
 
 export const bookingSchema = z

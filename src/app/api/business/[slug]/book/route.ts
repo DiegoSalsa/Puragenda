@@ -137,9 +137,9 @@ export async function POST(
           selectedOptionIdSet.has(alt.id)
         );
 
-        if (selectedAlternatives.length > 1) {
+        if (selectedAlternatives.length > category.maxSelections) {
           return Response.json(
-            { error: `Selecciona solo una alternativa para ${category.name}` },
+            { error: `Puedes seleccionar hasta ${category.maxSelections} alternativa(s) para ${category.name}` },
             { status: 400 }
           );
         }
@@ -151,28 +151,27 @@ export async function POST(
           );
         }
 
-        const alternative = selectedAlternatives[0];
-        if (!alternative) continue;
-
-        matchedOptionIds.add(alternative.id);
-        totalDuration += alternative.durationDelta;
-        totalPrice += alternative.priceDelta;
-        const currentTotals = serviceTotals.get(currentService.id) ?? { duration: currentService.duration, price: currentService.price };
-        serviceTotals.set(currentService.id, {
-          duration: currentTotals.duration + alternative.durationDelta,
-          price: currentTotals.price + alternative.priceDelta,
-        });
-        selectedOptionsSnapshot.push({
-          serviceId: currentService.id,
-          serviceName: currentService.name,
-          categoryId: category.id,
-          categoryName: category.name,
-          alternativeId: alternative.id,
-          alternativeName: alternative.name,
-          priceDelta: alternative.priceDelta,
-          durationDelta: alternative.durationDelta,
-          isHomeService: alternative.isHomeService,
-        });
+        for (const alternative of selectedAlternatives) {
+          matchedOptionIds.add(alternative.id);
+          totalDuration += alternative.durationDelta;
+          totalPrice += alternative.priceDelta;
+          const currentTotals = serviceTotals.get(currentService.id) ?? { duration: currentService.duration, price: currentService.price };
+          serviceTotals.set(currentService.id, {
+            duration: currentTotals.duration + alternative.durationDelta,
+            price: currentTotals.price + alternative.priceDelta,
+          });
+          selectedOptionsSnapshot.push({
+            serviceId: currentService.id,
+            serviceName: currentService.name,
+            categoryId: category.id,
+            categoryName: category.name,
+            alternativeId: alternative.id,
+            alternativeName: alternative.name,
+            priceDelta: alternative.priceDelta,
+            durationDelta: alternative.durationDelta,
+            isHomeService: alternative.isHomeService,
+          });
+        }
       }
     }
 

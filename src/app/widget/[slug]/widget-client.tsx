@@ -22,7 +22,7 @@ interface RecurringPlan {
 }
 
 interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; isHomeService: boolean; }
-interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; alternatives: ServiceOptionAlternative[]; }
+interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; maxSelections: number; alternatives: ServiceOptionAlternative[]; }
 interface Service { id: string; name: string; description: string | null; imageUrl: string | null; duration: number; price: number; depositAmount: number; optionCategories: ServiceOptionCategory[]; recurringPlan: RecurringPlan | null; }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
@@ -170,7 +170,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
-  const [selectedOptionByCategory, setSelectedOptionByCategory] = useState<Record<string, string>>({});
+  const [selectedOptionByCategory, setSelectedOptionByCategory] = useState<Record<string, string[]>>({});
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [selectedStaffByServiceId, setSelectedStaffByServiceId] = useState<Record<string, string>>({});
   const [staffSelectionMode, setStaffSelectionMode] = useState<"single" | "split">("single");
@@ -212,9 +212,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const selectedOptionDetails = useMemo(() => {
     return activeServices.flatMap((service) =>
       service.optionCategories.flatMap((category) => {
-        const alternativeId = selectedOptionByCategory[category.id];
-        const alternative = category.alternatives.find((item) => item.id === alternativeId);
-        return alternative ? [{ service, category, alternative }] : [];
+        const alternativeIds = selectedOptionByCategory[category.id] ?? [];
+        return category.alternatives
+          .filter((alternative) => alternativeIds.includes(alternative.id))
+          .map((alternative) => ({ service, category, alternative }));
       })
     );
   }, [activeServices, selectedOptionByCategory]);
@@ -229,7 +230,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return totals;
   }, [activeServices, selectedOptionDetails]);
   const optionsComplete = activeServices.every((service) =>
-    service.optionCategories.every((category) => !category.isRequired || !!selectedOptionByCategory[category.id])
+    service.optionCategories.every((category) => !category.isRequired || (selectedOptionByCategory[category.id]?.length ?? 0) > 0)
   );
   const sequentialDuration = activeServices.reduce((s, sv) => s + sv.duration, 0) + optionDuration;
   const selectedServiceIds = activeServices.map((service) => service.id);
@@ -455,11 +456,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setStep(selectedService?.recurringPlan && recurringMode === "single" ? "mode-select" : "service");
   }
 
-  function toggleOption(categoryId: string, alternativeId: string) {
-    setSelectedOptionByCategory((prev) => ({
-      ...prev,
-      [categoryId]: prev[categoryId] === alternativeId ? "" : alternativeId,
-    }));
+  function toggleOption(category: ServiceOptionCategory, alternativeId: string) {
+    setSelectedOptionByCategory((prev) => {
+      const current = prev[category.id] ?? [];
+      if (current.includes(alternativeId)) {
+        return { ...prev, [category.id]: current.filter((id) => id !== alternativeId) };
+      }
+      if (category.maxSelections === 1) {
+        return { ...prev, [category.id]: [alternativeId] };
+      }
+      if (current.length >= category.maxSelections) return prev;
+      return { ...prev, [category.id]: [...current, alternativeId] };
+    });
   }
 
   function continueSingleSessionFromModeSelect() {
@@ -816,18 +824,21 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                           <div className="flex items-center justify-between gap-3">
                             <p className="font-medium">{category.name}</p>
                             <span className="rounded-lg border px-2 py-0.5 text-[10px] uppercase tracking-wide" style={{ borderColor: "var(--wborder)", color: textSecondary }}>
-                              {category.isRequired ? "Obligatoria" : "Opcional"}
+                              {category.isRequired ? "Obligatoria" : "Opcional"} · {category.maxSelections === 1 ? "Elige 1" : `Hasta ${category.maxSelections} (${selectedOptionByCategory[category.id]?.length ?? 0}/${category.maxSelections})`}
                             </span>
                           </div>
                           <div className="grid gap-2">
                             {category.alternatives.map((alternative) => {
-                              const active = selectedOptionByCategory[category.id] === alternative.id;
+                              const active = (selectedOptionByCategory[category.id] ?? []).includes(alternative.id);
+                              const selectionLimitReached = !active && (selectedOptionByCategory[category.id]?.length ?? 0) >= category.maxSelections;
                               return (
                                 <button
                                   key={alternative.id}
                                   type="button"
-                                  onClick={() => toggleOption(category.id, alternative.id)}
-                                  className="rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                                  aria-pressed={active}
+                                  onClick={() => toggleOption(category, alternative.id)}
+                                  disabled={selectionLimitReached}
+                                  className="rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-45"
                                   style={active ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
                                 >
                                   <div className="flex items-start justify-between gap-3">

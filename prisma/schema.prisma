@@ -409,6 +409,7 @@ model ServiceOptionCategory {
   id          String   @id @default(cuid())
   name        String
   isRequired  Boolean  @default(false)
+  maxSelections Int    @default(1)
   position    Int      @default(0)
   serviceId   String
   createdAt   DateTime @default(now())

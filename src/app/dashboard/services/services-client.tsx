@@ -37,6 +37,7 @@ interface ServiceOptionCategory {
   id: string;
   name: string;
   isRequired: boolean;
+  maxSelections: number;
   alternatives: ServiceOptionAlternative[];
 }
 
@@ -52,6 +53,7 @@ interface OptionCategoryForm {
   id?: string;
   name: string;
   isRequired: boolean;
+  maxSelections: number;
   alternatives: OptionAlternativeForm[];
 }
 
@@ -113,6 +115,7 @@ const DEFAULT_RECURRING: {
 const DEFAULT_OPTION_CATEGORY: OptionCategoryForm = {
   name: "",
   isRequired: true,
+  maxSelections: 1,
   alternatives: [{ name: "", priceDelta: "0", durationDelta: "0", isHomeService: false }],
 };
 
@@ -211,6 +214,7 @@ export function ServicesClient({
         id: category.id,
         name: category.name,
         isRequired: category.isRequired,
+        maxSelections: category.maxSelections,
         alternatives: category.alternatives.map((alternative) => ({
           id: alternative.id,
           name: alternative.name,
@@ -259,6 +263,7 @@ export function ServicesClient({
           .map((category) => ({
             name: category.name.trim(),
             isRequired: category.isRequired,
+            maxSelections: category.maxSelections,
             alternatives: category.alternatives.map((alternative) => ({
               name: alternative.name.trim(),
               priceDelta: alternative.priceDelta,
@@ -478,6 +483,7 @@ export function ServicesClient({
           ? {
               ...category,
               alternatives: category.alternatives.filter((_, j) => j !== alternativeIndex),
+              maxSelections: Math.max(1, Math.min(category.maxSelections, category.alternatives.length - 1)),
             }
           : category
       )
@@ -712,15 +718,29 @@ export function ServicesClient({
                                 className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                               />
                             </div>
-                            <label className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                              <input
-                                type="checkbox"
-                                checked={category.isRequired}
-                                onChange={(e) => updateOptionCategory(categoryIndex, { isRequired: e.target.checked })}
-                                className="h-3.5 w-3.5 rounded accent-[#7C3AED]"
-                              />
-                              Obligatoria
-                            </label>
+                            <div className="mt-5 flex items-center gap-3">
+                              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={category.isRequired}
+                                  onChange={(e) => updateOptionCategory(categoryIndex, { isRequired: e.target.checked })}
+                                  className="h-3.5 w-3.5 rounded accent-[#7C3AED]"
+                                />
+                                Obligatoria
+                              </label>
+                              <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                Maximo
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={category.alternatives.length}
+                                  value={category.maxSelections}
+                                  onChange={(e) => updateOptionCategory(categoryIndex, { maxSelections: Math.max(1, Math.min(category.alternatives.length, Number(e.target.value) || 1)) })}
+                                  className="w-14 rounded-lg border border-border bg-muted px-2 py-1.5 text-center text-xs outline-none"
+                                  aria-label={`Maximo de selecciones para ${category.name || "la categoria"}`}
+                                />
+                              </label>
+                            </div>
                             <button
                               type="button"
                               onClick={() => removeOptionCategory(categoryIndex)}

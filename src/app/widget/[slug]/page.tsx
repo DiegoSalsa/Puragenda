@@ -171,6 +171,7 @@ export default async function WidgetPage({
           id: category.id,
           name: category.name,
           isRequired: category.isRequired,
+          maxSelections: category.maxSelections,
           alternatives: category.alternatives.map((alternative) => ({
             id: alternative.id,
             name: alternative.name,

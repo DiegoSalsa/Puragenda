@@ -14,6 +14,7 @@ function buildOptionCategoryCreates(optionCategories: ServiceInput["optionCatego
   return optionCategories.map((category, categoryIndex) => ({
     name: category.name,
     isRequired: category.isRequired,
+    maxSelections: category.maxSelections,
     position: categoryIndex,
     alternatives: {
       create: category.alternatives.map((alternative, alternativeIndex) => ({

@@ -76,15 +76,15 @@ export async function POST(
 
     for (const category of service.optionCategories) {
       const selectedAlternatives = category.alternatives.filter((alternative) => selectedOptionIds.has(alternative.id));
-      if (selectedAlternatives.length > 1) {
-        return Response.json({ error: `Selecciona solo una alternativa para ${category.name}` }, { status: 400 });
+      if (selectedAlternatives.length > category.maxSelections) {
+        return Response.json({ error: `Puedes seleccionar hasta ${category.maxSelections} alternativa(s) para ${category.name}` }, { status: 400 });
       }
-      if (category.isRequired && selectedAlternatives.length === 0) {
+      if (selectedOptionIds.size > 0 && category.isRequired && selectedAlternatives.length === 0) {
         return Response.json({ error: `Debes seleccionar una alternativa para ${category.name}` }, { status: 400 });
       }
-      if (selectedAlternatives[0]) {
-        matchedOptionIds.add(selectedAlternatives[0].id);
-        requiresHomeAddress ||= selectedAlternatives[0].isHomeService;
+      for (const alternative of selectedAlternatives) {
+        matchedOptionIds.add(alternative.id);
+        requiresHomeAddress ||= alternative.isHomeService;
       }
     }
 
