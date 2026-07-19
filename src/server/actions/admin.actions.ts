@@ -16,7 +16,7 @@ import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscriptio
 
 async function requireSuperAdmin() {
   const user = await getCurrentSessionUser();
-  if (!user || !user.isSuperAdmin) {
+  if (!user || !user.isSuperAdmin || !user.adminAccess) {
     throw new Error("Acceso denegado");
   }
   return user;

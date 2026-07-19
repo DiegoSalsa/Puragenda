@@ -63,5 +63,20 @@ export const loginSchema = z.object({
     .max(128, "La contraseña no debe exceder 128 caracteres"),
 });
 
+export const adminCodeRequestSchema = z.object({
+  email: z
+    .string({ message: "El email es obligatorio" })
+    .email("Debe ser un email válido")
+    .max(255)
+    .trim()
+    .toLowerCase(),
+});
+
+export const adminCodeVerifySchema = adminCodeRequestSchema.extend({
+  code: z
+    .string({ message: "El código es obligatorio" })
+    .regex(/^\d{6}$/, "El código debe tener 6 dígitos"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

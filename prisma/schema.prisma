@@ -35,6 +35,7 @@ model User {
   businesses Business[]
   staff      Staff[]
   auditLogs  AuditLog[]
+  adminLoginCodes AdminLoginCode[]
   platformDiscountCodes PlatformDiscountCode[] @relation("PlatformDiscountCreatedBy")
   adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
 }
@@ -51,6 +52,21 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model AdminLoginCode {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }
 
 // ==========================================

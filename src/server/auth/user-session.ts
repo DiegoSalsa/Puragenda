@@ -17,11 +17,18 @@ export async function getCurrentSessionUser(): Promise<SessionUser | null> {
 
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true },
+    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true, deletedAt: true },
   });
 
-  if (!user) return null;
-  return user;
+  if (!user || user.deletedAt) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    isSuperAdmin: user.isSuperAdmin,
+    adminAccess: sessionUser.adminAccess ?? false,
+  };
 }
 
 /**
@@ -38,9 +45,16 @@ export async function getApiSessionUser(
 
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
-    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true },
+    select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true, deletedAt: true },
   });
 
-  if (!user) return null;
-  return user;
+  if (!user || user.deletedAt) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    isSuperAdmin: user.isSuperAdmin,
+    adminAccess: sessionUser.adminAccess ?? false,
+  };
 }

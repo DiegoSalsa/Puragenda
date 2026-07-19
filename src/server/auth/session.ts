@@ -90,6 +90,7 @@ export function verifySessionToken(token: string): SessionUser | null {
       name: payload.name,
       role: payload.role,
       isSuperAdmin: payload.isSuperAdmin ?? false,
+      adminAccess: payload.adminAccess ?? false,
     };
   } catch {
     return null;

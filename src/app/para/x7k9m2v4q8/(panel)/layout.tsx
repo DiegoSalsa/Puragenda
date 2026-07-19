@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }) {
   const user = await getCurrentSessionUser();
 
-  if (!user || !user.isSuperAdmin) {
+  if (!user || !user.isSuperAdmin || !user.adminAccess) {
     redirect(`${ADMIN_SECRET_PATH}/login`);
   }
 

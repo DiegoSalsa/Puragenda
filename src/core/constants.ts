@@ -10,6 +10,10 @@ export const DEFAULT_TIMEZONE = "America/Santiago";
 // Auth
 export const SALT_ROUNDS = 12;
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+export const ADMIN_LOGIN_CODE_TTL_MINUTES = 10;
+export const ADMIN_LOGIN_CODE_MAX_ATTEMPTS = 5;
+export const ADMIN_LOGIN_CODE_RESEND_SECONDS = 60;
 export const AUTH_COOKIE_NAME = "puragenda_session";
 
 // SuperAdmin emails

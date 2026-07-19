@@ -115,6 +115,20 @@ export const loginLimiter = rateLimit({
   message: "Demasiados intentos de inicio de sesión. Espera 15 minutos.",
 });
 
+/** SuperAdmin code requests: 5 attempts per 15 minutes per IP */
+export const adminCodeRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Demasiadas solicitudes de código. Espera 15 minutos.",
+});
+
+/** SuperAdmin code verification: 15 attempts per 15 minutes per IP */
+export const adminCodeVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: "Demasiados intentos de verificación. Espera 15 minutos.",
+});
+
 /** Register: 3 attempts per 60 minutes */
 export const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

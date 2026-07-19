@@ -366,6 +366,40 @@ export function forgotPasswordEmail(data: ForgotPasswordEmailData): { subject: s
 }
 
 // ═══════════════════════════════════════════
+// SUPERADMIN LOGIN CODE EMAIL
+// ═══════════════════════════════════════════
+
+interface AdminLoginCodeEmailData {
+  name: string;
+  code: string;
+  expiresInMinutes: number;
+}
+
+export function adminLoginCodeEmail(data: AdminLoginCodeEmailData): { subject: string; html: string } {
+  const safeName = escapeHtml(data.name);
+  return {
+    subject: "Tu código de acceso al panel — Puragenda",
+    html: layout("Acceso seguro", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Hola, ${safeName}</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
+        Usa este código para iniciar sesión en el panel de SuperAdmin:
+      </p>
+      <div style="margin:24px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;text-align:center;">
+        <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:32px;line-height:1;letter-spacing:8px;font-weight:800;color:#5b21b6;">${data.code}</span>
+      </div>
+      <p style="margin:0;font-size:13px;color:#64748b;">
+        El código vence en <strong style="color:#0f172a;">${data.expiresInMinutes} minutos</strong> y sólo puede utilizarse una vez.
+      </p>
+      <div style="margin:16px 0 0;padding:14px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa;">
+        <p style="margin:0;font-size:12px;color:#9a3412;">
+          Si no solicitaste este acceso, ignora el mensaje. Nunca compartas este código.
+        </p>
+      </div>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
 // NEW REGISTRATION ADMIN NOTIFICATION
 // ═══════════════════════════════════════════
 

@@ -13,7 +13,7 @@ const PUBLIC_API_PREFIX = "/api/business";
  * Lightweight: only reads the payload, does NOT verify HMAC.
  * Full signature verification happens in user-session.ts on the server.
  */
-function readSessionPayload(token: string): { isSuperAdmin?: boolean } | null {
+function readSessionPayload(token: string): { isSuperAdmin?: boolean; adminAccess?: boolean } | null {
   try {
     const [encodedPayload] = token.split(".");
     if (!encodedPayload) return null;
@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
     }
 
     const payload = readSessionPayload(token);
-    if (!payload?.isSuperAdmin) {
+    if (!payload?.isSuperAdmin || !payload.adminAccess) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
       }

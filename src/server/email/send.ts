@@ -9,6 +9,7 @@ import {
   staffInviteEmail,
   cancellationClientEmail,
   forgotPasswordEmail,
+  adminLoginCodeEmail,
   newRegistrationAdminEmail,
   loyaltyStampEarnedEmail,
   loyaltyRewardWonEmail,
@@ -556,6 +557,28 @@ export async function sendAppointmentActionNotification(data: {
     subject,
     html,
   });
+}
+
+/** Send a one-time SuperAdmin login code. Failures are propagated to invalidate the challenge. */
+export async function sendAdminLoginCodeEmail(
+  email: string,
+  name: string,
+  code: string,
+  expiresInMinutes: number
+) {
+  const { subject, html } = adminLoginCodeEmail({ name, code, expiresInMinutes });
+  const result = await resend.emails.send({
+    from: EMAIL_FROM,
+    to: email,
+    subject,
+    html,
+  });
+
+  if (result.error) {
+    throw new Error(`Resend rejected admin login code: ${result.error.message}`);
+  }
+
+  console.log(`[Email] Admin login code sent to ${email}`);
 }
 
 export async function sendAppointmentActionStaffNotification(data: {
