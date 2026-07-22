@@ -9,6 +9,36 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
 import { sendStaffInviteEmail } from "@/server/email/send";
+import { isValidTime, isValidTimeRange } from "@/lib/time";
+
+type DailyHours = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isOpen?: boolean;
+  isWorking?: boolean;
+};
+
+function validateDailyHours(entries: DailyHours[]): string | null {
+  if (entries.length === 0 || entries.length > 7 || new Set(entries.map((entry) => entry.dayOfWeek)).size !== entries.length) {
+    return "La configuración de días es inválida";
+  }
+
+  for (const entry of entries) {
+    if (!Number.isInteger(entry.dayOfWeek) || entry.dayOfWeek < 0 || entry.dayOfWeek > 6) {
+      return "Día de la semana inválido";
+    }
+    if (!isValidTime(entry.startTime) || !isValidTime(entry.endTime)) {
+      return "Usa horas válidas en formato HH:mm";
+    }
+    const isActive = entry.isOpen ?? entry.isWorking ?? true;
+    if (isActive && !isValidTimeRange(entry.startTime, entry.endTime)) {
+      return "La hora de inicio debe ser anterior a la hora de fin";
+    }
+  }
+
+  return null;
+}
 
 // â”€â”€â”€ Appointment Status â”€â”€â”€
 export async function updateAppointmentStatusAction(appointmentId: string, status: "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "NO_SHOW") {
@@ -33,6 +63,8 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  const validationError = validateDailyHours(hours);
+  if (validationError) return { error: validationError };
   const ops = hours.map((h) =>
     prisma.businessHours.upsert({
       where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek: h.dayOfWeek } },
@@ -155,6 +187,8 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  const validationError = validateDailyHours(schedule);
+  if (validationError) return { error: validationError };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Staff no encontrado" };
   const ops = schedule.map((s) =>

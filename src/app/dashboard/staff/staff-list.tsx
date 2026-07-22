@@ -5,12 +5,10 @@ import { Plus, Loader2, UserCheck, UserX, Clock, ChevronDown, ChevronUp, Save, A
 import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { isValidTimeRange } from "@/lib/time";
 
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const TIMES: string[] = [];
-for (let h = 6; h <= 23; h++) { TIMES.push(`${String(h).padStart(2, "0")}:00`); TIMES.push(`${String(h).padStart(2, "0")}:30`); }
-
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
 interface BlockEntry { id: string; startTime: string; endTime: string; reason: string | null; }
 type EditableStaffRole = "ADMIN" | "RECEPTIONIST" | "STAFF";
@@ -140,6 +138,7 @@ export function StaffList({
     return map;
   });
   const [savingSchedule, setSavingSchedule] = useState<string | null>(null);
+  const [scheduleErrors, setScheduleErrors] = useState<Record<string, string>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -201,11 +200,26 @@ export function StaffList({
       ...prev,
       [staffId]: (prev[staffId] || defaultSchedule()).map((s) => s.dayOfWeek === dow ? { ...s, [field]: value } : s),
     }));
+    setScheduleErrors((prev) => ({ ...prev, [staffId]: "" }));
   }
 
   async function handleSaveSchedule(staffId: string) {
+    const schedule = schedules[staffId] || defaultSchedule();
+    const invalidDay = schedule.find((entry) => entry.isWorking && !isValidTimeRange(entry.startTime, entry.endTime));
+    if (invalidDay) {
+      setScheduleErrors((prev) => ({
+        ...prev,
+        [staffId]: `Revisa el horario del ${DAYS[invalidDay.dayOfWeek]}: la entrada debe ser anterior a la salida.`,
+      }));
+      return;
+    }
+
     setSavingSchedule(staffId);
-    await saveStaffScheduleAction(staffId, schedules[staffId] || defaultSchedule());
+    setScheduleErrors((prev) => ({ ...prev, [staffId]: "" }));
+    const result = await saveStaffScheduleAction(staffId, schedule);
+    if (result.error) {
+      setScheduleErrors((prev) => ({ ...prev, [staffId]: result.error }));
+    }
     setSavingSchedule(null);
   }
 
@@ -600,19 +614,19 @@ export function StaffList({
                         <span className={`w-12 text-xs font-bold uppercase tracking-wider ${entry.isWorking ? "text-black dark:text-white" : "text-black/50 dark:text-white/50"}`}>{DAYS[entry.dayOfWeek]}</span>
                         {entry.isWorking ? (
                           <div className="flex items-center gap-1.5">
-                            <select value={entry.startTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "startTime", e.target.value)}
-                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white">
-                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <input type="time" step={60} value={entry.startTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "startTime", e.target.value)}
+                              aria-label={`Hora de entrada del ${DAYS[entry.dayOfWeek]}`}
+                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white" />
                             <span className="text-black font-bold dark:text-white">-</span>
-                            <select value={entry.endTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "endTime", e.target.value)}
-                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white">
-                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <input type="time" step={60} value={entry.endTime} onChange={(e) => updateSchedule(s.id, entry.dayOfWeek, "endTime", e.target.value)}
+                              aria-label={`Hora de salida del ${DAYS[entry.dayOfWeek]}`}
+                              className="rounded-lg border-2 border-black dark:border-white bg-white px-2 py-1 text-xs font-bold outline-none dark:bg-black dark:text-white" />
                           </div>
                         ) : <span className="text-xs font-bold uppercase text-black/50 dark:text-white/50">Libre</span>}
                       </div>
                     ))}
+                    <p className="text-[11px] text-muted-foreground">Puedes escribir horas exactas, por ejemplo 09:15.</p>
+                    {scheduleErrors[s.id] && <p role="alert" className="text-xs text-red-500">{scheduleErrors[s.id]}</p>}
                     <button onClick={() => handleSaveSchedule(s.id)} disabled={savingSchedule === s.id}
                       className="flex items-center gap-2 rounded-xl bg-[#BFFCC6] border-2 border-black px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-[#BFFCC6] dark:text-black">
                       {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -677,17 +691,13 @@ export function StaffList({
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
                             <label className="block text-xs text-muted-foreground mb-1">Hora inicio</label>
-                            <select value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
-                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground">
-                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <input type="time" step={60} value={blockStart} onChange={(e) => setBlockStart(e.target.value)}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none" />
                           </div>
                           <div>
                             <label className="block text-xs text-muted-foreground mb-1">Hora fin</label>
-                            <select value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)}
-                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground">
-                              {TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-                            </select>
+                            <input type="time" step={60} value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none" />
                           </div>
                         </div>
                         {blockError && <p className="text-xs text-red-400">{blockError}</p>}
