@@ -3,6 +3,8 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId } from "@/server/services/service.service";
 import { ServicesClient } from "./services-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,9 @@ export default async function ServicesPage() {
         No tienes un negocio configurado aún
       </div>
     );
+  }
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar servicios.</div>;
   }
 
   const services = await getServicesByBusinessId(business.id);

@@ -9,6 +9,8 @@ import { DashboardTutorial } from "@/components/dashboard/tutorial";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
+import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 
 export default async function DashboardLayout({
   children,
@@ -22,6 +24,7 @@ export default async function DashboardLayout({
   }
 
   const business = await getBusinessForUser(user.id);
+  const permissions = business ? await getEffectiveBusinessPermissions(user, business) : [];
 
   // Check subscription status — block access if INACTIVE (pending payment)
   if (business && user.role !== "SUPERADMIN") {
@@ -57,11 +60,20 @@ export default async function DashboardLayout({
           userName={user.name}
           widgetSlug={business?.slug}
           userRole={user.role}
+          permissions={permissions}
         />
-        <main id="tutorial-main" className="flex-1 overflow-auto">
-          <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
-        </main>
-        <DashboardTutorial userEmail={user.email} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="hidden h-14 shrink-0 items-center justify-end border-b border-border/70 bg-background/95 px-5 backdrop-blur md:flex">
+            <ContextualHelpButton />
+          </header>
+          <main id="tutorial-main" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+            <div className="min-w-0 max-w-full px-4 pb-6 pt-[72px] sm:p-6 md:pt-6 xl:p-8">{children}</div>
+          </main>
+        </div>
+        <div className="md:hidden">
+          <ContextualHelpButton />
+        </div>
+        <DashboardTutorial />
         <ChangelogPopup
           seenVersion={changelogSeenVersion}
           isDemoAccount={isDemoAccount}

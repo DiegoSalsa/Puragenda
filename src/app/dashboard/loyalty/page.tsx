@@ -3,18 +3,20 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { Stamp } from "lucide-react";
 import { LoyaltyConfigForm } from "./loyalty-config-form";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoyaltyPage() {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return <div className="py-20 text-center text-muted-foreground">Solo el administrador puede acceder a esta sección</div>;
-  }
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar fidelización.</div>;
+  }
 
   return (
     <div className="space-y-8">

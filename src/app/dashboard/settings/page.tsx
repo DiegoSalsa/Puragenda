@@ -16,17 +16,19 @@ import { MercadoPagoConnect } from "./mercadopago-connect";
 import { DepositConfig } from "./deposit-config";
 import { BusinessPoliciesEditor } from "./business-policies-editor";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { SecretField } from "@/components/dashboard/secret-field";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ mp_connected?: string; mp_error?: string }> }) {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return <div className="py-20 text-center text-muted-foreground">Solo el administrador puede acceder a esta sección</div>;
-  }
-
   const business = await getBusinessForUser(user.id);
+  if (business && !(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para administrar la configuración</div>;
+  }
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
   const [hours, subscription] = await Promise.all([
@@ -185,6 +187,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
           <BusinessHoursEditor initialHours={hours.map((h) => ({
             dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
+            breakStart: h.breakStart, breakEnd: h.breakEnd,
           }))} />
         </div>
 
@@ -203,10 +206,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <Key className="h-4 w-4 text-[#7C3AED]" /> API Key
             <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]">Secreta</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex-1 break-all rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm">{business.apiKey}</div>
-            <CopyButton text={business.apiKey} />
-          </div>
+          <SecretField value={business.apiKey} label="API Key" />
         </div>
 
         <div id="business-embed" className="rounded-2xl border border-border bg-card p-6">

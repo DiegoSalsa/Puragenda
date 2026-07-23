@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, LogIn } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 
 export function LoginForm() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,7 +27,10 @@ export function LoginForm() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        const message = data.error || "No se pudo iniciar sesión";
+        const message =
+          response.status >= 500
+            ? "El servidor no pudo iniciar la sesión. Intenta nuevamente en unos segundos."
+            : data.error || "No se pudo iniciar sesión";
         const details = data.details?.length ? `: ${data.details.join(", ")}` : "";
         setError(`${message}${details}`);
         return;
@@ -34,6 +38,8 @@ export function LoginForm() {
 
       router.push("/dashboard");
       router.refresh();
+    } catch {
+      setError("No se pudo conectar con Puragenda. Comprueba que el servidor esté encendido e intenta nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -64,15 +70,26 @@ export function LoginForm() {
 
         <div className="space-y-1.5">
           <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="********"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={passwordVisible ? "text" : "password"}
+              placeholder="********"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 pr-11 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            />
+            <button
+              type="button"
+              onClick={() => setPasswordVisible((current) => !current)}
+              aria-label={passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+              title={passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+              className="absolute inset-y-0 right-2 flex w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+            >
+              {passwordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           <div className="flex justify-end pt-1">
             <Link href="/auth/forgot-password" className="text-xs text-[#7C3AED] hover:underline">
               ¿Olvidaste tu contraseña?
@@ -81,7 +98,7 @@ export function LoginForm() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <div role="alert" aria-live="polite" className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error}
           </div>
         )}

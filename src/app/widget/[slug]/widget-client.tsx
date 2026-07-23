@@ -24,14 +24,25 @@ interface RecurringPlan {
 interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; isHomeService: boolean; }
 interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; maxSelections: number; alternatives: ServiceOptionAlternative[]; }
 interface Service { id: string; name: string; description: string | null; imageUrl: string | null; duration: number; price: number; depositAmount: number; optionCategories: ServiceOptionCategory[]; recurringPlan: RecurringPlan | null; }
-interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
-interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
+interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null; }
+interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null; }
 interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
+interface PromoBlock {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string;
+  linkUrl: string | null;
+  placement: "HEADER" | "BETWEEN_SERVICES" | "FOOTER";
+  position: number;
+  textAlign: string;
+}
 interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
     primaryColor: string; secondaryColor: string; backgroundColor: string; brandColor: string | null;
     textColor?: string; textSecondary?: string; fontSize?: number;
+    cornerRadius?: number; shadowStyle?: string; headerAlign?: string;
   };
   services: Service[];
   primaryColor: string;
@@ -42,6 +53,7 @@ interface Props {
   allowSameDayBookings?: boolean;
   slotInterval?: number;
   minAdvanceBookingMinutes?: number;
+  promoBlocks?: PromoBlock[];
 }
 
 type Step = "service" | "mode-select" | "options" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -76,6 +88,7 @@ function buildDays(businessHours?: BusinessHour[], allowSameDayBookings?: boolea
 function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30) {
   const dow = date.getDay();
   let startH = 9, startM = 0, endH = 19, endM = 0;
+  const breakRanges: { start: number; end: number }[] = [];
 
   if (businessHours && businessHours.length > 0) {
     const bh = businessHours.find((h) => h.dayOfWeek === dow);
@@ -83,6 +96,9 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
       const [sh, sm] = bh.startTime.split(":").map(Number);
       const [eh, em] = bh.endTime.split(":").map(Number);
       startH = sh; startM = sm; endH = eh; endM = em;
+      if (bh.breakStart && bh.breakEnd) {
+        breakRanges.push({ start: scheduleTimeToMinutes(bh.breakStart), end: scheduleTimeToMinutes(bh.breakEnd) });
+      }
     }
   }
 
@@ -94,6 +110,9 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
       const [seh, sem] = ss.endTime.split(":").map(Number);
       if (ssh * 60 + ssm > startH * 60 + startM) { startH = ssh; startM = ssm; }
       if (seh * 60 + sem < endH * 60 + endM) { endH = seh; endM = sem; }
+      if (ss.breakStart && ss.breakEnd) {
+        breakRanges.push({ start: scheduleTimeToMinutes(ss.breakStart), end: scheduleTimeToMinutes(ss.breakEnd) });
+      }
     }
   }
 
@@ -101,7 +120,11 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
   let current = setMinutes(setHours(date, startH), startM);
   const end = setMinutes(setHours(date, endH), endM);
   while (addMinutes(current, duration) <= end) {
-    slots.push({ start: current, end: addMinutes(current, duration) });
+    const slotEnd = addMinutes(current, duration);
+    const currentMinutes = timeToMinutes(current);
+    const endMinutes = timeToMinutes(slotEnd);
+    const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && endMinutes > range.start);
+    if (!overlapsBreak) slots.push({ start: current, end: slotEnd });
     current = addMinutes(current, slotInterval);
   }
   return slots;
@@ -160,12 +183,15 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120 }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [] }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
   const textSecondary = business.textSecondary || `${textColor}66`;
   const fontSize = business.fontSize || 14;
+  const cornerRadius = Math.max(0, Math.min(40, business.cornerRadius ?? 16));
+  const shadowStyle = business.shadowStyle || "soft";
+  const headerAlign = business.headerAlign || "left";
   const isMultiService = maxServicesPerBooking > 1;
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -356,7 +382,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }, [business.slug, business.apiKey]);
 
   useEffect(() => {
-    if (selectedDate) fetchBlocked(selectedDate, assignedStaffIds);
+    if (!selectedDate) return;
+    const timer = window.setTimeout(() => {
+      void fetchBlocked(selectedDate, assignedStaffIds);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [selectedDate, assignedStaffIds, fetchBlocked]);
 
   function isSlotUnavailable(slot: { start: Date; end: Date }) {
@@ -379,10 +409,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   useEffect(() => {
-    if (selectedSlot && isSlotUnavailable(selectedSlot)) {
+    if (!selectedSlot || !isSlotUnavailable(selectedSlot)) return;
+    const timer = window.setTimeout(() => {
       setSelectedSlot(null);
       setStep("datetime");
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // isSlotUnavailable reads the current booking selection captured by these dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSlot, blockedSlots, selectedStaffByServiceId, splitStaffMode]);
 
   // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
@@ -708,6 +742,36 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     : step === "details" ? 2 + optionOffset + staffOffset
     : stepLabels.length;
 
+  const shellShadow = shadowStyle === "none"
+    ? "none"
+    : shadowStyle === "strong"
+      ? "0 28px 70px rgba(0,0,0,.42)"
+      : "0 18px 45px rgba(0,0,0,.24)";
+
+  function renderPromoBlocks(placement: PromoBlock["placement"]) {
+    const blocks = promoBlocks
+      .filter((block) => block.placement === placement)
+      .sort((a, b) => a.position - b.position);
+    if (!blocks.length) return null;
+    return (
+      <div className="space-y-3 p-4 sm:p-5">
+        {blocks.map((block) => {
+          const content = (
+            <div className="group relative min-h-32 overflow-hidden border" style={{ borderColor: "var(--wborder)", borderRadius: `${Math.max(8, cornerRadius - 4)}px` }}>
+              <img src={block.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="relative flex min-h-32 flex-col justify-end p-4" style={{ textAlign: block.textAlign === "center" ? "center" : block.textAlign === "right" ? "right" : "left" }}>
+                <p className="text-base font-bold text-white">{block.title}</p>
+                {block.subtitle && <p className="mt-1 text-xs text-white/75">{block.subtitle}</p>}
+              </div>
+            </div>
+          );
+          return block.linkUrl ? <a key={block.id} href={block.linkUrl} target="_blank" rel="noopener noreferrer">{content}</a> : <div key={block.id}>{content}</div>;
+        })}
+      </div>
+    );
+  }
+
   return (
     <div
       className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
@@ -724,19 +788,19 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         color: textColor,
       }}
     >
-      <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-[1.25rem] border shadow-2xl transition-all duration-500 flex flex-col" style={{ background: bgColor, color: textColor, borderColor: "var(--wborder)" }}>
+      <div className="mx-auto flex w-full max-w-2xl flex-col overflow-hidden border transition-all duration-500" style={{ background: bgColor, color: textColor, borderColor: "var(--wborder)", borderRadius: `${cornerRadius}px`, boxShadow: shellShadow }}>
         {/* Header */}
         <div className="border-b px-5 py-4 sm:px-6 relative overflow-hidden" style={{ background: `${bgColor}F2`, borderColor: "var(--wborder)", backdropFilter: "blur(12px)" }}>
           <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc}40 100%)` }} />
-          <div className="relative flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-2" style={{ justifyContent: headerAlign === "center" ? "center" : headerAlign === "right" ? "flex-end" : "space-between" }}>
+            <div className="flex items-center gap-3" style={{ textAlign: headerAlign as "left" | "center" | "right" }}>
               {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>Reserva online</p>
                 <h1 className="text-lg font-bold tracking-tight" style={{ color: textColor }}>{business.name}</h1>
               </div>
             </div>
-            <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>
+            {headerAlign === "left" && <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>}
           </div>
           {step !== "success" && (
             <div className={`mt-4 grid gap-2 text-[10px] sm:text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
@@ -748,12 +812,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             </div>
           )}
         </div>
+        {renderPromoBlocks("HEADER")}
 
         <div className="p-5 sm:p-6">
           {/* Step 1: Service */}
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
               <div><h2 className="text-xl font-bold">1. {isMultiService ? "Selecciona servicios" : "Selecciona un servicio"}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : "Elige el servicio que quieras reservar."}</p></div>
+              {renderPromoBlocks("BETWEEN_SERVICES")}
               <div className="grid gap-3">
                 {services.map((s) => {
                   const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
@@ -1589,6 +1655,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
 
+        {renderPromoBlocks("FOOTER")}
         <div className="mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium" style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}>
           <span>Powered by</span>
           <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">

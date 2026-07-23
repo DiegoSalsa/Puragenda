@@ -8,6 +8,8 @@ import {
   getLastCampaign,
 } from "@/server/services/marketing.service";
 import type { SubscriptionPlan, MarketingStatus } from "@/core/entities";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +21,9 @@ export async function GET(request: NextRequest) {
     const business = await getBusinessForUser(user.id);
     if (!business) {
       return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+    }
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.MARKETING_MANAGE))) {
+      return NextResponse.json({ error: "Sin permisos para gestionar marketing" }, { status: 403 });
     }
 
     const subscription = await getSubscriptionByBusinessId(business.id);

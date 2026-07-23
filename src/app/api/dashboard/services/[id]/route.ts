@@ -8,6 +8,8 @@ import {
 } from "@/server/services/service.service";
 import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export async function PUT(
   request: NextRequest,
@@ -21,6 +23,9 @@ export async function PUT(
 
     const business = await getBusinessForUser(user.id);
     if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+      return Response.json({ error: "Sin permisos para gestionar servicios" }, { status: 403 });
+    }
 
     const existing = await getServiceByIdAndBusiness(id, business.id);
     if (!existing) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
@@ -71,6 +76,9 @@ export async function DELETE(
 
     const business = await getBusinessForUser(user.id);
     if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+      return Response.json({ error: "Sin permisos para gestionar servicios" }, { status: 403 });
+    }
 
     const existing = await getServiceByIdAndBusiness(id, business.id);
     if (!existing) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });

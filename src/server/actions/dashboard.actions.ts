@@ -10,6 +10,8 @@ import crypto from "crypto";
 import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
 import { sendStaffInviteEmail } from "@/server/email/send";
 import { isValidTime, isValidTimeRange } from "@/lib/time";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -17,6 +19,8 @@ type DailyHours = {
   endTime: string;
   isOpen?: boolean;
   isWorking?: boolean;
+  breakStart?: string | null;
+  breakEnd?: string | null;
 };
 
 function validateDailyHours(entries: DailyHours[]): string | null {
@@ -34,6 +38,14 @@ function validateDailyHours(entries: DailyHours[]): string | null {
     const isActive = entry.isOpen ?? entry.isWorking ?? true;
     if (isActive && !isValidTimeRange(entry.startTime, entry.endTime)) {
       return "La hora de inicio debe ser anterior a la hora de fin";
+    }
+    if (isActive && (entry.breakStart || entry.breakEnd)) {
+      if (!entry.breakStart || !entry.breakEnd || !isValidTimeRange(entry.breakStart, entry.breakEnd)) {
+        return "Revisa el horario de la pausa";
+      }
+      if (entry.breakStart < entry.startTime || entry.breakEnd > entry.endTime) {
+        return "La pausa debe estar dentro del horario laboral";
+      }
     }
   }
 
@@ -58,18 +70,21 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
 }
 
 // â”€â”€â”€ Business Hours â”€â”€â”€
-export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean }[]) {
+export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null }[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar los horarios del negocio" };
+  }
   const validationError = validateDailyHours(hours);
   if (validationError) return { error: validationError };
   const ops = hours.map((h) =>
     prisma.businessHours.upsert({
       where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek: h.dayOfWeek } },
-      create: { businessId: business.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen },
-      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen },
+      create: { businessId: business.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
+      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
     })
   );
   await prisma.$transaction(ops);
@@ -97,8 +112,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
 
-  // Only ADMIN can create staff
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
     return { error: "No tienes permisos para agregar profesionales" };
   }
 
@@ -175,6 +189,9 @@ export async function toggleStaffActiveAction(staffId: string) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para administrar profesionales" };
+  }
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Staff no encontrado" };
   await prisma.staff.update({ where: { id: staffId }, data: { isActive: !staff.isActive } });
@@ -182,11 +199,14 @@ export async function toggleStaffActiveAction(staffId: string) {
   return { success: true };
 }
 
-export async function saveStaffScheduleAction(staffId: string, schedule: { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean }[]) {
+export async function saveStaffScheduleAction(staffId: string, schedule: { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null }[]) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para modificar horarios profesionales" };
+  }
   const validationError = validateDailyHours(schedule);
   if (validationError) return { error: validationError };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
@@ -194,8 +214,8 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
   const ops = schedule.map((s) =>
     prisma.staffSchedule.upsert({
       where: { staffId_dayOfWeek: { staffId, dayOfWeek: s.dayOfWeek } },
-      create: { staffId, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking },
-      update: { startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking },
+      create: { staffId, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking, breakStart: s.breakStart || null, breakEnd: s.breakEnd || null },
+      update: { startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking, breakStart: s.breakStart || null, breakEnd: s.breakEnd || null },
     })
   );
   await prisma.$transaction(ops);
@@ -211,12 +231,24 @@ export async function saveAppearanceAction(data: {
   textColor?: string;
   textMutedColor?: string;
   widgetFontSize?: number;
+  widgetCornerRadius?: number;
+  widgetShadowStyle?: string;
+  widgetHeaderAlign?: string;
   logoUrl?: string;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE))) {
+    return { error: "No tienes permisos para modificar el widget" };
+  }
+  const shadowStyle = ["none", "soft", "strong"].includes(data.widgetShadowStyle || "")
+    ? data.widgetShadowStyle
+    : "soft";
+  const headerAlign = ["left", "center", "right"].includes(data.widgetHeaderAlign || "")
+    ? data.widgetHeaderAlign
+    : "left";
   await prisma.business.update({
     where: { id: business.id },
     data: {
@@ -226,6 +258,9 @@ export async function saveAppearanceAction(data: {
       textColor: data.textColor || "#FFFFFF",
       textMutedColor: data.textMutedColor || "#FFFFFF66",
       widgetFontSize: data.widgetFontSize || 14,
+      widgetCornerRadius: Math.max(0, Math.min(40, Math.floor(data.widgetCornerRadius ?? 16))),
+      widgetShadowStyle: shadowStyle,
+      widgetHeaderAlign: headerAlign,
       logoUrl: data.logoUrl || null,
       brandColor: data.primaryColor.replace("#", ""),
     },
@@ -241,6 +276,9 @@ export async function updateMaxServicesAction(maxServices: number) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para modificar los servicios" };
+  }
 
   const clamped = Math.max(1, Math.min(10, Math.floor(maxServices)));
   await prisma.business.update({
@@ -257,6 +295,9 @@ export async function deleteStaffAction(staffId: string) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para eliminar profesionales" };
+  }
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
@@ -280,6 +321,9 @@ export async function updateBusinessNameAction(name: string) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar la configuración" };
+  }
 
   const trimmed = name.trim();
   if (trimmed.length < 2 || trimmed.length > 100) {
@@ -302,6 +346,9 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para asignar servicios al equipo" };
+  }
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
@@ -357,10 +404,12 @@ export async function updateStaffRoleAction(staffId: string, role: "ADMIN" | "RE
 export async function updateBusinessLogoAction(formData: FormData) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar el logo del negocio" };
+  }
 
   const file = formData.get("logo") as File | null;
   if (!file || file.size === 0) return { error: "No se recibió ninguna imagen" };
@@ -422,6 +471,9 @@ export async function removeBusinessLogoAction() {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar el logo del negocio" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },
@@ -471,9 +523,11 @@ async function uploadDashboardImage(file: File | null, folder: string, publicId:
 export async function uploadServiceImageAssetAction(formData: FormData) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para modificar imágenes de servicios" };
+  }
 
   const file = formData.get("image") as File | null;
   try {
@@ -491,9 +545,11 @@ export async function uploadServiceImageAssetAction(formData: FormData) {
 export async function updateStaffImageAction(staffId: string, formData: FormData) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para modificar profesionales" };
+  }
 
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
@@ -516,9 +572,11 @@ export async function updateStaffImageAction(staffId: string, formData: FormData
 export async function removeStaffImageAction(staffId: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") return { error: "Sin permisos" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para modificar profesionales" };
+  }
 
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
@@ -542,6 +600,9 @@ export async function createScheduleBlockAction(data: {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para administrar bloqueos del equipo" };
+  }
 
   // Validate staff belongs to business
   const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
@@ -638,6 +699,9 @@ export async function deleteScheduleBlockAction(blockId: string) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
+    return { error: "No tienes permisos para administrar bloqueos del equipo" };
+  }
 
   // Verify block belongs to a staff in this business
   const block = await prisma.scheduleBlock.findUnique({
@@ -662,11 +726,11 @@ export async function saveLoyaltyConfigAction(data: {
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar la fidelización" };
-  }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) {
+    return { error: "No tienes permisos para configurar la fidelización" };
+  }
 
   const stamps = Math.max(1, Math.min(50, Math.floor(data.stampsRequired)));
   const discountVal = Math.max(0, Math.floor(data.discountValue || 0));
@@ -700,6 +764,9 @@ export async function updateBusinessLocationAction(data: { address: string; maps
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar la ubicación" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },
@@ -720,11 +787,11 @@ export async function saveDepositConfigAction(data: {
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar los abonos" };
-  }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para configurar los abonos" };
+  }
 
   // If enabling deposits, check that MP is connected
   if (data.depositRequired && !business.mpAccessToken) {
@@ -754,17 +821,17 @@ export async function updateBusinessPoliciesAction(data: {
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar las politicas" };
-  }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para configurar las políticas" };
+  }
 
   const hoursLimit = Math.max(1, Math.min(168, Math.floor(data.rescheduleHoursLimit)));
 
-  // Validate slotInterval against allowed values
-  const ALLOWED_INTERVALS = [15, 30, 45, 60, 90, 120];
-  const slotInterval = ALLOWED_INTERVALS.includes(data.slotInterval) ? data.slotInterval : 60;
+  // Any useful interval is valid. Five-minute precision keeps the widget
+  // predictable while still allowing fully custom schedules.
+  const slotInterval = Math.max(5, Math.min(240, Math.round(data.slotInterval / 5) * 5));
 
   // Clamp minAdvanceBookingMinutes between 0 and 1440 (24h)
   const minAdvance = Math.max(0, Math.min(1440, Math.floor(data.minAdvanceBookingMinutes)));
@@ -790,11 +857,11 @@ export async function updateBusinessPoliciesAction(data: {
 export async function disconnectMercadoPagoAction() {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede desconectar Mercado Pago" };
-  }
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para desconectar Mercado Pago" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },

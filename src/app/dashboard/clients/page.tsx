@@ -4,6 +4,8 @@ import { prisma } from "@/server/db/prisma";
 import { ClientsTable } from "./clients-table";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export default async function ClientsPage() {
   const user = await getCurrentSessionUser();
@@ -11,6 +13,9 @@ export default async function ClientsPage() {
 
   const biz = await getBusinessForUser(user.id);
   if (!biz) redirect("/dashboard/settings");
+  if (!(await hasBusinessPermission(user, biz, DASHBOARD_PERMISSIONS.CLIENTS_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar clientes.</div>;
+  }
 
   const business = await prisma.business.findUnique({
     where: { id: biz.id },

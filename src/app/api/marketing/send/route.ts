@@ -12,6 +12,8 @@ import {
 import { resend } from "@/server/email/resend";
 import { marketingCampaignEmail } from "@/server/email/templates";
 import type { SubscriptionPlan } from "@/core/entities";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +30,9 @@ export async function POST(request: NextRequest) {
     const business = await getBusinessForUser(user.id);
     if (!business) {
       return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+    }
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.MARKETING_MANAGE))) {
+      return NextResponse.json({ error: "Sin permisos para gestionar marketing" }, { status: 403 });
     }
 
     const subscription = await getSubscriptionByBusinessId(business.id);

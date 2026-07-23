@@ -8,6 +8,8 @@ import {
   activatePrize,
 } from "@/server/services/affiliate.service";
 import { revalidatePath } from "next/cache";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export async function spinRouletteAction() {
   const user = await getCurrentSessionUser();
@@ -15,6 +17,9 @@ export async function spinRouletteAction() {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { success: false as const, error: "Negocio no encontrado" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REWARDS_VIEW))) {
+    return { success: false as const, error: "Sin permisos" };
+  }
 
   const result = await spinRoulette(business.id);
   if (result.success) {
@@ -30,6 +35,9 @@ export async function redeemFixedDiscountAction() {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { success: false as const, error: "Negocio no encontrado" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REWARDS_VIEW))) {
+    return { success: false as const, error: "Sin permisos" };
+  }
 
   const result = await redeemFixedDiscount(business.id);
   if (result.success) {
@@ -45,6 +53,9 @@ export async function activatePrizeAction(prizeId: string) {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { success: false as const, error: "Negocio no encontrado" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REWARDS_VIEW))) {
+    return { success: false as const, error: "Sin permisos" };
+  }
 
   const result = await activatePrize(business.id, prizeId);
   if (result.success) {

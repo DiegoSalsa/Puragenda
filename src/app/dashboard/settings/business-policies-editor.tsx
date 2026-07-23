@@ -14,6 +14,8 @@ interface Props {
 }
 
 const SLOT_INTERVAL_OPTIONS = [
+  { value: 5, label: "5 minutos" },
+  { value: 10, label: "10 minutos" },
   { value: 15, label: "15 minutos" },
   { value: 30, label: "30 minutos" },
   { value: 45, label: "45 minutos" },
@@ -171,17 +173,16 @@ export function BusinessPoliciesEditor({
           <p className="text-sm font-medium">Intervalo de horarios</p>
           <p className="mt-0.5 text-xs text-muted-foreground">Cada cuántos minutos se genera un bloque de hora disponible en el widget</p>
         </div>
-        <select
-          value={slotInterval}
-          onChange={(e) => setSlotInterval(parseInt(e.target.value))}
-          className="w-48 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
-        >
+        <div className="flex flex-wrap gap-2">
           {SLOT_INTERVAL_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
+            <button type="button" key={opt.value} onClick={() => setSlotInterval(opt.value)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${slotInterval === opt.value ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>{opt.label}</button>
           ))}
-        </select>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Valor personalizado</span>
+          <input type="number" min={5} max={240} step={5} value={slotInterval} onChange={(e) => setSlotInterval(Math.max(5, Math.min(240, parseInt(e.target.value) || 5)))} className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30" />
+          <span className="text-muted-foreground">min</span>
+        </label>
       </div>
 
       {/* Save button */}

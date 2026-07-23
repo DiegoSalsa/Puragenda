@@ -17,26 +17,32 @@ enum UserRole {
   SUPERADMIN
 }
 
-model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  password         String
-  name             String
-  role             UserRole  @default(ADMIN)
-  isSuperAdmin     Boolean   @default(false)
-  trialUsedAt      DateTime?
-  registrationIp   String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  tokenVersion     Int       @default(1)
-  deletedAt        DateTime?
-  termsAcceptedAt  DateTime?
+enum WidgetPromoPlacement {
+  HEADER
+  BETWEEN_SERVICES
+  FOOTER
+}
 
-  businesses Business[]
-  staff      Staff[]
-  auditLogs  AuditLog[]
-  adminLoginCodes AdminLoginCode[]
-  platformDiscountCodes PlatformDiscountCode[] @relation("PlatformDiscountCreatedBy")
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String
+  role            UserRole  @default(ADMIN)
+  isSuperAdmin    Boolean   @default(false)
+  trialUsedAt     DateTime?
+  registrationIp  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tokenVersion    Int       @default(1)
+  deletedAt       DateTime?
+  termsAcceptedAt DateTime?
+
+  businesses                Business[]
+  staff                     Staff[]
+  auditLogs                 AuditLog[]
+  adminLoginCodes           AdminLoginCode[]
+  platformDiscountCodes     PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
   adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
 }
 
@@ -106,48 +112,48 @@ enum BillingCycle {
 }
 
 enum RecurringMode {
-  FIXED_DAYS      // El negocio fija exactamente que dias (ej: L/M/V)
-  DAYS_WITH_REST  // N dias/semana con minimo de descanso entre sesiones
-  FREE_MINIMUM    // Libre con minimo de dias semanales, cliente elige
+  FIXED_DAYS // El negocio fija exactamente que dias (ej: L/M/V)
+  DAYS_WITH_REST // N dias/semana con minimo de descanso entre sesiones
+  FREE_MINIMUM // Libre con minimo de dias semanales, cliente elige
 }
 
 enum RecurringStatus {
-  PENDING_APPROVAL  // Esperando que el negocio apruebe
-  ACTIVE            // Corriendo normalmente
-  PAUSED            // Pausada temporalmente
-  CANCELLED         // Cancelada por el negocio o el cliente
-  COMPLETED         // Termino el periodo natural
+  PENDING_APPROVAL // Esperando que el negocio apruebe
+  ACTIVE // Corriendo normalmente
+  PAUSED // Pausada temporalmente
+  CANCELLED // Cancelada por el negocio o el cliente
+  COMPLETED // Termino el periodo natural
 }
 
 model Subscription {
-  id                    String             @id @default(cuid())
-  plan                  SubscriptionPlan   @default(INDIVIDUAL)
-  status                SubscriptionStatus @default(ACTIVE)
-  billingCycle          BillingCycle       @default(MONTHLY)
-  isTrial               Boolean            @default(false)
-  trialEndsAt           DateTime?
-  extraStaffCount       Int                @default(0)
-  pendingDiscountPercentage Int?
-  hasCountedAsPaidReferral  Boolean        @default(false)
-  trialWarningEmailSent Boolean            @default(false)
-  freeMonthsRemaining   Int                @default(0)
-  activePrizeId         String?
-  promoName             String?
-  promoFreeMonthsRemaining Int             @default(0)
-  promoDiscountPercentage Int?
-  promoDiscountMonthsRemaining Int         @default(0)
-  nextBillingOverrideAmount Int?
-  billingNotes          String?
-  lastBillingSyncAt     DateTime?
-  lastBillingSyncError  String?
-  businessId            String             @unique
-  mpCustomerId          String?
-  mpSubscriptionId      String?
-  currentPeriodEnd      DateTime?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  id                           String             @id @default(cuid())
+  plan                         SubscriptionPlan   @default(INDIVIDUAL)
+  status                       SubscriptionStatus @default(ACTIVE)
+  billingCycle                 BillingCycle       @default(MONTHLY)
+  isTrial                      Boolean            @default(false)
+  trialEndsAt                  DateTime?
+  extraStaffCount              Int                @default(0)
+  pendingDiscountPercentage    Int?
+  hasCountedAsPaidReferral     Boolean            @default(false)
+  trialWarningEmailSent        Boolean            @default(false)
+  freeMonthsRemaining          Int                @default(0)
+  activePrizeId                String?
+  promoName                    String?
+  promoFreeMonthsRemaining     Int                @default(0)
+  promoDiscountPercentage      Int?
+  promoDiscountMonthsRemaining Int                @default(0)
+  nextBillingOverrideAmount    Int?
+  billingNotes                 String?
+  lastBillingSyncAt            DateTime?
+  lastBillingSyncError         String?
+  businessId                   String             @unique
+  mpCustomerId                 String?
+  mpSubscriptionId             String?
+  currentPeriodEnd             DateTime?
+  createdAt                    DateTime           @default(now())
+  updatedAt                    DateTime           @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business                    Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   platformDiscountRedemptions PlatformDiscountRedemption[]
 }
 
@@ -156,67 +162,134 @@ model Subscription {
 // ==========================================
 
 model Business {
-  id                    String   @id @default(cuid())
-  name                  String
-  slug                  String   @unique
-  apiKey                String   @unique
-  logoUrl               String?
-  address               String?
-  mapsUrl               String?
-  primaryColor          String   @default("#7C3AED")
-  secondaryColor        String   @default("#5B21B6")
-  backgroundColor       String   @default("#0A0A0A")
-  textColor             String   @default("#FFFFFF")
-  textMutedColor        String   @default("#FFFFFF66")
-  widgetFontSize        Int      @default(14)
-  brandColor            String?
-  maxServicesPerBooking Int      @default(1)
+  id                       String    @id @default(cuid())
+  name                     String
+  slug                     String    @unique
+  apiKey                   String    @unique
+  logoUrl                  String?
+  address                  String?
+  mapsUrl                  String?
+  primaryColor             String    @default("#7C3AED")
+  secondaryColor           String    @default("#5B21B6")
+  backgroundColor          String    @default("#0A0A0A")
+  textColor                String    @default("#FFFFFF")
+  textMutedColor           String    @default("#FFFFFF66")
+  widgetFontSize           Int       @default(14)
+  widgetCornerRadius       Int       @default(16)
+  widgetShadowStyle        String    @default("soft")
+  widgetHeaderAlign        String    @default("left")
+  brandColor               String?
+  maxServicesPerBooking    Int       @default(1)
   // ── Abono (Deposit) Config ──
-  depositRequired       Boolean  @default(false)
-  allowedOrigins        String[] @default([])
-  timezone              String   @default("America/Santiago")
-  ownerId               String?
-  referredByAffiliateId String?
+  depositRequired          Boolean   @default(false)
+  allowedOrigins           String[]  @default([])
+  timezone                 String    @default("America/Santiago")
+  ownerId                  String?
+  referredByAffiliateId    String?
   // ── Mercado Pago OAuth (Marketplace) ──
-  mpAccessToken         String?
-  mpRefreshToken        String?
-  mpUserId              String?
-  mpTokenExpiresAt      DateTime?
+  mpAccessToken            String?
+  mpRefreshToken           String?
+  mpUserId                 String?
+  mpTokenExpiresAt         DateTime?
   // ── Loyalty / Fidelización ──
-  isLoyaltyEnabled      Boolean  @default(false)
-  stampsRequired        Int      @default(5)
-  rewardName            String?
-  discountType          String?  // 'PERCENTAGE' | 'FIXED'
-  discountValue         Int?
+  isLoyaltyEnabled         Boolean   @default(false)
+  stampsRequired           Int       @default(5)
+  rewardName               String?
+  discountType             String? // 'PERCENTAGE' | 'FIXED'
+  discountValue            Int?
   // ── Politicas del negocio ──
-  requiresClientRut     Boolean  @default(false)  // Pedir RUT en el widget
-  allowRescheduling     Boolean  @default(false)  // Permitir que clientes reagenden
-  rescheduleHoursLimit  Int      @default(24)     // Horas minimas de anticipacion para reagendar
+  requiresClientRut        Boolean   @default(false) // Pedir RUT en el widget
+  allowRescheduling        Boolean   @default(false) // Permitir que clientes reagenden
+  rescheduleHoursLimit     Int       @default(24) // Horas minimas de anticipacion para reagendar
   // ── Configuración de agenda ──
-  allowSameDayBookings      Boolean  @default(false)  // Permite agendar para hoy
-  slotInterval              Int      @default(60)     // Minutos entre cada bloque de hora disponible
-  minAdvanceBookingMinutes  Int      @default(120)    // Minutos de anticipación (solo si allowSameDayBookings=true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  deletedAt             DateTime?
+  allowSameDayBookings     Boolean   @default(false) // Permite agendar para hoy
+  slotInterval             Int       @default(60) // Minutos entre cada bloque de hora disponible
+  minAdvanceBookingMinutes Int       @default(120) // Minutos de anticipación (solo si allowSameDayBookings=true)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
 
-  owner              User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  referredByAffiliate Affiliate?    @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
-  affiliate          Affiliate?     @relation("AffiliateOwner")
-  services           Service[]
-  staff              Staff[]
-  appointments       Appointment[]
-  clients            Client[]
-  subscription       Subscription?
-  businessHours      BusinessHours[]
-  blockedDates       BlockedDate[]
-  loyaltyCodes       LoyaltyCode[]
-  marketingCampaigns MarketingCampaign[]
-  recurringBookings  RecurringBooking[]
+  owner                       User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  referredByAffiliate         Affiliate?                   @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
+  affiliate                   Affiliate?                   @relation("AffiliateOwner")
+  services                    Service[]
+  staff                       Staff[]
+  appointments                Appointment[]
+  clients                     Client[]
+  subscription                Subscription?
+  businessHours               BusinessHours[]
+  blockedDates                BlockedDate[]
+  loyaltyCodes                LoyaltyCode[]
+  marketingCampaigns          MarketingCampaign[]
+  recurringBookings           RecurringBooking[]
   platformDiscountRedemptions PlatformDiscountRedemption[]
+  widgetThemes                WidgetTheme[]
+  widgetPromoBlocks           WidgetPromoBlock[]
+  accessProfiles              AccessProfile[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
+}
+
+model WidgetTheme {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   @default("Personalizado")
+  primaryColor    String
+  secondaryColor  String
+  backgroundColor String
+  textColor       String
+  textMutedColor  String
+  fontSize        Int      @default(14)
+  cornerRadius    Int      @default(16)
+  shadowStyle     String   @default("soft")
+  headerAlign     String   @default("left")
+  logoUrl         String?
+  businessId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, name])
+  @@index([businessId, category])
+}
+
+model WidgetPromoBlock {
+  id         String               @id @default(cuid())
+  title      String
+  subtitle   String?
+  imageUrl   String
+  linkUrl    String?
+  placement  WidgetPromoPlacement @default(HEADER)
+  position   Int                  @default(0)
+  isVisible  Boolean              @default(true)
+  textAlign  String               @default("left")
+  businessId String
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, placement, position])
+}
+
+model AccessProfile {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @default("")
+  permissions String[]  @default([])
+  isSystem    Boolean   @default(false)
+  baseRole    UserRole?
+  businessId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff    Staff[]
+
+  @@unique([businessId, name])
+  @@index([businessId, isSystem])
 }
 
 // ==========================================
@@ -224,20 +297,20 @@ model Business {
 // ==========================================
 
 model PlatformDiscountCode {
-  id               String   @id @default(cuid())
-  code             String   @unique
-  name             String
-  discountType     String   // 'PERCENTAGE' | 'FIXED'
-  discountValue    Int
-  maxRedemptions   Int?
-  redeemedCount    Int      @default(0)
-  startsAt         DateTime?
-  expiresAt        DateTime?
-  isActive         Boolean  @default(true)
-  appliesToPlans   String[] @default([])
-  createdById      String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String    @id @default(cuid())
+  code           String    @unique
+  name           String
+  discountType   String // 'PERCENTAGE' | 'FIXED'
+  discountValue  Int
+  maxRedemptions Int?
+  redeemedCount  Int       @default(0)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  isActive       Boolean   @default(true)
+  appliesToPlans String[]  @default([])
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   createdBy   User?                        @relation("PlatformDiscountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   redemptions PlatformDiscountRedemption[]
@@ -259,7 +332,7 @@ model PlatformDiscountRedemption {
 
   discountCode PlatformDiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
   business     Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  subscription Subscription?         @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  subscription Subscription?        @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@unique([discountCodeId, businessId])
   @@index([businessId])
@@ -274,14 +347,14 @@ model PlatformDiscountRedemption {
 model AdminInteractiveCampaign {
   id          String   @id @default(cuid())
   title       String
-  type        String   // 'SATISFACTION' | 'FORM'
+  type        String // 'SATISFACTION' | 'FORM'
   question    String
   fields      Json?
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy  User?                         @relation("AdminInteractiveCampaignCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy  User?                       @relation("AdminInteractiveCampaignCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   recipients AdminInteractiveRecipient[]
   responses  AdminInteractiveResponse[]
 
@@ -300,7 +373,7 @@ model AdminInteractiveRecipient {
   createdAt    DateTime  @default(now())
   respondedAt  DateTime?
 
-  campaign AdminInteractiveCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign AdminInteractiveCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   response AdminInteractiveResponse?
 
   @@index([campaignId])
@@ -329,6 +402,8 @@ model BusinessHours {
   startTime  String
   endTime    String
   isOpen     Boolean @default(true)
+  breakStart String?
+  breakEnd   String?
   businessId String
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -351,18 +426,20 @@ model BlockedDate {
 }
 
 model Staff {
-  id         String   @id @default(cuid())
-  name       String
-  email      String?
-  imageUrl   String?
-  businessId String
-  userId     String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  email           String?
+  imageUrl        String?
+  businessId      String
+  userId          String?
+  accessProfileId String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  accessProfile     AccessProfile?     @relation(fields: [accessProfileId], references: [id], onDelete: SetNull)
   appointments      Appointment[]
   schedule          StaffSchedule[]
   scheduleBlocks    ScheduleBlock[]
@@ -371,15 +448,18 @@ model Staff {
 
   @@unique([businessId, email])
   @@index([businessId])
+  @@index([accessProfileId])
 }
 
 model StaffSchedule {
-  id        String  @id @default(cuid())
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isWorking Boolean @default(true)
-  staffId   String
+  id         String  @id @default(cuid())
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  isWorking  Boolean @default(true)
+  breakStart String?
+  breakEnd   String?
+  staffId    String
 
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
@@ -402,16 +482,16 @@ model ScheduleBlock {
 }
 
 model Service {
-  id             String  @id @default(cuid())
-  name           String
-  description    String?
-  imageUrl       String?
-  duration       Int
-  price          Float
-  depositAmount  Int     @default(0)   // CLP amount for per-service deposit
-  businessId     String
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  duration      Int
+  price         Float
+  depositAmount Int     @default(0) // CLP amount for per-service deposit
+  businessId    String
 
-  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
   staff             Staff[]
   recurringPlan     RecurringPlan?
@@ -422,14 +502,14 @@ model Service {
 }
 
 model ServiceOptionCategory {
-  id          String   @id @default(cuid())
-  name        String
-  isRequired  Boolean  @default(false)
-  maxSelections Int    @default(1)
-  position    Int      @default(0)
-  serviceId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  isRequired    Boolean  @default(false)
+  maxSelections Int      @default(1)
+  position      Int      @default(0)
+  serviceId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   service      Service                    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   alternatives ServiceOptionAlternative[]
@@ -466,8 +546,8 @@ model RecurringPlan {
   // FIXED_DAYS: dias exactos de la semana (0=Dom, 1=Lun, ... 6=Sab)
   fixedDays             Int[]         @default([])
   // DAYS_WITH_REST / FREE_MINIMUM
-  daysPerWeek           Int?          // cuantos dias por semana
-  minRestDays           Int?          // minimo dias de descanso entre sesiones
+  daysPerWeek           Int? // cuantos dias por semana
+  minRestDays           Int? // minimo dias de descanso entre sesiones
   // Opciones de duracion que el cliente puede elegir (en meses, ej: [1,2,3])
   durationOptions       Int[]         @default([1])
   // Rango maximo de dias desde hoy que el cliente puede elegir como fecha de inicio
@@ -493,47 +573,47 @@ model RecurringPlan {
 }
 
 model RecurringBooking {
-  id               String          @id @default(cuid())
-  businessId       String
-  serviceId        String
-  recurringPlanId  String
-  staffId          String?
-  clientId         String?
-  customerName     String
-  customerEmail    String
-  customerPhone    String?
-  customerAddress  String?
-  customerRut      String?
-  status           RecurringStatus @default(PENDING_APPROVAL)
+  id                    String          @id @default(cuid())
+  businessId            String
+  serviceId             String
+  recurringPlanId       String
+  staffId               String?
+  clientId              String?
+  customerName          String
+  customerEmail         String
+  customerPhone         String?
+  customerAddress       String?
+  customerRut           String?
+  status                RecurringStatus @default(PENDING_APPROVAL)
   // Dias elegidos por el cliente (0=Dom, 1=Lun, ... 6=Sab)
-  selectedDays     Int[]
+  selectedDays          Int[]
   // Hora por dia: JSON { "1": "08:00", "3": "10:00", "5": "09:00" }
-  selectedTimes    Json
-  startDate        DateTime
-  endDate          DateTime
-  durationMonths   Int
+  selectedTimes         Json
+  startDate             DateTime
+  endDate               DateTime
+  durationMonths        Int
   // Formulario de salud
-  healthAnswers    Json?           // Respuestas a healthQuestions
-  healthFreeText   String?         // Texto libre del cliente
-  healthAccepted   Boolean         @default(false) // Acepto que pueden rechazar
+  healthAnswers         Json? // Respuestas a healthQuestions
+  healthFreeText        String? // Texto libre del cliente
+  healthAccepted        Boolean         @default(false) // Acepto que pueden rechazar
   // Estado de pausa
-  pausedUntil      DateTime?
+  pausedUntil           DateTime?
   // Notas internas del negocio (solo lo ve el negocio)
-  internalNotes    String?
+  internalNotes         String?
   // Control de emails automaticos ya enviados
-  expirationWarningSent Boolean    @default(false)
-  renewalOffered        Boolean    @default(false)
+  expirationWarningSent Boolean         @default(false)
+  renewalOffered        Boolean         @default(false)
   // Token para el link de gestion del cliente (/mi-plan/[token])
-  managementToken  String?         @unique
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  managementToken       String?         @unique
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  business       Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  service        Service                   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  recurringPlan  RecurringPlan             @relation(fields: [recurringPlanId], references: [id], onDelete: Cascade)
-  staff          Staff?                    @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  client         Client?                   @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  appointments   Appointment[]
+  business         Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service          Service                    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  recurringPlan    RecurringPlan              @relation(fields: [recurringPlanId], references: [id], onDelete: Cascade)
+  staff            Staff?                     @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  client           Client?                    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  appointments     Appointment[]
   sessionOverrides RecurringSessionOverride[]
 
   @@index([businessId])
@@ -545,19 +625,19 @@ model RecurringBooking {
 }
 
 model RecurringSessionOverride {
-  id                  String          @id @default(cuid())
-  recurringBookingId  String
+  id                 String   @id @default(cuid())
+  recurringBookingId String
   // Fecha original del turno que se modifica
-  originalDate        DateTime
+  originalDate       DateTime
   // CANCELLED o TIME_CHANGED
-  action              String
+  action             String
   // Si es TIME_CHANGED, la nueva hora ("10:00")
-  newTime             String?
-  reason              String?
-  requestedByClient   Boolean         @default(false)
+  newTime            String?
+  reason             String?
+  requestedByClient  Boolean  @default(false)
   // Control de email de aviso enviado
-  warningSent         Boolean         @default(false)
-  createdAt           DateTime        @default(now())
+  warningSent        Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
   recurringBooking RecurringBooking @relation(fields: [recurringBookingId], references: [id], onDelete: Cascade)
 
@@ -607,12 +687,12 @@ model Appointment {
   reminderSent         Boolean           @default(false)
   actionToken          String?           @unique
   // ── Deposit Payment ──
-  depositAmount        Int?              // CLP amount charged as deposit
+  depositAmount        Int? // CLP amount charged as deposit
   paymentStatus        PaymentStatus     @default(NONE)
-  mpPaymentId          String?           // MercadoPago payment ID
-  mpPreferenceId       String?           // MercadoPago preference ID
+  mpPaymentId          String? // MercadoPago payment ID
+  mpPreferenceId       String? // MercadoPago preference ID
   // ── Recurring ──
-  recurringBookingId   String?           // FK a RecurringBooking si es parte de un plan
+  recurringBookingId   String? // FK a RecurringBooking si es parte de un plan
   createdAt            DateTime          @default(now())
 
   business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -638,17 +718,17 @@ model Client {
   name             String
   email            String
   phone            String?
-  rut              String?  // RUT del cliente (opcional, configurable por negocio)
+  rut              String? // RUT del cliente (opcional, configurable por negocio)
   totalSpent       Float    @default(0)
   noShowCount      Int      @default(0)
   currentStamps    Int      @default(0)
   acceptsMarketing Boolean  @default(true)
-  privateNotes     String?  // Notas privadas del negocio sobre este cliente (CRM light)
+  privateNotes     String? // Notas privadas del negocio sobre este cliente (CRM light)
   businessId       String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
   loyaltyCodes      LoyaltyCode[]
   recurringBookings RecurringBooking[]
@@ -666,7 +746,7 @@ model LoyaltyCode {
   code          String   @unique
   clientId      String
   businessId    String
-  discountType  String   // 'PERCENTAGE' | 'FIXED'
+  discountType  String // 'PERCENTAGE' | 'FIXED'
   discountValue Int
   rewardName    String?
   isUsed        Boolean  @default(false)
@@ -684,12 +764,12 @@ model LoyaltyCode {
 // ==========================================
 
 model Affiliate {
-  id                 String     @id @default(cuid())
-  referralCode       String     @unique
-  businessId         String     @unique
-  paidReferrals      Int        @default(0)
-  spentTokens        Int        @default(0)
-  createdAt          DateTime   @default(now())
+  id            String   @id @default(cuid())
+  referralCode  String   @unique
+  businessId    String   @unique
+  paidReferrals Int      @default(0)
+  spentTokens   Int      @default(0)
+  createdAt     DateTime @default(now())
 
   business           Business   @relation("AffiliateOwner", fields: [businessId], references: [id], onDelete: Cascade)
   referredBusinesses Business[] @relation("ReferredBy")
@@ -707,14 +787,14 @@ enum PrizeStatus {
 model Prize {
   id          String      @id @default(cuid())
   affiliateId String
-  type        String      // 'PERCENTAGE' | 'FREE_MONTH'
-  percentage  Int?        // 10, 15, 20, 30, 50
-  freeMonths  Int?        // 1 or 3
-  name        String      // "El Fix Rápido", "Modo Dios", etc.
+  type        String // 'PERCENTAGE' | 'FREE_MONTH'
+  percentage  Int? // 10, 15, 20, 30, 50
+  freeMonths  Int? // 1 or 3
+  name        String // "El Fix Rápido", "Modo Dios", etc.
   status      PrizeStatus @default(AVAILABLE)
   createdAt   DateTime    @default(now())
 
-  affiliate   Affiliate   @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
 
   @@index([affiliateId])
   @@index([affiliateId, status])
@@ -738,32 +818,32 @@ model MarketingCampaign {
   @@index([businessId, sentAt])
 }
 
-
 // ==========================================
 // AUDIT LOG (WORM: Write Once, Read Many)
 // ==========================================
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  action      String
-  details     String?  // JSON stringified payload
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String? // JSON stringified payload
+  ipAddress String?
+  createdAt DateTime @default(now())
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
   @@index([createdAt])
 }
+
 model SystemError {
   id        String   @id @default(cuid())
   source    String
   message   String
   stack     String?
   userId    String?
-  details   String?  // JSON string
+  details   String? // JSON string
   createdAt DateTime @default(now())
 
   @@index([createdAt])

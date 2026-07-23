@@ -3,6 +3,8 @@ import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/busin
 import { prisma } from "@/server/db/prisma";
 import { RecurringClient } from "./recurring-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,9 @@ export default async function RecurringPage() {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.RECURRING_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar suscripciones.</div>;
+  }
 
   const agendaScope = await getStaffAgendaScope(user, business);
   const scopedStaffFilter = agendaScope.canSeeAllAgendas

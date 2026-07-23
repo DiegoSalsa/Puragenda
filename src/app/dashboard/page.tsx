@@ -10,6 +10,9 @@ import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
 import { PendingRecurringPanel } from "./pending-recurring-panel";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { DASHBOARD_PERMISSIONS, type DashboardPermission } from "@/core/permissions";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,32 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+
+  const permissions = await getEffectiveBusinessPermissions(user, business);
+  const canSeeAppointments =
+    permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN) ||
+    permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL);
+
+  if (!canSeeAppointments) {
+    const landingRoutes: [DashboardPermission, string][] = [
+      [DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN, "/dashboard/analytics"],
+      [DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS, "/dashboard/analytics"],
+      [DASHBOARD_PERMISSIONS.STAFF_MANAGE, "/dashboard/staff"],
+      [DASHBOARD_PERMISSIONS.SERVICES_MANAGE, "/dashboard/services"],
+      [DASHBOARD_PERMISSIONS.CLIENTS_MANAGE, "/dashboard/clients"],
+      [DASHBOARD_PERMISSIONS.RECURRING_MANAGE, "/dashboard/recurring"],
+      [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE, "/dashboard/loyalty"],
+      [DASHBOARD_PERMISSIONS.MARKETING_MANAGE, "/dashboard/marketing"],
+      [DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE, "/dashboard/appearance/personalizado"],
+      [DASHBOARD_PERMISSIONS.REFERRALS_VIEW, "/dashboard/referrals"],
+      [DASHBOARD_PERMISSIONS.REWARDS_VIEW, "/dashboard/rewards"],
+      [DASHBOARD_PERMISSIONS.SETTINGS_MANAGE, "/dashboard/settings"],
+    ];
+    const firstAllowedRoute = landingRoutes.find(([permission]) => permissions.includes(permission))?.[1];
+
+    if (firstAllowedRoute) redirect(firstAllowedRoute);
+    return <div className="py-20 text-center text-muted-foreground">Tu cuenta no tiene funcionalidades asignadas. Solicita acceso al administrador del negocio.</div>;
+  }
 
   const agendaScope = await getStaffAgendaScope(user, business);
   const params = await searchParams;

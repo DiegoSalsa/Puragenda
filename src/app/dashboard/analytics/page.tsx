@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Building2, UserRound } from "lucide-react";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { BusinessInsights } from "../business-insights";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -116,14 +118,22 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  const permissions = await getEffectiveBusinessPermissions(user, business);
+  if (
+    !permissions.includes(DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN) &&
+    !permissions.includes(DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS)
+  ) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para ver analítica.</div>;
+  }
 
   const agendaScope = await getStaffAgendaScope(user, business);
   const params = await searchParams;
-  const canToggleOwnAgenda = agendaScope.canSeeAllAgendas && !!agendaScope.ownStaffId;
+  const canSeeBusinessAnalytics = permissions.includes(DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS);
+  const canToggleOwnAgenda = canSeeBusinessAnalytics && !!agendaScope.ownStaffId;
   const showingOwnAgenda = canToggleOwnAgenda && params.agenda === "mine";
-  const scopedStaffFilter = agendaScope.canSeeAllAgendas
+  const scopedStaffFilter = canSeeBusinessAnalytics
     ? (showingOwnAgenda ? { staffId: agendaScope.ownStaffId ?? "__no_staff_access__" } : {})
-    : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
+    : { staffId: agendaScope.ownStaffId ?? "__no_staff_access__" };
   const period: AnalyticsPeriod = params.period === "month" ? "month" : "week";
 
   function analyticsHref(agenda?: "mine", periodOverride: AnalyticsPeriod = period) {

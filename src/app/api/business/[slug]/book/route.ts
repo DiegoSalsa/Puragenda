@@ -7,7 +7,57 @@ import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
+import { toZonedTime } from "date-fns-tz";
 
+type ScheduleRange = {
+  startTime: string;
+  endTime: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+};
+
+function scheduleTimeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function localDateKey(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function validateScheduleRange(
+  start: Date,
+  end: Date,
+  range: ScheduleRange,
+  label: string
+) {
+  if (localDateKey(start) !== localDateKey(end)) {
+    return `La reserva debe comenzar y terminar el mismo día según el horario de ${label}.`;
+  }
+
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+  const rangeStart = scheduleTimeToMinutes(range.startTime);
+  const rangeEnd = scheduleTimeToMinutes(range.endTime);
+
+  if (startMinutes < rangeStart || endMinutes > rangeEnd) {
+    return `El horario seleccionado está fuera del horario de ${label}.`;
+  }
+
+  if (range.breakStart && range.breakEnd) {
+    const breakStart = scheduleTimeToMinutes(range.breakStart);
+    const breakEnd = scheduleTimeToMinutes(range.breakEnd);
+    if (startMinutes < breakEnd && endMinutes > breakStart) {
+      return `El horario seleccionado coincide con la pausa configurada de ${label}.`;
+    }
+  }
+
+  return null;
+}
 
 export async function POST(
   request: NextRequest,
@@ -202,6 +252,147 @@ export async function POST(
     }
 
     // ── CRM: Upsert Client record ──
+    if (
+      Number.isNaN(requestedStart.getTime()) ||
+      Number.isNaN(requestedEnd.getTime()) ||
+      requestedEnd <= requestedStart
+    ) {
+      return Response.json(
+        { error: "El rango de fecha y hora seleccionado no es válido" },
+        { status: 400 }
+      );
+    }
+
+    const timezone = business.timezone || "America/Santiago";
+    const localStart = toZonedTime(requestedStart, timezone);
+    const localEnd = toZonedTime(expectedEnd, timezone);
+    const localNow = toZonedTime(new Date(), timezone);
+    const bookingDateKey = localDateKey(localStart);
+    const todayKey = localDateKey(localNow);
+
+    if (bookingDateKey < todayKey || requestedStart <= new Date()) {
+      return Response.json(
+        { error: "No puedes reservar un horario que ya pasó" },
+        { status: 400 }
+      );
+    }
+
+    if (bookingDateKey === todayKey) {
+      if (!business.allowSameDayBookings) {
+        return Response.json(
+          { error: "Este negocio no acepta reservas para el mismo día" },
+          { status: 400 }
+        );
+      }
+
+      const earliestAllowed = Date.now() + business.minAdvanceBookingMinutes * 60 * 1000;
+      if (requestedStart.getTime() < earliestAllowed) {
+        return Response.json(
+          {
+            error: `Debes reservar con al menos ${business.minAdvanceBookingMinutes} minutos de anticipación`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const blockedDate = await prisma.blockedDate.findUnique({
+      where: {
+        businessId_date: {
+          businessId: business.id,
+          date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+        },
+      },
+      select: { reason: true },
+    });
+
+    if (blockedDate) {
+      return Response.json(
+        {
+          error: blockedDate.reason
+            ? `El negocio no atiende ese día: ${blockedDate.reason}`
+            : "El negocio no atiende el día seleccionado",
+        },
+        { status: 400 }
+      );
+    }
+
+    const businessHour = await prisma.businessHours.findUnique({
+      where: {
+        businessId_dayOfWeek: {
+          businessId: business.id,
+          dayOfWeek: localStart.getDay(),
+        },
+      },
+    });
+
+    if (businessHour && !businessHour.isOpen) {
+      return Response.json(
+        { error: "El negocio está cerrado el día seleccionado" },
+        { status: 400 }
+      );
+    }
+
+    const businessScheduleError = validateScheduleRange(
+      localStart,
+      localEnd,
+      businessHour ?? { startTime: "09:00", endTime: "19:00" },
+      "atención del negocio"
+    );
+    if (businessScheduleError) {
+      return Response.json({ error: businessScheduleError }, { status: 400 });
+    }
+
+    if (!hasStaffAssignments && staffId) {
+      const selectedStaff = await prisma.staff.findFirst({
+        where: { id: staffId, businessId: business.id, isActive: true },
+        include: {
+          services: { select: { id: true } },
+          schedule: { orderBy: { dayOfWeek: "asc" } },
+        },
+      });
+
+      if (!selectedStaff) {
+        return Response.json(
+          { error: "El profesional seleccionado no pertenece a este negocio o está inactivo" },
+          { status: 400 }
+        );
+      }
+
+      const assignedServiceIds = new Set(selectedStaff.services.map((item) => item.id));
+      const canPerformAll =
+        assignedServiceIds.size === 0 ||
+        allServiceIds.every((selectedServiceId) => assignedServiceIds.has(selectedServiceId));
+      if (!canPerformAll) {
+        return Response.json(
+          { error: "El profesional seleccionado no realiza todos los servicios de la reserva" },
+          { status: 400 }
+        );
+      }
+
+      if (selectedStaff.schedule.length > 0) {
+        const staffDay = selectedStaff.schedule.find(
+          (entry) => entry.dayOfWeek === localStart.getDay()
+        );
+        if (!staffDay?.isWorking) {
+          return Response.json(
+            { error: "El profesional no trabaja el día seleccionado" },
+            { status: 400 }
+          );
+        }
+
+        const staffScheduleError = validateScheduleRange(
+          localStart,
+          localEnd,
+          staffDay,
+          `trabajo de ${selectedStaff.name}`
+        );
+        if (staffScheduleError) {
+          return Response.json({ error: staffScheduleError }, { status: 400 });
+        }
+      }
+    }
+
     const client = await prisma.client.upsert({
       where: {
         businessId_email: { businessId: business.id, email: customerEmail },
@@ -277,6 +468,33 @@ export async function POST(
           .filter((s): s is NonNullable<typeof s> => Boolean(s));
         const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
         const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
+        const assigned = staffById.get(assignedStaffId);
+        if (assigned) {
+          const schedule = await prisma.staffSchedule.findMany({
+            where: { staffId: assignedStaffId },
+            orderBy: { dayOfWeek: "asc" },
+          });
+          if (schedule.length > 0) {
+            const staffDay = schedule.find((entry) => entry.dayOfWeek === localStart.getDay());
+            if (!staffDay?.isWorking) {
+              return Response.json(
+                { error: `${assigned.name} no trabaja el día seleccionado` },
+                { status: 400 }
+              );
+            }
+
+            const staffScheduleError = validateScheduleRange(
+              localStart,
+              toZonedTime(groupEnd, timezone),
+              staffDay,
+              `trabajo de ${assigned.name}`
+            );
+            if (staffScheduleError) {
+              return Response.json({ error: staffScheduleError }, { status: 400 });
+            }
+          }
+        }
+
         const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
           business.id,
           requestedStart,

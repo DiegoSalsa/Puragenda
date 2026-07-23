@@ -1,5 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import type { UserRole } from "@/core/entities";
+import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 
 /**
  * Get a business by its slug.
@@ -65,19 +67,16 @@ export async function getStaffAgendaScope(
     where: { userId: user.id, businessId: business.id, isActive: true },
     select: { id: true },
   });
+  const permissions = await getEffectiveBusinessPermissions(user, business);
 
-  if (
-    user.role === "SUPERADMIN" ||
-    user.role === "ADMIN" ||
-    user.role === "RECEPTIONIST" ||
-    business.ownerId === user.id
-  ) {
+  if (permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL)) {
     return { canSeeAllAgendas: true, staffId: null, ownStaffId: staff?.id ?? null };
   }
 
+  const canSeeOwnAgenda = permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN);
   return {
     canSeeAllAgendas: false,
-    staffId: staff?.id ?? null,
+    staffId: canSeeOwnAgenda ? staff?.id ?? null : null,
     ownStaffId: staff?.id ?? null,
   };
 }
