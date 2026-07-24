@@ -208,7 +208,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
 
       {/* Plan Cards — 2 columns */}
-      <div className="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2 pt-6 sm:pt-8">
+      <div className="mx-auto grid min-w-0 max-w-4xl gap-6 pt-6 sm:pt-8 lg:grid-cols-2">
         {plans.map((plan) => {
           const totalPrice = getTotalPrice(plan.key);
           const basePrice = getBasePriceDisplay(plan.key);
@@ -219,7 +219,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
           return (
             <div
               key={plan.key}
-              className={`relative flex flex-col h-full rounded-[32px] border-4 border-black dark:border-white p-6 sm:p-10 transition-transform duration-300 ${
+              className={`relative flex min-w-0 flex-col h-full rounded-[32px] border-4 border-black dark:border-white p-5 sm:p-10 transition-transform duration-300 ${
                 plan.highlighted
                   ? "bg-[#B28DFF] dark:bg-[#111111] shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#B28DFF] -translate-y-2"
                   : "bg-white dark:bg-[#000000] shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF] hover:-translate-y-1 hover:shadow-[10px_10px_0_#000] dark:hover:shadow-[10px_10px_0_#FFF]"
@@ -247,11 +247,11 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
               {/* Header */}
               <div className="space-y-5">
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                   <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-4 border-black dark:border-white ${plan.highlighted ? "bg-[#FFF5BA] dark:bg-black" : "bg-[#85E3FF] dark:bg-black"} shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]`}>
                     <PlanIcon className="h-7 w-7 text-black dark:text-white" />
                   </div>
-                  <p className="text-4xl font-black uppercase">{plan.name}</p>
+                  <p className="min-w-0 break-words text-3xl font-black uppercase sm:text-4xl">{plan.name}</p>
                 </div>
                 <p className="text-base font-bold opacity-80">{plan.description}</p>
 
@@ -263,8 +263,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
 
                 {/* Price display */}
                 <div className="space-y-2 pt-2">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-6xl font-black tracking-tighter">
+                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                    <p className="min-w-0 text-5xl font-black tracking-tighter sm:text-6xl">
                       {formatCLP(totalPrice)}
                     </p>
                     <span className="text-xl font-bold opacity-70">/mes</span>

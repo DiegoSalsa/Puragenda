@@ -18,15 +18,15 @@ export default async function PricingPage() {
 
   return (
     <LandingLayout user={user} business={business}>
-      <section className="mx-auto w-full max-w-6xl px-6 pt-10 pb-16">
-        <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-center mb-4">Planes para crecer a tu ritmo</h2>
+      <section className="mx-auto w-full max-w-6xl px-4 pt-10 pb-16 sm:px-6">
+        <h2 className="text-3xl font-black uppercase tracking-tighter sm:text-6xl text-center mb-4">Planes para crecer a tu ritmo</h2>
         <p className="mx-auto mt-4 max-w-xl font-bold text-black/70 dark:text-gray-400 text-center mb-4">Prueba gratis por 30 días. Sin tarjeta. Cancela cuando quieras.</p>
         <PricingCards mode="landing" />
       </section>
 
       {/* Comparison Table */}
-      <section className="mx-auto w-full max-w-4xl px-6 py-16">
-        <h3 className="text-3xl font-black uppercase tracking-tighter text-center mb-12">Comparación de Planes</h3>
+      <section className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
+        <h3 className="text-2xl font-black uppercase tracking-tighter text-center mb-12 sm:text-3xl">Comparación de Planes</h3>
         <div className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-2xl overflow-hidden shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF]">
           <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[520px]">

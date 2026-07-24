@@ -13,6 +13,8 @@ const navLinks = [
   { href: "/pricing", label: "Precios" },
   { href: "/guias", label: "Guías" },
   { href: "/faq", label: "FAQ" },
+  { href: "/sobre-nosotros", label: "Nosotros" },
+  { href: "/contacto", label: "Contacto" },
 ];
 
 import { Store } from "lucide-react";
@@ -57,14 +59,14 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           </div>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-0 xl:flex">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 ${
                     isActive
                       ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
                       : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
@@ -77,7 +79,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           </nav>
 
           {/* Desktop actions */}
-          <div className="hidden flex-1 items-center justify-end gap-3 md:flex">
+          <div className="hidden flex-1 items-center justify-end gap-2 xl:flex">
             <ThemeToggle />
             {user ? (
               <Link href="/dashboard">
@@ -107,7 +109,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           </div>
 
           {/* Mobile hamburger */}
-          <div className="flex flex-1 items-center justify-end md:hidden">
+          <div className="flex flex-1 items-center justify-end xl:hidden">
             <button
               onClick={() => setMobileOpen(true)}
               className="rounded-full p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -121,7 +123,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
       {/* ═══ MOBILE DRAWER — rendered via portal OUTSIDE the header ═══ */}
       {mobileOpen && typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] md:hidden">
+          <div className="fixed inset-0 z-[9999] xl:hidden">
             {/* Dark overlay */}
             <div
               className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
