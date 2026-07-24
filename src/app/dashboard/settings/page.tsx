@@ -5,7 +5,7 @@ import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
@@ -16,6 +16,7 @@ import { MercadoPagoConnect } from "./mercadopago-connect";
 import { DepositConfig } from "./deposit-config";
 import { BusinessPoliciesEditor } from "./business-policies-editor";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { ProductionOrdersConfig } from "./production-orders-config";
 
 export const dynamic = "force-dynamic";
 
@@ -156,6 +157,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             initialDepositRequired={business.depositRequired}
             isMpConnected={isMpConnected}
           />
+        </div>
+
+        <div id="encargos" className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-5 flex items-center gap-2 text-sm font-medium">
+            <Package className="h-4 w-4 text-[#7C3AED]" /> Encargos
+          </div>
+          <ProductionOrdersConfig initialEnabled={business.productionOrdersEnabled} />
         </div>
 
         <div id="business-name" className="rounded-2xl border border-border bg-card p-6">

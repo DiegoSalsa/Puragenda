@@ -4,10 +4,12 @@ import { ArrowRight, Code2 } from "lucide-react";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Sobre Nosotros | Puragenda",
+  title: "Sobre nosotros",
   description: "Conoce a PuroCode, el equipo detrás de Puragenda. Desarrollamos software SaaS de alta calidad para negocios locales en Chile y Latinoamérica.",
+  alternates: { canonical: absoluteUrl("/sobre-nosotros") },
 };
 
 export default async function AboutPage() {
@@ -30,10 +32,10 @@ export default async function AboutPage() {
             <div className="space-y-6">
               <h2 className="text-2xl font-black uppercase bg-[#85E3FF] border-2 border-black dark:border-white inline-block px-3 py-1 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] text-black">El problema de las agendas</h2>
               <p className="text-lg font-bold leading-relaxed opacity-80">
-                Visitando cientos de negocios locales (peluquerías, clínicas, barberías), notamos un patrón: excelentes profesionales perdían ventas y tiempo valioso gestionando citas por WhatsApp o usando cuadernos de papel.
+                Al conversar con negocios locales —peluquerías, consultas, barberías y centros de estética— encontramos un patrón: profesionales que dedicaban parte de su jornada a coordinar citas por WhatsApp o en cuadernos.
               </p>
               <p className="text-lg font-bold leading-relaxed opacity-80">
-                Las opciones del mercado eran gigantescas, costosas, o con soporte técnico inexistente (bots que nunca resuelven nada).
+                Puragenda nació como una alternativa enfocada en una configuración simple, precios publicados y atención directa para negocios pequeños y equipos en crecimiento.
               </p>
             </div>
             
@@ -43,10 +45,10 @@ export default async function AboutPage() {
               </div>
               <h2 className="text-2xl font-black uppercase">¿Qué es PuroCode?</h2>
               <p className="mt-4 font-bold leading-relaxed opacity-80">
-                PuroCode es la agencia de desarrollo detrás de Puragenda. Somos un equipo chileno dedicado a construir software de clase mundial para empresas latinoamericanas.
+                PuroCode es el equipo de desarrollo detrás de Puragenda. Somos un equipo chileno con base en el Gran Concepción que construye productos web para empresas latinoamericanas.
               </p>
               <p className="mt-4 font-bold leading-relaxed opacity-80">
-                Nuestro compromiso es la calidad técnica (Sistemas rápidos, seguros y sin caídas) y el soporte humano directo.
+                Nuestro compromiso es mantener un producto rápido, documentar con claridad lo que ofrece y atender directamente las dudas de implementación.
               </p>
             </div>
           </div>
@@ -107,7 +109,7 @@ export default async function AboutPage() {
               </div>
               <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-6 shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] rounded-xl hover:-translate-y-1 transition-transform">
                 <h3 className="text-xl font-black uppercase text-black dark:text-white bg-[#FFF5BA] dark:bg-transparent dark:border-b-4 inline-block px-2 mb-3">2. Soporte Humano</h3>
-                <p className="font-bold opacity-80 text-sm">No usamos chatbots que te hacen perder el tiempo. Hablas directamente con las personas que construyen el sistema.</p>
+                <p className="font-bold opacity-80 text-sm">Priorizamos la atención directa: las dudas de configuración llegan al equipo que desarrolla y mantiene el sistema.</p>
               </div>
               <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-6 shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] rounded-xl hover:-translate-y-1 transition-transform">
                 <h3 className="text-xl font-black uppercase text-black dark:text-white bg-[#85E3FF] dark:bg-transparent dark:border-b-4 inline-block px-2 mb-3">3. Marca Blanca</h3>

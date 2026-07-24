@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -23,19 +24,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.puragenda.cl"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Puragenda — Sistema de Reservas Online para Negocios | Agenda Inteligente",
+    default: "Puragenda — Reservas online, abonos y agenda para negocios",
     template: "%s | Puragenda",
   },
   description:
-    "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
+    "Sistema de reservas online para negocios de servicios y encargos. Gestiona citas, cupos, abonos, clientes y profesionales desde un solo lugar.",
   keywords: [
     "sistema de reservas online",
     "agenda online",
     "software de citas",
     "agendamiento",
     "reservas online Chile",
+    "agenda de encargos",
+    "reservas con abono",
+    "cupos de producción",
     "alternativa AgendaPro",
     "widget de reservas",
     "gestión de citas",
@@ -68,9 +72,9 @@ export const metadata: Metadata = {
     locale: "es_CL",
     url: "/",
     siteName: "Puragenda",
-    title: "Puragenda — Sistema de Reservas Online para Negocios",
+    title: "Puragenda — Reservas online, abonos y agenda para negocios",
     description:
-      "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
+      "Gestiona citas, encargos, cupos, abonos, clientes y profesionales desde un solo lugar.",
     images: [
       {
         url: "/android-chrome-512x512.png",
@@ -82,13 +86,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Puragenda — Sistema de Reservas Online para Negocios",
+    title: "Puragenda — Reservas online, abonos y agenda para negocios",
     description:
-      "Sistema de reservas online para hacer crecer tu local. Gestiona citas 24/7, reduce inasistencias y fideliza clientes. ¡Pruébalo gratis!",
+      "Gestiona citas, encargos, cupos, abonos, clientes y profesionales desde un solo lugar.",
     images: ["/android-chrome-512x512.png"],
-  },
-  alternates: {
-    canonical: "/",
   },
   robots: {
     index: true,

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ChevronLeft } from "lucide-react";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones | Puragenda",
+  title: "Términos y condiciones",
   description: "Términos y condiciones de uso de la plataforma Puragenda.",
+  alternates: { canonical: absoluteUrl("/terminos-y-condiciones") },
 };
 
 export default function TerminosPage() {

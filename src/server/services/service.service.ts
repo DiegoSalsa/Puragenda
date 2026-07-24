@@ -66,6 +66,14 @@ export async function createService(data: {
   duration: number;
   price: number;
   depositAmount?: number;
+  bookingMode?: "APPOINTMENT" | "PRODUCTION";
+  productionScheduleMode?: "WEEKLY" | "CUSTOM";
+  weeklyProductionCapacity?: number;
+  productionWeeksAhead?: number;
+  productionLeadTimeWeeks?: number;
+  customProductionWindows?: ServiceInput["customProductionWindows"];
+  productionDepositPercent?: number;
+  requiresReferenceImages?: boolean;
   businessId: string;
   optionCategories?: ServiceInput["optionCategories"];
 }) {
@@ -86,7 +94,23 @@ export async function createService(data: {
  */
 export async function updateService(
   serviceId: string,
-  data: { name?: string; description?: string; imageUrl?: string | null; duration?: number; price?: number; depositAmount?: number; optionCategories?: ServiceInput["optionCategories"] }
+  data: {
+    name?: string;
+    description?: string;
+    imageUrl?: string | null;
+    duration?: number;
+    price?: number;
+    depositAmount?: number;
+    bookingMode?: "APPOINTMENT" | "PRODUCTION";
+    productionScheduleMode?: "WEEKLY" | "CUSTOM";
+    weeklyProductionCapacity?: number;
+    productionWeeksAhead?: number;
+    productionLeadTimeWeeks?: number;
+    customProductionWindows?: ServiceInput["customProductionWindows"];
+    productionDepositPercent?: number;
+    requiresReferenceImages?: boolean;
+    optionCategories?: ServiceInput["optionCategories"];
+  }
 ) {
   const { optionCategories, ...serviceData } = data;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon, CalendarRange, Clock3 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { updateMaxServicesAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
 import { createRecurringPlanAction, deleteRecurringPlanAction } from "@/server/actions/recurring.actions";
@@ -57,6 +57,19 @@ interface OptionCategoryForm {
   alternatives: OptionAlternativeForm[];
 }
 
+interface CustomProductionWindow {
+  key: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  capacity: number;
+  isActive: boolean;
+}
+
+interface CustomProductionWindowForm extends Omit<CustomProductionWindow, "capacity"> {
+  capacity: string;
+}
+
 interface Service {
   id: string;
   name: string;
@@ -65,6 +78,14 @@ interface Service {
   duration: number;
   price: number;
   depositAmount: number;
+  bookingMode: "APPOINTMENT" | "PRODUCTION";
+  productionScheduleMode: "WEEKLY" | "CUSTOM";
+  weeklyProductionCapacity: number;
+  productionWeeksAhead: number;
+  productionLeadTimeWeeks: number;
+  customProductionWindows: unknown;
+  productionDepositPercent: number;
+  requiresReferenceImages: boolean;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
   _count: { recurringBookings: number };
@@ -119,6 +140,20 @@ const DEFAULT_OPTION_CATEGORY: OptionCategoryForm = {
   alternatives: [{ name: "", priceDelta: "0", durationDelta: "0", isHomeService: false }],
 };
 
+function getCustomProductionWindows(value: unknown): CustomProductionWindow[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((window): window is CustomProductionWindow => (
+    typeof window === "object" &&
+    window !== null &&
+    typeof window.key === "string" &&
+    typeof window.label === "string" &&
+    typeof window.startDate === "string" &&
+    typeof window.endDate === "string" &&
+    typeof window.capacity === "number" &&
+    typeof window.isActive === "boolean"
+  ));
+}
+
 // ─────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────
@@ -127,11 +162,13 @@ export function ServicesClient({
   initialServices,
   maxServicesPerBooking = 1,
   depositEnabled = false,
+  productionOrdersEnabled = false,
   businessPolicies = { requiresClientRut: false, allowRescheduling: false },
 }: {
   initialServices: Service[];
   maxServicesPerBooking?: number;
   depositEnabled?: boolean;
+  productionOrdersEnabled?: boolean;
   businessPolicies?: { requiresClientRut: boolean; allowRescheduling: boolean };
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
@@ -146,13 +183,36 @@ export function ServicesClient({
   const [serviceImageError, setServiceImageError] = useState("");
 
   // Base service form
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    imageUrl: string;
+    duration: string;
+    price: string;
+    depositAmount: string;
+    bookingMode: "APPOINTMENT" | "PRODUCTION";
+    productionScheduleMode: "WEEKLY" | "CUSTOM";
+    weeklyProductionCapacity: string;
+    productionWeeksAhead: string;
+    productionLeadTimeWeeks: string;
+    customProductionWindows: CustomProductionWindowForm[];
+    productionDepositPercent: string;
+    requiresReferenceImages: boolean;
+  }>({
     name: "",
     description: "",
     imageUrl: "",
     duration: "",
     price: "",
     depositAmount: "",
+    bookingMode: "APPOINTMENT" as "APPOINTMENT" | "PRODUCTION",
+    productionScheduleMode: "WEEKLY",
+    weeklyProductionCapacity: "5",
+    productionWeeksAhead: "24",
+    productionLeadTimeWeeks: "1",
+    customProductionWindows: [],
+    productionDepositPercent: "50",
+    requiresReferenceImages: false,
   });
 
   // Recurring plan form
@@ -188,7 +248,22 @@ export function ServicesClient({
 
   function openCreate() {
     setEditingService(null);
-    setForm({ name: "", description: "", imageUrl: "", duration: "", price: "", depositAmount: "" });
+    setForm({
+      name: "",
+      description: "",
+      imageUrl: "",
+      duration: "60",
+      price: "",
+      depositAmount: "",
+      bookingMode: "APPOINTMENT",
+      productionScheduleMode: "WEEKLY",
+      weeklyProductionCapacity: "5",
+      productionWeeksAhead: "24",
+      productionLeadTimeWeeks: "1",
+      customProductionWindows: [],
+      productionDepositPercent: "50",
+      requiresReferenceImages: false,
+    });
     setServiceImageError("");
     setRecurringEnabled(false);
     setRecurringOpen(false);
@@ -207,6 +282,17 @@ export function ServicesClient({
       duration: String(service.duration),
       price: String(service.price),
       depositAmount: String(service.depositAmount || 0),
+      bookingMode: service.bookingMode,
+      productionScheduleMode: service.productionScheduleMode,
+      weeklyProductionCapacity: String(service.weeklyProductionCapacity),
+      productionWeeksAhead: String(service.productionWeeksAhead),
+      productionLeadTimeWeeks: String(service.productionLeadTimeWeeks),
+      customProductionWindows: getCustomProductionWindows(service.customProductionWindows).map((window) => ({
+        ...window,
+        capacity: String(window.capacity),
+      })),
+      productionDepositPercent: String(service.productionDepositPercent),
+      requiresReferenceImages: service.requiresReferenceImages,
     });
     setServiceImageError("");
     setOptionCategories(
@@ -299,7 +385,7 @@ export function ServicesClient({
       }
 
       // Handle recurring plan
-      if (recurringEnabled && recurringForm.durationOptions.length > 0) {
+      if (form.bookingMode === "APPOINTMENT" && recurringEnabled && recurringForm.durationOptions.length > 0) {
         const result = await createRecurringPlanAction(serviceId, {
           mode: recurringForm.mode,
           fixedDays: recurringForm.mode === "FIXED_DAYS" ? recurringForm.fixedDays : [],
@@ -319,7 +405,7 @@ export function ServicesClient({
           setSaving(false);
           return;
         }
-      } else if (!recurringEnabled && editingService?.recurringPlan) {
+      } else if ((form.bookingMode === "PRODUCTION" || !recurringEnabled) && editingService?.recurringPlan) {
         const result = await deleteRecurringPlanAction(serviceId);
         if (result?.error) {
           alert(result.error);
@@ -639,8 +725,43 @@ export function ServicesClient({
                     className="hidden"
                   />
                 </div>
+                <div className="rounded-xl border border-border p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">¿Cómo se reserva este servicio?</p>
+                    <p className="text-xs text-muted-foreground">Elige el flujo que verá el cliente. Los demás servicios no cambian.</p>
+                  </div>
+                  <div className={`grid gap-3 ${productionOrdersEnabled ? "sm:grid-cols-2" : ""}`}>
+                    <button
+                      type="button"
+                      onClick={() => setForm((current) => ({ ...current, bookingMode: "APPOINTMENT" }))}
+                      className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "APPOINTMENT" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4 text-[#7C3AED]" />Cita con fecha y hora</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">El flujo tradicional de Puragenda.</span>
+                    </button>
+                    {productionOrdersEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm((current) => ({ ...current, bookingMode: "PRODUCTION", duration: current.duration || "60" }));
+                        setRecurringEnabled(false);
+                      }}
+                      className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "PRODUCTION" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" />Encargo con cupos</span>
+                      <span className="mt-1 block text-xs text-muted-foreground">El cliente elige un período de entrega.</span>
+                    </button>
+                    )}
+                  </div>
+                  {!productionOrdersEnabled && (
+                    <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                      Si vendes productos por encargo, activa el módulo en Configuración para ver esta opción.
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                  <div className={`space-y-1.5 ${form.bookingMode === "PRODUCTION" ? "hidden" : ""}`}>
                     <label className="text-sm text-muted-foreground">Duracion (minutos)</label>
                     <input
                       type="number"
@@ -666,7 +787,156 @@ export function ServicesClient({
                   </div>
                 </div>
 
-                {depositEnabled && (
+                {form.bookingMode === "PRODUCTION" && productionOrdersEnabled && (
+                  <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4 space-y-4">
+                    <div>
+                      <p className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" />Configuración de encargos</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Estas reglas solo se aplican a este servicio.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <button type="button"
+                        onClick={() => setForm((current) => ({ ...current, productionScheduleMode: "WEEKLY" }))}
+                        className={`rounded-xl border p-3 text-left ${form.productionScheduleMode === "WEEKLY" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-background"}`}>
+                        <span className="text-sm font-medium">Semanas automáticas</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">La agenda abre semanas continuamente según la anticipación.</span>
+                      </button>
+                      <button type="button"
+                        onClick={() => setForm((current) => ({ ...current, productionScheduleMode: "CUSTOM" }))}
+                        className={`rounded-xl border p-3 text-left ${form.productionScheduleMode === "CUSTOM" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-background"}`}>
+                        <span className="text-sm font-medium">Períodos personalizados</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">Crea campañas como “Entrega Navidad” con sus propios cupos.</span>
+                      </button>
+                    </div>
+
+                    {form.productionScheduleMode === "WEEKLY" ? (
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <label className="space-y-1.5">
+                          <span className="text-xs text-muted-foreground">Cupos por semana</span>
+                          <input type="number" min={1} max={100} required value={form.weeklyProductionCapacity}
+                            onChange={(e) => setForm({ ...form, weeklyProductionCapacity: e.target.value })}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="text-xs text-muted-foreground">Semanas que se muestran</span>
+                          <input type="number" min={1} max={104} required value={form.productionWeeksAhead}
+                            onChange={(e) => setForm({ ...form, productionWeeksAhead: e.target.value })}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="text-xs text-muted-foreground">Anticipación mínima (semanas)</span>
+                          <input type="number" min={0} max={104} required value={form.productionLeadTimeWeeks}
+                            onChange={(e) => setForm({ ...form, productionLeadTimeWeeks: e.target.value })}
+                            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {form.customProductionWindows.map((window, index) => (
+                          <div key={window.key} className="rounded-xl border border-border bg-background p-3">
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                              <label className="space-y-1.5 sm:col-span-2">
+                                <span className="text-xs text-muted-foreground">Nombre visible</span>
+                                <input required value={window.label} placeholder="Entrega Navidad"
+                                  onChange={(e) => setForm((current) => ({
+                                    ...current,
+                                    customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
+                                      itemIndex === index ? { ...item, label: e.target.value } : item),
+                                  }))}
+                                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
+                              </label>
+                              <label className="space-y-1.5">
+                                <span className="text-xs text-muted-foreground">Desde</span>
+                                <input type="date" required value={window.startDate}
+                                  onChange={(e) => setForm((current) => ({
+                                    ...current,
+                                    customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
+                                      itemIndex === index ? { ...item, startDate: e.target.value } : item),
+                                  }))}
+                                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
+                              </label>
+                              <label className="space-y-1.5">
+                                <span className="text-xs text-muted-foreground">Hasta</span>
+                                <input type="date" required value={window.endDate}
+                                  onChange={(e) => setForm((current) => ({
+                                    ...current,
+                                    customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
+                                      itemIndex === index ? { ...item, endDate: e.target.value } : item),
+                                  }))}
+                                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
+                              </label>
+                              <label className="space-y-1.5">
+                                <span className="text-xs text-muted-foreground">Cupos totales</span>
+                                <input type="number" min={1} max={10000} required value={window.capacity}
+                                  onChange={(e) => setForm((current) => ({
+                                    ...current,
+                                    customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
+                                      itemIndex === index ? { ...item, capacity: e.target.value } : item),
+                                  }))}
+                                  className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
+                              </label>
+                            </div>
+                            <div className="mt-3 flex items-center justify-between">
+                              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <input type="checkbox" checked={window.isActive}
+                                  onChange={(e) => setForm((current) => ({
+                                    ...current,
+                                    customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
+                                      itemIndex === index ? { ...item, isActive: e.target.checked } : item),
+                                  }))}
+                                  className="accent-[#7C3AED]" />
+                                Visible para clientes
+                              </label>
+                              <button type="button"
+                                onClick={() => setForm((current) => ({
+                                  ...current,
+                                  customProductionWindows: current.customProductionWindows.filter((_, itemIndex) => itemIndex !== index),
+                                }))}
+                                className="inline-flex items-center gap-1 text-xs text-red-400">
+                                <Trash2 className="h-3.5 w-3.5" />Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        <button type="button"
+                          onClick={() => setForm((current) => ({
+                            ...current,
+                            customProductionWindows: [
+                              ...current.customProductionWindows,
+                              {
+                                key: `period-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                                label: "",
+                                startDate: "",
+                                endDate: "",
+                                capacity: "10",
+                                isActive: true,
+                              },
+                            ],
+                          }))}
+                          className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 px-3 py-2 text-xs font-medium text-[#7C3AED]">
+                          <Plus className="h-4 w-4" />Agregar período de entrega
+                        </button>
+                      </div>
+                    )}
+
+                    <label className="block max-w-xs space-y-1.5">
+                      <span className="text-xs text-muted-foreground">Abono del total (%)</span>
+                      <input type="number" min={0} max={100} required value={form.productionDepositPercent}
+                        onChange={(e) => setForm({ ...form, productionDepositPercent: e.target.value })}
+                        className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
+                    </label>
+                    <label className="flex items-start gap-3 rounded-xl border border-border bg-background p-3">
+                      <input type="checkbox" checked={form.requiresReferenceImages}
+                        onChange={(e) => setForm({ ...form, requiresReferenceImages: e.target.checked })}
+                        className="mt-0.5 h-4 w-4 accent-[#7C3AED]" />
+                      <span>
+                        <span className="block text-sm font-medium">Exigir fotos de referencia</span>
+                        <span className="block text-xs text-muted-foreground">El cliente deberá subir al menos una imagen antes de reservar el cupo.</span>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {depositEnabled && form.bookingMode === "APPOINTMENT" && (
                   <div className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
@@ -816,7 +1086,7 @@ export function ServicesClient({
                   )}
                 </div>
 
-                <div className="rounded-xl border border-border overflow-hidden">
+                {form.bookingMode === "APPOINTMENT" && <div className="rounded-xl border border-border overflow-hidden">
                   {/* Header — click to expand/collapse, toggle to activate/deactivate */}
                   <div className="flex w-full items-center justify-between px-4 py-3">
                     <button
@@ -1109,7 +1379,7 @@ export function ServicesClient({
                       )}
                     </div>
                   )}
-                </div>
+                </div>}
 
               </div>
 
@@ -1188,14 +1458,25 @@ export function ServicesClient({
                         </div>
                       </td>
                       <td className="py-3.5 pr-4 font-medium">
-                        {service.name}
+                        <div className="flex flex-col items-start gap-1">
+                          <span>{service.name}</span>
+                          {service.bookingMode === "PRODUCTION" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-600 dark:text-fuchsia-400">
+                              <CalendarRange className="h-3 w-3" />Encargo
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="max-w-xs truncate py-3.5 pr-4 text-muted-foreground">
                         {service.description || "—"}
                       </td>
                       <td className="py-3.5 pr-4">
                         <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
-                          {service.duration} min
+                          {service.bookingMode === "PRODUCTION"
+                            ? service.productionScheduleMode === "CUSTOM"
+                              ? `${getCustomProductionWindows(service.customProductionWindows).filter((window) => window.isActive).length} período(s)`
+                              : `${service.weeklyProductionCapacity} cupos/sem`
+                            : `${service.duration} min`}
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 font-mono text-sm">
@@ -1203,7 +1484,12 @@ export function ServicesClient({
                       </td>
                       {depositEnabled && (
                         <td className="py-3.5 pr-4">
-                          {service.depositAmount > 0 ? (
+                          {service.bookingMode === "PRODUCTION" ? (
+                            <span className="inline-flex items-center gap-1 rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/10 px-2 py-0.5 text-xs font-medium text-fuchsia-600 dark:text-fuchsia-400">
+                              <Banknote className="h-3 w-3" />
+                              {service.productionDepositPercent}%
+                            </span>
+                          ) : service.depositAmount > 0 ? (
                             <span className="inline-flex items-center gap-1 rounded-lg border border-[#009EE3]/20 bg-[#009EE3]/10 px-2 py-0.5 text-xs font-medium text-[#009EE3]">
                               <Banknote className="h-3 w-3" />
                               {formatPrice(service.depositAmount)}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { BarChart3, ExternalLink, Gift, LayoutDashboard, Mail, Menu, RefreshCw, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers } from "lucide-react";
+import { BarChart3, ExternalLink, Gift, LayoutDashboard, Mail, Menu, RefreshCw, Settings, Wrench, Users, UsersRound, Palette, Stamp, Trophy, X, ChevronDown, Paintbrush, Layers, Package } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
@@ -14,6 +14,7 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
+  { href: "/dashboard/orders", label: "Encargos", icon: Package },
   { href: "/dashboard/analytics", label: "Analitica", icon: BarChart3 },
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
   { href: "/dashboard/services", label: "Servicios", icon: Wrench },
@@ -34,7 +35,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/settings", label: "Configuración", icon: Settings },
 ];
 
-function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName: string; widgetSlug?: string; userRole?: string; onClose?: () => void }) {
+function SidebarContent({ userName, widgetSlug, userRole, productionOrdersEnabled, onClose }: { userName: string; widgetSlug?: string; userRole?: string; productionOrdersEnabled?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
@@ -44,6 +45,7 @@ function SidebarContent({ userName, widgetSlug, userRole, onClose }: { userName:
 
   const visibleItems = navItems.filter((item) => {
     const href = "href" in item ? item.href : item.children?.[0]?.href ?? "";
+    if (href === "/dashboard/orders" && !productionOrdersEnabled) return false;
     if (userRole === "STAFF" && href !== "/dashboard" && href !== "/dashboard/analytics") return false;
     if (userRole === "RECEPTIONIST" && (href === "/dashboard/settings" || href === "/dashboard/referrals" || href === "/dashboard/rewards")) return false;
     return true;
@@ -149,10 +151,12 @@ export function DashboardSidebar({
   userName,
   widgetSlug,
   userRole,
+  productionOrdersEnabled,
 }: {
   userName: string;
   widgetSlug?: string;
   userRole?: string;
+  productionOrdersEnabled?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -175,14 +179,14 @@ export function DashboardSidebar({
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="relative flex h-full w-72 max-w-[80vw] flex-col bg-sidebar shadow-2xl animate-drawer-left">
-            <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} onClose={() => setMobileOpen(false)} />
+            <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} productionOrdersEnabled={productionOrdersEnabled} onClose={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar">
-        <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} />
+        <SidebarContent userName={userName} widgetSlug={widgetSlug} userRole={userRole} productionOrdersEnabled={productionOrdersEnabled} />
       </aside>
     </>
   );

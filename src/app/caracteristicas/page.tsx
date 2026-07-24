@@ -1,13 +1,15 @@
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3, Database, Gift, Stamp } from "lucide-react";
+import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3, Database, Gift, Stamp, PackageCheck } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Características | Puragenda",
+  title: "Características del sistema de reservas",
   description: "Descubre todas las funcionalidades de Puragenda para tu negocio.",
+  alternates: { canonical: absoluteUrl("/caracteristicas") },
 };
 
 const bentoFeatures = [
@@ -15,6 +17,7 @@ const bentoFeatures = [
   { title: "Widget Marca Blanca", description: "Se adapta a tus colores.", icon: LayoutTemplate, bg: "bg-[#FFF5BA]", colSpan: "md:col-span-1", size: "text-xl" },
   { title: "Multi-Staff", description: "Agendas separadas por profesional.", icon: Users, bg: "bg-[#85E3FF]", colSpan: "md:col-span-1", size: "text-xl" },
   { title: "Marketing Win-Back", description: "Recupera clientes perdidos con recordatorios.", icon: Mail, bg: "bg-[#FFB5E8]", colSpan: "md:col-span-2", size: "text-2xl" },
+  { title: "Encargos", description: "Cupos futuros, abonos, archivos y entrega estimada. Se activa solo si tu negocio lo necesita.", icon: PackageCheck, bg: "bg-[#BFFCC6]", colSpan: "md:col-span-3", size: "text-2xl" },
 ];
 
 export default async function CaracteristicasPage() {

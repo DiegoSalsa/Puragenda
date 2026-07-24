@@ -785,6 +785,30 @@ export async function updateBusinessPoliciesAction(data: {
   return { success: true };
 }
 
+// ─── Encargos personalizados ───
+
+export async function updateProductionOrdersEnabledAction(enabled: boolean) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    return { error: "Solo el administrador puede configurar los encargos" };
+  }
+
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { productionOrdersEnabled: Boolean(enabled) },
+  });
+
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/services");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 // ─── Disconnect Mercado Pago ───
 
 export async function disconnectMercadoPagoAction() {

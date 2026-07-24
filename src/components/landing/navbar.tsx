@@ -11,9 +11,8 @@ const navLinks = [
   { href: "/soluciones", label: "Soluciones" },
   { href: "/caracteristicas", label: "Características" },
   { href: "/pricing", label: "Precios" },
+  { href: "/guias", label: "Guías" },
   { href: "/faq", label: "FAQ" },
-  { href: "/sobre-nosotros", label: "Nosotros" },
-  { href: "/contacto", label: "Contacto" },
 ];
 
 import { Store } from "lucide-react";

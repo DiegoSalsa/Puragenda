@@ -108,6 +108,22 @@ export const bookingSchema = z
 
 export type BookingInput = z.infer<typeof bookingSchema>;
 
+export const customProductionWindowSchema = z.object({
+  key: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(2, "Escribe un nombre para el período").max(100),
+  startDate: z.string().date("La fecha inicial no es válida"),
+  endDate: z.string().date("La fecha final no es válida"),
+  capacity: z.coerce
+    .number()
+    .int("La capacidad debe ser un número entero")
+    .min(1, "Debe existir al menos 1 cupo")
+    .max(10000, "La capacidad máxima es 10.000"),
+  isActive: z.coerce.boolean().optional().default(true),
+}).refine((window) => window.endDate >= window.startDate, {
+  message: "La fecha final debe ser igual o posterior a la inicial",
+  path: ["endDate"],
+});
+
 export const serviceSchema = z.object({
   name: z
     .string({ message: "El nombre es obligatorio" })
@@ -143,11 +159,103 @@ export const serviceSchema = z.object({
     .optional()
     .default(0),
 
+  bookingMode: z.enum(["APPOINTMENT", "PRODUCTION"]).optional().default("APPOINTMENT"),
+
+  productionScheduleMode: z.enum(["WEEKLY", "CUSTOM"]).optional().default("WEEKLY"),
+
+  weeklyProductionCapacity: z.coerce
+    .number()
+    .int("Los cupos semanales deben ser un numero entero")
+    .min(1, "Debe existir al menos 1 cupo semanal")
+    .max(100, "El maximo es 100 cupos semanales")
+    .optional()
+    .default(5),
+
+  productionWeeksAhead: z.coerce
+    .number()
+    .int("Las semanas disponibles deben ser un numero entero")
+    .min(1, "Debes abrir al menos 1 semana")
+    .max(104, "Puedes abrir hasta 104 semanas")
+    .optional()
+    .default(24),
+
+  productionLeadTimeWeeks: z.coerce
+    .number()
+    .int("La anticipación debe ser un número entero")
+    .min(0, "La anticipación no puede ser negativa")
+    .max(104, "La anticipación máxima es 104 semanas")
+    .optional()
+    .default(1),
+
+  customProductionWindows: z
+    .array(customProductionWindowSchema)
+    .max(60, "Puedes configurar hasta 60 períodos")
+    .optional()
+    .default([]),
+
+  productionDepositPercent: z.coerce
+    .number()
+    .int("El porcentaje de abono debe ser un numero entero")
+    .min(0, "El porcentaje no puede ser negativo")
+    .max(100, "El porcentaje no puede superar 100")
+    .optional()
+    .default(50),
+
+  requiresReferenceImages: z.coerce.boolean().optional().default(false),
+
   optionCategories: z
     .array(optionCategorySchema)
     .max(10, "Cada servicio puede tener hasta 10 categorias de opciones")
     .optional()
     .default([]),
+}).superRefine((service, ctx) => {
+  if (service.bookingMode !== "PRODUCTION" || service.productionScheduleMode !== "CUSTOM") return;
+
+  const activeWindows = service.customProductionWindows.filter((window) => window.isActive);
+  if (activeWindows.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Agrega al menos un período de entrega activo",
+      path: ["customProductionWindows"],
+    });
+  }
+
+  const keys = new Set<string>();
+  service.customProductionWindows.forEach((window, index) => {
+    if (keys.has(window.key)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Cada período debe tener un identificador único",
+        path: ["customProductionWindows", index, "key"],
+      });
+    }
+    keys.add(window.key);
+  });
 });
 
 export type ServiceInput = z.infer<typeof serviceSchema>;
+
+export const productionOrderSchema = z.object({
+  serviceId: z.string().min(1),
+  selectedOptionAlternativeIds: z.array(z.string()).max(50).optional().default([]),
+  productionWeek: z.string().date("La semana de produccion no es valida"),
+  productionWindowKey: z.string().trim().min(1).max(80),
+  customerName: z.string().trim().min(2).max(100),
+  customerEmail: z.string().trim().email().max(255).toLowerCase(),
+  customerPhone: z.string().trim().regex(/^\+?[0-9\s()-]{8,18}$/, "Telefono invalido"),
+  petName: z.string().trim().min(1, "Indica el nombre de la mascota").max(80),
+  petDetails: z.string().trim().min(10, "Cuéntanos un poco mas sobre la mascota").max(2000),
+  referenceImageUrls: z.array(z.string().url()).max(6).optional().default([]),
+  deliveryMethod: z.enum(["COORDINATE", "PICKUP", "SHIPPING"]).optional().default("COORDINATE"),
+  customerAddress: z.string().trim().max(300).optional(),
+}).superRefine((data, ctx) => {
+  if (data.deliveryMethod === "SHIPPING" && (!data.customerAddress || data.customerAddress.length < 5)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Indica la direccion de despacho",
+      path: ["customerAddress"],
+    });
+  }
+});
+
+export type ProductionOrderInput = z.infer<typeof productionOrderSchema>;

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ChevronLeft } from "lucide-react";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad | Puragenda",
+  title: "Política de privacidad",
   description: "Política de privacidad y protección de datos personales de Puragenda.",
+  alternates: { canonical: absoluteUrl("/politica-de-privacidad") },
 };
 
 export default function PrivacidadPage() {

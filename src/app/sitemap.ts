@@ -1,106 +1,43 @@
-import { prisma } from "@/server/db/prisma";
 import type { MetadataRoute } from "next";
 import { industriesData } from "@/lib/data/industries";
+import { guides } from "@/lib/data/guides";
+import { absoluteUrl } from "@/lib/site";
 
-const baseUrl = "https://www.puragenda.cl";
+const contentUpdatedAt = new Date("2026-07-23T00:00:00-04:00");
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static routes
+export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/soluciones`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/caracteristicas`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/faq`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/contacto`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/sobre-nosotros`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/alternativa-agendapro`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/register`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/terminos-y-condiciones`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-    {
-      url: `${baseUrl}/politica-de-privacidad`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-  ];
+    ["/", "weekly", 1],
+    ["/pricing", "monthly", 0.8],
+    ["/soluciones", "monthly", 0.8],
+    ["/caracteristicas", "monthly", 0.8],
+    ["/faq", "monthly", 0.7],
+    ["/contacto", "monthly", 0.6],
+    ["/sobre-nosotros", "monthly", 0.7],
+    ["/alternativa-agendapro", "monthly", 0.8],
+    ["/terminos-y-condiciones", "yearly", 0.2],
+    ["/politica-de-privacidad", "yearly", 0.2],
+    ["/guias", "weekly", 0.9],
+  ].map(([path, changeFrequency, priority]) => ({
+    url: absoluteUrl(path as string),
+    lastModified: contentUpdatedAt,
+    changeFrequency: changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"],
+    priority: priority as number,
+  }));
 
-  // Programmatic SEO Routes (Industries)
-  const industryRoutes: MetadataRoute.Sitemap = industriesData.map((ind) => ({
-    url: `${baseUrl}/para/${ind.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+  const industryRoutes: MetadataRoute.Sitemap = industriesData.map((industry) => ({
+    url: absoluteUrl(`/para/${industry.slug}`),
+    lastModified: contentUpdatedAt,
+    changeFrequency: "monthly",
     priority: 0.8,
   }));
 
-  // Dynamic routes: all public business widget pages
-  const businesses = await prisma.business.findMany({
-    select: { slug: true, updatedAt: true },
-    orderBy: { updatedAt: "desc" },
-  });
-
-  const businessRoutes: MetadataRoute.Sitemap = businesses.map((b) => ({
-    url: `${baseUrl}/widget/${b.slug}`,
-    lastModified: b.updatedAt,
-    changeFrequency: "daily" as const,
-    priority: 0.7,
+  const guideRoutes: MetadataRoute.Sitemap = guides.map((guide) => ({
+    url: absoluteUrl(`/guias/${guide.slug}`),
+    lastModified: new Date(`${guide.updatedAt}T00:00:00-04:00`),
+    changeFrequency: "monthly",
+    priority: 0.8,
   }));
 
-  return [...staticRoutes, ...industryRoutes, ...businessRoutes];
+  return [...staticRoutes, ...industryRoutes, ...guideRoutes];
 }

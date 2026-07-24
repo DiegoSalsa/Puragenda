@@ -1,19 +1,21 @@
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { Scissors, Sparkles, Stethoscope, CheckCircle2, TrendingUp, Users2, Clock } from "lucide-react";
+import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Soluciones por Industria | Puragenda",
+  title: "Soluciones por industria",
   description: "Descubre cómo Puragenda se adapta a las necesidades específicas de tu rubro.",
+  alternates: { canonical: absoluteUrl("/soluciones") },
 };
 
 const metrics = [
-  { value: "40%", label: "Menos inasistencias", icon: Users2, bg: "bg-[#FFB5E8]" },
-  { value: "15h", label: "Ahorradas al mes", icon: Clock, bg: "bg-[#FFF5BA]" },
-  { value: "+25%", label: "Aumento en reservas", icon: TrendingUp, bg: "bg-[#BFFCC6]" },
+  { value: "24/7", label: "Reservas fuera de horario", icon: Clock, bg: "bg-[#FFB5E8]" },
+  { value: "1 panel", label: "Agenda, clientes y pagos", icon: Users2, bg: "bg-[#FFF5BA]" },
+  { value: "Tu marca", label: "Widget personalizable", icon: TrendingUp, bg: "bg-[#BFFCC6]" },
 ];
 
 export default async function SolucionesPage() {
@@ -62,6 +64,9 @@ export default async function SolucionesPage() {
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Catálogo visual de servicios.</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Elección de profesional favorito.</li>
             </ul>
+            <Link href="/para/barberias" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
+              Ver solución para barberías →
+            </Link>
           </div>
         </div>
 
@@ -79,6 +84,9 @@ export default async function SolucionesPage() {
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Fichas de cliente y notas.</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Campañas automáticas de reactivación.</li>
             </ul>
+            <Link href="/para/estetica" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
+              Ver solución para estética →
+            </Link>
           </div>
           <div className="bg-[#85E3FF] dark:bg-black border-4 border-black dark:border-white p-8 rounded-3xl shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#85E3FF]">
              <div className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-xl p-4 rotate-3">
@@ -94,12 +102,44 @@ export default async function SolucionesPage() {
             </div>
           </div>
         </div>
+
+        {/* Encargos y producción */}
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="order-2 md:order-1 bg-[#BFFCC6] dark:bg-black border-4 border-black dark:border-white p-8 rounded-3xl shadow-[12px_12px_0_#000] dark:shadow-[12px_12px_0_#BFFCC6]">
+            <div className="bg-white dark:bg-[#111] border-4 border-black dark:border-white rounded-xl p-5">
+              <p className="font-black uppercase border-b-4 border-black dark:border-white pb-3">Próxima entrega disponible</p>
+              <p className="mt-5 text-3xl font-black">Diciembre 2026</p>
+              <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black">
+                <span className="border-2 border-black bg-[#FFF5BA] p-2 text-black">2 cupos</span>
+                <span className="border-2 border-black bg-[#FFB5E8] p-2 text-black">Abono</span>
+                <span className="border-2 border-black bg-[#85E3FF] p-2 text-black">Archivos</span>
+              </div>
+            </div>
+          </div>
+          <div className="order-1 md:order-2 space-y-6">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-black bg-[#BFFCC6] text-black shadow-[4px_4px_0_#000]">
+              <PackageCheck className="h-8 w-8" />
+            </div>
+            <h2 className="text-4xl font-black uppercase tracking-tighter">Talleres y encargos personalizados</h2>
+            <p className="text-lg font-bold opacity-80">
+              Para réplicas de mascotas, tejidos, tortas, muebles, joyas u otros trabajos que se entregan semanas o meses después. Activa Encargos solo si lo necesitas y organiza cupos de producción, referencias, abonos y fechas estimadas.
+            </p>
+            <ul className="space-y-2 font-bold">
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Horizonte configurable de hasta varios meses.</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Capacidad por período y semanas bloqueadas.</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> Abono y archivos de referencia en el mismo flujo.</li>
+            </ul>
+            <Link href="/guias/agenda-encargos-con-abono" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
+              Leer la guía de encargos →
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Metrics Section */}
       <section className="border-y-4 border-black dark:border-white py-20 bg-white dark:bg-[#111]">
         <div className="mx-auto w-full max-w-6xl px-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-center mb-16">El impacto real en los negocios</h2>
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-center mb-16">Una operación más fácil de controlar</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {metrics.map((m, i) => (
               <div key={i} className="flex flex-col items-center text-center p-6 border-4 border-black dark:border-white rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] bg-white dark:bg-black hover:-translate-y-2 transition-transform">
@@ -112,7 +152,7 @@ export default async function SolucionesPage() {
             ))}
           </div>
           <p className="mt-8 text-center text-sm font-bold opacity-60">
-            * Métricas basadas en resultados promedio observados en clientes piloto iniciales.
+            El impacto depende del tipo de negocio, la adopción del equipo y la forma en que configures recordatorios, abonos y disponibilidad.
           </p>
         </div>
       </section>

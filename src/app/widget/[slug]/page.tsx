@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Negocio no encontrado", description: "El negocio solicitado no existe en Puragenda." };
   }
 
-  const title = `Reserva en ${business.name} | Puragenda`;
+  const title = `Reserva en ${business.name}`;
   const description = `Agenda tu cita en ${business.name} de forma rápida y segura. Reservas online 24/7 con confirmación inmediata.`;
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const url = new URL(`/widget/${business.slug}`, baseUrl).toString();
@@ -165,8 +165,17 @@ export default async function WidgetPage({
         textSecondary: textMuted,
         fontSize,
       }}
-      services={business.services.map((s) => ({
+      services={business.services
+        .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
+        .map((s) => ({
         id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        bookingMode: s.bookingMode,
+        productionScheduleMode: s.productionScheduleMode,
+        weeklyProductionCapacity: s.weeklyProductionCapacity,
+        productionWeeksAhead: s.productionWeeksAhead,
+        productionLeadTimeWeeks: s.productionLeadTimeWeeks,
+        productionDepositPercent: s.productionDepositPercent,
+        requiresReferenceImages: s.requiresReferenceImages,
         optionCategories: s.optionCategories.map((category) => ({
           id: category.id,
           name: category.name,

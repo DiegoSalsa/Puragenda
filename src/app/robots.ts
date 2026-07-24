@@ -1,6 +1,19 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl } from "@/lib/site";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl";
+const privateRoutes = [
+  "/dashboard/",
+  "/api/",
+  "/admin/",
+  "/auth/",
+  "/cita/",
+  "/encargo/",
+  "/mi-plan/",
+  "/mis-premios/",
+  "/reagendar/",
+  "/responder/",
+  "/para/x7k9m2v4q8/",
+];
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,9 +21,24 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard/", "/api/", "/admin/", "/auth/", "/para/", "/widget/"],
+        disallow: privateRoutes,
+      },
+      {
+        userAgent: [
+          "OAI-SearchBot",
+          "ChatGPT-User",
+          "Googlebot",
+          "bingbot",
+          "PerplexityBot",
+          "Perplexity-User",
+          "Claude-SearchBot",
+          "Claude-User",
+        ],
+        allow: "/",
+        disallow: privateRoutes,
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: absoluteUrl("/sitemap.xml"),
+    host: absoluteUrl("/"),
   };
 }

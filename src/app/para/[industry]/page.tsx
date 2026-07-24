@@ -6,6 +6,7 @@ import { LandingLayout } from "@/components/landing/landing-layout";
 import { industriesData } from "@/lib/data/industries";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { absoluteUrl } from "@/lib/site";
 import {
   Accordion,
   AccordionContent,
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ industry:
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) return {};
 
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl"}/para/${data.slug}`;
+  const url = absoluteUrl(`/para/${data.slug}`);
 
   return {
     title: data.title,
@@ -71,7 +72,27 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
     "@type": "SoftwareApplication",
     name: "Puragenda",
     applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: absoluteUrl("/"),
     description: data.description,
+    offers: {
+      "@type": "AggregateOffer",
+      lowPrice: "12990",
+      highPrice: "29990",
+      priceCurrency: "CLP",
+      offerCount: "2",
+      url: absoluteUrl("/pricing"),
+    },
+  };
+
+  const jsonLdBreadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Soluciones", item: absoluteUrl("/soluciones") },
+      { "@type": "ListItem", position: 3, name: data.name, item: absoluteUrl(`/para/${data.slug}`) },
+    ],
   };
 
   // Rotate accent colors for benefit cards
@@ -81,6 +102,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
     <LandingLayout user={user} business={business}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumbs) }} />
 
       {/* HERO */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">

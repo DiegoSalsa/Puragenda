@@ -4,10 +4,12 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { PricingCards } from "@/components/pricing-cards";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { STAFF_LIMITS } from "@/core/constants";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata = {
-  title: "Selecciona tu Plan — Puragenda",
-  description: "Elige el plan que mejor se adapte a tu negocio.",
+  title: "Precios y planes",
+  description: "Compara los planes Individual y Equipo de Puragenda, sus precios en pesos chilenos y las funciones incluidas.",
+  alternates: { canonical: absoluteUrl("/pricing") },
 };
 
 export default async function PricingPage() {

@@ -1,8 +1,28 @@
 import type { NextConfig } from "next";
 
+const noIndexRoutes = [
+  "/dashboard/:path*",
+  "/login",
+  "/register",
+  "/widget/:path*",
+  "/cita/:path*",
+  "/encargo/:path*",
+  "/mi-plan/:path*",
+  "/mis-premios/:path*",
+  "/reagendar/:path*",
+  "/responder/:path*",
+  "/para/x7k9m2v4q8/:path*",
+];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      ...noIndexRoutes.map((source) => ({
+        source,
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      })),
       // Global security headers (all routes except widget)
       {
         source: "/((?!widget).*)",

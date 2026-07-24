@@ -47,6 +47,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (parsed.data.bookingMode === "PRODUCTION" && !business.productionOrdersEnabled) {
+      return Response.json(
+        { error: "Activa Encargos en Configuración antes de crear este tipo de servicio" },
+        { status: 400 },
+      );
+    }
 
     const service = await createService({
       ...parsed.data,

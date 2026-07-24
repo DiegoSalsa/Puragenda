@@ -1,11 +1,14 @@
 import { ThemeNeoBrutalism } from "@/components/landing/ThemeNeoBrutalism";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { absoluteUrl } from "@/lib/site";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Puragenda - Reservas online para tu negocio",
-  description: "Recibe reservas sin tocar el WhatsApp, cobra abonos online y lleva el control de tu negocio desde un solo lugar. Gratis 30 días, sin contrato.",
+  title: { absolute: "Puragenda — Reservas online, abonos y agenda para negocios" },
+  description:
+    "Recibe reservas y encargos, cobra abonos online y controla clientes, profesionales y capacidad desde un solo lugar. Prueba gratis por 30 días.",
+  alternates: { canonical: absoluteUrl("/") },
 };
 
 export default async function HomePage() {
@@ -19,32 +22,31 @@ export default async function HomePage() {
     name: "Puragenda",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
-    url: "https://www.puragenda.cl",
+    url: absoluteUrl("/"),
     description:
-      "Sistema de agendamiento online para peluquerías, estética, consultas y servicios. Reservas 24/7, widget marca blanca y multi-profesional.",
+      "Sistema de reservas online para negocios de servicios y encargos. Incluye reservas 24/7, abonos, widget personalizable, clientes y agendas por profesional.",
     offers: [
       {
         "@type": "Offer",
-        name: "Plan Base",
+        name: "Plan Individual",
         price: "12990",
         priceCurrency: "CLP",
         priceValidUntil: "2027-12-31",
+        description: "Para un profesional, con reservas ilimitadas.",
         availability: "https://schema.org/InStock",
+        url: absoluteUrl("/pricing"),
       },
       {
         "@type": "Offer",
-        name: "Plan Pro",
+        name: "Plan Equipo",
         price: "29990",
         priceCurrency: "CLP",
         priceValidUntil: "2027-12-31",
+        description: "Para equipos, con hasta cinco profesionales incluidos y roles de acceso.",
         availability: "https://schema.org/InStock",
+        url: absoluteUrl("/pricing"),
       },
     ],
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      reviewCount: "127",
-    },
     creator: {
       "@type": "Organization",
       name: "PuroCode",
@@ -55,23 +57,48 @@ export default async function HomePage() {
   const jsonLdOrg = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${absoluteUrl("/")}#organization`,
     name: "Puragenda",
-    url: "https://www.puragenda.cl",
-    logo: "https://www.puragenda.cl/icon-512x512.png",
+    url: absoluteUrl("/"),
+    logo: absoluteUrl("/android-chrome-512x512.png"),
     description: "Plataforma SaaS de agendamiento online para negocios de servicios en Latinoamérica.",
-    sameAs: [],
+    email: "contacto@purocode.com",
+    telephone: "+56949255006",
+    areaServed: {
+      "@type": "Country",
+      name: "Chile",
+    },
+    parentOrganization: {
+      "@type": "Organization",
+      name: "PuroCode",
+      url: "https://purocode.com",
+      sameAs: ["https://www.instagram.com/purocodecl/"],
+    },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
-      availableLanguage: ["Spanish"],
+      email: "contacto@purocode.com",
+      telephone: "+56949255006",
+      availableLanguage: ["es"],
+      areaServed: "CL",
     },
+  };
+
+  const jsonLdWebsite = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${absoluteUrl("/")}#website`,
+    name: "Puragenda",
+    url: absoluteUrl("/"),
+    inLanguage: "es-CL",
+    publisher: { "@id": `${absoluteUrl("/")}#organization` },
   };
 
   return (
     <>
-      {/* JSON-LD Structured Data for SEO */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }} />
       <ThemeNeoBrutalism user={user} business={business} />
     </>
   );

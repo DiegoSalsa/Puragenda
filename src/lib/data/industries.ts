@@ -49,6 +49,14 @@ export const industriesData: IndustrySEOData[] = [
         question: "¿Mis clientes necesitan bajar una app?",
         answer: "No, agendan directamente desde el enlace en tu Instagram o desde el widget en tu página web sin instalar nada.",
       },
+      {
+        question: "¿Puedo pedir un abono antes de confirmar una hora?",
+        answer: "Sí. Puedes configurar el abono por servicio y el cliente ve el monto antes de pasar al pago.",
+      },
+      {
+        question: "¿Qué ocurre si un estilista está de vacaciones?",
+        answer: "Puedes bloquear sus días o períodos no disponibles sin cerrar la agenda del resto del equipo.",
+      },
     ],
     keywords: ["software peluquería", "agenda online salón", "reservas peluquería", "sistema citas peluqueros"],
   },
@@ -82,6 +90,14 @@ export const industriesData: IndustrySEOData[] = [
       {
         question: "¿Cómo ven su agenda mis barberos?",
         answer: "Cada barbero ingresa con su propio correo y solo ve y gestiona su propia lista de clientes del día.",
+      },
+      {
+        question: "¿Se puede cobrar una seña para los horarios más demandados?",
+        answer: "Sí. La regla de abono se puede aplicar a los servicios que quieras proteger antes de confirmar la reserva.",
+      },
+      {
+        question: "¿Puedo compartir un enlace sin tener una página web?",
+        answer: "Sí. El widget tiene un enlace propio que puedes poner en Instagram, WhatsApp o Google Business Profile.",
       },
     ],
     keywords: ["software barbería", "agenda online barberos", "app para barberías", "reservas barbería"],
@@ -117,6 +133,14 @@ export const industriesData: IndustrySEOData[] = [
         question: "¿Qué pasa si un paciente cancela?",
         answer: "El bloque se libera automáticamente para que otro paciente pueda tomar esa hora en el momento.",
       },
+      {
+        question: "¿Puedo vender tratamientos de varias sesiones?",
+        answer: "Puedes llevar el historial del cliente y organizar servicios recurrentes o planes de sesiones desde el panel.",
+      },
+      {
+        question: "¿El widget puede usar los colores de mi centro?",
+        answer: "Sí. Puedes personalizar colores, tipografía y logo para que el flujo de reserva se vea integrado con tu marca.",
+      },
     ],
     keywords: ["software estética", "agenda centro estético", "reservas spa", "sistema gestión clínica estética"],
   },
@@ -145,11 +169,19 @@ export const industriesData: IndustrySEOData[] = [
     faq: [
       {
         question: "¿Es seguro para los datos de los pacientes?",
-        answer: "Aplicamos estrictos estándares de seguridad y encriptación. Tu base de datos es privada y protegida.",
+        answer: "El acceso al panel requiere autenticación y cada negocio administra sus propios usuarios. Si necesitas requisitos clínicos o regulatorios específicos, consúltanos antes de contratar.",
       },
       {
         question: "¿Funciona para psicólogos o terapeutas independientes?",
-        answer: "Es ideal. Puedes usar el plan gratuito para 1 profesional y gestionar todas tus sesiones sin costo adicional.",
+        answer: "Sí. El Plan Individual está pensado para un profesional e incluye 30 días de prueba sin tarjeta antes de activar la suscripción.",
+      },
+      {
+        question: "¿Los pacientes pueden reprogramar sin llamar a recepción?",
+        answer: "Sí. El flujo puede entregar enlaces de gestión para confirmar, cancelar o solicitar un cambio de la reserva.",
+      },
+      {
+        question: "¿Puragenda reemplaza una ficha clínica electrónica?",
+        answer: "No. Puragenda organiza reservas y clientes; no se presenta como una ficha clínica certificada ni reemplaza el software médico que tu consulta pueda requerir.",
       },
     ],
     keywords: ["software médico", "agenda clínica", "reservas médicos", "sistema gestión pacientes"],

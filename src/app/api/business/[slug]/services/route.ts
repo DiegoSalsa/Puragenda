@@ -14,7 +14,11 @@ export async function GET(
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
 
-    return Response.json(business.services);
+    return Response.json(
+      business.services.filter(
+        (service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled,
+      ),
+    );
   } catch (error) {
     console.error("[route] Error:", error);
     return Response.json(

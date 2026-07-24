@@ -9,6 +9,12 @@ import { DashboardTutorial } from "@/components/dashboard/tutorial";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({
   children,
@@ -57,6 +63,7 @@ export default async function DashboardLayout({
           userName={user.name}
           widgetSlug={business?.slug}
           userRole={user.role}
+          productionOrdersEnabled={business?.productionOrdersEnabled}
         />
         <main id="tutorial-main" className="flex-1 overflow-auto">
           <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>

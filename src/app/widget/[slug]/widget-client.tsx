@@ -5,6 +5,7 @@ import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "da
 import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
+import { ProductionOrderFlow } from "./production-order-flow";
 
 interface RecurringPlan {
   mode: "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM";
@@ -23,7 +24,24 @@ interface RecurringPlan {
 
 interface ServiceOptionAlternative { id: string; name: string; priceDelta: number; durationDelta: number; isHomeService: boolean; }
 interface ServiceOptionCategory { id: string; name: string; isRequired: boolean; maxSelections: number; alternatives: ServiceOptionAlternative[]; }
-interface Service { id: string; name: string; description: string | null; imageUrl: string | null; duration: number; price: number; depositAmount: number; optionCategories: ServiceOptionCategory[]; recurringPlan: RecurringPlan | null; }
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  duration: number;
+  price: number;
+  depositAmount: number;
+  bookingMode: "APPOINTMENT" | "PRODUCTION";
+  productionScheduleMode: "WEEKLY" | "CUSTOM";
+  weeklyProductionCapacity: number;
+  productionWeeksAhead: number;
+  productionLeadTimeWeeks: number;
+  productionDepositPercent: number;
+  requiresReferenceImages: boolean;
+  optionCategories: ServiceOptionCategory[];
+  recurringPlan: RecurringPlan | null;
+}
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; }
 interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
@@ -44,7 +62,7 @@ interface Props {
   minAdvanceBookingMinutes?: number;
 }
 
-type Step = "service" | "mode-select" | "options" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
+type Step = "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
 type FormState = { name: string; email: string; phone: string; address: string };
 type BlockedSlot = { startTime: string; endTime: string; staffId?: string };
 type StaffAssignment = { serviceId: string; staffId: string };
@@ -205,7 +223,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
 
   const activeServices = useMemo(
-    () => (isMultiService ? selectedServices : selectedService ? [selectedService] : []),
+    () => (
+      selectedService?.bookingMode === "PRODUCTION"
+        ? [selectedService]
+        : isMultiService
+          ? selectedServices
+          : selectedService
+            ? [selectedService]
+            : []
+    ),
     [isMultiService, selectedServices, selectedService]
   );
   const servicesNeedOptions = activeServices.some((service) => service.optionCategories.length > 0);
@@ -356,10 +382,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }, [business.slug, business.apiKey]);
 
   useEffect(() => {
-    if (selectedDate) fetchBlocked(selectedDate, assignedStaffIds);
+    if (!selectedDate) return;
+    const timeoutId = window.setTimeout(() => {
+      void fetchBlocked(selectedDate, assignedStaffIds);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [selectedDate, assignedStaffIds, fetchBlocked]);
 
-  function isSlotUnavailable(slot: { start: Date; end: Date }) {
+  const isSlotUnavailable = useCallback((slot: { start: Date; end: Date }) => {
     if (!splitStaffMode) return isBlocked(slot, blockedSlots);
 
     for (const service of activeServices) {
@@ -376,14 +406,23 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return false;
-  }
+  }, [
+    activeServices,
+    blockedSlots,
+    durationByServiceId,
+    selectedStaffByServiceId,
+    splitStaffMode,
+    staffMembers,
+  ]);
 
   useEffect(() => {
-    if (selectedSlot && isSlotUnavailable(selectedSlot)) {
+    if (!selectedSlot || !isSlotUnavailable(selectedSlot)) return;
+    const timeoutId = window.setTimeout(() => {
       setSelectedSlot(null);
       setStep("datetime");
-    }
-  }, [selectedSlot, blockedSlots, selectedStaffByServiceId, splitStaffMode]);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [selectedSlot, isSlotUnavailable]);
 
   // Helper: filter staff for a given set of service IDs (avoids stale useMemo)
   function getStaffForServices(serviceIds: string[]): StaffMember[] {
@@ -398,6 +437,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   function handleSelectService(s: Service) {
+    if (s.bookingMode === "PRODUCTION") {
+      setSelectedServices([]);
+      setSelectedService(s);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+      setSelectedStaff(null);
+      setSelectedOptionByCategory({});
+      setStep(s.optionCategories.length > 0 ? "options" : "production");
+      return;
+    }
     if (isMultiService) {
       setSelectedStaff(null);
       setSelectedStaffByServiceId({});
@@ -443,6 +492,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   function handleOptionsContinue() {
     if (!optionsComplete) return;
+    if (selectedService?.bookingMode === "PRODUCTION") {
+      setStep("production");
+      return;
+    }
     setSelectedDate(null);
     setSelectedSlot(null);
     setSelectedStaff(null);
@@ -687,10 +740,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   const isRecurringFlow = recurringMode === "recurring" && selectedService?.recurringPlan && step !== "service" && step !== "mode-select" && step !== "staff";
+  const isProductionFlow = selectedService?.bookingMode === "PRODUCTION" && step !== "service";
   const optionOffset = servicesNeedOptions ? 1 : 0;
   const needsStaffStep = hasMultipleFilteredStaff || needsStaffPerService || (canChooseStaffPerService && activeServices.length > 1);
   const staffOffset = needsStaffStep ? 1 : 0;
-  const stepLabels = isRecurringFlow
+  const stepLabels = isProductionFlow
+    ? ["Producto", ...(servicesNeedOptions ? ["Opciones"] : []), "Cupo y datos"]
+    : isRecurringFlow
     ? ["Servicio", "Configurar plan", "Tus datos"]
     : [
         isMultiService ? "Servicios" : "Servicio",
@@ -699,7 +755,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         "Fecha y hora",
         "Tus datos",
       ];
-  const stepIdx = isRecurringFlow
+  const stepIdx = isProductionFlow
+    ? step === "options" ? 1 : step === "production" ? stepLabels.length - 1 : 0
+    : isRecurringFlow
     ? (step === "recurring-config" || step === "health-form" ? 1 : step === "recurring-confirm" ? 2 : stepLabels.length)
     : step === "service" || step === "mode-select" ? 0
     : step === "options" ? 1
@@ -770,12 +828,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                           <p className="font-medium">{s.name}</p>
                           {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}><Clock3 className="h-3.5 w-3.5" />{s.duration} min</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>
+                            {s.bookingMode === "PRODUCTION"
+                              ? <><CalendarDays className="h-3.5 w-3.5" />{s.productionScheduleMode === "CUSTOM" ? "Períodos de entrega" : "Cupos semanales"}</>
+                              : <><Clock3 className="h-3.5 w-3.5" />{s.duration} min</>}
+                          </span>
                           <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
                         </div>
                         </div>
                       </div>
-                      {isMultiService ? (
+                      {isMultiService && s.bookingMode !== "PRODUCTION" ? (
                         <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all duration-300 shadow-sm" style={isSelected ? { borderColor: pc, background: pc } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}>
                           {isSelected && <span className="text-sm text-white font-bold drop-shadow-md">✓</span>}
                         </div>
@@ -810,7 +872,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <button type="button" onClick={handleOptionsBack} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Personaliza</span>
               </div>
-              <div><h2 className="text-xl font-bold">Elige las opciones</h2><p className="text-sm" style={{ color: textSecondary }}>Ajustaremos el precio y la duracion antes de mostrar horarios.</p></div>
+              <div><h2 className="text-xl font-bold">Elige las opciones</h2><p className="text-sm" style={{ color: textSecondary }}>{selectedService?.bookingMode === "PRODUCTION" ? "Personaliza tu encargo antes de elegir un cupo." : "Ajustaremos el precio y la duracion antes de mostrar horarios."}</p></div>
 
               <div className="space-y-4">
                 {activeServices.map((service) => (
@@ -863,15 +925,32 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
 
               <div className="rounded-2xl border p-4 text-sm space-y-1.5" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
-                <div className="flex justify-between" style={{ color: textSecondary }}><span>Duracion total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
+                {selectedService?.bookingMode !== "PRODUCTION" && <div className="flex justify-between" style={{ color: textSecondary }}><span>Duracion total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>}
                 <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(rawTotalPrice)}</span></div>
               </div>
 
               <button type="button" disabled={!optionsComplete} onClick={handleOptionsContinue}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                Ver horarios <ChevronRight className="h-4 w-4" />
+                {selectedService?.bookingMode === "PRODUCTION" ? "Elegir cupo" : "Ver horarios"} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+          )}
+
+          {step === "production" && selectedService?.bookingMode === "PRODUCTION" && (
+            <ProductionOrderFlow
+              business={{ slug: business.slug, apiKey: business.apiKey, name: business.name }}
+              service={selectedService}
+              selectedOptionAlternativeIds={selectedOptionAlternativeIds}
+              totalPrice={rawTotalPrice}
+              primaryColor={pc}
+              textColor={textColor}
+              textSecondary={textSecondary}
+              onBack={() => {
+                setSelectedOptionByCategory({});
+                setSelectedService(null);
+                setStep("service");
+              }}
+            />
           )}
 
           {step === "mode-select" && selectedService?.recurringPlan && (

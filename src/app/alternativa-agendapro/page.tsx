@@ -1,192 +1,176 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Alternativa a AgendaPro | Puragenda",
+  title: "Alternativa a AgendaPro: guía de comparación",
   description:
-    "Descubre por qué Puragenda es la mejor alternativa a AgendaPro para tu negocio. Compara velocidad, tecnología, fricción de clientes y soporte.",
-  alternates: {
-    canonical: "/alternativa-agendapro",
+    "Compara Puragenda con AgendaPro usando precio total, flujo de reserva, pagos, exportación, soporte y necesidades reales de tu negocio.",
+  alternates: { canonical: absoluteUrl("/alternativa-agendapro") },
+  openGraph: {
+    title: "Alternativa a AgendaPro: guía de comparación",
+    description:
+      "Una comparación transparente para elegir software de reservas en Chile sin depender de afirmaciones difíciles de verificar.",
+    url: absoluteUrl("/alternativa-agendapro"),
+    type: "article",
   },
 };
 
-export default function AlternativaAgendaProPage() {
-  return (
-    <div className="relative min-h-screen w-full overflow-x-hidden text-foreground selection:bg-[#7C3AED]/30">
-      {/* ─── Premium Background ─── */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7C3AED]/70 to-transparent shadow-[0_0_15px_#7C3AED]/50" />
-        <div className="absolute top-[-10%] left-1/2 w-[200%] h-[50vh] -translate-x-1/2 opacity-30 dark:opacity-40">
-          <div className="absolute top-0 left-1/2 w-[80%] h-full -translate-x-1/2 bg-[conic-gradient(from_90deg_at_50%_0%,#A78BFA_0%,transparent_50%,#7C3AED_100%)] blur-[90px] animate-pulse" style={{ animationDuration: '6s' }} />
-        </div>
-      </div>
+const criteria = [
+  {
+    label: "Precio publicado",
+    puragenda: "Individual $12.990 CLP/mes y Equipo $29.990 CLP/mes.",
+    competitor: "Revisar los planes y la cotización vigente directamente con AgendaPro.",
+  },
+  {
+    label: "Prueba del producto",
+    puragenda: "30 días sin tarjeta para validar el flujo con tu propio catálogo.",
+    competitor: "Confirmar modalidad y condiciones vigentes en su sitio oficial.",
+  },
+  {
+    label: "Reserva del cliente",
+    puragenda: "Flujo web desde un enlace o iframe; el cliente no administra una contraseña.",
+    competitor: "Probar el recorrido vigente desde un teléfono antes de decidir.",
+  },
+  {
+    label: "Encargos y cupos futuros",
+    puragenda: "Modo opcional con abono, archivos, capacidad por período y entrega estimada.",
+    competitor: "Confirmar si el flujo requerido está disponible en el plan evaluado.",
+  },
+  {
+    label: "Soporte",
+    puragenda: "Atención directa en español por el equipo de PuroCode en Chile.",
+    competitor: "Verificar canales, horarios y tiempos de respuesta ofrecidos al contratar.",
+  },
+  {
+    label: "Salida y datos",
+    puragenda: "Solicita una demostración de la exportación antes de contratar.",
+    competitor: "Solicita la misma demostración y compara los formatos entregados.",
+  },
+];
 
+export default function AlternativaAgendaProPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "Alternativa a AgendaPro: guía de comparación",
+    description:
+      "Criterios verificables para comparar Puragenda, AgendaPro y otras plataformas de reservas.",
+    datePublished: "2026-07-23",
+    dateModified: "2026-07-23",
+    inLanguage: "es-CL",
+    mainEntityOfPage: absoluteUrl("/alternativa-agendapro"),
+    author: {
+      "@type": "Organization",
+      name: "Equipo Puragenda",
+      url: absoluteUrl("/sobre-nosotros"),
+    },
+  };
+
+  return (
+    <div className="relative min-h-screen bg-background text-foreground">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Navbar />
 
-      <main className="relative z-10 pt-32 pb-20 md:pt-40 lg:pt-48">
-        <section className="mx-auto w-full max-w-5xl px-6">
-          <div className="text-center space-y-6">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-b from-foreground to-foreground/70">
-              La mejor alternativa a AgendaPro para clínicas y salones
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Compara de forma transparente por qué cada vez más negocios están migrando a una plataforma más rápida, moderna y sin fricción para sus clientes.
-            </p>
+      <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pt-40">
+        <header className="mx-auto max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 border-2 border-black bg-[#FFF5BA] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
+            <SearchCheck className="h-4 w-4" />
+            Comparación actualizada el 23 de julio de 2026
           </div>
+          <h1 className="mt-8 text-4xl font-black uppercase tracking-tighter sm:text-6xl">
+            ¿Buscas una alternativa a AgendaPro?
+          </h1>
+          <p className="mx-auto mt-6 max-w-3xl text-lg font-bold leading-relaxed opacity-75">
+            La respuesta depende de tu operación. Esta página separa lo que Puragenda publica y puede demostrar de lo que debes verificar directamente en cada proveedor.
+          </p>
+        </header>
 
-          <div className="mt-16 overflow-hidden rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl shadow-2xl shadow-black/5 dark:shadow-[#7C3AED]/10">
-            <div className="overflow-x-auto">
-              {/* Semantic Table for LLMs and SEO */}
-              <table className="w-full text-left text-sm">
-                <caption className="sr-only">Comparación de características entre Puragenda y AgendaPro</caption>
-                <thead className="bg-muted/50 border-b border-border/50">
-                  <tr>
-                    <th scope="col" className="p-6 text-base font-bold text-foreground w-1/3">
-                      Característica
-                    </th>
-                    <th scope="col" className="p-6 text-xl font-extrabold text-[#7C3AED] w-1/3 border-l border-border/50 bg-[#7C3AED]/5">
-                      Puragenda
-                    </th>
-                    <th scope="col" className="p-6 text-xl font-bold text-muted-foreground w-1/3 border-l border-border/50">
-                      AgendaPro
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {/* Row 1 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Velocidad y Tecnología
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Next.js 14, carga en milisegundos</span>
-                      </div>
+        <section className="mt-16" aria-labelledby="comparison-heading">
+          <h2 id="comparison-heading" className="text-3xl font-black uppercase tracking-tight">
+            Comparación para una evaluación real
+          </h2>
+          <div className="mt-7 overflow-x-auto rounded-3xl border-4 border-black shadow-[8px_8px_0_#000] dark:border-white dark:shadow-[8px_8px_0_#fff]">
+            <table className="min-w-[760px] w-full border-collapse bg-white text-left dark:bg-black">
+              <caption className="sr-only">
+                Aspectos que un negocio debe verificar al comparar Puragenda con AgendaPro
+              </caption>
+              <thead>
+                <tr className="border-b-4 border-black bg-[#85E3FF] text-black dark:border-white">
+                  <th className="p-5 font-black uppercase">Criterio</th>
+                  <th className="border-l-4 border-black p-5 font-black uppercase dark:border-white">Puragenda</th>
+                  <th className="border-l-4 border-black p-5 font-black uppercase dark:border-white">Qué verificar en AgendaPro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {criteria.map((criterion) => (
+                  <tr key={criterion.label} className="border-b-2 border-black/20 last:border-b-0 dark:border-white/20">
+                    <th scope="row" className="p-5 align-top text-base font-black">{criterion.label}</th>
+                    <td className="border-l-2 border-black/20 p-5 align-top font-medium dark:border-white/20">
+                      <span className="flex gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                        {criterion.puragenda}
+                      </span>
                     </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Arquitectura tradicional</span>
-                      </div>
+                    <td className="border-l-2 border-black/20 p-5 align-top font-medium opacity-80 dark:border-white/20">
+                      {criterion.competitor}
                     </td>
                   </tr>
-                  {/* Row 2 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Cuentas de Cliente
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Cuentas invisibles, solo email, sin fricción</span>
-                      </div>
-                    </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Requiere registro y contraseñas</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {/* Row 3 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Fidelización
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Tarjetas de timbres automáticas incluidas</span>
-                      </div>
-                    </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Depende del plan</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {/* Row 4 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Enfoque de Soporte
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Soporte directo y local</span>
-                      </div>
-                    </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Call centers internacionales</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {/* Row 5 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Precio Inicial
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Desde $12.990 CLP/mes</span>
-                      </div>
-                    </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Planes de costo elevado o precios ocultos</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {/* Row 6 */}
-                  <tr className="transition-colors hover:bg-muted/20">
-                    <th scope="row" className="p-6 font-semibold text-foreground text-base">
-                      Amarras y Contratos
-                    </th>
-                    <td className="p-6 border-l border-border/50 bg-[#7C3AED]/[0.02]">
-                      <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-[#22c55e] shrink-0 mt-0.5" />
-                        <span className="text-foreground font-medium">Sin contratos, cancela cuando quieras</span>
-                      </div>
-                    </td>
-                    <td className="p-6 border-l border-border/50">
-                      <div className="flex items-start gap-2.5 text-muted-foreground">
-                        <XCircle className="h-5 w-5 text-red-400/70 shrink-0 mt-0.5" />
-                        <span>Contratos anuales frecuentes</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <p className="mt-6 text-sm font-bold leading-relaxed opacity-65">
+            AgendaPro es una marca de su respectivo titular. Sus funciones, precios y condiciones pueden cambiar. Esta comparación no atribuye características que no podamos comprobar y recomienda validar la información en su sitio oficial.
+          </p>
+        </section>
 
-          <div className="mt-20 flex flex-col items-center justify-center gap-6 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">¿Listo para probar la diferencia?</h2>
-            <p className="text-muted-foreground max-w-lg text-lg">
-              Migrar a Puragenda es rápido y fácil. Te acompañamos en todo el proceso para que no pierdas ni una sola reserva.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 mt-4">
-              <Link href="/register">
-                <button className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-8 py-4 text-sm font-semibold text-white shadow-xl shadow-[#7C3AED]/20 transition-all hover:bg-[#5B21B6] hover:-translate-y-1">
-                  Empezar Gratis <ArrowRight className="h-4 w-4" />
-                </button>
-              </Link>
-              <Link href="/pricing">
-                <button className="rounded-xl border border-border bg-card/40 backdrop-blur-xl px-8 py-4 text-sm font-medium text-foreground transition-all hover:border-foreground/20 hover:bg-muted/60">
-                  Ver Precios
-                </button>
-              </Link>
-            </div>
+        <section className="mx-auto mt-20 max-w-4xl">
+          <h2 className="text-3xl font-black uppercase">Prueba estas seis tareas</h2>
+          <p className="mt-5 text-lg font-medium leading-8 opacity-80">
+            Antes de migrar, crea servicios reales y realiza una reserva desde el teléfono. Intenta ocupar el mismo horario dos veces, cobrar un abono, reprogramar, cancelar y exportar clientes. Anota cuántos pasos requiere cada tarea y qué costos adicionales aparecen para tu cantidad de profesionales.
+          </p>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <Link
+              href="/guias/como-elegir-sistema-reservas-chile"
+              className="rounded-2xl border-4 border-black bg-[#BFFCC6] p-6 text-black shadow-[5px_5px_0_#000] dark:border-white"
+            >
+              <p className="text-sm font-black uppercase">Guía neutral</p>
+              <p className="mt-2 text-xl font-black">Cómo elegir un sistema de reservas en Chile</p>
+              <span className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase">
+                Leer criterios <ArrowRight className="h-4 w-4" />
+              </span>
+            </Link>
+            <a
+              href="https://www.agendapro.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border-4 border-black bg-[#FFF5BA] p-6 text-black shadow-[5px_5px_0_#000] dark:border-white"
+            >
+              <p className="text-sm font-black uppercase">Fuente externa</p>
+              <p className="mt-2 text-xl font-black">Revisar la información oficial de AgendaPro</p>
+              <span className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase">
+                Abrir sitio <ExternalLink className="h-4 w-4" />
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <section className="mt-20 border-t-4 border-black pt-14 text-center dark:border-white">
+          <h2 className="text-3xl font-black uppercase">Compruébalo con tu propio negocio</h2>
+          <p className="mx-auto mt-4 max-w-2xl font-bold opacity-75">
+            Configura el mismo catálogo que usas hoy y evalúa el recorrido completo durante la prueba.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Link href="/pricing" className="inline-flex items-center gap-2 border-4 border-black bg-[#7C3AED] px-7 py-4 font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white">
+              Ver planes <ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link href="/contacto" className="inline-flex items-center border-4 border-black bg-white px-7 py-4 font-black uppercase text-black shadow-[6px_6px_0_#000] dark:border-white">
+              Pedir una demostración
+            </Link>
           </div>
         </section>
       </main>

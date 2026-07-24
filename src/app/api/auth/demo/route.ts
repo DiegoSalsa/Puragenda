@@ -17,12 +17,16 @@ export async function GET(request: Request) {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role as any,
+      role: user.role,
       isSuperAdmin: user.isSuperAdmin,
     });
 
-    const url = new URL(request.url);
-    const redirectUrl = new URL("/dashboard", url.origin);
+    const requestUrl = new URL(request.url);
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const host = forwardedHost || request.headers.get("host");
+    const protocol = request.headers.get("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
+    const origin = host ? `${protocol}://${host}` : requestUrl.origin;
+    const redirectUrl = new URL("/dashboard", origin);
     const response = NextResponse.redirect(redirectUrl);
     
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());

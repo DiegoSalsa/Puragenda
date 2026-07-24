@@ -4,10 +4,12 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { Mail, Phone } from "lucide-react";
 import { Metadata } from "next";
 import { ContactForm } from "@/components/landing/contact-form";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contacto | Puragenda",
+  title: "Contacto",
   description: "Ponte en contacto con el equipo de Puragenda para resolver tus dudas o agendar una demostración.",
+  alternates: { canonical: absoluteUrl("/contacto") },
 };
 
 export default async function ContactoPage() {
@@ -57,8 +59,8 @@ export default async function ContactoPage() {
                 <p className="font-bold opacity-80">Priorizamos la respuesta rápida para todos nuestros clientes.</p>
               </div>
               <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF]">
-                <h3 className="text-xl font-black uppercase mb-2">Migración Gratuita</h3>
-                <p className="font-bold opacity-80">Si vienes de otro software (AgendaPro, Fresha, etc), nosotros migramos todos tus clientes gratis.</p>
+                <h3 className="text-xl font-black uppercase mb-2">Evaluación de Migración</h3>
+                <p className="font-bold opacity-80">Si vienes de otro software, revisamos el formato de tus datos y confirmamos contigo el alcance de la importación antes de comenzar.</p>
               </div>
             </div>
 
@@ -71,7 +73,7 @@ export default async function ContactoPage() {
                 </div>
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
                   <h4 className="font-black uppercase mb-1">¿Necesito conocimientos técnicos?</h4>
-                  <p className="text-sm font-bold opacity-80">En absoluto. Nosotros configuramos todo por ti durante la primera semana.</p>
+                  <p className="text-sm font-bold opacity-80">No. Te acompañamos en la configuración inicial de servicios, horarios, profesionales y enlace de reservas.</p>
                 </div>
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
                   <h4 className="font-black uppercase mb-1">¿Puedo probarlo antes de pagar?</h4>

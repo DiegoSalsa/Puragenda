@@ -3,10 +3,12 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { FAQSection } from "@/components/landing/faq-section";
 import { Metadata } from "next";
+import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Preguntas Frecuentes | Puragenda",
+  title: "Preguntas frecuentes",
   description: "Resolvemos tus dudas sobre Puragenda: precios, funcionalidades, soporte y más.",
+  alternates: { canonical: absoluteUrl("/faq") },
 };
 
 export default async function FAQPage() {

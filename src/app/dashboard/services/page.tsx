@@ -35,6 +35,7 @@ export default async function ServicesPage() {
         initialServices={services}
         maxServicesPerBooking={business.maxServicesPerBooking}
         depositEnabled={business.depositRequired && !!business.mpAccessToken}
+        productionOrdersEnabled={business.productionOrdersEnabled}
         businessPolicies={{
           requiresClientRut: business.requiresClientRut,
           allowRescheduling: business.allowRescheduling,
