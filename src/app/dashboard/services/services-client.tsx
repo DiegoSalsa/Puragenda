@@ -750,6 +750,14 @@ export function ServicesClient({
                 </p>
               </div>
             </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span
+                className={`min-w-[5.5rem] text-right text-xs font-medium ${
+                  groupingEnabled ? "text-[#7C3AED]" : "text-muted-foreground"
+                }`}
+              >
+                {savingGrouping ? "Guardando..." : groupingEnabled ? "Activado" : "Desactivado"}
+              </span>
             <button
               type="button"
               role="switch"
@@ -757,16 +765,19 @@ export function ServicesClient({
               aria-label="Agrupar servicios por categorías en el widget"
               disabled={savingGrouping}
               onClick={() => handleGroupingChange(!groupingEnabled)}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-                groupingEnabled ? "bg-[#7C3AED]" : "bg-muted-foreground/30"
+              className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors disabled:opacity-50 ${
+                groupingEnabled
+                  ? "border-[#7C3AED] bg-[#7C3AED]"
+                  : "border-slate-400/40 bg-slate-300 dark:bg-slate-700"
               }`}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  groupingEnabled ? "translate-x-5" : "translate-x-0.5"
+                className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                  groupingEnabled ? "translate-x-5" : "translate-x-0"
                 }`}
               />
             </button>
+            </div>
           </div>
 
           <div className="rounded-xl border border-border bg-muted/20 p-4">
