@@ -83,6 +83,7 @@ export default async function WidgetPage({
       services: {
         orderBy: { name: "asc" },
         include: {
+          category: true,
           recurringPlan: true,
           optionCategories: {
             orderBy: { position: "asc" },
@@ -176,6 +177,13 @@ export default async function WidgetPage({
         productionLeadTimeWeeks: s.productionLeadTimeWeeks,
         productionDepositPercent: s.productionDepositPercent,
         requiresReferenceImages: s.requiresReferenceImages,
+        category: s.category
+          ? {
+              id: s.category.id,
+              name: s.category.name,
+              position: s.category.position,
+            }
+          : null,
         optionCategories: s.optionCategories.map((category) => ({
           id: category.id,
           name: category.name,
@@ -218,6 +226,7 @@ export default async function WidgetPage({
         })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
+      groupServicesByCategory={business.groupServicesByCategory}
       depositRequired={business.depositRequired && !!business.mpAccessToken}
       allowSameDayBookings={business.allowSameDayBookings}
       slotInterval={business.slotInterval}

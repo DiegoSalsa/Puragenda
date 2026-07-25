@@ -171,6 +171,7 @@ model Business {
   widgetFontSize           Int       @default(14)
   brandColor               String?
   maxServicesPerBooking    Int       @default(1)
+  groupServicesByCategory  Boolean   @default(false)
   // ── Abono (Deposit) Config ──
   depositRequired          Boolean   @default(false)
   allowedOrigins           String[]  @default([])
@@ -205,6 +206,7 @@ model Business {
   referredByAffiliate         Affiliate?                   @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
   affiliate                   Affiliate?                   @relation("AffiliateOwner")
   services                    Service[]
+  serviceCategories           ServiceCategory[]
   staff                       Staff[]
   appointments                Appointment[]
   clients                     Client[]
@@ -420,8 +422,10 @@ model Service {
   productionDepositPercent Int                    @default(50)
   requiresReferenceImages  Boolean                @default(false)
   businessId               String
+  categoryId               String?
 
   business          Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category          ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   appointments      Appointment[]
   staff             Staff[]
   recurringPlan     RecurringPlan?
@@ -430,6 +434,22 @@ model Service {
   productionOrders  ProductionOrder[]
 
   @@index([businessId])
+  @@index([categoryId])
+}
+
+model ServiceCategory {
+  id         String   @id @default(cuid())
+  name       String
+  position   Int      @default(0)
+  businessId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@unique([businessId, name])
+  @@index([businessId, position])
 }
 
 enum ServiceBookingMode {

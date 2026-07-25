@@ -20,6 +20,7 @@ export async function getBusinessWithServices(slug: string) {
       services: {
         orderBy: { name: "asc" },
         include: {
+          category: true,
           optionCategories: {
             orderBy: { position: "asc" },
             include: { alternatives: { orderBy: { position: "asc" } } },

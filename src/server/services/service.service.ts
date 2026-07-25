@@ -2,6 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import type { ServiceInput } from "@/server/validations/booking";
 
 const serviceOptionsInclude = {
+  category: true,
   optionCategories: {
     orderBy: { position: "asc" as const },
     include: {
@@ -75,6 +76,7 @@ export async function createService(data: {
   productionDepositPercent?: number;
   requiresReferenceImages?: boolean;
   businessId: string;
+  categoryId?: string | null;
   optionCategories?: ServiceInput["optionCategories"];
 }) {
   const { optionCategories = [], ...serviceData } = data;
@@ -109,6 +111,7 @@ export async function updateService(
     customProductionWindows?: ServiceInput["customProductionWindows"];
     productionDepositPercent?: number;
     requiresReferenceImages?: boolean;
+    categoryId?: string | null;
     optionCategories?: ServiceInput["optionCategories"];
   }
 ) {

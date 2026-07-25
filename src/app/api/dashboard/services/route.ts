@@ -1,6 +1,7 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId, createService } from "@/server/services/service.service";
+import { getServiceCategoryByIdAndBusiness } from "@/server/services/service-category.service";
 import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
 
@@ -52,6 +53,12 @@ export async function POST(request: NextRequest) {
         { error: "Activa Encargos en Configuración antes de crear este tipo de servicio" },
         { status: 400 },
       );
+    }
+    if (
+      parsed.data.categoryId &&
+      !(await getServiceCategoryByIdAndBusiness(parsed.data.categoryId, business.id))
+    ) {
+      return Response.json({ error: "La categoría seleccionada no pertenece a tu negocio" }, { status: 400 });
     }
 
     const service = await createService({

@@ -251,6 +251,21 @@ export async function updateMaxServicesAction(maxServices: number) {
   return { success: true };
 }
 
+export async function updateServiceCategoryGroupingAction(enabled: boolean) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { groupServicesByCategory: Boolean(enabled) },
+  });
+  revalidatePath("/dashboard/services");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 // â”€â”€â”€ Staff Deletion (Soft Delete) â”€â”€â”€
 export async function deleteStaffAction(staffId: string) {
   const user = await getCurrentSessionUser();

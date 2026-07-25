@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon, CalendarRange, Clock3 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { updateMaxServicesAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
+import { updateMaxServicesAction, updateServiceCategoryGroupingAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
 import { createRecurringPlanAction, deleteRecurringPlanAction } from "@/server/actions/recurring.actions";
 
 // ─────────────────────────────────────────────
@@ -39,6 +39,13 @@ interface ServiceOptionCategory {
   isRequired: boolean;
   maxSelections: number;
   alternatives: ServiceOptionAlternative[];
+}
+
+interface ServiceCategorySummary {
+  id: string;
+  name: string;
+  position: number;
+  _count: { services: number };
 }
 
 interface OptionAlternativeForm {
@@ -86,6 +93,8 @@ interface Service {
   customProductionWindows: unknown;
   productionDepositPercent: number;
   requiresReferenceImages: boolean;
+  categoryId: string | null;
+  category: { id: string; name: string; position: number } | null;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
   _count: { recurringBookings: number };
@@ -160,18 +169,30 @@ function getCustomProductionWindows(value: unknown): CustomProductionWindow[] {
 
 export function ServicesClient({
   initialServices,
+  initialCategories,
+  groupServicesByCategory = false,
   maxServicesPerBooking = 1,
   depositEnabled = false,
   productionOrdersEnabled = false,
   businessPolicies = { requiresClientRut: false, allowRescheduling: false },
 }: {
   initialServices: Service[];
+  initialCategories: ServiceCategorySummary[];
+  groupServicesByCategory?: boolean;
   maxServicesPerBooking?: number;
   depositEnabled?: boolean;
   productionOrdersEnabled?: boolean;
   businessPolicies?: { requiresClientRut: boolean; allowRescheduling: boolean };
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
+  const [categories, setCategories] = useState<ServiceCategorySummary[]>(initialCategories);
+  const [groupingEnabled, setGroupingEnabled] = useState(groupServicesByCategory);
+  const [savingGrouping, setSavingGrouping] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [savingCategoryId, setSavingCategoryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -187,6 +208,7 @@ export function ServicesClient({
     name: string;
     description: string;
     imageUrl: string;
+    categoryId: string;
     duration: string;
     price: string;
     depositAmount: string;
@@ -202,6 +224,7 @@ export function ServicesClient({
     name: "",
     description: "",
     imageUrl: "",
+    categoryId: "",
     duration: "",
     price: "",
     depositAmount: "",
@@ -246,12 +269,99 @@ export function ServicesClient({
     }
   }
 
+  async function fetchCategories() {
+    const res = await fetch("/api/dashboard/service-categories");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "No se pudieron cargar las categorías.");
+    setCategories(data);
+  }
+
+  async function handleGroupingChange(enabled: boolean) {
+    setGroupingEnabled(enabled);
+    setSavingGrouping(true);
+    const result = await updateServiceCategoryGroupingAction(enabled);
+    if (result?.error) {
+      setGroupingEnabled(!enabled);
+      alert(result.error);
+    }
+    setSavingGrouping(false);
+  }
+
+  async function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) return;
+
+    setAddingCategory(true);
+    try {
+      const res = await fetch("/api/dashboard/service-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo crear la categoría.");
+      setNewCategoryName("");
+      await fetchCategories();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "No se pudo crear la categoría.");
+    } finally {
+      setAddingCategory(false);
+    }
+  }
+
+  async function handleRenameCategory(categoryId: string) {
+    const name = editingCategoryName.trim();
+    if (!name) return;
+
+    setSavingCategoryId(categoryId);
+    try {
+      const res = await fetch(`/api/dashboard/service-categories/${categoryId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo renombrar la categoría.");
+      setEditingCategoryId(null);
+      setEditingCategoryName("");
+      await Promise.all([fetchCategories(), fetchServices()]);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "No se pudo renombrar la categoría.");
+    } finally {
+      setSavingCategoryId(null);
+    }
+  }
+
+  async function handleDeleteCategory(category: ServiceCategorySummary) {
+    const serviceMessage =
+      category._count.services > 0
+        ? ` Los ${category._count.services} servicio(s) asignados quedarán sin categoría.`
+        : "";
+    if (!confirm(`¿Eliminar la categoría "${category.name}"?${serviceMessage}`)) return;
+
+    setSavingCategoryId(category.id);
+    try {
+      const res = await fetch(`/api/dashboard/service-categories/${category.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo eliminar la categoría.");
+      await Promise.all([fetchCategories(), fetchServices()]);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "No se pudo eliminar la categoría.");
+    } finally {
+      setSavingCategoryId(null);
+    }
+  }
+
   function openCreate() {
     setEditingService(null);
     setForm({
       name: "",
       description: "",
       imageUrl: "",
+      categoryId: "",
       duration: "60",
       price: "",
       depositAmount: "",
@@ -279,6 +389,7 @@ export function ServicesClient({
       name: service.name,
       description: service.description || "",
       imageUrl: service.imageUrl || "",
+      categoryId: service.categoryId || "",
       duration: String(service.duration),
       price: String(service.price),
       depositAmount: String(service.depositAmount || 0),
@@ -415,7 +526,7 @@ export function ServicesClient({
       }
 
       setDialogOpen(false);
-      await fetchServices();
+      await Promise.all([fetchServices(), fetchCategories()]);
     } catch (error) {
       console.error("Error saving service:", error);
       alert(error instanceof Error ? error.message : "No se pudo guardar el servicio.");
@@ -469,7 +580,7 @@ export function ServicesClient({
 
     try {
       await fetch(`/api/dashboard/services/${id}`, { method: "DELETE" });
-      await fetchServices();
+      await Promise.all([fetchServices(), fetchCategories()]);
     } catch (error) {
       console.error("Error deleting service:", error);
     }
@@ -624,6 +735,135 @@ export function ServicesClient({
         </div>
       </div>
 
+      {/* Optional widget categories */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+        <div className="flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
+                <ChevronDown className="h-4 w-4 text-[#7C3AED]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Categorías desplegables en el widget</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Agrupa catálogos grandes para mostrar primero sólo las categorías. Es opcional y no cambia tus reservas.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={groupingEnabled}
+              aria-label="Agrupar servicios por categorías en el widget"
+              disabled={savingGrouping}
+              onClick={() => handleGroupingChange(!groupingEnabled)}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                groupingEnabled ? "bg-[#7C3AED]" : "bg-muted-foreground/30"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  groupingEnabled ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/20 p-4">
+            <form onSubmit={handleAddCategory} className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Ej: Cabello, Manicure, Masajes..."
+                maxLength={80}
+                className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/40"
+              />
+              <button
+                type="submit"
+                disabled={addingCategory || !newCategoryName.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {addingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Agregar categoría
+              </button>
+            </form>
+
+            {categories.length === 0 ? (
+              <p className="pt-3 text-xs text-muted-foreground">
+                Todavía no hay categorías. Los servicios seguirán mostrándose como hasta ahora.
+              </p>
+            ) : (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-background px-3 py-2"
+                  >
+                    {editingCategoryId === category.id ? (
+                      <>
+                        <input
+                          autoFocus
+                          value={editingCategoryName}
+                          onChange={(e) => setEditingCategoryName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleRenameCategory(category.id);
+                            }
+                            if (e.key === "Escape") setEditingCategoryId(null);
+                          }}
+                          maxLength={80}
+                          className="min-w-0 flex-1 rounded-lg border border-border bg-muted px-2 py-1 text-sm outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRenameCategory(category.id)}
+                          disabled={savingCategoryId === category.id || !editingCategoryName.trim()}
+                          className="rounded-lg px-2 py-1 text-xs font-medium text-[#7C3AED] disabled:opacity-40"
+                        >
+                          Guardar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {category._count.services} servicio(s)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCategoryId(category.id);
+                            setEditingCategoryName(category.name);
+                          }}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label={`Renombrar ${category.name}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(category)}
+                          disabled={savingCategoryId === category.id}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 disabled:opacity-40"
+                          aria-label={`Eliminar ${category.name}`}
+                        >
+                          {savingCategoryId === category.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Dialog/Modal */}
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -647,6 +887,26 @@ export function ServicesClient({
                     required
                     className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm text-muted-foreground">Categoría del servicio (opcional)</label>
+                  <select
+                    value={form.categoryId}
+                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  {categories.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Crea las categorías desde el panel superior para poder asignarlas.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm text-muted-foreground">Descripcion</label>
@@ -1433,6 +1693,7 @@ export function ServicesClient({
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <th className="pb-3 pr-4">Foto</th>
                     <th className="pb-3 pr-4">Nombre</th>
+                    <th className="pb-3 pr-4">Categoría</th>
                     <th className="pb-3 pr-4">Descripción</th>
                     <th className="pb-3 pr-4">Duración</th>
                     <th className="pb-3 pr-4">Precio</th>
@@ -1466,6 +1727,15 @@ export function ServicesClient({
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        {service.category ? (
+                          <span className="inline-flex rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
+                            {service.category.name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin categoría</span>
+                        )}
                       </td>
                       <td className="max-w-xs truncate py-3.5 pr-4 text-muted-foreground">
                         {service.description || "—"}

@@ -47,6 +47,12 @@ export const optionCategorySchema = z.object({
   path: ["maxSelections"],
 });
 
+export const serviceCategoryNameSchema = z
+  .string({ message: "El nombre de la categoría es obligatorio" })
+  .trim()
+  .min(1, "El nombre de la categoría no puede estar vacío")
+  .max(80, "El nombre de la categoría no puede superar 80 caracteres");
+
 export const bookingSchema = z
   .object({
     serviceId: z
@@ -140,6 +146,11 @@ export const serviceSchema = z.object({
       .url("La URL de la imagen no es valida")
       .nullable()
       .optional()
+  ),
+
+  categoryId: z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.string().min(1).nullable().optional()
   ),
 
   duration: z.coerce

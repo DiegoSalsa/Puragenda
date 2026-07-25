@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { ProductionOrderFlow } from "./production-order-flow";
 
@@ -39,6 +39,7 @@ interface Service {
   productionLeadTimeWeeks: number;
   productionDepositPercent: number;
   requiresReferenceImages: boolean;
+  category: { id: string; name: string; position: number } | null;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
 }
@@ -56,6 +57,7 @@ interface Props {
   businessHours?: BusinessHour[];
   staffMembers?: StaffMember[];
   maxServicesPerBooking?: number;
+  groupServicesByCategory?: boolean;
   depositRequired?: boolean;
   allowSameDayBookings?: boolean;
   slotInterval?: number;
@@ -178,7 +180,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120 }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120 }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -188,6 +190,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [expandedServiceCategories, setExpandedServiceCategories] = useState<string[]>([]);
   const [selectedOptionByCategory, setSelectedOptionByCategory] = useState<Record<string, string[]>>({});
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [selectedStaffByServiceId, setSelectedStaffByServiceId] = useState<Record<string, string>>({});
@@ -221,6 +224,31 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringSubmitting, setRecurringSubmitting] = useState(false);
   const [recurringError, setRecurringError] = useState("");
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
+
+  const serviceGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { id: string; name: string; position: number; services: Service[] }
+    >();
+
+    for (const service of services) {
+      const id = service.category?.id ?? "__uncategorized";
+      const current = groups.get(id) ?? {
+        id,
+        name: service.category?.name ?? "Otros servicios",
+        position: service.category?.position ?? Number.MAX_SAFE_INTEGER,
+        services: [],
+      };
+      current.services.push(service);
+      groups.set(id, current);
+    }
+
+    return Array.from(groups.values()).sort(
+      (a, b) => a.position - b.position || a.name.localeCompare(b.name, "es")
+    );
+  }, [services]);
+  const shouldGroupServices =
+    groupServicesByCategory && serviceGroups.some((group) => group.id !== "__uncategorized");
 
   const activeServices = useMemo(
     () => (
@@ -766,6 +794,99 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     : step === "details" ? 2 + optionOffset + staffOffset
     : stepLabels.length;
 
+  function renderServiceButton(service: Service) {
+    const isSelected =
+      isMultiService && selectedServices.some((selected) => selected.id === service.id);
+
+    return (
+      <button
+        key={service.id}
+        type="button"
+        onClick={() => handleSelectService(service)}
+        className="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+        style={{
+          borderColor: isSelected ? `${pc}60` : "var(--wborder)",
+          background: isSelected ? `${pc}08` : "var(--wsubtle)",
+        }}
+        onMouseEnter={(event) => {
+          if (!isSelected) event.currentTarget.style.borderColor = `${pc}40`;
+        }}
+        onMouseLeave={(event) => {
+          if (!isSelected) event.currentTarget.style.borderColor = "var(--wborder)";
+        }}
+      >
+        {isSelected && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-10"
+            style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc} 100%)` }}
+          />
+        )}
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="flex min-w-0 gap-3">
+            {service.imageUrl && (
+              <img
+                src={service.imageUrl}
+                alt={service.name}
+                className="h-16 w-16 shrink-0 rounded-xl object-cover"
+              />
+            )}
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium">{service.name}</p>
+              {service.description && (
+                <p className="text-sm" style={{ color: textSecondary }}>
+                  {service.description}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm"
+                  style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}
+                >
+                  {service.bookingMode === "PRODUCTION" ? (
+                    <>
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {service.productionScheduleMode === "CUSTOM"
+                        ? "Períodos de entrega"
+                        : "Cupos semanales"}
+                    </>
+                  ) : (
+                    <>
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {service.duration} min
+                    </>
+                  )}
+                </span>
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm"
+                  style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}
+                >
+                  {formatPrice(service.price)}
+                </span>
+              </div>
+            </div>
+          </div>
+          {isMultiService && service.bookingMode !== "PRODUCTION" ? (
+            <div
+              className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-all duration-300"
+              style={
+                isSelected
+                  ? { borderColor: pc, background: pc }
+                  : { borderColor: "var(--wborder)", background: "var(--wbg)" }
+              }
+            >
+              {isSelected && <span className="text-sm font-bold text-white">✓</span>}
+            </div>
+          ) : (
+            <ChevronRight
+              className="mt-1 h-5 w-5 shrink-0 opacity-40 transition-transform group-hover:translate-x-1"
+              style={{ color: textColor }}
+            />
+          )}
+        </div>
+      </button>
+    );
+  }
+
   return (
     <div
       className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
@@ -812,6 +933,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
               <div><h2 className="text-xl font-bold">1. {isMultiService ? "Selecciona servicios" : "Selecciona un servicio"}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : "Elige el servicio que quieras reservar."}</p></div>
+              {!shouldGroupServices && (
               <div className="grid gap-3">
                 {services.map((s) => {
                   const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
@@ -849,6 +971,54 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   );
                 })}
               </div>
+              )}
+              {shouldGroupServices && (
+                <div className="space-y-2">
+                  {serviceGroups.map((group) => {
+                    const expanded = expandedServiceCategories.includes(group.id);
+                    return (
+                      <div
+                        key={group.id}
+                        className="overflow-hidden rounded-2xl border"
+                        style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
+                      >
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          onClick={() =>
+                            setExpandedServiceCategories((current) =>
+                              current.includes(group.id)
+                                ? current.filter((id) => id !== group.id)
+                                : [...current, group.id]
+                            )
+                          }
+                          className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-white/5"
+                        >
+                          <span>
+                            <span className="block font-semibold">{group.name}</span>
+                            <span className="mt-0.5 block text-xs" style={{ color: textSecondary }}>
+                              {group.services.length} servicio{group.services.length === 1 ? "" : "s"}
+                            </span>
+                          </span>
+                          {expanded ? (
+                            <ChevronUp className="h-5 w-5 shrink-0" style={{ color: pc }} />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 shrink-0" style={{ color: pc }} />
+                          )}
+                        </button>
+                        {expanded && (
+                          <div
+                            className="grid gap-3 border-t p-3"
+                            style={{ borderColor: "var(--wborder)" }}
+                          >
+                            {group.services.map(renderServiceButton)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {isMultiService && selectedServices.length > 0 && (
                 <div className="space-y-4 pt-2">
                   <div className="rounded-2xl border p-4 text-sm space-y-1.5 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>

@@ -1,6 +1,7 @@
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId } from "@/server/services/service.service";
+import { getServiceCategoriesByBusinessId } from "@/server/services/service-category.service";
 import { ServicesClient } from "./services-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 
@@ -27,12 +28,17 @@ export default async function ServicesPage() {
     );
   }
 
-  const services = await getServicesByBusinessId(business.id);
+  const [services, serviceCategories] = await Promise.all([
+    getServicesByBusinessId(business.id),
+    getServiceCategoriesByBusinessId(business.id),
+  ]);
 
   return (
     <>
       <ServicesClient
         initialServices={services}
+        initialCategories={serviceCategories}
+        groupServicesByCategory={business.groupServicesByCategory}
         maxServicesPerBooking={business.maxServicesPerBooking}
         depositEnabled={business.depositRequired && !!business.mpAccessToken}
         productionOrdersEnabled={business.productionOrdersEnabled}

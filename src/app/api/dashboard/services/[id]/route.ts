@@ -6,6 +6,7 @@ import {
   updateServiceImage,
   deleteService,
 } from "@/server/services/service.service";
+import { getServiceCategoryByIdAndBusiness } from "@/server/services/service-category.service";
 import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
 
@@ -51,6 +52,12 @@ export async function PUT(
         { error: "Activa Encargos en Configuración antes de usar este tipo de servicio" },
         { status: 400 },
       );
+    }
+    if (
+      parsed.data.categoryId &&
+      !(await getServiceCategoryByIdAndBusiness(parsed.data.categoryId, business.id))
+    ) {
+      return Response.json({ error: "La categoría seleccionada no pertenece a tu negocio" }, { status: 400 });
     }
 
     const service = await updateService(id, {

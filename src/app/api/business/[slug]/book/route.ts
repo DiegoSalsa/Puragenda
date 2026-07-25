@@ -109,6 +109,7 @@ export async function POST(
       const additionalServices = await prisma.service.findMany({
         where: { id: { in: additionalIds }, businessId: business.id },
         include: {
+          category: true,
           optionCategories: {
             orderBy: { position: "asc" },
             include: { alternatives: { orderBy: { position: "asc" } } },
