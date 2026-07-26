@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Check, Loader2, ChevronLeft, ChevronRight, X, Eye } from "lucide-react";
+import { Search, Check, Loader2, ChevronLeft, ChevronRight, X, Eye, Copy, Trash2, SlidersHorizontal } from "lucide-react";
 import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
+import { deleteWidgetThemeAction, duplicateWidgetThemeAction } from "@/server/actions/appearance-studio.actions";
 
 const CATEGORIES = ["Todos", "Oscuro", "Claro", "Colorido", "Minimalista"] as const;
 const PER_PAGE = 12;
@@ -16,7 +17,20 @@ interface PresetColors {
   textMutedColor: string;
 }
 
-const PRESETS: (PresetColors & { id: string; name: string; category: string; description: string })[] = [
+interface ThemeCard extends PresetColors {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  customId?: string;
+  fontSize?: number;
+  cornerRadius?: number;
+  shadowStyle?: string;
+  headerAlign?: string;
+  logoUrl?: string | null;
+}
+
+const PRESETS: ThemeCard[] = [
   // ——— Oscuro ———
   { id: "midnight",    name: "Midnight",     category: "Oscuro",      description: "Violeta sobre negro profundo",          primaryColor: "#7C3AED", secondaryColor: "#5B21B6", backgroundColor: "#0A0A0A", textColor: "#FFFFFF",  textMutedColor: "#FFFFFF66" },
   { id: "carbon",      name: "Carbon",       category: "Oscuro",      description: "Naranja fuego sobre carbón",              primaryColor: "#F97316", secondaryColor: "#EA580C", backgroundColor: "#111111", textColor: "#FFFFFF",  textMutedColor: "#FFFFFF66" },
@@ -171,7 +185,7 @@ function isActive(current: PresetColors, preset: PresetColors) {
   );
 }
 
-function MiniPreview({ preset }: { preset: typeof PRESETS[0] }) {
+function MiniPreview({ preset }: { preset: ThemeCard }) {
   return (
     <div
       className="relative h-40 w-full overflow-hidden rounded-xl"
@@ -248,33 +262,83 @@ export function TemasGallery({
   currentFontSize,
   currentLogoUrl,
   widgetSlug,
+  savedThemes,
 }: {
   currentColors: PresetColors;
   currentFontSize: number;
   currentLogoUrl?: string;
   widgetSlug: string;
+  savedThemes: {
+    id: string; name: string; category: string; primaryColor: string; secondaryColor: string;
+    backgroundColor: string; textColor: string; textMutedColor: string; fontSize: number;
+    cornerRadius: number; shadowStyle: string; headerAlign: string; logoUrl: string | null;
+  }[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("Todos");
   const [page, setPage] = useState(1);
   const [applying, setApplying] = useState<string | null>(null);
-  const [previewing, setPreviewing] = useState<typeof PRESETS[0] | null>(null);
+  const [previewing, setPreviewing] = useState<ThemeCard | null>(null);
   const [sortBy, setSortBy] = useState<"defecto" | "az" | "za">("defecto");
+  const [origin, setOrigin] = useState<"todos" | "catalogo" | "mios">("todos");
+  const [colorFamily, setColorFamily] = useState("Todos");
+  const [mutating, setMutating] = useState<string | null>(null);
+
+  const customThemes: ThemeCard[] = savedThemes.map((theme) => ({
+    id: `custom-${theme.id}`,
+    customId: theme.id,
+    name: theme.name,
+    category: theme.category,
+    description: "Tema guardado por tu equipo",
+    primaryColor: theme.primaryColor,
+    secondaryColor: theme.secondaryColor,
+    backgroundColor: theme.backgroundColor,
+    textColor: theme.textColor,
+    textMutedColor: theme.textMutedColor,
+    fontSize: theme.fontSize,
+    cornerRadius: theme.cornerRadius,
+    shadowStyle: theme.shadowStyle,
+    headerAlign: theme.headerAlign,
+    logoUrl: theme.logoUrl,
+  }));
+  const allThemes = [...customThemes, ...PRESETS];
+
+  function getColorFamily(hex: string) {
+    const value = hex.replace("#", "").slice(0, 6);
+    if (value.length !== 6) return "Neutro";
+    const r = parseInt(value.slice(0, 2), 16) / 255;
+    const g = parseInt(value.slice(2, 4), 16) / 255;
+    const b = parseInt(value.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    if (max - min < 0.12) return "Neutro";
+    let hue = 0;
+    if (max === r) hue = ((g - b) / (max - min) + 6) % 6;
+    else if (max === g) hue = (b - r) / (max - min) + 2;
+    else hue = (r - g) / (max - min) + 4;
+    hue *= 60;
+    if (hue < 25 || hue >= 345) return "Rojo";
+    if (hue < 55) return "Naranja";
+    if (hue < 170) return "Verde";
+    if (hue < 250) return "Azul";
+    return "Violeta";
+  }
 
   const categoryCounts = CATEGORIES.reduce<Record<string, number>>((acc, cat) => {
-    acc[cat] = cat === "Todos" ? PRESETS.length : PRESETS.filter((p) => p.category === cat).length;
+    acc[cat] = cat === "Todos" ? allThemes.length : allThemes.filter((p) => p.category === cat).length;
     return acc;
   }, {});
 
-  const filtered = PRESETS.filter((p) => {
+  const filtered = allThemes.filter((p) => {
     const matchSearch =
       !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.description.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase());
     const matchCat = category === "Todos" || p.category === category;
-    return matchSearch && matchCat;
+    const matchOrigin = origin === "todos" || (origin === "mios" ? !!p.customId : !p.customId);
+    const matchColor = colorFamily === "Todos" || getColorFamily(p.primaryColor) === colorFamily;
+    return matchSearch && matchCat && matchOrigin && matchColor;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -286,7 +350,7 @@ export function TemasGallery({
   const totalPages = Math.ceil(sorted.length / PER_PAGE);
   const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  async function handleApply(preset: typeof PRESETS[0]) {
+  async function handleApply(preset: ThemeCard) {
     setApplying(preset.id);
     await saveAppearanceAction({
       primaryColor: preset.primaryColor,
@@ -294,21 +358,51 @@ export function TemasGallery({
       backgroundColor: preset.backgroundColor,
       textColor: preset.textColor,
       textMutedColor: preset.textMutedColor,
-      widgetFontSize: currentFontSize,
-      logoUrl: currentLogoUrl,
+      widgetFontSize: preset.fontSize ?? currentFontSize,
+      widgetCornerRadius: preset.cornerRadius ?? 16,
+      widgetShadowStyle: preset.shadowStyle ?? "soft",
+      widgetHeaderAlign: preset.headerAlign ?? "left",
+      logoUrl: preset.logoUrl ?? currentLogoUrl,
     });
     setPreviewing(null);
     router.push("/dashboard/appearance/personalizado");
     router.refresh();
   }
 
-  const previewUrl = (p: typeof PRESETS[0]) =>
-    `/widget/${widgetSlug}?primary=${p.primaryColor.replace("#", "")}&secondary=${p.secondaryColor.replace("#", "")}&bg=${p.backgroundColor.replace("#", "")}&text=${p.textColor.replace("#", "")}&textSecondary=${p.textMutedColor.replace("#", "")}&fontSize=${currentFontSize}`;
+  async function handleDuplicate(themeId: string) {
+    setMutating(themeId);
+    await duplicateWidgetThemeAction(themeId);
+    setMutating(null);
+    router.refresh();
+  }
+
+  async function handleDelete(themeId: string) {
+    setMutating(themeId);
+    await deleteWidgetThemeAction(themeId);
+    setMutating(null);
+    router.refresh();
+  }
+
+  const previewUrl = (p: ThemeCard) => {
+    const params = new URLSearchParams({
+      primary: p.primaryColor.replace("#", ""),
+      secondary: p.secondaryColor.replace("#", ""),
+      bg: p.backgroundColor.replace("#", ""),
+      text: p.textColor.replace("#", ""),
+      textSecondary: p.textMutedColor.replace("#", ""),
+      fontSize: String(p.fontSize ?? currentFontSize),
+      radius: String(p.cornerRadius ?? 16),
+      shadow: p.shadowStyle ?? "soft",
+      headerAlign: p.headerAlign ?? "left",
+    });
+    return `/widget/${widgetSlug}?${params.toString()}`;
+  };
 
   return (
     <div className="space-y-5">
       {/* Search + Filters */}
-      <div className="space-y-3">
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-4" data-tour="theme-filters">
+        <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4 text-[#7C3AED]" /> Filtros avanzados</div>
         {/* Search + sort row */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -362,15 +456,32 @@ export function TemasGallery({
           ))}
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Origen</span>
+          {([["todos", "Todos"], ["catalogo", "Catálogo"], ["mios", `Mis temas (${savedThemes.length})`]] as const).map(([value, label]) => (
+            <button key={value} onClick={() => { setOrigin(value); setPage(1); }} className={`rounded-full border px-3 py-1.5 text-xs font-medium ${origin === value ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "border-border text-muted-foreground hover:text-foreground"}`}>{label}</button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Color</span>
+          {["Todos", "Violeta", "Azul", "Verde", "Rojo", "Naranja", "Neutro"].map((family) => (
+            <button key={family} onClick={() => { setColorFamily(family); setPage(1); }} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${colorFamily === family ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>
+              {family !== "Todos" && <span className={`h-2.5 w-2.5 rounded-full ${family === "Violeta" ? "bg-violet-500" : family === "Azul" ? "bg-sky-500" : family === "Verde" ? "bg-emerald-500" : family === "Rojo" ? "bg-red-500" : family === "Naranja" ? "bg-orange-500" : "bg-zinc-500"}`} />}
+              {family}
+            </button>
+          ))}
+        </div>
+
         {/* Result count + clear all */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">{sorted.length}</span> tema{sorted.length !== 1 ? "s" : ""}
             {search && <> para <span className="font-medium text-foreground">&quot;{search}&quot;</span></>}
           </p>
-          {(search || category !== "Todos") && (
+          {(search || category !== "Todos" || origin !== "todos" || colorFamily !== "Todos") && (
             <button
-              onClick={() => { setSearch(""); setCategory("Todos"); setSortBy("defecto"); setPage(1); }}
+              onClick={() => { setSearch(""); setCategory("Todos"); setOrigin("todos"); setColorFamily("Todos"); setSortBy("defecto"); setPage(1); }}
               className="flex items-center gap-1 text-xs text-[#7C3AED] hover:underline"
             >
               <X className="h-3 w-3" /> Limpiar filtros
@@ -381,7 +492,7 @@ export function TemasGallery({
 
       {/* Grid */}
       {paginated.length > 0 ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" data-tour="theme-gallery">
           {paginated.map((preset) => {
             const active = isActive(currentColors, preset);
             const isApplying = applying === preset.id;
@@ -417,10 +528,20 @@ export function TemasGallery({
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">{preset.name}</span>
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{preset.category}</span>
+                      <div className="flex items-center gap-1.5">
+                        {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]">Mío</span>}
+                        <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{preset.category}</span>
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{preset.description}</p>
                   </div>
+
+                  {preset.customId && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button disabled={mutating === preset.customId} onClick={() => handleDuplicate(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground"><Copy className="h-3.5 w-3.5" /> Duplicar</button>
+                      <button disabled={mutating === preset.customId} onClick={() => handleDelete(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /> Eliminar</button>
+                    </div>
+                  )}
 
                   {/* Palette */}
                   <div className="flex items-center gap-1.5">

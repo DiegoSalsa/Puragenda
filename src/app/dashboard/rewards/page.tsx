@@ -5,6 +5,8 @@ import { getOrCreateAffiliate, getUserPrizes, getTokenBalance } from "@/server/s
 import { Trophy } from "lucide-react";
 import { RewardsClient } from "./rewards-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +14,11 @@ export default async function RewardsPage() {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
 
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return <div className="py-20 text-center text-muted-foreground">Solo el administrador puede acceder a esta sección</div>;
-  }
-
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REWARDS_VIEW))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para ver recompensas.</div>;
+  }
 
   const affiliate = await getOrCreateAffiliate(business.id);
   const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id } });

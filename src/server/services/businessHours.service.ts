@@ -18,6 +18,8 @@ export async function getBusinessHours(businessId: string) {
       startTime: "09:00",
       endTime: "19:00",
       isOpen: i >= 1 && i <= 5, // Mon-Fri open by default
+      breakStart: null,
+      breakEnd: null,
       businessId,
     }));
   }

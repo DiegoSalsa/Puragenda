@@ -11,6 +11,8 @@ import {
 import { MarketingDashboard } from "./marketing-dashboard";
 import type { SubscriptionPlan } from "@/core/entities";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export default async function MarketingPage() {
   const user = await getCurrentSessionUser();
@@ -18,6 +20,9 @@ export default async function MarketingPage() {
 
   const business = await getBusinessForUser(user.id);
   if (!business) redirect("/dashboard/settings");
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.MARKETING_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar marketing.</div>;
+  }
 
   const subscription = await getSubscriptionByBusinessId(business.id);
   const plan: SubscriptionPlan = subscription?.plan ?? "INDIVIDUAL";

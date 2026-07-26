@@ -4,6 +4,8 @@ import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 // ==========================================
 // CLIENT PRIVATE NOTES (CRM light)
@@ -15,6 +17,9 @@ export async function updateClientNotesAction(clientId: string, notes: string) {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.CLIENTS_MANAGE))) {
+    return { error: "No tienes permisos para modificar clientes" };
+  }
 
   const client = await prisma.client.findFirst({
     where: { id: clientId, businessId: business.id },
@@ -40,6 +45,9 @@ export async function updateClientRutAction(clientId: string, rut: string) {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.CLIENTS_MANAGE))) {
+    return { error: "No tienes permisos para modificar clientes" };
+  }
 
   const client = await prisma.client.findFirst({
     where: { id: clientId, businessId: business.id },

@@ -17,6 +17,12 @@ enum UserRole {
   SUPERADMIN
 }
 
+enum WidgetPromoPlacement {
+  HEADER
+  BETWEEN_SERVICES
+  FOOTER
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -172,6 +178,9 @@ model Business {
   brandColor               String?
   maxServicesPerBooking    Int       @default(1)
   groupServicesByCategory  Boolean   @default(false)
+  widgetCornerRadius       Int       @default(16)
+  widgetShadowStyle        String    @default("soft")
+  widgetHeaderAlign        String    @default("left")
   // ── Abono (Deposit) Config ──
   depositRequired          Boolean   @default(false)
   allowedOrigins           String[]  @default([])
@@ -218,9 +227,73 @@ model Business {
   recurringBookings           RecurringBooking[]
   productionOrders            ProductionOrder[]
   platformDiscountRedemptions PlatformDiscountRedemption[]
+  widgetThemes                WidgetTheme[]
+  widgetPromoBlocks           WidgetPromoBlock[]
+  accessProfiles              AccessProfile[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
+}
+
+model WidgetTheme {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   @default("Personalizado")
+  primaryColor    String
+  secondaryColor  String
+  backgroundColor String
+  textColor       String
+  textMutedColor  String
+  fontSize        Int      @default(14)
+  cornerRadius    Int      @default(16)
+  shadowStyle     String   @default("soft")
+  headerAlign     String   @default("left")
+  logoUrl         String?
+  businessId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, name])
+  @@index([businessId, category])
+}
+
+model WidgetPromoBlock {
+  id         String               @id @default(cuid())
+  title      String
+  subtitle   String?
+  imageUrl   String
+  linkUrl    String?
+  placement  WidgetPromoPlacement @default(HEADER)
+  position   Int                  @default(0)
+  isVisible  Boolean              @default(true)
+  textAlign  String               @default("left")
+  businessId String
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, placement, position])
+}
+
+model AccessProfile {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @default("")
+  permissions String[]  @default([])
+  isSystem    Boolean   @default(false)
+  baseRole    UserRole?
+  businessId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff    Staff[]
+
+  @@unique([businessId, name])
+  @@index([businessId, isSystem])
 }
 
 // ==========================================
@@ -333,6 +406,8 @@ model BusinessHours {
   startTime  String
   endTime    String
   isOpen     Boolean @default(true)
+  breakStart String?
+  breakEnd   String?
   businessId String
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -355,18 +430,20 @@ model BlockedDate {
 }
 
 model Staff {
-  id         String   @id @default(cuid())
-  name       String
-  email      String?
-  imageUrl   String?
-  businessId String
-  userId     String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  email           String?
+  imageUrl        String?
+  businessId      String
+  userId          String?
+  accessProfileId String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
   user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  accessProfile     AccessProfile?     @relation(fields: [accessProfileId], references: [id], onDelete: SetNull)
   appointments      Appointment[]
   schedule          StaffSchedule[]
   scheduleBlocks    ScheduleBlock[]
@@ -375,15 +452,18 @@ model Staff {
 
   @@unique([businessId, email])
   @@index([businessId])
+  @@index([accessProfileId])
 }
 
 model StaffSchedule {
-  id        String  @id @default(cuid())
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isWorking Boolean @default(true)
-  staffId   String
+  id         String  @id @default(cuid())
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  isWorking  Boolean @default(true)
+  breakStart String?
+  breakEnd   String?
+  staffId    String
 
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 

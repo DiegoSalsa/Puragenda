@@ -72,6 +72,7 @@ export default async function WidgetPage({
   searchParams: Promise<{
     color?: string; primary?: string; secondary?: string;
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
+    radius?: string; shadow?: string; headerAlign?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -99,6 +100,10 @@ export default async function WidgetPage({
           services: { select: { id: true } },
         },
       },
+      widgetPromoBlocks: {
+        where: { isVisible: true },
+        orderBy: [{ placement: "asc" }, { position: "asc" }],
+      },
     },
   });
 
@@ -124,6 +129,9 @@ export default async function WidgetPage({
   const textColor = sp.text ? `#${sp.text}` : (business.textColor || "#FFFFFF");
   const textMuted = sp.textSecondary ? `#${sp.textSecondary}` : (business.textMutedColor || `${textColor}66`);
   const fontSize = sp.fontSize ? parseInt(sp.fontSize, 10) : (business.widgetFontSize || 14);
+  const cornerRadius = sp.radius ? parseInt(sp.radius, 10) : business.widgetCornerRadius;
+  const shadowStyle = sp.shadow || business.widgetShadowStyle;
+  const headerAlign = sp.headerAlign || business.widgetHeaderAlign;
 
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const url = new URL(`/widget/${business.slug}`, baseUrl).toString();
@@ -165,6 +173,9 @@ export default async function WidgetPage({
         textColor,
         textSecondary: textMuted,
         fontSize,
+        cornerRadius,
+        shadowStyle,
+        headerAlign,
       }}
       services={business.services
         .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
@@ -215,6 +226,7 @@ export default async function WidgetPage({
       primaryColor={widgetColor}
       businessHours={business.businessHours.map((h) => ({
         dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
+        breakStart: h.breakStart, breakEnd: h.breakEnd,
       }))}
       staffMembers={business.staff.map((s) => ({
         id: s.id,
@@ -223,6 +235,7 @@ export default async function WidgetPage({
         serviceIds: s.services.map((sv) => sv.id),
         schedule: s.schedule.map((sc) => ({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
+          breakStart: sc.breakStart, breakEnd: sc.breakEnd,
         })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
@@ -231,6 +244,16 @@ export default async function WidgetPage({
       allowSameDayBookings={business.allowSameDayBookings}
       slotInterval={business.slotInterval}
       minAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
+      promoBlocks={business.widgetPromoBlocks.map((block) => ({
+        id: block.id,
+        title: block.title,
+        subtitle: block.subtitle,
+        imageUrl: block.imageUrl,
+        linkUrl: block.linkUrl,
+        placement: block.placement,
+        position: block.position,
+        textAlign: block.textAlign,
+      }))}
     />
     </>
   );

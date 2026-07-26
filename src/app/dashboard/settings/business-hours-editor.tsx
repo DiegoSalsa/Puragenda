@@ -1,12 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "lucide-react";
 import { saveBusinessHoursAction } from "@/server/actions/dashboard.actions";
 import { isValidTimeRange } from "@/lib/time";
+import { TimeTextInput } from "@/components/ui/time-text-input";
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-interface HourEntry { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; }
+
+interface HourEntry {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isOpen: boolean;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}
 
 export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[] }) {
   const [hours, setHours] = useState<HourEntry[]>(initialHours);
@@ -14,97 +23,242 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  function update(dayOfWeek: number, field: keyof HourEntry, value: string | boolean) {
-    setHours((prev) => prev.map((h) => h.dayOfWeek === dayOfWeek ? { ...h, [field]: value } : h));
+  function update(dayOfWeek: number, field: keyof HourEntry, value: string | boolean | null) {
+    setHours((current) =>
+      current.map((entry) => entry.dayOfWeek === dayOfWeek ? { ...entry, [field]: value } : entry)
+    );
     setSaved(false);
     setError("");
   }
 
+  function copyToWeekdays() {
+    const source = hours.find((entry) => entry.isOpen && entry.dayOfWeek >= 1 && entry.dayOfWeek <= 5);
+    if (!source) return;
+
+    setHours((current) =>
+      current.map((entry) =>
+        entry.dayOfWeek >= 1 && entry.dayOfWeek <= 5
+          ? {
+              ...entry,
+              isOpen: true,
+              startTime: source.startTime,
+              endTime: source.endTime,
+              breakStart: source.breakStart,
+              breakEnd: source.breakEnd,
+            }
+          : entry
+      )
+    );
+    setSaved(false);
+  }
+
+  function closeWeekend() {
+    setHours((current) =>
+      current.map((entry) =>
+        entry.dayOfWeek === 0 || entry.dayOfWeek === 6
+          ? { ...entry, isOpen: false }
+          : entry
+      )
+    );
+    setSaved(false);
+  }
+
   async function handleSave() {
-    const invalidDay = hours.find((h) => h.isOpen && !isValidTimeRange(h.startTime, h.endTime));
-    if (invalidDay) {
-      setError(`Revisa el horario de ${DAYS[invalidDay.dayOfWeek]}: la apertura debe ser anterior al cierre.`);
+    const invalid = hours.find((entry) =>
+      entry.isOpen && (
+        !isValidTimeRange(entry.startTime, entry.endTime) ||
+        ((entry.breakStart || entry.breakEnd) && (
+          !entry.breakStart ||
+          !entry.breakEnd ||
+          !isValidTimeRange(entry.breakStart, entry.breakEnd) ||
+          entry.breakStart < entry.startTime ||
+          entry.breakEnd > entry.endTime
+        ))
+      )
+    );
+
+    if (invalid) {
+      setError(`Revisa el horario o la pausa de ${DAYS[invalid.dayOfWeek]}.`);
       return;
     }
 
     setSaving(true);
-    setError("");
-    try {
-      const result = await saveBusinessHoursAction(hours);
-      if (result.success) setSaved(true);
-      else setError(result.error || "No se pudieron guardar los horarios.");
-    } catch (e) {
-      console.error(e);
-      setError("No se pudieron guardar los horarios.");
+    const result = await saveBusinessHoursAction(hours);
+    setSaving(false);
+
+    if (result.success) {
+      setSaved(true);
+      setError("");
+    } else {
+      setError(result.error || "No se pudieron guardar los horarios.");
     }
-    finally { setSaving(false); }
   }
 
   return (
-    <div className="space-y-3">
-      {hours.map((h) => (
-        <div
-          key={h.dayOfWeek}
-          className={`flex flex-wrap items-center gap-3 rounded-xl border p-3 transition-all ${
-            h.isOpen
-              ? "border-border bg-muted/50"
-              : "border-border/50 bg-muted/20 opacity-50"
-          }`}
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={copyToWeekdays}
+          className="flex items-center gap-2 rounded-xl border border-[#7C3AED] bg-[#7C3AED] px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#6D28D9]"
         >
-          <button
-            type="button"
-            onClick={() => update(h.dayOfWeek, "isOpen", !h.isOpen)}
-            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-              h.isOpen ? "bg-[#7C3AED]" : "bg-muted-foreground/30"
-            }`}
-          >
+          <Copy className="h-3.5 w-3.5" />
+          Copiar a lunes–viernes
+        </button>
+        <button
+          type="button"
+          onClick={closeWeekend}
+          className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Cerrar fin de semana
+        </button>
+      </div>
+
+      <div className="space-y-3" data-tour="business-hours-list">
+        {hours.map((entry) => {
+          const hasBreak = Boolean(entry.breakStart && entry.breakEnd);
+          const day = DAYS[entry.dayOfWeek];
+
+          return (
             <div
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-                h.isOpen ? "left-[26px]" : "left-1"
+              key={entry.dayOfWeek}
+              className={`overflow-hidden rounded-2xl border transition-colors ${
+                entry.isOpen
+                  ? "border-[#7C3AED]/30 bg-[#7C3AED]/[0.035]"
+                  : "border-border bg-muted/20"
               }`}
-            />
-          </button>
+            >
+              <div className="grid gap-4 p-4 md:grid-cols-[minmax(160px,0.7fr)_minmax(260px,1.35fr)] md:items-center xl:grid-cols-[minmax(180px,0.7fr)_minmax(320px,1.35fr)_auto]">
+                <div className="flex min-w-0 items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => update(entry.dayOfWeek, "isOpen", !entry.isOpen)}
+                    className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors ${
+                      entry.isOpen
+                        ? "border-[#7C3AED] bg-[#7C3AED]"
+                        : "border-border bg-muted"
+                    }`}
+                    aria-label={`${entry.isOpen ? "Cerrar" : "Abrir"} ${day}`}
+                    aria-pressed={entry.isOpen}
+                  >
+                    <span
+                      className={`absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                        entry.isOpen ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-foreground">{day}</p>
+                    <span
+                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        entry.isOpen
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {entry.isOpen ? "Atención activa" : "Cerrado"}
+                    </span>
+                  </div>
+                </div>
 
-          <span className="w-20 sm:w-24 text-sm font-medium">{DAYS[h.dayOfWeek]}</span>
+                {entry.isOpen ? (
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+                    <label className="grid min-w-0 gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Desde</span>
+                      <TimeTextInput
+                        ariaLabel={`Inicio ${day}`}
+                        value={entry.startTime}
+                        onChange={(value) => update(entry.dayOfWeek, "startTime", value)}
+                      />
+                    </label>
+                    <span className="mb-3.5 text-xs font-medium text-muted-foreground">a</span>
+                    <label className="grid min-w-0 gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Hasta</span>
+                      <TimeTextInput
+                        ariaLabel={`Fin ${day}`}
+                        value={entry.endTime}
+                        onChange={(value) => update(entry.dayOfWeek, "endTime", value)}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground lg:col-span-2">
+                    No se ofrecerán horas reservables durante este día.
+                  </p>
+                )}
 
-          {h.isOpen ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="time"
-                step={60}
-                value={h.startTime}
-                onChange={(e) => update(h.dayOfWeek, "startTime", e.target.value)}
-                aria-label={`Hora de apertura del ${DAYS[h.dayOfWeek]}`}
-                className="rounded-lg border border-border bg-muted px-3 py-1.5 text-sm outline-none focus:border-[#7C3AED]/40"
-              />
-              <span className="text-muted-foreground">—</span>
-              <input
-                type="time"
-                step={60}
-                value={h.endTime}
-                onChange={(e) => update(h.dayOfWeek, "endTime", e.target.value)}
-                aria-label={`Hora de cierre del ${DAYS[h.dayOfWeek]}`}
-                className="rounded-lg border border-border bg-muted px-3 py-1.5 text-sm outline-none focus:border-[#7C3AED]/40"
-              />
+                {entry.isOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update(entry.dayOfWeek, "breakStart", hasBreak ? null : "13:00");
+                      update(entry.dayOfWeek, "breakEnd", hasBreak ? null : "14:00");
+                    }}
+                    aria-label={`${hasBreak ? "Quitar" : "Añadir"} pausa de ${day}`}
+                    className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors md:col-span-2 xl:col-span-1 ${
+                      hasBreak
+                        ? "border-[#7C3AED] bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+                        : "border-border bg-background text-foreground hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5"
+                    }`}
+                  >
+                    <Coffee className="h-3.5 w-3.5" />
+                    {hasBreak ? "Quitar pausa" : "Añadir pausa"}
+                  </button>
+                )}
+              </div>
+
+              {entry.isOpen && hasBreak && (
+                <div className="grid gap-3 border-t border-[#7C3AED]/15 bg-[#7C3AED]/5 px-4 py-3 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
+                      <Coffee className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Pausa / almuerzo</p>
+                      <p className="text-[11px] text-muted-foreground">Este tramo no estará disponible para reservas.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                    <TimeTextInput
+                      ariaLabel={`Inicio de pausa ${day}`}
+                      value={entry.breakStart || ""}
+                      onChange={(value) => update(entry.dayOfWeek, "breakStart", value)}
+                      compact
+                    />
+                    <span className="text-xs text-muted-foreground">a</span>
+                    <TimeTextInput
+                      ariaLabel={`Fin de pausa ${day}`}
+                      value={entry.breakEnd || ""}
+                      onChange={(value) => update(entry.dayOfWeek, "breakEnd", value)}
+                      compact
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <span className="text-sm text-muted-foreground">Cerrado</span>
-          )}
-        </div>
-      ))}
+          );
+        })}
+      </div>
 
       <p className="text-xs text-muted-foreground">
-        Puedes escribir la hora exacta de apertura y cierre, por ejemplo 09:15.
+        Puedes escribir horas exactas. Las pausas se excluyen automáticamente de los horarios reservables.
       </p>
-      {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
-
+      {error && <p role="alert" className="text-sm font-medium text-red-500">{error}</p>}
       <button
+        type="button"
         onClick={handleSave}
         disabled={saving}
-        className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-5 h-11 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
+        className="flex h-11 items-center gap-2 rounded-xl bg-[#7C3AED] px-5 text-sm font-bold text-white transition-colors hover:bg-[#6D28D9] disabled:opacity-50"
       >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        {saved ? "¡Guardado!" : "Guardar horarios"}
+        {saving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : saved ? (
+          <Check className="h-4 w-4" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        {saved ? "Horarios guardados" : "Guardar horarios"}
       </button>
     </div>
   );

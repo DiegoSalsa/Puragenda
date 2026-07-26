@@ -23,6 +23,8 @@ import {
   sendRecurringBookingRejectedClient,
   sendRecurringBookingCancelledClient,
 } from "@/server/email/send";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
 type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
@@ -32,6 +34,9 @@ async function recurringBookingWhereForAgenda(
   business: BusinessForUser,
   recurringBookingId?: string
 ) {
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.RECURRING_MANAGE))) {
+    return { businessId: "__no_recurring_access__" };
+  }
   const agendaScope = await getStaffAgendaScope(user, business);
 
   return {
@@ -69,6 +74,9 @@ export async function createRecurringPlanAction(
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para configurar planes recurrentes" };
+  }
 
   // Verify service belongs to this business
   const service = await prisma.service.findFirst({
@@ -119,6 +127,9 @@ export async function deleteRecurringPlanAction(serviceId: string) {
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para configurar planes recurrentes" };
+  }
 
   const service = await prisma.service.findFirst({
     where: { id: serviceId, businessId: business.id },

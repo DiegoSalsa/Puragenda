@@ -5,7 +5,7 @@ import { driver } from "driver.js";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import "driver.js/dist/driver.css";
 
-export function DashboardTutorial({ userEmail }: { userEmail: string }) {
+export function DashboardTutorial() {
   const initialized = useRef(false);
   const { isChangelogOpen } = useDashboardOverlay();
 
@@ -15,9 +15,8 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
     initialized.current = true;
 
     const hasSeen = localStorage.getItem("hasSeenTutorial_general");
-    const isDemo = userEmail === "vale@esteticabella.cl";
 
-    if (hasSeen && !isDemo) {
+    if (hasSeen) {
       return;
     }
 
@@ -64,15 +63,8 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
         }
       ],
       onDestroyStarted: () => {
-        if (!isDemo) {
-          localStorage.setItem("hasSeenTutorial_general", "true");
-        } else {
-          // If demo, we might need a way to tell the sub-tutorials that this is done for the current session.
-          // Since the demo resets, we can set it to true temporarily and clear it on unmount or just let it be true for the session?
-          // The issue is, for the demo account, hasSeenTutorial is NEVER set, so PageTutorial dependsOnKey will loop forever.
-          // Let's set a session-level flag to tell PageTutorials we finished the general one.
-          window.sessionStorage.setItem("hasSeenTutorial_general", "true");
-        }
+        localStorage.setItem("hasSeenTutorial_general", "true");
+        window.sessionStorage.setItem("hasSeenTutorial_general", "true");
         driverObj.destroy();
       }
     });
@@ -82,7 +74,7 @@ export function DashboardTutorial({ userEmail }: { userEmail: string }) {
       driverObj.drive();
     }, 500);
 
-  }, [isChangelogOpen, userEmail]);
+  }, [isChangelogOpen]);
 
   return null;
 }
