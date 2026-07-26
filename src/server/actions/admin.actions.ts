@@ -717,7 +717,7 @@ export async function sendMassEmailAction(data: {
             question: interactive.question?.trim() || "Queremos conocer tu experiencia.",
             fields: interactive.type === "FORM"
               ? (interactive.formQuestions || [])
-                  .map((question, index) => question.trim())
+                  .map((question) => question.trim())
                   .filter(Boolean)
                   .map((question, index) => ({
                     id: `q${index + 1}`,

@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
+import { resolveWidgetPromotion } from "@/server/services/widget-promotion.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -81,7 +82,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -237,6 +238,26 @@ export async function POST(
     if (requiresHomeAddress && (!customerAddress || customerAddress.trim().length < 5)) {
       return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
+
+    if (promotionId && rewardCode) {
+      return Response.json(
+        { error: "Las promociones y los códigos de premio no se pueden combinar" },
+        { status: 400 }
+      );
+    }
+
+    const originalTotalPrice = totalPrice;
+    const promotionResolution = await resolveWidgetPromotion({
+      promotionId,
+      businessId: business.id,
+      subtotal: originalTotalPrice,
+    });
+    if ("error" in promotionResolution) {
+      return Response.json({ error: promotionResolution.error }, { status: 400 });
+    }
+    const appliedPromotion = promotionResolution.promotion;
+    const promotionDiscountAmount = promotionResolution.quote?.discountAmount ?? 0;
+    totalPrice = promotionResolution.quote?.discountedTotal ?? originalTotalPrice;
 
     const requestedStart = new Date(startTime);
     const requestedEnd = new Date(endTime);
@@ -421,6 +442,7 @@ export async function POST(
         totalDepositAmount += s.depositAmount || 0;
       }
     }
+    totalDepositAmount = Math.min(totalDepositAmount, totalPrice);
     const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!business.mpAccessToken;
 
     if (hasStaffAssignments) {
@@ -463,7 +485,9 @@ export async function POST(
         groupedAssignments.set(assignment.staffId, [...(groupedAssignments.get(assignment.staffId) ?? []), assignment]);
       }
 
-      for (const [assignedStaffId, assignments] of groupedAssignments) {
+      const groupedAppointmentEntries = Array.from(groupedAssignments.entries());
+
+      for (const [assignedStaffId, assignments] of groupedAppointmentEntries) {
         const groupServices = assignments
           .map((assignment) => serviceById.get(assignment.serviceId))
           .filter((s): s is NonNullable<typeof s> => Boolean(s));
@@ -527,14 +551,25 @@ export async function POST(
       }
 
       const createdAppointments = [];
+      let remainingDiscountedTotal = totalPrice;
 
-      for (const [assignedStaffId, assignments] of groupedAssignments) {
+      for (const [groupIndex, [assignedStaffId, assignments]] of groupedAppointmentEntries.entries()) {
         const groupServices = assignments
           .map((assignment) => serviceById.get(assignment.serviceId))
           .filter((s): s is NonNullable<typeof s> => Boolean(s));
         const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
         const groupPrice = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.price ?? s.price), 0);
-        const groupDeposit = groupServices.reduce((sum, s) => sum + (s.depositAmount || 0), 0);
+        const groupDiscountedPrice = groupIndex === groupedAppointmentEntries.length - 1
+          ? remainingDiscountedTotal
+          : Math.min(
+              remainingDiscountedTotal,
+              Math.round(totalPrice * groupPrice / Math.max(1, originalTotalPrice))
+            );
+        remainingDiscountedTotal -= groupDiscountedPrice;
+        const groupDeposit = Math.min(
+          groupDiscountedPrice,
+          groupServices.reduce((sum, s) => sum + (s.depositAmount || 0), 0)
+        );
         const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
         const groupPrimary = groupServices[0];
 
@@ -550,7 +585,11 @@ export async function POST(
           staffId: assignedStaffId,
           additionalServiceIds: groupServices.slice(1).map((s) => s.id),
           totalDuration: groupDuration,
-          totalPrice: groupPrice,
+          totalPrice: groupDiscountedPrice,
+          originalTotalPrice: groupPrice,
+          discountAmount: groupPrice - groupDiscountedPrice,
+          promotionId: appliedPromotion?.id,
+          promotionTitle: appliedPromotion?.title,
           selectedOptions: selectedOptionsSnapshot.filter((option) => assignments.some((assignment) => assignment.serviceId === option.serviceId)),
           clientId: client.id,
           depositRequired,
@@ -687,6 +726,10 @@ export async function POST(
       additionalServiceIds: additionalIds,
       totalDuration,
       totalPrice,
+      originalTotalPrice,
+      discountAmount: promotionDiscountAmount,
+      promotionId: appliedPromotion?.id,
+      promotionTitle: appliedPromotion?.title,
       selectedOptions: selectedOptionsSnapshot,
       clientId: client.id,
       depositRequired,

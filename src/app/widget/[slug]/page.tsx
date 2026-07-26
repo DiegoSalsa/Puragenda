@@ -253,6 +253,11 @@ export default async function WidgetPage({
         placement: block.placement,
         position: block.position,
         textAlign: block.textAlign,
+        discountType: block.discountType,
+        discountValue: block.discountValue,
+        discountStartsAt: block.discountStartsAt?.toISOString() ?? null,
+        discountEndsAt: block.discountEndsAt?.toISOString() ?? null,
+        discountMinSubtotal: block.discountMinSubtotal,
       }))}
     />
     </>

@@ -21,7 +21,6 @@ if (typeof window !== "undefined" && !_listenerAdded) {
 }
 
 export function InstallPWAButton({ variant = "default" }: { variant?: "default" | "sidebar" | "nav" }) {
-  const [promptAvailable, setPromptAvailable] = useState(!!_deferredPrompt);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -30,35 +29,29 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
     // Check if already running as installed PWA
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-    if (standalone) {
-      setIsStandalone(true);
-      return;
-    }
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     // Detect iOS
     const ua = window.navigator.userAgent;
     const ios =
       /iPad|iPhone|iPod/.test(ua) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    setIsIOS(ios);
+    queueMicrotask(() => {
+      setIsStandalone(standalone);
+      setIsIOS(ios);
+    });
 
-    // Check if prompt already captured by global listener
-    if (_deferredPrompt) {
-      setPromptAvailable(true);
-    }
+    if (standalone) return;
 
     // Listen for future beforeinstallprompt events
     function onBeforeInstall(e: Event) {
       e.preventDefault();
       _deferredPrompt = e as BeforeInstallPromptEvent;
-      setPromptAvailable(true);
     }
 
     function onInstalled() {
       setIsStandalone(true);
       _deferredPrompt = null;
-      setPromptAvailable(false);
     }
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
@@ -83,7 +76,6 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
         // prompt() can only be called once
       }
       _deferredPrompt = null;
-      setPromptAvailable(false);
       return;
     }
 

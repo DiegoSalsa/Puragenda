@@ -182,8 +182,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     return getDisplayMonthlyPrice(PRICING[key].monthly, cycle);
   }
 
-  const [loading, setLoading] = useState<PlanKey | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loading] = useState<PlanKey | null>(null);
+  const [error] = useState<string | null>(null);
 
   async function handlePlanAction(key: PlanKey, isTrial: boolean) {
     if (isLoggedIn) {

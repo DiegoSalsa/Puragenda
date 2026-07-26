@@ -1,5 +1,4 @@
 import { formatInTimeZone } from "date-fns-tz";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 // Zona horaria por defecto para formatear fechas en emails
@@ -70,18 +69,6 @@ function detailRow(label: string, value: string): string {
     <td style="padding:8px 12px;font-size:13px;color:#64748b;white-space:nowrap;">${label}</td>
     <td style="padding:8px 12px;font-size:13px;color:#0f172a;font-weight:500;">${value}</td>
   </tr>`;
-}
-
-function detailsTable(data: BookingEmailData): string {
-  const date = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const time = `${formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm")} - ${formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm")}`;
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
-    ${detailRow(" Fecha", date)}
-    ${detailRow(" Hora", time)}
-    ${detailRow(" Servicio", data.serviceName)}
-    ${detailRow(" Profesional", data.staffName)}
-    ${detailRow(" Teléfono", data.customerPhone || "No proporcionado")}
-  </table>`;
 }
 
 // ═══════════════════════════════════════════

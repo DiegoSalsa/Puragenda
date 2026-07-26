@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Link as LinkIcon, Check, Copy } from "lucide-react";
 
 export function CopyWidgetLink({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
-  const [url, setUrl] = useState("");
-
-  useEffect(() => {
-    // We use window.location.origin to get the current domain dynamically (e.g. https://www.puragenda.cl)
-    setUrl(`${window.location.origin}/widget/${slug}`);
-  }, [slug]);
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => "",
+  );
+  const url = origin ? `${origin}/widget/${slug}` : "";
 
   function handleCopy() {
     if (!url) return;

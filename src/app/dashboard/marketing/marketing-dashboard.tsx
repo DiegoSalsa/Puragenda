@@ -39,7 +39,6 @@ export function MarketingDashboard({
   campaignsSentThisMonth,
   maxCampaignsPerMonth,
   maxAudienceSize,
-  lastCampaign,
   history,
 }: MarketingDashboardProps) {
   const [subject, setSubject] = useState("");

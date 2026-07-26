@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,9 @@ export async function POST(
     if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     const business = await getBusinessForUser(user.id);
     if (!business) return NextResponse.json({ error: "Sin negocio" }, { status: 403 });
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.RECURRING_MANAGE))) {
+      return NextResponse.json({ error: "Sin permisos para gestionar planes recurrentes" }, { status: 403 });
+    }
 
     const { id } = await params;
     const { fromDate } = await req.json();

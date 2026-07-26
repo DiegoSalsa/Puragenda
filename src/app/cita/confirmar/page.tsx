@@ -7,15 +7,15 @@ import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 function ConfirmContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "already">(
+    token ? "loading" : "error",
+  );
+  const [message, setMessage] = useState(
+    token ? "" : "Enlace inválido. No se encontró el token de la cita.",
+  );
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Enlace inválido. No se encontró el token de la cita.");
-      return;
-    }
+    if (!token) return;
 
     fetch("/api/appointments/action", {
       method: "POST",

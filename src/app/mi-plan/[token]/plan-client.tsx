@@ -161,7 +161,6 @@ export function PlanClient({ token }: { token: string }) {
   if (!booking) return null;
 
   const sc = STATUS_CONFIG[booking.status] || STATUS_CONFIG.COMPLETED;
-  const now = new Date();
   const completedCount = booking.appointments.filter((a) => ["CHECKED_IN", "COMPLETED"].includes(a.status)).length;
   const totalCount = booking.appointments.length;
   const nextSession = booking.appointments.find((a) => !isPast(parseISO(a.startTime)) && a.status !== "CANCELLED");

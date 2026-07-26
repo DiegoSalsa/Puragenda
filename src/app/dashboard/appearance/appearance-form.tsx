@@ -8,6 +8,7 @@ import {
   AlignRight,
   ArrowDown,
   ArrowUp,
+  BadgePercent,
   Eye,
   EyeOff,
   ImagePlus,
@@ -27,6 +28,7 @@ import {
   createWidgetThemeAction,
   deleteWidgetPromoBlockAction,
   updateWidgetPromoBlockAction,
+  updateWidgetPromoDiscountAction,
 } from "@/server/actions/appearance-studio.actions";
 
 type Placement = "HEADER" | "BETWEEN_SERVICES" | "FOOTER";
@@ -40,6 +42,11 @@ type PromoBlock = {
   position: number;
   isVisible: boolean;
   textAlign: string;
+  discountType: string | null;
+  discountValue: number | null;
+  discountStartsAt: Date | string | null;
+  discountEndsAt: Date | string | null;
+  discountMinSubtotal: number;
 };
 
 interface FormData {
@@ -180,6 +187,7 @@ export function AppearanceForm({
   });
   const [previewUrl, setPreviewUrl] = useState(() => buildPreviewUrl(data));
   const [previewRevision, setPreviewRevision] = useState(0);
+  const [previewLoading, setPreviewLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -190,7 +198,13 @@ export function AppearanceForm({
   const [promoSaving, setPromoSaving] = useState(false);
   const [promoError, setPromoError] = useState("");
   const [promoBusyId, setPromoBusyId] = useState<string | null>(null);
+  const [localPromoBlocks, setLocalPromoBlocks] = useState(promoBlocks);
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  const [promoDiscountEnabled, setPromoDiscountEnabled] = useState(false);
+  const [promoFilePreview, setPromoFilePreview] = useState<{ url: string; name: string; size: number } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promoPreviewUrlRef = useRef<string | null>(null);
+  const displayedPromoBlocks = localPromoBlocks;
 
   function buildPreviewUrl(next: FormData) {
     const params = new URLSearchParams({
@@ -210,8 +224,63 @@ export function AppearanceForm({
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (promoPreviewUrlRef.current) URL.revokeObjectURL(promoPreviewUrlRef.current);
     };
   }, []);
+
+  function clearPromoFilePreview() {
+    if (promoPreviewUrlRef.current) {
+      URL.revokeObjectURL(promoPreviewUrlRef.current);
+      promoPreviewUrlRef.current = null;
+    }
+    setPromoFilePreview(null);
+  }
+
+  function handlePromoFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    clearPromoFilePreview();
+    setPromoError("");
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      event.target.value = "";
+      setPromoError("Usa una imagen PNG, JPG o WebP.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      event.target.value = "";
+      setPromoError("La imagen no puede superar 8 MB.");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    promoPreviewUrlRef.current = url;
+    setPromoFilePreview({ url, name: file.name, size: file.size });
+  }
+
+  function refreshWidgetPreview() {
+    setPreviewLoading(true);
+    const nextUrl = new URL(buildPreviewUrl(data), window.location.origin);
+    nextUrl.searchParams.set("previewRevision", String(Date.now()));
+    setPreviewUrl(`${nextUrl.pathname}${nextUrl.search}`);
+    setPreviewRevision((current) => current + 1);
+  }
+
+  function prepareDiscountDates(formData: globalThis.FormData) {
+    const startsAt = String(formData.get("discountStartsAt") || "");
+    const endsAt = String(formData.get("discountEndsAt") || "");
+    if (startsAt) formData.set("discountStartsAt", new Date(`${startsAt}T00:00:00`).toISOString());
+    if (endsAt) formData.set("discountEndsAt", new Date(`${endsAt}T23:59:59.999`).toISOString());
+  }
+
+  function toDateInputValue(value: Date | string | null) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
 
   function update(field: keyof FormData, value: string | number) {
     const next = { ...data, [field]: value };
@@ -219,7 +288,11 @@ export function AppearanceForm({
     setSaved(false);
     setSaveError("");
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setPreviewUrl(buildPreviewUrl(next)), 220);
+    setPreviewLoading(true);
+    debounceRef.current = setTimeout(() => {
+      setPreviewUrl(buildPreviewUrl(next));
+      setPreviewRevision((current) => current + 1);
+    }, 220);
   }
 
   async function handleSave() {
@@ -239,6 +312,7 @@ export function AppearanceForm({
     });
     if ("success" in result && result.success) {
       setSaved(true);
+      setPreviewLoading(true);
       setPreviewUrl(buildPreviewUrl(data));
       setPreviewRevision((current) => current + 1);
     } else {
@@ -275,37 +349,93 @@ export function AppearanceForm({
 
   async function handlePromoSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new globalThis.FormData(form);
+    prepareDiscountDates(formData);
     setPromoSaving(true);
     setPromoError("");
-    const result = await createWidgetPromoBlockAction(new FormData(event.currentTarget));
-    if ("success" in result && result.success) {
-      event.currentTarget.reset();
-      setPromoOpen(false);
-      router.refresh();
-      setPreviewUrl(buildPreviewUrl(data));
-      setPreviewRevision((current) => current + 1);
-    } else {
-      setPromoError(result.error || "No se pudo crear el bloque");
+    try {
+      const result = await createWidgetPromoBlockAction(formData);
+      if ("success" in result && result.success) {
+        setLocalPromoBlocks(result.blocks);
+        form.reset();
+        clearPromoFilePreview();
+        setPromoDiscountEnabled(false);
+        setPromoOpen(false);
+        refreshWidgetPreview();
+      } else {
+        setPromoError(result.error || "No se pudo crear el bloque");
+      }
+    } catch {
+      setPromoError("No se pudo completar la subida. Intenta nuevamente.");
+    } finally {
+      setPromoSaving(false);
     }
-    setPromoSaving(false);
   }
 
   async function mutatePromo(blockId: string, mutation: { isVisible?: boolean; direction?: "up" | "down" }) {
     setPromoBusyId(blockId);
-    await updateWidgetPromoBlockAction(blockId, mutation);
-    setPromoBusyId(null);
-    router.refresh();
-    setPreviewUrl(buildPreviewUrl(data));
-    setPreviewRevision((current) => current + 1);
+    setPromoError("");
+    setPreviewLoading(true);
+    try {
+      const result = await updateWidgetPromoBlockAction(blockId, mutation);
+      if (!("success" in result) || !result.success) {
+        setPromoError(result.error || "No se pudo actualizar el bloque");
+        setPreviewLoading(false);
+        return;
+      }
+      setLocalPromoBlocks(result.blocks);
+      refreshWidgetPreview();
+    } catch {
+      setPromoError("No se pudo actualizar el bloque");
+      setPreviewLoading(false);
+    } finally {
+      setPromoBusyId(null);
+    }
   }
 
   async function removePromo(blockId: string) {
+    if (!window.confirm("¿Eliminar esta imagen promocional? Esta acción no se puede deshacer.")) return;
     setPromoBusyId(blockId);
-    await deleteWidgetPromoBlockAction(blockId);
-    setPromoBusyId(null);
-    router.refresh();
-    setPreviewUrl(buildPreviewUrl(data));
-    setPreviewRevision((current) => current + 1);
+    setPromoError("");
+    try {
+      const result = await deleteWidgetPromoBlockAction(blockId);
+      if (!("success" in result) || !result.success) {
+        setPromoError(result.error || "No se pudo eliminar el bloque");
+        return;
+      }
+      setLocalPromoBlocks(result.blocks);
+      refreshWidgetPreview();
+    } catch {
+      setPromoError("No se pudo eliminar el bloque");
+    } finally {
+      setPromoBusyId(null);
+    }
+  }
+
+  async function handlePromoDiscountSubmit(
+    event: React.FormEvent<HTMLFormElement>,
+    blockId: string,
+  ) {
+    event.preventDefault();
+    const formData = new globalThis.FormData(event.currentTarget);
+    prepareDiscountDates(formData);
+    setPromoBusyId(blockId);
+    setPromoError("");
+    try {
+      const result = await updateWidgetPromoDiscountAction(blockId, formData);
+      if (!("success" in result) || !result.success) {
+        setPromoError(result.error || "No se pudo guardar el descuento");
+        return;
+      }
+      setLocalPromoBlocks(result.blocks);
+      setEditingPromoId(null);
+      refreshWidgetPreview();
+    } catch {
+      setPromoError("No se pudo guardar el descuento");
+    } finally {
+      setPromoBusyId(null);
+    }
   }
 
   return (
@@ -318,6 +448,7 @@ export function AppearanceForm({
             </div>
             <button
               onClick={() => {
+                setPreviewLoading(true);
                 setPreviewUrl(buildPreviewUrl(data));
                 setPreviewRevision((current) => current + 1);
               }}
@@ -326,8 +457,43 @@ export function AppearanceForm({
               <RefreshCw className="h-3.5 w-3.5" /> Recargar
             </button>
           </div>
-          <div className="overflow-hidden rounded-2xl border border-border bg-[#111] shadow-xl">
-            {previewUrl && <iframe key={previewRevision} title="Vista previa del widget" src={previewUrl} width="100%" height="760" className="border-0" />}
+          <div
+            className="relative min-h-[760px] overflow-hidden rounded-2xl border border-border shadow-xl"
+            style={{ background: data.backgroundColor }}
+          >
+            {previewLoading && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden px-6 text-center"
+                style={{
+                  color: data.textColor,
+                  background: `radial-gradient(circle at 50% 42%, ${data.primaryColor}24 0%, transparent 34%), ${data.backgroundColor}`,
+                }}
+              >
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center">
+                  <span className="absolute inset-0 animate-ping rounded-2xl opacity-20" style={{ background: data.primaryColor }} />
+                  <span className="absolute inset-1 animate-spin rounded-2xl border-2 border-transparent" style={{ borderTopColor: data.primaryColor, borderRightColor: `${data.primaryColor}66` }} />
+                  <span className="relative flex h-11 w-11 items-center justify-center rounded-xl shadow-lg" style={{ background: data.primaryColor, color: "#FFFFFF" }}>
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                </div>
+                <p className="text-base font-bold">Preparando tu widget</p>
+                <p className="mt-1 max-w-xs text-xs opacity-60">Aplicando diseño, imágenes y promociones…</p>
+                <span className="sr-only">Cargando vista previa</span>
+              </div>
+            )}
+            {previewUrl && (
+              <iframe
+                key={previewRevision}
+                title="Vista previa del widget"
+                src={previewUrl}
+                width="100%"
+                height="760"
+                onLoad={() => setPreviewLoading(false)}
+                className={`border-0 transition-opacity duration-300 ${previewLoading ? "opacity-0" : "opacity-100"}`}
+              />
+            )}
           </div>
           <p className="text-center text-[11px] text-muted-foreground">Edita a la derecha; la vista previa permanece visible mientras trabajas.</p>
         </section>
@@ -392,9 +558,18 @@ export function AppearanceForm({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 text-base font-bold"><Layers3 className="h-4 w-4 text-[#7C3AED]" /> Bloques promocionales</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Sube banners y decide dónde aparecen dentro del widget.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Sube banners y decide dónde aparecen. Las flechas recorren Encabezado → Servicios → Pie.</p>
               </div>
-              <button onClick={() => setPromoOpen((open) => !open)} className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white dark:bg-white dark:text-black">
+              <button
+                type="button"
+                disabled={promoSaving}
+                onClick={() => {
+                  setPromoOpen((open) => !open);
+                  setPromoError("");
+                  if (promoOpen) clearPromoFilePreview();
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black"
+              >
                 {promoOpen ? <X className="h-4 w-4" /> : <ImagePlus className="h-4 w-4" />}
                 {promoOpen ? "Cerrar" : "Agregar imagen"}
               </button>
@@ -406,34 +581,129 @@ export function AppearanceForm({
                   <label className="space-y-1.5"><span className="text-xs font-medium">Título</span><input name="title" required maxLength={90} placeholder="20% en tu primera cita" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
                   <label className="space-y-1.5"><span className="text-xs font-medium">Ubicación</span><select name="placement" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"><option value="HEADER">Encabezado</option><option value="BETWEEN_SERVICES">Antes de los servicios</option><option value="FOOTER">Pie del widget</option></select></label>
                   <label className="space-y-1.5 sm:col-span-2"><span className="text-xs font-medium">Texto secundario</span><input name="subtitle" maxLength={180} placeholder="Promoción válida durante julio" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
-                  <label className="space-y-1.5"><span className="text-xs font-medium">Imagen</span><input name="image" type="file" required accept="image/png,image/jpeg,image/webp" className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs" /></label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium">Imagen</span>
+                    <input name="image" type="file" required accept="image/png,image/jpeg,image/webp" onChange={handlePromoFileChange} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs" />
+                    <span className="block text-[11px] text-muted-foreground">PNG, JPG o WebP · máximo 8 MB · recomendado 2:1.</span>
+                  </label>
                   <label className="space-y-1.5"><span className="text-xs font-medium">Enlace opcional</span><input name="linkUrl" type="url" placeholder="https://..." className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium">Alineación del texto</span>
+                    <select name="textAlign" defaultValue="left" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
+                      <option value="left">Izquierda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Derecha</option>
+                    </select>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-[#7C3AED]/25 bg-[#7C3AED]/5 p-3 sm:col-span-2">
+                    <input
+                      name="discountEnabled"
+                      type="checkbox"
+                      value="true"
+                      checked={promoDiscountEnabled}
+                      onChange={(event) => setPromoDiscountEnabled(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 accent-[#7C3AED]"
+                    />
+                    <span>
+                      <span className="flex items-center gap-1.5 text-sm font-semibold"><BadgePercent className="h-4 w-4 text-[#7C3AED]" /> Aplicar un descuento real</span>
+                      <span className="mt-1 block text-[11px] text-muted-foreground">El servidor descontará este valor del precio de la reserva. No es solo texto promocional.</span>
+                    </span>
+                  </label>
+                  {promoDiscountEnabled && (
+                    <div className="grid gap-4 rounded-xl border border-border bg-background p-3 sm:col-span-2 sm:grid-cols-2">
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-medium">Tipo de descuento</span>
+                        <select name="discountType" defaultValue="PERCENTAGE" className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm">
+                          <option value="PERCENTAGE">Porcentaje</option>
+                          <option value="FIXED">Monto fijo (CLP)</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-medium">Valor</span>
+                        <input name="discountValue" type="number" min={1} required defaultValue={10} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="text-xs font-medium">Compra mínima (CLP)</span>
+                        <input name="discountMinSubtotal" type="number" min={0} defaultValue={0} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="space-y-1.5"><span className="text-xs font-medium">Desde</span><input name="discountStartsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
+                        <label className="space-y-1.5"><span className="text-xs font-medium">Hasta</span><input name="discountEndsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground sm:col-span-2">Se aplica a todos los servicios de cita y no se acumula con códigos de premio.</p>
+                    </div>
+                  )}
+                  {promoFilePreview && (
+                    <div className="overflow-hidden rounded-2xl border border-border bg-background sm:col-span-2">
+                      <img src={promoFilePreview.url} alt="Vista previa de la imagen seleccionada" className="aspect-[2/1] w-full object-cover" />
+                      <div className="flex items-center justify-between gap-3 px-3 py-2 text-[11px] text-muted-foreground">
+                        <span className="truncate">{promoFilePreview.name}</span>
+                        <span className="shrink-0">{(promoFilePreview.size / 1024 / 1024).toFixed(2)} MB</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {promoError && <p role="alert" className="text-sm text-red-500">{promoError}</p>}
-                <button disabled={promoSaving} className="flex h-10 items-center gap-2 rounded-xl bg-[#7C3AED] px-4 text-sm font-bold text-white disabled:opacity-50">{promoSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} Subir bloque</button>
+                <button type="submit" disabled={promoSaving || !promoFilePreview} aria-busy={promoSaving} className="flex h-10 items-center gap-2 rounded-xl bg-[#7C3AED] px-4 text-sm font-bold text-white disabled:opacity-50">{promoSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />} {promoSaving ? "Subiendo imagen…" : "Subir y previsualizar"}</button>
               </form>
             )}
 
             <div className="mt-5 space-y-3">
-              {promoBlocks.length === 0 ? (
+              {displayedPromoBlocks.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Aún no hay imágenes promocionales.</div>
-              ) : promoBlocks.map((block) => (
+              ) : displayedPromoBlocks.map((block) => (
                 <div key={block.id} className="flex gap-3 rounded-2xl border border-border bg-muted/30 p-3">
-                  <img src={block.imageUrl} alt="" className="h-20 w-28 shrink-0 rounded-xl object-cover" />
+                  <img src={block.imageUrl} alt={block.title} className="h-20 w-28 shrink-0 rounded-xl object-cover" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold">{block.title}</p>
                         <p className="text-[11px] text-muted-foreground">{PLACEMENT_LABELS[block.placement]}</p>
+                        {block.discountType && block.discountValue ? (
+                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                            <BadgePercent className="h-3 w-3" />
+                            {block.discountType === "PERCENTAGE" ? `${block.discountValue}%` : `$${block.discountValue.toLocaleString("es-CL")}`} de descuento
+                          </span>
+                        ) : null}
                       </div>
                       <div className="flex gap-1">
-                        <button disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title="Mover arriba" className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"><ArrowUp className="h-3.5 w-3.5" /></button>
-                        <button disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title="Mover abajo" className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"><ArrowDown className="h-3.5 w-3.5" /></button>
-                        <button disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { isVisible: !block.isVisible })} title={block.isVisible ? "Ocultar" : "Mostrar"} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground">{block.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
-                        <button disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title="Eliminar bloque" className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title="Subir orden o mover a la zona anterior" aria-label={`Subir ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowUp className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title="Bajar orden o mover a la zona siguiente" aria-label={`Bajar ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowDown className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { isVisible: !block.isVisible })} title={block.isVisible ? "Ocultar" : "Mostrar"} aria-label={`${block.isVisible ? "Ocultar" : "Mostrar"} ${block.title}`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50">{block.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => setEditingPromoId((current) => current === block.id ? null : block.id)} title="Configurar descuento" aria-label={`Configurar descuento de ${block.title}`} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"><BadgePercent className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title="Eliminar bloque" aria-label={`Eliminar ${block.title}`} className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                     {block.subtitle && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{block.subtitle}</p>}
+                    {editingPromoId === block.id && (
+                      <form onSubmit={(event) => handlePromoDiscountSubmit(event, block.id)} className="mt-3 grid gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 sm:grid-cols-2">
+                        <input type="hidden" name="discountEnabled" value="true" />
+                        <label className="space-y-1">
+                          <span className="text-[11px] font-medium">Descuento</span>
+                          <select name="discountType" defaultValue={block.discountType || "NONE"} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs">
+                            <option value="NONE">Sin descuento</option>
+                            <option value="PERCENTAGE">Porcentaje</option>
+                            <option value="FIXED">Monto fijo (CLP)</option>
+                          </select>
+                        </label>
+                        <label className="space-y-1">
+                          <span className="text-[11px] font-medium">Valor</span>
+                          <input name="discountValue" type="number" min={1} defaultValue={block.discountValue || 10} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs" />
+                        </label>
+                        <label className="space-y-1">
+                          <span className="text-[11px] font-medium">Compra mínima</span>
+                          <input name="discountMinSubtotal" type="number" min={0} defaultValue={block.discountMinSubtotal} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs" />
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="space-y-1"><span className="text-[11px] font-medium">Desde</span><input name="discountStartsAt" type="date" defaultValue={toDateInputValue(block.discountStartsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
+                          <label className="space-y-1"><span className="text-[11px] font-medium">Hasta</span><input name="discountEndsAt" type="date" defaultValue={toDateInputValue(block.discountEndsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
+                        </div>
+                        <div className="flex gap-2 sm:col-span-2">
+                          <button type="submit" disabled={promoBusyId === block.id} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Guardar descuento</button>
+                          <button type="button" onClick={() => setEditingPromoId(null)} className="rounded-lg border border-border px-3 py-2 text-xs">Cancelar</button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 </div>
               ))}

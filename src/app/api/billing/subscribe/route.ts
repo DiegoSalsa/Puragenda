@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Return the payment URL
     return NextResponse.json({ init_point: result.init_point, discount: platformDiscount ?? null });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[billing/subscribe] Error:", error);
     
     // Extract MercadoPago error details if present

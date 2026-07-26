@@ -2,6 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import {
   DASHBOARD_PERMISSIONS,
   LEGACY_ROLE_PERMISSIONS,
+  normalizeDashboardPermissions,
   type DashboardPermission,
 } from "@/core/permissions";
 
@@ -19,7 +20,7 @@ export async function getEffectiveBusinessPermissions(
   });
 
   if (staff?.accessProfile) {
-    return staff.accessProfile.permissions as DashboardPermission[];
+    return normalizeDashboardPermissions(staff.accessProfile.permissions);
   }
 
   return LEGACY_ROLE_PERMISSIONS[user.role] ?? [];

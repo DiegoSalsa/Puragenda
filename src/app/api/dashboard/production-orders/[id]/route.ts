@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 const updateSchema = z.object({
   status: z.enum([
@@ -30,6 +32,9 @@ export async function PATCH(
   if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
   const business = await getBusinessForUser(user.id);
   if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return Response.json({ error: "Sin permisos para gestionar encargos" }, { status: 403 });
+  }
 
   const { id } = await params;
   const parsed = updateSchema.safeParse(await request.json());

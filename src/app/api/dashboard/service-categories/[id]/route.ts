@@ -7,6 +7,8 @@ import {
 } from "@/server/services/service-category.service";
 import { serviceCategoryNameSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 function isUniqueConstraintError(error: unknown) {
   return (
@@ -24,6 +26,9 @@ async function getAuthorizedCategory(request: NextRequest, categoryId: string) {
   const business = await getBusinessForUser(user.id);
   if (!business) {
     return { error: Response.json({ error: "Negocio no encontrado" }, { status: 404 }) };
+  }
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: Response.json({ error: "Sin permisos para gestionar categorías" }, { status: 403 }) };
   }
 
   const category = await getServiceCategoryByIdAndBusiness(categoryId, business.id);

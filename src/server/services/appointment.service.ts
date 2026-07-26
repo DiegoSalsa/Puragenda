@@ -61,6 +61,10 @@ export async function createAppointment(data: {
   additionalServiceIds?: string[];
   totalDuration?: number;
   totalPrice?: number;
+  originalTotalPrice?: number;
+  discountAmount?: number;
+  promotionId?: string;
+  promotionTitle?: string;
   selectedOptions?: Prisma.InputJsonValue;
   depositRequired?: boolean;
   depositAmount?: number;
@@ -116,6 +120,10 @@ export async function createAppointment(data: {
       additionalServiceIds: data.additionalServiceIds || [],
       totalDuration: data.totalDuration,
       totalPrice: data.totalPrice,
+      originalTotalPrice: data.originalTotalPrice,
+      discountAmount: data.discountAmount,
+      promotionId: data.promotionId,
+      promotionTitle: data.promotionTitle,
       selectedOptions: data.selectedOptions,
       depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",

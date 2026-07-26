@@ -11,8 +11,6 @@ import {
   Mail,
   Palette,
   Share2,
-  CheckCircle2,
-  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";

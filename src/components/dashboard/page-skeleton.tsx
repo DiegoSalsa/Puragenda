@@ -1,9 +1,11 @@
+import Image from "next/image";
+
 export function PageSkeleton({ cards = 6 }: { cards?: number }) {
   return (
     <div className="space-y-7" role="status" aria-label="Cargando contenido">
       <div className="flex items-center gap-4">
         <div className="relative h-11 w-11">
-          <img src="/logos/iconPuragenda.svg" alt="" className="h-11 w-11 animate-pulse" />
+          <Image src="/icon-512x512.png" alt="" width={44} height={44} className="h-11 w-11 animate-pulse" />
           <span className="absolute -inset-1 animate-ping rounded-2xl border border-[#7C3AED]/40" />
         </div>
         <div className="space-y-2">

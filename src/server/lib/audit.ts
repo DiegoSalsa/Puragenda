@@ -10,7 +10,7 @@ import { headers } from "next/headers";
  */
 export async function createAuditLog(
   action: string,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
   userId?: string
 ) {
   try {

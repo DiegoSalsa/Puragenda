@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 
 const themes = [
@@ -12,10 +12,13 @@ const themes = [
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // Avoid hydration mismatch
-  useEffect(() => setMounted(true), []);
   if (!mounted) {
     return (
       <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/50 p-1">

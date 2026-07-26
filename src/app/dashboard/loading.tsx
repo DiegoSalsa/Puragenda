@@ -1,9 +1,11 @@
+import Image from "next/image";
+
 export default function DashboardLoading() {
   return (
     <div className="space-y-8" role="status" aria-label="Cargando Puragenda">
       <div className="flex items-center gap-4">
         <div className="relative h-12 w-12">
-          <img src="/logos/iconPuragenda.svg" alt="" className="h-12 w-12 animate-pulse" />
+          <Image src="/icon-512x512.png" alt="" width={48} height={48} className="h-12 w-12 animate-pulse" />
           <span className="absolute -inset-1 animate-ping rounded-2xl border-2 border-[#7C3AED]/30" />
         </div>
         <div className="space-y-2">

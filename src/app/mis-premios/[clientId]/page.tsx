@@ -300,7 +300,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
               </div>
 
               <div className="space-y-2">
-                {completedVisits.map((visit, i) => {
+                {completedVisits.map((visit) => {
                   const date = new Date(visit.startTime);
                   return (
                     <div

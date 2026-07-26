@@ -94,6 +94,8 @@ export default async function ReagendarPage({ params }: { params: Promise<{ appo
     );
   }
 
+  // Dynamic server rendering intentionally compares against the request time.
+  // eslint-disable-next-line react-hooks/purity
   const hoursUntil = (new Date(appointment.startTime).getTime() - Date.now()) / (1000 * 60 * 60);
   if (hoursUntil < appointment.business.rescheduleHoursLimit) {
     return (

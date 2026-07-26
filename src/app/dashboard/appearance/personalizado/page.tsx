@@ -30,6 +30,11 @@ export default async function PersonalizadoPage() {
       position: true,
       isVisible: true,
       textAlign: true,
+      discountType: true,
+      discountValue: true,
+      discountStartsAt: true,
+      discountEndsAt: true,
+      discountMinSubtotal: true,
     },
   });
 

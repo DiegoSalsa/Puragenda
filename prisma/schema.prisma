@@ -260,22 +260,30 @@ model WidgetTheme {
 }
 
 model WidgetPromoBlock {
-  id         String               @id @default(cuid())
-  title      String
-  subtitle   String?
-  imageUrl   String
-  linkUrl    String?
-  placement  WidgetPromoPlacement @default(HEADER)
-  position   Int                  @default(0)
-  isVisible  Boolean              @default(true)
-  textAlign  String               @default("left")
-  businessId String
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
+  id                  String               @id @default(cuid())
+  title               String
+  subtitle            String?
+  imageUrl            String
+  cloudinaryPublicId  String?
+  linkUrl             String?
+  placement           WidgetPromoPlacement @default(HEADER)
+  position            Int                  @default(0)
+  isVisible           Boolean              @default(true)
+  textAlign           String               @default("left")
+  discountType        String?
+  discountValue       Int?
+  discountStartsAt    DateTime?
+  discountEndsAt      DateTime?
+  discountMinSubtotal Int                  @default(0)
+  businessId          String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   @@index([businessId, placement, position])
+  @@index([businessId, isVisible, discountStartsAt, discountEndsAt])
 }
 
 model AccessProfile {
@@ -778,6 +786,10 @@ model Appointment {
   additionalServiceIds String[]          @default([])
   totalDuration        Int?
   totalPrice           Float?
+  originalTotalPrice   Float?
+  discountAmount       Float?
+  promotionId          String?
+  promotionTitle       String?
   selectedOptions      Json?
   businessId           String
   serviceId            String
@@ -799,6 +811,7 @@ model Appointment {
   staff            Staff?            @relation(fields: [staffId], references: [id], onDelete: SetNull)
   client           Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
   recurringBooking RecurringBooking? @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
+  promotion        WidgetPromoBlock? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
   @@index([serviceId])
@@ -806,6 +819,7 @@ model Appointment {
   @@index([startTime])
   @@index([clientId])
   @@index([recurringBookingId])
+  @@index([promotionId])
 }
 
 // ==========================================

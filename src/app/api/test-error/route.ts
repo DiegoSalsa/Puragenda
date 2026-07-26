@@ -2,14 +2,19 @@ import { NextResponse } from "next/server";
 import { logCriticalError } from "@/server/lib/error-logger";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
   try {
     // Simulamos que la API de pagos explotó
     throw new Error("Conexión con MercadoPago rechazada (Simulación)");
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const caughtError = error instanceof Error ? error : new Error(String(error));
     await logCriticalError({
       source: "api/test-error",
-      message: error.message,
-      stack: error.stack,
+      message: caughtError.message,
+      stack: caughtError.stack,
       userId: "test_user_id_123",
       details: {
         method: "GET",

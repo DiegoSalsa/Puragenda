@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw, CheckCircle2, XCircle, PauseCircle, PlayCircle, Trash2,
-  ChevronRight, ChevronLeft, Search, StickyNote, Clock, Calendar,
-  User, Link2, X, Loader2, AlertCircle
+  ChevronLeft, Search, StickyNote, Clock, Calendar,
+  User, Link2, X, Loader2
 } from "lucide-react";
 import {
   approveRecurringBookingAction,

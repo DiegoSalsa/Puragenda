@@ -454,6 +454,7 @@ export function ServicesClient({
     try {
       let serviceId: string;
       const { imageUrl: _imageUrl, ...formWithoutImage } = form;
+      void _imageUrl;
       const payload = {
         ...(editingService ? formWithoutImage : form),
         optionCategories: optionCategories

@@ -73,6 +73,7 @@ export const bookingSchema = z
       .optional(),
 
     rewardCode: z.string().optional(),
+    promotionId: z.string().min(1, "La promoción seleccionada no es válida").optional(),
 
     customerName: z
       .string({ message: "El nombre es obligatorio" })

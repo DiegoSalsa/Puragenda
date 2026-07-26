@@ -3,6 +3,8 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { OrdersBoard } from "./orders-board";
 import Link from "next/link";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +13,9 @@ export default async function OrdersPage() {
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion</div>;
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">Negocio no encontrado</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar encargos.</div>;
+  }
   if (!business.productionOrdersEnabled) {
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-border p-10 text-center">

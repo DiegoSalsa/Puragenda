@@ -5,7 +5,6 @@ import { prisma } from "@/server/db/prisma";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
-import { DashboardTutorial } from "@/components/dashboard/tutorial";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
@@ -52,12 +51,7 @@ export default async function DashboardLayout({
   }
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
-  const isDemoAccount =
-    business?.slug?.toLowerCase().includes("esteticabella") ||
-    business?.slug?.toLowerCase().includes("estetica-bella") ||
-    user.email.toLowerCase().includes("esteticabella") ||
-    user.email.toLowerCase().includes("diego");
-  const shouldShowChangelogPopup = isDemoAccount || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
+  const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
     <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
@@ -80,11 +74,7 @@ export default async function DashboardLayout({
         <div className="md:hidden">
           <ContextualHelpButton />
         </div>
-        <DashboardTutorial />
-        <ChangelogPopup
-          seenVersion={changelogSeenVersion}
-          isDemoAccount={isDemoAccount}
-        />
+        <ChangelogPopup />
       </div>
     </DashboardOverlayProvider>
   );

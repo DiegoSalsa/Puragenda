@@ -2,7 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-import { XCircle, Loader2, AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { XCircle, Loader2, AlertCircle, AlertTriangle } from "lucide-react";
 
 function CancelContent() {
   const searchParams = useSearchParams();
@@ -71,12 +72,12 @@ function CancelContent() {
               >
                 Sí, cancelar mi cita
               </button>
-              <a
+              <Link
                 href="/"
                 className="w-full rounded-xl border border-border px-6 py-3 text-sm font-semibold text-muted-foreground transition-all hover:border-foreground/20 hover:text-foreground inline-block"
               >
                 No, mantener mi cita
-              </a>
+              </Link>
             </div>
           </>
         )}

@@ -5,7 +5,7 @@ interface LogCriticalErrorParams {
   message: string;
   stack?: string;
   userId?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export async function logCriticalError({

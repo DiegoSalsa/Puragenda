@@ -1,4 +1,3 @@
-import { createAuditLog } from "@/server/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";

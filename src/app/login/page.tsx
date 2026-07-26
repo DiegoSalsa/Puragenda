@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarClock } from "lucide-react";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { LoginForm } from "./login-form";
 

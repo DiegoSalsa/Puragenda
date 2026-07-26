@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { addDays } from "date-fns";
 import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } from "@/core/constants";
 import { toSlug } from "@/core/validators/slug";
-import { applyReferralCode, incrementPaidReferrals } from "@/server/services/affiliate.service";
+import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
 
 async function generateUniqueBusinessSlug(

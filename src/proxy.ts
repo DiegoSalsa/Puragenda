@@ -27,7 +27,7 @@ function readSessionPayload(token: string): { isSuperAdmin?: boolean; adminAcces
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ─── Handle CORS for public API ───

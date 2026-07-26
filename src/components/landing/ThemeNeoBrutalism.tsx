@@ -3,29 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Stamp, Mail, Gift, Database, Palette, LayoutTemplate, Shield, CreditCard } from "lucide-react";
+import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Palette, Shield, CreditCard } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
 import { Theme70s } from "@/components/landing/Theme70s";
-const PricingCards = dynamic(() => import("@/components/pricing-cards").then((m) => m.PricingCards), { ssr: true });
-const FAQSection = dynamic(() => import("@/components/landing/faq-section").then((m) => m.FAQSection), { ssr: true });
+import type { LandingIdentityProps } from "@/components/landing/types";
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
-
-const bentoFeatures = [
-  { title: "Timbres Digitales", description: "Programa de lealtad integrado. Premia a tus clientes recurrentes con descuentos automaticos.", icon: Stamp, className: "md:col-span-2 bg-[#85E3FF] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#85E3FF] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#85E3FF] dark:text-white", darkIconBg: "dark:bg-[#85E3FF]" },
-  { title: "Email Marketing", description: "Campanhas automaticas para reactivar clientes inactivos.", icon: Mail, className: "bg-[#FFB5E8] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#FFB5E8] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#FFB5E8] dark:text-white", darkIconBg: "dark:bg-[#FFB5E8]" },
-  { title: "Programa Referidos", description: "Invita a otros negocios y gana meses gratis.", icon: Gift, className: "bg-[#BFFCC6] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#BFFCC6] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#BFFCC6] dark:text-white", darkIconBg: "dark:bg-[#BFFCC6]" },
-  { title: "CRM Integrado", description: "Historial de citas, inasistencias y preferencias de cada cliente.", icon: Database, className: "md:col-span-2 bg-[#FFF5BA] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#FFF5BA] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#FFF5BA] dark:text-white", darkIconBg: "dark:bg-[#FFF5BA]" },
-  { title: "Widget Marca Blanca", description: "Se adapta al estilo de tu negocio. Colores y branding personalizables.", icon: Palette, className: "md:col-span-2 bg-[#B28DFF] dark:bg-black border-black dark:border-white shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_#B28DFF] hover:shadow-[14px_14px_0px_rgba(0,0,0,1)] dark:hover:shadow-[14px_14px_0px_#B28DFF] dark:text-white", darkIconBg: "dark:bg-[#B28DFF]" },
-  { title: "Abonos con MercadoPago", description: "Tus clientes pagan sus paquetes y abonos online directo desde el widget. Sin cobrar en mano.", icon: CreditCard, className: "md:col-span-3 bg-[#009EE3]/15 dark:bg-black border-[#009EE3] dark:border-[#009EE3] shadow-[8px_8px_0px_#009EE3] hover:shadow-[14px_14px_0px_#009EE3] dark:text-white", darkIconBg: "dark:bg-[#009EE3]/30", iconColor: "text-[#009EE3]" },
-];
-
-const features = [
-  { title: "Reservas automaticas 24/7", description: "Tus clientes agendan solos desde tu web a cualquier hora.", icon: CalendarClock, bg: "bg-[#B28DFF]" },
-  { title: "Widget listo para tu web", description: "Integramos la agenda en tu sitio con tu estilo visual.", icon: LayoutTemplate, bg: "bg-[#FFF5BA]" },
-  { title: "Multi-profesional", description: "Cada profesional tiene su propia agenda y horarios. Sin conflictos.", icon: Users, bg: "bg-[#85E3FF]" },
-  { title: "Marketing Win-Back", description: "Recordatorios a clientes que no han vuelto.", icon: Mail, bg: "bg-[#FFB5E8]" },
-];
 
 const neoVars: React.CSSProperties & Record<string, string> = {
   "--primary": "#7C3AED",
@@ -39,7 +22,7 @@ const neoVars: React.CSSProperties & Record<string, string> = {
   "--ring": "#7C3AED",
 };
 
-export function ThemeNeoBrutalism({ user, business }: { user: any; business: any }) {
+export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
   const [easterEggCount, setEasterEggCount] = useState(0);
   const [show70s, setShow70s] = useState(false);
 
@@ -58,7 +41,12 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
             className="absolute left-10 top-48 md:top-56 hidden lg:block animate-[bounce_5s_infinite] cursor-pointer select-none z-50"
             onClick={() => {
               try {
-                const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const browserWindow = window as Window & typeof globalThis & {
+                  webkitAudioContext?: typeof AudioContext;
+                };
+                const AudioContextConstructor = window.AudioContext || browserWindow.webkitAudioContext;
+                if (!AudioContextConstructor) return;
+                const audioCtx = new AudioContextConstructor();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.connect(gainNode);
@@ -69,7 +57,7 @@ export function ThemeNeoBrutalism({ user, business }: { user: any; business: any
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + 0.1);
-              } catch (e) {
+              } catch {
                 // Ignore audio errors
               }
 

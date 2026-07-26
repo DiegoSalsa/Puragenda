@@ -1,25 +1,11 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Stamp, Mail, Gift, Database, Palette, LayoutTemplate, Shield, CreditCard } from "lucide-react";
+import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Palette, Shield, CreditCard } from "lucide-react";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
+import type { LandingIdentityProps } from "@/components/landing/types";
 
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
-
-const bentoFeatures = [
-  { title: "Timbres Digitales", description: "Fideliza a tus clientes. Descuentos automaticos por visitas recurrentes.", icon: Stamp, className: "md:col-span-2", bg: "bg-[#FF1493]", text: "text-[#FFF]" },
-  { title: "Email Marketing", description: "Campanas para recuperar clientes inactivos.", icon: Mail, className: "", bg: "bg-[#FFDB58]", text: "text-[#000]" },
-  { title: "Programa Referidos", description: "Tus clientes te recomiendan y ambos ganan.", icon: Gift, className: "", bg: "bg-[#FF4500]", text: "text-[#FFF]" },
-  { title: "Historial de Clientes", description: "Ficha clinica, preferencias y notas de cada cliente.", icon: Database, className: "md:col-span-2", bg: "bg-[#FFFDD0] dark:bg-[#FFDB58]", text: "text-[#000]" },
-  { title: "Widget Marca Blanca", description: "Se integra a tu web con tus propios colores y logo.", icon: Palette, className: "md:col-span-2", bg: "bg-[#FF1493]", text: "text-[#FFF]" },
-];
-
-const features = [
-  { title: "Agenda Inteligente 24/7", description: "Tus clientes reservan solos desde Instagram o tu web.", icon: CalendarClock, bg: "bg-[#FFDB58]" },
-  { title: "Pagos por Adelantado", description: "Reduce las inasistencias cobrando una senal al agendar.", icon: LayoutTemplate, bg: "bg-[#FF4500]" },
-  { title: "Multi-Profesional", description: "Horarios independientes para cada miembro de tu equipo.", icon: Users, bg: "bg-[#FF1493]" },
-  { title: "Recordatorios Auto", description: "WhatsApp y Email automatico para que nadie falte.", icon: Mail, bg: "bg-[#FFFDD0] dark:bg-[#FFDB58]" },
-];
 
 const stitchVars: React.CSSProperties & Record<string, string> = {
   "--primary": "#FF4500",
@@ -31,7 +17,7 @@ const stitchVars: React.CSSProperties & Record<string, string> = {
   "--ring": "#FF4500",
 };
 
-export function Theme70s({ user, business }: { user: any; business: any }) {
+export function Theme70s({ user, business }: LandingIdentityProps) {
   return (
     <div className="relative min-h-screen w-full font-sans overflow-hidden bg-[#FFFDD0] text-[#000] dark:bg-[#1A1A1D] dark:text-[#FFFDD0] transition-colors duration-300" style={{ ...stitchVars, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* Halftone Texture Overlay */}

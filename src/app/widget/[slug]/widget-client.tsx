@@ -3,8 +3,9 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, Users, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
+import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
 
 interface RecurringPlan {
@@ -55,6 +56,11 @@ interface PromoBlock {
   placement: "HEADER" | "BETWEEN_SERVICES" | "FOOTER";
   position: number;
   textAlign: string;
+  discountType: string | null;
+  discountValue: number | null;
+  discountStartsAt: string | null;
+  discountEndsAt: string | null;
+  discountMinSubtotal: number;
 }
 interface Props {
   business: {
@@ -236,6 +242,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [rewardStatus, setRewardStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [rewardError, setRewardError] = useState("");
   const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number } | null>(null);
+  const [activePromotionId, setActivePromotionId] = useState<string | null>(null);
 
   // ── Recurring booking state ──
   const [recurringMode, setRecurringMode] = useState<"single" | "recurring">("single");
@@ -337,16 +344,29 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     ? Math.max(0, ...activeServices.map((service) => durationByServiceId.get(service.id) ?? service.duration))
     : sequentialDuration;
   const rawTotalPrice = activeServices.reduce((s, sv) => s + sv.price, 0) + optionPrice;
+  const activePromotion = promoBlocks.find((block) => block.id === activePromotionId) ?? null;
+  const promotionResult = useMemo(() => activePromotion
+    ? calculateWidgetPromotion({
+        subtotal: rawTotalPrice,
+        discountType: activePromotion.discountType,
+        discountValue: activePromotion.discountValue,
+        discountStartsAt: activePromotion.discountStartsAt,
+        discountEndsAt: activePromotion.discountEndsAt,
+        discountMinSubtotal: activePromotion.discountMinSubtotal,
+      })
+    : null,
+  [activePromotion, rawTotalPrice]);
 
-  // Apply discount if a valid reward code is present
+  // Reward codes and widget promotions intentionally do not stack.
   const totalPrice = useMemo(() => {
-    if (!rewardDiscount) return rawTotalPrice;
-    if (rewardDiscount.type === "PERCENTAGE") {
-      return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * rewardDiscount.value / 100));
+    if (rewardDiscount) {
+      if (rewardDiscount.type === "PERCENTAGE") {
+        return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * rewardDiscount.value / 100));
+      }
+      return Math.max(0, rawTotalPrice - rewardDiscount.value);
     }
-    // FIXED discount
-    return Math.max(0, rawTotalPrice - rewardDiscount.value);
-  }, [rawTotalPrice, rewardDiscount]);
+    return promotionResult?.quote?.discountedTotal ?? rawTotalPrice;
+  }, [promotionResult, rawTotalPrice, rewardDiscount]);
 
   // Compute deposit amount dynamically from selected service(s)
   const depositAmount = useMemo(() => {
@@ -357,9 +377,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return selectedService?.depositAmount || 0;
   }, [depositRequired, isMultiService, selectedServices, selectedService]);
 
-  const showDeposit = depositRequired && depositAmount > 0;
-
-  const hasMultipleStaff = staffMembers && staffMembers.length > 1;
+  const effectiveDepositAmount = Math.min(depositAmount, totalPrice);
+  const showDeposit = depositRequired && effectiveDepositAmount > 0;
 
   // Filter staff who can perform the selected service(s)
   const filteredStaff = useMemo(() => {
@@ -395,13 +414,6 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
     return generated;
   }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes]);
-
-  // Filter available staff for a given day
-  const availableStaff = useMemo(() => {
-    if (!staffMembers || !selectedDate) return staffMembers || [];
-    const dow = selectedDate.getDay();
-    return staffMembers.filter((s) => isStaffWorkingOnDay(s, dow));
-  }, [staffMembers, selectedDate]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -617,6 +629,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       } else {
         setRewardStatus("valid");
         setRewardDiscount({ type: data.discountType, value: data.discountValue });
+        setActivePromotionId(null);
       }
     } catch {
       setRewardStatus("invalid");
@@ -657,6 +670,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           staffId: splitStaffMode ? undefined : selectedStaff?.id,
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
+          promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
         }),
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
@@ -675,6 +689,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setSelectedOptionByCategory({});
     setForm({ name: "", email: "", phone: "", address: "" }); setTouched({ name: false, email: false, phone: false, address: false }); setApiError(""); setBlockedSlots([]);
     setRewardCode(""); setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null);
+    setActivePromotionId(null);
     // Reset recurring state
     setRecurringMode("single"); setRecurringSelectedDays([]); setRecurringStartDate(""); setRecurringDurationMonths(1);
     setRecurringTimes({});
@@ -927,16 +942,65 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return (
       <div className="space-y-3 p-4 sm:p-5">
         {blocks.map((block) => {
+          const hasDiscount = block.discountType === "PERCENTAGE" || block.discountType === "FIXED";
+          const isActive = activePromotionId === block.id;
+          const discountLabel = block.discountType === "PERCENTAGE"
+            ? `${block.discountValue}% de descuento`
+            : block.discountType === "FIXED"
+              ? `${formatPrice(block.discountValue ?? 0)} de descuento`
+              : null;
           const content = (
-            <div className="group relative min-h-32 overflow-hidden border" style={{ borderColor: "var(--wborder)", borderRadius: `${Math.max(8, cornerRadius - 4)}px` }}>
-              <img src={block.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+            <div
+              className="group relative min-h-32 overflow-hidden border transition-all"
+              style={{
+                borderColor: isActive ? pc : "var(--wborder)",
+                borderRadius: `${Math.max(8, cornerRadius - 4)}px`,
+                boxShadow: isActive ? `0 0 0 2px ${pc}55` : undefined,
+              }}
+            >
+              <img
+                src={block.imageUrl}
+                alt={block.title}
+                loading={placement === "HEADER" ? "eager" : "lazy"}
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
               <div className="relative flex min-h-32 flex-col justify-end p-4" style={{ textAlign: block.textAlign === "center" ? "center" : block.textAlign === "right" ? "right" : "left" }}>
                 <p className="text-base font-bold text-white">{block.title}</p>
                 {block.subtitle && <p className="mt-1 text-xs text-white/75">{block.subtitle}</p>}
+                {hasDiscount && (
+                  <span className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-black">
+                    <Gift className="h-3.5 w-3.5" />
+                    {isActive ? "Descuento aplicado" : `Aplicar ${discountLabel}`}
+                  </span>
+                )}
               </div>
             </div>
           );
+          if (hasDiscount) {
+            return (
+              <div key={block.id}>
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    setActivePromotionId(isActive ? null : block.id);
+                    setRewardCode("");
+                    setRewardStatus("idle");
+                    setRewardError("");
+                    setRewardDiscount(null);
+                  }}
+                >
+                  {content}
+                </button>
+                {isActive && promotionResult?.error && (
+                  <p className="mt-2 text-xs text-amber-500">{promotionResult.error}</p>
+                )}
+              </div>
+            );
+          }
           return block.linkUrl ? <a key={block.id} href={block.linkUrl} target="_blank" rel="noopener noreferrer">{content}</a> : <div key={block.id}>{content}</div>;
         })}
       </div>
@@ -1770,7 +1834,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <div className="flex justify-between items-center">
                   <span style={{ color: textSecondary }}>Total</span>
                   <span className="font-medium">
-                    {rewardDiscount ? (
+                    {rewardDiscount || promotionResult?.quote ? (
                       <span className="flex items-center gap-2">
                         <span className="line-through opacity-40">{formatPrice(rawTotalPrice)}</span>
                         <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice)}</span>
@@ -1835,11 +1899,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {!form.email && rewardCode.trim() && (
                     <p className="text-xs text-amber-400/70">Ingresa tu correo electrónico primero para validar el código.</p>
                   )}
+                  {promotionResult?.quote && activePromotion && (
+                    <p className="flex items-center gap-1 text-xs text-green-400">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Promoción “{activePromotion.title}” aplicada: ahorras {formatPrice(promotionResult.quote.discountAmount)}.
+                    </p>
+                  )}
                 </div>
                 {/* Deposit notice */}
                 {showDeposit && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
-                    <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(depositAmount)}</p>
+                    <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(effectiveDepositAmount)}</p>
                     <p className="text-xs mt-1" style={{ color: textSecondary }}>Serás redirigido a Mercado Pago para pagar el abono. Tu cita se confirmará automáticamente al completar el pago.</p>
                   </div>
                 )}
