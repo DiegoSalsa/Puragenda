@@ -49,12 +49,7 @@ export default async function DashboardLayout({
   }
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
-  const isDemoAccount =
-    business?.slug?.toLowerCase().includes("esteticabella") ||
-    business?.slug?.toLowerCase().includes("estetica-bella") ||
-    user.email.toLowerCase().includes("esteticabella") ||
-    user.email.toLowerCase().includes("diego");
-  const shouldShowChangelogPopup = isDemoAccount || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
+  const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
     <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
@@ -68,11 +63,8 @@ export default async function DashboardLayout({
         <main id="tutorial-main" className="flex-1 overflow-auto">
           <div className="px-4 pt-[72px] pb-6 sm:p-8 md:pt-8">{children}</div>
         </main>
-        <DashboardTutorial userEmail={user.email} />
-        <ChangelogPopup
-          seenVersion={changelogSeenVersion}
-          isDemoAccount={isDemoAccount}
-        />
+        <DashboardTutorial />
+        <ChangelogPopup seenVersion={changelogSeenVersion} />
       </div>
     </DashboardOverlayProvider>
   );

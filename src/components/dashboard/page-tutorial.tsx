@@ -12,7 +12,7 @@ interface PageTutorialProps {
   dependsOnKey?: string;
 }
 
-export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: PageTutorialProps) {
+export function PageTutorial({ tutorialKey, steps, dependsOnKey }: PageTutorialProps) {
   const initialized = useRef(false);
   const { isChangelogOpen } = useDashboardOverlay();
 
@@ -22,9 +22,8 @@ export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: Pa
     
     // Check if it's already seen
     const hasSeen = localStorage.getItem(`hasSeenTutorial_${tutorialKey}`);
-    const isDemo = userEmail === "vale@esteticabella.cl";
 
-    if (hasSeen && !isDemo) {
+    if (hasSeen) {
       return;
     }
 
@@ -39,9 +38,7 @@ export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: Pa
         popoverClass: "neo-brutalism-driver",
         steps,
         onDestroyStarted: () => {
-          if (!isDemo) {
-            localStorage.setItem(`hasSeenTutorial_${tutorialKey}`, "true");
-          }
+          localStorage.setItem(`hasSeenTutorial_${tutorialKey}`, "true");
           driverObj.destroy();
         }
       });
@@ -54,8 +51,7 @@ export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: Pa
     if (dependsOnKey) {
       // Poll for the dependency
       const interval = setInterval(() => {
-        const isDone = localStorage.getItem(`hasSeenTutorial_${dependsOnKey}`) === "true" ||
-                       window.sessionStorage.getItem(`hasSeenTutorial_${dependsOnKey}`) === "true";
+        const isDone = localStorage.getItem(`hasSeenTutorial_${dependsOnKey}`) === "true";
         if (isDone) {
           clearInterval(interval);
           startDriver();
@@ -66,7 +62,7 @@ export function PageTutorial({ tutorialKey, userEmail, steps, dependsOnKey }: Pa
       startDriver();
     }
 
-  }, [isChangelogOpen, tutorialKey, userEmail, steps, dependsOnKey]);
+  }, [isChangelogOpen, tutorialKey, steps, dependsOnKey]);
 
   return null;
 }

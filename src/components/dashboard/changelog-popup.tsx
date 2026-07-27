@@ -9,12 +9,11 @@ import { X, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 
 interface Props {
   seenVersion?: string | null;
-  isDemoAccount?: boolean;
 }
 
-export function ChangelogPopup({ seenVersion, isDemoAccount }: Props) {
+export function ChangelogPopup({ seenVersion }: Props) {
   const [open, setOpen] = useState(
-    isDemoAccount || seenVersion !== LATEST_CHANGELOG_VERSION
+    seenVersion !== LATEST_CHANGELOG_VERSION
   );
   const { setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
@@ -29,10 +28,8 @@ export function ChangelogPopup({ seenVersion, isDemoAccount }: Props) {
 
   async function handleDismiss() {
     setOpen(false);
-    if (!isDemoAccount) {
-      await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
-      router.refresh();
-    }
+    await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
+    router.refresh();
   }
 
   async function handleViewDetails() {
