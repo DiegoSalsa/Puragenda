@@ -1,10 +1,14 @@
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import {
+  WidgetStudioEditor,
+  type WidgetStudioInitialState,
+} from "@/components/widget-studio/widget-studio-editor";
+import { WidgetStudioEntry } from "@/components/widget-studio/widget-studio-entry";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { AppearanceForm } from "../appearance-form";
-import { PageTutorial } from "@/components/dashboard/page-tutorial";
-import { prisma } from "@/server/db/prisma";
+import { getWidgetEditorState } from "@/server/services/widget-design.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
-import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -17,74 +21,73 @@ export default async function PersonalizadoPage() {
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE))) {
     return <div className="py-20 text-center text-muted-foreground">No tienes permisos para editar la apariencia</div>;
   }
-  const promoBlocks = await prisma.widgetPromoBlock.findMany({
-    where: { businessId: business.id },
-    orderBy: [{ placement: "asc" }, { position: "asc" }, { createdAt: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      subtitle: true,
-      imageUrl: true,
-      linkUrl: true,
-      placement: true,
-      position: true,
-      isVisible: true,
-      textAlign: true,
-      discountType: true,
-      discountValue: true,
-      discountStartsAt: true,
-      discountEndsAt: true,
-      discountMinSubtotal: true,
-    },
-  });
+  const state = await getWidgetEditorState(business.id);
+  const initialState: WidgetStudioInitialState | null = state ? {
+    designId: state.id,
+    draftDocument: state.draftDocument,
+    draftRevision: state.draftRevision,
+    rendererEnabled: state.rendererEnabled,
+    publishedVersion: state.publishedVersion ? {
+      ...state.publishedVersion,
+      createdAt: state.publishedVersion.createdAt.toISOString(),
+    } : null,
+    fallbackVersion: state.fallbackVersion ? {
+      ...state.fallbackVersion,
+      createdAt: state.fallbackVersion.createdAt.toISOString(),
+    } : null,
+    versions: state.versions.map((version) => ({
+      id: version.id,
+      versionNumber: version.versionNumber,
+      checksum: version.checksum,
+      changeSummary: version.changeSummary,
+      createdAt: version.createdAt.toISOString(),
+      publishedBy: version.publishedBy,
+    })),
+    assets: state.assets.map((asset) => ({
+      ...asset,
+      createdAt: asset.createdAt.toISOString(),
+    })),
+  } : null;
 
   return (
     <>
-      <AppearanceForm
-        initialData={{
-          primaryColor: business.primaryColor,
-          secondaryColor: business.secondaryColor,
-          backgroundColor: business.backgroundColor,
-          textColor: business.textColor,
-          textMutedColor: business.textMutedColor,
-          widgetFontSize: business.widgetFontSize,
-          widgetCornerRadius: business.widgetCornerRadius,
-          widgetShadowStyle: business.widgetShadowStyle,
-          widgetHeaderAlign: business.widgetHeaderAlign,
-          logoUrl: business.logoUrl || "",
-        }}
-        widgetSlug={business.slug}
-        promoBlocks={promoBlocks}
-      />
+      {initialState ? (
+        <WidgetStudioEditor initialState={initialState} widgetSlug={business.slug} />
+      ) : (
+        <WidgetStudioEntry widgetSlug={business.slug} />
+      )}
       <PageTutorial
-        tutorialKey="apariencia_v1"
+        tutorialKey="widget_studio_v2"
         dependsOnKey="general"
         userEmail={user.email}
         steps={[
           {
+            element: "[data-tour='widget-studio']",
             popover: {
-              title: "DISEÑO PERSONALIZADO",
-              description: "Ajusta los colores y la tipografía para que el widget de reservas encaje perfectamente con la identidad de tu marca.",
-            }
+              title: "EDITOR DEL WIDGET",
+              description: "Trabaja sobre un borrador privado. Tus clientes no verán cambios hasta que publiques.",
+              side: "bottom",
+              align: "start",
+            },
           },
           {
-            element: "form",
+            element: "[data-tour='studio-preview']",
             popover: {
-              title: "COLORES DE LA MARCA",
-              description: "Cambia el color principal (botones), el color de fondo, y el color de los textos para crear tu diseño único.",
-              side: "top",
-              align: "start"
-            }
+              title: "PREVIEW REAL Y RESPONSIVE",
+              description: "Cambia entre móvil, tablet y escritorio. Esta vista usa el mismo renderer que producción.",
+              side: "right",
+              align: "start",
+            },
           },
           {
-            element: "iframe",
+            element: "[data-tour='studio-inspector']",
             popover: {
-              title: "VISTA PREVIA EN VIVO",
-              description: "Observa en tiempo real cómo se verá el widget para tus clientes mientras haces cambios en los colores.",
+              title: "PERSONALIZA CADA BLOQUE",
+              description: "Selecciona un bloque para editar contenido, posición, imagen, responsive y diseño.",
               side: "left",
-              align: "start"
-            }
-          }
+              align: "start",
+            },
+          },
         ]}
       />
     </>

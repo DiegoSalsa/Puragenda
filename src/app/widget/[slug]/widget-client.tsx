@@ -1,12 +1,31 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type CSSProperties,
+  type ElementType,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
+import {
+  widgetDesignDocumentSchema,
+  type WidgetDesignDocument,
+} from "@/core/widget-studio/schema";
+import {
+  WidgetDesignSlot,
+  type WidgetResolvedAsset,
+} from "@/components/widget-studio/widget-design-renderer";
 
 interface RecurringPlan {
   mode: "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM";
@@ -80,6 +99,9 @@ interface Props {
   slotInterval?: number;
   minAdvanceBookingMinutes?: number;
   promoBlocks?: PromoBlock[];
+  designDocument?: WidgetDesignDocument | null;
+  designAssets?: Record<string, WidgetResolvedAsset>;
+  previewMode?: boolean;
 }
 
 type Step = "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -209,15 +231,100 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [] }: Props) {
-  const pc = `#${primaryColor}`;
-  const bgColor = business.backgroundColor || "#0A0A0A";
-  const textColor = business.textColor || "#FFFFFF";
-  const textSecondary = business.textSecondary || `${textColor}66`;
-  const fontSize = business.fontSize || 14;
-  const cornerRadius = Math.max(0, Math.min(40, business.cornerRadius ?? 16));
-  const shadowStyle = business.shadowStyle || "soft";
-  const headerAlign = business.headerAlign || "left";
+function InlineSystemText({
+  as: Component,
+  systemId,
+  field,
+  editable,
+  multiline = false,
+  maxLength,
+  className,
+  style,
+  children,
+}: {
+  as: ElementType;
+  systemId: string;
+  field: "eyebrow" | "title" | "description";
+  editable: boolean;
+  multiline?: boolean;
+  maxLength: number;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
+  const commit = (event: FocusEvent<HTMLElement>) => {
+    if (!editable) return;
+    window.parent.postMessage({
+      source: "puragenda-widget-preview",
+      type: "INLINE_TEXT_COMMIT",
+      blockId: systemId,
+      field,
+      value: event.currentTarget.innerText.slice(0, maxLength),
+    }, window.location.origin);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!editable) return;
+    if (!multiline && event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.currentTarget.textContent = typeof children === "string" ? children : "";
+      event.currentTarget.blur();
+    }
+  };
+
+  return (
+    <Component
+      className={className}
+      style={style}
+      contentEditable={editable || undefined}
+      suppressContentEditableWarning={editable || undefined}
+      data-widget-inline-edit={editable ? `${systemId}:${field}` : undefined}
+      spellCheck={editable || undefined}
+      onBlur={commit}
+      onKeyDown={onKeyDown}
+    >
+      {children}
+    </Component>
+  );
+}
+
+export function WidgetClient({
+  business,
+  services,
+  primaryColor,
+  businessHours,
+  staffMembers,
+  maxServicesPerBooking = 1,
+  groupServicesByCategory = false,
+  depositRequired = false,
+  allowSameDayBookings = false,
+  slotInterval = 30,
+  minAdvanceBookingMinutes = 120,
+  promoBlocks = [],
+  designDocument: initialDesignDocument = null,
+  designAssets: initialDesignAssets = {},
+  previewMode = false,
+}: Props) {
+  const [liveDesignDocument, setLiveDesignDocument] = useState(initialDesignDocument);
+  const [liveDesignAssets, setLiveDesignAssets] = useState(initialDesignAssets);
+  const [previewInteraction, setPreviewInteraction] = useState<"design" | "test">("design");
+  const [previewSelectedId, setPreviewSelectedId] = useState<string | null>(null);
+  const designDocument = previewMode ? liveDesignDocument : initialDesignDocument;
+  const designAssets = previewMode ? liveDesignAssets : initialDesignAssets;
+  const inlineEditing = previewMode && previewInteraction === "design";
+  const pc = designDocument?.tokens.colors.primary || `#${primaryColor}`;
+  const bgColor = designDocument?.tokens.colors.background || business.backgroundColor || "#0A0A0A";
+  const textColor = designDocument?.tokens.colors.text || business.textColor || "#FFFFFF";
+  const textSecondary = designDocument?.tokens.colors.textMuted || business.textSecondary || `${textColor}66`;
+  const fontSize = designDocument?.tokens.typography.baseSize || business.fontSize || 14;
+  const cornerRadius = Math.max(0, Math.min(40, designDocument?.tokens.shape.radius ?? business.cornerRadius ?? 16));
+  const shadowStyle = designDocument?.tokens.shape.shadow || business.shadowStyle || "soft";
+  const headerAlign = designDocument?.shell.headerAlign || business.headerAlign || "left";
+  const shellMaxWidth = designDocument?.shell.maxWidth || 672;
   const isMultiService = maxServicesPerBooking > 1;
   const [step, setStep] = useState<Step>("service");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -236,6 +343,113 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const blockedRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (!previewMode) return;
+    const notifyReady = () => window.parent.postMessage({
+      source: "puragenda-widget-preview",
+      type: "PREVIEW_READY",
+    }, window.location.origin);
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent) return;
+      if (event.data?.source !== "puragenda-widget-studio") return;
+      if (event.data.type === "UPDATE_DOCUMENT") {
+        const parsed = widgetDesignDocumentSchema.safeParse(event.data.document);
+        if (parsed.success) setLiveDesignDocument(parsed.data);
+        if (event.data.assets && typeof event.data.assets === "object") {
+          setLiveDesignAssets(event.data.assets as Record<string, WidgetResolvedAsset>);
+        }
+      }
+      if (event.data.type === "SET_INTERACTION_MODE") {
+        setPreviewInteraction(event.data.mode === "test" ? "test" : "design");
+      }
+      if (event.data.type === "SET_SELECTED") {
+        setPreviewSelectedId(typeof event.data.id === "string" ? event.data.id : null);
+      }
+      if (event.data.type === "SET_STEP") {
+        const requested = event.data.step as Step;
+        if (requested === "service") {
+          setStep("service");
+        } else if (requested === "staff" && services[0]) {
+          setSelectedService(services[0]);
+          setSelectedStaff(null);
+          setStep("staff");
+        } else if (requested === "datetime" && services[0]) {
+          setSelectedService(services[0]);
+          setSelectedStaff(staffMembers?.[0] || null);
+          setStep("datetime");
+        } else if (requested === "details" && services[0]) {
+          const service = services[0];
+          const staff = staffMembers?.[0] || null;
+          const previewDate = buildDays(businessHours, allowSameDayBookings)[0] || addDays(new Date(), 1);
+          const previewSlot = buildSlots(
+            previewDate,
+            service.duration,
+            businessHours,
+            staff?.schedule,
+            slotInterval,
+          )[0] || {
+            start: setMinutes(setHours(previewDate, 10), 0),
+            end: addMinutes(setMinutes(setHours(previewDate, 10), 0), service.duration),
+          };
+          setSelectedService(service);
+          setSelectedStaff(staff);
+          setSelectedDate(previewDate);
+          setSelectedSlot(previewSlot);
+          setStep("details");
+        }
+      }
+      if (event.data.type === "RESET_SIMULATION") {
+        setStep("service");
+        setSelectedService(null);
+        setSelectedServices([]);
+        setSelectedStaff(null);
+        setSelectedDate(null);
+        setSelectedSlot(null);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    notifyReady();
+    return () => window.removeEventListener("message", onMessage);
+  }, [allowSameDayBookings, businessHours, previewMode, services, slotInterval, staffMembers]);
+
+  useEffect(() => {
+    if (!previewMode) return;
+    document.querySelectorAll(".widget-studio-preview-selected").forEach((element) => {
+      element.classList.remove("widget-studio-preview-selected");
+    });
+    if (!previewSelectedId) return;
+    const escaped = CSS.escape(previewSelectedId);
+    const selectedElement = document.querySelector(
+      `[data-widget-block-id="${escaped}"], [data-widget-system-id="${escaped}"]`,
+    );
+    selectedElement?.classList.add("widget-studio-preview-selected");
+  }, [designDocument, previewMode, previewSelectedId, step]);
+
+  function previewSelectableClass(id: string) {
+    if (!previewMode || previewInteraction !== "design") return "";
+    return `widget-studio-preview-selectable ${
+      previewSelectedId === id ? "widget-studio-preview-selected" : ""
+    }`;
+  }
+
+  function handlePreviewCapture(event: React.MouseEvent<HTMLElement>) {
+    if (!previewMode || previewInteraction !== "design") return;
+    const target = event.target as HTMLElement;
+    const selectable = target.closest<HTMLElement>("[data-widget-block-id], [data-widget-system-id]");
+    if (!selectable) return;
+    const id = selectable.dataset.widgetBlockId || selectable.dataset.widgetSystemId;
+    if (!id) return;
+    setPreviewSelectedId(id);
+    window.parent.postMessage({
+      source: "puragenda-widget-preview",
+      type: "BLOCK_SELECTED",
+      blockId: id,
+    }, window.location.origin);
+    if (target.closest("[data-widget-inline-edit]")) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }
 
   // ── Reward / Discount code state ──
   const [rewardCode, setRewardCode] = useState("");
@@ -448,12 +662,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }, [business.slug, business.apiKey]);
 
   useEffect(() => {
-    if (!selectedDate) return;
-    const timeoutId = window.setTimeout(() => {
+    if (!selectedDate || previewMode) return;
+    const timer = window.setTimeout(() => {
       void fetchBlocked(selectedDate, assignedStaffIds);
     }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [selectedDate, assignedStaffIds, fetchBlocked]);
+    return () => window.clearTimeout(timer);
+  }, [selectedDate, assignedStaffIds, fetchBlocked, previewMode]);
 
   const isSlotUnavailable = useCallback((slot: { start: Date; end: Date }) => {
     if (!splitStaffMode) return isBlocked(slot, blockedSlots);
@@ -640,6 +854,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
+    if (previewMode) {
+      setApiError("Modo vista previa: no se creará ninguna reserva.");
+      return;
+    }
     setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
     if (!selectedService || !selectedSlot || !isFormValid) return;
     if (loadingSlots) {
@@ -762,6 +980,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   async function handleRecurringConfirm() {
+    if (previewMode) {
+      setRecurringError("Modo vista previa: no se creará ninguna suscripción.");
+      return;
+    }
     if (!isFormValid) {
       setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
       setRecurringError("Completa nombre, correo y teléfono antes de confirmar.");
@@ -844,7 +1066,19 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         key={service.id}
         type="button"
         onClick={() => handleSelectService(service)}
-        className="group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+        className={`group relative overflow-hidden rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 ${
+          designDocument?.system.service.density === "compact"
+            ? "p-2.5"
+            : designDocument?.system.service.density === "spacious"
+              ? "p-5"
+              : "p-4"
+        } ${
+          designDocument?.system.service.cardStyle === "elevated"
+            ? "shadow-md hover:shadow-xl"
+            : designDocument?.system.service.cardStyle === "soft"
+              ? "border-transparent"
+              : "hover:shadow-lg"
+        }`}
         style={{
           borderColor: isSelected ? `${pc}60` : "var(--wborder)",
           background: isSelected ? `${pc}08` : "var(--wsubtle)",
@@ -864,7 +1098,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         )}
         <div className="relative flex items-start justify-between gap-3">
           <div className="flex min-w-0 gap-3">
-            {service.imageUrl && (
+            {service.imageUrl && designDocument?.system.service.showImages !== false && (
               <img
                 src={service.imageUrl}
                 alt={service.name}
@@ -873,14 +1107,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             )}
             <div className="min-w-0 space-y-1">
               <p className="font-medium">{service.name}</p>
-              {service.description && (
+              {service.description && designDocument?.system.service.showDescription !== false && (
                 <p className="text-sm" style={{ color: textSecondary }}>
                   {service.description}
                 </p>
               )}
               <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm"
+                  className={`${designDocument?.system.service.showDuration === false ? "hidden" : "inline-flex"} items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm`}
                   style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}
                 >
                   {service.bookingMode === "PRODUCTION" ? (
@@ -898,7 +1132,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   )}
                 </span>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm"
+                  className={`${designDocument?.system.service.showPrice === false ? "hidden" : "inline-flex"} items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm`}
                   style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}
                 >
                   {formatPrice(service.price)}
@@ -1010,6 +1244,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   return (
     <div
       className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
+      onClickCapture={handlePreviewCapture}
       style={{
         background: bgColor,
         ["--wp" as string]: pc,
@@ -1023,61 +1258,213 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         color: textColor,
       }}
     >
-      <div className="mx-auto flex w-full max-w-2xl flex-col overflow-hidden border transition-all duration-500" style={{ background: bgColor, color: textColor, borderColor: "var(--wborder)", borderRadius: `${cornerRadius}px`, boxShadow: shellShadow }}>
+      <div
+        data-widget-system-id="system.shell"
+        className={`mx-auto flex w-full flex-col overflow-hidden border transition-[box-shadow,border-radius] duration-200 ${previewSelectableClass("system.shell")}`}
+        style={{ maxWidth: `${shellMaxWidth}px`, background: bgColor, color: textColor, borderColor: "var(--wborder)", borderRadius: `${cornerRadius}px`, boxShadow: shellShadow }}
+      >
+        {designDocument && (
+          <WidgetDesignSlot
+            document={designDocument}
+            assets={designAssets}
+            slot="beforeHeader"
+            previewMode={previewMode}
+            editable={previewMode && previewInteraction === "design"}
+          />
+        )}
         {/* Header */}
-        <div className="border-b px-5 py-4 sm:px-6 relative overflow-hidden" style={{ background: `${bgColor}F2`, borderColor: "var(--wborder)", backdropFilter: "blur(12px)" }}>
+        <div
+          data-widget-system-id="system.header"
+          className={`relative overflow-hidden border-b ${
+            designDocument?.system.header.layout === "compact"
+              ? "px-4 py-2.5 sm:px-5"
+              : "px-5 py-4 sm:px-6"
+          } ${previewSelectableClass("system.header")}`}
+          style={{
+            background: `${bgColor}F2`,
+            borderColor: "var(--wborder)",
+            backdropFilter: "blur(12px)",
+            textAlign: designDocument?.system.header.layout === "centered" ? "center" : undefined,
+          }}
+        >
           <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc}40 100%)` }} />
-          <div className="relative flex items-center gap-2" style={{ justifyContent: headerAlign === "center" ? "center" : headerAlign === "right" ? "flex-end" : "space-between" }}>
-            <div className="flex items-center gap-3" style={{ textAlign: headerAlign as "left" | "center" | "right" }}>
-              {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
+          <div
+            className="relative flex items-center gap-2"
+            style={{
+              justifyContent: designDocument?.system.header.layout === "centered"
+                ? "center"
+                : headerAlign === "center"
+                  ? "center"
+                  : headerAlign === "right"
+                    ? "flex-end"
+                    : "space-between",
+            }}
+          >
+            <div
+              className={`flex items-center ${designDocument?.system.header.layout === "compact" ? "gap-2" : "gap-3"}`}
+              style={{ textAlign: designDocument?.system.header.layout === "centered" ? "center" : headerAlign as "left" | "center" | "right" }}
+            >
+              {business.logoUrl && designDocument?.system.header.showLogo !== false && (
+                <img
+                  src={business.logoUrl}
+                  alt={business.name}
+                  className={`${designDocument?.system.header.layout === "compact" ? "h-7 w-7" : "h-8 w-8"} rounded-lg object-cover`}
+                />
+              )}
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>Reserva online</p>
-                <h1 className="text-lg font-bold tracking-tight" style={{ color: textColor }}>{business.name}</h1>
+                {designDocument?.system.header.showEyebrow !== false && (
+                  <InlineSystemText
+                    as="p"
+                    systemId="system.header"
+                    field="eyebrow"
+                    editable={inlineEditing}
+                    maxLength={48}
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: textSecondary }}
+                  >
+                    {designDocument?.system.header.eyebrow || "Reserva online"}
+                  </InlineSystemText>
+                )}
+                <h1 className={`${designDocument?.system.header.layout === "compact" ? "text-base" : "text-lg"} font-bold tracking-tight`} style={{ color: textColor }}>{business.name}</h1>
               </div>
             </div>
-            {headerAlign === "left" && <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>}
+            {headerAlign === "left" && designDocument?.system.header.layout !== "centered" && (
+              <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>
+            )}
           </div>
           {step !== "success" && (
-            <div className={`mt-4 grid gap-2 text-[10px] sm:text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
-              {stepLabels.map((label, i) => (
-                <div key={label} className="rounded-full px-2 py-1.5 text-center transition-all duration-300" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
-                  {label}
+            <div
+              data-widget-system-id="system.progress"
+              className={`mt-4 ${previewSelectableClass("system.progress")}`}
+            >
+              {designDocument?.system.progress.variant === "minimal" ? (
+                <div className="h-1.5 overflow-hidden rounded-full" style={{ background: `${textSecondary}18` }}>
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ background: pc, width: `${((stepIdx + 1) / stepLabels.length) * 100}%` }}
+                  />
                 </div>
-              ))}
+              ) : (
+                <div className="grid gap-2 text-[10px] sm:text-xs" style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
+                  {stepLabels.map((label, i) => (
+                    <div
+                      key={label}
+                      className={designDocument?.system.progress.variant === "steps" ? "text-center" : "rounded-full px-2 py-1.5 text-center transition-all duration-200"}
+                      style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}
+                    >
+                      {designDocument?.system.progress.showLabels === false ? i + 1 : label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
+        {designDocument && (
+          <WidgetDesignSlot
+            document={designDocument}
+            assets={designAssets}
+            slot="afterHeader"
+            previewMode={previewMode}
+            editable={previewMode && previewInteraction === "design"}
+          />
+        )}
         {renderPromoBlocks("HEADER")}
 
         <div className="p-5 sm:p-6">
           {/* Step 1: Service */}
           {step === "service" && (
-            <div className="animate-fade-up space-y-4">
-              <div><h2 className="text-xl font-bold">1. {isMultiService ? "Selecciona servicios" : "Selecciona un servicio"}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : "Elige el servicio que quieras reservar."}</p></div>
+            <div
+              data-widget-system-id="system.service"
+              className={`animate-fade-up space-y-4 ${previewSelectableClass("system.service")}`}
+            >
+              {designDocument && (
+                <WidgetDesignSlot
+                  document={designDocument}
+                  assets={designAssets}
+                  step="service"
+                  slot="beforeIntro"
+                  previewMode={previewMode}
+                  editable={previewMode && previewInteraction === "design"}
+                />
+              )}
+              <div>
+                <h2 className="text-xl font-bold">
+                  1. {isMultiService ? "Selecciona servicios" : (
+                    <InlineSystemText
+                      as="span"
+                      systemId="system.service"
+                      field="title"
+                      editable={inlineEditing}
+                      maxLength={90}
+                    >
+                      {designDocument?.system.service.title || "Selecciona un servicio"}
+                    </InlineSystemText>
+                  )}
+                </h2>
+                <InlineSystemText
+                  as="p"
+                  systemId="system.service"
+                  field="description"
+                  editable={inlineEditing && !isMultiService}
+                  multiline
+                  maxLength={240}
+                  className="text-sm"
+                  style={{ color: textSecondary }}
+                >
+                  {isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : designDocument?.system.service.description || "Elige el servicio que quieras reservar."}
+                </InlineSystemText>
+              </div>
+              {designDocument && (
+                <WidgetDesignSlot
+                  document={designDocument}
+                  assets={designAssets}
+                  step="service"
+                  slot="afterIntro"
+                  previewMode={previewMode}
+                  editable={previewMode && previewInteraction === "design"}
+                />
+              )}
+              {designDocument && (
+                <WidgetDesignSlot
+                  document={designDocument}
+                  assets={designAssets}
+                  step="service"
+                  slot="beforeMain"
+                  previewMode={previewMode}
+                  editable={previewMode && previewInteraction === "design"}
+                />
+              )}
               {renderPromoBlocks("BETWEEN_SERVICES")}
               {!shouldGroupServices && (
-              <div className="grid gap-3">
+              <div
+                className={`grid gap-3 ${designDocument?.system.service.layout === "grid" ? "widget-service-grid" : ""}`}
+                data-widget-services
+                data-widget-columns={designDocument?.system.service.columns || 1}
+              >
                 {services.map((s) => {
                   const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
                   return (
                   <button key={s.id} type="button" onClick={() => handleSelectService(s)}
-                    className="group rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl relative overflow-hidden"
+                    className={`group rounded-2xl border text-left transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden ${
+                      designDocument?.system.service.density === "compact" ? "p-2.5" : designDocument?.system.service.density === "spacious" ? "p-5" : "p-4"
+                    } ${designDocument?.system.service.cardStyle === "elevated" ? "shadow-md hover:shadow-xl" : designDocument?.system.service.cardStyle === "soft" ? "border-transparent" : "hover:shadow-lg"}`}
                     style={{ borderColor: isSelected ? `${pc}60` : "var(--wborder)", background: isSelected ? `${pc}08` : "var(--wsubtle)" }}
                     onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.borderColor = `${pc}40`; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.borderColor = "var(--wborder)"; }}>
                     {isSelected && <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc} 100%)` }} />}
                     <div className="relative flex items-start justify-between gap-3">
                       <div className="flex min-w-0 gap-3">
-                        {s.imageUrl && <img src={s.imageUrl} alt={s.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />}
+                        {s.imageUrl && designDocument?.system.service.showImages !== false && <img src={s.imageUrl} alt={s.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />}
                         <div className="min-w-0 space-y-1">
                           <p className="font-medium">{s.name}</p>
-                          {s.description && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
+                          {s.description && designDocument?.system.service.showDescription !== false && <p className="text-sm" style={{ color: textSecondary }}>{s.description}</p>}
                         <div className="mt-2 flex flex-wrap gap-2 text-xs" style={{ color: textSecondary }}>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>
+                          <span className={`${designDocument?.system.service.showDuration === false ? "hidden" : "inline-flex"} items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium shadow-sm`} style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>
                             {s.bookingMode === "PRODUCTION"
                               ? <><CalendarDays className="h-3.5 w-3.5" />{s.productionScheduleMode === "CUSTOM" ? "Períodos de entrega" : "Cupos semanales"}</>
                               : <><Clock3 className="h-3.5 w-3.5" />{s.duration} min</>}
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
+                          <span className={`${designDocument?.system.service.showPrice === false ? "hidden" : "inline-flex"} items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm`} style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
                         </div>
                         </div>
                       </div>
@@ -1141,6 +1528,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   })}
                 </div>
               )}
+              {designDocument && (
+                <WidgetDesignSlot
+                  document={designDocument}
+                  assets={designAssets}
+                  step="service"
+                  slot="afterMain"
+                  previewMode={previewMode}
+                  editable={previewMode && previewInteraction === "design"}
+                />
+              )}
               {isMultiService && selectedServices.length > 0 && (
                 <div className="space-y-4 pt-2">
                   <div className="rounded-2xl border p-4 text-sm space-y-1.5 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
@@ -1166,7 +1563,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               <div><h2 className="text-xl font-bold">Elige las opciones</h2><p className="text-sm" style={{ color: textSecondary }}>{selectedService?.bookingMode === "PRODUCTION" ? "Personaliza tu encargo antes de elegir un cupo." : "Ajustaremos el precio y la duracion antes de mostrar horarios."}</p></div>
 
-              <div className="space-y-4">
+              <div className={designDocument?.system.staff.layout === "grid" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
                 {activeServices.map((service) => (
                   service.optionCategories.length > 0 && (
                     <div key={service.id} className="space-y-3">
@@ -1607,14 +2004,23 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
           {/* Step 1.5: Staff (only if multi-staff) */}
           {step === "staff" && selectedService && splitStaffMode && (
-            <div className="animate-fade-up space-y-4">
+            <div
+              data-widget-system-id="system.staff"
+              className={`animate-fade-up space-y-4 ${previewSelectableClass("system.staff")}`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Equipo</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold">2. Elige profesionales</h2>
-                <p className="text-sm" style={{ color: textSecondary }}>Asigna un profesional para cada servicio seleccionado.</p>
+                <h2 className="text-xl font-bold">
+                  2. <InlineSystemText as="span" systemId="system.staff" field="title" editable={inlineEditing} maxLength={90}>
+                    {designDocument?.system.staff.title || "Elige profesionales"}
+                  </InlineSystemText>
+                </h2>
+                <InlineSystemText as="p" systemId="system.staff" field="description" editable={inlineEditing} multiline maxLength={240} className="text-sm" style={{ color: textSecondary }}>
+                  {designDocument?.system.staff.description || "Asigna un profesional para cada servicio seleccionado."}
+                </InlineSystemText>
               </div>
               {commonStaffForSelectedServices.length > 0 && (
                 <button
@@ -1664,9 +2070,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                               style={active ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
                             >
                               <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
-                                  {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
-                                </div>
+                                {designDocument?.system.staff.showImages !== false && (
+                                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
+                                    {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
+                                  </div>
+                                )}
                                 <span className="font-medium">{staff.name}</span>
                               </div>
                               {active && <CheckCircle2 className="h-4 w-4" style={{ color: pc }} />}
@@ -1689,12 +2097,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
 
           {step === "staff" && selectedService && filteredStaff.length > 0 && !splitStaffMode && (
-            <div className="animate-fade-up space-y-4">
+            <div
+              data-widget-system-id="system.staff"
+              className={`animate-fade-up space-y-4 ${previewSelectableClass("system.staff")}`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
               </div>
-              <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona quién te atenderá.</p></div>
+              <div>
+                <h2 className="text-xl font-bold">
+                  2. <InlineSystemText as="span" systemId="system.staff" field="title" editable={inlineEditing} maxLength={90}>
+                    {designDocument?.system.staff.title || "Elige un profesional"}
+                  </InlineSystemText>
+                </h2>
+                <InlineSystemText as="p" systemId="system.staff" field="description" editable={inlineEditing} multiline maxLength={240} className="text-sm" style={{ color: textSecondary }}>
+                  {designDocument?.system.staff.description || "Selecciona quién te atenderá."}
+                </InlineSystemText>
+              </div>
               {canChooseStaffPerService && activeServices.length > 1 && (
                 <button
                   type="button"
@@ -1714,7 +2134,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <ChevronRight className="h-5 w-5" style={{ color: pc }} />
                 </button>
               )}
-              <div className="grid gap-3">
+              <div className={designDocument?.system.staff.layout === "grid" ? "grid gap-3 sm:grid-cols-2" : "grid gap-3"}>
                 {filteredStaff.map((staff) => (
                   <button key={staff.id} type="button" onClick={() => { setSelectedStaff(staff); setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
                     className="group rounded-2xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
@@ -1722,9 +2142,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${pc}40`)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--wborder)")}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
-                          {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
-                        </div>
+                        {designDocument?.system.staff.showImages !== false && (
+                          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-sm font-bold" style={{ background: `${pc}15`, color: pc }}>
+                            {staff.imageUrl ? <img src={staff.imageUrl} alt={staff.name} className="h-full w-full object-cover" /> : staff.name.charAt(0)}
+                          </div>
+                        )}
                         <p className="font-medium">{staff.name}</p>
                       </div>
                       <ChevronRight className="h-4 w-4 opacity-25" style={{ color: textColor }} />
@@ -1737,7 +2159,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
           {/* Step 2: DateTime */}
           {step === "datetime" && selectedService && (
-            <div className="animate-fade-up space-y-5">
+            <div
+              data-widget-system-id="system.datetime"
+              className={`animate-fade-up space-y-5 ${previewSelectableClass("system.datetime")}`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep(needsStaffStep ? "staff" : "service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <div className="flex gap-2">
@@ -1745,7 +2170,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border opacity-60" style={{ color: textColor, borderColor: `${textColor}15` }}>{selectedStaff.name}</span>}
                 </div>
               </div>
-              <div><h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
+              <div>
+                <h2 className="text-xl font-bold">
+                  {needsStaffStep ? "3" : "2"}. <InlineSystemText as="span" systemId="system.datetime" field="title" editable={inlineEditing} maxLength={90}>
+                    {designDocument?.system.datetime.title || "Elige fecha y hora"}
+                  </InlineSystemText>
+                </h2>
+                <InlineSystemText as="p" systemId="system.datetime" field="description" editable={inlineEditing} multiline maxLength={240} className="text-sm" style={{ color: textSecondary }}>
+                  {designDocument?.system.datetime.description || "Selecciona un día y luego una hora disponible."}
+                </InlineSystemText>
+              </div>
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
@@ -1760,7 +2194,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     return (
                       <button key={day.toISOString()} type="button" disabled={!staffWorking}
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
-                        className={`rounded-2xl border px-2 py-3 text-center transition-all duration-200 ${!staffWorking ? "opacity-30 cursor-not-allowed" : "hover:-translate-y-1 hover:shadow-md"}`}
+                        className={`rounded-2xl border px-2 text-center transition-all duration-200 ${
+                          designDocument?.system.datetime.density === "compact" ? "py-2" : "py-3"
+                        } ${!staffWorking ? "opacity-30 cursor-not-allowed" : "hover:-translate-y-1 hover:shadow-md"}`}
                         style={sel ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                         <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: es }))}</p>
                         <p className="text-lg font-bold leading-none">{format(day, "d")}</p>
@@ -1782,7 +2218,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
                         return (
                           <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => setSelectedSlot(slot)}
-                            className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${blocked ? "cursor-not-allowed opacity-20 line-through" : "hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5"}`}
+                            className={`rounded-xl border px-3 text-sm font-medium transition-all duration-200 ${
+                              designDocument?.system.datetime.density === "compact" ? "py-1.5" : "py-2.5"
+                            } ${blocked ? "cursor-not-allowed opacity-20 line-through" : "hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5"}`}
                             style={active && !blocked ? { borderColor: `${pc}60`, background: `${pc}20`, color: pc, fontWeight: 700 } : blocked ? { borderColor: "var(--wborder)" } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                             {format(slot.start, "HH:mm")}
                           </button>
@@ -1801,12 +2239,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
           {/* Step 3: Details */}
           {step === "details" && selectedService && selectedSlot && (
-            <div className="animate-fade-up space-y-5">
+            <div
+              data-widget-system-id="system.details"
+              className={`animate-fade-up space-y-5 ${previewSelectableClass("system.details")}`}
+            >
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setStep("datetime")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs" style={{ background: `${pc}15`, color: pc }}>Paso final</span>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm" style={{ color: textSecondary }}>Te enviaremos la confirmación.</p></div>
+              <div>
+                <h2 className="text-xl font-bold">
+                  {hasMultipleFilteredStaff ? "4" : "3"}. <InlineSystemText as="span" systemId="system.details" field="title" editable={inlineEditing} maxLength={90}>
+                    {designDocument?.system.details.title || "Completa tus datos"}
+                  </InlineSystemText>
+                </h2>
+                <InlineSystemText as="p" systemId="system.details" field="description" editable={inlineEditing} multiline maxLength={240} className="text-sm" style={{ color: textSecondary }}>
+                  {designDocument?.system.details.description || "Te enviaremos la confirmación."}
+                </InlineSystemText>
+              </div>
               <div className="rounded-2xl border p-5 text-sm space-y-3 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                 <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: "var(--wborder)" }}>
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: `${pc}15`, color: pc }}>
@@ -1845,10 +2295,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               <form onSubmit={handleConfirm} className="space-y-4">
                 {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
-                  <div key={field} className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
-                    <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} required
-                      className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
+                  <div key={field} className={designDocument?.system.details.labelStyle === "floating" ? "relative pt-2" : "space-y-1.5"}>
+                    <label
+                      className={`flex items-center gap-1.5 text-sm opacity-70 ${
+                        designDocument?.system.details.labelStyle === "floating"
+                          ? "absolute left-3 top-0 z-10 rounded px-1 text-xs"
+                          : ""
+                      }`}
+                      style={{
+                        color: textColor,
+                        background: designDocument?.system.details.labelStyle === "floating" ? bgColor : undefined,
+                      }}
+                    >
+                      <Icon className="h-3.5 w-3.5" />{label}
+                    </label>
+                    <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={designDocument?.system.details.labelStyle === "floating" ? " " : placeholder} required
+                      className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md ${
+                        designDocument?.system.details.labelStyle === "floating" ? "pt-4" : ""
+                      }`}
                       style={!touched[field] ? { borderColor: "var(--wborder)", background: "var(--wsubtle)" } : validation[field] ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
                     {touched[field] && !validation[field] && <p className="text-xs text-red-400">Campo inválido</p>}
                   </div>
@@ -1966,14 +2430,38 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
 
+        {designDocument && (
+          <WidgetDesignSlot
+            document={designDocument}
+            assets={designAssets}
+            slot="beforeFooter"
+            previewMode={previewMode}
+            editable={previewMode && previewInteraction === "design"}
+          />
+        )}
         {renderPromoBlocks("FOOTER")}
-        <div className="mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium" style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}>
-          <span>Powered by</span>
-          <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
-            <span style={{ color: pc, fontWeight: 700, letterSpacing: "-0.02em" }}>Puragenda</span>
-            <Sparkles className="h-3 w-3" style={{ color: pc }} />
-          </a>
-        </div>
+        {(!designDocument || designDocument.shell.showPoweredBy) && (
+          <div
+            data-widget-system-id="system.footer"
+            className={`mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium ${previewSelectableClass("system.footer")}`}
+            style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}
+          >
+            <span>Powered by</span>
+            <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+              <span style={{ color: pc, fontWeight: 700, letterSpacing: "-0.02em" }}>Puragenda</span>
+              <Sparkles className="h-3 w-3" style={{ color: pc }} />
+            </a>
+          </div>
+        )}
+        {designDocument && (
+          <WidgetDesignSlot
+            document={designDocument}
+            assets={designAssets}
+            slot="afterFooter"
+            previewMode={previewMode}
+            editable={previewMode && previewInteraction === "design"}
+          />
+        )}
       </div>
     </div>
   );

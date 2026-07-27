@@ -23,6 +23,34 @@ enum WidgetPromoPlacement {
   FOOTER
 }
 
+enum WidgetAssetStatus {
+  PROCESSING
+  READY
+  FAILED
+  ARCHIVED
+}
+
+enum WidgetAssetUsage {
+  IMAGE
+  BACKGROUND
+  BANNER
+  POSTER
+}
+
+enum WidgetDesignEventType {
+  DRAFT_CREATED
+  DRAFT_SAVED
+  DESIGN_PUBLISHED
+  VERSION_RESTORED
+  VERSION_ROLLED_BACK
+  ASSET_UPLOADED
+  ASSET_ARCHIVED
+  PUBLISH_FAILED
+  MIGRATION_STARTED
+  MIGRATION_CANCELLED
+  RENDER_FALLBACK
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -44,6 +72,9 @@ model User {
   adminLoginCodes           AdminLoginCode[]
   platformDiscountCodes     PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
   adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
+  widgetDesignVersions      WidgetDesignVersion[]      @relation("WidgetDesignVersionPublisher")
+  widgetAssets              WidgetAsset[]              @relation("WidgetAssetCreator")
+  widgetDesignEvents        WidgetDesignEvent[]        @relation("WidgetDesignEventActor")
 }
 
 // ==========================================
@@ -230,6 +261,9 @@ model Business {
   widgetThemes                WidgetTheme[]
   widgetPromoBlocks           WidgetPromoBlock[]
   accessProfiles              AccessProfile[]
+  widgetDesign                WidgetDesign?
+  widgetAssets                WidgetAsset[]
+  widgetDesignEvents          WidgetDesignEvent[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -284,6 +318,116 @@ model WidgetPromoBlock {
 
   @@index([businessId, placement, position])
   @@index([businessId, isVisible, discountStartsAt, discountEndsAt])
+}
+
+model WidgetDesign {
+  id                 String   @id @default(cuid())
+  businessId         String   @unique
+  draftDocument      Json
+  draftSchemaVersion Int      @default(1)
+  draftRevision      Int      @default(1)
+  publishedVersionId String?  @unique
+  fallbackVersionId  String?  @unique
+  rendererEnabled    Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  business             Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  versions             WidgetDesignVersion[]  @relation("WidgetDesignVersions")
+  publishedVersion     WidgetDesignVersion?   @relation("PublishedWidgetDesignVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  fallbackVersion      WidgetDesignVersion?   @relation("FallbackWidgetDesignVersion", fields: [fallbackVersionId], references: [id], onDelete: SetNull)
+  draftAssetReferences WidgetAssetReference[] @relation("WidgetDraftAssetReferences")
+  events               WidgetDesignEvent[]
+
+  @@index([publishedVersionId])
+  @@index([fallbackVersionId])
+}
+
+model WidgetDesignVersion {
+  id                String   @id @default(cuid())
+  designId          String
+  versionNumber     Int
+  schemaVersion     Int
+  document          Json
+  checksum          String
+  publishedByUserId String
+  changeSummary     String?
+  createdAt         DateTime @default(now())
+
+  design          WidgetDesign           @relation("WidgetDesignVersions", fields: [designId], references: [id], onDelete: Cascade)
+  publishedBy     User                   @relation("WidgetDesignVersionPublisher", fields: [publishedByUserId], references: [id], onDelete: Restrict)
+  publishedFor    WidgetDesign?          @relation("PublishedWidgetDesignVersion")
+  fallbackFor     WidgetDesign?          @relation("FallbackWidgetDesignVersion")
+  assetReferences WidgetAssetReference[] @relation("WidgetVersionAssetReferences")
+
+  @@unique([designId, versionNumber])
+  @@index([designId, createdAt])
+  @@index([checksum])
+}
+
+model WidgetAsset {
+  id              String            @id @default(cuid())
+  businessId      String
+  provider        String
+  publicId        String
+  url             String
+  mimeType        String
+  byteSize        Int
+  width           Int
+  height          Int
+  altDefault      String?
+  blurDataUrl     String?
+  status          WidgetAssetStatus @default(PROCESSING)
+  createdByUserId String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  business   Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdBy  User                   @relation("WidgetAssetCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  references WidgetAssetReference[]
+
+  @@unique([provider, publicId])
+  @@index([businessId, status, createdAt])
+  @@index([createdByUserId])
+}
+
+model WidgetAssetReference {
+  id        String           @id @default(cuid())
+  assetId   String
+  designId  String?
+  versionId String?
+  blockId   String
+  usage     WidgetAssetUsage
+  createdAt DateTime         @default(now())
+
+  asset   WidgetAsset          @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  design  WidgetDesign?        @relation("WidgetDraftAssetReferences", fields: [designId], references: [id], onDelete: Cascade)
+  version WidgetDesignVersion? @relation("WidgetVersionAssetReferences", fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, designId, blockId, usage])
+  @@unique([assetId, versionId, blockId, usage])
+  @@index([designId])
+  @@index([versionId])
+  @@index([assetId])
+}
+
+model WidgetDesignEvent {
+  id          String                @id @default(cuid())
+  businessId  String
+  designId    String?
+  actorUserId String?
+  type        WidgetDesignEventType
+  metadata    Json?
+  createdAt   DateTime              @default(now())
+
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  design   WidgetDesign? @relation(fields: [designId], references: [id], onDelete: SetNull)
+  actor    User?         @relation("WidgetDesignEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, createdAt])
+  @@index([designId, createdAt])
+  @@index([actorUserId])
 }
 
 model AccessProfile {

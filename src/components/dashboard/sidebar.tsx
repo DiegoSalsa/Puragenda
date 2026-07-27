@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Gift,
   GripVertical,
+  History,
   Layers,
   LayoutDashboard,
   Mail,
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
     children: [
       { href: "/dashboard/appearance/personalizado", label: "Personalizar", icon: Paintbrush },
       { href: "/dashboard/appearance/temas", label: "Temas", icon: Layers },
+      { href: "/dashboard/appearance/historial", label: "Historial", icon: History },
     ],
   },
   { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
@@ -201,7 +203,7 @@ function SidebarContent({
         ) : null}
       </div>
 
-      <nav id="tutorial-nav" className={`min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "p-2" : "p-4"}`}>
+      <nav id="tutorial-nav" className={`app-sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "is-collapsed p-2" : "p-4"}`}>
         {collapsed && onToggleCollapsed && (
           <button
             onClick={onToggleCollapsed}

@@ -3,6 +3,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { TemasGallery } from "./temas-gallery";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { parseWidgetDesignDocument } from "@/core/widget-studio/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -20,19 +21,27 @@ export default async function TemasPage() {
     where: { businessId: business.id },
     orderBy: { updatedAt: "desc" },
   });
+  const studioDesign = await prisma.widgetDesign.findUnique({
+    where: { businessId: business.id },
+    select: { draftDocument: true, draftRevision: true },
+  });
+  const studioDocument = studioDesign
+    ? parseWidgetDesignDocument(studioDesign.draftDocument)
+    : null;
 
   return (
     <TemasGallery
       currentColors={{
-        primaryColor: business.primaryColor,
-        secondaryColor: business.secondaryColor,
-        backgroundColor: business.backgroundColor,
-        textColor: business.textColor,
-        textMutedColor: business.textMutedColor,
+        primaryColor: studioDocument?.tokens.colors.primary || business.primaryColor,
+        secondaryColor: studioDocument?.tokens.colors.secondary || business.secondaryColor,
+        backgroundColor: studioDocument?.tokens.colors.background || business.backgroundColor,
+        textColor: studioDocument?.tokens.colors.text || business.textColor,
+        textMutedColor: studioDocument?.tokens.colors.textMuted || business.textMutedColor,
       }}
-      currentFontSize={business.widgetFontSize}
+      currentFontSize={studioDocument?.tokens.typography.baseSize || business.widgetFontSize}
       currentLogoUrl={business.logoUrl ?? undefined}
       widgetSlug={business.slug}
+      studioRevision={studioDesign?.draftRevision}
       savedThemes={savedThemes.map((theme) => ({
         id: theme.id,
         name: theme.name,

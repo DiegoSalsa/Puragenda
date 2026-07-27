@@ -44,33 +44,57 @@ La preview permanece visible con `sticky` solo cuando existe altura suficiente. 
 
 ### Modo Avanzado
 
-Tres zonas:
+Dos zonas permanentes:
 
 | Zona | Ancho orientativo | Función |
 | --- | ---: | --- |
 | Biblioteca y capas | 248–288 px | Agregar bloques, navegar secciones y ordenar |
 | Canvas | Flexible, mínimo 420 px | Ver y seleccionar el widget real |
-| Inspector | 304–360 px | Editar propiedades del bloque seleccionado |
+
+Las propiedades frecuentes se muestran en una barra contextual horizontal, situada entre los controles de viewport y el canvas. Los ajustes poco frecuentes se abren en un drawer temporal sobre el borde derecho. El drawer no reserva ancho ni crea una tercera columna.
 
 Reglas:
 
 - los paneles laterales son colapsables;
 - el canvas conserva el centro disponible;
 - no hay scroll horizontal de página;
-- cada panel tiene scroll interno cuando corresponde;
+- la estructura puede desplazarse sin mostrar una barra visual permanente;
+- el canvas exterior no tiene scroll vertical: el contenido se desplaza únicamente dentro del widget;
 - el header de acciones permanece visible;
-- a menos de 1100 px se muestra solo un panel lateral a la vez;
-- a menos de 760 px se usa el flujo móvil descrito más abajo.
+- entre 800 y 1199 px se conservan la estructura compacta y el canvas;
+- a menos de 800 px se usa el flujo móvil descrito más abajo.
+
+### Modelo operativo del Studio
+
+El modo Avanzado no duplica controles entre paneles. La responsabilidad de cada zona es única:
+
+- **Pasos:** cambia la pantalla simulada entre Servicios, Profesionales, Fecha y hora, y Datos del cliente;
+- **Capas:** muestra la jerarquía completa, incluidos los componentes funcionales protegidos;
+- **Añadir:** incorpora contenido visual en el slot activo;
+- **Canvas:** selecciona el componente real y refleja el documento local de inmediato;
+- **Barra contextual:** concentra las propiedades de uso diario sobre el widget, con el patrón de una cinta de edición;
+- **Ajustes detallados:** abre un drawer solo cuando se solicita y nunca duplica la barra contextual.
+
+Los textos editables se modifican directamente sobre el canvas mediante `contenteditable`. El cursor comunica la acción disponible: `text` al escribir y `pointer` al seleccionar componentes. El inspector detallado conserva una alternativa de formulario para accesibilidad y propiedades avanzadas, pero no es la vía principal para editar contenido.
+
+El canvas tiene dos comportamientos explícitos:
+
+- **Diseñar:** cualquier click selecciona el componente bajo el cursor y nunca avanza la reserva;
+- **Probar:** permite recorrer el flujo con datos simulados, sin consultas destructivas ni creación de citas.
+
+Los cambios visuales se envían directamente al renderer mediante mensajería same-origin. El debounce de autosave no controla la preview: solo confirma el borrador en segundo plano. Las escrituras se serializan para evitar carreras y, si otra sesión guardó antes, el cliente realiza una combinación de tres vías sobre el último borrador antes de reintentar. La interfaz no obliga al usuario a resolver un “conflicto de edición” técnico ni a recargar manualmente.
+
+Los componentes funcionales del widget son capas protegidas. El usuario puede cambiar su presentación —títulos, descripciones, distribución, densidad, imágenes visibles y estilos de tarjetas o campos— pero los datos reales y las reglas de reserva permanecen administrados desde Servicios, Profesionales y Configuración.
 
 ## Editor en tablet y móvil
 
-En pantallas pequeñas no se intenta comprimir tres paneles.
+En pantallas pequeñas no se comprimen paneles laterales.
 
 La experiencia se divide en:
 
 1. canvas a ancho completo;
-2. barra inferior con `Agregar`, `Capas`, `Editar`, `Preview`;
-3. panel inferior deslizable para biblioteca o inspector;
+2. barra inferior con `Pasos`, `Agregar`, `Capas`, `Editar` y `Lienzo`;
+3. panel inferior deslizable para estructura, biblioteca o ajustes detallados;
 4. encabezado compacto con estado y Publicar.
 
 El usuario puede seleccionar un bloque tocándolo. Los handles deben tener al menos 44 × 44 px. Reordenar por drag and drop siempre tiene alternativa “Mover arriba/abajo”.
@@ -93,7 +117,9 @@ El `iframe` no recibe el documento completo en query strings. Usa una sesión de
 - Escritorio: 1200 px
 - Embed personalizado: ancho ingresado entre 320 y 1600 px
 
-La altura es automática o desplazable según el paso del widget. El editor debe permitir probar todos los pasos con datos simulados seguros, sin crear reservas.
+Cada preset adapta su altura al espacio vertical disponible y el contenido se desplaza dentro del `iframe`. El canvas exterior recorta el excedente vertical y nunca añade un segundo desplazamiento. El editor no calcula la altura exterior a partir del contenido del documento porque ese acoplamiento crea bucles de `resize`, saltos de scrollbar y “tiriteo” al cambiar de paso o estilo.
+
+El editor debe permitir probar todos los pasos con datos simulados seguros, sin crear reservas. Cambiar entre Móvil, Tablet y Escritorio solo modifica el viewport simulado y el zoom de ajuste; no remonta el renderer ni altera el borrador.
 
 ### Zoom del canvas
 

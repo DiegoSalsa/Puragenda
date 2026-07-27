@@ -2,7 +2,7 @@
 
 import { CircleHelp } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 
@@ -312,38 +312,67 @@ const TOURS: Record<string, TourDefinition> = {
     ],
   },
   "/dashboard/appearance/personalizado": {
-    title: "Ayuda del editor visual",
+    title: "Ayuda de Puragenda Studio",
     steps: [
       {
-        selectors: ["[data-tour='appearance-preview']"],
+        selectors: ["[data-tour='studio-interaction']", "[data-tour='widget-studio']"],
         popover: {
-          title: "Vista previa en vivo",
+          title: "Diseñar o probar",
           description:
-            "Este es el widget que verán tus clientes. Permanece visible mientras modificas la identidad y los bloques promocionales.",
+            "En Diseñar, los clics seleccionan partes del widget y nunca avanzan una reserva. En Probar puedes recorrer el flujo completo de forma segura, sin crear citas.",
+          side: "bottom",
+          align: "center",
+        },
+      },
+      {
+        selectors: ["[data-tour='studio-layers']"],
+        popover: {
+          title: "Pasos, capas y contenido",
+          description:
+            "Cambia directamente entre Servicio, Profesional, Fecha y datos del cliente. Capas muestra la estructura protegida y Añadir incorpora textos, imágenes, banners, botones y secciones.",
           side: "right",
           align: "start",
         },
       },
       {
-        selectors: ["[data-tour='appearance-controls']"],
+        selectors: ["[data-tour='studio-preview']"],
         popover: {
-          title: "Diseño y contenido",
+          title: "Lienzo en tiempo real",
           description:
-            "Ajusta colores, tipografía, radio, sombras y alineación. También puedes subir imágenes y decidir dónde aparecen.",
+            "Los cambios aparecen aquí al instante. En Diseñar puedes seleccionar componentes directamente; también puedes arrastrar una imagen al lienzo para insertarla.",
+          side: "right",
+          align: "start",
+        },
+      },
+      {
+        selectors: ["[data-tour='studio-inspector']"],
+        popover: {
+          title: "Un solo inspector",
+          description:
+            "Este panel concentra todas las propiedades del elemento seleccionado. El contenido real de servicios, profesionales y disponibilidad está protegido, pero su presentación sí se puede personalizar.",
           side: "left",
           align: "start",
         },
       },
       {
-        selectors: ["[data-tour='save-theme']"],
+        selectors: ["[data-tour='widget-studio']"],
         popover: {
-          title: "Guardar como tema",
+          title: "Borrador y publicación",
           description:
-            "Ponle nombre y categoría a esta combinación para reutilizarla más tarde desde la galería de temas.",
+            "El borrador se guarda automáticamente. Publicar crea una versión estable para clientes; el historial permite restaurar una versión anterior sin perder el diseño actual.",
           side: "top",
           align: "start",
         },
       },
+    ],
+  },
+  "/dashboard/appearance/historial": {
+    title: "Ayuda del historial",
+    steps: [
+      pageHeading(
+        "Historial de publicaciones",
+        "Cada publicación es inmutable. Puedes abrir su preview o restaurarla a un nuevo borrador sin cambiar el widget público."
+      ),
     ],
   },
   "/dashboard/appearance/temas": {
@@ -351,7 +380,7 @@ const TOURS: Record<string, TourDefinition> = {
     steps: [
       pageHeading(
         "Galería de temas",
-        "Explora diseños preparados y tus propias configuraciones guardadas sin alterar el widget hasta que decidas aplicarlas."
+        "Explora diseños preparados y tus propias configuraciones guardadas sin alterar el widget público hasta que publiques el borrador."
       ),
       {
         selectors: ["[data-tour='theme-filters']"],
@@ -522,7 +551,7 @@ export function ContextualHelpButton() {
     };
   }, [pathname]);
 
-  function startTour() {
+  const startTour = useCallback(() => {
     activeTour.current?.destroy();
     const tour = getTour(pathname);
     const steps = resolveSteps(tour.steps);
@@ -557,7 +586,13 @@ export function ContextualHelpButton() {
 
     activeTour.current = instance;
     instance.drive();
-  }
+  }, [pathname]);
+
+  useEffect(() => {
+    const openTour = () => startTour();
+    document.addEventListener("puragenda:start-contextual-help", openTour);
+    return () => document.removeEventListener("puragenda:start-contextual-help", openTour);
+  }, [startTour]);
 
   return (
     <button

@@ -9,7 +9,7 @@ export default function AppearanceLayout({ children }: { children: React.ReactNo
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Apariencia</h1>
-          <p className="text-sm text-muted-foreground">Personaliza los colores y logo de tu widget de reservas.</p>
+          <p className="text-sm text-muted-foreground">Diseña, previsualiza, publica y restaura tu widget de reservas.</p>
         </div>
       </div>
       {children}

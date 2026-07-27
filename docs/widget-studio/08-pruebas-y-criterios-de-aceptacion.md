@@ -308,7 +308,63 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** no se puede eliminar ni invalidar el bloque funcional requerido del paso activo.
 
-### AC-11 — Reserva completa
+### AC-11 — Preview local inmediata
+
+**Dado** el Studio en modo Diseñar
+
+**Cuando** se modifica texto, distribución, visibilidad o estilo
+
+**Entonces** el cambio aparece en el `iframe` durante la misma interacción, sin esperar el autosave, sin recargar el renderer y sin perder el paso seleccionado.
+
+### AC-12 — Interacción Diseñar/Probar
+
+**Dado** el paso Servicios en el canvas
+
+**Cuando** se pulsa una tarjeta en modo Diseñar
+
+**Entonces** se selecciona `system.service` y el flujo no avanza.
+
+**Cuando** se pulsa la misma tarjeta en modo Probar
+
+**Entonces** la simulación avanza al siguiente paso aplicable sin crear reservas ni escribir datos de clientes.
+
+### AC-13 — Inspector único
+
+**Dada** cualquier selección del canvas, Pasos o Capas
+
+**Entonces** las propiedades frecuentes aparecen en una sola barra contextual sobre el widget, su título coincide con la selección y no aparece una segunda copia fija a la derecha.
+
+**Cuando** se pulsa `Más ajustes`
+
+**Entonces** se abre un único drawer superpuesto que se puede cerrar sin perder selección, paso ni scroll.
+
+### AC-14 — Navegación segura entre pasos
+
+**Dado** un borrador con datos reales del negocio
+
+**Cuando** el editor abre directamente Profesionales, Fecha y hora o Datos del cliente desde Pasos
+
+**Entonces** el renderer prepara datos simulados suficientes, no consulta bloqueos de producción y no genera reservas.
+
+### AC-15 — Canvas estable y responsive
+
+**Dado** el Studio en cualquier paso y con cualquier estilo de componente
+
+**Cuando** se cambia repetidamente entre Móvil, Tablet y Escritorio, se modifica el estilo o se inserta una imagen
+
+**Entonces** el viewport conserva dimensiones estables, no entra en bucles de redimensionamiento, no parpadea, no deja paneles vacíos y mantiene visible la barra contextual.
+
+La matriz mínima se ejecuta en 390, 944 y 1280 px de ancho de navegador. En cada tamaño se comprueba también que no exista scroll horizontal de la página, que el canvas exterior no tenga scroll vertical y que la navegación inferior móvil pueda abrir `Pasos`, `Agregar`, `Capas`, `Editar` y cerrar los paneles con `Lienzo`.
+
+### AC-16 — Edición directa y sincronización
+
+**Dado** un texto editable del widget
+
+**Cuando** el usuario lo modifica directamente en el canvas y luego realiza más cambios antes de que termine el guardado anterior
+
+**Entonces** el cursor es de texto, el contenido local no se pierde, las escrituras se serializan y el estado termina en `Guardado` sin mostrar conflictos técnicos ni exigir una recarga.
+
+### AC-17 — Reserva completa
 
 **Dado** cada fixture funcional
 
@@ -316,7 +372,7 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** la reserva creada es equivalente a la del renderer legacy.
 
-### AC-12 — Aislamiento
+### AC-18 — Aislamiento
 
 **Dado** un id de diseño, versión o activo de otro negocio
 
@@ -324,7 +380,7 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** la operación es rechazada sin revelar existencia.
 
-### AC-13 — Profesional autorizado
+### AC-19 — Profesional autorizado
 
 **Dado** un profesional con `appearance.manage`
 
@@ -332,13 +388,13 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** ve Apariencia y puede editar/publicar según la política aprobada, sin obtener otros permisos.
 
-### AC-14 — Profesional no autorizado
+### AC-20 — Profesional no autorizado
 
 **Dado** un profesional sin `appearance.manage`
 
 **Entonces** la navegación no muestra Apariencia y las rutas/acciones de servidor rechazan acceso directo.
 
-### AC-15 — Responsive
+### AC-21 — Responsive
 
 **Dado** cualquier diseño publicable
 
@@ -346,7 +402,7 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** no hay overflow horizontal, acciones ocultas, texto ilegible ni solapamiento de bloques protegidos.
 
-### AC-16 — Zoom
+### AC-22 — Zoom
 
 **Dado** editor y widget
 
@@ -354,39 +410,39 @@ Si falla, no muestra éxito y permite reintentar.
 
 **Entonces** todas las acciones siguen accesibles y el tour no cubre controles críticos.
 
-### AC-17 — Teclado
+### AC-23 — Teclado
 
 **Dado** un usuario sin ratón
 
 **Entonces** puede agregar, seleccionar, reordenar, editar, eliminar, revisar y publicar.
 
-### AC-18 — Accesibilidad
+### AC-24 — Accesibilidad
 
 Los componentes propios no presentan violaciones críticas automáticas y superan la revisión manual definida.
 
-### AC-19 — Activo inválido
+### AC-25 — Activo inválido
 
 Un archivo con MIME falso, firma inválida, tamaño o dimensiones fuera de límite se rechaza antes de convertirse en bloque utilizable.
 
-### AC-20 — Fallback
+### AC-26 — Fallback
 
 **Dado** un fallo del renderer publicado
 
 **Entonces** se sirve la versión fallback o legacy, se registra el evento y la reserva permanece operativa.
 
-### AC-21 — Rendimiento
+### AC-27 — Rendimiento
 
 Los escenarios definidos cumplen los presupuestos aprobados o tienen una excepción explícita antes de liberar.
 
-### AC-22 — Tema separado
+### AC-28 — Tema separado
 
 Aplicar, renombrar o eliminar un tema no cambia el layout ni versiones publicadas hasta una nueva publicación.
 
-### AC-23 — Ayuda contextual
+### AC-29 — Ayuda contextual
 
 El tour del editor explica controles presentes, se adapta al viewport y no cubre la acción destacada.
 
-### AC-24 — Pérdida de conexión
+### AC-30 — Pérdida de conexión
 
 Los cambios no confirmados quedan identificados; la UI no declara éxito y permite recuperarlos o exportar diagnóstico seguro.
 

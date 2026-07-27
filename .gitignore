@@ -43,5 +43,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# Widget Studio local assets (development only)
+/public/uploads/widget-assets/*
+!/public/uploads/widget-assets/.gitkeep
+
 # contexto local
 /contexto

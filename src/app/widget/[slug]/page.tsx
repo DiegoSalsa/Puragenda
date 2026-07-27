@@ -1,6 +1,10 @@
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
+import {
+  resolvePublishedWidgetDesign,
+  resolveWidgetAssets,
+} from "@/server/services/widget-design.service";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +124,11 @@ export default async function WidgetPage({
       </div>
     );
   }
+
+  const publishedDesign = await resolvePublishedWidgetDesign(business.id);
+  const designAssets = publishedDesign
+    ? await resolveWidgetAssets(business.id, publishedDesign.document)
+    : {};
 
   // Color cascade: URL params > DB values > defaults
   const primaryHex = business.primaryColor.replace("#", "");
@@ -259,6 +268,8 @@ export default async function WidgetPage({
         discountEndsAt: block.discountEndsAt?.toISOString() ?? null,
         discountMinSubtotal: block.discountMinSubtotal,
       }))}
+      designDocument={publishedDesign?.document || null}
+      designAssets={designAssets}
     />
     </>
   );

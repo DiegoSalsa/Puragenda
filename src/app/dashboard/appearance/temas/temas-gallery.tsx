@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, Check, Loader2, ChevronLeft, ChevronRight, X, Eye, Copy, Trash2, SlidersHorizontal } from "lucide-react";
 import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
 import { deleteWidgetThemeAction, duplicateWidgetThemeAction } from "@/server/actions/appearance-studio.actions";
+import { applyPresetToWidgetStudioDraftAction } from "@/server/actions/widget-studio.actions";
 
 const CATEGORIES = ["Todos", "Oscuro", "Claro", "Colorido", "Minimalista"] as const;
 const PER_PAGE = 12;
@@ -263,11 +264,13 @@ export function TemasGallery({
   currentLogoUrl,
   widgetSlug,
   savedThemes,
+  studioRevision,
 }: {
   currentColors: PresetColors;
   currentFontSize: number;
   currentLogoUrl?: string;
   widgetSlug: string;
+  studioRevision?: number;
   savedThemes: {
     id: string; name: string; category: string; primaryColor: string; secondaryColor: string;
     backgroundColor: string; textColor: string; textMutedColor: string; fontSize: number;
@@ -352,18 +355,35 @@ export function TemasGallery({
 
   async function handleApply(preset: ThemeCard) {
     setApplying(preset.id);
-    await saveAppearanceAction({
-      primaryColor: preset.primaryColor,
-      secondaryColor: preset.secondaryColor,
-      backgroundColor: preset.backgroundColor,
-      textColor: preset.textColor,
-      textMutedColor: preset.textMutedColor,
-      widgetFontSize: preset.fontSize ?? currentFontSize,
-      widgetCornerRadius: preset.cornerRadius ?? 16,
-      widgetShadowStyle: preset.shadowStyle ?? "soft",
-      widgetHeaderAlign: preset.headerAlign ?? "left",
-      logoUrl: preset.logoUrl ?? currentLogoUrl,
-    });
+    if (typeof studioRevision === "number") {
+      await applyPresetToWidgetStudioDraftAction({
+        expectedRevision: studioRevision,
+        colors: {
+          primaryColor: preset.primaryColor,
+          secondaryColor: preset.secondaryColor,
+          backgroundColor: preset.backgroundColor,
+          textColor: preset.textColor,
+          textMutedColor: preset.textMutedColor,
+        },
+        fontSize: preset.fontSize ?? currentFontSize,
+        cornerRadius: preset.cornerRadius ?? 16,
+        shadowStyle: preset.shadowStyle ?? "soft",
+        headerAlign: preset.headerAlign ?? "left",
+      });
+    } else {
+      await saveAppearanceAction({
+        primaryColor: preset.primaryColor,
+        secondaryColor: preset.secondaryColor,
+        backgroundColor: preset.backgroundColor,
+        textColor: preset.textColor,
+        textMutedColor: preset.textMutedColor,
+        widgetFontSize: preset.fontSize ?? currentFontSize,
+        widgetCornerRadius: preset.cornerRadius ?? 16,
+        widgetShadowStyle: preset.shadowStyle ?? "soft",
+        widgetHeaderAlign: preset.headerAlign ?? "left",
+        logoUrl: preset.logoUrl ?? currentLogoUrl,
+      });
+    }
     setPreviewing(null);
     router.push("/dashboard/appearance/personalizado");
     router.refresh();

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/dashboard/appearance/personalizado", label: "Personalizar" },
   { href: "/dashboard/appearance/temas", label: "Temas" },
+  { href: "/dashboard/appearance/historial", label: "Historial" },
 ];
 
 export function AppearanceTabs() {
