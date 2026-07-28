@@ -64,7 +64,6 @@ export function DashboardTutorial() {
       ],
       onDestroyStarted: () => {
         localStorage.setItem("hasSeenTutorial_general", "true");
-        window.sessionStorage.setItem("hasSeenTutorial_general", "true");
         driverObj.destroy();
       }
     });
