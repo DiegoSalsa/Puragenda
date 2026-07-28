@@ -143,6 +143,13 @@ export const bookingLimiter = rateLimit({
   message: "Demasiadas reservas en poco tiempo. Espera unos minutos.",
 });
 
+/** Public appointment actions: 20 previews/actions per 15 minutes */
+export const appointmentActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Demasiados intentos sobre esta cita. Espera unos minutos.",
+});
+
 /** Billing: 5 attempts per 15 minutes */
 export const billingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

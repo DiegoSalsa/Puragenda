@@ -237,6 +237,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <BusinessPoliciesEditor
             initialAllowRescheduling={business.allowRescheduling}
             initialRescheduleHoursLimit={business.rescheduleHoursLimit}
+            initialIncludeAppointmentActionsInConfirmationEmail={business.includeAppointmentActionsInConfirmationEmail}
             initialRequiresClientRut={business.requiresClientRut}
             initialAllowSameDayBookings={business.allowSameDayBookings}
             initialSlotInterval={business.slotInterval}

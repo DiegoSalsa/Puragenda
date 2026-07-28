@@ -5,6 +5,11 @@ import {
   sendAppointmentActionStaffNotification,
   sendConfirmationEmail,
 } from "@/server/email/send";
+import {
+  getCustomerAppointmentByToken,
+  hashCustomerAppointmentToken,
+} from "@/server/services/customer-appointment-action.service";
+import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 
 /**
  * Public action: reschedule an appointment.
@@ -13,29 +18,18 @@ import {
 export async function rescheduleAppointmentAction(
   appointmentId: string,
   newStartTime: string,
-  newEndTime: string
+  newEndTime: string,
+  token: string,
 ) {
-  const appointment = await prisma.appointment.findUnique({
-    where: { id: appointmentId },
-    include: {
-      business: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          allowRescheduling: true,
-          rescheduleHoursLimit: true,
-          address: true,
-          mapsUrl: true,
-          owner: { select: { email: true, name: true } },
-        },
-      },
-      service: { select: { id: true, name: true, duration: true } },
-      staff: { select: { id: true, name: true, email: true } },
-    },
-  });
+  const appointment = await getCustomerAppointmentByToken(token);
 
-  if (!appointment) return { error: "Cita no encontrada" };
+  if (
+    !appointment ||
+    appointment.id !== appointmentId ||
+    !appointment.business.includeAppointmentActionsInConfirmationEmail
+  ) {
+    return { error: "El enlace no es válido, ya fue utilizado o venció" };
+  }
   if (appointment.status === "CANCELLED") return { error: "Esta cita ya fue cancelada" };
   if (appointment.recurringBookingId) return { error: "Las sesiones de un plan recurrente no se pueden reagendar por esta vía" };
   if (!appointment.business.allowRescheduling) return { error: "Este negocio no permite reagendamiento" };
@@ -47,7 +41,11 @@ export async function rescheduleAppointmentAction(
   }
 
   const newStart = new Date(newStartTime);
-  const newEnd = new Date(newEndTime);
+  const canonicalDuration = appointment.totalDuration ?? appointment.service.duration;
+  const newEnd = new Date(newStart.getTime() + canonicalDuration * 60_000);
+  if (Math.abs(newEnd.getTime() - new Date(newEndTime).getTime()) > 60_000) {
+    return { error: "La duración de la cita no es válida" };
+  }
 
   // Validate the new slot is in the future
   if (newStart <= new Date()) {
@@ -69,13 +67,38 @@ export async function rescheduleAppointmentAction(
     return { error: "Ese horario ya no está disponible" };
   }
 
+  if (appointment.staffId) {
+    const block = await prisma.scheduleBlock.findFirst({
+      where: {
+        staffId: appointment.staffId,
+        startTime: { lt: newEnd },
+        endTime: { gt: newStart },
+        ...getPublicBlockingScheduleBlockWhere(),
+      },
+      select: { id: true },
+    });
+    if (block) return { error: "Ese horario está bloqueado por el profesional" };
+  }
+
   // Cancel old, create new
-  const [, newApt] = await prisma.$transaction([
-    prisma.appointment.update({
-      where: { id: appointmentId },
-      data: { status: "CANCELLED" },
-    }),
-    prisma.appointment.create({
+  const newApt = await prisma.$transaction(async (tx) => {
+    const consumed = await tx.appointment.updateMany({
+      where: {
+        id: appointmentId,
+        customerActionTokenHash: hashCustomerAppointmentToken(token),
+        customerActionTokenUsedAt: null,
+        status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
+      },
+      data: {
+        status: "CANCELLED",
+        customerActionTokenHash: null,
+        customerActionTokenExpiresAt: null,
+        customerActionTokenUsedAt: new Date(),
+      },
+    });
+    if (consumed.count !== 1) throw new Error("ACTION_ALREADY_USED");
+
+    return tx.appointment.create({
       data: {
         customerName: appointment.customerName,
         customerEmail: appointment.customerEmail,
@@ -104,8 +127,13 @@ export async function rescheduleAppointmentAction(
         service: { select: { name: true } },
         staff: { select: { name: true, email: true } },
       },
-    }),
-  ]);
+    });
+  }).catch((error) => {
+    if (error instanceof Error && error.message === "ACTION_ALREADY_USED") return null;
+    throw error;
+  });
+
+  if (!newApt) return { error: "Este enlace ya fue utilizado" };
 
   // Send confirmation email for the new appointment
   try {

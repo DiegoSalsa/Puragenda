@@ -12,7 +12,14 @@ import { TimeTextInput } from "@/components/ui/time-text-input";
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 interface ScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null; }
-interface BlockEntry { id: string; startTime: string; endTime: string; reason: string | null; }
+interface BlockEntry {
+  id: string;
+  startTime: string;
+  endTime: string;
+  reason: string | null;
+  type: "UNAVAILABLE" | "PRIORITY";
+  releaseAt: string | null;
+}
 type EditableStaffRole = "ADMIN" | "RECEPTIONIST" | "STAFF";
 type StaffAccessRole = EditableStaffRole | "SUPERADMIN";
 type StaffDrawerTab = "general" | "services" | "schedule" | "blocks";
@@ -170,6 +177,8 @@ export function StaffList({
   const [blockStart, setBlockStart] = useState("13:00");
   const [blockEnd, setBlockEnd] = useState("14:00");
   const [blockReason, setBlockReason] = useState("");
+  const [blockType, setBlockType] = useState<"UNAVAILABLE" | "PRIORITY">("UNAVAILABLE");
+  const [blockReleaseHours, setBlockReleaseHours] = useState<"never" | "24" | "48" | "72">("48");
   const [savingBlock, setSavingBlock] = useState(false);
   const [blockError, setBlockError] = useState("");
   const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
@@ -807,9 +816,11 @@ export function StaffList({
                   {/* ── Section: Schedule Blocks ── */}
                   {drawerTab === "blocks" && <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> Bloqueos de Agenda
+                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> Bloqueos y cupos prioritarios
                     </p>
-                    <p className="text-xs text-muted-foreground">Bloquea horarios para descansos, colación u otros motivos. Estos horarios no estarán disponibles para reservas.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Un bloqueo impide cualquier cita. Un cupo prioritario se oculta de la reserva pública, pero puedes ocuparlo desde tu calendario.
+                    </p>
 
                     {/* Existing blocks */}
                     {(s.blocks && s.blocks.length > 0) && (
@@ -820,12 +831,30 @@ export function StaffList({
                           const dateStr = bStart.toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" });
                           const timeStr = `${bStart.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} - ${bEnd.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
                           return (
-                            <div key={block.id} className="flex items-center justify-between rounded-lg border border-red-500/10 bg-red-500/5 px-3 py-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <CalendarOff className="h-3.5 w-3.5 text-red-400" />
-                                <span className="text-foreground font-medium">{dateStr}</span>
+                            <div
+                              key={block.id}
+                              className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+                                block.type === "PRIORITY"
+                                  ? "border-amber-500/20 bg-amber-500/5"
+                                  : "border-red-500/10 bg-red-500/5"
+                              }`}
+                            >
+                              <div className="flex min-w-0 items-center gap-2 text-sm">
+                                {block.type === "PRIORITY" ? (
+                                  <Crown className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                                ) : (
+                                  <CalendarOff className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                                )}
+                                <span className="font-medium text-foreground">{dateStr}</span>
                                 <span className="text-muted-foreground">{timeStr}</span>
-                                {block.reason && <span className="text-xs text-red-400/80">({block.reason})</span>}
+                                <span className={`text-xs ${block.type === "PRIORITY" ? "text-amber-400" : "text-red-400/80"}`}>
+                                  {block.type === "PRIORITY" ? "Cupo prioritario" : block.reason ? `(${block.reason})` : "No disponible"}
+                                </span>
+                                {block.type === "PRIORITY" && block.releaseAt && (
+                                  <span className="hidden text-[10px] text-muted-foreground lg:inline">
+                                    se libera {new Date(block.releaseAt).toLocaleString("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                )}
                               </div>
                               <button
                                 onClick={async () => { setDeletingBlockId(block.id); await deleteScheduleBlockAction(block.id); setDeletingBlockId(null); router.refresh(); }}
@@ -846,15 +875,26 @@ export function StaffList({
                       <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
+                            <label className="block text-xs text-muted-foreground mb-1">Tipo</label>
+                            <select
+                              value={blockType}
+                              onChange={(event) => setBlockType(event.target.value as "UNAVAILABLE" | "PRIORITY")}
+                              className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
+                            >
+                              <option value="UNAVAILABLE">No disponible</option>
+                              <option value="PRIORITY">Cupo prioritario</option>
+                            </select>
+                          </div>
+                          <div>
                             <label className="block text-xs text-muted-foreground mb-1">Fecha</label>
                             <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)}
                               min={new Date().toISOString().split("T")[0]}
                               className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none" />
                           </div>
-                          <div>
+                          <div className="sm:col-span-2">
                             <label className="block text-xs text-muted-foreground mb-1">Motivo (opcional)</label>
                             <input type="text" value={blockReason} onChange={(e) => setBlockReason(e.target.value)}
-                              placeholder="Ej: Colación, Médico..."
+                              placeholder={blockType === "PRIORITY" ? "Ej: Clientas frecuentes" : "Ej: Colación, médico..."}
                               className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/50" />
                           </div>
                         </div>
@@ -868,29 +908,66 @@ export function StaffList({
                             <TimeTextInput value={blockEnd} onChange={setBlockEnd} ariaLabel="Hora de fin del bloqueo" />
                           </div>
                         </div>
+                        {blockType === "PRIORITY" && (
+                          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                            <label className="mb-1 block text-xs font-medium text-amber-500">Liberación automática</label>
+                            <select
+                              value={blockReleaseHours}
+                              onChange={(event) => setBlockReleaseHours(event.target.value as "never" | "24" | "48" | "72")}
+                              className="w-full rounded-lg border border-amber-500/20 bg-background px-3 py-2 text-sm outline-none"
+                            >
+                              <option value="never">No liberar automáticamente</option>
+                              <option value="24">24 horas antes</option>
+                              <option value="48">48 horas antes</option>
+                              <option value="72">72 horas antes</option>
+                            </select>
+                            <p className="mt-1.5 text-[11px] text-muted-foreground">
+                              Mientras esté protegido solo podrás agendarlo desde el calendario interno. Al liberarse aparecerá en la reserva pública si sigue vacío.
+                            </p>
+                          </div>
+                        )}
                         {blockError && <p className="text-xs text-red-400">{blockError}</p>}
                         <div className="flex gap-2">
                           <button
                             onClick={async () => {
                               if (!blockDate) { setBlockError("Selecciona una fecha"); return; }
                               setSavingBlock(true); setBlockError("");
-                              const res = await createScheduleBlockAction({ staffId: s.id, date: blockDate, startTime: blockStart, endTime: blockEnd, reason: blockReason || undefined });
-                              if (res.error) { setBlockError(res.error); } else { setBlockStaffId(null); setBlockDate(""); setBlockReason(""); router.refresh(); }
+                              const res = await createScheduleBlockAction({
+                                staffId: s.id,
+                                date: blockDate,
+                                startTime: blockStart,
+                                endTime: blockEnd,
+                                reason: blockReason || undefined,
+                                type: blockType,
+                                releaseHoursBefore: blockType === "PRIORITY" && blockReleaseHours !== "never"
+                                  ? Number(blockReleaseHours)
+                                  : null,
+                              });
+                              if (res.error) {
+                                setBlockError(res.error);
+                              } else {
+                                setBlockStaffId(null);
+                                setBlockDate("");
+                                setBlockReason("");
+                                setBlockType("UNAVAILABLE");
+                                setBlockReleaseHours("48");
+                                router.refresh();
+                              }
                               setSavingBlock(false);
                             }}
                             disabled={savingBlock}
                             className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]"
                           >
-                            {savingBlock ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
-                            Crear bloqueo
+                            {savingBlock ? <Loader2 className="h-4 w-4 animate-spin" /> : blockType === "PRIORITY" ? <Crown className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                            {blockType === "PRIORITY" ? "Crear cupo prioritario" : "Crear bloqueo"}
                           </button>
                           <button onClick={() => { setBlockStaffId(null); setBlockError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
                         </div>
                       </div>
                     ) : (
-                      <button onClick={() => { setBlockStaffId(s.id); setBlockDate(""); setBlockReason(""); setBlockError(""); }}
+                      <button onClick={() => { setBlockStaffId(s.id); setBlockDate(""); setBlockReason(""); setBlockType("UNAVAILABLE"); setBlockReleaseHours("48"); setBlockError(""); }}
                         className="flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-[#7C3AED]/30 transition-all">
-                        <Plus className="h-4 w-4" /> Agregar bloqueo
+                        <Plus className="h-4 w-4" /> Agregar bloqueo o cupo
                       </button>
                     )}
                   </div>}

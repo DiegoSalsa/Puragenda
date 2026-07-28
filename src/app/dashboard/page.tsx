@@ -50,6 +50,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   const agendaScope = await getStaffAgendaScope(user, business);
+  const canManageAllAppointments = permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_ALL);
+  const canManageOwnAppointments =
+    permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN) &&
+    !!agendaScope.ownStaffId;
+  const canManageAppointments = canManageAllAppointments || canManageOwnAppointments;
   const params = await searchParams;
   const canToggleOwnAgenda = agendaScope.canSeeAllAgendas && !!agendaScope.ownStaffId;
   const showingOwnAgenda = canToggleOwnAgenda && params.agenda === "mine";
@@ -77,7 +82,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekStart = startOfWeek(targetDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(targetDate, { weekStartsOn: 1 });
 
-  const [weekAppointments, businessHours, pendingRecurring] = await Promise.all([
+  const [weekAppointments, priorityBlocks, businessHours, pendingRecurring, appointmentServices, appointmentStaff, appointmentClients] = await Promise.all([
     prisma.appointment.findMany({
       where: {
         businessId: business.id,
@@ -91,6 +96,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       },
       orderBy: { startTime: "asc" },
     }),
+    prisma.scheduleBlock.findMany({
+      where: {
+        type: "PRIORITY",
+        staff: { businessId: business.id },
+        ...("staffId" in scopedStaffFilter ? { staffId: scopedStaffFilter.staffId } : {}),
+        startTime: { lt: addDays(weekEnd, 1) },
+        endTime: { gt: weekStart },
+      },
+      include: { staff: { select: { name: true } } },
+      orderBy: { startTime: "asc" },
+    }),
     getBusinessHours(business.id),
     prisma.recurringBooking.findMany({
       where: { businessId: business.id, status: "PENDING_APPROVAL", ...scopedStaffFilter },
@@ -100,20 +116,59 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         staff: { select: { id: true, name: true } },
       },
     }),
+    canManageAppointments
+      ? prisma.service.findMany({
+          where: { businessId: business.id, bookingMode: "APPOINTMENT" },
+          orderBy: { name: "asc" },
+          include: {
+            staff: { where: { isActive: true }, select: { id: true } },
+            optionCategories: {
+              orderBy: { position: "asc" },
+              include: { alternatives: { orderBy: { position: "asc" } } },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    canManageAppointments
+      ? prisma.staff.findMany({
+          where: {
+            businessId: business.id,
+            isActive: true,
+            ...(!canManageAllAppointments && agendaScope.ownStaffId
+              ? { id: agendaScope.ownStaffId }
+              : {}),
+          },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+    canManageAppointments
+      ? prisma.client.findMany({
+          where: { businessId: business.id },
+          orderBy: { updatedAt: "desc" },
+          take: 200,
+          select: { id: true, name: true, email: true, phone: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const serialized = weekAppointments.map((appointment) => ({
     id: appointment.id,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
+    customerPhone: appointment.customerPhone,
+    clientId: appointment.clientId,
     startTime: appointment.startTime.toISOString(),
     endTime: appointment.endTime.toISOString(),
     status: appointment.status,
+    serviceId: appointment.serviceId,
     serviceName: appointment.service.name,
+    staffId: appointment.staffId,
     staffName: appointment.staff?.name || "Sin asignar",
-    selectedOptions: (appointment.selectedOptions as { categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[] | null) ?? [],
+    selectedOptions: (appointment.selectedOptions as { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[] | null) ?? [],
     recurringBookingId: appointment.recurringBookingId ?? null,
     clientNotes: appointment.client?.privateNotes ?? null,
+    internalNotes: appointment.internalNotes,
   }));
 
   const pendingSerialized = pendingRecurring.map((booking) => ({
@@ -130,6 +185,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     healthAnswers: booking.healthAnswers as Record<string, string> | null,
     healthFreeText: booking.healthFreeText,
     createdAt: booking.createdAt.toISOString(),
+  }));
+  const serializedPriorityBlocks = priorityBlocks.map((block) => ({
+    id: block.id,
+    staffId: block.staffId,
+    staffName: block.staff.name,
+    startTime: block.startTime.toISOString(),
+    endTime: block.endTime.toISOString(),
+    reason: block.reason,
+    releaseAt: block.releaseAt?.toISOString() ?? null,
   }));
 
   return (
@@ -180,6 +244,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       <WeeklyCalendar
         appointments={serialized}
+        priorityBlocks={serializedPriorityBlocks}
         weekStartISO={format(weekStart, "yyyy-MM-dd")}
         agendaMode={showingOwnAgenda ? "mine" : undefined}
         businessHours={businessHours.map((hour) => ({
@@ -188,6 +253,28 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           endTime: hour.endTime,
           isOpen: hour.isOpen,
         }))}
+        canManageAppointments={canManageAppointments}
+        services={appointmentServices.map((service) => ({
+          id: service.id,
+          name: service.name,
+          duration: service.duration,
+          price: service.price,
+          staffIds: service.staff.map((member) => member.id),
+          optionCategories: service.optionCategories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            isRequired: category.isRequired,
+            maxSelections: category.maxSelections,
+            alternatives: category.alternatives.map((alternative) => ({
+              id: alternative.id,
+              name: alternative.name,
+              priceDelta: alternative.priceDelta,
+              durationDelta: alternative.durationDelta,
+            })),
+          })),
+        }))}
+        staff={appointmentStaff}
+        clients={appointmentClients}
       />
 
       <PageTutorial

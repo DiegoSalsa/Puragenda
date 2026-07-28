@@ -31,6 +31,7 @@ interface BookingEmailData {
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
   rescheduleUrl?: string;
+  cancelUrl?: string;
 }
 
 // ═══════════════════════════════════════════
@@ -189,12 +190,21 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
 
 /** Email to client when booking is CONFIRMED */
 export function confirmedBookingClientEmail(data: BookingEmailData): { subject: string; html: string } {
-  const rescheduleBlock = data.rescheduleUrl ? `
-      <div style="text-align:center;margin:24px 0 0;">
-        <a href="${data.rescheduleUrl}" style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">Reagendar cita →</a>
-      </div>
-      <p style="margin:8px 0 0;font-size:12px;color:#9CA3AF;text-align:center;">Si necesitas cambiar la hora de tu cita, usa el botón de arriba.</p>
-  ` : '';
+  const actionsBlock = data.cancelUrl || data.rescheduleUrl ? `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+        <tr>
+          ${data.rescheduleUrl ? `
+          <td align="center" style="padding:4px;">
+            <a href="${data.rescheduleUrl}" style="display:inline-block;background:#7C3AED;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">Reagendar cita &rarr;</a>
+          </td>` : ""}
+          ${data.cancelUrl ? `
+          <td align="center" style="padding:4px;">
+            <a href="${data.cancelUrl}" style="display:inline-block;background:#fff;color:#DC2626;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;border:2px solid #FECACA;">Cancelar cita</a>
+          </td>` : ""}
+        </tr>
+      </table>
+      <p style="margin:8px 0 0;font-size:12px;color:#9CA3AF;text-align:center;">Por seguridad, cancelar requiere una confirmación adicional y nunca ocurre al abrir el enlace.</p>
+  ` : "";
 
   return {
     subject: `Reserva confirmada en ${data.businessName}`,
@@ -205,9 +215,11 @@ export function confirmedBookingClientEmail(data: BookingEmailData): { subject: 
       </p>
       ${enterpriseDetailsTable(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
-        Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${data.businessName}.
+        ${actionsBlock
+          ? "Puede administrar esta reserva con las opciones seguras disponibles a continuación."
+          : `Si necesita cancelar o reprogramar su cita, por favor contacte directamente a ${data.businessName}.`}
       </p>
-      ${rescheduleBlock}
+      ${actionsBlock}
     `),
   };
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma";
 import { addDays, startOfDay, format, isAfter, getDay } from "date-fns";
+import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 
 // ==========================================
 // TYPES
@@ -205,6 +206,7 @@ export async function detectAllConflicts(params: {
           staffId: params.staffId,
           startTime: { lt: session.endTime },
           endTime: { gt: session.startTime },
+          ...getPublicBlockingScheduleBlockWhere(),
         },
         select: { id: true },
       });
@@ -461,10 +463,10 @@ export async function checkScheduleBlockCollisions(scheduleBlockId: string): Pro
 > {
   const block = await prisma.scheduleBlock.findUnique({
     where: { id: scheduleBlockId },
-    select: { staffId: true, startTime: true, endTime: true },
+    select: { staffId: true, startTime: true, endTime: true, type: true },
   });
 
-  if (!block) return [];
+  if (!block || block.type === "PRIORITY") return [];
 
   const conflictingAppointments = await prisma.appointment.findMany({
     where: {
@@ -527,17 +529,28 @@ export async function getRecurringAvailableSlots(params: {
   const allSlots = generateTimeSlots(schedStart, schedEnd, params.serviceDurationMinutes, stepMinutes);
 
   // Find all appointments on this dayOfWeek across the entire recurring period
-  const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      staffId: params.staffId,
-      status: { notIn: ["CANCELLED", "NO_SHOW"] },
-      startTime: {
-        gte: params.startDate,
-        lte: params.endDate,
+  const [existingAppointments, activeScheduleBlocks] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        staffId: params.staffId,
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        startTime: {
+          gte: params.startDate,
+          lte: params.endDate,
+        },
       },
-    },
-    select: { startTime: true, endTime: true },
-  });
+      select: { startTime: true, endTime: true },
+    }),
+    prisma.scheduleBlock.findMany({
+      where: {
+        staffId: params.staffId,
+        startTime: { lt: params.endDate },
+        endTime: { gt: params.startDate },
+        ...getPublicBlockingScheduleBlockWhere(),
+      },
+      select: { startTime: true, endTime: true },
+    }),
+  ]);
 
   // Group by day-of-week and collect occupied slots
   const occupiedSlots = new Set<string>();
@@ -547,7 +560,22 @@ export async function getRecurringAvailableSlots(params: {
     }
   }
 
-  return allSlots.filter((slot) => !occupiedSlots.has(slot));
+  return allSlots.filter((slot) => {
+    if (occupiedSlots.has(slot)) return false;
+
+    const slotMinutes = parseTime(slot);
+    const slotStart = slotMinutes.hours * 60 + slotMinutes.minutes;
+    const slotEnd = slotStart + params.serviceDurationMinutes;
+
+    return !activeScheduleBlocks.some((block) => {
+      if (getDay(block.startTime) !== params.dayOfWeek) return false;
+      const blockStartParts = parseTime(format(block.startTime, "HH:mm"));
+      const blockEndParts = parseTime(format(block.endTime, "HH:mm"));
+      const blockStart = blockStartParts.hours * 60 + blockStartParts.minutes;
+      const blockEnd = blockEndParts.hours * 60 + blockEndParts.minutes;
+      return slotStart < blockEnd && slotEnd > blockStart;
+    });
+  });
 }
 
 /**

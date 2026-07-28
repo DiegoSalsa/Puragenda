@@ -12,6 +12,7 @@ import { sendStaffInviteEmail } from "@/server/email/send";
 import { isValidTime, isValidTimeRange } from "@/lib/time";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { calculatePriorityReleaseAt } from "@/server/services/schedule-block.service";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -610,6 +611,8 @@ export async function createScheduleBlockAction(data: {
   startTime: string;  // HH:mm
   endTime: string;    // HH:mm
   reason?: string;
+  type?: "UNAVAILABLE" | "PRIORITY";
+  releaseHoursBefore?: number | null;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -623,14 +626,34 @@ export async function createScheduleBlockAction(data: {
   const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
-  // Build DateTimes from date + time in America/Santiago timezone
+  // Build DateTimes from the business timezone (Vercel runs in UTC).
   // Instead of new Date(`${date}T${time}:00`) which parses as UTC on Vercel
   const { fromZonedTime } = await import("date-fns-tz");
-  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, "America/Santiago");
-  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, "America/Santiago");
+  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, business.timezone);
+  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, business.timezone);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
   if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
+
+  const blockType = data.type ?? "UNAVAILABLE";
+  if (!["UNAVAILABLE", "PRIORITY"].includes(blockType)) {
+    return { error: "Tipo de bloqueo inválido" };
+  }
+  const allowedReleaseHours = new Set([24, 48, 72]);
+  if (
+    blockType === "PRIORITY" &&
+    data.releaseHoursBefore != null &&
+    !allowedReleaseHours.has(data.releaseHoursBefore)
+  ) {
+    return { error: "El plazo de liberación no es válido" };
+  }
+  const releaseAt =
+    blockType === "PRIORITY"
+      ? calculatePriorityReleaseAt(start, data.releaseHoursBefore)
+      : null;
+  if (releaseAt && releaseAt <= new Date()) {
+    return { error: "El cupo ya estaría liberado. Elige una fecha posterior o un plazo menor." };
+  }
 
   // Check for overlapping blocks
   const overlap = await prisma.scheduleBlock.findFirst({
@@ -642,70 +665,88 @@ export async function createScheduleBlockAction(data: {
   });
   if (overlap) return { error: "Ya existe un bloqueo en ese rango horario" };
 
+  if (blockType === "PRIORITY") {
+    const occupied = await prisma.appointment.findFirst({
+      where: {
+        staffId: data.staffId,
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+      select: { id: true },
+    });
+    if (occupied) return { error: "Ese horario ya tiene una cita y no puede reservarse como prioritario" };
+  }
+
   const block = await prisma.scheduleBlock.create({
     data: {
       staffId: data.staffId,
       startTime: start,
       endTime: end,
       reason: data.reason?.trim() || null,
+      type: blockType,
+      releaseAt,
     },
   });
 
   // ── Logic 3: Check if this block collides with any active recurring appointments ──
-  try {
-    const collidingAppointments = await prisma.appointment.findMany({
-      where: {
-        staffId: data.staffId,
-        startTime: { lt: block.endTime },
-        endTime: { gt: block.startTime },
-        status: { notIn: ["CANCELLED", "NO_SHOW"] },
-        recurringBookingId: { not: null },
-      },
-      include: {
-        recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
-        service: { select: { name: true } },
-        business: { select: { name: true } },
-      },
-    });
+  if (blockType === "UNAVAILABLE") {
+    try {
+      const collidingAppointments = await prisma.appointment.findMany({
+        where: {
+          staffId: data.staffId,
+          startTime: { lt: block.endTime },
+          endTime: { gt: block.startTime },
+          status: { notIn: ["CANCELLED", "NO_SHOW"] },
+          recurringBookingId: { not: null },
+        },
+        include: {
+          recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
+          service: { select: { name: true } },
+          business: { select: { name: true } },
+        },
+      });
 
-    if (collidingAppointments.length > 0) {
-      const { sendRecurringSessionCancelledClient } = await import("@/server/email/send");
+      if (collidingAppointments.length > 0) {
+        const { sendRecurringSessionCancelledClient } = await import("@/server/email/send");
 
-      for (const apt of collidingAppointments) {
-        // Cancel the appointment
-        await prisma.appointment.update({
-          where: { id: apt.id },
-          data: { status: "CANCELLED" },
-        });
+        for (const apt of collidingAppointments) {
+          // Cancel the appointment
+          await prisma.appointment.update({
+            where: { id: apt.id },
+            data: { status: "CANCELLED" },
+          });
 
-        // Create a session override record
-        await prisma.recurringSessionOverride.create({
-          data: {
-            recurringBookingId: apt.recurringBookingId!,
-            originalDate: apt.startTime,
-            action: "CANCELLED",
-            reason: "Bloqueo de agenda",
-            requestedByClient: false,
-          },
-        });
+          // Create a session override record
+          await prisma.recurringSessionOverride.create({
+            data: {
+              recurringBookingId: apt.recurringBookingId!,
+              originalDate: apt.startTime,
+              action: "CANCELLED",
+              reason: "Bloqueo de agenda",
+              requestedByClient: false,
+            },
+          });
 
-        // Notify the client
-        await sendRecurringSessionCancelledClient({
-          customerEmail: apt.recurringBooking!.customerEmail,
-          customerName: apt.recurringBooking!.customerName,
-          serviceName: apt.service.name,
-          sessionDate: apt.startTime,
-          businessName: apt.business.name,
-        });
+          // Notify the client
+          await sendRecurringSessionCancelledClient({
+            customerEmail: apt.recurringBooking!.customerEmail,
+            customerName: apt.recurringBooking!.customerName,
+            serviceName: apt.service.name,
+            sessionDate: apt.startTime,
+            businessName: apt.business.name,
+          });
+        }
+
+        console.log(`[ScheduleBlock] Cancelled ${collidingAppointments.length} recurring appointments due to block`);
       }
-
-      console.log(`[ScheduleBlock] Cancelled ${collidingAppointments.length} recurring appointments due to block`);
+    } catch (err) {
+      console.error("[ScheduleBlock] Error checking recurring collisions:", err);
     }
-  } catch (err) {
-    console.error("[ScheduleBlock] Error checking recurring collisions:", err);
   }
 
   revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -727,6 +768,7 @@ export async function deleteScheduleBlockAction(blockId: string) {
 
   await prisma.scheduleBlock.delete({ where: { id: blockId } });
   revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -829,6 +871,7 @@ export async function saveDepositConfigAction(data: {
 export async function updateBusinessPoliciesAction(data: {
   allowRescheduling: boolean;
   rescheduleHoursLimit: number;
+  includeAppointmentActionsInConfirmationEmail: boolean;
   requiresClientRut: boolean;
   allowSameDayBookings: boolean;
   slotInterval: number;
@@ -856,6 +899,7 @@ export async function updateBusinessPoliciesAction(data: {
     data: {
       allowRescheduling: data.allowRescheduling,
       rescheduleHoursLimit: hoursLimit,
+      includeAppointmentActionsInConfirmationEmail: Boolean(data.includeAppointmentActionsInConfirmationEmail),
       requiresClientRut: data.requiresClientRut,
       allowSameDayBookings: data.allowSameDayBookings,
       slotInterval,
