@@ -439,7 +439,7 @@ export function StaffList({
           const assignedServiceNames = (staffServices[s.id] || []).map((id) => serviceNameMap[id]).filter(Boolean);
 
           return (
-            <div key={s.id} className={`relative overflow-visible rounded-2xl border border-border bg-card transition-shadow hover:shadow-sm ${menuId === s.id ? "z-30" : "z-0"}`}>
+            <div key={s.id} className={`relative overflow-visible rounded-2xl border border-border bg-card transition-shadow hover:shadow-sm ${menuId === s.id ? "z-30" : "z-auto"}`}>
               {/* ── Card Header ── */}
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
