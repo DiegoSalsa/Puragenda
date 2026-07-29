@@ -13,6 +13,7 @@ export function DashboardTutorial() {
     if (initialized.current) return;
     if (isChangelogOpen) return;
     initialized.current = true;
+    let startTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const hasSeen = localStorage.getItem("hasSeenTutorial_general");
 
@@ -21,6 +22,9 @@ export function DashboardTutorial() {
     }
 
     const driverObj = driver({
+      animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      allowClose: true,
+      smoothScroll: true,
       showProgress: true,
       nextBtnText: "Siguiente",
       prevBtnText: "Atrás",
@@ -69,10 +73,14 @@ export function DashboardTutorial() {
     });
 
     // Timeout to ensure the DOM is fully rendered
-    setTimeout(() => {
+    startTimeout = setTimeout(() => {
       driverObj.drive();
     }, 500);
 
+    return () => {
+      if (startTimeout) clearTimeout(startTimeout);
+      driverObj.destroy();
+    };
   }, [isChangelogOpen]);
 
   return null;

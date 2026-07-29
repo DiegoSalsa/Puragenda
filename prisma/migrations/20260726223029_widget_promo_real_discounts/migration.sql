@@ -39,7 +39,7 @@ ADD CONSTRAINT "Appointment_promotionId_fkey"
 FOREIGN KEY ("promotionId") REFERENCES "WidgetPromoBlock"("id")
 ON DELETE SET NULL ON UPDATE CASCADE;
 
-CREATE INDEX "WidgetPromoBlock_businessId_isVisible_discountStartsAt_discountEndsAt_idx"
+CREATE INDEX "WidgetPromoBlock_discount_active_idx"
 ON "WidgetPromoBlock"("businessId", "isVisible", "discountStartsAt", "discountEndsAt");
 
 CREATE INDEX "Appointment_promotionId_idx"

@@ -181,7 +181,7 @@ function SidebarContent({
         >
           <img
             src={collapsed ? "/icon-512x512.png" : "/logos/logoPuragendaSVG.svg"}
-            alt={collapsed ? "PuroCode" : "Puragenda"}
+            alt="Puragenda"
             className={collapsed ? "h-9 w-9 rounded-xl shadow-sm" : "h-12 w-auto max-w-[145px]"}
           />
         </Link>
@@ -382,7 +382,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar px-4 py-3 md:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] md:hidden">
         <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground" aria-label="Abrir menú">
           <Menu className="h-5 w-5" />
         </button>

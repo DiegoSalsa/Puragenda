@@ -62,11 +62,13 @@ async function deliverEmail(
     const result = await resend.emails.send(params);
     if (result.error) {
       console.error(`[Email] Resend rejected ${context}:`, result.error);
-      return;
+      return false;
     }
     console.log(`[Email] Sent ${context}: ${result.data?.id ?? "no-id"}`);
+    return true;
   } catch (err) {
     console.error(`[Email] Error sending ${context}:`, err);
+    return false;
   }
 }
 
@@ -171,8 +173,11 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     );
   }
 
-  await Promise.allSettled(tasks);
-  console.log(`[Email] Booking notifications sent for appointment with ${data.customerName}`);
+  const results = await Promise.all(tasks);
+  const delivered = results.filter((result) => result === true).length;
+  console.log(
+    `[Email] Booking notifications complete for appointment ${appointment.id ?? "unknown"}: ${delivered}/${tasks.length} delivered`
+  );
 }
 
 /**

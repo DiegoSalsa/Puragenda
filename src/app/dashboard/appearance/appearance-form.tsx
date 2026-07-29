@@ -187,7 +187,9 @@ export function AppearanceForm({
   });
   const [previewUrl, setPreviewUrl] = useState(() => buildPreviewUrl(data));
   const [previewRevision, setPreviewRevision] = useState(0);
-  const [previewLoading, setPreviewLoading] = useState(true);
+  // The initial iframe may finish loading before hydration attaches `onLoad`.
+  // Start visible; explicit refreshes and edits still enable the loader.
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");

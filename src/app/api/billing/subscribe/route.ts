@@ -8,6 +8,10 @@ import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
 import { quotePlatformDiscount, reservePlatformDiscount } from "@/server/services/platform-discount.service";
 import { calculateNextBillingPreview } from "@/server/services/subscription-billing.service";
+import {
+  mapMercadoPagoFailure,
+  mercadoPagoNotConfigured,
+} from "@/server/lib/mercadopago-error";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -68,12 +72,21 @@ export async function POST(request: NextRequest) {
 
     // 5. Determine back_url based on environment
     const isProduction = process.env.NODE_ENV === "production";
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
     const baseUrl = isProduction
-      ? "https://www.puragenda.cl"
-      : "http://localhost:3000";
+      ? configuredBaseUrl || "https://www.puragenda.cl"
+      : request.nextUrl.origin;
     const backUrl = `${baseUrl}/dashboard/settings`;
 
     // 6. Create MercadoPago Preapproval (subscription)
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
+      const failure = mercadoPagoNotConfigured(isProduction);
+      console.error("[billing/subscribe] MercadoPago is not configured", {
+        code: failure.body.code,
+      });
+      return NextResponse.json(failure.body, { status: failure.status });
+    }
+
     const preapproval = new PreApproval(mpClient);
     
     // Calculate initial price (apply discount if any)
@@ -172,16 +185,14 @@ export async function POST(request: NextRequest) {
     // 8. Return the payment URL
     return NextResponse.json({ init_point: result.init_point, discount: platformDiscount ?? null });
   } catch (error: unknown) {
-    console.error("[billing/subscribe] Error:", error);
-    
-    // Extract MercadoPago error details if present
-    const errorMsg = "Error al procesar la suscripcion. Intenta de nuevo o contacta soporte.";
-
-
-
-    return NextResponse.json(
-      { error: errorMsg },
-      { status: 500 }
-    );
+    const failure = mapMercadoPagoFailure(error, process.env.NODE_ENV === "production");
+    console.error("[billing/subscribe] Failed to create subscription", {
+      code: failure.body.code,
+      providerStatus:
+        error && typeof error === "object" && "status" in error
+          ? (error as { status?: unknown }).status
+          : undefined,
+    });
+    return NextResponse.json(failure.body, { status: failure.status });
   }
 }

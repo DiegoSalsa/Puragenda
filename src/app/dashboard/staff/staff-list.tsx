@@ -5,7 +5,7 @@ import { Plus, Loader2, UserCheck, UserX, Clock, Save, AlertTriangle, Crown, Tra
 import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { isValidTimeRange } from "@/lib/time";
+import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
 import { updateStaffAccessProfileAction } from "@/server/actions/access-profile.actions";
 import { TimeTextInput } from "@/components/ui/time-text-input";
 
@@ -236,20 +236,30 @@ export function StaffList({
 
   async function handleSaveSchedule(staffId: string) {
     const schedule = schedules[staffId] || defaultSchedule();
-    const invalidDay = schedule.find((entry) => entry.isWorking && (
-      !isValidTimeRange(entry.startTime, entry.endTime) ||
-      ((entry.breakStart || entry.breakEnd) && (
+    const invalidWorkday = schedule.find(
+      (entry) => entry.isWorking && !isValidTimeRange(entry.startTime, entry.endTime),
+    );
+    if (invalidWorkday) {
+      setScheduleErrors((prev) => ({
+        ...prev,
+        [staffId]: `Revisa el horario del ${DAYS[invalidWorkday.dayOfWeek]}: la entrada debe ser anterior a la salida.`,
+      }));
+      return;
+    }
+
+    const invalidBreakDay = schedule.find((entry) => entry.isWorking && (
+      (entry.breakStart || entry.breakEnd) && (
         !entry.breakStart ||
         !entry.breakEnd ||
         !isValidTimeRange(entry.breakStart, entry.breakEnd) ||
         entry.breakStart < entry.startTime ||
         entry.breakEnd > entry.endTime
-      ))
+      )
     ));
-    if (invalidDay) {
+    if (invalidBreakDay) {
       setScheduleErrors((prev) => ({
         ...prev,
-        [staffId]: `Revisa el horario del ${DAYS[invalidDay.dayOfWeek]}: la entrada debe ser anterior a la salida.`,
+        [staffId]: `Revisa la pausa del ${DAYS[invalidBreakDay.dayOfWeek]}: debe quedar dentro del horario laboral.`,
       }));
       return;
     }
@@ -381,18 +391,27 @@ export function StaffList({
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email del profesional" type="email" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
             </div>
-            <div>
-              <label className="block text-xs text-muted-foreground mb-1.5">Rol asignado</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as "ADMIN" | "RECEPTIONIST" | "STAFF")}
-                className="w-full sm:w-auto rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none [&>option]:bg-muted [&>option]:text-foreground"
-              >
-                <option value="ADMIN">Admin — Acceso total</option>
-                <option value="RECEPTIONIST">Recepcionista — Gestiona agenda</option>
-                <option value="STAFF">Profesional — Solo sus citas</option>
-              </select>
-            </div>
+            {canManageRoles ? (
+              <div>
+                <label className="mb-1.5 block text-xs text-muted-foreground">Rol asignado</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "ADMIN" | "RECEPTIONIST" | "STAFF")}
+                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/15 sm:w-auto [&>option]:bg-muted [&>option]:text-foreground"
+                >
+                  <option value="ADMIN">Admin — Acceso total</option>
+                  <option value="RECEPTIONIST">Recepcionista — Gestiona agenda</option>
+                  <option value="STAFF">Profesional — Solo sus citas</option>
+                </select>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-background px-4 py-3">
+                <p className="text-xs font-bold text-foreground">Cuenta profesional</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Se creará con acceso únicamente a sus citas. La cuenta owner puede ampliar sus funciones después.
+                </p>
+              </div>
+            )}
 
             {/* ═══ SERVICE CHECKBOXES ON CREATE ═══ */}
             {allServices.length > 0 && (
@@ -763,8 +782,19 @@ export function StaffList({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  updateSchedule(s.id, entry.dayOfWeek, "breakStart", hasBreak ? null : "13:00");
-                                  updateSchedule(s.id, entry.dayOfWeek, "breakEnd", hasBreak ? null : "14:00");
+                                  const suggestedBreak = getDefaultBreakRange(entry.startTime, entry.endTime);
+                                  updateSchedule(
+                                    s.id,
+                                    entry.dayOfWeek,
+                                    "breakStart",
+                                    hasBreak ? null : suggestedBreak?.startTime ?? null,
+                                  );
+                                  updateSchedule(
+                                    s.id,
+                                    entry.dayOfWeek,
+                                    "breakEnd",
+                                    hasBreak ? null : suggestedBreak?.endTime ?? null,
+                                  );
                                 }}
                                 aria-label={`${hasBreak ? "Quitar" : "Añadir"} pausa ${dayLabel} de ${s.name}`}
                                 className={`flex h-9 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-colors ${

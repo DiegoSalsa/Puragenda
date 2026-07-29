@@ -563,7 +563,7 @@ export function ContextualHelpButton() {
     <button
       type="button"
       onClick={startTour}
-      className="fixed right-3 top-2 z-50 flex h-10 items-center justify-center gap-2 rounded-xl border border-black bg-[#7C3AED] px-3 text-white shadow-[2px_2px_0_#111] transition-transform hover:-translate-y-0.5 active:translate-y-0 md:static md:z-auto md:h-9 md:shadow-none"
+      className="fixed right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex h-10 items-center justify-center gap-2 rounded-xl border border-black bg-[#7C3AED] px-3 text-white shadow-[2px_2px_0_#111] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 active:translate-y-0 md:static md:z-auto md:h-9 md:shadow-none"
       aria-label="Abrir ayuda de esta página"
       title="Ayuda de esta página"
       data-tour="contextual-help"

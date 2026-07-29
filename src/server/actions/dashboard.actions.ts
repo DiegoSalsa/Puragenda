@@ -128,6 +128,20 @@ export async function createStaffAction(data: { name: string; email: string; rol
   if (!["ADMIN", "RECEPTIONIST", "STAFF"].includes(assignedRole)) {
     return { error: "Rol inválido" };
   }
+  const canAssignPrivilegedRole = business.ownerId === user.id || user.role === "SUPERADMIN";
+  if (!canAssignPrivilegedRole && assignedRole !== "STAFF") {
+    return { error: "Solo la cuenta owner puede asignar roles con acceso administrativo" };
+  }
+
+  const serviceIds = [...new Set(data.serviceIds || [])];
+  if (serviceIds.length > 0) {
+    const scopedServiceCount = await prisma.service.count({
+      where: { businessId: business.id, id: { in: serviceIds } },
+    });
+    if (scopedServiceCount !== serviceIds.length) {
+      return { error: "Uno o más servicios no pertenecen a este negocio" };
+    }
+  }
 
   // Enforce staff limit
   const limitInfo = await getStaffLimitInfo(business.id);
@@ -148,8 +162,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
     const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
 
     // Build service connections if provided
-    const serviceConnect = data.serviceIds && data.serviceIds.length > 0
-      ? { connect: data.serviceIds.map((id) => ({ id })) }
+    const serviceConnect = serviceIds.length > 0
+      ? { connect: serviceIds.map((id) => ({ id })) }
       : undefined;
 
     // Create User + Staff in a transaction
@@ -295,6 +309,9 @@ export async function updateServiceCategoryGroupingAction(enabled: boolean) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para modificar la organización de servicios" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },
@@ -367,12 +384,21 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
   }
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
+  const uniqueServiceIds = [...new Set(serviceIds)];
+  if (uniqueServiceIds.length > 0) {
+    const scopedServiceCount = await prisma.service.count({
+      where: { businessId: business.id, id: { in: uniqueServiceIds } },
+    });
+    if (scopedServiceCount !== uniqueServiceIds.length) {
+      return { error: "Uno o más servicios no pertenecen a este negocio" };
+    }
+  }
 
   await prisma.staff.update({
     where: { id: staffId },
     data: {
       services: {
-        set: serviceIds.map((id) => ({ id })),
+        set: uniqueServiceIds.map((id) => ({ id })),
       },
     },
   });
@@ -884,6 +910,13 @@ export async function updateBusinessPoliciesAction(data: {
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
     return { error: "No tienes permisos para configurar las políticas" };
   }
+  if (
+    !Number.isFinite(data.rescheduleHoursLimit) ||
+    !Number.isFinite(data.slotInterval) ||
+    !Number.isFinite(data.minAdvanceBookingMinutes)
+  ) {
+    return { error: "Usa valores numéricos válidos para las políticas de reserva" };
+  }
 
   const hoursLimit = Math.max(1, Math.min(168, Math.floor(data.rescheduleHoursLimit)));
 
@@ -916,12 +949,11 @@ export async function updateBusinessPoliciesAction(data: {
 export async function updateProductionOrdersEnabledAction(enabled: boolean) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar los encargos" };
-  }
-
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para configurar los encargos" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },
