@@ -109,8 +109,12 @@ export default async function ReagendarPage({
           slug: appointment.business.slug,
           primaryColor: pc,
           rescheduleHoursLimit: appointment.business.rescheduleHoursLimit,
+          timezone: appointment.business.timezone,
         }}
-        service={{ name: appointment.service.name, duration: appointment.service.duration }}
+        service={{
+          name: appointment.service.name,
+          duration: appointment.totalDuration ?? appointment.service.duration,
+        }}
         staff={appointment.staff}
         currentStart={appointment.startTime.toISOString()}
         currentEnd={appointment.endTime.toISOString()}

@@ -59,11 +59,18 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  const [canManageAll, canManageOwn] = await Promise.all([
+    hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_ALL),
+    hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN),
+  ]);
+  if (!canManageAll && !canManageOwn) {
+    return { error: "No tienes permisos para modificar citas" };
+  }
   const apt = await prisma.appointment.findFirst({ where: { id: appointmentId, businessId: business.id } });
   if (!apt) return { error: "Cita no encontrada" };
   const agendaScope = await getStaffAgendaScope(user, business);
-  if (!agendaScope.canSeeAllAgendas && (!agendaScope.staffId || apt.staffId !== agendaScope.staffId)) {
-    return { error: "Cita no encontrada" };
+  if (!canManageAll && (!agendaScope.ownStaffId || apt.staffId !== agendaScope.ownStaffId)) {
+    return { error: "No tienes permisos para modificar esta cita" };
   }
   await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
   revalidatePath("/dashboard");

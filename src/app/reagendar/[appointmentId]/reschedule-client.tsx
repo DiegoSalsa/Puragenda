@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { format, parseISO, addDays, addMinutes } from "date-fns";
 import { es } from "date-fns/locale";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import {
   Calendar, Clock, Briefcase, User, Loader2, CheckCircle2, XCircle, ArrowRight,
 } from "lucide-react";
@@ -11,7 +12,13 @@ import { rescheduleAppointmentAction } from "@/server/actions/appointment.action
 interface Props {
   appointmentId: string;
   token: string;
-  business: { name: string; slug: string; primaryColor: string; rescheduleHoursLimit: number };
+  business: {
+    name: string;
+    slug: string;
+    primaryColor: string;
+    rescheduleHoursLimit: number;
+    timezone: string;
+  };
   service: { name: string; duration: number };
   staff: { id: string; name: string } | null;
   currentStart: string;
@@ -27,14 +34,20 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
   const [isPending, startTransition] = useTransition();
 
   const pc = business.primaryColor;
-  const minDate = format(addDays(new Date(), 1), "yyyy-MM-dd");
+  const minDate = format(
+    addDays(toZonedTime(new Date(), business.timezone), 1),
+    "yyyy-MM-dd",
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!newDate || !newTime) return;
     setError(null);
 
-    const newStart = new Date(`${newDate}T${newTime}:00`);
+    const newStart = fromZonedTime(
+      `${newDate}T${newTime}:00`,
+      business.timezone,
+    );
     const newEnd = addMinutes(newStart, service.duration);
 
     startTransition(async () => {
@@ -55,7 +68,10 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
 
   // ── Success state ──
   if (success) {
-    const newStart = new Date(`${newDate}T${newTime}:00`);
+    const newStart = toZonedTime(
+      fromZonedTime(`${newDate}T${newTime}:00`, business.timezone),
+      business.timezone,
+    );
     const newEnd = addMinutes(newStart, service.duration);
     return (
       <div className="w-full max-w-md space-y-6">
@@ -130,13 +146,18 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
           <div className="flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="font-medium capitalize">
-              {format(parseISO(currentStart), "EEEE d 'de' MMMM yyyy", { locale: es })}
+              {format(
+                toZonedTime(parseISO(currentStart), business.timezone),
+                "EEEE d 'de' MMMM yyyy",
+                { locale: es },
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="font-medium">
-              {format(parseISO(currentStart), "HH:mm")} - {format(parseISO(currentEnd), "HH:mm")}
+              {format(toZonedTime(parseISO(currentStart), business.timezone), "HH:mm")} -{" "}
+              {format(toZonedTime(parseISO(currentEnd), business.timezone), "HH:mm")}
             </span>
           </div>
           {staff && (

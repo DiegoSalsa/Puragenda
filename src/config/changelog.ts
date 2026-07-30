@@ -9,6 +9,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.4.0",
+    date: "2026-07-30",
+    title: "Control de Agenda y Widget Studio",
+    description:
+      "Esta actualizacion amplia el control diario de la agenda, permite personalizar y promocionar el widget, y entrega permisos mas precisos para cada integrante del equipo.",
+    features: [
+      "Nuevo Widget Studio con temas guardados, colores, tipografia, bordes, sombras y alineacion personalizables.",
+      "Bloques promocionales con imagen, ubicacion configurable y descuentos reales aplicados al total de la reserva.",
+      "Perfiles de acceso reutilizables para decidir que puede ver o administrar cada integrante del equipo.",
+      "Creacion y edicion de citas directamente desde el calendario del dashboard, incluyendo notas internas.",
+      "Enlaces seguros en los correos para cancelar o reagendar citas cuando el negocio habilita esta opcion.",
+      "Pausas configurables en los horarios del negocio y de cada profesional.",
+      "Intervalos de agenda con precision de cinco minutos para adaptar los horarios a cada operacion.",
+      "Cupos prioritarios que el equipo puede ocupar antes de liberarlos automaticamente al widget publico.",
+      "Nueva ayuda contextual accesible desde cada seccion del dashboard.",
+      "Mejoras de navegacion, carga y adaptacion responsive en las principales pantallas del panel.",
+    ],
+    fixes: [
+      "Se reforzaron los permisos para impedir que perfiles de solo lectura modifiquen citas o configuraciones.",
+      "El reagendamiento ahora respeta dias bloqueados, horarios, pausas y la zona horaria del negocio.",
+      "Se corrigio la superposicion del panel de profesionales sobre las tarjetas.",
+      "Se mejoro el manejo de errores de Mercado Pago y la compatibilidad de sus dependencias.",
+    ],
+  },
+  {
     version: "v1.3.0",
     date: "2026-07-16",
     title: "Servicios, Imagenes y Analitica",

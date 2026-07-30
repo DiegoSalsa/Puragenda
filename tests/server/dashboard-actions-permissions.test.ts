@@ -27,6 +27,7 @@ vi.mock("@/server/email/send", () => ({
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
+    appointment: { findFirst: vi.fn(), update: vi.fn() },
     business: { update: vi.fn() },
     businessHours: { upsert: vi.fn() },
     service: { count: vi.fn() },
@@ -39,6 +40,7 @@ vi.mock("@/server/db/prisma", () => ({
 import {
   createStaffAction,
   saveBusinessHoursAction,
+  updateAppointmentStatusAction,
   updateBusinessPoliciesAction,
   updateProductionOrdersEnabledAction,
   updateServiceCategoryGroupingAction,
@@ -46,7 +48,10 @@ import {
 } from "@/server/actions/dashboard.actions";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
-import { getBusinessForUser } from "@/server/services/business.service";
+import {
+  getBusinessForUser,
+  getStaffAgendaScope,
+} from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 
 const business = {
@@ -83,6 +88,46 @@ describe("dashboard action permission boundaries", () => {
       error: "Solo la cuenta owner puede asignar roles con acceso administrativo",
     });
     expect(prisma.staff.count).not.toHaveBeenCalled();
+  });
+
+  it("does not let a read-only profile change appointment status", async () => {
+    vi.mocked(hasBusinessPermission).mockResolvedValue(false);
+
+    const result = await updateAppointmentStatusAction(
+      "appointment-1",
+      "CONFIRMED",
+    );
+
+    expect(result).toEqual({
+      error: "No tienes permisos para modificar citas",
+    });
+    expect(prisma.appointment.findFirst).not.toHaveBeenCalled();
+    expect(prisma.appointment.update).not.toHaveBeenCalled();
+  });
+
+  it("limits appointments.manage_own to the linked professional", async () => {
+    vi.mocked(hasBusinessPermission)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+    vi.mocked(prisma.appointment.findFirst).mockResolvedValue({
+      id: "appointment-1",
+      staffId: "staff-2",
+    } as never);
+    vi.mocked(getStaffAgendaScope).mockResolvedValue({
+      canSeeAllAgendas: false,
+      staffId: "staff-1",
+      ownStaffId: "staff-1",
+    });
+
+    const result = await updateAppointmentStatusAction(
+      "appointment-1",
+      "CONFIRMED",
+    );
+
+    expect(result).toEqual({
+      error: "No tienes permisos para modificar esta cita",
+    });
+    expect(prisma.appointment.update).not.toHaveBeenCalled();
   });
 
   it("checks services.manage before changing category grouping", async () => {
