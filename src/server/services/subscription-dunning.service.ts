@@ -366,6 +366,7 @@ export async function runBillingReconciliation(now = new Date()) {
   const results = {
     checked: 0,
     reconciled: 0,
+    notices: 0,
     warnings: 0,
     errors: [] as string[],
   };
@@ -401,6 +402,43 @@ export async function runBillingReconciliation(now = new Date()) {
         }`
       );
     }
+  }
+
+  const unsentNotices = await prisma.subscription.findMany({
+    where: {
+      status: "PAST_DUE",
+      dunningEmailSentAt: null,
+      gracePeriodEndsAt: { gt: now },
+    },
+    include: {
+      business: {
+        select: {
+          name: true,
+          owner: { select: { email: true, name: true } },
+        },
+      },
+    },
+    take: 100,
+  });
+
+  for (const subscription of unsentNotices) {
+    const owner = subscription.business.owner;
+    if (!owner?.email || !subscription.gracePeriodEndsAt) continue;
+
+    const delivered = await sendSubscriptionPaymentFailedEmail({
+      ownerEmail: owner.email,
+      ownerName: owner.name,
+      businessName: subscription.business.name,
+      gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+      nextPaymentAttemptAt: subscription.nextPaymentAttemptAt,
+    });
+    if (!delivered) continue;
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { dunningEmailSentAt: new Date() },
+    });
+    results.notices++;
   }
 
   const expiringGrace = await prisma.subscription.findMany({
