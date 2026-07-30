@@ -1,36 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/server/db/prisma";
-import { PreApproval } from "mercadopago";
-import { mpClient } from "@/server/lib/mercadopago";
-import { addDays } from "date-fns";
-import { incrementPaidReferrals } from "@/server/services/affiliate.service";
-import { markPlatformDiscountApplied } from "@/server/services/platform-discount.service";
-import { advanceBillingBenefitAfterAuthorized } from "@/server/services/subscription-billing.service";
 import crypto from "crypto";
+import { addMonths, addYears } from "date-fns";
+import { Invoice, PreApproval } from "mercadopago";
+import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Verify MercadoPago webhook signature.
- * MercadoPago sends x-signature header with format: "ts=TIMESTAMP,v1=HASH"
- * The hash is HMAC-SHA256 of a manifest string using the webhook secret.
- *
- * @see https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks#verificarsignature
- */
+import { prisma } from "@/server/db/prisma";
+import { mpClient } from "@/server/lib/mercadopago";
+import {
+  processMercadoPagoInvoice,
+  type MercadoPagoInvoiceSnapshot,
+} from "@/server/services/subscription-dunning.service";
+
 function verifyWebhookSignature(
   xSignature: string | null,
   xRequestId: string | null,
   dataId: string | undefined
-): boolean {
+) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
-  // If no secret configured, skip verification (log warning)
   if (!secret) {
-    console.warn("[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET not set — skipping signature verification");
+    console.warn(
+      "[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET not set — skipping signature verification"
+    );
     return true;
   }
 
   if (!xSignature || !xRequestId) return false;
 
-  // Parse "ts=...,v1=..." format
   const parts: Record<string, string> = {};
   for (const part of xSignature.split(",")) {
     const [key, ...valueParts] = part.trim().split("=");
@@ -39,181 +34,178 @@ function verifyWebhookSignature(
     }
   }
 
-  const ts = parts["ts"];
-  const v1 = parts["v1"];
+  const ts = parts.ts;
+  const v1 = parts.v1;
   if (!ts || !v1) return false;
 
-  // Build manifest and compute HMAC
   const manifest = `id:${dataId || ""};request-id:${xRequestId};ts:${ts};`;
-  const hmac = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(manifest)
+    .digest("hex");
 
-  return hmac === v1;
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(v1);
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
 }
 
-/**
- * Webhook endpoint for MercadoPago subscription notifications.
- * Receives silent notifications and updates subscription status accordingly.
- *
- * MercadoPago sends: { id, type, data: { id }, ... }
- * We only care about type === "subscription_preapproval"
- */
+function dateOrNull(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function processPreapproval(resourceId: string) {
+  const preapproval = new PreApproval(mpClient);
+  const mpSubscription = await preapproval.get({ id: resourceId });
+
+  if (!mpSubscription?.id) {
+    return { handled: false, reason: "preapproval_not_found" };
+  }
+
+  const subscription = await prisma.subscription.findFirst({
+    where: { mpSubscriptionId: mpSubscription.id },
+  });
+  if (!subscription) {
+    return { handled: false, reason: "subscription_not_found" };
+  }
+
+  if (mpSubscription.status === "authorized") {
+    // An authorized preapproval only proves that the recurring agreement is
+    // active. It must never clear a PAST_DUE state; invoice notifications do.
+    const canActivateOnboarding =
+      (subscription.status === "INACTIVE" ||
+        subscription.status === "TRIALING") &&
+      !subscription.paymentFailedAt;
+
+    if (!canActivateOnboarding) {
+      return { handled: true, state: subscription.status };
+    }
+
+    const providerPeriodEnd = dateOrNull(mpSubscription.next_payment_date);
+    const fallbackPeriodEnd =
+      subscription.billingCycle === "ANNUAL"
+        ? addYears(new Date(), 1)
+        : addMonths(new Date(), 1);
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: "ACTIVE",
+        isTrial: false,
+        currentPeriodEnd: providerPeriodEnd ?? fallbackPeriodEnd,
+      },
+    });
+
+    return { handled: true, state: "ACTIVE" };
+  }
+
+  if (
+    mpSubscription.status === "cancelled" ||
+    mpSubscription.status === "canceled"
+  ) {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: "CANCELLED" },
+    });
+    return { handled: true, state: "CANCELLED" };
+  }
+
+  if (mpSubscription.status === "paused") {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: "INACTIVE" },
+    });
+    return { handled: true, state: "INACTIVE" };
+  }
+
+  return { handled: true, state: mpSubscription.status ?? "unknown" };
+}
+
+async function processPaymentNotification(resourceId: string) {
+  const paymentId = Number(resourceId);
+  if (!Number.isFinite(paymentId)) {
+    return { handled: false, reason: "invalid_payment_id" };
+  }
+
+  const invoiceClient = new Invoice(mpClient);
+  const search = await invoiceClient.search({
+    options: { payment_id: paymentId, limit: 1 },
+  });
+  const invoice = search.results?.[0] as
+    | MercadoPagoInvoiceSnapshot
+    | undefined;
+
+  if (!invoice) {
+    // The payment may belong to deposits or another integration.
+    return { handled: false, reason: "subscription_invoice_not_found" };
+  }
+
+  return processMercadoPagoInvoice(invoice);
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Read body as text first for signature verification
     const rawBody = await request.text();
     let body: Record<string, unknown>;
 
     try {
       body = JSON.parse(rawBody);
-    } catch (error) {
-      console.error("[route] Error:", error);
+    } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    // ── Verify webhook signature ──
-    const xSignature = request.headers.get("x-signature");
-    const xRequestId = request.headers.get("x-request-id");
-    const dataId = (body.data as Record<string, unknown>)?.id as string | undefined;
+    const dataId = (body.data as Record<string, unknown> | undefined)?.id;
+    const resourceId =
+      typeof dataId === "string" || typeof dataId === "number"
+        ? String(dataId)
+        : undefined;
 
-    if (!verifyWebhookSignature(xSignature, xRequestId, dataId)) {
-      console.error("[webhook/mp] Invalid signature — rejecting request");
+    if (
+      !verifyWebhookSignature(
+        request.headers.get("x-signature"),
+        request.headers.get("x-request-id"),
+        resourceId
+      )
+    ) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const notificationType = body.type as string | undefined;
-    const resourceId = dataId;
-
-    // Only process subscription_preapproval notifications
-    if (notificationType !== "subscription_preapproval" || !resourceId) {
-      // Return 200 OK so MercadoPago doesn't retry irrelevant notifications
-      return NextResponse.json({ received: true }, { status: 200 });
+    if (!notificationType || !resourceId) {
+      return NextResponse.json({ received: true });
     }
 
-    // Query MercadoPago for the real subscription status
-    const preapproval = new PreApproval(mpClient);
-    const mpSubscription = await preapproval.get({ id: resourceId });
-
-    if (!mpSubscription || !mpSubscription.id) {
-      console.error("[webhook/mp] Could not fetch preapproval:", resourceId);
-      return NextResponse.json({ received: true }, { status: 200 });
+    if (notificationType === "subscription_authorized_payment") {
+      const invoiceClient = new Invoice(mpClient);
+      const invoice = (await invoiceClient.get({
+        id: resourceId,
+      })) as MercadoPagoInvoiceSnapshot;
+      const result = await processMercadoPagoInvoice(invoice);
+      return NextResponse.json({ received: true, result });
     }
 
-    const mpStatus = mpSubscription.status; // "authorized" | "paused" | "cancelled" | "pending"
-    const mpSubscriptionId = mpSubscription.id;
-
-    // Find the subscription in our database
-    const subscription = await prisma.subscription.findFirst({
-      where: { mpSubscriptionId },
-    });
-
-    if (!subscription) {
-      console.warn("[webhook/mp] No subscription found for mpSubscriptionId:", mpSubscriptionId);
-      return NextResponse.json({ received: true }, { status: 200 });
+    if (notificationType === "subscription_preapproval") {
+      const result = await processPreapproval(resourceId);
+      return NextResponse.json({ received: true, result });
     }
 
-    // Update subscription based on MercadoPago status
-    if (mpStatus === "authorized") {
-      // If the subscription had a pending discount, the payment was already charged with it.
-      // We must now revert the MP subscription transaction_amount to the base price for the NEXT month.
-      if (false) {
-        const subscription = { freeMonthsRemaining: 0 };
-        // Check if there are free months remaining — if so, keep minimum price
-        if (subscription.freeMonthsRemaining > 0) {
-          try {
-            await preapproval.update({
-              id: mpSubscriptionId,
-              body: {
-                auto_recurring: {
-                  transaction_amount: 10, // Minimum CLP
-                  currency_id: "CLP",
-                },
-              },
-            });
-            console.log(`[webhook/mp] Free months remaining: ${subscription.freeMonthsRemaining - 1}, keeping minimum price for ${mpSubscriptionId}`);
-          } catch (error) {
-            console.error(`[webhook/mp] Failed to keep minimum price for ${mpSubscriptionId}:`, error);
-          }
-        } else {
-          // No free months — revert to full price
-          try {
-            await preapproval.update({
-              id: mpSubscriptionId,
-              body: {
-                auto_recurring: {
-                  transaction_amount: 10,
-                  currency_id: "CLP",
-                },
-              },
-            });
-            console.log(`[webhook/mp] Temporarily reset subscription ${mpSubscriptionId} before billing sync`);
-          } catch (error) {
-            console.error(`[webhook/mp] Failed to revert discount for ${mpSubscriptionId}:`, error);
-          }
-        }
-      }
-
-      // Consume active prize if exists (ACTIVE → USED)
-      const updateData: Record<string, unknown> = {
-        status: "ACTIVE",
-        isTrial: false,
-        currentPeriodEnd: addDays(new Date(), 30),
-        hasCountedAsPaidReferral: true,
-      };
-
-      // If there was an active prize and no more free months, mark it used
-      if (subscription.activePrizeId && subscription.freeMonthsRemaining <= 1) {
-        await prisma.prize.update({
-          where: { id: subscription.activePrizeId },
-          data: { status: "USED" },
-        });
-        updateData.activePrizeId = null;
-      }
-
-      // Payment successful — upgrade to ACTIVE and clean up
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: updateData,
-      });
-
-      const billingSync = await advanceBillingBenefitAfterAuthorized(subscription.id);
-      if (!billingSync.success) {
-        console.warn("[webhook/mp] Billing benefit advanced, but MP sync failed:", billingSync.error);
-      }
-
-      await markPlatformDiscountApplied(subscription.id);
-
-      // If it's the first time they pay, count it for the affiliate
-      if (!subscription.hasCountedAsPaidReferral) {
-        await incrementPaidReferrals(subscription.businessId);
-      }
-
-      console.log(`[webhook/mp] Subscription ${mpSubscriptionId} activated for business ${subscription.businessId}`);
-    } else if (mpStatus === "cancelled") {
-      // Subscription cancelled — downgrade
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: "CANCELLED",
-          plan: "INDIVIDUAL",
-        },
-      });
-      console.log(`[webhook/mp] Subscription ${mpSubscriptionId} cancelled for business ${subscription.businessId}`);
-    } else if (mpStatus === "paused") {
-      // Subscription paused
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: "INACTIVE",
-        },
-      });
-      console.log(`[webhook/mp] Subscription ${mpSubscriptionId} paused for business ${subscription.businessId}`);
+    if (notificationType === "payment") {
+      const result = await processPaymentNotification(resourceId);
+      return NextResponse.json({ received: true, result });
     }
-    // For "pending" and other statuses, we don't change anything
 
-    return NextResponse.json({ received: true }, { status: 200 });
+    return NextResponse.json({ received: true });
   } catch (error) {
+    // Return a retryable status: losing billing notifications is worse than a
+    // duplicate because invoice processing is idempotent by invoice/payment ID.
     console.error("[webhook/mp] Error processing notification:", error);
-    // Always return 200 to prevent MercadoPago from retrying
-    return NextResponse.json({ received: true }, { status: 200 });
+    return NextResponse.json(
+      { received: false, error: "Webhook processing failed" },
+      { status: 500 }
+    );
   }
 }

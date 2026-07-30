@@ -11,6 +11,7 @@ import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import type { Metadata } from "next";
 import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { hasDunningAccess } from "@/server/services/subscription-dunning.service";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -37,7 +38,11 @@ export default async function DashboardLayout({
       where: { businessId: business.id },
     });
 
-    if (subscription?.status === "INACTIVE") {
+    const pastDueAccessExpired =
+      subscription?.status === "PAST_DUE" &&
+      !hasDunningAccess(subscription);
+
+    if (subscription?.status === "INACTIVE" || pastDueAccessExpired) {
       return (
         <PaymentWall 
           userEmail={user.email} 
@@ -45,6 +50,7 @@ export default async function DashboardLayout({
           businessId={business.id} 
           businessName={business.name}
           plan={subscription.plan} 
+          reason={pastDueAccessExpired ? "past_due" : "pending"}
         />
       );
     }

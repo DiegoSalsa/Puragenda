@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/server/email/send";
+import { runBillingReconciliation } from "@/server/services/subscription-dunning.service";
 
 // ── Vercel Cron: runs daily at 13:00 UTC (09:00 AM Chile) ──
 // Handles two tasks:
@@ -163,10 +164,22 @@ export async function GET(req: Request) {
       }
     }
 
+    let billingReconciliation = null;
+    try {
+      billingReconciliation = await runBillingReconciliation(now);
+    } catch (error) {
+      results.errors.push(
+        `billing-reconciliation: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       message: `Trial expiry check: ${results.warned} warned, ${results.expired} expired, ${results.promoExpired} promo expired`,
       ...results,
+      billingReconciliation,
     });
   } catch (err) {
     console.error("[Cron Trial-Expiry] Error:", err);

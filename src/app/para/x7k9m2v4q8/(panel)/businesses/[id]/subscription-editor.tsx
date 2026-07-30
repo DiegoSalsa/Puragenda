@@ -35,7 +35,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
     try {
       const result = await updateSubscriptionAction(subscription.id, {
         plan: plan as "INDIVIDUAL" | "EQUIPO",
-        status: status as "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED",
+        status: status as "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED",
         billingCycle: billingCycle as "MONTHLY" | "ANNUAL",
         extraStaffCount: extraStaff,
       });
@@ -77,6 +77,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
             <option value="ACTIVE">Activo</option>
             <option value="TRIALING">En trial</option>
+            <option value="PAST_DUE">Pago pendiente</option>
             <option value="INACTIVE">Inactivo</option>
             <option value="CANCELLED">Cancelado</option>
           </select>

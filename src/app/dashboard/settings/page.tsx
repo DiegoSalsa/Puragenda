@@ -51,7 +51,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const planPrice = subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
   const isActive = subscription?.status === "ACTIVE";
   const isTrial = subscription?.isTrial ?? false;
-  const showUpgrade = !subscription || subscription.plan === "INDIVIDUAL" || (subscription.plan === "EQUIPO" && isTrial);
+  const showUpgrade =
+    subscription?.status !== "PAST_DUE" &&
+    (!subscription ||
+      subscription.plan === "INDIVIDUAL" ||
+      (subscription.plan === "EQUIPO" && isTrial));
 
   const isMpConnected = !!business.mpAccessToken;
 
@@ -124,6 +128,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 {subscription?.status === "INACTIVE" && (
                   <span className="flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-400">
                     <AlertCircle className="h-3 w-3" /> Inactivo
+                  </span>
+                )}
+                {subscription?.status === "PAST_DUE" && (
+                  <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
+                    <AlertCircle className="h-3 w-3" /> Pago pendiente
                   </span>
                 )}
               </div>

@@ -1,9 +1,10 @@
 import { prisma } from "@/server/db/prisma";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, differenceInHours } from "date-fns";
 import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
 import { PRICING, STAFF_LIMITS } from "@/core/constants";
+import { DunningActions } from "./dunning-actions";
 
 export async function SubscriptionBanner({ businessId }: { businessId: string }) {
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
@@ -13,6 +14,58 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
   const daysLeft = trialEndsAt ? Math.max(0, differenceInDays(new Date(trialEndsAt), new Date())) : 0;
   const isUrgent = daysLeft <= 5;
   const planLabel = plan === "INDIVIDUAL" ? "Individual" : "Equipo";
+
+  if (status === "PAST_DUE") {
+    const graceEndsAt = subscription.gracePeriodEndsAt;
+    const hoursLeft = graceEndsAt
+      ? Math.max(0, differenceInHours(graceEndsAt, new Date()))
+      : 0;
+    const graceLabel = graceEndsAt
+      ? graceEndsAt.toLocaleString("es-CL", {
+          timeZone: "America/Santiago",
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "muy pronto";
+    const nextAttemptLabel = subscription.nextPaymentAttemptAt
+      ? subscription.nextPaymentAttemptAt.toLocaleString("es-CL", {
+          timeZone: "America/Santiago",
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+    return (
+      <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent p-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <p className="flex items-center gap-2 text-sm font-bold text-amber-500">
+              <AlertTriangle className="h-4 w-4" />
+              No pudimos cobrar tu suscripción
+            </p>
+            <p className="max-w-2xl text-sm text-foreground">
+              Sigues teniendo acceso durante el periodo de gracia. Regulariza
+              el pago antes del <strong>{graceLabel}</strong>
+              {hoursLeft > 0 ? ` (${hoursLeft} horas restantes)` : ""}.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {nextAttemptLabel
+                ? `Mercado Pago tiene otro intento previsto para el ${nextAttemptLabel}.`
+                : "Puedes reautorizar la tarjeta guardada sin crear una suscripción nueva."}
+              {subscription.paymentRetryCount > 0
+                ? ` Intentos informados: ${subscription.paymentRetryCount}.`
+                : ""}
+            </p>
+          </div>
+          <DunningActions compact />
+        </div>
+      </div>
+    );
+  }
 
   // TRIALING: show trial info + contextual CTAs
   if (status === "TRIALING" && isTrial) {

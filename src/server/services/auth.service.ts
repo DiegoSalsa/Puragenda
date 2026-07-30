@@ -115,7 +115,7 @@ export async function registerUser(data: {
     const givesTrial = !trialBlocked && isTrialPlan;
 
     let plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
-    let status: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
+    let status: "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
     let isTrial = false;
     let trialEndsAt: Date | null = null;
 

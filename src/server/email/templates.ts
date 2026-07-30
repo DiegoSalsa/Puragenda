@@ -1295,3 +1295,104 @@ export function recurringConflictWarningClientEmail(data: RecurringConflictWarni
     `),
   };
 }
+
+interface SubscriptionPaymentFailedEmailData {
+  ownerName?: string | null;
+  businessName: string;
+  gracePeriodEndsAt: Date;
+  nextPaymentAttemptAt?: Date | null;
+  amount?: number | null;
+  finalWarning?: boolean;
+}
+
+export function subscriptionPaymentFailedEmail(
+  data: SubscriptionPaymentFailedEmailData
+): { subject: string; html: string } {
+  const dashboardUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://www.puragenda.cl/dashboard"
+      : "http://localhost:3000/dashboard";
+  const graceEnd = formatInTimeZone(
+    data.gracePeriodEndsAt,
+    BUSINESS_TZ,
+    "d 'de' MMMM 'a las' HH:mm",
+    { locale: es }
+  );
+  const nextAttempt = data.nextPaymentAttemptAt
+    ? formatInTimeZone(
+        data.nextPaymentAttemptAt,
+        BUSINESS_TZ,
+        "d 'de' MMMM 'a las' HH:mm",
+        { locale: es }
+      )
+    : null;
+  const amount =
+    data.amount && data.amount > 0
+      ? `$${Math.round(data.amount).toLocaleString("es-CL")}`
+      : null;
+
+  return {
+    subject: data.finalWarning
+      ? "Tu periodo de gracia está por terminar — Puragenda"
+      : "No pudimos cobrar tu suscripción — Puragenda",
+    html: layout("Pago pendiente", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">
+        ${data.finalWarning ? "Tu periodo de gracia está por terminar" : "No pudimos procesar tu pago"}
+      </h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.ownerName || "hola")}</strong>.
+        El cobro${amount ? ` de <strong style="color:#0f172a;">${amount}</strong>` : ""}
+        de la suscripción de <strong style="color:#0f172a;">${escapeHtml(data.businessName)}</strong>
+        no pudo completarse.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#fff7ed;border-radius:12px;border:1px solid #fed7aa;">
+        <p style="margin:0;font-size:14px;color:#9a3412;line-height:1.6;">
+          Mantendremos el acceso hasta el <strong>${graceEnd}</strong>.
+          ${nextAttempt ? `Mercado Pago tiene otro intento previsto para el <strong>${nextAttempt}</strong>.` : "Puedes reautorizar tu tarjeta desde el dashboard."}
+        </p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Regularizar pago
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">
+        Tus datos no se eliminarán. Si necesitas ayuda, responde a este correo.
+      </p>
+    `),
+  };
+}
+
+interface SubscriptionPaymentRecoveredEmailData {
+  ownerName?: string | null;
+  businessName: string;
+  periodEnd: Date;
+}
+
+export function subscriptionPaymentRecoveredEmail(
+  data: SubscriptionPaymentRecoveredEmailData
+): { subject: string; html: string } {
+  const periodEnd = formatInTimeZone(
+    data.periodEnd,
+    BUSINESS_TZ,
+    "d 'de' MMMM 'de' yyyy",
+    { locale: es }
+  );
+
+  return {
+    subject: "Pago recibido y acceso normalizado — Puragenda",
+    html: layout("Pago recibido", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu suscripción está al día</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.ownerName || "hola")}</strong>.
+        Recibimos el pago de la suscripción de
+        <strong style="color:#0f172a;">${escapeHtml(data.businessName)}</strong>.
+      </p>
+      <div style="margin:20px 0;padding:20px;background:#ecfdf5;border-radius:12px;border:1px solid #a7f3d0;">
+        <p style="margin:0;font-size:14px;color:#065f46;line-height:1.6;">
+          El acceso está activo y el periodo pagado se extiende hasta el <strong>${periodEnd}</strong>.
+        </p>
+      </div>
+    `),
+  };
+}

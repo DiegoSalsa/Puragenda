@@ -9,6 +9,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.5.0",
+    date: "2026-07-30",
+    title: "Recuperación de Pagos y Periodo de Gracia",
+    description:
+      "Esta actualización mejora la cobranza de suscripciones rechazadas sin cortar el acceso de inmediato ni crear contratos duplicados.",
+    features: [
+      "Nuevo periodo de gracia móvil de 48 horas después de cada intento de cobro rechazado.",
+      "Banner de pago pendiente sobre el calendario con plazo, próximo intento y estado de la cobranza.",
+      "Reautorización segura de la tarjeta guardada sobre la misma suscripción de Mercado Pago.",
+      "Reconciliación automática de respaldo para recuperar notificaciones perdidas y normalizar pagos.",
+      "Correos al detectar un rechazo, antes de terminar la gracia y al confirmar la recuperación.",
+      "Nuevo estado de pago pendiente visible también desde la administración de Puragenda.",
+    ],
+    fixes: [
+      "Los rechazos de cobros recurrentes ahora procesan la notificación subscription_authorized_payment.",
+      "Una suscripción autorizada ya no se confunde con una cuota efectivamente pagada.",
+      "Se impide crear una segunda suscripción cuando existe una cuota atrasada en la actual.",
+      "El acceso se bloquea solamente después de agotar la gracia correspondiente al último intento informado.",
+    ],
+  },
+  {
     version: "v1.4.0",
     date: "2026-07-30",
     title: "Control de Agenda y Widget Studio",

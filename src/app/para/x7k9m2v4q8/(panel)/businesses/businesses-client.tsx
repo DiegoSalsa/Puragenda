@@ -162,6 +162,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
           <option value="ALL">Todos los estados</option>
           <option value="ACTIVE">Activo</option>
           <option value="TRIALING">Trial</option>
+          <option value="PAST_DUE">Pago pendiente</option>
           <option value="CANCELLED">Cancelado</option>
           <option value="INACTIVE">Inactivo</option>
         </select>
@@ -189,7 +190,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                 </div>
                 {sub && (
                   <span className={`shrink-0 inline-flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${
-                    sub.status === "ACTIVE" ? "bg-[#BFFCC6]" : sub.status === "TRIALING" ? "bg-[#FFF5BA]" : sub.status === "CANCELLED" ? "bg-[#FFB5E8]" : "bg-black/10"
+                    sub.status === "ACTIVE" ? "bg-[#BFFCC6]" : sub.status === "TRIALING" ? "bg-[#FFF5BA]" : sub.status === "PAST_DUE" ? "bg-orange-200" : sub.status === "CANCELLED" ? "bg-[#FFB5E8]" : "bg-black/10"
                   }`}>
                     {sub.status}
                     {daysLeft !== null && daysLeft >= 0 && <span className="opacity-60">({daysLeft}d)</span>}
@@ -275,6 +276,8 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                             ? "bg-[#BFFCC6]"
                             : sub?.status === "TRIALING"
                             ? "bg-[#FFF5BA]"
+                            : sub?.status === "PAST_DUE"
+                              ? "bg-orange-200"
                             : sub?.status === "CANCELLED"
                             ? "bg-[#FFB5E8]"
                             : "bg-black/10"
@@ -282,6 +285,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                       >
                         {sub?.status === "ACTIVE" && <CheckCircle2 className="h-3 w-3" />}
                         {sub?.status === "TRIALING" && <Clock className="h-3 w-3" />}
+                        {sub?.status === "PAST_DUE" && <AlertTriangle className="h-3 w-3" />}
                         {sub?.status === "CANCELLED" && <XCircle className="h-3 w-3" />}
                         {sub?.status === "INACTIVE" && <AlertTriangle className="h-3 w-3" />}
                         {sub?.status || "N/A"}

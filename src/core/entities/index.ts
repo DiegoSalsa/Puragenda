@@ -4,7 +4,7 @@
 
 export type UserRole = "ADMIN" | "RECEPTIONIST" | "STAFF" | "SUPERADMIN";
 export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
-export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
+export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
 export type BillingCycle = "MONTHLY" | "ANNUAL";
 export type AppointmentStatus = "PENDING" | "AWAITING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "COMPLETED" | "NO_SHOW";
 
@@ -53,7 +53,9 @@ export interface Subscription {
   billingCycle: BillingCycle; isTrial: boolean; trialEndsAt: Date | null;
   extraStaffCount: number; businessId: string;
   mpCustomerId: string | null; mpSubscriptionId: string | null;
-  currentPeriodEnd: Date | null; createdAt: Date; updatedAt: Date;
+  currentPeriodEnd: Date | null; paymentFailedAt: Date | null;
+  gracePeriodEndsAt: Date | null; nextPaymentAttemptAt: Date | null;
+  createdAt: Date; updatedAt: Date;
 }
 
 export interface SessionUser {

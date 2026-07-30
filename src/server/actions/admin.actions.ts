@@ -157,7 +157,7 @@ export async function updateSubscriptionAction(
   subscriptionId: string,
   data: {
     plan?: "INDIVIDUAL" | "EQUIPO";
-    status?: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
+    status?: "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
     billingCycle?: "MONTHLY" | "ANNUAL";
     isTrial?: boolean;
     extraStaffCount?: number;

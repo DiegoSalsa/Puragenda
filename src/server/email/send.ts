@@ -15,6 +15,8 @@ import {
   loyaltyRewardWonEmail,
   trialExpiringEmail,
   trialExpiredEmail,
+  subscriptionPaymentFailedEmail,
+  subscriptionPaymentRecoveredEmail,
   appointmentActionOwnerEmail,
   appointmentActionStaffEmail,
   recurringBookingCreatedClientEmail,
@@ -567,6 +569,39 @@ export async function sendTrialExpiredEmail(data: {
 /**
  * Notify business owner when a customer confirms or cancels via email link.
  */
+export async function sendSubscriptionPaymentFailedEmail(data: {
+  ownerEmail: string;
+  ownerName?: string | null;
+  businessName: string;
+  gracePeriodEndsAt: Date;
+  nextPaymentAttemptAt?: Date | null;
+  amount?: number | null;
+  finalWarning?: boolean;
+}) {
+  const { subject, html } = subscriptionPaymentFailedEmail(data);
+  return deliverEmail(`subscription payment warning to ${data.ownerEmail}`, {
+    from: EMAIL_FROM,
+    to: data.ownerEmail,
+    subject,
+    html,
+  });
+}
+
+export async function sendSubscriptionPaymentRecoveredEmail(data: {
+  ownerEmail: string;
+  ownerName?: string | null;
+  businessName: string;
+  periodEnd: Date;
+}) {
+  const { subject, html } = subscriptionPaymentRecoveredEmail(data);
+  return deliverEmail(`subscription payment recovered to ${data.ownerEmail}`, {
+    from: EMAIL_FROM,
+    to: data.ownerEmail,
+    subject,
+    html,
+  });
+}
+
 export async function sendAppointmentActionNotification(data: {
   action: "confirmed" | "cancelled";
   customerName: string;

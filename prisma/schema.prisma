@@ -102,6 +102,7 @@ enum SubscriptionPlan {
 enum SubscriptionStatus {
   ACTIVE
   TRIALING
+  PAST_DUE
   INACTIVE
   CANCELLED
 }
@@ -150,11 +151,25 @@ model Subscription {
   mpCustomerId                 String?
   mpSubscriptionId             String?
   currentPeriodEnd             DateTime?
+  paymentFailedAt              DateTime?
+  gracePeriodEndsAt            DateTime?
+  nextPaymentAttemptAt         DateTime?
+  lastInvoiceId                String?
+  lastInvoiceStatus            String?
+  lastPaymentId                String?
+  lastPaymentStatus            String?
+  lastPaymentStatusDetail      String?
+  lastPaymentAttemptAt         DateTime?
+  paymentRetryCount            Int                @default(0)
+  dunningEmailSentAt           DateTime?
+  graceExpiryWarningSentAt     DateTime?
   createdAt                    DateTime           @default(now())
   updatedAt                    DateTime           @updatedAt
 
   business                    Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   platformDiscountRedemptions PlatformDiscountRedemption[]
+
+  @@index([status, gracePeriodEndsAt])
 }
 
 // ==========================================

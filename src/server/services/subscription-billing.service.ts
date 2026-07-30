@@ -11,7 +11,7 @@ type BillingCycle = "MONTHLY" | "ANNUAL";
 export type BillingSubscriptionInput = {
   id?: string;
   plan: BillingPlan;
-  status?: "ACTIVE" | "TRIALING" | "INACTIVE" | "CANCELLED";
+  status?: "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
   billingCycle: BillingCycle;
   extraStaffCount: number;
   pendingDiscountPercentage?: number | null;

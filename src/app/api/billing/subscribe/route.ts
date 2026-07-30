@@ -63,6 +63,18 @@ export async function POST(request: NextRequest) {
       where: { businessId: business.id },
     });
 
+    if (subscription?.status === "PAST_DUE" && subscription.mpSubscriptionId) {
+      return NextResponse.json(
+        {
+          error:
+            "Tienes un cobro pendiente. Regularízalo sin crear otra suscripción.",
+          code: "SUBSCRIPTION_PAST_DUE",
+          recoveryUrl: "/api/billing/recovery",
+        },
+        { status: 409 }
+      );
+    }
+
     if (subscription?.plan === targetPlan && subscription.status === "ACTIVE" && !subscription.isTrial) {
       return NextResponse.json(
         { error: `Ya tienes el plan ${PRICING[targetPlan].name} activo.` },
@@ -160,6 +172,18 @@ export async function POST(request: NextRequest) {
         extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
         status: "INACTIVE",
         isTrial: false,
+        paymentFailedAt: null,
+        gracePeriodEndsAt: null,
+        nextPaymentAttemptAt: null,
+        lastInvoiceId: null,
+        lastInvoiceStatus: null,
+        lastPaymentId: null,
+        lastPaymentStatus: null,
+        lastPaymentStatusDetail: null,
+        lastPaymentAttemptAt: null,
+        paymentRetryCount: 0,
+        dunningEmailSentAt: null,
+        graceExpiryWarningSentAt: null,
       },
       create: {
         businessId: business.id,
