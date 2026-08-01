@@ -325,7 +325,7 @@ export async function getLatestMercadoPagoInvoice(
 ) {
   const invoiceClient = new Invoice(mpClient);
   const response = await invoiceClient.search({
-    options: { preapproval_id: mpSubscriptionId, limit: 20 },
+    options: { preapproval_id: mpSubscriptionId },
   });
   const invoices = (response.results ?? []) as MercadoPagoInvoiceSnapshot[];
   const actionableInvoices = invoices.filter(

@@ -33,9 +33,17 @@ type MercadoPagoInstance = {
   };
 };
 
+type MercadoPagoOptions = {
+  locale?: string;
+  trackingDisabled?: boolean;
+};
+
 declare global {
   interface Window {
-    MercadoPago?: new (publicKey: string) => MercadoPagoInstance;
+    MercadoPago?: new (
+      publicKey: string,
+      options?: MercadoPagoOptions
+    ) => MercadoPagoInstance;
   }
 }
 
@@ -62,7 +70,10 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
       return;
     }
 
-    const mp = new window.MercadoPago(config.publicKey);
+    const mp = new window.MercadoPago(config.publicKey, {
+      locale: "es-CL",
+      trackingDisabled: true,
+    });
     mpRef.current = mp;
     const field = mp.fields
       .create("securityCode", { placeholder: "CVV" })

@@ -1,12 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const invoiceSearch = vi.hoisted(() => vi.fn());
+
+vi.mock("mercadopago", () => ({
+  Invoice: class {
+    search = invoiceSearch;
+  },
+  MercadoPagoConfig: class {},
+}));
 
 import {
   calculateGracePeriodEnd,
+  getLatestMercadoPagoInvoice,
   hasDunningAccess,
   nextPaidPeriodEnd,
 } from "@/server/services/subscription-dunning.service";
 
 describe("subscription dunning", () => {
+  beforeEach(() => {
+    invoiceSearch.mockReset();
+  });
+
   it("grants 48 rolling hours after a failed attempt", () => {
     const attemptAt = new Date("2026-07-30T12:00:00.000Z");
 
@@ -62,5 +76,31 @@ describe("subscription dunning", () => {
     expect(nextPaidPeriodEnd("ANNUAL", debitDate).toISOString()).toBe(
       "2027-07-29T18:45:24.106Z"
     );
+  });
+
+  it("searches invoices without forcing an unsupported page limit", async () => {
+    invoiceSearch.mockResolvedValue({
+      results: [
+        {
+          id: "older",
+          preapproval_id: "subscription-1",
+          last_modified: "2026-07-29T12:00:00.000Z",
+          payment: { status: "approved" },
+        },
+        {
+          id: "newer",
+          preapproval_id: "subscription-1",
+          last_modified: "2026-07-30T12:00:00.000Z",
+          payment: { status: "rejected" },
+        },
+      ],
+    });
+
+    const latest = await getLatestMercadoPagoInvoice("subscription-1");
+
+    expect(invoiceSearch).toHaveBeenCalledWith({
+      options: { preapproval_id: "subscription-1" },
+    });
+    expect(latest?.id).toBe("newer");
   });
 });
