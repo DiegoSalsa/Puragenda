@@ -137,7 +137,7 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
           Selecciona una nueva fecha y hora para tu cita en <strong className="text-foreground">{business.name}</strong>.
         </p>
 
-        <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2 text-sm">
+        <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2 text-sm text-foreground">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cita actual</p>
           <div className="flex items-center gap-2">
             <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
@@ -181,7 +181,7 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
             onChange={(e) => setNewDate(e.target.value)}
             min={minDate}
             required
-            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 focus:border-[#7C3AED]"
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 focus:border-[#7C3AED]"
           />
         </div>
 
@@ -192,7 +192,7 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
             value={newTime}
             onChange={(e) => setNewTime(e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 focus:border-[#7C3AED]"
+            className="w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/50 focus:border-[#7C3AED]"
           />
         </div>
 
@@ -217,7 +217,7 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
         <button
           type="submit"
           disabled={isPending || !newDate || !newTime}
-          className="w-full rounded-xl py-3 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:saturate-50"
           style={{ backgroundColor: pc }}
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -229,7 +229,7 @@ export function RescheduleClient({ appointmentId, token, business, service, staf
         </p>
       </form>
 
-      <p className="text-center text-xs text-muted-foreground/50">
+      <p className="text-center text-xs text-white/60">
         Powered by <span className="font-semibold" style={{ color: pc }}>Puragenda</span>
       </p>
     </div>

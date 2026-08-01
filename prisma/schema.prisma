@@ -44,6 +44,7 @@ model User {
   adminLoginCodes           AdminLoginCode[]
   platformDiscountCodes     PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
   adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
+  googleCalendarConnections GoogleCalendarConnection[]
 }
 
 // ==========================================
@@ -58,6 +59,18 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model ClientPortalToken {
+  id         String    @id @default(cuid())
+  email      String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([expiresAt])
 }
 
 model AdminLoginCode {
@@ -213,6 +226,7 @@ model Business {
   rewardName                                   String?
   discountType                                 String? // 'PERCENTAGE' | 'FIXED'
   discountValue                                Int?
+  loyaltyCodePrefix                            String    @default("PREMIO")
   // ── Politicas del negocio ──
   requiresClientRut                            Boolean   @default(false) // Pedir RUT en el widget
   allowRescheduling                            Boolean   @default(false) // Permitir que clientes reagenden
@@ -246,6 +260,7 @@ model Business {
   widgetThemes                WidgetTheme[]
   widgetPromoBlocks           WidgetPromoBlock[]
   accessProfiles              AccessProfile[]
+  googleCalendarConnections   GoogleCalendarConnection[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -465,14 +480,15 @@ model Staff {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  accessProfile     AccessProfile?     @relation(fields: [accessProfileId], references: [id], onDelete: SetNull)
-  appointments      Appointment[]
-  schedule          StaffSchedule[]
-  scheduleBlocks    ScheduleBlock[]
-  services          Service[]
-  recurringBookings RecurringBooking[]
+  business                  Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user                      User?                      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  accessProfile             AccessProfile?             @relation(fields: [accessProfileId], references: [id], onDelete: SetNull)
+  appointments              Appointment[]
+  schedule                  StaffSchedule[]
+  scheduleBlocks            ScheduleBlock[]
+  services                  Service[]
+  recurringBookings         RecurringBooking[]
+  googleCalendarConnections GoogleCalendarConnection[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -520,6 +536,7 @@ model ScheduleBlock {
 model Service {
   id                       String                 @id @default(cuid())
   name                     String
+  position                 Int                    @default(0)
   description              String?
   imageUrl                 String?
   duration                 Int
@@ -547,6 +564,7 @@ model Service {
 
   @@index([businessId])
   @@index([categoryId])
+  @@index([businessId, position])
 }
 
 model ServiceCategory {
@@ -835,12 +853,13 @@ model Appointment {
   createdAt                    DateTime          @default(now())
   updatedAt                    DateTime          @updatedAt
 
-  business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  service          Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  staff            Staff?            @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  client           Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  recurringBooking RecurringBooking? @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
-  promotion        WidgetPromoBlock? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service             Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff               Staff?               @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  client              Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  recurringBooking    RecurringBooking?    @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
+  promotion           WidgetPromoBlock?    @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  googleCalendarEvent GoogleCalendarEvent?
 
   @@index([businessId])
   @@index([serviceId])
@@ -849,6 +868,58 @@ model Appointment {
   @@index([clientId])
   @@index([recurringBookingId])
   @@index([promotionId])
+}
+
+model GoogleCalendarConnection {
+  id                      String    @id @default(cuid())
+  businessId              String
+  staffId                 String?
+  userId                  String
+  scope                   String
+  scopeKey                String
+  googleEmail             String
+  calendarId              String    @default("primary")
+  calendarName            String?
+  accessTokenEncrypted    String    @db.Text
+  refreshTokenEncrypted   String?   @db.Text
+  tokenExpiresAt          DateTime?
+  syncEnabled             Boolean   @default(true)
+  includeCustomerAttendee Boolean   @default(true)
+  lastSyncedAt            DateTime?
+  lastSyncError           String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  business Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  staff    Staff?                @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events   GoogleCalendarEvent[]
+
+  @@unique([businessId, scopeKey])
+  @@index([businessId, scope, syncEnabled])
+  @@index([staffId, syncEnabled])
+  @@index([userId])
+}
+
+model GoogleCalendarEvent {
+  id             String   @id @default(cuid())
+  appointmentId  String   @unique
+  connectionId   String
+  calendarId     String
+  googleEventId  String
+  googleEventUrl String?
+  etag           String?
+  lastSyncedAt   DateTime @default(now())
+  syncError      String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  appointment Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  connection  GoogleCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, calendarId, googleEventId])
+  @@index([connectionId])
+  @@index([lastSyncedAt])
 }
 
 // ==========================================

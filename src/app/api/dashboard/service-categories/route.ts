@@ -3,6 +3,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import {
   createServiceCategory,
   getServiceCategoriesByBusinessId,
+  reorderServiceCategories,
 } from "@/server/services/service-category.service";
 import { serviceCategoryNameSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
@@ -60,5 +61,35 @@ export async function POST(request: NextRequest) {
     }
     console.error("[service-categories] Error:", error);
     return Response.json({ error: "No se pudo crear la categoría" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getApiSessionUser(request);
+    if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
+
+    const business = await getBusinessForUser(user.id);
+    if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+    if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+      return Response.json({ error: "Sin permisos para gestionar categorías" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    if (
+      !Array.isArray(body.orderedIds) ||
+      body.orderedIds.length > 500 ||
+      body.orderedIds.some((id: unknown) => typeof id !== "string")
+    ) {
+      return Response.json({ error: "Orden inválido" }, { status: 400 });
+    }
+
+    await reorderServiceCategories(business.id, body.orderedIds);
+    return Response.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No se pudieron ordenar las categorías";
+    const status = message.startsWith("El orden debe incluir") ? 400 : 500;
+    if (status === 500) console.error("[service-categories] Reorder error:", error);
+    return Response.json({ error: message }, { status });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { resend, EMAIL_FROM } from "@/server/email/resend";
 import { reminderEmail } from "@/server/email/templates";
+import { addClientPortalLinkToEmail } from "@/server/email/send";
 
 // ── Vercel Cron: runs daily at 14:00 UTC (10:00 AM Chile) ──
 // Protected via CRON_SECRET to prevent unauthorized access.
@@ -91,16 +92,19 @@ export async function GET(req: Request) {
         // Generate unique action token for confirm/cancel links
         const actionToken = `${apt.id}-${crypto.randomUUID()}`;
 
-        const email = reminderEmail({
-          customerName: apt.customerName,
-          serviceName: apt.service.name,
-          staffName: apt.staff?.name || "Sin asignar",
-          startTime: apt.startTime,
-          endTime: apt.endTime,
-          businessName: apt.business.name,
-          confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
-          cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
-        });
+        const email = await addClientPortalLinkToEmail(
+          apt.customerEmail,
+          reminderEmail({
+            customerName: apt.customerName,
+            serviceName: apt.service.name,
+            staffName: apt.staff?.name || "Sin asignar",
+            startTime: apt.startTime,
+            endTime: apt.endTime,
+            businessName: apt.business.name,
+            confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
+            cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
+          }),
+        );
 
         const { error } = await resend.emails.send({
           from: EMAIL_FROM,

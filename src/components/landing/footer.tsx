@@ -23,6 +23,7 @@ export function Footer() {
               <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Precios</Link>
               <Link href="/guias" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Guías prácticas</Link>
               <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">FAQ</Link>
+              <Link href="/mi-agenda" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Mis citas</Link>
               <a href="/api/auth/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Demo</a>
               <Link href="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Dashboard</Link>
             </nav>

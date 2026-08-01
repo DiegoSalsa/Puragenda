@@ -105,14 +105,7 @@ export async function POST(
         }
         // Cancel all future appointments
         const now = new Date();
-        await prisma.appointment.updateMany({
-          where: {
-            recurringBookingId: booking.id,
-            startTime: { gte: now },
-            status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
-          },
-          data: { status: "CANCELLED" },
-        });
+        await cancelFutureSessions(booking.id, now);
         await prisma.recurringBooking.update({
           where: { id: booking.id },
           data: { status: "CANCELLED" },

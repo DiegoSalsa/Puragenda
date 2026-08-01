@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
-import { X, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { X, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function ChangelogPopup() {
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
@@ -78,6 +78,15 @@ export function ChangelogPopup() {
             <p className="mb-4 border-b-4 border-dashed border-black/20 pb-4 text-sm font-bold leading-relaxed text-black/80 dark:text-white/80 [@media(max-height:620px)]:mb-3 [@media(max-height:620px)]:pb-3 [@media(max-height:620px)]:leading-snug">
               {latestUpdate.description}
             </p>
+
+            {latestUpdate.notice && (
+              <div className="mb-4 flex items-start gap-3 rounded-xl border-2 border-black bg-[#FFF4B8] p-3 text-black shadow-[2px_2px_0_#000] [@media(max-height:620px)]:mb-3 [@media(max-height:620px)]:p-2.5">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={3} />
+                <p className="text-xs font-bold leading-relaxed [@media(max-height:620px)]:leading-snug">
+                  {latestUpdate.notice}
+                </p>
+              </div>
+            )}
 
             <div className="mb-4 space-y-2.5 [@media(max-height:620px)]:mb-3 [@media(max-height:620px)]:space-y-2">
               {latestUpdate.features.slice(0, 3).map((feature, index) => (

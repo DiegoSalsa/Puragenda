@@ -9,6 +9,7 @@ import {
   staffInviteEmail,
   cancellationClientEmail,
   forgotPasswordEmail,
+  clientPortalAccessEmail,
   adminLoginCodeEmail,
   newRegistrationAdminEmail,
   loyaltyStampEarnedEmail,
@@ -28,9 +29,15 @@ import {
   recurringExpiringClientEmail,
   recurringExpiringBusinessEmail,
   recurringConflictWarningClientEmail,
+  withClientPortalAccess,
+  type EmailTemplate,
 } from "./templates";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
+import {
+  getClientPortalAppUrl,
+  issueClientPortalEmailToken,
+} from "@/server/services/client-portal.service";
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -164,7 +171,10 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
 
   // 3. Email to customer
   {
-    const { subject, html } = newBookingClientEmail(data);
+    const { subject, html } = await addClientPortalLinkToEmail(
+      appointment.customerEmail,
+      newBookingClientEmail(data),
+    );
     tasks.push(
       deliverEmail(`new booking to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
@@ -243,7 +253,10 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
 
   // 3. Email to customer — use CONFIRMED template (they paid, so it's confirmed immediately)
   {
-    const { subject, html } = confirmedBookingClientEmail(data);
+    const { subject, html } = await addClientPortalLinkToEmail(
+      appointment.customerEmail,
+      confirmedBookingClientEmail(data),
+    );
     tasks.push(
       deliverEmail(`deposit confirmed to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
@@ -278,7 +291,10 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     ...actionUrls,
   };
 
-  const { subject, html } = confirmedBookingClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    appointment.customerEmail,
+    confirmedBookingClientEmail(data),
+  );
 
   await deliverEmail(`confirmation to client ${appointment.customerEmail}`, {
     from: EMAIL_FROM,
@@ -309,7 +325,10 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
     businessMapsUrl: appointment.business.mapsUrl,
   };
 
-  const { subject, html } = cancellationClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    appointment.customerEmail,
+    cancellationClientEmail(data),
+  );
 
   await deliverEmail(`cancellation to client ${appointment.customerEmail}`, {
     from: EMAIL_FROM,
@@ -403,6 +422,38 @@ export async function sendForgotPasswordEmail(email: string, token: string) {
  * Notify platform admins when a new business registers or starts a trial.
  * Errors are logged but never thrown — notification failures should not block registration.
  */
+export async function sendClientPortalAccessEmail(
+  email: string,
+  portalUrl: string,
+  expiresInMinutes: number,
+) {
+  const { subject, html } = clientPortalAccessEmail({ portalUrl, expiresInMinutes });
+  return deliverEmail("client portal access link", {
+    from: EMAIL_FROM,
+    to: email,
+    subject,
+    html,
+  });
+}
+
+export async function createClientPortalEmailUrl(customerEmail: string): Promise<string | null> {
+  try {
+    const { token } = await issueClientPortalEmailToken(customerEmail);
+    return `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`;
+  } catch (error) {
+    console.error(`[Email] Could not create client portal link for ${customerEmail}:`, error);
+    return null;
+  }
+}
+
+export async function addClientPortalLinkToEmail(
+  customerEmail: string,
+  template: EmailTemplate,
+): Promise<EmailTemplate> {
+  const portalUrl = await createClientPortalEmailUrl(customerEmail);
+  return portalUrl ? withClientPortalAccess(template, portalUrl) : template;
+}
+
 export async function sendNewRegistrationNotification(data: {
   ownerName: string;
   ownerEmail: string;
@@ -443,8 +494,8 @@ export async function sendLoyaltyStampEmail(data: {
   businessName: string;
   clientId: string;
 }) {
-  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-  const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
+  const portalUrl = await createClientPortalEmailUrl(data.clientEmail)
+    ?? `${getClientPortalAppUrl()}/mi-agenda`;
 
   const { subject, html } = loyaltyStampEarnedEmail({
     clientName: data.clientName,
@@ -482,8 +533,8 @@ export async function sendLoyaltyRewardEmail(data: {
   businessName: string;
   clientId: string;
 }) {
-  const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-  const portalUrl = `${appUrl}/mis-premios/${data.clientId}`;
+  const portalUrl = await createClientPortalEmailUrl(data.clientEmail)
+    ?? `${getClientPortalAppUrl()}/mi-agenda`;
 
   const { subject, html } = loyaltyRewardWonEmail({
     clientName: data.clientName,
@@ -681,7 +732,10 @@ export async function sendRecurringBookingCreatedClient(data: {
   managementToken: string;
   businessName: string;
 }) {
-  const { subject, html } = recurringBookingCreatedClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringBookingCreatedClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring created sent to ${data.customerEmail}`);
@@ -724,7 +778,10 @@ export async function sendRecurringBookingApprovedClient(data: {
   managementToken: string;
   businessName: string;
 }) {
-  const { subject, html } = recurringBookingApprovedClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringBookingApprovedClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring approved sent to ${data.customerEmail}`);
@@ -740,7 +797,10 @@ export async function sendRecurringBookingRejectedClient(data: {
   reason: string;
   businessName: string;
 }) {
-  const { subject, html } = recurringBookingRejectedClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringBookingRejectedClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring rejected sent to ${data.customerEmail}`);
@@ -755,7 +815,10 @@ export async function sendRecurringBookingCancelledClient(data: {
   serviceName: string;
   businessName: string;
 }) {
-  const { subject, html } = recurringBookingCancelledClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringBookingCancelledClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring cancelled sent to ${data.customerEmail}`);
@@ -771,7 +834,10 @@ export async function sendRecurringSessionCancelledClient(data: {
   sessionDate: Date;
   businessName: string;
 }) {
-  const { subject, html } = recurringSessionCancelledClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringSessionCancelledClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring session cancelled sent to ${data.customerEmail}`);
@@ -790,7 +856,10 @@ export async function sendRecurringExpiringClient(data: {
   managementToken: string;
   businessName: string;
 }) {
-  const { subject, html } = recurringExpiringClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringExpiringClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring expiring sent to ${data.customerEmail}`);
@@ -823,7 +892,10 @@ export async function sendRecurringConflictWarningClient(data: {
   originalDate: Date;
   businessName: string;
 }) {
-  const { subject, html } = recurringConflictWarningClientEmail(data);
+  const { subject, html } = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    recurringConflictWarningClientEmail(data),
+  );
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring conflict warning sent to ${data.customerEmail}`);

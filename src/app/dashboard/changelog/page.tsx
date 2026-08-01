@@ -1,5 +1,5 @@
 import { CHANGELOG_DATA } from "@/config/changelog";
-import { Sparkles, Calendar, CheckCircle2 } from "lucide-react";
+import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default function ChangelogPage() {
   return (
@@ -56,6 +56,13 @@ export default function ChangelogPage() {
               <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
                 {entry.description}
               </p>
+
+              {entry.notice && (
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+                  <p className="text-sm font-medium leading-relaxed">{entry.notice}</p>
+                </div>
+              )}
 
               <div className="space-y-6">
                 {entry.features.length > 0 && (

@@ -38,6 +38,7 @@ export default async function LoyaltyPage() {
             rewardName: business.rewardName ?? "",
             discountType: business.discountType ?? "PERCENTAGE",
             discountValue: business.discountValue ?? 0,
+            loyaltyCodePrefix: business.loyaltyCodePrefix,
           }}
         />
       </div>

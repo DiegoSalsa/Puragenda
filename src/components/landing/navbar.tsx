@@ -94,6 +94,11 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               </Link>
             ) : (
               <>
+                <Link href="/mi-agenda">
+                  <button className="rounded-full px-4 py-2 text-sm font-semibold text-[#7C3AED] transition-all duration-200 hover:bg-[#7C3AED]/10">
+                    Mis citas
+                  </button>
+                </Link>
                 <Link href="/login">
                   <button className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground">
                     Entrar
@@ -181,6 +186,11 @@ export function Navbar({ user, business }: NavbarProps = {}) {
                   </Link>
                 ) : (
                   <>
+                    <Link href="/mi-agenda" onClick={() => setMobileOpen(false)} className="block">
+                      <button className="w-full rounded-2xl border-2 border-[#7C3AED] py-3 text-sm font-semibold text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10">
+                        Ver mis citas
+                      </button>
+                    </Link>
                     <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
                       <button className="w-full rounded-2xl border border-border/50 py-3 text-sm font-medium text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground">
                         Entrar

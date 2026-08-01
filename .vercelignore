@@ -1,0 +1,6 @@
+scratch/
+marketing/
+.next/
+node_modules/
+*.log
+tests/

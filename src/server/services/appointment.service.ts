@@ -1,6 +1,10 @@
 import { prisma } from "@/server/db/prisma";
 import type { AppointmentStatus, Prisma } from "@prisma/client";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
+import {
+  getGoogleCalendarBusySlots,
+  syncAppointmentToGoogle,
+} from "@/server/services/google-calendar.service";
 
 /**
  * Verifica si existe una cita que colisione con el rango de tiempo dado
@@ -39,10 +43,37 @@ export async function checkAppointmentCollision(
     },
   });
 
-  return {
-    hasCollision: !!conflicting,
-    conflictingAppointment: conflicting ?? undefined,
-  };
+  if (conflicting) {
+    return { hasCollision: true, conflictingAppointment: conflicting };
+  }
+
+  if (staffId) {
+    const googleBusy = await getGoogleCalendarBusySlots(staffId, startTime, endTime);
+    const ownGoogleEventRange = excludeAppointmentId
+      ? await prisma.appointment.findUnique({
+          where: { id: excludeAppointmentId },
+          select: {
+            startTime: true,
+            endTime: true,
+            googleCalendarEvent: { select: { id: true } },
+          },
+        })
+      : null;
+    const externalGoogleBusy = googleBusy.filter(
+      (range) =>
+        !ownGoogleEventRange?.googleCalendarEvent ||
+        range.startTime.getTime() !== ownGoogleEventRange.startTime.getTime() ||
+        range.endTime.getTime() !== ownGoogleEventRange.endTime.getTime(),
+    );
+    if (externalGoogleBusy.some((range) => startTime < range.endTime && endTime > range.startTime)) {
+      return {
+        hasCollision: true,
+        conflictingAppointment: { customerName: "Google Calendar", startTime, endTime },
+      };
+    }
+  }
+
+  return { hasCollision: false };
 }
 
 /**
@@ -139,6 +170,8 @@ export async function createAppointment(data: {
     include: { service: true },
   });
 
+  await syncAppointmentToGoogle(appointment.id);
+
   return { success: true as const, appointment };
 }
 
@@ -200,8 +233,12 @@ export async function getBlockedSlots(
       })
     : [];
 
+  const googleBusy = staffId
+    ? await getGoogleCalendarBusySlots(staffId, dateStart, dateEnd)
+    : [];
+
   // Merge both lists
-  return [...appointments, ...scheduleBlocks].sort(
+  return [...appointments, ...scheduleBlocks, ...googleBusy].sort(
     (a, b) => a.startTime.getTime() - b.startTime.getTime()
   );
 }
@@ -226,9 +263,11 @@ export async function updateAppointmentStatus(
   appointmentId: string,
   status: "PENDING" | "AWAITING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "COMPLETED" | "NO_SHOW"
 ) {
-  return prisma.appointment.update({
+  const appointment = await prisma.appointment.update({
     where: { id: appointmentId },
     data: { status },
     include: { service: true, staff: true },
   });
+  await syncAppointmentToGoogle(appointmentId);
+  return appointment;
 }

@@ -13,6 +13,8 @@ import { isValidTime, isValidTimeRange } from "@/lib/time";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { calculatePriorityReleaseAt } from "@/server/services/schedule-block.service";
+import { normalizeLoyaltyCodePrefix } from "@/server/services/loyalty-code.service";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -73,6 +75,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
     return { error: "No tienes permisos para modificar esta cita" };
   }
   await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
+  await syncAppointmentToGoogle(appointmentId);
   revalidatePath("/dashboard");
   return { success: true };
 }
@@ -749,6 +752,7 @@ export async function createScheduleBlockAction(data: {
             where: { id: apt.id },
             data: { status: "CANCELLED" },
           });
+          await syncAppointmentToGoogle(apt.id);
 
           // Create a session override record
           await prisma.recurringSessionOverride.create({
@@ -813,6 +817,7 @@ export async function saveLoyaltyConfigAction(data: {
   rewardName: string;
   discountType: string;
   discountValue: number;
+  loyaltyCodePrefix: string;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -824,6 +829,7 @@ export async function saveLoyaltyConfigAction(data: {
 
   const stamps = Math.max(1, Math.min(50, Math.floor(data.stampsRequired)));
   const discountVal = Math.max(0, Math.floor(data.discountValue || 0));
+  const loyaltyCodePrefix = normalizeLoyaltyCodePrefix(data.loyaltyCodePrefix);
 
   if (data.discountType && !["PERCENTAGE", "FIXED"].includes(data.discountType)) {
     return { error: "Tipo de descuento inválido" };
@@ -841,6 +847,7 @@ export async function saveLoyaltyConfigAction(data: {
       rewardName: data.rewardName?.trim() || null,
       discountType: data.discountType || null,
       discountValue: discountVal || null,
+      loyaltyCodePrefix,
     },
   });
 

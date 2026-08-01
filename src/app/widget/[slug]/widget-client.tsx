@@ -1775,6 +1775,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Horas — {capitalize(format(selectedDate, "EEEE d 'de' MMMM", { locale: es }))}</p>
                   {loadingSlots ? (
                     <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin opacity-40" style={{ color: textColor }} /></div>
+                  ) : slots.length === 0 || slots.every(isSlotUnavailable) ? (
+                    <div
+                      className="rounded-2xl border px-4 py-5 text-center"
+                      style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
+                    >
+                      <Clock3 className="mx-auto h-5 w-5 opacity-40" style={{ color: textColor }} />
+                      <p className="mt-2 text-sm font-semibold" style={{ color: textColor }}>Sin horas disponibles</p>
+                      <p className="mt-1 text-xs" style={{ color: textSecondary }}>Prueba seleccionando otra fecha.</p>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                       {slots.map((slot) => {

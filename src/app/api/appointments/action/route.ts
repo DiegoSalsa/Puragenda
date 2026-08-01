@@ -4,6 +4,7 @@ import {
   sendAppointmentActionNotification,
   sendAppointmentActionStaffNotification,
 } from "@/server/email/send";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
         where: { id: appointment.id },
         data: { status: "CONFIRMED" },
       });
+      await syncAppointmentToGoogle(appointment.id);
 
       // Notify business owner
       if (appointment.business.owner?.email) {
@@ -101,6 +103,7 @@ export async function POST(req: Request) {
         where: { id: appointment.id },
         data: { status: "CANCELLED", actionToken: null },
       });
+      await syncAppointmentToGoogle(appointment.id);
 
       // Notify business owner
       if (appointment.business.owner?.email) {

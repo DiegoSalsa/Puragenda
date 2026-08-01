@@ -4,6 +4,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { cancelFutureSessions } from "@/server/services/recurring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +46,14 @@ export async function POST(
     const from = new Date(fromDate);
 
     // Cancel all future appointments that are still active
-    const result = await prisma.appointment.updateMany({
+    const appointmentsToCancel = await prisma.appointment.count({
       where: {
         recurringBookingId: id,
         startTime: { gte: from },
         status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
       },
-      data: { status: "CANCELLED" },
     });
+    await cancelFutureSessions(id, from);
 
     // If no more future active appointments remain, mark the booking as CANCELLED
     const remainingActive = await prisma.appointment.count({
@@ -72,7 +73,7 @@ export async function POST(
 
     return NextResponse.json({
       ok: true,
-      cancelled: result.count,
+      cancelled: appointmentsToCancel,
       bookingCancelled: remainingActive === 0,
     });
   } catch (err) {

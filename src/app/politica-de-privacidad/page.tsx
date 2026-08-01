@@ -37,7 +37,7 @@ export default function PrivacidadPage() {
                 Política de Privacidad
               </h1>
               <p className="mt-4 text-sm text-[#7C3AED] uppercase tracking-widest font-medium">
-                Última actualización: Abril 2026
+                Última actualización: Agosto 2026
               </p>
             </header>
 
@@ -143,19 +143,86 @@ export default function PrivacidadPage() {
                 de 30 días, salvo que la ley requiera su conservación por un período mayor.
               </p>
 
-              <h2>9. Menores de Edad</h2>
+              <h2 id="google-calendar" className="scroll-mt-32">9. Integración con Google Calendar y datos de Google</h2>
+
+              <h3>9.1 Datos de Google a los que accede Puragenda</h3>
+              <p>
+                La integración con Google Calendar es opcional y solo se activa cuando el usuario
+                selecciona &quot;Conectar con Google&quot; y concede su autorización. Puragenda accede únicamente a:
+              </p>
+              <ul>
+                <li>El correo de la cuenta de Google, para identificar qué cuenta está conectada.</li>
+                <li>La lista de calendarios y sus datos básicos, como identificador, nombre, calendario principal y nivel de acceso, para permitir que el usuario elija el calendario de destino.</li>
+                <li>Los intervalos de disponibilidad ocupada del calendario seleccionado, para impedir reservas que se superpongan. Puragenda no consulta ni muestra el título, descripción o contenido de los eventos externos.</li>
+                <li>Los eventos de citas administrados por Puragenda, para crearlos, actualizarlos o eliminarlos cuando una reserva cambia o se cancela.</li>
+              </ul>
+
+              <h3>9.2 Finalidad del uso</h3>
+              <p>
+                Los datos de Google se utilizan exclusivamente para ofrecer la sincronización visible de citas,
+                seleccionar el calendario conectado, enviar las actualizaciones autorizadas y bloquear horarios
+                ocupados en la agenda pública del profesional. No se utilizan para publicidad, elaboración de
+                perfiles, evaluación crediticia ni entrenamiento de modelos de inteligencia artificial.
+              </p>
+
+              <h3>9.3 Almacenamiento y protección</h3>
+              <p>
+                Puragenda conserva el correo conectado, el identificador y nombre del calendario elegido, los
+                identificadores de los eventos sincronizados y el estado de la conexión. Los tokens OAuth se
+                cifran en reposo mediante AES-256-GCM y se transmiten únicamente mediante HTTPS/TLS. Los intervalos
+                ocupados consultados desde eventos externos se usan para calcular disponibilidad y no se almacenan
+                como contenido de dichos eventos.
+              </p>
+
+              <h3>9.4 Transferencia, divulgación y uso limitado</h3>
+              <p>
+                No vendemos, transferimos ni compartimos datos de usuarios de Google con plataformas publicitarias,
+                corredores de datos u otros terceros. Solo pueden ser procesados por proveedores de infraestructura
+                necesarios para operar Puragenda, bajo obligaciones de confidencialidad y seguridad, o cuando una
+                ley aplicable lo exija. El uso y la transferencia de información recibida desde las APIs de Google
+                cumplen con la Política de Datos de Usuario de los Servicios de API de Google, incluidos sus
+                requisitos de Uso Limitado.
+              </p>
+              <p lang="en">
+                Puragenda&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Google API Services User Data Policy
+                </a>, including the Limited Use requirements.
+              </p>
+
+              <h3>9.5 Control, revocación y eliminación</h3>
+              <p>
+                El usuario puede desconectar Google Calendar en cualquier momento desde la misma sección del
+                dashboard. Al desconectar, Puragenda revoca el token, elimina las credenciales y la configuración
+                de conexión almacenadas, y retira del calendario los eventos creados por esa conexión. También se
+                puede revocar el acceso desde la página de conexiones de la cuenta de Google. Los datos de reservas
+                creados directamente en Puragenda se conservan conforme a las reglas generales de retención de esta
+                política.
+              </p>
+              <p>
+                Para administrar o revocar el acceso concedido, visite{" "}
+                <a href="https://myaccount.google.com/connections" target="_blank" rel="noreferrer">
+                  las conexiones de su cuenta de Google
+                </a>.
+              </p>
+
+              <h2>10. Menores de Edad</h2>
               <p>
                 El Servicio no está dirigido a menores de 18 años. No recopilamos intencionalmente
                 datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos.
               </p>
 
-              <h2>10. Cambios en esta Política</h2>
+              <h2>11. Cambios en esta Política</h2>
               <p>
                 Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados
                 a través de la plataforma. La fecha de última actualización se indica al inicio del documento.
               </p>
 
-              <h2>11. Contacto</h2>
+              <h2>12. Contacto</h2>
               <p>
                 Para consultas sobre privacidad y protección de datos, contáctenos en{" "}
                 <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.

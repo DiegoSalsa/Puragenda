@@ -11,6 +11,7 @@ interface LoyaltyConfigFormProps {
     rewardName: string;
     discountType: string;
     discountValue: number;
+    loyaltyCodePrefix: string;
   };
 }
 
@@ -20,6 +21,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
   const [rewardName, setRewardName] = useState(initialData.rewardName);
   const [discountType, setDiscountType] = useState(initialData.discountType);
   const [discountValue, setDiscountValue] = useState(initialData.discountValue);
+  const [loyaltyCodePrefix, setLoyaltyCodePrefix] = useState(initialData.loyaltyCodePrefix);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -34,6 +36,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
       rewardName,
       discountType,
       discountValue,
+      loyaltyCodePrefix,
     });
 
     if (result.error) {
@@ -106,6 +109,25 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
             placeholder="Ej: Corte gratis, Descuento especial..."
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="loyaltyCodePrefix" className="flex items-center gap-2 text-sm font-medium">
+            <Hash className="h-4 w-4 text-[#7C3AED]" />
+            Prefijo personalizado del código
+          </label>
+          <input
+            id="loyaltyCodePrefix"
+            type="text"
+            maxLength={16}
+            value={loyaltyCodePrefix}
+            onChange={(e) => setLoyaltyCodePrefix(e.target.value.toUpperCase())}
+            placeholder="Ej: TERAPIAS"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm uppercase outline-none transition-colors focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
+          />
+          <p className="text-xs text-muted-foreground">
+            Cada premio seguirá siendo único y personal, por ejemplo: {(loyaltyCodePrefix.trim() || "PREMIO").toUpperCase()}-A1B2C3D4E5.
+          </p>
         </div>
 
         {/* Discount Type */}

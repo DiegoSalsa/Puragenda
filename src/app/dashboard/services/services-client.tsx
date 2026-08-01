@@ -80,6 +80,7 @@ interface CustomProductionWindowForm extends Omit<CustomProductionWindow, "capac
 interface Service {
   id: string;
   name: string;
+  position: number;
   description: string | null;
   imageUrl: string | null;
   duration: number;
@@ -193,6 +194,7 @@ export function ServicesClient({
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [savingCategoryId, setSavingCategoryId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState<"categories" | "services" | null>(null);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -352,6 +354,56 @@ export function ServicesClient({
       alert(error instanceof Error ? error.message : "No se pudo eliminar la categoría.");
     } finally {
       setSavingCategoryId(null);
+    }
+  }
+
+  async function moveCategory(index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= categories.length || savingOrder) return;
+    const previous = categories;
+    const next = [...categories];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    const positioned = next.map((category, position) => ({ ...category, position }));
+    setCategories(positioned);
+    setSavingOrder("categories");
+    try {
+      const response = await fetch("/api/dashboard/service-categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: positioned.map((category) => category.id) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudieron ordenar las categorías.");
+    } catch (error) {
+      setCategories(previous);
+      alert(error instanceof Error ? error.message : "No se pudieron ordenar las categorías.");
+    } finally {
+      setSavingOrder(null);
+    }
+  }
+
+  async function moveService(index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= services.length || savingOrder) return;
+    const previous = services;
+    const next = [...services];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    const positioned = next.map((service, position) => ({ ...service, position }));
+    setServices(positioned);
+    setSavingOrder("services");
+    try {
+      const response = await fetch("/api/dashboard/services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: positioned.map((service) => service.id) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudieron ordenar los servicios.");
+    } catch (error) {
+      setServices(previous);
+      alert(error instanceof Error ? error.message : "No se pudieron ordenar los servicios.");
+    } finally {
+      setSavingOrder(null);
     }
   }
 
@@ -806,7 +858,7 @@ export function ServicesClient({
               </p>
             ) : (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {categories.map((category) => (
+                {categories.map((category, categoryIndex) => (
                   <div
                     key={category.id}
                     className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-background px-3 py-2"
@@ -838,6 +890,26 @@ export function ServicesClient({
                       </>
                     ) : (
                       <>
+                        <div className="flex shrink-0 flex-col">
+                          <button
+                            type="button"
+                            onClick={() => moveCategory(categoryIndex, -1)}
+                            disabled={categoryIndex === 0 || savingOrder !== null}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                            aria-label={`Subir ${category.name}`}
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveCategory(categoryIndex, 1)}
+                            disabled={categoryIndex === categories.length - 1 || savingOrder !== null}
+                            className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                            aria-label={`Bajar ${category.name}`}
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
                         <span className="text-[11px] text-muted-foreground">
                           {category._count.services} servicio(s)
@@ -1716,7 +1788,7 @@ export function ServicesClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map((service) => (
+                  {services.map((service, serviceIndex) => (
                     <tr
                       key={service.id}
                       className="border-b border-border/50 transition-colors hover:bg-muted/50"
@@ -1803,12 +1875,32 @@ export function ServicesClient({
                       <td className="py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            type="button"
+                            onClick={() => moveService(serviceIndex, -1)}
+                            disabled={serviceIndex === 0 || savingOrder !== null}
+                            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
+                            aria-label={`Subir ${service.name}`}
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveService(serviceIndex, 1)}
+                            disabled={serviceIndex === services.length - 1 || savingOrder !== null}
+                            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
+                            aria-label={`Bajar ${service.name}`}
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => openEdit(service)}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(service.id)}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
                           >

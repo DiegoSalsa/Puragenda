@@ -1,6 +1,12 @@
 import { prisma } from "@/server/db/prisma";
 import { addDays, startOfDay, format, isAfter, getDay } from "date-fns";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
+import {
+  removeAppointmentFromGoogle,
+  getGoogleCalendarBusySlots,
+  syncAppointmentToGoogle,
+  syncRecurringBookingAppointments,
+} from "@/server/services/google-calendar.service";
 
 // ==========================================
 // TYPES
@@ -14,7 +20,7 @@ export interface ConflictInfo {
   date: Date;
   dayOfWeek: number;
   time: string;
-  conflictType: "APPOINTMENT" | "SCHEDULE_BLOCK" | "RECURRING";
+  conflictType: "APPOINTMENT" | "SCHEDULE_BLOCK" | "RECURRING" | "GOOGLE_CALENDAR";
 }
 
 // ==========================================
@@ -145,6 +151,7 @@ export async function generateAppointments(params: {
   if (appointments.length === 0) return [];
 
   await prisma.appointment.createMany({ data: appointments });
+  await syncRecurringBookingAppointments(params.recurringBookingId);
 
   return appointments;
 }
@@ -175,6 +182,13 @@ export async function detectAllConflicts(params: {
   );
 
   const conflicts: ConflictInfo[] = [];
+  const googleBusy = params.staffId
+    ? await getGoogleCalendarBusySlots(
+        params.staffId,
+        params.startDate,
+        addDays(params.endDate, 1),
+      )
+    : [];
 
   for (const session of sessions) {
     // Check appointments (CONFIRMED, PENDING, AWAITING_PAYMENT, CHECKED_IN)
@@ -195,6 +209,20 @@ export async function detectAllConflicts(params: {
         dayOfWeek: session.dayOfWeek,
         time: format(session.startTime, "HH:mm"),
         conflictType: "APPOINTMENT",
+      });
+      continue;
+    }
+
+    if (
+      googleBusy.some(
+        (range) => session.startTime < range.endTime && session.endTime > range.startTime,
+      )
+    ) {
+      conflicts.push({
+        date: session.startTime,
+        dayOfWeek: session.dayOfWeek,
+        time: format(session.startTime, "HH:mm"),
+        conflictType: "GOOGLE_CALENDAR",
       });
       continue;
     }
@@ -257,6 +285,14 @@ export async function detectAllConflicts(params: {
  * Cancels all future appointments of a RecurringBooking from a given date onwards.
  */
 export async function cancelFutureSessions(recurringBookingId: string, fromDate: Date) {
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      recurringBookingId,
+      startTime: { gte: fromDate },
+      status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
+    },
+    select: { id: true },
+  });
   await prisma.appointment.updateMany({
     where: {
       recurringBookingId,
@@ -265,6 +301,7 @@ export async function cancelFutureSessions(recurringBookingId: string, fromDate:
     },
     data: { status: "CANCELLED" },
   });
+  await Promise.all(appointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
 }
 
 /**
@@ -274,6 +311,14 @@ export async function cancelSpecificSessions(recurringBookingId: string, dates: 
   for (const date of dates) {
     const dayStart = startOfDay(date);
     const dayEnd = addDays(dayStart, 1);
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        recurringBookingId,
+        startTime: { gte: dayStart, lt: dayEnd },
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+      },
+      select: { id: true },
+    });
     await prisma.appointment.updateMany({
       where: {
         recurringBookingId,
@@ -282,6 +327,7 @@ export async function cancelSpecificSessions(recurringBookingId: string, dates: 
       },
       data: { status: "CANCELLED" },
     });
+    await Promise.all(appointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
   }
 }
 
@@ -306,6 +352,17 @@ export async function regenerateFromDate(params: {
   serviceDurationMinutes: number;
 }) {
   // Remove future unconfirmed/pending sessions
+  const appointmentsToDelete = await prisma.appointment.findMany({
+    where: {
+      recurringBookingId: params.recurringBookingId,
+      startTime: { gte: params.fromDate },
+      status: { in: ["PENDING", "CONFIRMED"] },
+    },
+    select: { id: true },
+  });
+  await Promise.all(
+    appointmentsToDelete.map((appointment) => removeAppointmentFromGoogle(appointment.id)),
+  );
   await prisma.appointment.deleteMany({
     where: {
       recurringBookingId: params.recurringBookingId,
@@ -370,6 +427,7 @@ export async function applyTimePunctual(params: {
       },
     }),
   ]);
+  await syncAppointmentToGoogle(appointment.id);
 }
 
 /**
@@ -396,6 +454,17 @@ export async function applyTimePermanent(params: {
   const mergedTimes: SelectedTimes = { ...currentTimes, ...params.newTimes };
 
   // Delete future confirmed appointments
+  const appointmentsToDelete = await prisma.appointment.findMany({
+    where: {
+      recurringBookingId: params.recurringBookingId,
+      startTime: { gte: params.fromDate },
+      status: { in: ["PENDING", "CONFIRMED"] },
+    },
+    select: { id: true },
+  });
+  await Promise.all(
+    appointmentsToDelete.map((appointment) => removeAppointmentFromGoogle(appointment.id)),
+  );
   await prisma.appointment.deleteMany({
     where: {
       recurringBookingId: params.recurringBookingId,

@@ -54,3 +54,31 @@ export function deleteServiceCategory(categoryId: string) {
     where: { id: categoryId },
   });
 }
+
+export async function reorderServiceCategories(
+  businessId: string,
+  orderedIds: string[]
+) {
+  const existing = await prisma.serviceCategory.findMany({
+    where: { businessId },
+    select: { id: true },
+  });
+  const expected = new Set(existing.map((category) => category.id));
+  const received = new Set(orderedIds);
+  if (
+    received.size !== orderedIds.length ||
+    received.size !== expected.size ||
+    orderedIds.some((id) => !expected.has(id))
+  ) {
+    throw new Error("El orden debe incluir todas las categorías del negocio");
+  }
+
+  await prisma.$transaction(
+    orderedIds.map((id, position) =>
+      prisma.serviceCategory.updateMany({
+        where: { id, businessId },
+        data: { position },
+      })
+    )
+  );
+}

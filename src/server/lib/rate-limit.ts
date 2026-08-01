@@ -150,6 +150,13 @@ export const appointmentActionLimiter = rateLimit({
   message: "Demasiados intentos sobre esta cita. Espera unos minutos.",
 });
 
+/** Client portal magic links: 5 requests per 15 minutes per IP */
+export const clientPortalLinkLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Demasiadas solicitudes de acceso. Espera 15 minutos.",
+});
+
 /** Billing: 5 attempts per 15 minutes */
 export const billingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

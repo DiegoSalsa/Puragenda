@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendDepositConfirmedNotifications } from "@/server/email/send";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 async function getAppointmentForEmail(appointmentId: string) {
   return prisma.appointment.findUnique({
@@ -43,6 +44,7 @@ async function markGroupApproved(appointmentIds: string[], paymentId: string) {
     const appointment = await getAppointmentForEmail(appointmentId);
     if (!appointment) continue;
     await sendDepositConfirmedNotifications(appointment);
+    await syncAppointmentToGoogle(appointmentId);
   }
 }
 

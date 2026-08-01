@@ -357,6 +357,30 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
           </div>
         </section>
 
+        {/* Compact Google Calendar disclosure */}
+        <section id="google-calendar" className="mx-auto w-full max-w-6xl scroll-mt-32 px-6 pb-10">
+          <div className="flex flex-col gap-3 rounded-xl border-2 border-black/40 bg-white/50 px-4 py-3 text-black shadow-[3px_3px_0_rgba(0,0,0,0.35)] dark:border-white/40 dark:bg-white/5 dark:text-white sm:flex-row sm:items-center">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 border-black bg-white text-[#4285F4] dark:border-white">
+                <CalendarClock className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-black uppercase">Google Calendar · integración opcional</h2>
+                <p className="mt-0.5 text-xs font-semibold leading-relaxed text-black/65 dark:text-white/65">
+                  Sincroniza citas y bloquea horas ocupadas. Solo usamos el correo, la lista de calendarios y los
+                  eventos para esta función; puedes revocar el acceso cuando quieras.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/politica-de-privacidad#google-calendar"
+              className="shrink-0 text-xs font-bold text-[#1A73E8] underline underline-offset-4 dark:text-[#85E3FF] sm:ml-auto"
+            >
+              Privacidad de datos de Google
+            </Link>
+          </div>
+        </section>
+
         {/* Link to see all features */}
         <section className="flex justify-center pb-16">
           <Link href="/caracteristicas">

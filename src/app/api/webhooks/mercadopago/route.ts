@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { mpClient } from "@/server/lib/mercadopago";
 import {
+  getMercadoPagoInvoiceByPaymentId,
   processMercadoPagoInvoice,
   type MercadoPagoInvoiceSnapshot,
 } from "@/server/services/subscription-dunning.service";
@@ -131,13 +132,7 @@ async function processPaymentNotification(resourceId: string) {
     return { handled: false, reason: "invalid_payment_id" };
   }
 
-  const invoiceClient = new Invoice(mpClient);
-  const search = await invoiceClient.search({
-    options: { payment_id: paymentId, limit: 1 },
-  });
-  const invoice = search.results?.[0] as
-    | MercadoPagoInvoiceSnapshot
-    | undefined;
+  const invoice = await getMercadoPagoInvoiceByPaymentId(paymentId);
 
   if (!invoice) {
     // The payment may belong to deposits or another integration.

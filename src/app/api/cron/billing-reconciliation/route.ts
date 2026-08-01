@@ -16,7 +16,8 @@ export async function GET(request: Request) {
 
   try {
     const results = await runBillingReconciliation();
-    return NextResponse.json({ ok: true, ...results });
+    const ok = results.errors.length === 0;
+    return NextResponse.json({ ok, ...results }, { status: ok ? 200 : 500 });
   } catch (error) {
     console.error("[cron/billing-reconciliation] Fatal error:", error);
     return NextResponse.json(

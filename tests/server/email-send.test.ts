@@ -13,6 +13,11 @@ vi.mock("@/server/db/prisma", () => ({
   },
 }));
 
+vi.mock("@/server/services/client-portal.service", () => ({
+  getClientPortalAppUrl: () => "https://www.puragenda.cl",
+  issueClientPortalEmailToken: vi.fn(async () => ({ token: "portal-token" })),
+}));
+
 vi.mock("@/server/services/customer-appointment-action.service", () => ({
   issueCustomerAppointmentToken: vi.fn(),
 }));
@@ -21,6 +26,10 @@ vi.mock("@/server/email/templates", () => ({
   newBookingOwnerEmail: vi.fn(() => ({ subject: "Owner", html: "<p>Owner</p>" })),
   newBookingStaffEmail: vi.fn(() => ({ subject: "Staff", html: "<p>Staff</p>" })),
   newBookingClientEmail: vi.fn(() => ({ subject: "Client", html: "<p>Client</p>" })),
+  withClientPortalAccess: vi.fn((template, portalUrl) => ({
+    ...template,
+    html: `${template.html}<a href="${portalUrl}">Mi agenda</a>`,
+  })),
 }));
 
 import { sendBookingNotifications } from "@/server/email/send";
@@ -56,6 +65,9 @@ describe("booking notification delivery accounting", () => {
     ).resolves.toBeUndefined();
 
     expect(sendMock).toHaveBeenCalledTimes(3);
+    expect(sendMock).toHaveBeenNthCalledWith(3, expect.objectContaining({
+      html: expect.stringContaining("/mi-agenda/entrar/portal-token"),
+    }));
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Resend rejected"),
       expect.objectContaining({ message: "provider rejected" }),

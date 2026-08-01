@@ -5,9 +5,35 @@ export interface ChangelogEntry {
   description: string;
   features: string[];
   fixes?: string[];
+  notice?: string;
 }
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
+  {
+    version: "v1.6.0",
+    date: "2026-08-01",
+    title: "Google Calendar y Operación más Clara",
+    description:
+      "Esta actualización conecta la agenda de Puragenda con Google Calendar y reúne mejoras solicitadas por negocios para atender, ordenar y fidelizar clientes con menos trabajo manual.",
+    notice:
+      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
+    features: [
+      "Integración con Google Calendar para el calendario principal del negocio y para la agenda individual de cada trabajador.",
+      "Las citas se crean, actualizan y cancelan automáticamente en Google; los compromisos externos del profesional bloquean esas horas en el widget público.",
+      "El teléfono del cliente ahora aparece directamente en el calendario, en el detalle de la cita, en los correos y en los eventos sincronizados.",
+      "Los correos de reserva incluyen un botón para agregar la cita a Google Calendar.",
+      "Servicios y categorías se pueden ordenar manualmente, y el widget respeta el orden definido por el negocio.",
+      "Fidelización permite personalizar el prefijo de los códigos de descuento únicos para cada cliente.",
+      "Cuando una fecha no tiene cupos, el widget muestra un mensaje claro para elegir otro día.",
+      "La integración funciona tanto para dueños como para trabajadores con acceso, respetando sus permisos y calendarios seleccionados.",
+    ],
+    fixes: [
+      "Después de autorizar Google Calendar, producción siempre regresa a www.puragenda.cl y nunca al dominio técnico de Vercel.",
+      "La portada, la integración y la política de privacidad explican de forma transparente cómo se usan, protegen y eliminan los datos de Google.",
+      "Un pago atrasado aprobado vuelve a activar automáticamente la cuenta y los avisos antiguos de rechazo ya no pueden bloquearla otra vez.",
+      "La conciliación de pagos ahora recupera notificaciones perdidas y registra con mayor claridad los fallos que requieren revisión.",
+    ],
+  },
   {
     version: "v1.5.0",
     date: "2026-07-30",

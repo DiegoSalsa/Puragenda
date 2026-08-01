@@ -10,6 +10,7 @@ import {
   sendCancellationEmail,
 } from "@/server/email/send";
 import { appointmentActionLimiter } from "@/server/lib/rate-limit";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 export async function GET(request: NextRequest) {
   const limited = appointmentActionLimiter.check(request);
@@ -77,6 +78,8 @@ export async function POST(request: NextRequest) {
     if (result.count !== 1) {
       return Response.json({ error: "Esta acción ya fue procesada", alreadyProcessed: true }, { status: 409 });
     }
+
+    await syncAppointmentToGoogle(appointment.id);
 
     const notifications: Promise<unknown>[] = [
       sendCancellationEmail(appointment),

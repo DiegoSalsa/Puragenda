@@ -4,7 +4,7 @@ import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown } from "lucide-react";
+import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown } from "lucide-react";
 import {
   AppointmentEditor,
   type AppointmentEditorClient,
@@ -425,6 +425,12 @@ export function WeeklyCalendar({
                                 {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-[#7C3AED] opacity-70" />}
                               </div>
                               <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
+                              {apt.customerPhone && (
+                                <p className="mt-0.5 flex items-center gap-1 truncate text-[9px] text-muted-foreground">
+                                  <Phone className="h-2.5 w-2.5 shrink-0" />
+                                  <span className="truncate">{apt.customerPhone}</span>
+                                </p>
+                              )}
                             </button>
                           );
                         })}
@@ -494,6 +500,12 @@ export function WeeklyCalendar({
                           <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
                         </div>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{apt.serviceName} · {apt.staffName}</p>
+                        {apt.customerPhone && (
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Phone className="h-3 w-3 shrink-0" />
+                            <span>{apt.customerPhone}</span>
+                          </p>
+                        )}
                       </button>
                     );
                   })}
@@ -525,6 +537,18 @@ export function WeeklyCalendar({
               <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Cliente:</span><span className="font-medium">{selected.customerName}</span></div>
                 <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Email:</span><span>{selected.customerEmail}</span></div>
+                {selected.customerPhone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Teléfono:</span>
+                    <a
+                      href={`tel:${selected.customerPhone.replace(/[^\d+]/g, "")}`}
+                      className="font-medium text-[#A78BFA] hover:underline"
+                    >
+                      {selected.customerPhone}
+                    </a>
+                  </div>
+                )}
                 <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Hora:</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
                 <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Servicio:</span><span>{selected.serviceName}</span></div>
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Staff:</span><span>{selected.staffName}</span></div>

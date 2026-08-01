@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendDepositConfirmedNotifications } from "@/server/email/send";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 /**
  * GET /api/mercadopago/deposit-return
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
       });
       for (const fullAppointment of fullAppointments) {
         await sendDepositConfirmedNotifications(fullAppointment);
+        await syncAppointmentToGoogle(fullAppointment.id);
       }
 
       // Redirect to widget with success

@@ -10,7 +10,12 @@ import {
   recordCampaign,
 } from "@/server/services/marketing.service";
 import { resend } from "@/server/email/resend";
-import { marketingCampaignEmail } from "@/server/email/templates";
+import { marketingCampaignEmail, withClientPortalAccess } from "@/server/email/templates";
+import {
+  getClientPortalAppUrl,
+  issueClientPortalEmailTokens,
+  normalizeClientPortalEmail,
+} from "@/server/services/client-portal.service";
 import type { SubscriptionPlan } from "@/core/entities";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
@@ -85,14 +90,28 @@ export async function POST(request: NextRequest) {
     const senderEmail = "marketing@puragenda.cl";
     const from = `${senderName} <${senderEmail}>`;
 
+    let portalTokens = new Map<string, string>();
+    try {
+      portalTokens = await issueClientPortalEmailTokens(audience.map((client) => client.email));
+    } catch (portalError) {
+      console.error("[Marketing] Could not create client portal links:", portalError);
+    }
+
     const emails = audience.map((client) => {
-      const { html } = marketingCampaignEmail({
+      const baseTemplate = marketingCampaignEmail({
         clientName: client.name,
         businessName: business.name,
         subject: subject.trim(),
         body: message.trim(),
         widgetUrl,
       });
+      const token = portalTokens.get(normalizeClientPortalEmail(client.email));
+      const { html } = token
+        ? withClientPortalAccess(
+            baseTemplate,
+            `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`,
+          )
+        : baseTemplate;
 
       return {
         from,

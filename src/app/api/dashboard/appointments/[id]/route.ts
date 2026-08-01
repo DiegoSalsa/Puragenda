@@ -13,6 +13,7 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { managedAppointmentSchema } from "@/server/validations/appointment-management";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 
 function canManageTarget(
   permissions: string[],
@@ -80,6 +81,7 @@ export async function PATCH(
     }
 
     const appointment = await getAppointmentByIdAndBusiness(id, business.id);
+    await syncAppointmentToGoogle(id);
 
     // ── CRM: Update Client stats based on status change ──
     if (existing.clientId) {
@@ -273,6 +275,8 @@ export async function PUT(
         business: { include: { owner: { select: { email: true, name: true } } } },
       },
     });
+
+    await syncAppointmentToGoogle(id);
 
     if (parsed.data.sendConfirmation) await sendConfirmationEmail(updated);
     return Response.json(updated);

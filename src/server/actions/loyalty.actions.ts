@@ -2,6 +2,7 @@
 
 import { prisma } from "@/server/db/prisma";
 import { sendLoyaltyStampEmail, sendLoyaltyRewardEmail } from "@/server/email/send";
+import { buildLoyaltyRewardCode } from "@/server/services/loyalty-code.service";
 import crypto from "crypto";
 
 /**
@@ -31,6 +32,7 @@ export async function processLoyaltyStamps(appointmentId: string) {
           rewardName: true,
           discountType: true,
           discountValue: true,
+          loyaltyCodePrefix: true,
         },
       },
       client: {
@@ -74,8 +76,8 @@ export async function processLoyaltyStamps(appointmentId: string) {
     let attempts = 0;
     do {
       const randomHex = crypto.randomBytes(5).toString("hex").toUpperCase();
-      code = `PREMIO-${randomHex}`;
-      const exists = await prisma.loyaltyCode.findFirst({ where: { code } });
+      code = buildLoyaltyRewardCode(business.loyaltyCodePrefix, randomHex);
+      const exists = await tx.loyaltyCode.findFirst({ where: { code } });
       if (!exists) break;
       attempts++;
     } while (attempts < 5);

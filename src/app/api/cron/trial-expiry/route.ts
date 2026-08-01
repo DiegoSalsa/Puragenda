@@ -175,12 +175,13 @@ export async function GET(req: Request) {
       );
     }
 
+    const ok = results.errors.length === 0;
     return NextResponse.json({
-      ok: true,
+      ok,
       message: `Trial expiry check: ${results.warned} warned, ${results.expired} expired, ${results.promoExpired} promo expired`,
       ...results,
       billingReconciliation,
-    });
+    }, { status: ok ? 200 : 500 });
   } catch (err) {
     console.error("[Cron Trial-Expiry] Error:", err);
     return NextResponse.json(

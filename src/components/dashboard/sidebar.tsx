@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   BarChart3,
+  CalendarDays,
   ChevronDown,
   ExternalLink,
   Gift,
@@ -38,6 +39,7 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
+  { href: "/dashboard/google-calendar", label: "Google Calendar", icon: CalendarDays },
   { href: "/dashboard/orders", label: "Encargos", icon: Package },
   { href: "/dashboard/analytics", label: "Analítica", icon: BarChart3 },
   { href: "/dashboard/staff", label: "Profesionales", icon: Users },
@@ -142,6 +144,7 @@ function SidebarContent({
     if (permissions) {
       const required: Record<string, string[]> = {
         "/dashboard": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL],
+        "/dashboard/google-calendar": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE],
         "/dashboard/orders": [DASHBOARD_PERMISSIONS.SERVICES_MANAGE],
         "/dashboard/analytics": [DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS],
         "/dashboard/staff": [DASHBOARD_PERMISSIONS.STAFF_MANAGE],

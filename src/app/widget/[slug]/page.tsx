@@ -82,7 +82,7 @@ export default async function WidgetPage({
     where: { slug },
     include: {
       services: {
-        orderBy: { name: "asc" },
+        orderBy: [{ position: "asc" }, { name: "asc" }],
         include: {
           category: true,
           recurringPlan: true,

@@ -1,5 +1,5 @@
 import { addDays, addHours, addMonths, addYears } from "date-fns";
-import { Invoice } from "mercadopago";
+import { Invoice, PreApproval } from "mercadopago";
 
 import { prisma } from "@/server/db/prisma";
 import { mpClient } from "@/server/lib/mercadopago";
@@ -100,6 +100,22 @@ function invoiceActivityAt(invoice: MercadoPagoInvoiceSnapshot, now: Date) {
 function invoiceNextAttemptAt(invoice: MercadoPagoInvoiceSnapshot, now: Date) {
   const debitDate = validDate(invoice.debit_date);
   return debitDate && debitDate > now ? debitDate : null;
+}
+
+function isStaleFailureAfterRecovery(
+  subscription: {
+    status: string;
+    lastPaymentStatus?: string | null;
+    lastPaymentAttemptAt?: Date | null;
+  },
+  activityAt: Date
+) {
+  return (
+    subscription.status === "ACTIVE" &&
+    subscription.lastPaymentStatus === "approved" &&
+    !!subscription.lastPaymentAttemptAt &&
+    activityAt <= subscription.lastPaymentAttemptAt
+  );
 }
 
 export async function processMercadoPagoInvoice(
@@ -238,6 +254,16 @@ export async function processMercadoPagoInvoice(
   }
 
   if (isRejectedInvoice(invoice)) {
+    // Mercado Pago retries webhook delivery and does not guarantee arrival
+    // order. Never let an older rejected attempt overwrite a newer approved
+    // payment that already restored access.
+    if (isStaleFailureAfterRecovery(subscription, activityAt)) {
+      return {
+        handled: false as const,
+        reason: "stale_rejected_invoice",
+      };
+    }
+
     const nextAttemptAt = invoiceNextAttemptAt(invoice, now);
     const isNewAttempt =
       subscription.lastInvoiceId !== invoice.id ||
@@ -352,11 +378,32 @@ export async function getLatestMercadoPagoInvoice(
   );
 }
 
+export async function getMercadoPagoInvoiceByPaymentId(paymentId: number) {
+  const invoiceClient = new Invoice(mpClient);
+  // Although the API response is paginated, Mercado Pago currently rejects
+  // an explicit `limit` on this endpoint for production subscription calls.
+  const response = await invoiceClient.search({
+    options: { payment_id: paymentId },
+  });
+  const invoices = (response.results ?? []) as MercadoPagoInvoiceSnapshot[];
+
+  return (
+    invoices.find(
+      (invoice) => invoice.payment?.id?.toString() === paymentId.toString()
+    ) ?? null
+  );
+}
+
 export async function reconcileMercadoPagoSubscription(
   mpSubscriptionId: string
 ) {
   const latestInvoice = await getLatestMercadoPagoInvoice(mpSubscriptionId);
   if (!latestInvoice) {
+    // The invoice search endpoint can return an empty page when the configured
+    // credential does not own the preapproval. Verify ownership so this is
+    // reported as a reconciliation error instead of a false "no invoice".
+    const preapprovalClient = new PreApproval(mpClient);
+    await preapprovalClient.get({ id: mpSubscriptionId });
     return { handled: false as const, reason: "invoice_not_found" };
   }
   return processMercadoPagoInvoice(latestInvoice);
@@ -396,11 +443,13 @@ export async function runBillingReconciliation(now = new Date()) {
       );
       if (result.handled) results.reconciled++;
     } catch (error) {
-      results.errors.push(
-        `${subscription.id}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      const message =
+        error instanceof Error ? error.message : String(error);
+      results.errors.push(`${subscription.id}: ${message}`);
+      console.error("[subscription-dunning] Reconciliation failed", {
+        subscriptionId: subscription.id,
+        message,
+      });
     }
   }
 

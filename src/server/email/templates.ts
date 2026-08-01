@@ -40,6 +40,30 @@ interface BookingEmailData {
 
 const BRAND = "#7C3AED";
 const BRAND_DARK = "#5B21B6";
+const CLIENT_PORTAL_SLOT = "<!-- CLIENT_PORTAL_SLOT -->";
+
+export interface EmailTemplate {
+  subject: string;
+  html: string;
+}
+
+export function withClientPortalAccess(template: EmailTemplate, portalUrl: string): EmailTemplate {
+  const safeUrl = escapeHtml(portalUrl);
+  const portalRow = `<tr><td style="padding:0 32px 28px;background:#ffffff;text-align:center;">
+    <div style="padding:20px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;">
+      <p style="margin:0 0 12px;font-size:14px;color:#4C1D95;font-weight:700;">Todo en un solo lugar</p>
+      <a href="${safeUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 26px;border-radius:9px;font-size:14px;font-weight:700;text-decoration:none;">
+        Ver mis citas y premios →
+      </a>
+      <p style="margin:10px 0 0;font-size:11px;color:#7C3AED;">Acceso privado de un solo uso · válido por 30 días</p>
+    </div>
+  </td></tr>`;
+
+  return {
+    ...template,
+    html: template.html.replace(CLIENT_PORTAL_SLOT, portalRow),
+  };
+}
 
 function layout(title: string, body: string): string {
   return `<!DOCTYPE html>
@@ -56,6 +80,7 @@ function layout(title: string, body: string): string {
   </td></tr>
   <!-- Body -->
   <tr><td style="padding:32px;">${body}</td></tr>
+  ${CLIENT_PORTAL_SLOT}
   <!-- Footer -->
   <tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #e5e7eb;text-align:center;">
     <p style="margin:0;font-size:12px;color:#94a3b8;">Powered by <a href="https://www.puragenda.cl" style="color:#94a3b8;text-decoration:none;font-weight:600;">Puragenda</a></p>
@@ -86,6 +111,7 @@ function enterpriseLayout(title: string, body: string): string {
 <tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);">
   <tr><td style="padding:40px 40px 32px;">${body}</td></tr>
+  ${CLIENT_PORTAL_SLOT}
   <tr><td style="padding:24px 40px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center;">
     <p style="margin:0;font-size:12px;color:#9CA3AF;">Powered by <a href="https://www.puragenda.cl" style="color:#9CA3AF;text-decoration:none;font-weight:600;">Puragenda</a></p>
   </td></tr>
@@ -110,8 +136,21 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   html += row("Fecha", date);
   html += row("Hora", time);
   html += row("Servicio", data.serviceName);
+  const customerPhone =
+    "customerPhone" in data ? data.customerPhone?.trim() || null : null;
   const customerAddress = "customerAddress" in data && data.customerAddress ? escapeHtml(data.customerAddress) : null;
-  html += row("Profesional", data.staffName, !customerAddress);
+  html += row("Profesional", data.staffName, !customerPhone && !customerAddress);
+  if (customerPhone) {
+    const safePhone = escapeHtml(customerPhone);
+    const phoneHref = escapeHtml(customerPhone.replace(/[^\d+]/g, ""));
+    html += row(
+      "Teléfono del cliente",
+      phoneHref
+        ? `<a href="tel:${phoneHref}" style="color:${BRAND};text-decoration:none;">${safePhone}</a>`
+        : safePhone,
+      !customerAddress
+    );
+  }
   if (customerAddress) html += row("Direccion de la visita", customerAddress, true);
   
   html += `</table>`;
@@ -131,6 +170,31 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   return html;
 }
 
+function googleCalendarButton(data: BookingEmailData): string {
+  const dates = [data.startTime, data.endTime]
+    .map((date) => formatInTimeZone(date, "UTC", "yyyyMMdd'T'HHmmss'Z'"))
+    .join("/");
+  const details = [
+    `Servicio: ${data.serviceName}`,
+    `Profesional: ${data.staffName}`,
+    `Cliente: ${data.customerName}`,
+    data.customerPhone ? `Teléfono: ${data.customerPhone}` : null,
+  ].filter(Boolean).join("\n");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `${data.serviceName} — ${data.businessName}`,
+    dates,
+    details,
+    ctz: BUSINESS_TZ,
+  });
+  if (data.businessAddress) params.set("location", data.businessAddress);
+  const href = escapeHtml(`https://calendar.google.com/calendar/render?${params.toString()}`);
+
+  return `<div style="margin:0 0 24px;text-align:center;">
+    <a href="${href}" style="display:inline-block;padding:10px 18px;background:#FFFFFF;color:#374151;text-decoration:none;font-size:13px;font-weight:600;border-radius:8px;border:1px solid #D1D5DB;">Agregar a Google Calendar</a>
+  </div>`;
+}
+
 // ═══════════════════════════════════════════
 // TEMPLATES
 // ═══════════════════════════════════════════
@@ -145,6 +209,7 @@ export function newBookingOwnerEmail(data: BookingEmailData): { subject: string;
         <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) ha solicitado una cita.
       </p>
       ${enterpriseDetailsTable(data)}
+      ${googleCalendarButton(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
         Revisa tu dashboard para confirmar o gestionar esta cita.
       </p>
@@ -162,6 +227,7 @@ export function newBookingStaffEmail(data: BookingEmailData): { subject: string;
         Se ha agendado una cita con <strong style="color:#111827;">${data.customerName}</strong>.
       </p>
       ${enterpriseDetailsTable(data)}
+      ${googleCalendarButton(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
         Revisa tu agenda para más detalles.
       </p>
@@ -179,6 +245,7 @@ export function newBookingClientEmail(data: BookingEmailData): { subject: string
         Hola <strong style="color:#111827;">${data.customerName}</strong>, hemos recibido su solicitud de reserva en <strong style="color:#111827;">${data.businessName}</strong>.
       </p>
       ${enterpriseDetailsTable(data)}
+      ${googleCalendarButton(data)}
       <div style="margin:24px 0;padding:16px;background:#FEF3C7;border-radius:8px;border:1px solid #FDE68A;">
         <p style="margin:0;font-size:14px;color:#92400E;line-height:1.5;">
           <strong>Estado: Pendiente</strong> — Su cita será confirmada por el equipo de ${data.businessName}. Le avisaremos en cuanto sea aprobada.
@@ -214,6 +281,7 @@ export function confirmedBookingClientEmail(data: BookingEmailData): { subject: 
         Hola <strong style="color:#111827;">${data.customerName}</strong>, su cita en <strong style="color:#111827;">${data.businessName}</strong> ha sido agendada exitosamente.
       </p>
       ${enterpriseDetailsTable(data)}
+      ${googleCalendarButton(data)}
       <p style="margin:0;font-size:14px;color:#6B7280;line-height:1.6;">
         ${actionsBlock
           ? "Puede administrar esta reserva con las opciones seguras disponibles a continuación."
@@ -367,6 +435,39 @@ export function forgotPasswordEmail(data: ForgotPasswordEmailData): { subject: s
 // ═══════════════════════════════════════════
 // SUPERADMIN LOGIN CODE EMAIL
 // ═══════════════════════════════════════════
+
+interface ClientPortalAccessEmailData {
+  portalUrl: string;
+  expiresInMinutes: number;
+}
+
+/** Passwordless, one-use access link for a client's appointments and rewards. */
+export function clientPortalAccessEmail(data: ClientPortalAccessEmailData): { subject: string; html: string } {
+  const safeUrl = escapeHtml(data.portalUrl);
+
+  return {
+    subject: "Entra a Mi agenda — Puragenda",
+    html: layout("Acceso a Mi agenda", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Tu agenda, sin contraseña</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Usa este enlace para ver tus próximas citas, tu historial y tus premios en Puragenda.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${safeUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
+          Ver mi agenda →
+        </a>
+      </div>
+      <div style="margin:16px 0;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+        <p style="margin:0;font-size:12px;color:#64748b;line-height:1.6;">
+          El enlace vence en <strong style="color:#0f172a;">${data.expiresInMinutes} minutos</strong> y funciona una sola vez. Después, este dispositivo quedará autorizado de forma segura.
+        </p>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
+        Si no solicitaste este acceso, puedes ignorar el correo.
+      </p>
+    `),
+  };
+}
 
 interface AdminLoginCodeEmailData {
   name: string;
@@ -701,6 +802,8 @@ export function marketingCampaignEmail(data: MarketingCampaignEmailData): { subj
     </a>
     <p style="margin:12px 0 0;font-size:12px;color:#94a3b8;">Reserva en pocos clics</p>
   </td></tr>
+
+  ${CLIENT_PORTAL_SLOT}
 
   <!-- Divider -->
   <tr><td style="padding:0 32px;">

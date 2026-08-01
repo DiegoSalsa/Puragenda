@@ -25,6 +25,7 @@ import {
 } from "@/server/email/send";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { syncRecurringBookingAppointments } from "@/server/services/google-calendar.service";
 
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
 type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
@@ -579,6 +580,7 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
       data: { status: "CANCELLED" },
     }),
   ]);
+  await syncRecurringBookingAppointments(recurringBookingId);
 
   try {
     await sendRecurringBookingCancelledClient({
