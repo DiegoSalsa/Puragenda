@@ -146,7 +146,7 @@ function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDa
   return days;
 }
 
-function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30, scheduleOverrides?: ScheduleOverride[]) {
+export function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30, scheduleOverrides?: ScheduleOverride[], additionalStartTimes: Date[] = []) {
   const dow = date.getDay();
   let startH = 9, startM = 0, endH = 19, endM = 0;
   const breakRanges: { start: number; end: number }[] = [];
@@ -197,6 +197,7 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
   }
 
   const slots: { start: Date; end: Date }[] = [];
+  const slotStarts = new Set<number>();
   let current = setMinutes(setHours(date, startH), startM);
   const end = setMinutes(setHours(date, endH), endM);
   while (addMinutes(current, duration) <= end) {
@@ -204,10 +205,37 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
     const currentMinutes = timeToMinutes(current);
     const endMinutes = timeToMinutes(slotEnd);
     const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && endMinutes > range.start);
-    if (!overlapsBreak) slots.push({ start: current, end: slotEnd });
+    if (!overlapsBreak) {
+      slots.push({ start: current, end: slotEnd });
+      slotStarts.add(current.getTime());
+    }
     current = addMinutes(current, slotInterval);
   }
-  return slots;
+
+  // A broad display interval (for example, every 60 minutes) must not waste
+  // the time that becomes available when an appointment ends off-grid. Add an
+  // eligible start at each appointment end so a 13:00–14:10 booking can make
+  // 14:10 available, while preserving the business's usual interval.
+  for (const start of additionalStartTimes) {
+    if (
+      start.getFullYear() !== date.getFullYear() ||
+      start.getMonth() !== date.getMonth() ||
+      start.getDate() !== date.getDate() ||
+      slotStarts.has(start.getTime())
+    ) continue;
+
+    const slotEnd = addMinutes(start, duration);
+    const currentMinutes = timeToMinutes(start);
+    const endMinutes = timeToMinutes(slotEnd);
+    const withinWorkingHours = currentMinutes >= startH * 60 + startM && endMinutes <= endH * 60 + endM;
+    const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && endMinutes > range.start);
+    if (withinWorkingHours && !overlapsBreak) {
+      slots.push({ start, end: slotEnd });
+      slotStarts.add(start.getTime());
+    }
+  }
+
+  return slots.sort((a, b) => a.start.getTime() - b.start.getTime());
 }
 
 function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], timezone: string) {
@@ -456,7 +484,20 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
     const staffSched = selectedStaff?.schedule;
-    let generated = buildSlots(selectedDate, dur, businessHours, staffSched, slotInterval, scheduleOverrides);
+    // The API returns appointment timestamps in UTC. Convert their end to the
+    // business timezone before using it as a wall-clock start candidate.
+    const appointmentEndStarts = blockedSlots.map((blocked) =>
+      toZonedTime(new Date(blocked.endTime), business.timezone),
+    );
+    let generated = buildSlots(
+      selectedDate,
+      dur,
+      businessHours,
+      staffSched,
+      slotInterval,
+      scheduleOverrides,
+      appointmentEndStarts,
+    );
 
     // Same-day filtering logic
     const now = toZonedTime(new Date(), business.timezone);
@@ -472,7 +513,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return generated;
-  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides, business.timezone]);
+  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides, blockedSlots, business.timezone]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };

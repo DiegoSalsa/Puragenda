@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { RegisterForm } from "./register-form";
-import { getCountryOptions } from "@/core/countries";
+import { getCountryOptions, isSupportedCountryCode } from "@/core/countries";
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
 export default async function RegisterPage() {
   const user = await getCurrentSessionUser();
+  const requestHeaders = await headers();
+  const detectedCountry = requestHeaders.get("x-vercel-ip-country")?.toUpperCase() ?? "";
+  const initialCountryCode = isSupportedCountryCode(detectedCountry) ? detectedCountry : "";
 
   if (user) {
     redirect("/dashboard");
@@ -28,6 +32,7 @@ export default async function RegisterPage() {
           <RegisterForm
             countryOptions={getCountryOptions("es")}
             paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
+            initialCountryCode={initialCountryCode}
           />
         </Suspense>
       </div>

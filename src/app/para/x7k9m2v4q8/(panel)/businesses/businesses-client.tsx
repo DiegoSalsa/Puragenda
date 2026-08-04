@@ -18,12 +18,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { getCountryName } from "@/core/countries";
 import { extendTrialAction } from "@/server/actions/admin.actions";
 
 type Business = {
   id: string;
   name: string;
   slug: string;
+  countryCode: string;
   createdAt: Date;
   owner: { name: string; email: string } | null;
   subscription: {
@@ -45,6 +47,17 @@ type Business = {
   _count: { staff: number; services: number; appointments: number };
 };
 
+function countryFlag(countryCode: string) {
+  return countryCode
+    .toUpperCase()
+    .replace(/./g, (letter) => String.fromCodePoint(127397 + letter.charCodeAt(0)));
+}
+
+function countryLabel(countryCode: string) {
+  const normalized = countryCode.toUpperCase();
+  return `${countryFlag(normalized)} ${getCountryName(normalized)} · ${normalized}`;
+}
+
 export function BusinessesClient({ businesses }: { businesses: Business[] }) {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("ALL");
@@ -59,6 +72,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
         !q ||
         biz.name.toLowerCase().includes(q) ||
         biz.slug.toLowerCase().includes(q) ||
+        countryLabel(biz.countryCode).toLowerCase().includes(q) ||
         biz.owner?.email.toLowerCase().includes(q) ||
         biz.owner?.name.toLowerCase().includes(q);
 
@@ -73,10 +87,11 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
   }, [businesses, search, planFilter, statusFilter]);
 
   function downloadCSV() {
-    const headers = ["Nombre", "Slug", "Dueno", "Email", "Plan", "Estado", "Staff", "Servicios", "Citas", "Creado"];
+    const headers = ["Nombre", "Slug", "Pais", "Dueno", "Email", "Plan", "Estado", "Staff", "Servicios", "Citas", "Creado"];
     const rows = filtered.map((biz) => [
       biz.name,
       biz.slug,
+      getCountryName(biz.countryCode),
       biz.owner?.name || "",
       biz.owner?.email || "",
       biz.subscription?.plan || "",
@@ -199,6 +214,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {sub && <span className={`border border-black px-1.5 py-0.5 font-black uppercase ${sub.plan === "EQUIPO" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"}`}>{sub.plan}</span>}
+                <span className="border border-black bg-[#FFFAEB] px-1.5 py-0.5 font-black text-black">{countryLabel(biz.countryCode)}</span>
                 <span className="font-bold text-black/40">{biz.owner?.name || "Sin dueño"}</span>
                 <span className="font-bold text-black/40">{biz._count.staff}s · {biz._count.services}sv · {biz._count.appointments}c</span>
               </div>
@@ -226,6 +242,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
           <thead>
             <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase tracking-wider text-black font-black">
               <th className="px-6 py-4">Negocio</th>
+              <th className="px-4 py-4">Pais</th>
               <th className="px-4 py-4">Dueno</th>
               <th className="px-4 py-4">Plan</th>
               <th className="px-4 py-4">Estado</th>
@@ -250,6 +267,11 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                   <td className="px-6 py-4">
                     <p className="font-black text-black">{biz.name}</p>
                     <p className="font-mono text-xs font-bold text-black/40">/{biz.slug}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex border-2 border-black bg-[#FFFAEB] px-2 py-0.5 text-xs font-black text-black">
+                      {countryLabel(biz.countryCode)}
+                    </span>
                   </td>
                   <td className="px-4 py-4">
                     <p className="text-sm font-bold text-black">{biz.owner?.name || "Sin dueno"}</p>

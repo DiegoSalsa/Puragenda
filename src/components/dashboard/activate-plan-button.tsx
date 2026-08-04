@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { startBillingCheckout } from "@/components/paddle/checkout";
 
 function getFriendlyBillingError(data: { error?: string; code?: string }, status: number) {
   if (
@@ -48,12 +49,7 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
         return;
       }
 
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        setError("No se recibió la URL de pago. Intenta de nuevo.");
-        setLoading(false);
-      }
+      await startBillingCheckout(data);
     } catch {
       setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
       setLoading(false);

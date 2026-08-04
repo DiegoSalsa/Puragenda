@@ -778,9 +778,10 @@ export async function disconnectGoogleCalendarConnection(connectionId: string) {
   await prisma.googleCalendarConnection.delete({ where: { id: connectionId } });
 }
 
-export async function runGoogleCalendarReconciliation(now = new Date()) {
+export async function runGoogleCalendarReconciliation(now = new Date(), businessId?: string) {
   const appointments = await prisma.appointment.findMany({
     where: {
+      ...(businessId ? { businessId } : {}),
       OR: [
         {
           status: "CANCELLED",

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
 import { PRICING, STAFF_LIMITS } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
-import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
 export async function SubscriptionBanner({
   businessId,
@@ -79,7 +78,6 @@ export async function SubscriptionBanner({
   // TRIALING: show trial info + contextual CTAs
   if (status === "TRIALING" && isTrial) {
     if (countryCode !== "CL") {
-      const simulatorEnabled = isLocalPaymentSimulatorEnabled();
       return (
         <div className="rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-500/10 via-[#7C3AED]/5 to-transparent p-5">
           <div className="flex items-start gap-3">
@@ -87,15 +85,11 @@ export async function SubscriptionBanner({
             <div className="space-y-1.5">
               <p className="text-sm font-semibold text-sky-400">Acceso internacional habilitado · Plan {planLabel}</p>
               <p className="max-w-2xl text-sm text-muted-foreground">
-                {simulatorEnabled
-                  ? "Puedes recorrer el pago internacional local con dinero ficticio. No se contactará ningún proveedor real."
-                  : "Tu acceso de prueba se mantendrá mientras habilitamos el cobro internacional de Puragenda. No intentaremos cobrarte en CLP."}
+                Activa tu suscripción con Paddle. El precio base es en USD y el Checkout mostrará la moneda y los impuestos aplicables para tu país.
               </p>
-              {simulatorEnabled && (
-                <div className="pt-2">
-                  <ActivatePlanButton plan={plan} />
-                </div>
-              )}
+              <div className="pt-2">
+                <ActivatePlanButton plan={plan} />
+              </div>
             </div>
           </div>
         </div>

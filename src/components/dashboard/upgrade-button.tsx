@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Crown, Loader2, Sparkles } from "lucide-react";
+import { startBillingCheckout } from "@/components/paddle/checkout";
 
 export function UpgradeButton() {
   const [loading, setLoading] = useState(false);
@@ -25,13 +26,7 @@ export function UpgradeButton() {
         return;
       }
 
-      if (data.init_point) {
-        // Redirect to MercadoPago checkout
-        window.location.href = data.init_point;
-      } else {
-        setError("No se recibió la URL de pago. Intenta de nuevo.");
-        setLoading(false);
-      }
+      await startBillingCheckout(data);
     } catch {
       setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
       setLoading(false);
@@ -51,7 +46,7 @@ export function UpgradeButton() {
         {loading ? (
           <>
             <Loader2 className="h-4.5 w-4.5 animate-spin" />
-            <span>Redirigiendo a MercadoPago…</span>
+            <span>Abriendo Checkout…</span>
           </>
         ) : (
           <>

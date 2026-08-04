@@ -29,6 +29,23 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    if (subscription?.paddleSubscriptionId) {
+      return NextResponse.json({
+        status: subscription.status,
+        provider: "paddle",
+        currentPeriodEnd: subscription.currentPeriodEnd,
+      });
+    }
+    // Paddle creates the subscription asynchronously after Checkout succeeds.
+    // Until the signed webhook arrives, this is an expected pending state rather
+    // than a missing subscription error.
+    if (business.countryCode !== "CL") {
+      return NextResponse.json({
+        status: subscription?.status ?? "INACTIVE",
+        provider: "paddle",
+        pending: true,
+      });
+    }
     if (!subscription?.mpSubscriptionId) {
       return NextResponse.json(
         { error: "No hay una suscripción enlazada" },

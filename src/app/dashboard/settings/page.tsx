@@ -111,7 +111,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       {params.billing_notice === "international" && (
         <div className="flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-3 text-sm text-amber-400">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <span>Tu cuenta quedó creada y mantiene su período de prueba. La suscripción de Puragenda se cobra en CLP; el cobro internacional automático se habilitará cuando se configure el proveedor global.</span>
+          <span>Tu cuenta quedó creada y mantiene su período de prueba. Para pagos internacionales usamos Paddle: el precio base está en USD y el Checkout mostrará moneda e impuestos aplicables.</span>
         </div>
       )}
 
@@ -168,7 +168,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <p className="text-sm text-muted-foreground">
                 {business.countryCode === "CL"
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
-                  : "Precio internacional pendiente de habilitación"}
+                  : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
                 {subscription?.currentPeriodEnd && (
                   <> · Próxima renovación: {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}

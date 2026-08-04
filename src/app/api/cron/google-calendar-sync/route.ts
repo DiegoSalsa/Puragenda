@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   if (cronSecret && request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const results = await runGoogleCalendarReconciliation();
+  const businessId = new URL(request.url).searchParams.get("businessId") ?? undefined;
+  const results = await runGoogleCalendarReconciliation(new Date(), businessId);
   const ok = results.errors.length === 0;
   return NextResponse.json({ ok, ...results }, { status: ok ? 200 : 500 });
 }

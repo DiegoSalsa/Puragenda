@@ -15,6 +15,7 @@ import {
 
 import { PRICING } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
+import { startBillingCheckout } from "@/components/paddle/checkout";
 
 interface PaymentWallProps {
   userEmail: string;
@@ -53,13 +54,20 @@ export function PaymentWall({
 
   useEffect(() => {
     void verifyPayment();
-  }, []);
+
+    if (!isInternational) return;
+    const pollId = window.setInterval(() => {
+      void verifyPayment();
+    }, 5_000);
+
+    return () => window.clearInterval(pollId);
+  }, [isInternational]);
 
   async function verifyPayment() {
     setVerifying(true);
     try {
       const response = await fetch("/api/billing/verify", { method: "POST" });
-      const data = (await response.json()) as { status?: string };
+      const data = (await response.json()) as { status?: string; provider?: string };
       if (response.ok && data.status === "ACTIVE") {
         window.location.reload();
         return;
@@ -79,13 +87,10 @@ export function PaymentWall({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      const data = (await response.json()) as {
-        init_point?: string;
-        error?: string;
-      };
+      const data = (await response.json()) as { init_point?: string; provider?: string; error?: string };
 
-      if (response.ok && data.init_point) {
-        window.location.href = data.init_point;
+      if (response.ok && (data.init_point || data.provider === "paddle")) {
+        await startBillingCheckout(data as Parameters<typeof startBillingCheckout>[0]);
         return;
       }
       setError(data.error || "Error al iniciar el proceso de pago.");
@@ -192,7 +197,7 @@ export function PaymentWall({
               {isInternational
                 ? paymentSimulatorEnabled
                   ? "Prueba local · sin dinero real"
-                  : "Cobro internacional pendiente"
+                  : "USD base + impuestos locales"
                 : `$${planPrice.toLocaleString("es-CL")} CLP/mes`}
             </span>
           </div>
@@ -203,11 +208,7 @@ export function PaymentWall({
             </div>
           )}
 
-          {isInternational && !paymentSimulatorEnabled ? (
-            <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm text-sky-300">
-              No intentaremos cobrarte en CLP. Contacta a soporte para recuperar el acceso mientras se habilita el proveedor internacional.
-            </div>
-          ) : isPastDue && !paymentSimulatorEnabled ? (
+          {isPastDue && !paymentSimulatorEnabled && !isInternational ? (
             <DunningActions />
           ) : (
             <>

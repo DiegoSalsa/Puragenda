@@ -18,6 +18,7 @@ import {
   localPaymentCheckoutUrl,
   localProviderId,
 } from "@/server/services/local-payment-simulator";
+import { getPaddleCheckoutItems } from "@/server/lib/paddle";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -45,15 +46,6 @@ export async function POST(request: NextRequest) {
       );
     }
     const localSimulatorEnabled = isLocalPaymentSimulatorEnabled();
-    if (business.countryCode !== "CL" && !localSimulatorEnabled) {
-      return NextResponse.json(
-        {
-          error: "El cobro internacional de la suscripción de Puragenda aún requiere configurar un proveedor global. Tu cuenta y tus reservas no se perderán.",
-          code: "INTERNATIONAL_BILLING_NOT_CONFIGURED",
-        },
-        { status: 503 },
-      );
-    }
 
     // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
     let targetPlan: ValidPlan = "EQUIPO";
@@ -79,7 +71,7 @@ export async function POST(request: NextRequest) {
       where: { businessId: business.id },
     });
 
-    if (subscription?.status === "PAST_DUE" && subscription.mpSubscriptionId) {
+    if (subscription?.status === "PAST_DUE" && (subscription.mpSubscriptionId || subscription.paddleSubscriptionId)) {
       return NextResponse.json(
         {
           error:
@@ -104,6 +96,65 @@ export async function POST(request: NextRequest) {
     const baseUrl = configuredBaseUrl
       || (isProduction ? "https://www.puragenda.cl" : request.nextUrl.origin);
     const backUrl = `${baseUrl}/dashboard/settings`;
+
+    // Chile keeps Mercado Pago in CLP. Every other country starts Paddle Checkout
+    // with the fixed USD catalog price; Paddle localizes the presented currency and tax.
+    if (business.countryCode !== "CL" && !localSimulatorEnabled) {
+      if (targetPlan === "TEST") {
+        return NextResponse.json(
+          { error: "El plan Test solo está disponible en el flujo local." },
+          { status: 400 },
+        );
+      }
+      if (discountCode?.trim()) {
+        return NextResponse.json(
+          { error: "Los códigos de descuento todavía no están disponibles para el Checkout internacional." },
+          { status: 400 },
+        );
+      }
+
+      const extraStaffCount = targetPlan === "EQUIPO"
+        ? requestedExtraStaffCount || subscription?.extraStaffCount || 0
+        : 0;
+
+      try {
+        const items = getPaddleCheckoutItems(targetPlan, extraStaffCount);
+        await prisma.subscription.upsert({
+          where: { businessId: business.id },
+          update: {
+            plan: targetPlan,
+            extraStaffCount,
+            status: "INACTIVE",
+            isTrial: false,
+            trialEndsAt: null,
+          },
+          create: {
+            businessId: business.id,
+            plan: targetPlan,
+            extraStaffCount,
+            status: "INACTIVE",
+            isTrial: false,
+          },
+        });
+
+        return NextResponse.json({
+          provider: "paddle",
+          items,
+  customer: { email: user.email, countryCode: business.countryCode },
+          customData: {
+            puragenda_business_id: business.id,
+            puragenda_plan: targetPlan,
+          },
+          successUrl: backUrl,
+        });
+      } catch (error) {
+        console.error("[billing/subscribe] Paddle no está configurado", error);
+        return NextResponse.json(
+          { error: "El Checkout internacional no está configurado todavía." },
+          { status: 503 },
+        );
+      }
+    }
 
     // Calculate initial price (apply discount if any)
     const billingPreview = calculateNextBillingPreview({

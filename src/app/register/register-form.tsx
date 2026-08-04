@@ -6,13 +6,16 @@ import { useSearchParams } from "next/navigation";
 import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-react";
 import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 import { getCountryConfig } from "@/core/countries";
+import { startBillingCheckout } from "@/components/paddle/checkout";
 
 export function RegisterForm({
   countryOptions,
   paymentSimulatorEnabled,
+  initialCountryCode = "",
 }: {
   countryOptions: Array<{ code: string; name: string }>;
   paymentSimulatorEnabled: boolean;
+  initialCountryCode?: string;
 }) {
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
@@ -27,9 +30,10 @@ export function RegisterForm({
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [countryCode, setCountryCode] = useState("");
-  const [timezone, setTimezone] = useState("");
-  const [currencyCode, setCurrencyCode] = useState("");
+  const detectedCountry = getCountryConfig(initialCountryCode);
+  const [countryCode, setCountryCode] = useState(initialCountryCode);
+  const [timezone, setTimezone] = useState(initialCountryCode ? detectedCountry.timezone : "");
+  const [currencyCode, setCurrencyCode] = useState(initialCountryCode ? detectedCountry.currency : "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -92,12 +96,8 @@ export function RegisterForm({
         return;
       }
 
-      // Step 2: If direct subscription, redirect to MercadoPago checkout
+      // Step 2: Start the provider selected by the business country.
       if (isDirectSubscription) {
-        if (countryCode !== "CL" && !paymentSimulatorEnabled) {
-          window.location.href = "/dashboard/settings?billing_notice=international";
-          return;
-        }
         setLoadingStep("payment");
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
@@ -107,9 +107,8 @@ export function RegisterForm({
 
         const billingData = await billingRes.json();
 
-        if (billingRes.ok && billingData.init_point) {
-          // Redirect to MercadoPago checkout
-          window.location.href = billingData.init_point;
+        if (billingRes.ok && (billingData.init_point || billingData.provider === "paddle")) {
+          await startBillingCheckout(billingData);
           return;
         }
 
@@ -141,7 +140,7 @@ export function RegisterForm({
                 {countryCode && countryCode !== "CL"
                   ? paymentSimulatorEnabled
                     ? `Plan ${planLabel} — prueba local en ${currencyCode}`
-                    : `Plan ${planLabel} — cobro internacional por configurar`
+                    : `Plan ${planLabel} — USD ${wantsPlan === "EQUIPO" ? (32.99 + extraStaffCount * 3.49).toFixed(2) : wantsPlan === "INDIVIDUAL" ? "13.99" : "0.00"}/mes base`
                   : `Plan ${planLabel} — $${planPrice.toLocaleString("es-CL")} CLP/mes`}
               </span>
             </div>
@@ -378,7 +377,7 @@ export function RegisterForm({
             {countryCode !== "CL"
               ? paymentSimulatorEnabled
                 ? "Seras redirigido al simulador local. No se cobra dinero real."
-                : "Tu cuenta conservara el acceso de prueba; el cobro internacional real aun no esta habilitado."
+                : "Paddle mostrará el importe en tu moneda cuando esté disponible. El precio base está en USD y los impuestos locales se calculan en Checkout."
               : "Seras redirigido a Mercado Pago para completar el pago."}
           </p>
         )}

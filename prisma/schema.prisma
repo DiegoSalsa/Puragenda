@@ -163,6 +163,11 @@ model Subscription {
   businessId                   String             @unique
   mpCustomerId                 String?
   mpSubscriptionId             String?
+  paddleCustomerId             String?            @unique
+  paddleSubscriptionId         String?            @unique
+  paddlePriceIds               String[]           @default([])
+  paddleLastEventAt            DateTime?
+  paddleLastEventId            String?
   currentPeriodEnd             DateTime?
   paymentFailedAt              DateTime?
   gracePeriodEndsAt            DateTime?

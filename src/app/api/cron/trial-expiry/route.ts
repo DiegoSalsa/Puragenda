@@ -5,9 +5,8 @@ import { runBillingReconciliation } from "@/server/services/subscription-dunning
 
 // ── Vercel Cron: runs daily at 13:00 UTC (09:00 AM Chile) ──
 // Handles two tasks:
-// 1. Send warning emails to Chilean users whose trial expires in 3 days
-// 2. Expire Chilean trials that have passed their trialEndsAt date
-// International trials stay accessible until a global billing provider exists.
+// 1. Send warning emails to users whose trial expires in 3 days
+// 2. Expire trials that have passed their trialEndsAt date.
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -42,7 +41,6 @@ export async function GET(req: Request) {
         isTrial: true,
         trialEndsAt: { gte: warningStart, lte: warningEnd },
         trialWarningEmailSent: false,
-        business: { countryCode: "CL" },
       },
       include: {
         business: {
@@ -85,7 +83,6 @@ export async function GET(req: Request) {
         status: "TRIALING",
         isTrial: true,
         trialEndsAt: { lt: now },
-        business: { countryCode: "CL" },
       },
       include: {
         business: {
