@@ -104,6 +104,9 @@ export default async function WidgetPage({
         where: { isVisible: true },
         orderBy: [{ placement: "asc" }, { position: "asc" }],
       },
+      scheduleOverrides: {
+        orderBy: { date: "asc" },
+      },
     },
   });
 
@@ -227,6 +230,14 @@ export default async function WidgetPage({
       businessHours={business.businessHours.map((h) => ({
         dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
         breakStart: h.breakStart, breakEnd: h.breakEnd,
+      }))}
+      scheduleOverrides={business.scheduleOverrides.map((o) => ({
+        date: o.date.toISOString().split("T")[0],
+        isOpen: o.isOpen,
+        startTime: o.startTime,
+        endTime: o.endTime,
+        breakStart: o.breakStart,
+        breakEnd: o.breakEnd,
       }))}
       staffMembers={business.staff.map((s) => ({
         id: s.id,

@@ -62,6 +62,14 @@ interface PromoBlock {
   discountEndsAt: string | null;
   discountMinSubtotal: number;
 }
+interface ScheduleOverride {
+  date: string; // YYYY-MM-DD
+  isOpen: boolean;
+  startTime: string | null;
+  endTime: string | null;
+  breakStart: string | null;
+  breakEnd: string | null;
+}
 interface Props {
   business: {
     name: string; slug: string; apiKey: string; logoUrl: string | null;
@@ -72,6 +80,7 @@ interface Props {
   services: Service[];
   primaryColor: string;
   businessHours?: BusinessHour[];
+  scheduleOverrides?: ScheduleOverride[];
   staffMembers?: StaffMember[];
   maxServicesPerBooking?: number;
   groupServicesByCategory?: boolean;
@@ -93,30 +102,73 @@ const WEEK_DAYS = [
 ];
 const WEEK_NAMES: Record<number, string> = { 0: "Domingo", 1: "Lunes", 2: "Martes", 3: "Miercoles", 4: "Jueves", 5: "Viernes", 6: "Sabado" };
 
-function buildDays(businessHours?: BusinessHour[], allowSameDayBookings?: boolean) {
+function buildDays(businessHours?: BusinessHour[], allowSameDayBookings?: boolean, scheduleOverrides?: ScheduleOverride[]) {
   const days: Date[] = [];
   let d = new Date();
   // If same-day bookings are allowed, start from today; otherwise from tomorrow
   const startOffset = allowSameDayBookings ? 0 : 1;
   d = addDays(d, startOffset);
-  while (days.length < 10) {
+  // Build a lookup map for overrides by date key
+  const overrideMap = new Map<string, ScheduleOverride>();
+  if (scheduleOverrides) {
+    for (const o of scheduleOverrides) overrideMap.set(o.date, o);
+  }
+  // Show up to 60 days ahead (to find enough open days), cap at 10 results
+  const maxLookahead = 60;
+  let checked = 0;
+  while (days.length < 10 && checked < maxLookahead) {
     const dow = d.getDay();
-    if (businessHours && businessHours.length > 0) {
-      const bh = businessHours.find((h) => h.dayOfWeek === dow);
-      if (bh && !bh.isOpen) { d = addDays(d, 1); continue; }
+    const dateKey = [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+    const override = overrideMap.get(dateKey);
+
+    if (override) {
+      // Override takes priority: if isOpen, include the day; if not, skip
+      if (override.isOpen) {
+        days.push(new Date(d));
+      }
+    } else {
+      // Fall back to weekly schedule
+      if (businessHours && businessHours.length > 0) {
+        const bh = businessHours.find((h) => h.dayOfWeek === dow);
+        if (bh && !bh.isOpen) { d = addDays(d, 1); checked++; continue; }
+      }
+      days.push(new Date(d));
     }
-    days.push(new Date(d));
     d = addDays(d, 1);
+    checked++;
   }
   return days;
 }
 
-function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30) {
+function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30, scheduleOverrides?: ScheduleOverride[]) {
   const dow = date.getDay();
   let startH = 9, startM = 0, endH = 19, endM = 0;
   const breakRanges: { start: number; end: number }[] = [];
 
-  if (businessHours && businessHours.length > 0) {
+  // Check for a schedule override for this specific date
+  const dateKey = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+  const override = scheduleOverrides?.find((o) => o.date === dateKey);
+
+  if (override) {
+    // Override replaces weekly business hours entirely
+    if (!override.isOpen) return [];
+    if (override.startTime && override.endTime) {
+      const [sh, sm] = override.startTime.split(":").map(Number);
+      const [eh, em] = override.endTime.split(":").map(Number);
+      startH = sh; startM = sm; endH = eh; endM = em;
+      if (override.breakStart && override.breakEnd) {
+        breakRanges.push({ start: scheduleTimeToMinutes(override.breakStart), end: scheduleTimeToMinutes(override.breakEnd) });
+      }
+    }
+  } else if (businessHours && businessHours.length > 0) {
     const bh = businessHours.find((h) => h.dayOfWeek === dow);
     if (bh && bh.isOpen) {
       const [sh, sm] = bh.startTime.split(":").map(Number);
@@ -209,7 +261,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [] }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [] }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -392,12 +444,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
-  const days = useMemo(() => buildDays(businessHours, allowSameDayBookings), [businessHours, allowSameDayBookings]);
+  const days = useMemo(() => buildDays(businessHours, allowSameDayBookings, scheduleOverrides), [businessHours, allowSameDayBookings, scheduleOverrides]);
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
     const staffSched = selectedStaff?.schedule;
-    let generated = buildSlots(selectedDate, dur, businessHours, staffSched, slotInterval);
+    let generated = buildSlots(selectedDate, dur, businessHours, staffSched, slotInterval, scheduleOverrides);
 
     // Same-day filtering logic
     const now = new Date();
@@ -413,7 +465,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return generated;
-  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes]);
+  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };

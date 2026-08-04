@@ -1022,3 +1022,165 @@ export async function markChangelogSeenAction(version: string) {
 
   return { success: true };
 }
+
+// ─── Schedule Overrides ───
+
+export async function saveScheduleOverrideAction(data: {
+  date: string;        // YYYY-MM-DD
+  isOpen: boolean;
+  startTime?: string;
+  endTime?: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
+}) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar los horarios del negocio" };
+  }
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+    return { error: "Formato de fecha inválido" };
+  }
+  const dateObj = new Date(`${data.date}T00:00:00.000Z`);
+  if (isNaN(dateObj.getTime())) {
+    return { error: "Fecha inválida" };
+  }
+
+  if (data.isOpen) {
+    if (!data.startTime || !data.endTime) {
+      return { error: "Debes indicar hora de inicio y fin cuando el día está abierto" };
+    }
+    if (!isValidTime(data.startTime) || !isValidTime(data.endTime)) {
+      return { error: "Usa horas válidas en formato HH:mm" };
+    }
+    if (!isValidTimeRange(data.startTime, data.endTime)) {
+      return { error: "La hora de inicio debe ser anterior a la hora de fin" };
+    }
+    if (data.breakStart || data.breakEnd) {
+      if (!data.breakStart || !data.breakEnd || !isValidTimeRange(data.breakStart, data.breakEnd)) {
+        return { error: "Revisa el horario de la pausa" };
+      }
+      if (data.breakStart < data.startTime || data.breakEnd > data.endTime) {
+        return { error: "La pausa debe estar dentro del horario laboral" };
+      }
+    }
+  }
+
+  // Upsert both Business and Staff overrides (simplified UX for solo businesses)
+  const staff = await prisma.staff.findFirst({
+    where: { businessId: business.id, isActive: true },
+    select: { id: true },
+  });
+
+  await prisma.businessScheduleOverride.upsert({
+    where: { businessId_date: { businessId: business.id, date: dateObj } },
+    create: {
+      businessId: business.id,
+      date: dateObj,
+      isOpen: data.isOpen,
+      startTime: data.isOpen ? data.startTime || null : null,
+      endTime: data.isOpen ? data.endTime || null : null,
+      breakStart: data.isOpen ? data.breakStart || null : null,
+      breakEnd: data.isOpen ? data.breakEnd || null : null,
+    },
+    update: {
+      isOpen: data.isOpen,
+      startTime: data.isOpen ? data.startTime || null : null,
+      endTime: data.isOpen ? data.endTime || null : null,
+      breakStart: data.isOpen ? data.breakStart || null : null,
+      breakEnd: data.isOpen ? data.breakEnd || null : null,
+    },
+  });
+
+  // Also upsert a matching StaffScheduleOverride for the first active staff member
+  if (staff) {
+    await prisma.staffScheduleOverride.upsert({
+      where: { staffId_date: { staffId: staff.id, date: dateObj } },
+      create: {
+        staffId: staff.id,
+        date: dateObj,
+        isWorking: data.isOpen,
+        startTime: data.isOpen ? data.startTime || null : null,
+        endTime: data.isOpen ? data.endTime || null : null,
+        breakStart: data.isOpen ? data.breakStart || null : null,
+        breakEnd: data.isOpen ? data.breakEnd || null : null,
+      },
+      update: {
+        isWorking: data.isOpen,
+        startTime: data.isOpen ? data.startTime || null : null,
+        endTime: data.isOpen ? data.endTime || null : null,
+        breakStart: data.isOpen ? data.breakStart || null : null,
+        breakEnd: data.isOpen ? data.breakEnd || null : null,
+      },
+    });
+  }
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+export async function deleteScheduleOverrideAction(date: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar los horarios del negocio" };
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { error: "Formato de fecha inválido" };
+  }
+
+  const dateObj = new Date(`${date}T00:00:00.000Z`);
+
+  // Delete business override
+  await prisma.businessScheduleOverride.deleteMany({
+    where: { businessId: business.id, date: dateObj },
+  });
+
+  // Delete matching staff overrides
+  const staffIds = await prisma.staff.findMany({
+    where: { businessId: business.id },
+    select: { id: true },
+  });
+  if (staffIds.length > 0) {
+    await prisma.staffScheduleOverride.deleteMany({
+      where: {
+        staffId: { in: staffIds.map((s) => s.id) },
+        date: dateObj,
+      },
+    });
+  }
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+export async function getScheduleOverridesAction() {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado", overrides: [] };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio", overrides: [] };
+
+  const overrides = await prisma.businessScheduleOverride.findMany({
+    where: { businessId: business.id },
+    orderBy: { date: "asc" },
+  });
+
+  return {
+    overrides: overrides.map((o) => ({
+      id: o.id,
+      date: o.date.toISOString().split("T")[0],
+      isOpen: o.isOpen,
+      startTime: o.startTime,
+      endTime: o.endTime,
+      breakStart: o.breakStart,
+      breakEnd: o.breakEnd,
+    })),
+  };
+}

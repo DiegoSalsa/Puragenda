@@ -261,6 +261,7 @@ model Business {
   widgetPromoBlocks           WidgetPromoBlock[]
   accessProfiles              AccessProfile[]
   googleCalendarConnections   GoogleCalendarConnection[]
+  scheduleOverrides           BusinessScheduleOverride[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -455,6 +456,23 @@ model BusinessHours {
   @@index([businessId])
 }
 
+model BusinessScheduleOverride {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  startTime  String?  // null if isOpen = false
+  endTime    String?
+  isOpen     Boolean  @default(true)
+  breakStart String?
+  breakEnd   String?
+  businessId String
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, date])
+  @@index([businessId, date])
+}
+
 model BlockedDate {
   id         String   @id @default(cuid())
   date       DateTime @db.Date
@@ -489,6 +507,7 @@ model Staff {
   services                  Service[]
   recurringBookings         RecurringBooking[]
   googleCalendarConnections GoogleCalendarConnection[]
+  scheduleOverrides         StaffScheduleOverride[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -509,6 +528,23 @@ model StaffSchedule {
 
   @@unique([staffId, dayOfWeek])
   @@index([staffId])
+}
+
+model StaffScheduleOverride {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  startTime  String?
+  endTime    String?
+  isWorking  Boolean  @default(true)
+  breakStart String?
+  breakEnd   String?
+  staffId    String
+  createdAt  DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+  @@index([staffId, date])
 }
 
 enum ScheduleBlockType {

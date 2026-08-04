@@ -111,23 +111,66 @@ export async function resolveManagedAppointment(
   const localEnd = toZonedTime(endTime, business.timezone);
   const dayOfWeek = localStart.getDay();
 
-  const [businessHour, staffDay] = await Promise.all([
+  // Build a date-only key for override lookups
+  const dateKey = [
+    localStart.getFullYear(),
+    String(localStart.getMonth() + 1).padStart(2, "0"),
+    String(localStart.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  const [businessHour, businessOverride, staffOverride] = await Promise.all([
     prisma.businessHours.findUnique({
       where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek } },
     }),
-    Promise.resolve(staff.schedule.find((entry) => entry.dayOfWeek === dayOfWeek)),
+    prisma.businessScheduleOverride.findUnique({
+      where: { businessId_date: { businessId: business.id, date: new Date(`${dateKey}T00:00:00.000Z`) } },
+    }),
+    staff.id
+      ? prisma.staffScheduleOverride.findUnique({
+          where: { staffId_date: { staffId: staff.id, date: new Date(`${dateKey}T00:00:00.000Z`) } },
+        })
+      : Promise.resolve(null),
   ]);
 
-  if (businessHour && !businessHour.isOpen) return { error: "El negocio está cerrado ese día" };
-  if (businessHour) {
-    const starts = minutesOfDay(localStart);
-    const ends = minutesOfDay(localEnd);
-    if (starts < parseClock(businessHour.startTime) || ends > parseClock(businessHour.endTime)) {
-      return { error: "La cita queda fuera del horario de atención del negocio" };
+  // ── Business schedule validation (override takes priority) ──
+  if (businessOverride) {
+    if (!businessOverride.isOpen) return { error: "El negocio está cerrado ese día" };
+    if (businessOverride.startTime && businessOverride.endTime) {
+      const starts = minutesOfDay(localStart);
+      const ends = minutesOfDay(localEnd);
+      if (starts < parseClock(businessOverride.startTime) || ends > parseClock(businessOverride.endTime)) {
+        return { error: "La cita queda fuera del horario de atención del negocio" };
+      }
+      if (businessOverride.breakStart && businessOverride.breakEnd && starts < parseClock(businessOverride.breakEnd) && ends > parseClock(businessOverride.breakStart)) {
+        return { error: "La cita se cruza con la pausa del negocio" };
+      }
+    }
+  } else {
+    if (businessHour && !businessHour.isOpen) return { error: "El negocio está cerrado ese día" };
+    if (businessHour) {
+      const starts = minutesOfDay(localStart);
+      const ends = minutesOfDay(localEnd);
+      if (starts < parseClock(businessHour.startTime) || ends > parseClock(businessHour.endTime)) {
+        return { error: "La cita queda fuera del horario de atención del negocio" };
+      }
     }
   }
 
-  if (staff.schedule.length > 0) {
+  // ── Staff schedule validation (override takes priority) ──
+  if (staffOverride) {
+    if (!staffOverride.isWorking) return { error: `${staff.name} no trabaja ese día` };
+    if (staffOverride.startTime && staffOverride.endTime) {
+      const starts = minutesOfDay(localStart);
+      const ends = minutesOfDay(localEnd);
+      if (starts < parseClock(staffOverride.startTime) || ends > parseClock(staffOverride.endTime)) {
+        return { error: `La cita queda fuera del horario de ${staff.name}` };
+      }
+      if (staffOverride.breakStart && staffOverride.breakEnd && starts < parseClock(staffOverride.breakEnd) && ends > parseClock(staffOverride.breakStart)) {
+        return { error: `La cita se cruza con la pausa de ${staff.name}` };
+      }
+    }
+  } else if (staff.schedule.length > 0) {
+    const staffDay = staff.schedule.find((entry) => entry.dayOfWeek === dayOfWeek);
     if (!staffDay?.isWorking) return { error: `${staff.name} no trabaja ese día` };
     const starts = minutesOfDay(localStart);
     const ends = minutesOfDay(localEnd);

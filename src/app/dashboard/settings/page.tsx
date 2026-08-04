@@ -5,7 +5,7 @@ import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
@@ -20,6 +20,7 @@ import { ProductionOrdersConfig } from "./production-orders-config";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { SecretField } from "@/components/dashboard/secret-field";
+import { ScheduleOverridesEditor } from "./schedule-overrides";
 
 export const dynamic = "force-dynamic";
 
@@ -206,6 +207,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
             breakStart: h.breakStart, breakEnd: h.breakEnd,
           }))} />
+        </div>
+
+        <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <CalendarRange className="h-4 w-4 text-[#7C3AED]" /> Horarios por Fecha (Excepciones)
+          </div>
+          <ScheduleOverridesEditor />
         </div>
 
         <div id="business-slug" className="rounded-2xl border border-border bg-card p-6">

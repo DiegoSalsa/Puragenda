@@ -161,28 +161,91 @@ export async function rescheduleAppointmentAction(
   }
 
   const dayOfWeek = localStart.getDay();
-  const businessDay = businessHours.find((entry) => entry.dayOfWeek === dayOfWeek);
-  const defaultBusinessDay = {
-    startTime: "09:00",
-    endTime: "19:00",
-    isOpen: dayOfWeek >= 1 && dayOfWeek <= 5,
-    breakStart: null,
-    breakEnd: null,
-  };
-  const effectiveBusinessDay =
-    businessHours.length === 0 ? defaultBusinessDay : businessDay;
-  if (!effectiveBusinessDay?.isOpen) {
-    return { error: "El negocio está cerrado el día seleccionado" };
-  }
-  const businessScheduleError = validateScheduleWindow(
-    localStart,
-    localEnd,
-    effectiveBusinessDay,
-    "atención del negocio",
-  );
-  if (businessScheduleError) return { error: businessScheduleError };
 
-  if (staffSchedule.length > 0) {
+  // Check for schedule overrides (take priority over weekly schedule)
+  const [businessOverride, staffOverride] = await Promise.all([
+    prisma.businessScheduleOverride.findUnique({
+      where: {
+        businessId_date: {
+          businessId: appointment.business.id,
+          date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+        },
+      },
+    }),
+    appointment.staffId
+      ? prisma.staffScheduleOverride.findUnique({
+          where: {
+            staffId_date: {
+              staffId: appointment.staffId,
+              date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+            },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  // ── Business schedule validation (override takes priority) ──
+  if (businessOverride) {
+    if (!businessOverride.isOpen) {
+      return { error: "El negocio está cerrado el día seleccionado" };
+    }
+    if (businessOverride.startTime && businessOverride.endTime) {
+      const businessScheduleError = validateScheduleWindow(
+        localStart,
+        localEnd,
+        {
+          startTime: businessOverride.startTime,
+          endTime: businessOverride.endTime,
+          breakStart: businessOverride.breakStart,
+          breakEnd: businessOverride.breakEnd,
+        },
+        "atención del negocio",
+      );
+      if (businessScheduleError) return { error: businessScheduleError };
+    }
+  } else {
+    const businessDay = businessHours.find((entry) => entry.dayOfWeek === dayOfWeek);
+    const defaultBusinessDay = {
+      startTime: "09:00",
+      endTime: "19:00",
+      isOpen: dayOfWeek >= 1 && dayOfWeek <= 5,
+      breakStart: null,
+      breakEnd: null,
+    };
+    const effectiveBusinessDay =
+      businessHours.length === 0 ? defaultBusinessDay : businessDay;
+    if (!effectiveBusinessDay?.isOpen) {
+      return { error: "El negocio está cerrado el día seleccionado" };
+    }
+    const businessScheduleError = validateScheduleWindow(
+      localStart,
+      localEnd,
+      effectiveBusinessDay,
+      "atención del negocio",
+    );
+    if (businessScheduleError) return { error: businessScheduleError };
+  }
+
+  // ── Staff schedule validation (override takes priority) ──
+  if (staffOverride) {
+    if (!staffOverride.isWorking) {
+      return { error: "El profesional no trabaja el día seleccionado" };
+    }
+    if (staffOverride.startTime && staffOverride.endTime) {
+      const staffScheduleError = validateScheduleWindow(
+        localStart,
+        localEnd,
+        {
+          startTime: staffOverride.startTime,
+          endTime: staffOverride.endTime,
+          breakStart: staffOverride.breakStart,
+          breakEnd: staffOverride.breakEnd,
+        },
+        appointment.staff?.name ?? "trabajo del profesional",
+      );
+      if (staffScheduleError) return { error: staffScheduleError };
+    }
+  } else if (staffSchedule.length > 0) {
     const staffDay = staffSchedule.find((entry) => entry.dayOfWeek === dayOfWeek);
     if (!staffDay?.isWorking) {
       return { error: "El profesional no trabaja el día seleccionado" };

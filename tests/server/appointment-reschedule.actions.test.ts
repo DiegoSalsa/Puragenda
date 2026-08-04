@@ -17,6 +17,8 @@ vi.mock("@/server/db/prisma", () => ({
     businessHours: { findMany: vi.fn() },
     staffSchedule: { findMany: vi.fn() },
     scheduleBlock: { findFirst: vi.fn() },
+    businessScheduleOverride: { findUnique: vi.fn() },
+    staffScheduleOverride: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
 }));
@@ -63,6 +65,8 @@ describe("public appointment rescheduling availability", () => {
       appointment as never,
     );
     vi.mocked(prisma.blockedDate.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.businessScheduleOverride.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.staffScheduleOverride.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.businessHours.findMany).mockResolvedValue([
       {
         dayOfWeek: 2,

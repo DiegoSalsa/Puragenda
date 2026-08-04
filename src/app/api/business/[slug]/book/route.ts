@@ -349,21 +349,58 @@ export async function POST(
       },
     });
 
-    if (businessHour && !businessHour.isOpen) {
-      return Response.json(
-        { error: "El negocio está cerrado el día seleccionado" },
-        { status: 400 }
-      );
-    }
+    // ── Check for business schedule override for this specific date ──
+    const businessOverride = await prisma.businessScheduleOverride.findUnique({
+      where: {
+        businessId_date: {
+          businessId: business.id,
+          date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+        },
+      },
+    });
 
-    const businessScheduleError = validateScheduleRange(
-      localStart,
-      localEnd,
-      businessHour ?? { startTime: "09:00", endTime: "19:00" },
-      "atención del negocio"
-    );
-    if (businessScheduleError) {
-      return Response.json({ error: businessScheduleError }, { status: 400 });
+    if (businessOverride) {
+      // Override completely replaces the weekly schedule for this date
+      if (!businessOverride.isOpen) {
+        return Response.json(
+          { error: "El negocio está cerrado el día seleccionado" },
+          { status: 400 }
+        );
+      }
+      if (businessOverride.startTime && businessOverride.endTime) {
+        const overrideRange: ScheduleRange = {
+          startTime: businessOverride.startTime,
+          endTime: businessOverride.endTime,
+          breakStart: businessOverride.breakStart,
+          breakEnd: businessOverride.breakEnd,
+        };
+        const overrideError = validateScheduleRange(
+          localStart,
+          localEnd,
+          overrideRange,
+          "atención del negocio"
+        );
+        if (overrideError) {
+          return Response.json({ error: overrideError }, { status: 400 });
+        }
+      }
+    } else {
+      if (businessHour && !businessHour.isOpen) {
+        return Response.json(
+          { error: "El negocio está cerrado el día seleccionado" },
+          { status: 400 }
+        );
+      }
+
+      const businessScheduleError = validateScheduleRange(
+        localStart,
+        localEnd,
+        businessHour ?? { startTime: "09:00", endTime: "19:00" },
+        "atención del negocio"
+      );
+      if (businessScheduleError) {
+        return Response.json({ error: businessScheduleError }, { status: 400 });
+      }
     }
 
     if (!hasStaffAssignments && staffId) {
@@ -394,24 +431,59 @@ export async function POST(
       }
 
       if (selectedStaff.schedule.length > 0) {
-        const staffDay = selectedStaff.schedule.find(
-          (entry) => entry.dayOfWeek === localStart.getDay()
-        );
-        if (!staffDay?.isWorking) {
-          return Response.json(
-            { error: "El profesional no trabaja el día seleccionado" },
-            { status: 400 }
-          );
-        }
+        // Check for staff schedule override for this specific date
+        const staffOverride = await prisma.staffScheduleOverride.findUnique({
+          where: {
+            staffId_date: {
+              staffId: selectedStaff.id,
+              date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+            },
+          },
+        });
 
-        const staffScheduleError = validateScheduleRange(
-          localStart,
-          localEnd,
-          staffDay,
-          `trabajo de ${selectedStaff.name}`
-        );
-        if (staffScheduleError) {
-          return Response.json({ error: staffScheduleError }, { status: 400 });
+        if (staffOverride) {
+          if (!staffOverride.isWorking) {
+            return Response.json(
+              { error: "El profesional no trabaja el día seleccionado" },
+              { status: 400 }
+            );
+          }
+          if (staffOverride.startTime && staffOverride.endTime) {
+            const staffScheduleError = validateScheduleRange(
+              localStart,
+              localEnd,
+              {
+                startTime: staffOverride.startTime,
+                endTime: staffOverride.endTime,
+                breakStart: staffOverride.breakStart,
+                breakEnd: staffOverride.breakEnd,
+              },
+              `trabajo de ${selectedStaff.name}`
+            );
+            if (staffScheduleError) {
+              return Response.json({ error: staffScheduleError }, { status: 400 });
+            }
+          }
+        } else {
+          const staffDay = selectedStaff.schedule.find(
+            (entry) => entry.dayOfWeek === localStart.getDay()
+          );
+          if (!staffDay?.isWorking) {
+            return Response.json(
+              { error: "El profesional no trabaja el día seleccionado" },
+              { status: 400 }
+            );
+          }
+
+          const staffScheduleError = validateScheduleRange(
+            localStart,
+            localEnd,
+            staffDay,
+            `trabajo de ${selectedStaff.name}`
+          );
+          if (staffScheduleError) {
+            return Response.json({ error: staffScheduleError }, { status: 400 });
+          }
         }
       }
     }
@@ -501,22 +573,57 @@ export async function POST(
             orderBy: { dayOfWeek: "asc" },
           });
           if (schedule.length > 0) {
-            const staffDay = schedule.find((entry) => entry.dayOfWeek === localStart.getDay());
-            if (!staffDay?.isWorking) {
-              return Response.json(
-                { error: `${assigned.name} no trabaja el día seleccionado` },
-                { status: 400 }
-              );
-            }
+            // Check for staff schedule override for this specific date
+            const staffOverrideMulti = await prisma.staffScheduleOverride.findUnique({
+              where: {
+                staffId_date: {
+                  staffId: assignedStaffId,
+                  date: new Date(`${bookingDateKey}T00:00:00.000Z`),
+                },
+              },
+            });
 
-            const staffScheduleError = validateScheduleRange(
-              localStart,
-              toZonedTime(groupEnd, timezone),
-              staffDay,
-              `trabajo de ${assigned.name}`
-            );
-            if (staffScheduleError) {
-              return Response.json({ error: staffScheduleError }, { status: 400 });
+            if (staffOverrideMulti) {
+              if (!staffOverrideMulti.isWorking) {
+                return Response.json(
+                  { error: `${assigned.name} no trabaja el día seleccionado` },
+                  { status: 400 }
+                );
+              }
+              if (staffOverrideMulti.startTime && staffOverrideMulti.endTime) {
+                const staffScheduleError = validateScheduleRange(
+                  localStart,
+                  toZonedTime(groupEnd, timezone),
+                  {
+                    startTime: staffOverrideMulti.startTime,
+                    endTime: staffOverrideMulti.endTime,
+                    breakStart: staffOverrideMulti.breakStart,
+                    breakEnd: staffOverrideMulti.breakEnd,
+                  },
+                  `trabajo de ${assigned.name}`
+                );
+                if (staffScheduleError) {
+                  return Response.json({ error: staffScheduleError }, { status: 400 });
+                }
+              }
+            } else {
+              const staffDay = schedule.find((entry) => entry.dayOfWeek === localStart.getDay());
+              if (!staffDay?.isWorking) {
+                return Response.json(
+                  { error: `${assigned.name} no trabaja el día seleccionado` },
+                  { status: 400 }
+                );
+              }
+
+              const staffScheduleError = validateScheduleRange(
+                localStart,
+                toZonedTime(groupEnd, timezone),
+                staffDay,
+                `trabajo de ${assigned.name}`
+              );
+              if (staffScheduleError) {
+                return Response.json({ error: staffScheduleError }, { status: 400 });
+              }
             }
           }
         }
