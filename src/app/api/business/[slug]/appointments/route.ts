@@ -3,8 +3,6 @@ import { getBlockedSlots } from "@/server/services/appointment.service";
 import { fromZonedTime } from "date-fns-tz";
 import { NextRequest } from "next/server";
 
-const BUSINESS_TZ = "America/Santiago";
-
 /**
  * GET /api/business/[slug]/appointments?date=2026-04-25
  *
@@ -50,10 +48,10 @@ export async function GET(
       );
     }
 
-    // Parse the business-local day. Slots are generated in local Chile time,
+    // Parse the business-local day. Slots are generated in the business timezone,
     // so blocked ranges must use the same day boundary before converting to UTC.
-    const dateStart = fromZonedTime(`${dateParam}T00:00:00.000`, BUSINESS_TZ);
-    const dateEnd = fromZonedTime(`${dateParam}T23:59:59.999`, BUSINESS_TZ);
+    const dateStart = fromZonedTime(`${dateParam}T00:00:00.000`, business.timezone);
+    const dateEnd = fromZonedTime(`${dateParam}T23:59:59.999`, business.timezone);
 
     if (isNaN(dateStart.getTime())) {
       return Response.json(

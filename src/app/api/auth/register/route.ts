@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
       || request.headers.get("x-real-ip")
       || "unknown";
 
-    const { email, password, name, businessName, referralCode, planIntent, extraStaffCount } = parsed.data;
-    const result = await registerUser({ email, password, name, businessName, ip, referralCode, planIntent, extraStaffCount });
+    const { email, password, name, businessName, countryCode, timezone, currencyCode, referralCode, planIntent, extraStaffCount } = parsed.data;
+    const result = await registerUser({ email, password, name, businessName, countryCode, timezone, currencyCode, ip, referralCode, planIntent, extraStaffCount });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });

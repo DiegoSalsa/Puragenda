@@ -53,7 +53,7 @@ interface Order {
   serviceName: string;
 }
 
-export function OrdersBoard({ businessName, initialOrders }: { businessName: string; initialOrders: Order[] }) {
+export function OrdersBoard({ businessName, currencyCode, initialOrders }: { businessName: string; currencyCode: string; initialOrders: Order[] }) {
   const [orders, setOrders] = useState(initialOrders);
   const [selected, setSelected] = useState<Order | null>(null);
   const [loading, setLoading] = useState("");
@@ -107,7 +107,7 @@ export function OrdersBoard({ businessName, initialOrders }: { businessName: str
           ["Activos", stats.active, Package],
           ["Esperando abono", stats.awaitingDeposit, Banknote],
           ["Por entregar", stats.dueSoon, CalendarRange],
-          ["Por cobrar", formatPrice(stats.outstanding), Banknote],
+          ["Por cobrar", formatPrice(stats.outstanding, currencyCode), Banknote],
         ] as [string, string | number, LucideIcon][]).map(([label, value, Icon]) => (
           <div key={String(label)} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between"><p className="text-xs text-muted-foreground">{String(label)}</p><Icon className="h-4 w-4 text-[#7C3AED]" /></div>
@@ -204,9 +204,9 @@ export function OrdersBoard({ businessName, initialOrders }: { businessName: str
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{selected.customerPhone}</p>
                 </div>
                 <div className="rounded-xl border border-border p-4 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Total</span><strong>{formatPrice(selected.totalPrice)}</strong></div>
-                  <div className="mt-2 flex justify-between"><span className="text-muted-foreground">Abono</span><span>{formatPrice(selected.depositAmount)}</span></div>
-                  <div className="mt-1 flex justify-between"><span className="text-muted-foreground">Saldo</span><span>{formatPrice(selected.balanceAmount)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Total</span><strong>{formatPrice(selected.totalPrice, currencyCode)}</strong></div>
+                  <div className="mt-2 flex justify-between"><span className="text-muted-foreground">Abono</span><span>{formatPrice(selected.depositAmount, currencyCode)}</span></div>
+                  <div className="mt-1 flex justify-between"><span className="text-muted-foreground">Saldo</span><span>{formatPrice(selected.balanceAmount, currencyCode)}</span></div>
                   {selected.depositPaymentStatus !== "APPROVED" && (
                     <button disabled={loading === selected.id} onClick={() => updateOrder(selected.id, { depositPaid: true })} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-500/10 py-2 text-xs font-semibold text-emerald-600"><Check className="h-3.5 w-3.5" />Marcar abono recibido</button>
                   )}

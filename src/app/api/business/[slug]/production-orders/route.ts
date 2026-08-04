@@ -10,6 +10,8 @@ import {
   ACTIVE_PRODUCTION_STATUSES,
   getProductionWindows,
 } from "@/server/services/production-window.service";
+import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
 
 function dateOnly(value: string) {
   return new Date(`${value}T00:00:00.000Z`);
@@ -102,6 +104,23 @@ export async function POST(
     const depositAmount = Math.round(totalPrice * service.productionDepositPercent / 100);
     const balanceAmount = Math.max(0, Math.round(totalPrice - depositAmount));
     const orderNumber = `ENC-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
+    const businessMpAccessToken = depositAmount > 0
+      ? await getValidMercadoPagoAccessToken(business.id)
+      : null;
+    if (
+      businessMpAccessToken
+      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
+    ) {
+      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
+      return Response.json(
+        {
+          error: expectedCurrency
+            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
+            : "El pago online no está disponible para el país de este negocio.",
+        },
+        { status: 409 },
+      );
+    }
 
     const order = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${service.id}:${selectedWindow.key}`}))`;
@@ -167,12 +186,12 @@ export async function POST(
     });
 
     let paymentUrl: string | null = null;
-    if (order.depositAmount > 0 && business.mpAccessToken) {
+    if (order.depositAmount > 0 && businessMpAccessToken) {
       try {
         const baseUrl = process.env.NODE_ENV === "production"
           ? (process.env.NEXT_PUBLIC_APP_URL || "https://www.puragenda.cl")
           : request.nextUrl.origin;
-        const preference = new Preference(new MercadoPagoConfig({ accessToken: business.mpAccessToken }));
+        const preference = new Preference(new MercadoPagoConfig({ accessToken: businessMpAccessToken }));
         const preferenceResult = await preference.create({
           body: {
             items: [{
@@ -181,7 +200,7 @@ export async function POST(
               description: `Encargo ${order.orderNumber} para ${data.petName}`,
               quantity: 1,
               unit_price: order.depositAmount,
-              currency_id: "CLP",
+              currency_id: business.currencyCode,
             }],
             back_urls: {
               success: `${baseUrl}/api/mercadopago/production-return?orderId=${order.id}`,

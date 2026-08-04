@@ -19,6 +19,7 @@ function CancelContent() {
     businessName: string;
     startTime: string;
     endTime: string;
+    timezone: string;
   } | null>(null);
 
   useEffect(() => {
@@ -94,7 +95,7 @@ function CancelContent() {
                     {new Intl.DateTimeFormat("es-CL", {
                       dateStyle: "full",
                       timeStyle: "short",
-                      timeZone: "America/Santiago",
+                      timeZone: preview.timezone,
                     }).format(new Date(preview.startTime))}
                   </strong>
                 </p>

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/server/db/prisma";
+import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,18 +13,23 @@ export async function POST(request: NextRequest) {
 
     const order = await prisma.productionOrder.findUnique({
       where: { id: orderId },
-      include: { business: { select: { mpAccessToken: true } } },
+      include: { business: { select: { currencyCode: true } } },
     });
-    if (!order?.business.mpAccessToken) return Response.json({ received: true });
+    if (!order) return Response.json({ received: true });
+    const accessToken = await getValidMercadoPagoAccessToken(order.businessId);
+    if (!accessToken) return Response.json({ received: true });
 
-    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${order.business.mpAccessToken}` },
+    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
     });
     if (!paymentResponse.ok) return Response.json({ received: true });
     const payment = await paymentResponse.json();
     if (
       payment.external_reference !== `production:${order.id}` ||
-      Number(payment.transaction_amount) < order.depositAmount
+      typeof payment.transaction_amount !== "number" ||
+      Math.abs(payment.transaction_amount - order.depositAmount) >= 0.01 ||
+      payment.currency_id !== order.business.currencyCode
     ) {
       console.warn("[production-deposit] Payment validation failed", order.id);
       return Response.json({ received: true });

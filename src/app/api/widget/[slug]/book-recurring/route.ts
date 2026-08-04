@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { createRecurringBookingAction } from "@/server/actions/recurring.actions";
 import { NextRequest } from "next/server";
+import { recurringBookingRequestSchema } from "@/server/validations/booking";
 
 /**
  * POST /api/widget/[slug]/book-recurring
@@ -26,7 +27,10 @@ export async function POST(
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
 
-    const body = await request.json();
+    const parsed = recurringBookingRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return Response.json({ error: parsed.error.issues[0]?.message || "Datos de reserva inválidos" }, { status: 400 });
+    }
 
     const {
       serviceId,
@@ -44,7 +48,7 @@ export async function POST(
       healthAnswers,
       healthExtra,
       healthAccepted,
-    } = body;
+    } = parsed.data;
 
     const normalizedPhone = typeof customerPhone === "string" ? customerPhone.trim() : "";
 

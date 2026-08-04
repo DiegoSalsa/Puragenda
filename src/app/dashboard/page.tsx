@@ -13,6 +13,7 @@ import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS, type DashboardPermission } from "@/core/permissions";
 import { redirect } from "next/navigation";
+import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const business = await getBusinessForUser(user.id);
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  const businessLocale = getCountryConfig(business.countryCode).locale;
 
   const permissions = await getEffectiveBusinessPermissions(user, business);
   const canSeeAppointments =
@@ -236,10 +238,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       </div>
 
-      <SubscriptionBanner businessId={business.id} />
+      <SubscriptionBanner
+        businessId={business.id}
+        timezone={business.timezone}
+        countryCode={business.countryCode}
+      />
 
       {pendingSerialized.length > 0 && (
-        <PendingRecurringPanel bookings={pendingSerialized} />
+        <PendingRecurringPanel bookings={pendingSerialized} locale={businessLocale} />
       )}
 
       <WeeklyCalendar
@@ -275,6 +281,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         }))}
         staff={appointmentStaff}
         clients={appointmentClients}
+        currencyCode={business.currencyCode}
       />
 
       <PageTutorial

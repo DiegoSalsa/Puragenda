@@ -60,6 +60,7 @@ export async function POST(
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       businessName: appointment.business.name,
+      timezone: appointment.business.timezone,
       ownerEmail: appointment.business.owner.email,
     }));
   }
@@ -73,6 +74,7 @@ export async function POST(
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       businessName: appointment.business.name,
+      timezone: appointment.business.timezone,
     }));
   }
   await Promise.allSettled(notifications);

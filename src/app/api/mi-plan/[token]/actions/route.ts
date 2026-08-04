@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { cancelFutureSessions, regenerateFromDate, type SelectedTimes } from "@/server/services/recurring.service";
+import { cancelFutureSessions, dateOnlyInTimezone, regenerateFromDate, type SelectedTimes } from "@/server/services/recurring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(
     const booking = await prisma.recurringBooking.findUnique({
       where: { managementToken: token },
       include: {
-        business: { select: { name: true } },
+        business: { select: { name: true, timezone: true } },
         service: { select: { name: true, duration: true } },
       },
     });
@@ -66,7 +66,7 @@ export async function POST(
         if (booking.status !== "PAUSED") {
           return NextResponse.json({ error: "Solo puedes reanudar un plan pausado" }, { status: 400 });
         }
-        const resumeDate = new Date();
+        const resumeDate = dateOnlyInTimezone(new Date(), booking.business.timezone);
         // If endDate already passed, mark as completed
         if (booking.endDate < resumeDate) {
           await prisma.recurringBooking.update({
@@ -91,6 +91,7 @@ export async function POST(
           selectedDays: booking.selectedDays,
           selectedTimes,
           serviceDurationMinutes: booking.service.duration,
+          timezone: booking.business.timezone,
         });
         await prisma.recurringBooking.update({
           where: { id: booking.id },

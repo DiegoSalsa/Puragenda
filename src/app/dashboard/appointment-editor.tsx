@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarPlus, CheckCircle2, Loader2, Mail, X } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export interface AppointmentEditorService {
   id: string;
@@ -57,6 +58,7 @@ export function AppointmentEditor({
   services,
   staff,
   clients,
+  currencyCode,
   onClose,
 }: {
   appointment?: EditableAppointment;
@@ -65,6 +67,7 @@ export function AppointmentEditor({
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
+  currencyCode: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -238,7 +241,7 @@ export function AppointmentEditor({
                           {alternative.name}
                           {(alternative.priceDelta > 0 || alternative.durationDelta > 0) && (
                             <span className="ml-1 text-muted-foreground">
-                              {alternative.priceDelta > 0 ? `+$${Math.round(alternative.priceDelta).toLocaleString("es-CL")}` : ""}
+                              {alternative.priceDelta > 0 ? `+${formatPrice(Math.round(alternative.priceDelta), currencyCode)}` : ""}
                               {alternative.durationDelta > 0 ? ` +${alternative.durationDelta} min` : ""}
                             </span>
                           )}
@@ -258,7 +261,7 @@ export function AppointmentEditor({
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full bg-muted px-3 py-1.5">{totalDuration} minutos</span>
-                <span className="rounded-full bg-muted px-3 py-1.5">${Math.round(totalPrice).toLocaleString("es-CL")}</span>
+                <span className="rounded-full bg-muted px-3 py-1.5">{formatPrice(Math.round(totalPrice), currencyCode)}</span>
               </div>
               <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Nota interna para el equipo (opcional)" rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
               <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 p-3 text-sm">

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSupportedCountryCode, isValidTimeZone } from "@/core/countries";
 
 export const registerSchema = z.object({
   email: z
@@ -24,6 +25,25 @@ export const registerSchema = z.object({
     .min(2, "El nombre del negocio debe tener al menos 2 caracteres")
     .max(100, "El nombre del negocio no debe exceder 100 caracteres")
     .trim(),
+
+  countryCode: z
+    .string()
+    .default("CL")
+    .transform((value) => value.trim().toUpperCase())
+    .refine(isSupportedCountryCode, "Selecciona un país válido"),
+
+  timezone: z
+    .string()
+    .trim()
+    .refine(isValidTimeZone, "Selecciona una zona horaria válida")
+    .optional(),
+
+  currencyCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, "Usa un código de moneda ISO de 3 letras")
+    .optional(),
 
   referralCode: z
     .string()

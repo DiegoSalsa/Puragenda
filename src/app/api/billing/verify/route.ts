@@ -9,6 +9,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import {
   reconcileMercadoPagoSubscription,
 } from "@/server/services/subscription-dunning.service";
+import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,20 @@ export async function POST(request: NextRequest) {
         { error: "No hay una suscripción enlazada" },
         { status: 404 }
       );
+    }
+
+    if (subscription.mpSubscriptionId.startsWith("LOCAL_SUBSCRIPTION:")) {
+      if (!isLocalPaymentSimulatorEnabled()) {
+        return NextResponse.json(
+          { error: "La suscripción simulada solo existe en desarrollo" },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({
+        status: subscription.status,
+        simulated: true,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+      });
     }
 
     const reconciliation = await reconcileMercadoPagoSubscription(

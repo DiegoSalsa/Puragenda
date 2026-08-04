@@ -98,3 +98,18 @@ export function buildTimeSlots(
 export function formatDateES(date: Date, formatStr: string): string {
   return fnsFormat(date, formatStr, { locale: es });
 }
+
+/** Return an ISO date key (YYYY-MM-DD) as seen in a specific timezone. */
+export function dateKeyInTimezone(date: Date, timezone: string = DEFAULT_TIMEZONE): string {
+  return formatInTimezone(date, "yyyy-MM-dd", timezone);
+}
+
+/** Whether a UTC instant falls on tomorrow in the business timezone. */
+export function isTomorrowInTimezone(
+  date: Date,
+  now: Date,
+  timezone: string = DEFAULT_TIMEZONE,
+): boolean {
+  const localTomorrow = addDays(toZonedTime(now, timezone), 1);
+  return dateKeyInTimezone(date, timezone) === fnsFormat(localTomorrow, "yyyy-MM-dd");
+}

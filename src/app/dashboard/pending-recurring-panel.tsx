@@ -23,7 +23,7 @@ interface PendingBooking {
   createdAt: string;
 }
 
-export function PendingRecurringPanel({ bookings }: { bookings: PendingBooking[] }) {
+export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingBooking[]; locale: string }) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(bookings.length === 1 ? bookings[0].id : null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -113,8 +113,8 @@ export function PendingRecurringPanel({ bookings }: { bookings: PendingBooking[]
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
-                          {new Date(b.startDate).toLocaleDateString("es-CL", { day: "numeric", month: "short" })} al{" "}
-                          {new Date(b.endDate).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}
+                          {new Date(b.startDate).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" })} al{" "}
+                          {new Date(b.endDate).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
                         </span>
                       </div>
                     </div>

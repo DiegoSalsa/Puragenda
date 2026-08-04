@@ -7,6 +7,7 @@ import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Che
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 interface RecurringPlan {
   mode: "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM";
@@ -76,6 +77,7 @@ interface Props {
     primaryColor: string; secondaryColor: string; backgroundColor: string; brandColor: string | null;
     textColor?: string; textSecondary?: string; fontSize?: number;
     cornerRadius?: number; shadowStyle?: string; headerAlign?: string;
+    timezone: string; currencyCode: string; taxIdLabel: string; taxIdPlaceholder: string;
   };
   services: Service[];
   primaryColor: string;
@@ -102,9 +104,9 @@ const WEEK_DAYS = [
 ];
 const WEEK_NAMES: Record<number, string> = { 0: "Domingo", 1: "Lunes", 2: "Martes", 3: "Miercoles", 4: "Jueves", 5: "Viernes", 6: "Sabado" };
 
-function buildDays(businessHours?: BusinessHour[], allowSameDayBookings?: boolean, scheduleOverrides?: ScheduleOverride[]) {
+function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDayBookings?: boolean, scheduleOverrides?: ScheduleOverride[]) {
   const days: Date[] = [];
-  let d = new Date();
+  let d = toZonedTime(new Date(), timezone);
   // If same-day bookings are allowed, start from today; otherwise from tomorrow
   const startOffset = allowSameDayBookings ? 0 : 1;
   d = addDays(d, startOffset);
@@ -208,10 +210,12 @@ function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[]
   return slots;
 }
 
-function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[]) {
+function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], timezone: string) {
+  const slotStart = fromZonedTime(slot.start, timezone);
+  const slotEnd = fromZonedTime(slot.end, timezone);
   for (const b of blocked) {
     const bs = new Date(b.startTime), be = new Date(b.endTime);
-    if (slot.start < be && slot.end > bs) return true;
+    if (slotStart < be && slotEnd > bs) return true;
   }
   return false;
 }
@@ -444,7 +448,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
-  const days = useMemo(() => buildDays(businessHours, allowSameDayBookings, scheduleOverrides), [businessHours, allowSameDayBookings, scheduleOverrides]);
+  const days = useMemo(
+    () => buildDays(business.timezone, businessHours, allowSameDayBookings, scheduleOverrides),
+    [business.timezone, businessHours, allowSameDayBookings, scheduleOverrides],
+  );
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
@@ -452,7 +459,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     let generated = buildSlots(selectedDate, dur, businessHours, staffSched, slotInterval, scheduleOverrides);
 
     // Same-day filtering logic
-    const now = new Date();
+    const now = toZonedTime(new Date(), business.timezone);
     const isToday = selectedDate.getFullYear() === now.getFullYear() &&
       selectedDate.getMonth() === now.getMonth() &&
       selectedDate.getDate() === now.getDate();
@@ -465,7 +472,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return generated;
-  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides]);
+  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides, business.timezone]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -508,7 +515,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }, [selectedDate, assignedStaffIds, fetchBlocked]);
 
   const isSlotUnavailable = useCallback((slot: { start: Date; end: Date }) => {
-    if (!splitStaffMode) return isBlocked(slot, blockedSlots);
+    if (!splitStaffMode) return isBlocked(slot, blockedSlots, business.timezone);
 
     for (const service of activeServices) {
       const staffId = selectedStaffByServiceId[service.id];
@@ -520,7 +527,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       if (!isStaffAvailableForSlot(staff, serviceSlot)) return true;
 
       const staffBlockedSlots = blockedSlots.filter((blocked) => blocked.staffId === staffId);
-      if (isBlocked(serviceSlot, staffBlockedSlots)) return true;
+      if (isBlocked(serviceSlot, staffBlockedSlots, business.timezone)) return true;
     }
 
     return false;
@@ -531,6 +538,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     selectedStaffByServiceId,
     splitStaffMode,
     staffMembers,
+    business.timezone,
   ]);
 
   useEffect(() => {
@@ -716,9 +724,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           serviceId: serviceIds[0], serviceIds,
           selectedOptionAlternativeIds,
           customerName: form.name.trim(), customerEmail: form.email.trim(),
-          customerPhone: form.phone.trim(), startTime: selectedSlot.start.toISOString(),
+          customerPhone: form.phone.trim(), startTime: fromZonedTime(selectedSlot.start, business.timezone).toISOString(),
           customerAddress: requiresHomeAddress ? form.address.trim() : undefined,
-          endTime: selectedSlot.end.toISOString(),
+          endTime: fromZonedTime(selectedSlot.end, business.timezone).toISOString(),
           staffId: splitStaffMode ? undefined : selectedStaff?.id,
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
@@ -953,7 +961,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm"
                   style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}
                 >
-                  {formatPrice(service.price)}
+                  {formatPrice(service.price, business.currencyCode)}
                 </span>
               </div>
             </div>
@@ -999,7 +1007,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           const discountLabel = block.discountType === "PERCENTAGE"
             ? `${block.discountValue}% de descuento`
             : block.discountType === "FIXED"
-              ? `${formatPrice(block.discountValue ?? 0)} de descuento`
+              ? `${formatPrice(block.discountValue ?? 0, business.currencyCode)} de descuento`
               : null;
           const content = (
             <div
@@ -1129,7 +1137,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                               ? <><CalendarDays className="h-3.5 w-3.5" />{s.productionScheduleMode === "CUSTOM" ? "Períodos de entrega" : "Cupos semanales"}</>
                               : <><Clock3 className="h-3.5 w-3.5" />{s.duration} min</>}
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price)}</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-semibold shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wbg)" }}>{formatPrice(s.price, business.currencyCode)}</span>
                         </div>
                         </div>
                       </div>
@@ -1198,7 +1206,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <div className="rounded-2xl border p-4 text-sm space-y-1.5 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Servicios:</span><span className="font-medium" style={{ color: textColor }}>{selectedServices.length}</span></div>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Duración total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
-                    <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice)}</span></div>
+                    <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice, business.currencyCode)}</span></div>
                   </div>
                   <button type="button" onClick={handleMultiServiceContinue}
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98]" style={{ background: pc, color: getContrastColor(pc) }}>
@@ -1253,7 +1261,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                                       {alternative.isHomeService && <span className="mt-1 flex items-center gap-1 text-[11px]" style={{ color: pc }}><MapPin className="h-3 w-3" />A domicilio</span>}
                                     </span>
                                     <span className="text-xs font-semibold" style={{ color: active ? pc : textSecondary }}>
-                                      {alternative.priceDelta > 0 ? `+${formatPrice(alternative.priceDelta)}` : "+$0"}
+                                      {alternative.priceDelta > 0 ? `+${formatPrice(alternative.priceDelta, business.currencyCode)}` : `+${formatPrice(0, business.currencyCode)}`}
                                       {alternative.durationDelta > 0 ? ` / +${alternative.durationDelta} min` : ""}
                                     </span>
                                   </div>
@@ -1270,7 +1278,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
               <div className="rounded-2xl border p-4 text-sm space-y-1.5" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                 {selectedService?.bookingMode !== "PRODUCTION" && <div className="flex justify-between" style={{ color: textSecondary }}><span>Duracion total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>}
-                <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(rawTotalPrice)}</span></div>
+                <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(rawTotalPrice, business.currencyCode)}</span></div>
               </div>
 
               <button type="button" disabled={!optionsComplete} onClick={handleOptionsContinue}
@@ -1282,7 +1290,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
           {step === "production" && selectedService?.bookingMode === "PRODUCTION" && (
             <ProductionOrderFlow
-              business={{ slug: business.slug, apiKey: business.apiKey, name: business.name }}
+              business={{ slug: business.slug, apiKey: business.apiKey, name: business.name, currencyCode: business.currencyCode }}
               service={selectedService}
               selectedOptionAlternativeIds={selectedOptionAlternativeIds}
               totalPrice={rawTotalPrice}
@@ -1348,7 +1356,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <button type="button" onClick={() => setStep(hasMultipleFilteredStaff && !selectedStaff ? "staff" : "mode-select")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80 transition-opacity" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium shadow-sm" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
               </div>
-              <div><h2 className="text-2xl font-bold tracking-tight">Configura tu plan</h2><p className="text-sm mt-1" style={{ color: textSecondary }}>Personaliza los dias y horarios de tus sesiones.</p></div>
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Configura tu plan</h2>
+                <p className="text-sm mt-1" style={{ color: textSecondary }}>Personaliza los dias y horarios de tus sesiones.</p>
+                <p className="mt-1 text-xs" style={{ color: textSecondary }}>Todos los horarios corresponden a {business.timezone}.</p>
+              </div>
 
               {/* Staff picker if multiple */}
               {(filteredStaff.length > 1 && !selectedStaff) && (
@@ -1467,7 +1479,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 ) : (
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                     {Array.from({ length: selectedService.recurringPlan.startDateRangeDays || 30 }).map((_, i) => {
-                      const d = addDays(new Date(), i);
+                      const d = addDays(toZonedTime(new Date(), business.timezone), i);
                       // ONLY show dates that match the selected recurring days!
                       if (!recurringSelectedDays.includes(d.getDay())) return null;
                       const dStr = format(d, "yyyy-MM-dd");
@@ -1577,7 +1589,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               <div className="flex items-center gap-3">
                 <button type="button" onClick={() => setStep(selectedService.recurringPlan!.requiresHealthForm ? "health-form" : "recurring-config")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
               </div>
-              <div><h2 className="text-xl font-bold">Confirmar suscripcion</h2><p className="text-sm" style={{ color: textSecondary }}>Revisa tu plan antes de confirmar.</p></div>
+              <div>
+                <h2 className="text-xl font-bold">Confirmar suscripcion</h2>
+                <p className="text-sm" style={{ color: textSecondary }}>Revisa tu plan antes de confirmar.</p>
+                <p className="mt-1 text-xs" style={{ color: textSecondary }}>Zona horaria: {business.timezone}</p>
+              </div>
 
               {/* Summary table */}
               <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--wborder)" }}>
@@ -1637,8 +1653,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 )}
                 {selectedService.recurringPlan.requiresRut && (
                   <div className="space-y-1">
-                    <label className="text-xs opacity-70" style={{ color: textColor }}>RUT (ej: 12345678-9)</label>
-                    <input type="text" value={rut} onChange={(e) => setRut(e.target.value)} placeholder="12345678-9" maxLength={12}
+                    <label className="text-xs opacity-70" style={{ color: textColor }}>{business.taxIdLabel}</label>
+                    <input type="text" value={rut} onChange={(e) => setRut(e.target.value)} placeholder={business.taxIdPlaceholder} maxLength={20}
                       className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
                       style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
                   </div>
@@ -1797,7 +1813,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {selectedStaff && <span className="rounded-lg px-2.5 py-1 text-xs font-medium border opacity-60" style={{ color: textColor, borderColor: `${textColor}15` }}>{selectedStaff.name}</span>}
                 </div>
               </div>
-              <div><h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. Elige fecha y hora</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p></div>
+              <div>
+                <h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. Elige fecha y hora</h2>
+                <p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p>
+                <p className="mt-1 text-xs" style={{ color: textSecondary }}>Horarios en {business.timezone}.</p>
+              </div>
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
@@ -1876,6 +1896,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <div>
                     <p className="font-semibold">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p>
                     <p style={{ color: textSecondary }}>{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</p>
+                    <p className="text-xs" style={{ color: textSecondary }}>{business.timezone}</p>
                   </div>
                 </div>
                 <div className="flex justify-between pt-1"><span style={{ color: textSecondary }}>Servicio</span><span className="font-medium text-right max-w-[60%] truncate">{selectedService.name}</span></div>
@@ -1897,10 +1918,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <span className="font-medium">
                     {rewardDiscount || promotionResult?.quote ? (
                       <span className="flex items-center gap-2">
-                        <span className="line-through opacity-40">{formatPrice(rawTotalPrice)}</span>
-                        <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice)}</span>
+                        <span className="line-through opacity-40">{formatPrice(rawTotalPrice, business.currencyCode)}</span>
+                        <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice, business.currencyCode)}</span>
                       </span>
-                    ) : formatPrice(rawTotalPrice)}
+                    ) : formatPrice(rawTotalPrice, business.currencyCode)}
                   </span>
                 </div>
               </div>
@@ -1951,7 +1972,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {rewardStatus === "valid" && rewardDiscount && (
                     <p className="text-xs text-green-400 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
-                      ¡Código aplicado! Descuento de {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : formatPrice(rewardDiscount.value)}
+                      ¡Código aplicado! Descuento de {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : formatPrice(rewardDiscount.value, business.currencyCode)}
                     </p>
                   )}
                   {rewardStatus === "invalid" && rewardError && (
@@ -1963,14 +1984,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {promotionResult?.quote && activePromotion && (
                     <p className="flex items-center gap-1 text-xs text-green-400">
                       <CheckCircle2 className="h-3 w-3" />
-                      Promoción “{activePromotion.title}” aplicada: ahorras {formatPrice(promotionResult.quote.discountAmount)}.
+                      Promoción “{activePromotion.title}” aplicada: ahorras {formatPrice(promotionResult.quote.discountAmount, business.currencyCode)}.
                     </p>
                   )}
                 </div>
                 {/* Deposit notice */}
                 {showDeposit && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
-                    <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(effectiveDepositAmount)}</p>
+                    <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(effectiveDepositAmount, business.currencyCode)}</p>
                     <p className="text-xs mt-1" style={{ color: textSecondary }}>Serás redirigido a Mercado Pago para pagar el abono. Tu cita se confirmará automáticamente al completar el pago.</p>
                   </div>
                 )}
@@ -2005,6 +2026,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       {selectedStaff && <p><span style={{ color: textSecondary }}>Profesional:</span> {selectedStaff.name}</p>}
                       <p><span style={{ color: textSecondary }}>Dias:</span> {recurringSelectedDays.map((d) => WEEK_NAMES[d]).join(", ")}</p>
                       <p><span style={{ color: textSecondary }}>Duracion:</span> {recurringDurationMonths} {recurringDurationMonths === 1 ? "mes" : "meses"}</p>
+                      <p><span style={{ color: textSecondary }}>Zona horaria:</span> {business.timezone}</p>
                     </div>
                   </div>
                 </>
@@ -2016,7 +2038,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <div className="space-y-1 opacity-80" style={{ color: textColor }}>
                       <p><span style={{ color: textSecondary }}>Servicio:</span> {selectedService?.name}</p>
                       {selectedStaff && <p><span style={{ color: textSecondary }}>Profesional:</span> {selectedStaff.name}</p>}
-                      {selectedSlot && <><p><span style={{ color: textSecondary }}>Fecha:</span> {capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p><p><span style={{ color: textSecondary }}>Hora:</span> {format(selectedSlot.start, "HH:mm")}</p></>}
+                      {selectedSlot && <><p><span style={{ color: textSecondary }}>Fecha:</span> {capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p><p><span style={{ color: textSecondary }}>Hora:</span> {format(selectedSlot.start, "HH:mm")}</p><p><span style={{ color: textSecondary }}>Zona horaria:</span> {business.timezone}</p></>}
                       <p><span style={{ color: textSecondary }}>Cliente:</span> {form.name}</p>
                     </div>
                   </div>

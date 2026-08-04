@@ -135,6 +135,7 @@ export async function PATCH(
             startTime: fullAppointment.startTime,
             endTime: fullAppointment.endTime,
             businessName: fullAppointment.business.name,
+            timezone: fullAppointment.business.timezone,
           });
         }
       }
@@ -163,6 +164,7 @@ export async function PATCH(
             startTime: fullAppointment.startTime,
             endTime: fullAppointment.endTime,
             businessName: fullAppointment.business.name,
+            timezone: fullAppointment.business.timezone,
           });
         }
       }

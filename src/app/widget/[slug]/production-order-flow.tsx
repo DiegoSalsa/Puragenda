@@ -18,7 +18,7 @@ interface ProductionWindow {
 }
 
 interface Props {
-  business: { slug: string; apiKey: string; name: string };
+  business: { slug: string; apiKey: string; name: string; currencyCode: string };
   service: {
     id: string;
     name: string;
@@ -181,9 +181,9 @@ export function ProductionOrderFlow({
           <div className="space-y-2">
             <p><span style={{ color: textSecondary }}>Servicio:</span> {service.name}</p>
             <p><span style={{ color: textSecondary }}>Mascota:</span> {form.petName}</p>
-            <p><span style={{ color: textSecondary }}>Total:</span> {formatPrice(totalPrice)}</p>
-            <p><span style={{ color: textSecondary }}>Abono para confirmar:</span> {formatPrice(result.depositAmount)}</p>
-            <p><span style={{ color: textSecondary }}>Saldo:</span> {formatPrice(result.balanceAmount)}</p>
+            <p><span style={{ color: textSecondary }}>Total:</span> {formatPrice(totalPrice, business.currencyCode)}</p>
+            <p><span style={{ color: textSecondary }}>Abono para confirmar:</span> {formatPrice(result.depositAmount, business.currencyCode)}</p>
+            <p><span style={{ color: textSecondary }}>Saldo:</span> {formatPrice(result.balanceAmount, business.currencyCode)}</p>
           </div>
         </div>
         <button type="button" onClick={onBack} className="rounded-xl border px-6 py-3 text-sm font-medium" style={{ borderColor: "var(--wborder)", color: textColor }}>
@@ -308,9 +308,9 @@ export function ProductionOrderFlow({
       </div>
 
       <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: `${primaryColor}35`, background: `${primaryColor}08` }}>
-        <div className="flex justify-between"><span style={{ color: textSecondary }}>Total</span><strong>{formatPrice(totalPrice)}</strong></div>
-        <div className="mt-2 flex justify-between"><span style={{ color: textSecondary }}>Abono para reservar ({service.productionDepositPercent}%)</span><strong style={{ color: primaryColor }}>{formatPrice(depositAmount)}</strong></div>
-        <p className="mt-2 text-xs" style={{ color: textSecondary }}>El saldo de {formatPrice(Math.max(0, totalPrice - depositAmount))} se paga cuando el pedido esté listo.</p>
+        <div className="flex justify-between"><span style={{ color: textSecondary }}>Total</span><strong>{formatPrice(totalPrice, business.currencyCode)}</strong></div>
+        <div className="mt-2 flex justify-between"><span style={{ color: textSecondary }}>Abono para reservar ({service.productionDepositPercent}%)</span><strong style={{ color: primaryColor }}>{formatPrice(depositAmount, business.currencyCode)}</strong></div>
+        <p className="mt-2 text-xs" style={{ color: textSecondary }}>El saldo de {formatPrice(Math.max(0, totalPrice - depositAmount), business.currencyCode)} se paga cuando el pedido esté listo.</p>
       </div>
 
       {error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">{error}</div>}

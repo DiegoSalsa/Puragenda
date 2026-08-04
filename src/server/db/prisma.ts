@@ -5,7 +5,14 @@ import pg from "pg";
 const connectionString = process.env.DATABASE_URL!;
 
 const pool = new pg.Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+const configuredSchema = (() => {
+  try {
+    return new URL(connectionString).searchParams.get("schema") || undefined;
+  } catch {
+    return undefined;
+  }
+})();
+const adapter = new PrismaPg(pool, { schema: configuredSchema });
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

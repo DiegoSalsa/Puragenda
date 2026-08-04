@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { RegisterForm } from "./register-form";
+import { getCountryOptions } from "@/core/countries";
+import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
 export default async function RegisterPage() {
   const user = await getCurrentSessionUser();
@@ -23,7 +25,10 @@ export default async function RegisterPage() {
         </Link>
 
         <Suspense>
-          <RegisterForm />
+          <RegisterForm
+            countryOptions={getCountryOptions("es")}
+            paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
+          />
         </Suspense>
       </div>
     </main>

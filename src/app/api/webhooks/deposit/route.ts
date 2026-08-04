@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendDepositConfirmedNotifications } from "@/server/email/send";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 
 async function getAppointmentForEmail(appointmentId: string) {
   return prisma.appointment.findUnique({
@@ -16,18 +17,23 @@ async function getAppointmentForEmail(appointmentId: string) {
   });
 }
 
-async function getRelatedAppointmentIds(appointment: { id: string; businessId: string; mpPreferenceId: string | null }) {
-  if (!appointment.mpPreferenceId) return [appointment.id];
+async function getRelatedAppointments(appointment: {
+  id: string;
+  businessId: string;
+  mpPreferenceId: string | null;
+  depositAmount: number | null;
+}) {
+  if (!appointment.mpPreferenceId) {
+    return [{ id: appointment.id, depositAmount: appointment.depositAmount }];
+  }
 
-  const related = await prisma.appointment.findMany({
+  return prisma.appointment.findMany({
     where: {
       businessId: appointment.businessId,
       mpPreferenceId: appointment.mpPreferenceId,
     },
-    select: { id: true },
+    select: { id: true, depositAmount: true },
   });
-
-  return related.map((item) => item.id);
 }
 
 async function markGroupApproved(appointmentIds: string[], paymentId: string) {
@@ -68,46 +74,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    const platformToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    if (!platformToken) {
-      console.error("[webhook/deposit] MERCADOPAGO_ACCESS_TOKEN not set");
+    const businessId = request.nextUrl.searchParams.get("businessId");
+    const accessToken = businessId
+      ? await getValidMercadoPagoAccessToken(businessId)
+      : process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      console.error("[webhook/deposit] No access token available");
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
     const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${platformToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!paymentResponse.ok) {
-      const appointmentByPayment = await prisma.appointment.findFirst({
-        where: { mpPaymentId: paymentId },
-        include: { business: { select: { mpAccessToken: true } } },
-      });
-
-      if (!appointmentByPayment?.business.mpAccessToken) {
-        console.warn("[webhook/deposit] Could not fetch payment:", paymentId);
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      const businessPaymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: { Authorization: `Bearer ${appointmentByPayment.business.mpAccessToken}` },
-      });
-
-      if (!businessPaymentResponse.ok) {
-        console.warn("[webhook/deposit] Could not fetch payment with business token:", paymentId);
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      const businessPaymentData = await businessPaymentResponse.json();
-      const businessPaymentStatus = businessPaymentData.status as string;
-      const relatedIds = await getRelatedAppointmentIds(appointmentByPayment);
-
-      if (businessPaymentStatus === "approved") {
-        await markGroupApproved(relatedIds, paymentId);
-      } else if (businessPaymentStatus === "rejected" || businessPaymentStatus === "cancelled") {
-        await markGroupRejected(relatedIds, paymentId);
-      }
-
+      console.warn("[webhook/deposit] Could not fetch payment:", paymentId);
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
@@ -122,14 +103,35 @@ export async function POST(request: NextRequest) {
 
     const appointment = await prisma.appointment.findUnique({
       where: { id: externalReference },
+      include: { business: { select: { currencyCode: true } } },
     });
 
     if (!appointment) {
       console.warn("[webhook/deposit] Appointment not found:", externalReference);
       return NextResponse.json({ received: true }, { status: 200 });
     }
+    if (businessId && appointment.businessId !== businessId) {
+      console.warn("[webhook/deposit] Business mismatch for payment:", paymentId);
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
 
-    const relatedIds = await getRelatedAppointmentIds(appointment);
+    const relatedAppointments = await getRelatedAppointments(appointment);
+    const relatedIds = relatedAppointments.map((item) => item.id);
+    const expectedAmount = relatedAppointments.reduce(
+      (total, item) => total + (item.depositAmount ?? 0),
+      0,
+    );
+    const matchesAmount = typeof paymentData.transaction_amount === "number"
+      && Math.abs(paymentData.transaction_amount - expectedAmount) < 0.01;
+    const matchesCurrency = paymentData.currency_id === appointment.business.currencyCode;
+    if (!matchesAmount || !matchesCurrency) {
+      console.warn("[webhook/deposit] Payment amount or currency mismatch", {
+        paymentId,
+        matchesAmount,
+        matchesCurrency,
+      });
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
 
     if (paymentStatus === "approved") {
       await markGroupApproved(relatedIds, paymentId);

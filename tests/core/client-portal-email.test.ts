@@ -28,6 +28,7 @@ describe("correo de acceso al portal del cliente", () => {
       startTime: new Date("2026-08-10T14:00:00.000Z"),
       endTime: new Date("2026-08-10T15:00:00.000Z"),
       businessName: "Estudio",
+      timezone: "America/Argentina/Buenos_Aires",
     });
     const decorated = withClientPortalAccess(
       booking,
@@ -38,5 +39,7 @@ describe("correo de acceso al portal del cliente", () => {
     expect(decorated.html).toContain("Ver mis citas y premios");
     expect(decorated.html).toContain("válido por 30 días");
     expect(decorated.html).toContain("secret&amp;value");
+    expect(decorated.html).toContain("Zona horaria");
+    expect(decorated.html).toContain("America/Argentina/Buenos_Aires");
   });
 });

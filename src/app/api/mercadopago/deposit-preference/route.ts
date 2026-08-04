@@ -1,6 +1,14 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { MercadoPagoConfig, Preference } from "mercadopago";
+import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
+import {
+  createLocalPaymentToken,
+  isLocalPaymentSimulatorEnabled,
+  localPaymentCheckoutUrl,
+  localProviderId,
+} from "@/server/services/local-payment-simulator";
 
 /**
  * POST /api/mercadopago/deposit-preference
@@ -31,14 +39,6 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Cita no encontrada" }, { status: 404 });
     }
 
-    // Check business has MP connected
-    if (!appointment.business.mpAccessToken) {
-      return Response.json(
-        { error: "El negocio no tiene Mercado Pago conectado" },
-        { status: 400 }
-      );
-    }
-
     // Check deposit is required (use appointment's stored deposit amount)
     const depositAmt = appointment.depositAmount || 0;
     if (!appointment.business.depositRequired || depositAmt <= 0) {
@@ -56,14 +56,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+    if (isLocalPaymentSimulatorEnabled()) {
+      const preferenceId = localProviderId("deposit");
+      await prisma.appointment.update({
+        where: { id: appointment.id },
+        data: {
+          mpPreferenceId: preferenceId,
+          depositAmount: depositAmt,
+          paymentStatus: "PENDING",
+        },
+      });
+      const token = createLocalPaymentToken({
+        kind: "deposit",
+        entityId: appointment.id,
+        businessId: appointment.business.id,
+        amount: depositAmt,
+        currency: appointment.business.currencyCode,
+      });
+      const initPoint = localPaymentCheckoutUrl(baseUrl, token);
+      return Response.json({
+        preferenceId,
+        initPoint,
+        sandboxInitPoint: initPoint,
+        simulated: true,
+      });
+    }
+
+    const accessToken = await getValidMercadoPagoAccessToken(appointment.business.id);
+    if (!accessToken) {
+      return Response.json(
+        { error: "El negocio no tiene Mercado Pago conectado" },
+        { status: 400 }
+      );
+    }
+
+    if (!isMercadoPagoCurrencyCompatible(appointment.business.countryCode, appointment.business.currencyCode)) {
+      const expectedCurrency = getMercadoPagoCurrency(appointment.business.countryCode);
+      return Response.json(
+        {
+          error: expectedCurrency
+            ? `Mercado Pago para ${appointment.business.countryCode} solo esta habilitado en ${expectedCurrency}. Cambia la moneda del negocio o desconecta Mercado Pago.`
+            : "Mercado Pago no esta disponible para el pais de este negocio.",
+        },
+        { status: 409 },
+      );
+    }
+
     // Use the business's own access token (marketplace model)
     const mpClient = new MercadoPagoConfig({
-      accessToken: appointment.business.mpAccessToken,
+      accessToken,
     });
 
     const preference = new Preference(mpClient);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
     const result = await preference.create({
       body: {
         items: [
@@ -73,7 +118,7 @@ export async function POST(request: NextRequest) {
             description: `Reserva para ${appointment.customerName}`,
             quantity: 1,
             unit_price: depositAmt,
-            currency_id: "CLP",
+            currency_id: appointment.business.currencyCode,
           },
         ],
         back_urls: {
@@ -83,7 +128,7 @@ export async function POST(request: NextRequest) {
         },
         auto_return: "approved",
         external_reference: appointment.id,
-        notification_url: `${baseUrl}/api/webhooks/deposit`,
+        notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${appointment.business.id}`,
         statement_descriptor: "PURAGENDA",
       },
     });

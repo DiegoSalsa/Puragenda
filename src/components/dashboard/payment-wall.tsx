@@ -21,7 +21,9 @@ interface PaymentWallProps {
   userName: string;
   businessId: string;
   businessName: string;
+  countryCode: string;
   plan: string;
+  paymentSimulatorEnabled?: boolean;
   reason?: "pending" | "past_due";
 }
 
@@ -29,7 +31,9 @@ export function PaymentWall({
   userEmail,
   userName,
   businessName,
+  countryCode,
   plan,
+  paymentSimulatorEnabled = false,
   reason = "pending",
 }: PaymentWallProps) {
   const [loading, setLoading] = useState(false);
@@ -37,6 +41,7 @@ export function PaymentWall({
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isPastDue = reason === "past_due";
+  const isInternational = countryCode !== "CL";
   const planName =
     plan === "EQUIPO" ? "Equipo" : plan === "INDIVIDUAL" ? "Individual" : "Test";
   const planPrice =
@@ -184,7 +189,11 @@ export function PaymentWall({
           <div className="mb-6 flex items-center justify-between rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
             <span className="text-sm font-medium">Plan {planName}</span>
             <span className="text-lg font-bold text-[#7C3AED]">
-              ${planPrice.toLocaleString("es-CL")}/mes
+              {isInternational
+                ? paymentSimulatorEnabled
+                  ? "Prueba local · sin dinero real"
+                  : "Cobro internacional pendiente"
+                : `$${planPrice.toLocaleString("es-CL")} CLP/mes`}
             </span>
           </div>
 
@@ -194,7 +203,11 @@ export function PaymentWall({
             </div>
           )}
 
-          {isPastDue ? (
+          {isInternational && !paymentSimulatorEnabled ? (
+            <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm text-sky-300">
+              No intentaremos cobrarte en CLP. Contacta a soporte para recuperar el acceso mientras se habilita el proveedor internacional.
+            </div>
+          ) : isPastDue && !paymentSimulatorEnabled ? (
             <DunningActions />
           ) : (
             <>
@@ -208,7 +221,7 @@ export function PaymentWall({
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Redirigiendo a Mercado Pago...
+                      Abriendo pago...
                     </>
                   ) : (
                     <>

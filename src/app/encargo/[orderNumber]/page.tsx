@@ -22,7 +22,7 @@ export default async function ProductionOrderStatusPage({
       balanceAmount: true,
       depositPaymentStatus: true,
       service: { select: { name: true } },
-      business: { select: { name: true, primaryColor: true } },
+      business: { select: { name: true, primaryColor: true, currencyCode: true } },
     },
   });
   if (!order) return <div className="flex min-h-screen items-center justify-center">Encargo no encontrado</div>;
@@ -46,8 +46,8 @@ export default async function ProductionOrderStatusPage({
           <p className="mb-3 flex items-center gap-2 font-semibold" style={{ color: order.business.primaryColor }}><Package className="h-4 w-4" />{order.orderNumber}</p>
           <p><span className="text-muted-foreground">Servicio:</span> {order.service.name}</p>
           <p className="mt-1"><span className="text-muted-foreground">Mascota:</span> {order.petName}</p>
-          <p className="mt-1"><span className="text-muted-foreground">Abono:</span> {formatPrice(order.depositAmount)}</p>
-          <p className="mt-1"><span className="text-muted-foreground">Saldo al finalizar:</span> {formatPrice(order.balanceAmount)}</p>
+          <p className="mt-1"><span className="text-muted-foreground">Abono:</span> {formatPrice(order.depositAmount, order.business.currencyCode)}</p>
+          <p className="mt-1"><span className="text-muted-foreground">Saldo al finalizar:</span> {formatPrice(order.balanceAmount, order.business.currencyCode)}</p>
         </div>
       </div>
     </main>

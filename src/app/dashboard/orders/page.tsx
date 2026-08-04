@@ -39,6 +39,7 @@ export default async function OrdersPage() {
   return (
     <OrdersBoard
       businessName={business.name}
+      currencyCode={business.currencyCode}
       initialOrders={orders.map((order) => ({
         id: order.id,
         orderNumber: order.orderNumber,

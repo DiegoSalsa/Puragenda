@@ -5,7 +5,6 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
-import { addMonths } from "date-fns";
 import {
   generateAppointments,
   detectAllConflicts,
@@ -15,6 +14,9 @@ import {
   applyTimePunctual,
   applyTimePermanent,
   type SelectedTimes,
+  recurringEndDate,
+  dateOnlyInTimezone,
+  addDaysToDateOnly,
 } from "@/server/services/recurring.service";
 import {
   sendRecurringBookingCreatedClient,
@@ -26,6 +28,7 @@ import {
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { syncRecurringBookingAppointments } from "@/server/services/google-calendar.service";
+import { normalizeAndValidateTaxId } from "@/core/countries";
 
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
 type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
@@ -182,6 +185,8 @@ export async function createRecurringBookingAction(data: {
     select: {
       id: true,
       name: true,
+      countryCode: true,
+      timezone: true,
       owner: { select: { email: true, name: true } },
     },
   });
@@ -201,6 +206,19 @@ export async function createRecurringBookingAction(data: {
   if (!service.recurringPlan) return { error: "Este servicio no tiene plan recurrente configurado" };
 
   const plan = service.recurringPlan;
+
+  if (Number.isNaN(data.startDate.getTime())) return { error: "Fecha de inicio inválida" };
+  const today = dateOnlyInTimezone(new Date(), business.timezone);
+  const lastAllowedStart = addDaysToDateOnly(today, Math.max(0, plan.startDateRangeDays - 1));
+  if (data.startDate < today || data.startDate > lastAllowedStart) {
+    return { error: "La fecha de inicio está fuera del rango permitido" };
+  }
+
+  const taxId = normalizeAndValidateTaxId(business.countryCode, data.customerRut ?? "");
+  if (taxId.error) return { error: taxId.error };
+  if (plan.requiresRut && !taxId.value) {
+    return { error: "Debes ingresar el documento de identidad solicitado" };
+  }
 
   // Validate durationOptions
   if (!plan.durationOptions.includes(data.durationMonths)) {
@@ -249,8 +267,7 @@ export async function createRecurringBookingAction(data: {
   }
 
   // Calculate endDate
-  const endDate = addMonths(data.startDate, data.durationMonths);
-  endDate.setDate(endDate.getDate() - 1); // inclusive last day
+  const endDate = recurringEndDate(data.startDate, data.durationMonths);
 
   // Detect conflicts (informational, not blocking)
   const conflicts = await detectAllConflicts({
@@ -261,6 +278,7 @@ export async function createRecurringBookingAction(data: {
     selectedDays: data.selectedDays,
     selectedTimes: data.selectedTimes,
     serviceDurationMinutes: service.duration,
+    timezone: business.timezone,
   });
 
   const conflictDates = conflicts.map((c) => c.date);
@@ -282,13 +300,13 @@ export async function createRecurringBookingAction(data: {
         name: data.customerName,
         email: data.customerEmail.toLowerCase().trim(),
         phone: normalizedPhone,
-        rut: data.customerRut ?? null,
+        rut: taxId.value || null,
       },
     });
-  } else if (data.customerRut && !client.rut) {
+  } else if (taxId.value && !client.rut) {
     await prisma.client.update({
       where: { id: client.id },
-      data: { phone: normalizedPhone, rut: data.customerRut },
+      data: { phone: normalizedPhone, rut: taxId.value },
     });
   } else if (client.phone !== normalizedPhone) {
     await prisma.client.update({
@@ -316,7 +334,7 @@ export async function createRecurringBookingAction(data: {
         customerEmail: data.customerEmail.toLowerCase().trim(),
         customerPhone: normalizedPhone,
         customerAddress: data.customerAddress ?? null,
-        customerRut: data.customerRut ?? null,
+        customerRut: taxId.value || null,
         status: initialStatus,
         selectedDays: data.selectedDays,
         selectedTimes: data.selectedTimes,
@@ -347,12 +365,19 @@ export async function createRecurringBookingAction(data: {
         selectedDays: data.selectedDays,
         selectedTimes: data.selectedTimes,
         serviceDurationMinutes: service.duration,
+        timezone: business.timezone,
         cancelledDates: conflictDates,
+        db: tx,
+        syncGoogle: false,
       });
     }
 
     return booking;
   });
+
+  if (initialStatus === "ACTIVE") {
+    await syncRecurringBookingAppointments(recurringBooking.id);
+  }
 
   // Create RecurringSessionOverride records for detected conflicts
   if (conflicts.length > 0) {
@@ -387,6 +412,7 @@ export async function createRecurringBookingAction(data: {
           healthAnswers: data.healthAnswers,
           healthFreeText: data.healthFreeText,
           businessName: business.name,
+          timezone: business.timezone,
         });
       }
     } else {
@@ -403,6 +429,7 @@ export async function createRecurringBookingAction(data: {
         conflicts: conflictDates,
         managementToken,
         businessName: business.name,
+        timezone: business.timezone,
       });
     }
   } catch (err) {
@@ -445,7 +472,8 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
   const selectedTimes = booking.selectedTimes as SelectedTimes;
 
   // Re-detect conflicts at approval time (schedule may have changed since request)
-  const effectiveStartDate = booking.startDate < new Date() ? new Date() : booking.startDate;
+  const today = dateOnlyInTimezone(new Date(), business.timezone);
+  const effectiveStartDate = booking.startDate < today ? today : booking.startDate;
   const conflicts = await detectAllConflicts({
     businessId: business.id,
     staffId: booking.staffId,
@@ -454,6 +482,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
     selectedDays: booking.selectedDays,
     selectedTimes,
     serviceDurationMinutes: booking.service.duration,
+    timezone: business.timezone,
   });
   const conflictDates = conflicts.map((c) => c.date);
 
@@ -478,9 +507,14 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
       selectedDays: booking.selectedDays,
       selectedTimes,
       serviceDurationMinutes: booking.service.duration,
+      timezone: business.timezone,
       cancelledDates: conflictDates,
+      db: tx,
+      syncGoogle: false,
     });
   });
+
+  await syncRecurringBookingAppointments(recurringBookingId);
 
   // Record conflict overrides
   if (conflicts.length > 0) {
@@ -504,6 +538,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
       endDate: booking.endDate,
       managementToken: booking.managementToken ?? "",
       businessName: business.name,
+      timezone: business.timezone,
     });
   } catch (err) {
     console.error("[recurring.actions] Error sending approval email:", err);
@@ -634,7 +669,7 @@ export async function cancelSpecificSessionsAction(recurringBookingId: string, d
   if (!booking) return { error: "Suscripcion no encontrada" };
 
   const parsedDates = dates.map((d) => new Date(d));
-  await cancelSpecificSessions(recurringBookingId, parsedDates);
+  await cancelSpecificSessions(recurringBookingId, parsedDates, business.timezone);
 
   revalidatePath("/dashboard/recurring");
   return { success: true };
@@ -664,6 +699,7 @@ export async function requestTimePunctualAction(params: {
       targetDate: new Date(params.date),
       newTime: params.newTime,
       serviceDurationMinutes: booking.service.duration,
+      timezone: booking.business.timezone,
       reason: params.reason,
       requestedByClient: params.requestedByClient ?? false,
     });
@@ -745,7 +781,7 @@ export async function resumeRecurringAction(recurringBookingId: string) {
   if (!booking) return { error: "Suscripcion no encontrada" };
   if (booking.status !== "PAUSED") return { error: "Esta suscripcion no esta pausada" };
 
-  const resumeDate = new Date();
+  const resumeDate = dateOnlyInTimezone(new Date(), business.timezone);
 
   // If endDate already passed, mark as completed instead of regenerating
   if (booking.endDate < resumeDate) {
@@ -774,6 +810,7 @@ export async function resumeRecurringAction(recurringBookingId: string) {
     selectedDays: booking.selectedDays,
     selectedTimes,
     serviceDurationMinutes: booking.service.duration,
+    timezone: business.timezone,
   });
 
   await prisma.recurringBooking.update({

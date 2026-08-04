@@ -81,7 +81,17 @@ interface RecurringBooking {
   sessionOverrides: SessionOverride[];
 }
 
-export function RecurringClient({ bookings }: { bookings: RecurringBooking[] }) {
+export function RecurringClient({
+  bookings,
+  locale,
+  timezone,
+  taxIdLabel,
+}: {
+  bookings: RecurringBooking[];
+  locale: string;
+  timezone: string;
+  taxIdLabel: string;
+}) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterStatus>("ALL");
   const [search, setSearch] = useState("");
@@ -227,7 +237,7 @@ export function RecurringClient({ bookings }: { bookings: RecurringBooking[] }) 
                     <>
                       <span>·</span>
                       <span className="text-[#7C3AED]">
-                        Prox: {new Date(nextApt.startTime).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+                        Prox: {new Date(nextApt.startTime).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: timezone })}
                       </span>
                     </>
                   )}
@@ -278,11 +288,11 @@ export function RecurringClient({ bookings }: { bookings: RecurringBooking[] }) 
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Datos del cliente</p>
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span>{selected.customerEmail}</span></div>
                 {selected.customerPhone && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">T</span><span className="text-foreground">{selected.customerPhone}</span></div>}
-                {selected.customerRut && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">R</span><span className="text-foreground">RUT: {selected.customerRut}</span></div>}
+                {selected.customerRut && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">ID</span><span className="text-foreground">{taxIdLabel}: {selected.customerRut}</span></div>}
               </div>
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Plan</p>
-                <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /><span>{new Date(selected.startDate).toLocaleDateString("es-CL")} - {new Date(selected.endDate).toLocaleDateString("es-CL")}</span></div>
+                <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /><span>{new Date(selected.startDate).toLocaleDateString(locale, { timeZone: "UTC" })} - {new Date(selected.endDate).toLocaleDateString(locale, { timeZone: "UTC" })}</span></div>
                 <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>{selected.selectedDays.map((d) => `${WEEK_NAMES[d]} ${selected.selectedTimes[String(d)]}`).join(" / ")}</span>
                 </div>
@@ -322,12 +332,12 @@ export function RecurringClient({ bookings }: { bookings: RecurringBooking[] }) 
                   return (
                     <div
                       key={a.id}
-                      title={`${d.toLocaleDateString("es-CL")} ${d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} - ${a.status}`}
+                      title={`${d.toLocaleDateString(locale, { timeZone: timezone })} ${d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: timezone })} - ${a.status}`}
                       className={`flex flex-col items-center justify-center rounded-lg border border-border/50 p-2 text-xs w-14 text-center ${isPast ? "opacity-50" : ""}`}
                     >
                       <div className={`h-1.5 w-1.5 rounded-full mb-1 ${color}`} />
-                      <span className="font-medium">{d.getDate()}/{d.getMonth() + 1}</span>
-                      <span className="text-muted-foreground">{d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="font-medium">{d.toLocaleDateString(locale, { day: "numeric", month: "numeric", timeZone: timezone })}</span>
+                      <span className="text-muted-foreground">{d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: timezone })}</span>
                     </div>
                   );
                 })}
@@ -342,7 +352,7 @@ export function RecurringClient({ bookings }: { bookings: RecurringBooking[] }) 
                   {selected.sessionOverrides.map((o) => (
                     <div key={o.id} className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{new Date(o.originalDate).toLocaleDateString("es-CL")}</span>
+                        <span className="font-medium">{new Date(o.originalDate).toLocaleDateString(locale, { timeZone: timezone })}</span>
                         {o.newTime && <span className="text-[#7C3AED]">Nueva hora: {o.newTime}</span>}
                         {!o.newTime && <span className="text-red-500">Sesion cancelada</span>}
                       </div>

@@ -5,8 +5,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-react";
 import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { getCountryConfig } from "@/core/countries";
 
-export function RegisterForm() {
+export function RegisterForm({
+  countryOptions,
+  paymentSimulatorEnabled,
+}: {
+  countryOptions: Array<{ code: string; name: string }>;
+  paymentSimulatorEnabled: boolean;
+}) {
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
   const wantsTrial = searchParams.get("trial") === "1";
@@ -20,6 +27,9 @@ export function RegisterForm() {
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [timezone, setTimezone] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,6 +39,13 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<"register" | "payment" | null>(null);
+
+  function applyCountry(nextCountry: string) {
+    const defaults = getCountryConfig(nextCountry);
+    setCountryCode(nextCountry);
+    setTimezone(defaults.timezone);
+    setCurrencyCode(defaults.currency);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,6 +72,9 @@ export function RegisterForm() {
         body: JSON.stringify({
           name: name.trim(),
           businessName: businessName.trim(),
+          countryCode,
+          timezone,
+          currencyCode,
           email: email.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
@@ -74,6 +94,10 @@ export function RegisterForm() {
 
       // Step 2: If direct subscription, redirect to MercadoPago checkout
       if (isDirectSubscription) {
+        if (countryCode !== "CL" && !paymentSimulatorEnabled) {
+          window.location.href = "/dashboard/settings?billing_notice=international";
+          return;
+        }
         setLoadingStep("payment");
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
@@ -114,7 +138,11 @@ export function RegisterForm() {
             <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
               <Crown className="h-4 w-4 text-[#7C3AED]" />
               <span className="text-sm font-medium text-[#A78BFA]">
-                Plan {planLabel} — ${planPrice.toLocaleString("es-CL")}/mes
+                {countryCode && countryCode !== "CL"
+                  ? paymentSimulatorEnabled
+                    ? `Plan ${planLabel} — prueba local en ${currencyCode}`
+                    : `Plan ${planLabel} — cobro internacional por configurar`
+                  : `Plan ${planLabel} — $${planPrice.toLocaleString("es-CL")} CLP/mes`}
               </span>
             </div>
             {wantsPlan === "EQUIPO" && (
@@ -173,6 +201,54 @@ export function RegisterForm() {
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="countryCode" className="text-sm text-muted-foreground">País del negocio</label>
+          <select
+            id="countryCode"
+            value={countryCode}
+            onInput={(event) => applyCountry(event.currentTarget.value)}
+            onChange={(event) => applyCountry(event.target.value)}
+            required
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+          >
+            <option value="" disabled>Selecciona tu país</option>
+            {countryOptions.map((country) => (
+              <option key={country.code} value={country.code}>{country.name}</option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Configura la zona horaria y la moneda de tus reservas. Podrás cambiarlo después.
+          </p>
+        </div>
+
+        {countryCode && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="timezone" className="text-sm text-muted-foreground">Zona horaria</label>
+              <input
+                id="timezone"
+                value={timezone}
+                onChange={(event) => setTimezone(event.target.value)}
+                placeholder="Ej: America/Argentina/Buenos_Aires"
+                required
+                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="currencyCode" className="text-sm text-muted-foreground">Moneda de reservas</label>
+              <input
+                id="currencyCode"
+                value={currencyCode}
+                onChange={(event) => setCurrencyCode(event.target.value.toUpperCase().slice(0, 3))}
+                pattern="[A-Z]{3}"
+                maxLength={3}
+                required
+                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm uppercase outline-none transition-colors focus:border-[#7C3AED]/30"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-sm text-muted-foreground">Email</label>
@@ -299,7 +375,11 @@ export function RegisterForm() {
 
         {isDirectSubscription && (
           <p className="text-center text-xs text-muted-foreground">
-            Serás redirigido a MercadoPago para completar el pago.
+            {countryCode !== "CL"
+              ? paymentSimulatorEnabled
+                ? "Seras redirigido al simulador local. No se cobra dinero real."
+                : "Tu cuenta conservara el acceso de prueba; el cobro internacional real aun no esta habilitado."
+              : "Seras redirigido a Mercado Pago para completar el pago."}
           </p>
         )}
       </form>

@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { hasDunningAccess } from "@/server/services/subscription-dunning.service";
+import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -49,7 +50,9 @@ export default async function DashboardLayout({
           userName={user.name}
           businessId={business.id} 
           businessName={business.name}
+          countryCode={business.countryCode}
           plan={subscription.plan} 
+          paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={pastDueAccessExpired ? "past_due" : "pending"}
         />
       );

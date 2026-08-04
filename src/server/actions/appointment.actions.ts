@@ -336,6 +336,7 @@ export async function rescheduleAppointmentAction(
         business: {
           select: {
             name: true,
+            timezone: true,
             address: true,
             mapsUrl: true,
             owner: { select: { email: true, name: true } },
@@ -376,6 +377,7 @@ export async function rescheduleAppointmentAction(
         startTime: newApt.startTime,
         endTime: newApt.endTime,
         businessName: newApt.business.name,
+        timezone: newApt.business.timezone,
       });
     }
   } catch (err) {

@@ -57,6 +57,7 @@ interface AppointmentWithRelations {
   staff?: { name: string; email?: string | null } | null;
   business: {
     name: string;
+    timezone?: string;
     owner?: { email: string; name: string } | null;
     address?: string | null;
     mapsUrl?: string | null;
@@ -135,6 +136,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    timezone: appointment.business.timezone,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
   };
@@ -216,6 +218,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    timezone: appointment.business.timezone,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
     ...actionUrls,
@@ -286,6 +289,7 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    timezone: appointment.business.timezone,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
     ...actionUrls,
@@ -321,6 +325,7 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
+    timezone: appointment.business.timezone,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
   };
@@ -661,6 +666,7 @@ export async function sendAppointmentActionNotification(data: {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  timezone?: string;
   ownerEmail: string;
 }) {
   const { subject, html } = appointmentActionOwnerEmail(data);
@@ -704,6 +710,7 @@ export async function sendAppointmentActionStaffNotification(data: {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = appointmentActionStaffEmail(data);
 
@@ -731,6 +738,7 @@ export async function sendRecurringBookingCreatedClient(data: {
   conflicts: Date[];
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = await addClientPortalLinkToEmail(
     data.customerEmail,
@@ -759,6 +767,7 @@ export async function sendRecurringBookingPendingApprovalBusiness(data: {
   healthAnswers?: Record<string, string>;
   healthFreeText?: string;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = recurringBookingPendingApprovalBusinessEmail(data);
   try {
@@ -777,6 +786,7 @@ export async function sendRecurringBookingApprovedClient(data: {
   endDate: Date;
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = await addClientPortalLinkToEmail(
     data.customerEmail,
@@ -833,6 +843,7 @@ export async function sendRecurringSessionCancelledClient(data: {
   serviceName: string;
   sessionDate: Date;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = await addClientPortalLinkToEmail(
     data.customerEmail,
@@ -855,6 +866,7 @@ export async function sendRecurringExpiringClient(data: {
   renewalMessage?: string | null;
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = await addClientPortalLinkToEmail(
     data.customerEmail,
@@ -875,6 +887,7 @@ export async function sendRecurringExpiringBusiness(data: {
   endDate: Date;
   daysLeft: number;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = recurringExpiringBusinessEmail(data);
   try {
@@ -891,6 +904,7 @@ export async function sendRecurringConflictWarningClient(data: {
   serviceName: string;
   originalDate: Date;
   businessName: string;
+  timezone?: string;
 }) {
   const { subject, html } = await addClientPortalLinkToEmail(
     data.customerEmail,

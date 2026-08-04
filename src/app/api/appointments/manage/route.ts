@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     staffName: appointment.staff?.name ?? "Sin asignar",
     businessName: appointment.business.name,
     businessSlug: appointment.business.slug,
+    timezone: appointment.business.timezone,
     startTime: appointment.startTime.toISOString(),
     endTime: appointment.endTime.toISOString(),
   });
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
         startTime: appointment.startTime,
         endTime: appointment.endTime,
         businessName: appointment.business.name,
+        timezone: appointment.business.timezone,
         ownerEmail: appointment.business.owner.email,
       }));
     }
@@ -106,6 +108,7 @@ export async function POST(request: NextRequest) {
         startTime: appointment.startTime,
         endTime: appointment.endTime,
         businessName: appointment.business.name,
+        timezone: appointment.business.timezone,
       }));
     }
     await Promise.allSettled(notifications);

@@ -156,6 +156,7 @@ export function AppearanceForm({
   initialData,
   widgetSlug,
   promoBlocks,
+  currencyCode = "CLP",
 }: {
   initialData: {
     primaryColor: string;
@@ -171,6 +172,7 @@ export function AppearanceForm({
   };
   widgetSlug: string;
   promoBlocks: PromoBlock[];
+  currencyCode?: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<FormData>({
@@ -617,7 +619,7 @@ export function AppearanceForm({
                         <span className="text-xs font-medium">Tipo de descuento</span>
                         <select name="discountType" defaultValue="PERCENTAGE" className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm">
                           <option value="PERCENTAGE">Porcentaje</option>
-                          <option value="FIXED">Monto fijo (CLP)</option>
+                          <option value="FIXED">Monto fijo ({currencyCode})</option>
                         </select>
                       </label>
                       <label className="space-y-1.5">
@@ -625,7 +627,7 @@ export function AppearanceForm({
                         <input name="discountValue" type="number" min={1} required defaultValue={10} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
                       </label>
                       <label className="space-y-1.5">
-                        <span className="text-xs font-medium">Compra mínima (CLP)</span>
+                        <span className="text-xs font-medium">Compra mínima ({currencyCode})</span>
                         <input name="discountMinSubtotal" type="number" min={0} defaultValue={0} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
                       </label>
                       <div className="grid grid-cols-2 gap-2">
@@ -685,7 +687,7 @@ export function AppearanceForm({
                           <select name="discountType" defaultValue={block.discountType || "NONE"} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs">
                             <option value="NONE">Sin descuento</option>
                             <option value="PERCENTAGE">Porcentaje</option>
-                            <option value="FIXED">Monto fijo (CLP)</option>
+                            <option value="FIXED">Monto fijo ({currencyCode})</option>
                           </select>
                         </label>
                         <label className="space-y-1">

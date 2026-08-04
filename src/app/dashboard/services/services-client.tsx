@@ -175,6 +175,8 @@ export function ServicesClient({
   maxServicesPerBooking = 1,
   depositEnabled = false,
   productionOrdersEnabled = false,
+  currencyCode = "CLP",
+  taxIdLabel = "RUT",
   businessPolicies = { requiresClientRut: false, allowRescheduling: false },
 }: {
   initialServices: Service[];
@@ -183,6 +185,8 @@ export function ServicesClient({
   maxServicesPerBooking?: number;
   depositEnabled?: boolean;
   productionOrdersEnabled?: boolean;
+  currencyCode?: string;
+  taxIdLabel?: string;
   businessPolicies?: { requiresClientRut: boolean; allowRescheduling: boolean };
 }) {
   const [services, setServices] = useState<Service[]>(initialServices);
@@ -1118,7 +1122,7 @@ export function ServicesClient({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm text-muted-foreground">Precio (CLP)</label>
+                    <label className="text-sm text-muted-foreground">Precio ({currencyCode})</label>
                     <input
                       type="number"
                       value={form.price}
@@ -1284,7 +1288,7 @@ export function ServicesClient({
                   <div className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
-                      Abono / Deposito (CLP)
+                      Abono / Deposito ({currencyCode})
                     </label>
                     <input
                       type="number"
@@ -1612,7 +1616,7 @@ export function ServicesClient({
                         {([
                           { key: "requiresApproval", label: "Requiere aprobación del negocio" },
                           { key: "requiresHealthForm", label: "Formulario de salud" },
-                          { key: "requiresRut", label: "Pedir RUT al cliente" },
+                          { key: "requiresRut", label: `Pedir ${taxIdLabel} al cliente` },
                         ] as const).map(({ key, label }) => {
                           // Check if this toggle is affected by a business-level policy
                           const isRutToggle = key === "requiresRut";
@@ -1834,7 +1838,7 @@ export function ServicesClient({
                         </span>
                       </td>
                       <td className="py-3.5 pr-4 font-mono text-sm">
-                        {formatPrice(service.price)}
+                        {formatPrice(service.price, currencyCode)}
                       </td>
                       {depositEnabled && (
                         <td className="py-3.5 pr-4">
@@ -1846,7 +1850,7 @@ export function ServicesClient({
                           ) : service.depositAmount > 0 ? (
                             <span className="inline-flex items-center gap-1 rounded-lg border border-[#009EE3]/20 bg-[#009EE3]/10 px-2 py-0.5 text-xs font-medium text-[#009EE3]">
                               <Banknote className="h-3 w-3" />
-                              {formatPrice(service.depositAmount)}
+                              {formatPrice(service.depositAmount, currencyCode)}
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">Sin abono</span>

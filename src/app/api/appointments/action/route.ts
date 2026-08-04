@@ -28,6 +28,7 @@ export async function POST(req: Request) {
         business: {
           select: {
             name: true,
+            timezone: true,
             owner: { select: { email: true, name: true } },
           },
         },
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           businessName: appointment.business.name,
+          timezone: appointment.business.timezone,
           ownerEmail: appointment.business.owner.email,
         });
       }
@@ -87,6 +89,7 @@ export async function POST(req: Request) {
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           businessName: appointment.business.name,
+          timezone: appointment.business.timezone,
         });
       }
 
@@ -115,6 +118,7 @@ export async function POST(req: Request) {
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           businessName: appointment.business.name,
+          timezone: appointment.business.timezone,
           ownerEmail: appointment.business.owner.email,
         });
       }
@@ -129,6 +133,7 @@ export async function POST(req: Request) {
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           businessName: appointment.business.name,
+          timezone: appointment.business.timezone,
         });
       }
 

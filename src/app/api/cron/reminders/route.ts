@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { resend, EMAIL_FROM } from "@/server/email/resend";
 import { reminderEmail } from "@/server/email/templates";
 import { addClientPortalLinkToEmail } from "@/server/email/send";
+import { isTomorrowInTimezone } from "@/lib/date";
 
 // ── Vercel Cron: runs daily at 14:00 UTC (10:00 AM Chile) ──
 // Protected via CRON_SECRET to prevent unauthorized access.
@@ -20,47 +21,13 @@ export async function GET(req: Request) {
   }
 
   try {
-    // ── Calculate "tomorrow" in Chile timezone ──
-    // We compute tomorrow's start/end in UTC by using Chile's offset.
-    // Chile is UTC-4 (CLT) or UTC-3 (CLST). Using Intl to get the exact offset.
+    // Query a safe UTC window, then decide "tomorrow" in each business timezone.
     const now = new Date();
-    const chileTz = "America/Santiago";
-
-    // Get the current date string in Chile timezone
-    const chileFormatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: chileTz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const todayChile = chileFormatter.format(now); // "YYYY-MM-DD"
-
-    // Calculate tomorrow's date in Chile
-    const todayDate = new Date(`${todayChile}T12:00:00`); // noon to avoid DST issues
-    const tomorrowDate = new Date(todayDate);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowStr = tomorrowDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
-
-    // Build UTC boundaries for "tomorrow in Chile"
-    // We query appointments whose startTime falls on tomorrow (Chile time).
-    // Using a generous window: tomorrow 00:00 Chile → day after 00:00 Chile.
-    // Chile is UTC-3 or UTC-4, so tomorrow 00:00 Chile = tomorrow 03:00-04:00 UTC.
-    // Dynamically get Chile offset (handles CLT=-04:00 and CLST=-03:00 automatically)
-    const offsetParts = new Intl.DateTimeFormat("en", { timeZone: chileTz, timeZoneName: "shortOffset" }).formatToParts(new Date(`${tomorrowStr}T12:00:00Z`));
-    const tzPart = offsetParts.find(p => p.type === "timeZoneName")?.value || "GMT-4";
-    const offsetMatch = tzPart.match(/GMT([+-]\d+)/);
-    const offsetHours = offsetMatch ? parseInt(offsetMatch[1]) : -4;
-    const offsetStr = `${offsetHours >= 0 ? "+" : "-"}${String(Math.abs(offsetHours)).padStart(2, "0")}:00`;
-    const tomorrowStartUTC = new Date(`${tomorrowStr}T00:00:00${offsetStr}`);
-    const dayAfter = new Date(tomorrowStartUTC);
-    dayAfter.setDate(dayAfter.getDate() + 1);
-
-    // ── Query appointments for tomorrow ──
-    const appointments = await prisma.appointment.findMany({
+    const candidates = await prisma.appointment.findMany({
       where: {
         startTime: {
-          gte: tomorrowStartUTC,
-          lt: dayAfter,
+          gte: now,
+          lt: new Date(now.getTime() + 48 * 60 * 60 * 1000),
         },
         status: {
           notIn: ["CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"],
@@ -70,9 +37,12 @@ export async function GET(req: Request) {
       include: {
         service: { select: { name: true } },
         staff: { select: { name: true } },
-        business: { select: { name: true } },
+        business: { select: { name: true, timezone: true } },
       },
     });
+    const appointments = candidates.filter((appointment) =>
+      isTomorrowInTimezone(appointment.startTime, now, appointment.business.timezone)
+    );
 
     if (appointments.length === 0) {
       return NextResponse.json({
@@ -101,6 +71,7 @@ export async function GET(req: Request) {
             startTime: apt.startTime,
             endTime: apt.endTime,
             businessName: apt.business.name,
+            timezone: apt.business.timezone,
             confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
             cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
           }),
@@ -149,7 +120,7 @@ export async function GET(req: Request) {
               recurringPlan: { select: { expirationWarningDays: true, renewalMessage: true } },
             },
           },
-          business: { select: { name: true, owner: { select: { email: true } } } },
+              business: { select: { name: true, timezone: true, owner: { select: { email: true } } } },
         },
       });
 
@@ -170,6 +141,7 @@ export async function GET(req: Request) {
             renewalMessage,
             managementToken: booking.managementToken || "",
             businessName: booking.business.name,
+            timezone: booking.business.timezone,
           });
 
           if (booking.business.owner?.email) {
@@ -180,6 +152,7 @@ export async function GET(req: Request) {
               endDate: booking.endDate,
               daysLeft,
               businessName: booking.business.name,
+              timezone: booking.business.timezone,
             });
           }
 
@@ -216,7 +189,7 @@ export async function GET(req: Request) {
           recurringBooking: {
             include: {
               service: { select: { name: true } },
-              business: { select: { name: true } },
+              business: { select: { name: true, timezone: true } },
             },
           },
         },
@@ -229,6 +202,7 @@ export async function GET(req: Request) {
           serviceName: override.recurringBooking.service.name,
           originalDate: override.originalDate,
           businessName: override.recurringBooking.business.name,
+          timezone: override.recurringBooking.business.timezone,
         });
 
         await prisma.recurringSessionOverride.update({

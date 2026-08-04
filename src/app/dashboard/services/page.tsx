@@ -6,6 +6,7 @@ import { ServicesClient } from "./services-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,8 @@ export default async function ServicesPage() {
         maxServicesPerBooking={business.maxServicesPerBooking}
         depositEnabled={business.depositRequired && !!business.mpAccessToken}
         productionOrdersEnabled={business.productionOrdersEnabled}
+        currencyCode={business.currencyCode}
+        taxIdLabel={getCountryConfig(business.countryCode).taxIdLabel}
         businessPolicies={{
           requiresClientRut: business.requiresClientRut,
           allowRescheduling: business.allowRescheduling,

@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
+import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const business = await prisma.business.findUnique({
     where: { slug },
-    select: { name: true, slug: true, logoUrl: true },
+    select: { name: true, slug: true, logoUrl: true, countryCode: true },
   });
 
   if (!business) {
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       url,
       siteName: "Puragenda",
-      locale: "es_CL",
+      locale: getCountryConfig(business.countryCode).locale.replace("-", "_"),
       type: "website",
       ...(business.logoUrl && { images: [{ url: business.logoUrl, width: 400, height: 400, alt: business.name }] }),
     },
@@ -138,6 +139,7 @@ export default async function WidgetPage({
 
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const url = new URL(`/widget/${business.slug}`, baseUrl).toString();
+  const region = getCountryConfig(business.countryCode);
 
   // LocalBusiness JSON-LD for local SEO
   const jsonLdLocalBusiness = {
@@ -179,6 +181,10 @@ export default async function WidgetPage({
         cornerRadius,
         shadowStyle,
         headerAlign,
+        timezone: business.timezone,
+        currencyCode: business.currencyCode,
+        taxIdLabel: region.taxIdLabel,
+        taxIdPlaceholder: region.taxIdPlaceholder,
       }}
       services={business.services
         .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)

@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
+import { normalizeAndValidateTaxId } from "@/core/countries";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 
@@ -36,7 +37,7 @@ export async function updateClientNotesAction(clientId: string, notes: string) {
 }
 
 // ==========================================
-// CLIENT RUT
+// CLIENT TAX ID (stored in the legacy `rut` column)
 // ==========================================
 
 export async function updateClientRutAction(clientId: string, rut: string) {
@@ -54,15 +55,12 @@ export async function updateClientRutAction(clientId: string, rut: string) {
   });
   if (!client) return { error: "Cliente no encontrado" };
 
-  // Basic RUT format validation (Chilean RUT: XX.XXX.XXX-X or XXXXXXXX-X)
-  const rutClean = rut.replace(/\./g, "").trim();
-  if (rutClean && !/^\d{7,8}-[\dkK]$/.test(rutClean)) {
-    return { error: "Formato de RUT invalido. Usa el formato 12345678-9" };
-  }
+  const taxId = normalizeAndValidateTaxId(business.countryCode, rut);
+  if (taxId.error) return { error: taxId.error };
 
   await prisma.client.update({
     where: { id: clientId },
-    data: { rut: rutClean || null },
+    data: { rut: taxId.value || null },
   });
 
   revalidatePath("/dashboard/clients");

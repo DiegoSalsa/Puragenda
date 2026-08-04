@@ -12,6 +12,7 @@ interface Props {
   initialAllowSameDayBookings: boolean;
   initialSlotInterval: number;
   initialMinAdvanceBookingMinutes: number;
+  taxIdLabel: string;
 }
 
 const SLOT_INTERVAL_OPTIONS = [
@@ -33,6 +34,7 @@ export function BusinessPoliciesEditor({
   initialAllowSameDayBookings,
   initialSlotInterval,
   initialMinAdvanceBookingMinutes,
+  taxIdLabel,
 }: Props) {
   const [allowRescheduling, setAllowRescheduling] = useState(initialAllowRescheduling);
   const [rescheduleHoursLimit, setRescheduleHoursLimit] = useState(initialRescheduleHoursLimit);
@@ -137,8 +139,8 @@ export function BusinessPoliciesEditor({
       {/* Require RUT toggle */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium">Requerir RUT del cliente</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Se solicita el RUT al completar reservas recurrentes (requerido para facturas)</p>
+          <p className="text-sm font-medium">Requerir {taxIdLabel} del cliente</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Se solicita el {taxIdLabel} al completar reservas recurrentes.</p>
         </div>
         <button
           type="button"

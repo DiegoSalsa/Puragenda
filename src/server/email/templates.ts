@@ -28,6 +28,7 @@ interface BookingEmailData {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  timezone?: string;
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
   rescheduleUrl?: string;
@@ -121,8 +122,9 @@ function enterpriseLayout(title: string, body: string): string {
 }
 
 function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): string {
-  const date = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const time = `${formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm")} - ${formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm")}`;
+  const timezone = data.timezone || BUSINESS_TZ;
+  const date = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const time = `${formatInTimeZone(data.startTime, timezone, "HH:mm")} - ${formatInTimeZone(data.endTime, timezone, "HH:mm")}`;
   
   let html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">`;
   
@@ -135,6 +137,7 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
 
   html += row("Fecha", date);
   html += row("Hora", time);
+  html += row("Zona horaria", escapeHtml(timezone));
   html += row("Servicio", data.serviceName);
   const customerPhone =
     "customerPhone" in data ? data.customerPhone?.trim() || null : null;
@@ -185,7 +188,7 @@ function googleCalendarButton(data: BookingEmailData): string {
     text: `${data.serviceName} — ${data.businessName}`,
     dates,
     details,
-    ctz: BUSINESS_TZ,
+    ctz: data.timezone || BUSINESS_TZ,
   });
   if (data.businessAddress) params.set("location", data.businessAddress);
   const href = escapeHtml(`https://calendar.google.com/calendar/render?${params.toString()}`);
@@ -687,6 +690,7 @@ interface ReminderEmailData {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  timezone?: string;
   businessAddress?: string | null;
   businessMapsUrl?: string | null;
   confirmUrl: string;
@@ -695,9 +699,10 @@ interface ReminderEmailData {
 
 /** Email to client the day before their appointment */
 export function reminderEmail(data: ReminderEmailData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
-  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+  const timezone = data.timezone || BUSINESS_TZ;
+  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
 
   return {
     subject: `Recordatorio de tu cita en ${data.businessName}`,
@@ -709,6 +714,7 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
         ${detailRow(" Fecha", dateStr)}
         ${detailRow(" Hora", `${timeStr} - ${timeEnd}`)}
+        ${detailRow(" Zona horaria", escapeHtml(timezone))}
         ${detailRow(" Servicio", data.serviceName)}
         ${detailRow(" Profesional", data.staffName)}
       </table>
@@ -925,13 +931,15 @@ interface AppointmentActionEmailData {
   startTime: Date;
   endTime: Date;
   businessName: string;
+  timezone?: string;
 }
 
 /** Email to business owner when customer confirms or cancels via reminder link */
 export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
-  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+  const timezone = data.timezone || BUSINESS_TZ;
+  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
 
   const isConfirm = data.action === "confirmed";
   const title = isConfirm ? "Asistencia confirmada" : "Cita cancelada por el cliente";
@@ -984,9 +992,10 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
 }
 
 export function appointmentActionStaffEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "EEEE, d 'de' MMMM yyyy", { locale: es });
-  const timeStr = formatInTimeZone(data.startTime, BUSINESS_TZ, "HH:mm");
-  const timeEnd = formatInTimeZone(data.endTime, BUSINESS_TZ, "HH:mm");
+  const timezone = data.timezone || BUSINESS_TZ;
+  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
+  const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
   const isConfirm = data.action === "confirmed";
   const title = isConfirm ? "Cita confirmada" : "Cita cancelada";
   const message = isConfirm
@@ -1041,7 +1050,8 @@ function recurringSessionsTable(
   selectedDays: number[],
   selectedTimes: Record<string, string>,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  timezone: string,
 ): string {
   const rows = selectedDays.map((day) => {
     const time = selectedTimes[String(day)] ?? "";
@@ -1051,8 +1061,10 @@ function recurringSessionsTable(
     </tr>`;
   }).join("");
 
-  const start = formatInTimeZone(startDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
-  const end = formatInTimeZone(endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  // Recurring plan boundaries are date-only DB values represented at UTC midnight.
+  // Formatting them in the business timezone can shift western timezones one day back.
+  const start = formatInTimeZone(startDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const end = formatInTimeZone(endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
 
   return `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
@@ -1064,6 +1076,7 @@ function recurringSessionsTable(
       </thead>
       <tbody>${rows}</tbody>
     </table>
+    <p style="margin:8px 0 16px;font-size:12px;color:#6B7280;">Todos los horarios corresponden a ${escapeHtml(timezone)}.</p>
     <p style="margin:0 0 16px;font-size:13px;color:#6B7280;">Periodo: <strong style="color:#111827;">${start}</strong> al <strong style="color:#111827;">${end}</strong></p>
   `;
 }
@@ -1080,6 +1093,7 @@ interface RecurringCreatedClientData {
   conflicts: Date[];
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientData): { subject: string; html: string } {
@@ -1091,7 +1105,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
         <p style="margin:0 0 8px;font-size:13px;color:#92400E;font-weight:700;">Atencion: hay ${data.conflicts.length} sesion(es) con conflicto de horario</p>
         <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5;">
           Las siguientes fechas no pudieron ser agendadas porque ya tenian turnos ocupados: 
-          ${data.conflicts.map(d => formatInTimeZone(d, BUSINESS_TZ, "d MMM", { locale: es })).join(", ")}.
+          ${data.conflicts.map(d => formatInTimeZone(d, data.timezone || BUSINESS_TZ, "d MMM", { locale: es })).join(", ")}.
           El negocio te contactara para coordinar esas sesiones.
         </p>
       </div>`
@@ -1107,7 +1121,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
         en <strong style="color:#111827;">${data.businessName}</strong> ha sido confirmado.
       </p>
       <p style="margin:0 0 8px;font-size:14px;color:#374151;font-weight:600;">Tus sesiones semanales:</p>
-      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate)}
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ)}
       ${conflictsHtml}
       <div style="text-align:center;margin:24px 0;">
         <a href="${portalUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
@@ -1134,6 +1148,7 @@ interface RecurringPendingApprovalBusinessData {
   healthAnswers?: Record<string, string>;
   healthFreeText?: string;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPendingApprovalBusinessData): { subject: string; html: string } {
@@ -1159,7 +1174,7 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
         <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) solicito un plan recurrente de
         <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
       </p>
-      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate)}
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ)}
       ${data.customerAddress ? `<div style="margin:0 0 16px;padding:16px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;"><p style="margin:0 0 6px;font-size:12px;color:#6B7280;text-transform:uppercase;font-weight:600;">Direccion de las visitas</p><p style="margin:0;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.customerAddress)}</p></div>` : ""}
       ${healthHtml}
       <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
@@ -1182,13 +1197,14 @@ interface RecurringApprovedClientData {
   endDate: Date;
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringBookingApprovedClientEmail(data: RecurringApprovedClientData): { subject: string; html: string } {
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
-  const start = formatInTimeZone(data.startDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
-  const end = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  const start = formatInTimeZone(data.startDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const end = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
 
   return {
     subject: `Tu plan en ${data.businessName} fue aprobado`,
@@ -1218,6 +1234,7 @@ interface RecurringRejectedClientData {
   serviceName: string;
   reason: string;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringBookingRejectedClientEmail(data: RecurringRejectedClientData): { subject: string; html: string } {
@@ -1270,10 +1287,11 @@ interface RecurringSessionCancelledClientData {
   serviceName: string;
   sessionDate: Date;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringSessionCancelledClientEmail(data: RecurringSessionCancelledClientData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.sessionDate, BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+  const dateStr = formatInTimeZone(data.sessionDate, data.timezone || BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
 
   return {
     subject: `Tu sesion del ${dateStr} fue cancelada - ${data.businessName}`,
@@ -1298,12 +1316,13 @@ interface RecurringExpiringClientData {
   renewalMessage?: string | null;
   managementToken: string;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringExpiringClientEmail(data: RecurringExpiringClientData): { subject: string; html: string } {
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
-  const endStr = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  const endStr = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
 
   return {
     subject: `Tu plan en ${data.businessName} vence en ${data.daysLeft} dias`,
@@ -1336,13 +1355,14 @@ interface RecurringExpiringBusinessData {
   endDate: Date;
   daysLeft: number;
   businessName: string;
+  timezone?: string;
 }
 
 export function recurringExpiringBusinessEmail(data: RecurringExpiringBusinessData): { subject: string; html: string } {
   const dashboardUrl = process.env.NODE_ENV === "production"
     ? "https://www.puragenda.cl/dashboard/recurring"
     : "http://localhost:3000/dashboard/recurring";
-  const endStr = formatInTimeZone(data.endDate, BUSINESS_TZ, "d 'de' MMMM yyyy", { locale: es });
+  const endStr = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
 
   return {
     subject: `El plan de ${data.customerName} vence en ${data.daysLeft} dias`,
@@ -1372,11 +1392,12 @@ interface RecurringConflictWarningClientData {
   serviceName: string;
   originalDate: Date;
   businessName: string;
+  timezone?: string;
 }
 
 /** Email to client warning about a conflict/override on a specific recurring session */
 export function recurringConflictWarningClientEmail(data: RecurringConflictWarningClientData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.originalDate, BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+  const dateStr = formatInTimeZone(data.originalDate, data.timezone || BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
 
   return {
     subject: `Tu sesion del ${dateStr} tiene un cambio pendiente - ${data.businessName}`,

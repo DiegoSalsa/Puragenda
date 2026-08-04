@@ -31,6 +31,7 @@ interface TopStaffItem extends InsightItem {
 }
 
 interface BusinessInsightsProps {
+  currencyCode: string;
   period: PeriodMode;
   scopeLabel: string;
   periodLabel: string;
@@ -126,6 +127,7 @@ function BarList({
 }
 
 export function BusinessInsights({
+  currencyCode,
   period,
   scopeLabel,
   periodLabel,
@@ -187,7 +189,7 @@ export function BusinessInsights({
         {[
           {
             label: "Ingresos estimados",
-            value: formatPrice(metrics.estimatedRevenue),
+            value: formatPrice(metrics.estimatedRevenue, currencyCode),
             helper: "Reservas no canceladas",
             icon: DollarSign,
             trend: metrics.revenueChangePercent,
@@ -201,7 +203,7 @@ export function BusinessInsights({
           },
           {
             label: "Ticket promedio",
-            value: formatPrice(metrics.averageTicket),
+            value: formatPrice(metrics.averageTicket, currencyCode),
             helper: `${metrics.uniqueClients} clientes unicos`,
             icon: Users,
           },
@@ -253,7 +255,7 @@ export function BusinessInsights({
             <div>
               <p className="text-2xl font-bold">{metrics.topService.label}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {metrics.topService.value} citas · {formatPrice(metrics.topService.revenue)}
+                {metrics.topService.value} citas · {formatPrice(metrics.topService.revenue, currencyCode)}
               </p>
             </div>
           ) : (
@@ -282,7 +284,7 @@ export function BusinessInsights({
             items={metrics.topServices.map((item) => ({
               label: item.label,
               value: item.value,
-              helper: formatPrice(item.revenue),
+              helper: formatPrice(item.revenue, currencyCode),
             }))}
             emptyText="Aun no hay servicios reservados en este periodo."
           />
@@ -297,7 +299,7 @@ export function BusinessInsights({
             items={metrics.topStaff.map((item) => ({
               label: item.label,
               value: item.value,
-              helper: formatPrice(item.revenue),
+              helper: formatPrice(item.revenue, currencyCode),
             }))}
             emptyText={showTeamBreakdown ? "Aun no hay citas asignadas al equipo." : "Aun no tienes citas asignadas en este periodo."}
           />

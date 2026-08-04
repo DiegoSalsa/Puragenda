@@ -6,6 +6,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { getCountryConfig } from "@/core/countries";
 
 export default async function ClientsPage() {
   const user = await getCurrentSessionUser();
@@ -72,7 +73,12 @@ export default async function ClientsPage() {
           CRM de clientes · {clientsData.length} registrado{clientsData.length !== 1 ? "s" : ""}
         </p>
       </div>
-      <ClientsTable clients={clientsData} />
+      <ClientsTable
+        clients={clientsData}
+        currencyCode={business.currencyCode}
+        taxIdLabel={getCountryConfig(business.countryCode).taxIdLabel}
+        taxIdPlaceholder={getCountryConfig(business.countryCode).taxIdPlaceholder}
+      />
 
       <PageTutorial
         tutorialKey="clientes_v1"

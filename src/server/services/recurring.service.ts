@@ -1,5 +1,7 @@
 import { prisma } from "@/server/db/prisma";
-import { addDays, startOfDay, format, isAfter, getDay } from "date-fns";
+import type { Prisma } from "@prisma/client";
+import { addMinutes } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import {
   removeAppointmentFromGoogle,
@@ -38,26 +40,67 @@ function parseTime(time: string): { hours: number; minutes: number } {
 /**
  * Builds a Date for a given date + "HH:MM" time string
  */
-function buildDateTime(date: Date, time: string): Date {
-  const { hours, minutes } = parseTime(time);
-  const d = new Date(date);
-  d.setHours(hours, minutes, 0, 0);
-  return d;
+function dateOnlyKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
-/**
- * Generates all dates from startDate to endDate for a given dayOfWeek (0=Sun, 1=Mon, ... 6=Sat)
- */
+function dateOnlyFromKey(key: string): Date {
+  return new Date(`${key}T00:00:00.000Z`);
+}
+
+function shiftDateOnly(date: Date, days: number): Date {
+  const shifted = dateOnlyFromKey(dateOnlyKey(date));
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted;
+}
+
+export function addDaysToDateOnly(date: Date, days: number): Date {
+  return shiftDateOnly(date, days);
+}
+
+function localDateKeyFromInput(date: Date, timezone: string): string {
+  const isDateOnly =
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0;
+  return isDateOnly ? dateOnlyKey(date) : formatInTimeZone(date, timezone, "yyyy-MM-dd");
+}
+
+export function addMonthsToDateOnly(date: Date, months: number): Date {
+  const source = dateOnlyFromKey(dateOnlyKey(date));
+  const targetMonthStart = new Date(Date.UTC(source.getUTCFullYear(), source.getUTCMonth() + months, 1));
+  const lastDay = new Date(Date.UTC(targetMonthStart.getUTCFullYear(), targetMonthStart.getUTCMonth() + 1, 0)).getUTCDate();
+  targetMonthStart.setUTCDate(Math.min(source.getUTCDate(), lastDay));
+  return targetMonthStart;
+}
+
+export function recurringEndDate(startDate: Date, durationMonths: number): Date {
+  return shiftDateOnly(addMonthsToDateOnly(startDate, durationMonths), -1);
+}
+
+export function dateOnlyInTimezone(date: Date, timezone: string): Date {
+  return dateOnlyFromKey(formatInTimeZone(date, timezone, "yyyy-MM-dd"));
+}
+
+function localDayBounds(date: Date, timezone: string): { start: Date; end: Date } {
+  const key = localDateKeyFromInput(date, timezone);
+  const next = shiftDateOnly(dateOnlyFromKey(key), 1);
+  return {
+    start: fromZonedTime(`${key}T00:00:00`, timezone),
+    end: fromZonedTime(`${dateOnlyKey(next)}T00:00:00`, timezone),
+  };
+}
+
 function getDatesForDayOfWeek(startDate: Date, endDate: Date, dayOfWeek: number): Date[] {
   const dates: Date[] = [];
-  const current = new Date(startDate);
-  // Advance to the first occurrence of this day of week
-  while (getDay(current) !== dayOfWeek) {
-    current.setDate(current.getDate() + 1);
+  const current = dateOnlyFromKey(dateOnlyKey(startDate));
+  while (current.getUTCDay() !== dayOfWeek) {
+    current.setUTCDate(current.getUTCDate() + 1);
   }
-  while (!isAfter(current, endDate)) {
+  while (current.getTime() <= dateOnlyFromKey(dateOnlyKey(endDate)).getTime()) {
     dates.push(new Date(current));
-    current.setDate(current.getDate() + 7);
+    current.setUTCDate(current.getUTCDate() + 7);
   }
   return dates;
 }
@@ -76,7 +119,8 @@ export function buildRecurringSessions(
   endDate: Date,
   selectedDays: number[],
   selectedTimes: SelectedTimes,
-  serviceDurationMinutes: number
+  serviceDurationMinutes: number,
+  timezone: string,
 ): Array<{ startTime: Date; endTime: Date; dayOfWeek: number }> {
   const sessions: Array<{ startTime: Date; endTime: Date; dayOfWeek: number }> = [];
 
@@ -86,8 +130,8 @@ export function buildRecurringSessions(
 
     const dates = getDatesForDayOfWeek(startDate, endDate, dayOfWeek);
     for (const date of dates) {
-      const startTime = buildDateTime(date, time);
-      const endTime = new Date(startTime.getTime() + serviceDurationMinutes * 60 * 1000);
+      const startTime = fromZonedTime(`${dateOnlyKey(date)}T${time}:00`, timezone);
+      const endTime = addMinutes(startTime, serviceDurationMinutes);
       sessions.push({ startTime, endTime, dayOfWeek });
     }
   }
@@ -116,22 +160,26 @@ export async function generateAppointments(params: {
   selectedDays: number[];
   selectedTimes: SelectedTimes;
   serviceDurationMinutes: number;
+  timezone: string;
   cancelledDates?: Date[]; // Overrides from conflict detection
+  db?: Prisma.TransactionClient;
+  syncGoogle?: boolean;
 }) {
   const sessions = buildRecurringSessions(
     params.startDate,
     params.endDate,
     params.selectedDays,
     params.selectedTimes,
-    params.serviceDurationMinutes
+    params.serviceDurationMinutes,
+    params.timezone,
   );
 
   const cancelledTimestamps = new Set(
-    (params.cancelledDates || []).map((d) => d.getTime())
+    (params.cancelledDates || []).map((d) => formatInTimeZone(d, params.timezone, "yyyy-MM-dd"))
   );
 
   const appointments = sessions
-    .filter((s) => !cancelledTimestamps.has(startOfDay(s.startTime).getTime()))
+    .filter((s) => !cancelledTimestamps.has(formatInTimeZone(s.startTime, params.timezone, "yyyy-MM-dd")))
     .map((s) => ({
       customerName: params.customerName,
       customerEmail: params.customerEmail,
@@ -150,8 +198,13 @@ export async function generateAppointments(params: {
 
   if (appointments.length === 0) return [];
 
-  await prisma.appointment.createMany({ data: appointments });
-  await syncRecurringBookingAppointments(params.recurringBookingId);
+  const db = params.db ?? prisma;
+  await db.appointment.createMany({ data: appointments });
+
+  // External calendar I/O must run after the surrounding DB transaction commits.
+  if (params.syncGoogle !== false) {
+    await syncRecurringBookingAppointments(params.recurringBookingId);
+  }
 
   return appointments;
 }
@@ -172,13 +225,15 @@ export async function detectAllConflicts(params: {
   selectedDays: number[];
   selectedTimes: SelectedTimes;
   serviceDurationMinutes: number;
+  timezone: string;
 }): Promise<ConflictInfo[]> {
   const sessions = buildRecurringSessions(
     params.startDate,
     params.endDate,
     params.selectedDays,
     params.selectedTimes,
-    params.serviceDurationMinutes
+    params.serviceDurationMinutes,
+    params.timezone,
   );
 
   const conflicts: ConflictInfo[] = [];
@@ -186,7 +241,7 @@ export async function detectAllConflicts(params: {
     ? await getGoogleCalendarBusySlots(
         params.staffId,
         params.startDate,
-        addDays(params.endDate, 1),
+        fromZonedTime(`${dateOnlyKey(shiftDateOnly(params.endDate, 1))}T00:00:00`, params.timezone),
       )
     : [];
 
@@ -207,7 +262,7 @@ export async function detectAllConflicts(params: {
       conflicts.push({
         date: session.startTime,
         dayOfWeek: session.dayOfWeek,
-        time: format(session.startTime, "HH:mm"),
+        time: formatInTimeZone(session.startTime, params.timezone, "HH:mm"),
         conflictType: "APPOINTMENT",
       });
       continue;
@@ -221,7 +276,7 @@ export async function detectAllConflicts(params: {
       conflicts.push({
         date: session.startTime,
         dayOfWeek: session.dayOfWeek,
-        time: format(session.startTime, "HH:mm"),
+        time: formatInTimeZone(session.startTime, params.timezone, "HH:mm"),
         conflictType: "GOOGLE_CALENDAR",
       });
       continue;
@@ -243,7 +298,7 @@ export async function detectAllConflicts(params: {
         conflicts.push({
           date: session.startTime,
           dayOfWeek: session.dayOfWeek,
-          time: format(session.startTime, "HH:mm"),
+          time: formatInTimeZone(session.startTime, params.timezone, "HH:mm"),
           conflictType: "SCHEDULE_BLOCK",
         });
         continue;
@@ -267,7 +322,7 @@ export async function detectAllConflicts(params: {
         conflicts.push({
           date: session.startTime,
           dayOfWeek: session.dayOfWeek,
-          time: format(session.startTime, "HH:mm"),
+          time: formatInTimeZone(session.startTime, params.timezone, "HH:mm"),
           conflictType: "RECURRING",
         });
       }
@@ -307,10 +362,9 @@ export async function cancelFutureSessions(recurringBookingId: string, fromDate:
 /**
  * Cancels specific appointments by their exact startTime dates.
  */
-export async function cancelSpecificSessions(recurringBookingId: string, dates: Date[]) {
+export async function cancelSpecificSessions(recurringBookingId: string, dates: Date[], timezone: string) {
   for (const date of dates) {
-    const dayStart = startOfDay(date);
-    const dayEnd = addDays(dayStart, 1);
+    const { start: dayStart, end: dayEnd } = localDayBounds(date, timezone);
     const appointments = await prisma.appointment.findMany({
       where: {
         recurringBookingId,
@@ -350,6 +404,7 @@ export async function regenerateFromDate(params: {
   selectedDays: number[];
   selectedTimes: SelectedTimes;
   serviceDurationMinutes: number;
+  timezone: string;
 }) {
   // Remove future unconfirmed/pending sessions
   const appointmentsToDelete = await prisma.appointment.findMany({
@@ -390,11 +445,11 @@ export async function applyTimePunctual(params: {
   targetDate: Date;
   newTime: string;
   serviceDurationMinutes: number;
+  timezone: string;
   reason?: string;
   requestedByClient?: boolean;
 }) {
-  const dayStart = startOfDay(params.targetDate);
-  const dayEnd = addDays(dayStart, 1);
+  const { start: dayStart, end: dayEnd } = localDayBounds(params.targetDate, params.timezone);
 
   const appointment = await prisma.appointment.findFirst({
     where: {
@@ -408,8 +463,9 @@ export async function applyTimePunctual(params: {
     throw new Error("No se encontro el turno para esa fecha");
   }
 
-  const newStartTime = buildDateTime(params.targetDate, params.newTime);
-  const newEndTime = new Date(newStartTime.getTime() + params.serviceDurationMinutes * 60 * 1000);
+  const localDateKey = localDateKeyFromInput(params.targetDate, params.timezone);
+  const newStartTime = fromZonedTime(`${localDateKey}T${params.newTime}:00`, params.timezone);
+  const newEndTime = addMinutes(newStartTime, params.serviceDurationMinutes);
 
   await prisma.$transaction([
     prisma.appointment.update({
@@ -444,7 +500,7 @@ export async function applyTimePermanent(params: {
 }) {
   const booking = await prisma.recurringBooking.findUnique({
     where: { id: params.recurringBookingId },
-    include: { service: true, staff: true, client: true },
+    include: { service: true, staff: true, client: true, business: { select: { timezone: true } } },
   });
 
   if (!booking) throw new Error("Reserva recurrente no encontrada");
@@ -495,6 +551,7 @@ export async function applyTimePermanent(params: {
     selectedDays: booking.selectedDays,
     selectedTimes: mergedTimes,
     serviceDurationMinutes: params.serviceDurationMinutes,
+    timezone: booking.business.timezone,
   });
 
   // Log the override
@@ -580,6 +637,7 @@ export async function getRecurringAvailableSlots(params: {
   endDate: Date;
   serviceDurationMinutes: number;
   slotInterval?: number;
+  timezone: string;
 }): Promise<string[]> {
   // Get staff schedule for this day
   const schedule = await prisma.staffSchedule.findFirst({
@@ -598,14 +656,16 @@ export async function getRecurringAvailableSlots(params: {
   const allSlots = generateTimeSlots(schedStart, schedEnd, params.serviceDurationMinutes, stepMinutes);
 
   // Find all appointments on this dayOfWeek across the entire recurring period
+  const rangeStart = fromZonedTime(`${dateOnlyKey(params.startDate)}T00:00:00`, params.timezone);
+  const rangeEnd = fromZonedTime(`${dateOnlyKey(shiftDateOnly(params.endDate, 1))}T00:00:00`, params.timezone);
   const [existingAppointments, activeScheduleBlocks] = await Promise.all([
     prisma.appointment.findMany({
       where: {
         staffId: params.staffId,
         status: { notIn: ["CANCELLED", "NO_SHOW"] },
         startTime: {
-          gte: params.startDate,
-          lte: params.endDate,
+          gte: rangeStart,
+          lt: rangeEnd,
         },
       },
       select: { startTime: true, endTime: true },
@@ -613,37 +673,27 @@ export async function getRecurringAvailableSlots(params: {
     prisma.scheduleBlock.findMany({
       where: {
         staffId: params.staffId,
-        startTime: { lt: params.endDate },
-        endTime: { gt: params.startDate },
+        startTime: { lt: rangeEnd },
+        endTime: { gt: rangeStart },
         ...getPublicBlockingScheduleBlockWhere(),
       },
       select: { startTime: true, endTime: true },
     }),
   ]);
 
-  // Group by day-of-week and collect occupied slots
-  const occupiedSlots = new Set<string>();
-  for (const apt of existingAppointments) {
-    if (getDay(apt.startTime) === params.dayOfWeek) {
-      occupiedSlots.add(format(apt.startTime, "HH:mm"));
-    }
-  }
-
   return allSlots.filter((slot) => {
-    if (occupiedSlots.has(slot)) return false;
-
-    const slotMinutes = parseTime(slot);
-    const slotStart = slotMinutes.hours * 60 + slotMinutes.minutes;
-    const slotEnd = slotStart + params.serviceDurationMinutes;
-
-    return !activeScheduleBlocks.some((block) => {
-      if (getDay(block.startTime) !== params.dayOfWeek) return false;
-      const blockStartParts = parseTime(format(block.startTime, "HH:mm"));
-      const blockEndParts = parseTime(format(block.endTime, "HH:mm"));
-      const blockStart = blockStartParts.hours * 60 + blockStartParts.minutes;
-      const blockEnd = blockEndParts.hours * 60 + blockEndParts.minutes;
-      return slotStart < blockEnd && slotEnd > blockStart;
-    });
+    const sessions = buildRecurringSessions(
+      params.startDate,
+      params.endDate,
+      [params.dayOfWeek],
+      { [String(params.dayOfWeek)]: slot },
+      params.serviceDurationMinutes,
+      params.timezone,
+    );
+    return sessions.every((session) =>
+      !existingAppointments.some((appointment) => session.startTime < appointment.endTime && session.endTime > appointment.startTime) &&
+      !activeScheduleBlocks.some((block) => session.startTime < block.endTime && session.endTime > block.startTime)
+    );
   });
 }
 

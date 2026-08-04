@@ -7,6 +7,7 @@ import { SALT_ROUNDS, API_KEY_PREFIX, TRIAL_DURATION_DAYS, SUPERADMIN_EMAILS } f
 import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
+import { getCountryConfig } from "@/core/countries";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -64,6 +65,9 @@ export async function registerUser(data: {
   password: string;
   name: string;
   businessName: string;
+  countryCode: string;
+  timezone?: string;
+  currencyCode?: string;
   ip?: string | null;
   referralCode?: string | null;
   planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
@@ -99,8 +103,17 @@ export async function registerUser(data: {
     const baseSlug = toSlug(data.businessName);
     const slug = await generateUniqueBusinessSlug(baseSlug, tx);
 
+    const region = getCountryConfig(data.countryCode);
     const business = await tx.business.create({
-      data: { name: businessName, slug, apiKey: createApiKey(), ownerId: user.id, timezone: "America/Santiago" },
+      data: {
+        name: businessName,
+        slug,
+        apiKey: createApiKey(),
+        ownerId: user.id,
+        countryCode: region.code,
+        currencyCode: data.currencyCode || region.currency,
+        timezone: data.timezone || region.timezone,
+      },
       select: { id: true, name: true, slug: true },
     });
 

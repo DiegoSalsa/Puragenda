@@ -10,6 +10,8 @@ import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
 import { resolveWidgetPromotion } from "@/server/services/widget-promotion.service";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
+import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
 
 type ScheduleRange = {
   startTime: string;
@@ -516,7 +518,24 @@ export async function POST(
       }
     }
     totalDepositAmount = Math.min(totalDepositAmount, totalPrice);
-    const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!business.mpAccessToken;
+    const businessMpAccessToken = business.depositRequired && totalDepositAmount > 0
+      ? await getValidMercadoPagoAccessToken(business.id)
+      : null;
+    if (
+      businessMpAccessToken
+      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
+    ) {
+      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
+      return Response.json(
+        {
+          error: expectedCurrency
+            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
+            : "El pago online no está disponible para el país de este negocio.",
+        },
+        { status: 409 },
+      );
+    }
+    const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!businessMpAccessToken;
 
     if (hasStaffAssignments) {
       const assignmentServiceIds = new Set(staffAssignments.map((assignment) => assignment.serviceId));
@@ -714,10 +733,10 @@ export async function POST(
 
       let paymentUrl: string | null = null;
 
-      if (depositRequired && business.mpAccessToken) {
+      if (depositRequired && businessMpAccessToken) {
         try {
           const mpClient = new MercadoPagoConfig({
-            accessToken: business.mpAccessToken,
+            accessToken: businessMpAccessToken,
           });
 
           const preference = new Preference(mpClient);
@@ -733,7 +752,7 @@ export async function POST(
                   description: `Reserva para ${customerName} (${createdAppointments.length} profesionales)`,
                   quantity: 1,
                   unit_price: totalDepositAmount,
-                  currency_id: "CLP",
+                  currency_id: business.currencyCode,
                 },
               ],
               back_urls: {
@@ -743,7 +762,7 @@ export async function POST(
               },
               ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
               external_reference: primaryAppointmentId,
-              notification_url: `${baseUrl}/api/webhooks/deposit`,
+              notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${business.id}`,
               statement_descriptor: "PURAGENDA",
             },
           });
@@ -852,10 +871,10 @@ export async function POST(
     // ── If deposit required, create MP payment preference ──
     let paymentUrl: string | null = null;
 
-    if (depositRequired && business.mpAccessToken) {
+    if (depositRequired && businessMpAccessToken) {
       try {
         const mpClient = new MercadoPagoConfig({
-          accessToken: business.mpAccessToken,
+          accessToken: businessMpAccessToken,
         });
 
         const preference = new Preference(mpClient);
@@ -870,7 +889,7 @@ export async function POST(
                 description: `Reserva para ${customerName}`,
                 quantity: 1,
                 unit_price: totalDepositAmount,
-                currency_id: "CLP",
+                currency_id: business.currencyCode,
               },
             ],
             back_urls: {
@@ -880,7 +899,7 @@ export async function POST(
             },
             ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
             external_reference: result.appointment.id,
-            notification_url: `${baseUrl}/api/webhooks/deposit`,
+            notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${business.id}`,
             statement_descriptor: "PURAGENDA",
           },
         });

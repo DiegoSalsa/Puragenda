@@ -1,6 +1,5 @@
 import { prisma } from "@/server/db/prisma";
-import { getRecurringAvailableSlots } from "@/server/services/recurring.service";
-import { addMonths } from "date-fns";
+import { addMonthsToDateOnly, getRecurringAvailableSlots } from "@/server/services/recurring.service";
 import { NextRequest } from "next/server";
 
 /**
@@ -19,7 +18,7 @@ export async function GET(
   try {
     const business = await prisma.business.findUnique({
       where: { slug },
-      select: { id: true, slotInterval: true },
+      select: { id: true, slotInterval: true, timezone: true },
     });
 
     if (!business) {
@@ -50,7 +49,7 @@ export async function GET(
       return Response.json({ error: "Fecha de inicio invalida" }, { status: 400 });
     }
 
-    const endDate = addMonths(startDate, durationMonths);
+    const endDate = addMonthsToDateOnly(startDate, durationMonths);
 
     const slots = await getRecurringAvailableSlots({
       staffId,
@@ -60,6 +59,7 @@ export async function GET(
       endDate,
       serviceDurationMinutes,
       slotInterval: business.slotInterval,
+      timezone: business.timezone,
     });
 
     return Response.json(slots);

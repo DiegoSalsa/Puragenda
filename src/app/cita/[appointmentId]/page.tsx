@@ -1,7 +1,8 @@
 import { prisma } from "@/server/db/prisma";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatInTimeZone } from "date-fns-tz";
 import { CheckCircle2, XCircle, Clock, Calendar, User, Briefcase } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function CitaPage({
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
-      business: { select: { name: true, slug: true, primaryColor: true } },
+      business: { select: { name: true, slug: true, primaryColor: true, timezone: true, currencyCode: true } },
       service: { select: { name: true } },
       staff: { select: { name: true } },
     },
@@ -98,14 +99,14 @@ export default async function CitaPage({
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Fecha:</span>
               <span className="font-medium capitalize">
-                {format(new Date(appointment.startTime), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+                {formatInTimeZone(appointment.startTime, appointment.business.timezone, "EEEE, d 'de' MMMM yyyy", { locale: es })}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Hora:</span>
               <span className="font-medium">
-                {format(new Date(appointment.startTime), "HH:mm")} - {format(new Date(appointment.endTime), "HH:mm")}
+                {formatInTimeZone(appointment.startTime, appointment.business.timezone, "HH:mm")} - {formatInTimeZone(appointment.endTime, appointment.business.timezone, "HH:mm")}
               </span>
             </div>
             {appointment.staff && (
@@ -129,7 +130,7 @@ export default async function CitaPage({
               <div className="flex items-center gap-3 pt-2 border-t border-border">
                 <span className="text-muted-foreground">Abono pagado:</span>
                 <span className="font-bold" style={{ color: pc }}>
-                  ${appointment.depositAmount.toLocaleString("es-CL")}
+                  {formatPrice(appointment.depositAmount, appointment.business.currencyCode)}
                 </span>
               </div>
             )}

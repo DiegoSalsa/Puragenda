@@ -12,6 +12,12 @@ import {
   mapMercadoPagoFailure,
   mercadoPagoNotConfigured,
 } from "@/server/lib/mercadopago-error";
+import {
+  createLocalPaymentToken,
+  isLocalPaymentSimulatorEnabled,
+  localPaymentCheckoutUrl,
+  localProviderId,
+} from "@/server/services/local-payment-simulator";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -36,6 +42,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "No se encontró un negocio asociado a tu cuenta." },
         { status: 404 }
+      );
+    }
+    const localSimulatorEnabled = isLocalPaymentSimulatorEnabled();
+    if (business.countryCode !== "CL" && !localSimulatorEnabled) {
+      return NextResponse.json(
+        {
+          error: "El cobro internacional de la suscripción de Puragenda aún requiere configurar un proveedor global. Tu cuenta y tus reservas no se perderán.",
+          code: "INTERNATIONAL_BILLING_NOT_CONFIGURED",
+        },
+        { status: 503 },
       );
     }
 
@@ -85,22 +101,10 @@ export async function POST(request: NextRequest) {
     // 5. Determine back_url based on environment
     const isProduction = process.env.NODE_ENV === "production";
     const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
-    const baseUrl = isProduction
-      ? configuredBaseUrl || "https://www.puragenda.cl"
-      : request.nextUrl.origin;
+    const baseUrl = configuredBaseUrl
+      || (isProduction ? "https://www.puragenda.cl" : request.nextUrl.origin);
     const backUrl = `${baseUrl}/dashboard/settings`;
 
-    // 6. Create MercadoPago Preapproval (subscription)
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
-      const failure = mercadoPagoNotConfigured(isProduction);
-      console.error("[billing/subscribe] MercadoPago is not configured", {
-        code: failure.body.code,
-      });
-      return NextResponse.json(failure.body, { status: failure.status });
-    }
-
-    const preapproval = new PreApproval(mpClient);
-    
     // Calculate initial price (apply discount if any)
     const billingPreview = calculateNextBillingPreview({
       plan: targetPlan,
@@ -138,6 +142,76 @@ export async function POST(request: NextRequest) {
       platformDiscount = quote.discount;
       transactionAmount = platformDiscount.discountedAmount;
     }
+
+    if (localSimulatorEnabled) {
+      const providerId = localProviderId("subscription");
+      const savedSubscription = await prisma.subscription.upsert({
+        where: { businessId: business.id },
+        update: {
+          mpSubscriptionId: providerId,
+          mpCustomerId: null,
+          plan: targetPlan,
+          extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
+          status: "INACTIVE",
+          isTrial: false,
+          paymentFailedAt: null,
+          gracePeriodEndsAt: null,
+          nextPaymentAttemptAt: null,
+          lastInvoiceId: null,
+          lastInvoiceStatus: null,
+          lastPaymentId: null,
+          lastPaymentStatus: null,
+          lastPaymentStatusDetail: null,
+          lastPaymentAttemptAt: null,
+          paymentRetryCount: 0,
+          dunningEmailSentAt: null,
+          graceExpiryWarningSentAt: null,
+        },
+        create: {
+          businessId: business.id,
+          mpSubscriptionId: providerId,
+          plan: targetPlan,
+          extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount : 0,
+          status: "INACTIVE",
+          isTrial: false,
+        },
+      });
+
+      if (platformDiscount) {
+        await reservePlatformDiscount({
+          discountCodeId: platformDiscount.id,
+          businessId: business.id,
+          subscriptionId: savedSubscription.id,
+          originalAmount: platformDiscount.originalAmount,
+          discountedAmount: platformDiscount.discountedAmount,
+        });
+      }
+
+      const token = createLocalPaymentToken({
+        kind: "subscription",
+        entityId: savedSubscription.id,
+        businessId: business.id,
+        amount: transactionAmount,
+        currency: business.currencyCode,
+      });
+      return NextResponse.json({
+        init_point: localPaymentCheckoutUrl(baseUrl, token),
+        discount: platformDiscount ?? null,
+        simulated: true,
+        currency: business.currencyCode,
+      });
+    }
+
+    // Create the real Mercado Pago subscription only for the Chilean flow.
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
+      const failure = mercadoPagoNotConfigured(isProduction);
+      console.error("[billing/subscribe] MercadoPago is not configured", {
+        code: failure.body.code,
+      });
+      return NextResponse.json(failure.body, { status: failure.status });
+    }
+
+    const preapproval = new PreApproval(mpClient);
 
     const result = await preapproval.create({
       body: {

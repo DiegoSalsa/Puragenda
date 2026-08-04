@@ -5,8 +5,17 @@ import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
 import { PRICING, STAFF_LIMITS } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
+import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 
-export async function SubscriptionBanner({ businessId }: { businessId: string }) {
+export async function SubscriptionBanner({
+  businessId,
+  timezone,
+  countryCode,
+}: {
+  businessId: string;
+  timezone: string;
+  countryCode: string;
+}) {
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
   if (!subscription) return null;
 
@@ -22,7 +31,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
       : 0;
     const graceLabel = graceEndsAt
       ? graceEndsAt.toLocaleString("es-CL", {
-          timeZone: "America/Santiago",
+          timeZone: timezone,
           day: "2-digit",
           month: "2-digit",
           hour: "2-digit",
@@ -31,7 +40,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
       : "muy pronto";
     const nextAttemptLabel = subscription.nextPaymentAttemptAt
       ? subscription.nextPaymentAttemptAt.toLocaleString("es-CL", {
-          timeZone: "America/Santiago",
+          timeZone: timezone,
           day: "2-digit",
           month: "2-digit",
           hour: "2-digit",
@@ -69,6 +78,29 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
 
   // TRIALING: show trial info + contextual CTAs
   if (status === "TRIALING" && isTrial) {
+    if (countryCode !== "CL") {
+      const simulatorEnabled = isLocalPaymentSimulatorEnabled();
+      return (
+        <div className="rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-500/10 via-[#7C3AED]/5 to-transparent p-5">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold text-sky-400">Acceso internacional habilitado · Plan {planLabel}</p>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {simulatorEnabled
+                  ? "Puedes recorrer el pago internacional local con dinero ficticio. No se contactará ningún proveedor real."
+                  : "Tu acceso de prueba se mantendrá mientras habilitamos el cobro internacional de Puragenda. No intentaremos cobrarte en CLP."}
+              </p>
+              {simulatorEnabled && (
+                <div className="pt-2">
+                  <ActivatePlanButton plan={plan} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className={`rounded-2xl border p-5 ${isUrgent ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent" : "border-[#7C3AED]/20 bg-gradient-to-r from-[#7C3AED]/10 via-[#5B21B6]/5 to-transparent"}`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -117,7 +149,7 @@ export async function SubscriptionBanner({ businessId }: { businessId: string })
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Plan Individual · ¿Listo para crecer?</p>
             <p className="text-sm text-muted-foreground">
-              Sube a Equipo (${PRICING.EQUIPO.monthly.toLocaleString("es-CL")}/mes) para hasta {STAFF_LIMITS.EQUIPO} profesionales incluidos y extras desde el sexto.
+              Sube a Equipo (${PRICING.EQUIPO.monthly.toLocaleString("es-CL")} CLP/mes) para hasta {STAFF_LIMITS.EQUIPO} profesionales incluidos y extras desde el sexto.
             </p>
           </div>
           <Link href="/dashboard/settings#plan">

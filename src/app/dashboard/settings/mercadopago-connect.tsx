@@ -8,9 +8,22 @@ import { disconnectMercadoPagoAction } from "@/server/actions/dashboard.actions"
 interface Props {
   isConnected: boolean;
   mpUserId: string | null;
+  countryName: string;
+  currencyCode: string;
+  mercadoPagoCurrency: string | null;
+  isCurrencyCompatible: boolean;
+  isOAuthConfigured: boolean;
 }
 
-export function MercadoPagoConnect({ isConnected, mpUserId }: Props) {
+export function MercadoPagoConnect({
+  isConnected,
+  mpUserId,
+  countryName,
+  currencyCode,
+  mercadoPagoCurrency,
+  isCurrencyCompatible,
+  isOAuthConfigured,
+}: Props) {
   const router = useRouter();
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -38,6 +51,12 @@ export function MercadoPagoConnect({ isConnected, mpUserId }: Props) {
           <p className="text-sm text-muted-foreground">
             Mercado Pago ID: <span className="font-mono text-foreground/70">{mpUserId || "—"}</span>
           </p>
+          <p className="text-xs text-muted-foreground">Los abonos de reservas se crearán en {currencyCode}.</p>
+          {!isCurrencyCompatible && (
+            <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+              La conexión queda bloqueada hasta volver a {mercadoPagoCurrency}. Desconecta Mercado Pago si quieres cobrar manualmente en otra moneda.
+            </p>
+          )}
           <button
             onClick={handleDisconnect}
             disabled={disconnecting}
@@ -60,11 +79,22 @@ export function MercadoPagoConnect({ isConnected, mpUserId }: Props) {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Conecta tu cuenta de Mercado Pago para recibir pagos de abonos por reservas.
+            Conecta una cuenta de Mercado Pago de {countryName} para recibir abonos por reservas en {currencyCode}.
           </p>
+          {!isCurrencyCompatible && mercadoPagoCurrency && (
+            <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+              En {countryName}, la integración de Mercado Pago cobra en {mercadoPagoCurrency}. Puedes usar {currencyCode} para precios o cobros manuales, pero no para esta integración online.
+            </p>
+          )}
+          {!isOAuthConfigured && (
+            <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
+              Falta configurar la aplicación OAuth de Mercado Pago para {countryName}.
+            </p>
+          )}
           <a
-            href="/api/mercadopago/authorize"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#009EE3] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-[#008CCB] hover:shadow-lg hover:shadow-[#009EE3]/20 active:scale-[0.98]"
+            href={isOAuthConfigured && isCurrencyCompatible ? "/api/mercadopago/authorize" : undefined}
+            aria-disabled={!isOAuthConfigured || !isCurrencyCompatible}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#009EE3] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-[#008CCB] hover:shadow-lg hover:shadow-[#009EE3]/20 active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-6h2v6zm-2-8h-2V7h2v2z" />

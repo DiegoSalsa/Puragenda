@@ -187,6 +187,12 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 7. **Verify:** `POST /api/billing/verify` verifica estado polling (fallback).
 8. **Cancel Registration:** `DELETE /api/auth/cancel-registration` borra cuenta si INACTIVE.
 
+### Cobro internacional de la plataforma
+- En producción, el cobro recurrente de Puragenda sigue configurado solo para Chile en CLP.
+- Negocios de otros países conservan acceso de prueba, no expiran a `INACTIVE` y no ven botones ni precios CLP mientras se define el proveedor global y su tabla de precios.
+- `npm run dev:payments` habilita un checkout local de dinero ficticio para recorrer suscripciones internacionales y abonos de cualquier país sin credenciales externas.
+- El simulador está bloqueado por código cuando `NODE_ENV=production`, incluso si se configura accidentalmente la variable. Con el simulador apagado, `POST /api/billing/subscribe` responde `INTERNATIONAL_BILLING_NOT_CONFIGURED` fuera de Chile.
+
 ### Campos en Subscription
 - `mpSubscriptionId` — ID de la PreApproval en MercadoPago
 - `mpCustomerId` — ID del pagador
@@ -211,6 +217,10 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 3. Cliente paga el abono en MP.
 4. `GET /api/mercadopago/deposit-return` recibe el retorno, actualiza `Appointment.paymentStatus` → APPROVED y `status` → CONFIRMED.
 5. El cliente es redirigido a `/cita/[appointmentId]?payment=success`.
+
+- Países Mercado Pago habilitados por la integración común: Chile/CLP, Argentina/ARS, Brasil/BRL, Colombia/COP, México/MXN, Perú/PEN y Uruguay/UYU.
+- El catálogo puede usar otra moneda para cobro manual. Mercado Pago solo se puede conectar y cobrar cuando la moneda coincide con la operación local del país.
+- Retornos y webhooks verifican referencia, monto exacto y moneda antes de aprobar una reserva o encargo.
 
 ### Variables de entorno requeridas
 - `MP_APP_ID` — Application ID de la MP App (para OAuth)
@@ -435,13 +445,26 @@ DATABASE_URL="postgresql://..."
 AUTH_SECRET="tu-secreto-jwt"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
+# Solo QA local. No configurar en Vercel ni producción.
+# LOCAL_PAYMENT_SIMULATOR="true" # npm run dev:payments la activa automáticamente
+# LOCAL_PAYMENT_SIMULATOR_SECRET="secreto-local-opcional"
+
 # MercadoPago — Suscripciones (plataforma)
 MERCADOPAGO_ACCESS_TOKEN="..."
 
-# MercadoPago — OAuth Marketplace (abonos por negocio)
+# MercadoPago — OAuth Marketplace (abonos por negocio; configuración compartida)
 MP_APP_ID="..."
 MP_CLIENT_SECRET="..."
 MP_REDIRECT_URI="https://www.puragenda.cl/api/mercadopago/callback"
+
+# Solo si Mercado Pago exige una aplicación distinta para un país concreto,
+# se puede sobrescribir la configuración compartida sin cambiar el código:
+# MP_APP_ID_<ISO>="..."
+# MP_CLIENT_SECRET_<ISO>="..."
+# MP_REDIRECT_URI_<ISO>="..." # opcional; si se omite usa MP_REDIRECT_URI
+# ISO soportados actualmente: CL, AR, BR, CO, MX, PE y UY.
+# Opcional: firma dedicada; si se omite usa AUTH_SECRET
+MP_OAUTH_STATE_SECRET="secreto-de-al-menos-32-caracteres"
 
 # Email
 RESEND_API_KEY="..."
@@ -463,8 +486,11 @@ ADMIN_NOTIFICATION_EMAILS="contacto@purocode.com"
 
 ```bash
 npm run dev              # Servidor de desarrollo (webpack, --host 0.0.0.0)
+npm run dev:payments     # Desarrollo con cobros falsos locales; no usa proveedor ni dinero real
+npm run qa:payments:db   # Prepara solo el esquema PostgreSQL aislado de QA
 npm run dev:turbo        # Servidor de desarrollo (turbopack)
 npm run build            # Build de producción
+npm run test:payments:local # OAuth + abonos multi-país con proveedor dummy, sin red
 npm run start            # Servidor de producción
 npx prisma migrate dev   # Crear migración
 npx prisma generate      # Regenerar client

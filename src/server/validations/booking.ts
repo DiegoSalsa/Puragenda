@@ -115,6 +115,24 @@ export const bookingSchema = z
 
 export type BookingInput = z.infer<typeof bookingSchema>;
 
+export const recurringBookingRequestSchema = z.object({
+  serviceId: z.string().min(1),
+  staffId: z.string().min(1).optional(),
+  selectedDays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+  selectedTimes: z.record(z.string(), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de inicio inválida"),
+  durationMonths: z.number().int().min(1).max(24),
+  customerName: z.string().trim().min(2).max(100),
+  customerEmail: z.string().trim().email().max(255),
+  customerPhone: z.string().trim().regex(/^\+?[0-9\s()-]{8,18}$/, "Teléfono inválido"),
+  customerAddress: z.string().trim().max(300).optional(),
+  selectedOptionAlternativeIds: z.array(z.string()).max(50).optional(),
+  rut: z.string().trim().max(20).optional(),
+  healthAnswers: z.record(z.string(), z.string().max(1000)).optional(),
+  healthExtra: z.string().max(2000).optional(),
+  healthAccepted: z.boolean().optional(),
+});
+
 export const customProductionWindowSchema = z.object({
   key: z.string().trim().min(1).max(80),
   label: z.string().trim().min(2, "Escribe un nombre para el período").max(100),

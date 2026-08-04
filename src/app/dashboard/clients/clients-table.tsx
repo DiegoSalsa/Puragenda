@@ -6,6 +6,7 @@ import { useState, useMemo, useTransition } from "react";
 import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, StickyNote, RefreshCw, Edit2, Check, X } from "lucide-react";
 import { updateClientNotesAction, updateClientRutAction } from "@/server/actions/client.actions";
 import { useRouter } from "next/navigation";
+import { formatPrice } from "@/lib/utils";
 
 interface RecurringBookingSummary {
   id: string;
@@ -31,17 +32,13 @@ interface ClientData {
   recurringBookings: RecurringBookingSummary[];
 }
 
-function formatCLP(amount: number) {
-  return `$${Math.round(amount).toLocaleString("es-CL")}`;
-}
-
 const RECURRING_STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Activa",
   PENDING_APPROVAL: "Pendiente",
   PAUSED: "Pausada",
 };
 
-export function ClientsTable({ clients }: { clients: ClientData[] }) {
+export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlaceholder }: { clients: ClientData[]; currencyCode: string; taxIdLabel: string; taxIdPlaceholder: string }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -103,7 +100,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
               <TrendingUp className="h-4 w-4 text-emerald-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{formatCLP(totalRevenue)}</p>
+              <p className="text-2xl font-bold">{formatPrice(totalRevenue, currencyCode)}</p>
               <p className="text-xs text-muted-foreground">Ingresos totales</p>
             </div>
           </div>
@@ -236,7 +233,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                       {/* Revenue */}
                       <td className="px-3 sm:px-5 py-3 sm:py-4 text-right">
                         <span className="font-mono font-medium">
-                          {client.totalSpent > 0 ? formatCLP(client.totalSpent) : "-"}
+                          {client.totalSpent > 0 ? formatPrice(client.totalSpent, currencyCode) : "-"}
                         </span>
                       </td>
                     </tr>
@@ -259,21 +256,21 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                                 </div>
                               )}
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span>Gastado: <span className="font-mono font-medium text-foreground">{client.totalSpent > 0 ? formatCLP(client.totalSpent) : "$0"}</span></span>
+                                <span>Gastado: <span className="font-mono font-medium text-foreground">{formatPrice(client.totalSpent, currencyCode)}</span></span>
                                 <span>Citas: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
                               </div>
                             </div>
 
                             {/* RUT */}
                             <div className="flex items-start gap-2">
-                              <span className="shrink-0 mt-0.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-12">RUT</span>
+                              <span className="shrink-0 mt-0.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-20">{taxIdLabel}</span>
                               {editingRut === client.id ? (
                                 <div className="flex items-center gap-2 flex-1">
                                   <input
                                     autoFocus
                                     value={rutValue}
                                     onChange={(e) => setRutValue(e.target.value)}
-                                    placeholder="12.345.678-9"
+                                    placeholder={taxIdPlaceholder}
                                     className="flex-1 rounded-xl border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
                                   />
                                   <button disabled={pending} onClick={() => saveRut(client.id)} className="rounded-lg bg-[#7C3AED] p-1.5 text-white hover:bg-[#6d28d9] disabled:opacity-50">
@@ -286,7 +283,7 @@ export function ClientsTable({ clients }: { clients: ClientData[] }) {
                               ) : (
                                 <div className="flex items-center gap-2 flex-1">
                                   <span className={client.rut ? "font-medium text-foreground" : "text-muted-foreground italic"}>
-                                    {client.rut ?? "Sin RUT registrado"}
+                                    {client.rut ?? `Sin ${taxIdLabel} registrado`}
                                   </span>
                                   <button
                                     onClick={() => { setEditingRut(client.id); setRutValue(client.rut ?? ""); }}

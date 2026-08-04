@@ -15,6 +15,12 @@ import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { calculatePriorityReleaseAt } from "@/server/services/schedule-block.service";
 import { normalizeLoyaltyCodePrefix } from "@/server/services/loyalty-code.service";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import {
+  getMercadoPagoCurrency,
+  isMercadoPagoCurrencyCompatible,
+  isSupportedCountryCode,
+  isValidTimeZone,
+} from "@/core/countries";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -739,7 +745,7 @@ export async function createScheduleBlockAction(data: {
         include: {
           recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
           service: { select: { name: true } },
-          business: { select: { name: true } },
+          business: { select: { name: true, timezone: true } },
         },
       });
 
@@ -772,6 +778,7 @@ export async function createScheduleBlockAction(data: {
             serviceName: apt.service.name,
             sessionDate: apt.startTime,
             businessName: apt.business.name,
+            timezone: apt.business.timezone,
           });
         }
 
@@ -856,6 +863,56 @@ export async function saveLoyaltyConfigAction(data: {
 }
 
 // â”€â”€â”€ Business Location â”€â”€â”€
+export async function updateBusinessCountryAction(
+  data: { countryCode: string; timezone: string; currencyCode: string },
+  confirmedImpact = false,
+) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para modificar la configuración" };
+  }
+  const countryCode = data.countryCode.trim().toUpperCase();
+  const currencyCode = data.currencyCode.trim().toUpperCase();
+  if (!isSupportedCountryCode(countryCode)) {
+    return { error: "El país seleccionado no está soportado" };
+  }
+  if (!isValidTimeZone(data.timezone)) return { error: "La zona horaria no es válida" };
+  if (!/^[A-Z]{3}$/.test(currencyCode)) return { error: "La moneda debe usar un código ISO de 3 letras" };
+  const unchanged = business.countryCode === countryCode && business.timezone === data.timezone && business.currencyCode === currencyCode;
+  if (unchanged) return { success: true };
+  if (business.mpAccessToken && business.countryCode !== countryCode) {
+    return { error: "Desconecta primero la cuenta de Mercado Pago antes de cambiar el país" };
+  }
+  if (business.mpAccessToken && !isMercadoPagoCurrencyCompatible(countryCode, currencyCode)) {
+    const expectedCurrency = getMercadoPagoCurrency(countryCode);
+    return {
+      error: expectedCurrency
+        ? `Mercado Pago conectado requiere ${expectedCurrency}. Desconéctalo antes de usar otra moneda.`
+        : "Desconecta primero Mercado Pago antes de usar esta moneda.",
+    };
+  }
+  if (!confirmedImpact) {
+    return { error: "Debes confirmar el impacto sobre horarios y precios existentes" };
+  }
+
+  await prisma.business.update({
+    where: { id: business.id },
+    data: {
+      countryCode,
+      currencyCode,
+      timezone: data.timezone,
+    },
+  });
+
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 export async function updateBusinessLocationAction(data: { address: string; mapsUrl: string }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -893,6 +950,14 @@ export async function saveDepositConfigAction(data: {
   // If enabling deposits, check that MP is connected
   if (data.depositRequired && !business.mpAccessToken) {
     return { error: "Debes conectar tu cuenta de Mercado Pago antes de activar abonos." };
+  }
+  if (data.depositRequired && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)) {
+    const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
+    return {
+      error: expectedCurrency
+        ? `Para cobrar abonos con Mercado Pago en ${business.countryCode}, usa ${expectedCurrency}.`
+        : "Mercado Pago no está disponible para el país de este negocio.",
+    };
   }
 
   await prisma.business.update({

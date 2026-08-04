@@ -5,6 +5,7 @@ import { RecurringClient } from "./recurring-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function RecurringPage() {
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.RECURRING_MANAGE))) {
     return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar suscripciones.</div>;
   }
+  const country = getCountryConfig(business.countryCode);
 
   const agendaScope = await getStaffAgendaScope(user, business);
   const scopedStaffFilter = agendaScope.canSeeAllAgendas
@@ -91,7 +93,12 @@ export default async function RecurringPage() {
           Gestiona los planes de reserva fija de tus clientes · {bookings.length} total
         </p>
       </div>
-      <RecurringClient bookings={serialized} />
+      <RecurringClient
+        bookings={serialized}
+        locale={country.locale}
+        timezone={business.timezone || country.timezone}
+        taxIdLabel={country.taxIdLabel}
+      />
 
       <PageTutorial
         tutorialKey="suscripciones_v1"

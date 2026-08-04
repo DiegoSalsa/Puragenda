@@ -5,7 +5,7 @@ import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "lucide-react";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
@@ -21,10 +21,18 @@ import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { SecretField } from "@/components/dashboard/secret-field";
 import { ScheduleOverridesEditor } from "./schedule-overrides";
+import { BusinessCountryEditor } from "./business-country-editor";
+import {
+  getCountryConfig,
+  getMercadoPagoCurrency,
+  isMercadoPagoCountryCode,
+  isMercadoPagoCurrencyCompatible,
+} from "@/core/countries";
+import { getMercadoPagoOAuthConfig } from "@/server/services/mercadopago-oauth.service";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ mp_connected?: string; mp_error?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ mp_connected?: string; mp_error?: string; billing_notice?: string }> }) {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
   const business = await getBusinessForUser(user.id);
@@ -53,12 +61,22 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const isActive = subscription?.status === "ACTIVE";
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
+    business.countryCode === "CL" &&
     subscription?.status !== "PAST_DUE" &&
     (!subscription ||
       subscription.plan === "INDIVIDUAL" ||
       (subscription.plan === "EQUIPO" && isTrial));
 
   const isMpConnected = !!business.mpAccessToken;
+  const region = getCountryConfig(business.countryCode);
+  const mercadoPagoCurrency = getMercadoPagoCurrency(business.countryCode);
+  const isMercadoPagoCurrencyValid = isMercadoPagoCurrencyCompatible(
+    business.countryCode,
+    business.currencyCode,
+  );
+  const isMercadoPagoOAuthConfigured = isMercadoPagoCountryCode(business.countryCode)
+    ? !!getMercadoPagoOAuthConfig(business.countryCode)
+    : false;
 
   return (
     <div className="space-y-8">
@@ -83,7 +101,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           {mpError === "invalid_state" && "Estado de seguridad inválido."}
           {mpError === "server_config" && "Error de configuración del servidor."}
           {mpError === "no_token" && "No se recibió un token de acceso."}
+          {mpError === "country_changed" && "El país del negocio cambió durante la conexión. Inténtalo nuevamente."}
+          {mpError === "account_verification" && "No pudimos verificar el país de la cuenta de Mercado Pago."}
+          {mpError === "country_mismatch" && `La cuenta de Mercado Pago no pertenece a ${region.name}.`}
+          {mpError === "currency_mismatch" && `La moneda del negocio debe ser ${mercadoPagoCurrency} para conectar Mercado Pago en ${region.name}.`}
           {mpError === "unexpected" && "Error inesperado al conectar Mercado Pago."}
+        </div>
+      )}
+      {params.billing_notice === "international" && (
+        <div className="flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-3 text-sm text-amber-400">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>Tu cuenta quedó creada y mantiene su período de prueba. La suscripción de Puragenda se cobra en CLP; el cobro internacional automático se habilitará cuando se configure el proveedor global.</span>
         </div>
       )}
 
@@ -138,7 +166,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                ${planPrice.toLocaleString("es-CL")}/mes
+                {business.countryCode === "CL"
+                  ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
+                  : "Precio internacional pendiente de habilitación"}
                 {subscription?.currentPeriodEnd && (
                   <> · Próxima renovación: {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}
@@ -157,7 +187,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
             <CreditCard className="h-4 w-4 text-[#009EE3]" /> Mercado Pago
           </div>
-          <MercadoPagoConnect isConnected={isMpConnected} mpUserId={business.mpUserId} />
+          <MercadoPagoConnect
+            isConnected={isMpConnected}
+            mpUserId={business.mpUserId}
+            countryName={region.name}
+            currencyCode={business.currencyCode}
+            mercadoPagoCurrency={mercadoPagoCurrency}
+            isCurrencyCompatible={isMercadoPagoCurrencyValid}
+            isOAuthConfigured={isMercadoPagoOAuthConfigured}
+          />
         </div>
 
         {/* ── Deposit / Abono Config ── */}
@@ -167,7 +205,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
           <DepositConfig
             initialDepositRequired={business.depositRequired}
-            isMpConnected={isMpConnected}
+            isMpConnected={isMpConnected && isMercadoPagoCurrencyValid}
           />
         </div>
 
@@ -183,6 +221,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <Store className="h-4 w-4 text-[#7C3AED]" /> Nombre del Negocio
           </div>
           <BusinessNameEditor initialName={business.name} />
+        </div>
+
+        <div id="business-country" className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <Globe2 className="h-4 w-4 text-[#7C3AED]" /> País, hora y moneda
+          </div>
+          <BusinessCountryEditor
+            initialCountryCode={business.countryCode}
+            initialTimezone={business.timezone}
+            initialCurrencyCode={business.currencyCode}
+          />
         </div>
 
         <div id="business-logo" className="rounded-2xl border border-border bg-card p-6">
@@ -259,6 +308,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             initialAllowSameDayBookings={business.allowSameDayBookings}
             initialSlotInterval={business.slotInterval}
             initialMinAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
+            taxIdLabel={region.taxIdLabel}
           />
         </div>
 

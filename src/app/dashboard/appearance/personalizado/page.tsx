@@ -55,6 +55,7 @@ export default async function PersonalizadoPage() {
         }}
         widgetSlug={business.slug}
         promoBlocks={promoBlocks}
+        currencyCode={business.currencyCode}
       />
       <PageTutorial
         tutorialKey="apariencia_v1"

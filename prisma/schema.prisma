@@ -212,6 +212,8 @@ model Business {
   // ── Abono (Deposit) Config ──
   depositRequired                              Boolean   @default(false)
   allowedOrigins                               String[]  @default([])
+  countryCode                                  String    @default("CL")
+  currencyCode                                 String    @default("CLP")
   timezone                                     String    @default("America/Santiago")
   ownerId                                      String?
   referredByAffiliateId                        String?
@@ -577,7 +579,7 @@ model Service {
   imageUrl                 String?
   duration                 Int
   price                    Float
-  depositAmount            Int                    @default(0) // CLP amount for per-service deposit
+  depositAmount            Int                    @default(0) // Amount in the business currency
   bookingMode              ServiceBookingMode     @default(APPOINTMENT)
   productionScheduleMode   ProductionScheduleMode @default(WEEKLY)
   weeklyProductionCapacity Int                    @default(5)
@@ -880,7 +882,7 @@ model Appointment {
   customerActionTokenUsedAt    DateTime?
   internalNotes                String?
   // ── Deposit Payment ──
-  depositAmount                Int? // CLP amount charged as deposit
+  depositAmount                Int? // Amount charged in the business currency
   paymentStatus                PaymentStatus     @default(NONE)
   mpPaymentId                  String? // MercadoPago payment ID
   mpPreferenceId               String? // MercadoPago preference ID

@@ -242,6 +242,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
       </div>
 
       <BusinessInsights
+        currencyCode={business.currencyCode}
         period={period}
         scopeLabel={scopeLabel}
         periodLabel={periodLabel}

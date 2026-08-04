@@ -115,6 +115,7 @@ export function WeeklyCalendar({
   services = [],
   staff = [],
   clients = [],
+  currencyCode,
   canManageAppointments = false,
 }: {
   appointments: CalendarAppointment[];
@@ -125,6 +126,7 @@ export function WeeklyCalendar({
   services?: AppointmentEditorService[];
   staff?: AppointmentEditorStaff[];
   clients?: AppointmentEditorClient[];
+  currencyCode: string;
   canManageAppointments?: boolean;
 }) {
   const router = useRouter();
@@ -652,6 +654,7 @@ export function WeeklyCalendar({
           services={services}
           staff={staff}
           clients={clients}
+          currencyCode={currencyCode}
           onClose={() => setEditor(null)}
         />
       )}
