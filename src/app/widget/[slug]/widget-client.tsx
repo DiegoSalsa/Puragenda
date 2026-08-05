@@ -17,13 +17,18 @@ import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
+import { toggleCanvasSelection } from "@/core/widget-studio/canvas-layout";
 import { ProductionOrderFlow } from "./production-order-flow";
 import {
+  extractWidgetPromotionIds,
   widgetDesignDocumentSchema,
+  type WidgetCanvasDevice,
   type WidgetDesignDocument,
 } from "@/core/widget-studio/schema";
 import {
+  WidgetDesignRuntimeProvider,
   WidgetDesignSlot,
+  type WidgetPromotionRuntime,
   type WidgetResolvedAsset,
 } from "@/components/widget-studio/widget-design-renderer";
 
@@ -313,6 +318,12 @@ export function WidgetClient({
   const [liveDesignAssets, setLiveDesignAssets] = useState(initialDesignAssets);
   const [previewInteraction, setPreviewInteraction] = useState<"design" | "test">("design");
   const [previewSelectedId, setPreviewSelectedId] = useState<string | null>(null);
+  const [previewSelectedIds, setPreviewSelectedIds] = useState<string[]>([]);
+  const [previewMultiSelectMode, setPreviewMultiSelectMode] = useState(false);
+  const [canvasTransformsEnabled, setCanvasTransformsEnabled] = useState(false);
+  const [canvasGridEnabled, setCanvasGridEnabled] = useState(false);
+  const [canvasGridStep, setCanvasGridStep] = useState(5);
+  const [canvasDevice, setCanvasDevice] = useState<WidgetCanvasDevice>("desktop");
   const designDocument = previewMode ? liveDesignDocument : initialDesignDocument;
   const designAssets = previewMode ? liveDesignAssets : initialDesignAssets;
   const inlineEditing = previewMode && previewInteraction === "design";
@@ -321,6 +332,12 @@ export function WidgetClient({
   const textColor = designDocument?.tokens.colors.text || business.textColor || "#FFFFFF";
   const textSecondary = designDocument?.tokens.colors.textMuted || business.textSecondary || `${textColor}66`;
   const fontSize = designDocument?.tokens.typography.baseSize || business.fontSize || 14;
+  const fontFamily = {
+    system: "Inter, ui-sans-serif, system-ui, sans-serif",
+    modern: "\"Manrope\", Inter, ui-sans-serif, system-ui, sans-serif",
+    editorial: "Georgia, \"Times New Roman\", serif",
+    rounded: "\"Nunito\", \"Arial Rounded MT Bold\", ui-sans-serif, system-ui, sans-serif",
+  }[designDocument?.tokens.typography.family || "system"];
   const cornerRadius = Math.max(0, Math.min(40, designDocument?.tokens.shape.radius ?? business.cornerRadius ?? 16));
   const shadowStyle = designDocument?.tokens.shape.shadow || business.shadowStyle || "soft";
   const headerAlign = designDocument?.shell.headerAlign || business.headerAlign || "left";
@@ -361,12 +378,45 @@ export function WidgetClient({
         }
       }
       if (event.data.type === "SET_INTERACTION_MODE") {
-        setPreviewInteraction(event.data.mode === "test" ? "test" : "design");
+        const nextMode = event.data.mode === "test" ? "test" : "design";
+        setPreviewInteraction(nextMode);
+        window.parent.postMessage({
+          source: "puragenda-widget-preview",
+          type: "INTERACTION_MODE_CHANGED",
+          mode: nextMode,
+        }, window.location.origin);
       }
       if (event.data.type === "SET_SELECTED") {
-        setPreviewSelectedId(typeof event.data.id === "string" ? event.data.id : null);
+        const ids = Array.isArray(event.data.ids)
+          ? event.data.ids.filter((id: unknown): id is string => typeof id === "string")
+          : typeof event.data.id === "string"
+            ? [event.data.id]
+            : [];
+        setPreviewSelectedIds(ids);
+        setPreviewSelectedId(
+          typeof event.data.id === "string" && ids.includes(event.data.id)
+            ? event.data.id
+            : ids.at(-1) ?? null,
+        );
+      }
+      if (event.data.type === "SET_MULTI_SELECT_MODE") {
+        setPreviewMultiSelectMode(event.data.enabled === true);
+      }
+      if (event.data.type === "SET_CANVAS_TRANSFORMS") {
+        setCanvasTransformsEnabled(event.data.enabled === true);
+      }
+      if (event.data.type === "SET_CANVAS_GRID") {
+        setCanvasGridEnabled(event.data.enabled === true);
+        const requestedStep = Number(event.data.step);
+        setCanvasGridStep([2.5, 5, 10].includes(requestedStep) ? requestedStep : 5);
+      }
+      if (event.data.type === "SET_CANVAS_DEVICE") {
+        if (["mobile", "tablet", "desktop"].includes(event.data.device)) {
+          setCanvasDevice(event.data.device as WidgetCanvasDevice);
+        }
       }
       if (event.data.type === "SET_STEP") {
+        if (previewInteraction !== "design") return;
         const requested = event.data.step as Step;
         if (requested === "service") {
           setStep("service");
@@ -411,26 +461,52 @@ export function WidgetClient({
     window.addEventListener("message", onMessage);
     notifyReady();
     return () => window.removeEventListener("message", onMessage);
-  }, [allowSameDayBookings, businessHours, previewMode, services, slotInterval, staffMembers]);
+  }, [allowSameDayBookings, businessHours, previewInteraction, previewMode, services, slotInterval, staffMembers]);
 
   useEffect(() => {
     if (!previewMode) return;
     document.querySelectorAll(".widget-studio-preview-selected").forEach((element) => {
       element.classList.remove("widget-studio-preview-selected");
     });
-    if (!previewSelectedId) return;
-    const escaped = CSS.escape(previewSelectedId);
-    const selectedElement = document.querySelector(
-      `[data-widget-block-id="${escaped}"], [data-widget-system-id="${escaped}"]`,
-    );
-    selectedElement?.classList.add("widget-studio-preview-selected");
-  }, [designDocument, previewMode, previewSelectedId, step]);
+    if (previewInteraction !== "design") return;
+    for (const selectedId of previewSelectedIds) {
+      const escaped = CSS.escape(selectedId);
+      const selectedElement = document.querySelector(
+        `[data-widget-block-id="${escaped}"], [data-widget-system-id="${escaped}"]`,
+      );
+      selectedElement?.classList.add("widget-studio-preview-selected");
+    }
+  }, [designDocument, previewInteraction, previewMode, previewSelectedIds, step]);
+
+  useEffect(() => {
+    if (!previewMode || previewInteraction !== "test") return;
+    window.parent.postMessage({
+      source: "puragenda-widget-preview",
+      type: "STEP_CHANGED",
+      step,
+    }, window.location.origin);
+  }, [previewInteraction, previewMode, step]);
 
   function previewSelectableClass(id: string) {
     if (!previewMode || previewInteraction !== "design") return "";
     return `widget-studio-preview-selectable ${
-      previewSelectedId === id ? "widget-studio-preview-selected" : ""
+      previewSelectedIds.includes(id) ? "widget-studio-preview-selected" : ""
     }`;
+  }
+
+  function selectPreviewElement(id: string, intent?: { additive?: boolean }) {
+    if (!previewMode || previewInteraction !== "design") return;
+    setPreviewSelectedIds((current) => {
+      const next = toggleCanvasSelection(current, id, intent?.additive === true);
+      setPreviewSelectedId(next.includes(id) ? id : next.at(-1) ?? null);
+      return next;
+    });
+    window.parent.postMessage({
+      source: "puragenda-widget-preview",
+      type: "BLOCK_SELECTED",
+      blockId: id,
+      additive: intent?.additive === true,
+    }, window.location.origin);
   }
 
   function handlePreviewCapture(event: React.MouseEvent<HTMLElement>) {
@@ -440,12 +516,13 @@ export function WidgetClient({
     if (!selectable) return;
     const id = selectable.dataset.widgetBlockId || selectable.dataset.widgetSystemId;
     if (!id) return;
-    setPreviewSelectedId(id);
-    window.parent.postMessage({
-      source: "puragenda-widget-preview",
-      type: "BLOCK_SELECTED",
-      blockId: id,
-    }, window.location.origin);
+    selectPreviewElement(id, {
+      additive:
+        previewMultiSelectMode ||
+        event.shiftKey ||
+        event.ctrlKey ||
+        event.metaKey,
+    });
     if (target.closest("[data-widget-inline-edit]")) return;
     event.preventDefault();
     event.stopPropagation();
@@ -570,6 +647,36 @@ export function WidgetClient({
       })
     : null,
   [activePromotion, rawTotalPrice]);
+  const embeddedPromotionIds = useMemo(
+    () => designDocument ? extractWidgetPromotionIds(designDocument) : new Set<string>(),
+    [designDocument],
+  );
+  const promotionRuntime = useMemo<Record<string, WidgetPromotionRuntime>>(
+    () => Object.fromEntries(promoBlocks.map((block) => {
+      const hasDiscount = block.discountType === "PERCENTAGE" || block.discountType === "FIXED";
+      const discountLabel = block.discountType === "PERCENTAGE"
+        ? `${block.discountValue}% de descuento`
+        : block.discountType === "FIXED"
+          ? `${formatPrice(block.discountValue ?? 0)} de descuento`
+          : null;
+      const isActive = activePromotionId === block.id;
+      return [block.id, {
+        id: block.id,
+        hasDiscount,
+        discountLabel,
+        isActive,
+        error: isActive ? promotionResult?.error : null,
+      }];
+    })),
+    [activePromotionId, promoBlocks, promotionResult?.error],
+  );
+  const togglePromotion = useCallback((promotionId: string) => {
+    setActivePromotionId((current) => current === promotionId ? null : promotionId);
+    setRewardCode("");
+    setRewardStatus("idle");
+    setRewardError("");
+    setRewardDiscount(null);
+  }, []);
 
   // Reward codes and widget promotions intentionally do not stack.
   const totalPrice = useMemo(() => {
@@ -1170,7 +1277,7 @@ export function WidgetClient({
 
   function renderPromoBlocks(placement: PromoBlock["placement"]) {
     const blocks = promoBlocks
-      .filter((block) => block.placement === placement)
+      .filter((block) => block.placement === placement && !embeddedPromotionIds.has(block.id))
       .sort((a, b) => a.position - b.position);
     if (!blocks.length) return null;
     return (
@@ -1219,13 +1326,7 @@ export function WidgetClient({
                   type="button"
                   className="w-full text-left"
                   aria-pressed={isActive}
-                  onClick={() => {
-                    setActivePromotionId(isActive ? null : block.id);
-                    setRewardCode("");
-                    setRewardStatus("idle");
-                    setRewardError("");
-                    setRewardDiscount(null);
-                  }}
+                  onClick={() => togglePromotion(block.id)}
                 >
                   {content}
                 </button>
@@ -1242,9 +1343,40 @@ export function WidgetClient({
   }
 
   return (
+    <WidgetDesignRuntimeProvider
+      promotions={promotionRuntime}
+      onTogglePromotion={previewMode && previewInteraction === "design" ? undefined : togglePromotion}
+      selectedId={previewMode && previewInteraction === "design" ? previewSelectedId : null}
+      selectedIds={previewMode && previewInteraction === "design" ? previewSelectedIds : []}
+      canvasTransformsEnabled={
+        previewMode && previewInteraction === "design" && canvasTransformsEnabled
+      }
+      canvasGridEnabled={
+        previewMode && previewInteraction === "design" && canvasGridEnabled
+      }
+      canvasGridStep={canvasGridStep}
+      canvasDevice={previewMode ? canvasDevice : undefined}
+      onSelect={previewMode && previewInteraction === "design" ? selectPreviewElement : undefined}
+      onOverlayTransform={previewMode && previewInteraction === "design" && canvasTransformsEnabled
+        ? (blockId, transform) => {
+            window.parent.postMessage({
+              source: "puragenda-widget-preview",
+              type: "OVERLAY_TRANSFORM_COMMIT",
+              blockId,
+              transform,
+            }, window.location.origin);
+          }
+        : undefined}
+      onNext={previewMode && previewInteraction === "design" ? undefined : () => {
+        document.querySelector<HTMLButtonElement>("[data-widget-primary-action]:not(:disabled)")?.click();
+      }}
+    >
     <div
+      data-preview-interaction={previewInteraction}
+      data-preview-step={step}
+      data-preview-multi-select={previewMultiSelectMode || undefined}
       className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
-      onClickCapture={handlePreviewCapture}
+      onClickCapture={previewMode && previewInteraction === "design" ? handlePreviewCapture : undefined}
       style={{
         background: bgColor,
         ["--wp" as string]: pc,
@@ -1255,6 +1387,7 @@ export function WidgetClient({
         ["--wsubtle" as string]: `${textColor}08`,
         ["--wfont-size" as string]: `${fontSize}px`,
         fontSize: `${fontSize}px`,
+        fontFamily,
         color: textColor,
       }}
     >
@@ -1304,9 +1437,13 @@ export function WidgetClient({
               className={`flex items-center ${designDocument?.system.header.layout === "compact" ? "gap-2" : "gap-3"}`}
               style={{ textAlign: designDocument?.system.header.layout === "centered" ? "center" : headerAlign as "left" | "center" | "right" }}
             >
-              {business.logoUrl && designDocument?.system.header.showLogo !== false && (
+              {(designDocument?.shell.logoAssetId
+                ? designAssets[designDocument.shell.logoAssetId]?.url
+                : business.logoUrl) && designDocument?.system.header.showLogo !== false && (
                 <img
-                  src={business.logoUrl}
+                  src={designDocument?.shell.logoAssetId
+                    ? designAssets[designDocument.shell.logoAssetId]?.url
+                    : business.logoUrl || ""}
                   alt={business.name}
                   className={`${designDocument?.system.header.layout === "compact" ? "h-7 w-7" : "h-8 w-8"} rounded-lg object-cover`}
                 />
@@ -1545,7 +1682,7 @@ export function WidgetClient({
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Duración total:</span><span className="font-medium" style={{ color: textColor }}>{totalDuration} min</span></div>
                     <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(totalPrice)}</span></div>
                   </div>
-                  <button type="button" onClick={handleMultiServiceContinue}
+                  <button type="button" data-widget-primary-action onClick={handleMultiServiceContinue}
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98]" style={{ background: pc, color: getContrastColor(pc) }}>
                     Continuar <ChevronRight className="h-4 w-4" />
                   </button>
@@ -1618,7 +1755,7 @@ export function WidgetClient({
                 <div className="flex justify-between" style={{ color: textSecondary }}><span>Precio total:</span><span className="font-medium" style={{ color: textColor }}>{formatPrice(rawTotalPrice)}</span></div>
               </div>
 
-              <button type="button" disabled={!optionsComplete} onClick={handleOptionsContinue}
+              <button type="button" data-widget-primary-action disabled={!optionsComplete} onClick={handleOptionsContinue}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
                 {selectedService?.bookingMode === "PRODUCTION" ? "Elegir cupo" : "Ver horarios"} <ChevronRight className="h-4 w-4" />
               </button>
@@ -1850,7 +1987,7 @@ export function WidgetClient({
               </div>
 
               <div className="pt-4">
-                <button type="button"
+                <button type="button" data-widget-primary-action
                   disabled={recurringSelectedDays.length < getMinDaysRequired() || !recurringStartDate || recurringSelectedDays.some((d) => !recurringTimes[d]) || (filteredStaff.length > 1 && !selectedStaff)}
                   onClick={() => {
                     const plan = selectedService.recurringPlan!;
@@ -2230,7 +2367,7 @@ export function WidgetClient({
                   )}
                 </div>
               )}
-              <button type="button" disabled={!selectedSlot} onClick={() => setStep("details")}
+              <button type="button" data-widget-primary-action disabled={!selectedSlot} onClick={() => setStep("details")}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none mt-6" style={{ background: pc, color: getContrastColor(pc) }}>
                 Continuar con mis datos <ChevronRight className="h-4 w-4" />
               </button>
@@ -2464,5 +2601,6 @@ export function WidgetClient({
         )}
       </div>
     </div>
+    </WidgetDesignRuntimeProvider>
   );
 }

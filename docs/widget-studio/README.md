@@ -1,8 +1,8 @@
 # Puragenda Widget Studio — plan maestro
 
-Estado: **planificación previa a implementación**
+Estado: **implementación experimental en `testingWidget`, bajo auditoría**
 
-Última revisión: **23 de julio de 2026**
+Última revisión: **29 de julio de 2026**
 
 Alcance: editor visual de Apariencia y render público del widget de reservas.
 
@@ -44,6 +44,8 @@ Estas son recomendaciones técnicas para preparar un plan coherente. Las decisio
 10. [Registro de decisiones y preguntas abiertas](./10-decisiones-abiertas.md)
 11. [Matriz de trazabilidad](./11-matriz-trazabilidad.md)
 12. [Wireframes y flujos](./12-wireframes-y-flujos.md)
+13. [Auditoría y project tracker de la implementación](./13-project-tracker-auditoria-2026-07-29.md)
+14. [Visión del editor libre V3 y roadmap](./14-vision-editor-libre-v3-y-roadmap.md)
 
 ## Reglas no negociables
 

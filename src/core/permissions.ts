@@ -1,6 +1,8 @@
 export const DASHBOARD_PERMISSIONS = {
   APPOINTMENTS_VIEW_OWN: "appointments.view_own",
   APPOINTMENTS_VIEW_ALL: "appointments.view_all",
+  APPOINTMENTS_MANAGE_OWN: "appointments.manage_own",
+  APPOINTMENTS_MANAGE_ALL: "appointments.manage_all",
   ANALYTICS_VIEW_OWN: "analytics.view_own",
   ANALYTICS_VIEW_BUSINESS: "analytics.view_business",
   STAFF_MANAGE: "staff.manage",
@@ -26,6 +28,8 @@ export const PERMISSION_CATALOG: {
 }[] = [
   { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, group: "Agenda", label: "Ver sus propias citas", description: "Acceso a la agenda asignada a esta persona." },
   { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL, group: "Agenda", label: "Ver todas las agendas", description: "Puede consultar las citas de todo el equipo.", critical: true },
+  { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN, group: "Agenda", label: "Gestionar sus propias citas", description: "Puede crear, editar y reagendar citas en su propia agenda." },
+  { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_ALL, group: "Agenda", label: "Gestionar todas las agendas", description: "Puede crear, editar y reagendar citas para cualquier profesional.", critical: true },
   { code: DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN, group: "Analítica", label: "Ver su analítica", description: "Resumen semanal y mensual de su propia actividad." },
   { code: DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS, group: "Analítica", label: "Ver analítica del negocio", description: "Indicadores globales del negocio.", critical: true },
   { code: DASHBOARD_PERMISSIONS.STAFF_MANAGE, group: "Gestión", label: "Gestionar profesionales y roles", description: "Crear equipo, horarios y perfiles de acceso.", critical: true },
@@ -53,6 +57,7 @@ export const LEGACY_ROLE_PERMISSIONS: Record<string, DashboardPermission[]> = {
   RECEPTIONIST: ALL.filter((permission) => !RECEPTIONIST_EXCLUDED.has(permission)),
   STAFF: [
     DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
+    DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN,
     DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN,
   ],
 };

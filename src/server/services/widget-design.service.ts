@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { ZodError } from "zod";
 import {
   Prisma,
   WidgetAssetStatus,
@@ -9,10 +10,12 @@ import { prisma } from "@/server/db/prisma";
 import {
   extractWidgetAssetReferences,
   parseWidgetDesignDocument,
+  repairUnavailableWidgetAssets,
   type WidgetAssetReferenceInput,
   type WidgetDesignDocument,
 } from "@/core/widget-studio/schema";
 import { createLegacyWidgetDocument } from "@/core/widget-studio/legacy-adapter";
+import { isWidgetAssetAvailable } from "@/server/services/widget-assets.service";
 
 export class WidgetDraftConflictError extends Error {
   constructor(public readonly currentRevision: number) {
@@ -131,7 +134,7 @@ export async function getWidgetEditorState(businessId: string) {
   const assets = await prisma.widgetAsset.findMany({
     where: {
       businessId,
-      status: { in: [WidgetAssetStatus.READY, WidgetAssetStatus.PROCESSING] },
+      status: WidgetAssetStatus.READY,
       deletedAt: null,
     },
     orderBy: { createdAt: "desc" },
@@ -150,7 +153,21 @@ export async function getWidgetEditorState(businessId: string) {
     },
   });
 
-  return { ...design, draftDocument: document, assets };
+  const availableAssets = (await Promise.all(assets.map(async (asset) => (
+    await isWidgetAssetAvailable(asset) ? asset : null
+  )))).filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+  const repair = repairUnavailableWidgetAssets(
+    document,
+    new Set(availableAssets.map((asset) => asset.id)),
+  );
+
+  return {
+    ...design,
+    draftDocument: repair.document,
+    assets: availableAssets,
+    assetRepairCount: repair.repairedReferences,
+    repairedImageBlockIds: repair.repairedImageBlockIds,
+  };
 }
 
 async function validateOwnedAssets(
@@ -167,11 +184,14 @@ async function validateOwnedAssets(
       status: WidgetAssetStatus.READY,
       deletedAt: null,
     },
-    select: { id: true },
+    select: { id: true, provider: true, publicId: true },
   });
-  if (assets.length !== ids.length) {
+  const everyAssetAvailable = assets.length === ids.length && (
+    await Promise.all(assets.map(isWidgetAssetAvailable))
+  ).every(Boolean);
+  if (!everyAssetAvailable) {
     throw new WidgetDesignValidationError(
-      "El diseño contiene una imagen no disponible o perteneciente a otro negocio.",
+      "Una imagen del borrador ya no está disponible. Reemplázala o elimínala antes de publicar.",
     );
   }
 }
@@ -199,7 +219,7 @@ export async function saveWidgetDraft(input: {
     document = parseWidgetDesignDocument(input.document);
   } catch (error) {
     throw new WidgetDesignValidationError(
-      error instanceof Error ? error.message : "El documento no es válido.",
+      formatWidgetDocumentValidationError(error),
     );
   }
   const references = extractWidgetAssetReferences(document);
@@ -290,13 +310,24 @@ export async function publishWidgetDesign(input: {
     const document = parseWidgetDesignDocument(design.draftDocument);
     const references = extractWidgetAssetReferences(document);
     await validateOwnedAssets(tx, input.businessId, references);
+    const checksum = checksumWidgetDocument(document);
+
+    // A retry, double click or recovered network response must not create two
+    // immutable versions for the exact same document.
+    if (design.publishedVersion?.checksum === checksum) {
+      return {
+        versionId: design.publishedVersion.id,
+        versionNumber: design.publishedVersion.versionNumber,
+        checksum,
+        idempotent: true,
+      };
+    }
 
     const latest = await tx.widgetDesignVersion.aggregate({
       where: { designId: design.id },
       _max: { versionNumber: true },
     });
     const versionNumber = (latest._max.versionNumber || 0) + 1;
-    const checksum = checksumWidgetDocument(document);
     const version = await tx.widgetDesignVersion.create({
       data: {
         designId: design.id,
@@ -330,8 +361,33 @@ export async function publishWidgetDesign(input: {
         metadata: { versionId: version.id, versionNumber, checksum },
       },
     });
-    return { versionId: version.id, versionNumber, checksum };
+    return { versionId: version.id, versionNumber, checksum, idempotent: false };
   });
+}
+
+const WIDGET_FIELD_LABELS: Record<string, string> = {
+  "tokens.colors.primary": "Color principal",
+  "tokens.colors.secondary": "Bordes",
+  "tokens.colors.background": "Fondo",
+  "tokens.colors.text": "Texto",
+  "tokens.colors.textMuted": "Texto secundario",
+  "tokens.typography.baseSize": "Tamaño base",
+  "tokens.shape.radius": "Radio de bordes",
+  "shell.maxWidth": "Ancho máximo",
+};
+
+function formatWidgetDocumentValidationError(error: unknown) {
+  if (!(error instanceof ZodError)) {
+    return error instanceof Error ? error.message : "El borrador contiene datos inválidos.";
+  }
+  const issue = error.issues[0];
+  const path = issue?.path.join(".") || "";
+  const label = WIDGET_FIELD_LABELS[path];
+  if (path.startsWith("tokens.colors.")) {
+    return `Revisa ${label ? `«${label}»` : "el color"}: usa un hexadecimal completo, por ejemplo #7C3AED.`;
+  }
+  if (label) return `Revisa «${label}»: el valor ingresado no es válido.`;
+  return "Revisa los campos marcados del diseño antes de guardar.";
 }
 
 export async function restoreWidgetVersionToDraft(input: {
@@ -478,7 +534,10 @@ export async function resolveWidgetAssets(
       status: WidgetAssetStatus.READY,
       deletedAt: null,
     },
-    select: { id: true, url: true, width: true, height: true, altDefault: true },
+    select: { id: true, url: true, width: true, height: true, altDefault: true, provider: true, publicId: true },
   });
-  return Object.fromEntries(assets.map((asset) => [asset.id, asset]));
+  const availableAssets = (await Promise.all(assets.map(async (asset) => (
+    await isWidgetAssetAvailable(asset) ? asset : null
+  )))).filter((asset): asset is NonNullable<typeof asset> => asset !== null);
+  return Object.fromEntries(availableAssets.map((asset) => [asset.id, asset]));
 }

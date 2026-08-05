@@ -133,8 +133,9 @@ function SidebarContent({
   onToggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
-  const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-  const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
+  // Keep the public-widget shortcut on the same origin as the dashboard. This
+  // also works when local development moves away from the default port.
+  const widgetHref = widgetSlug ? `/widget/${encodeURIComponent(widgetSlug)}` : "/dashboard/settings";
   const isOnAppearance = pathname.startsWith("/dashboard/appearance");
   const [appearanceOpen, setAppearanceOpen] = useState(isOnAppearance);
 
@@ -183,7 +184,7 @@ function SidebarContent({
         >
           <img
             src={collapsed ? "/icon-512x512.png" : "/logos/logoPuragendaSVG.svg"}
-            alt={collapsed ? "PuroCode" : "Puragenda"}
+            alt="Puragenda"
             className={collapsed ? "h-9 w-9 rounded-xl shadow-sm" : "h-12 w-auto max-w-[145px]"}
           />
         </Link>
@@ -203,7 +204,7 @@ function SidebarContent({
         ) : null}
       </div>
 
-      <nav id="tutorial-nav" className={`app-sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "is-collapsed p-2" : "p-4"}`}>
+      <nav id="tutorial-nav" className={`min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "p-2" : "p-4"}`}>
         {collapsed && onToggleCollapsed && (
           <button
             onClick={onToggleCollapsed}
@@ -384,7 +385,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar px-4 py-3 md:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] md:hidden">
         <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground" aria-label="Abrir menú">
           <Menu className="h-5 w-5" />
         </button>

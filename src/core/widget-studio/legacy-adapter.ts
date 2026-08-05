@@ -1,4 +1,9 @@
-import type { WidgetDesignDocument, WidgetSection } from "./schema";
+import {
+  isSafeWidgetAssetUrl,
+  isSafeWidgetExternalUrl,
+  type WidgetDesignDocument,
+  type WidgetSection,
+} from "./schema";
 
 type LegacyBusinessAppearance = {
   name: string;
@@ -27,6 +32,10 @@ type LegacyPromoBlock = {
 
 function promoToSection(block: LegacyPromoBlock): WidgetSection {
   const safeId = block.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const legacyImageUrl = isSafeWidgetAssetUrl(block.imageUrl) ? block.imageUrl.trim() : undefined;
+  const ctaUrl = block.linkUrl && isSafeWidgetExternalUrl(block.linkUrl)
+    ? block.linkUrl.trim()
+    : "";
   return {
     id: `section_legacy_${safeId}`,
     type: "section",
@@ -54,12 +63,13 @@ function promoToSection(block: LegacyPromoBlock): WidgetSection {
         hidden: !block.isVisible,
         locked: false,
         visibility: { mobile: true, tablet: true, desktop: true },
-        legacyImageUrl: block.imageUrl,
+        promotionId: block.id,
+        ...(legacyImageUrl ? { legacyImageUrl } : {}),
         title: block.title,
         subtitle: block.subtitle || "",
         badge: "",
-        ctaLabel: block.linkUrl ? "Ver más" : "",
-        ctaUrl: block.linkUrl || "",
+        ctaLabel: ctaUrl ? "Ver más" : "",
+        ctaUrl,
         variant: "overlay",
         align: block.textAlign === "center" || block.textAlign === "right" ? block.textAlign : "left",
         presentation: {

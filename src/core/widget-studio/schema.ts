@@ -17,8 +17,31 @@ const breakpointVisibilitySchema = z.object({
   desktop: z.boolean().default(true),
 }).strict();
 
+const widgetCanvasBreakpointOverrideSchema = z.object({
+  x: z.number().finite().min(0).max(90),
+  y: z.number().finite().min(0).max(90),
+  width: z.number().finite().min(10).max(80),
+}).strict();
+
+const widgetCanvasResponsiveSchema = z.object({
+  mobile: widgetCanvasBreakpointOverrideSchema.optional(),
+  tablet: widgetCanvasBreakpointOverrideSchema.optional(),
+  desktop: widgetCanvasBreakpointOverrideSchema.optional(),
+}).strict();
+
+export const widgetCanvasPlacementSchema = z.object({
+  mode: z.enum(["flow", "free"]).default("flow"),
+  x: z.number().finite().min(0).max(90).default(10),
+  y: z.number().finite().min(0).max(90).default(10),
+  width: z.number().finite().min(10).max(80).default(36),
+  zIndex: z.number().int().min(1).max(5).default(2),
+  mobileFallback: z.enum(["flow", "hidden", "scaled"]).default("flow"),
+  responsive: widgetCanvasResponsiveSchema.optional(),
+}).strict();
+
 const commonBlockSchema = z.object({
   id: idSchema,
+  groupId: idSchema.optional(),
   name: z.string().trim().min(1).max(60),
   hidden: z.boolean().default(false),
   locked: z.boolean().default(false),
@@ -27,6 +50,7 @@ const commonBlockSchema = z.object({
     tablet: true,
     desktop: true,
   }),
+  canvas: widgetCanvasPlacementSchema.optional(),
 }).strict();
 
 const focalPointSchema = z.object({
@@ -45,7 +69,7 @@ const assetPresentationSchema = z.object({
 
 export const imageBlockSchema = commonBlockSchema.extend({
   type: z.literal("image"),
-  assetId: idSchema,
+  assetId: idSchema.optional(),
   alt: safeText(240).default(""),
   decorative: z.boolean().default(false),
   caption: safeText(240).default(""),
@@ -65,12 +89,14 @@ export const imageBlockSchema = commonBlockSchema.extend({
     width: z.number().finite().min(10).max(80).default(36),
     zIndex: z.number().int().min(1).max(5).default(2),
     mobileFallback: z.enum(["flow", "hidden", "scaled"]).default("flow"),
+    responsive: widgetCanvasResponsiveSchema.optional(),
   }).strict().default({ x: 10, y: 10, width: 36, zIndex: 2, mobileFallback: "flow" }),
 }).strict();
 
 export const bannerBlockSchema = commonBlockSchema.extend({
   type: z.literal("banner"),
   assetId: idSchema.optional(),
+  promotionId: idSchema.optional(),
   legacyImageUrl: safeText(2048).optional(),
   title: safeText(90).default("Nueva promoción"),
   subtitle: safeText(240).default(""),
@@ -322,6 +348,8 @@ export type WidgetDesignDocument = z.infer<typeof widgetDesignDocumentSchema>;
 export type WidgetSystemSettings = z.infer<typeof widgetSystemSettingsSchema>;
 export type WidgetSection = z.infer<typeof widgetSectionSchema>;
 export type WidgetContentBlock = z.infer<typeof widgetContentBlockSchema>;
+export type WidgetCanvasPlacement = z.infer<typeof widgetCanvasPlacementSchema>;
+export type WidgetCanvasDevice = keyof NonNullable<WidgetCanvasPlacement["responsive"]>;
 export type WidgetSlotName =
   | "beforeHeader"
   | "afterHeader"
@@ -341,6 +369,29 @@ export type WidgetAssetReferenceInput = {
   blockId: string;
   usage: "IMAGE" | "BACKGROUND" | "BANNER" | "POSTER";
 };
+
+const LEGACY_PROMOTION_BLOCK_PREFIX = "banner_legacy_";
+
+export function getWidgetBannerPromotionId(
+  block: Pick<Extract<WidgetContentBlock, { type: "banner" }>, "id" | "promotionId">,
+): string | null {
+  if (block.promotionId) return block.promotionId;
+  if (!block.id.startsWith(LEGACY_PROMOTION_BLOCK_PREFIX)) return null;
+  const legacyId = block.id.slice(LEGACY_PROMOTION_BLOCK_PREFIX.length);
+  return legacyId || null;
+}
+
+export function extractWidgetPromotionIds(document: WidgetDesignDocument): Set<string> {
+  const promotionIds = new Set<string>();
+  visitDocumentSections(document, (section) => {
+    for (const block of section.children) {
+      if (block.type !== "banner") continue;
+      const promotionId = getWidgetBannerPromotionId(block);
+      if (promotionId) promotionIds.add(promotionId);
+    }
+  });
+  return promotionIds;
+}
 
 export function parseWidgetDesignDocument(input: unknown): WidgetDesignDocument {
   const serialized = JSON.stringify(input);
@@ -366,7 +417,7 @@ export function validateDocumentSemantics(document: WidgetDesignDocument) {
       blocks += 1;
       if (ids.has(block.id)) errors.push(`El id ${block.id} está repetido.`);
       ids.add(block.id);
-      if (block.type === "image" && !block.decorative && !block.alt.trim()) {
+      if (block.type === "image" && block.assetId && !block.decorative && !block.alt.trim()) {
         errors.push(`La imagen "${block.name}" necesita texto alternativo o marcarse como decorativa.`);
       }
       if (block.type === "button" && block.action === "external") {
@@ -376,7 +427,7 @@ export function validateDocumentSemantics(document: WidgetDesignDocument) {
         validateSafeExternalUrl(block.ctaUrl, `El banner "${block.name}"`);
       }
       if (block.type === "banner" && block.legacyImageUrl) {
-        validateSafeExternalUrl(block.legacyImageUrl, `La imagen del banner "${block.name}"`);
+        validateSafeAssetUrl(block.legacyImageUrl, `La imagen del banner "${block.name}"`);
       }
       if (block.type === "image" && block.linkUrl) {
         validateSafeExternalUrl(block.linkUrl, `La imagen "${block.name}"`);
@@ -394,15 +445,33 @@ export function validateDocumentSemantics(document: WidgetDesignDocument) {
 }
 
 function validateSafeExternalUrl(value: string, label: string) {
+  if (!isSafeWidgetExternalUrl(value)) {
+    throw new Error(`${label} tiene un enlace inválido o no usa HTTPS.`);
+  }
+}
+
+export function isSafeWidgetExternalUrl(value: string): boolean {
   let parsed: URL;
   try {
     parsed = new URL(value);
   } catch {
-    throw new Error(`${label} tiene un enlace inválido.`);
+    return false;
   }
+  if (parsed.username || parsed.password) return false;
   const localHttp = parsed.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
-  if (parsed.protocol !== "https:" && !localHttp) {
-    throw new Error(`${label} solo puede usar HTTPS.`);
+  return parsed.protocol === "https:" || localHttp;
+}
+
+export function isSafeWidgetAssetUrl(value: string): boolean {
+  const normalized = value.trim();
+  if (!normalized || /[\u0000-\u001F\u007F\\]/.test(normalized)) return false;
+  if (normalized.startsWith("/") && !normalized.startsWith("//")) return true;
+  return isSafeWidgetExternalUrl(normalized);
+}
+
+function validateSafeAssetUrl(value: string, label: string) {
+  if (!isSafeWidgetAssetUrl(value)) {
+    throw new Error(`${label} tiene una ruta inválida o insegura.`);
   }
 }
 
@@ -433,7 +502,7 @@ export function extractWidgetAssetReferences(document: WidgetDesignDocument): Wi
       });
     }
     for (const block of section.children) {
-      if (block.type === "image") {
+      if (block.type === "image" && block.assetId) {
         references.push({ assetId: block.assetId, blockId: block.id, usage: "IMAGE" });
       }
       if (block.type === "banner" && block.assetId) {
@@ -444,6 +513,54 @@ export function extractWidgetAssetReferences(document: WidgetDesignDocument): Wi
   return references;
 }
 
-export function createWidgetNodeId(prefix: "section" | "image" | "banner" | "text" | "button" | "divider" | "spacer") {
+export type WidgetAssetRepairResult = {
+  document: WidgetDesignDocument;
+  repairedReferences: number;
+  repairedImageBlockIds: string[];
+};
+
+/**
+ * Removes only unavailable asset references from an editable draft.
+ *
+ * The content block, its placement and all presentation settings remain intact,
+ * so the user can choose a replacement without rebuilding the layout. Published
+ * versions are never passed through this recovery path.
+ */
+export function repairUnavailableWidgetAssets(
+  source: WidgetDesignDocument,
+  availableAssetIds: ReadonlySet<string>,
+): WidgetAssetRepairResult {
+  const document = structuredClone(source);
+  let repairedReferences = 0;
+  const repairedImageBlockIds: string[] = [];
+
+  if (document.shell.logoAssetId && !availableAssetIds.has(document.shell.logoAssetId)) {
+    delete document.shell.logoAssetId;
+    repairedReferences += 1;
+  }
+
+  visitDocumentSections(document, (section) => {
+    if (section.backgroundAssetId && !availableAssetIds.has(section.backgroundAssetId)) {
+      delete section.backgroundAssetId;
+      repairedReferences += 1;
+    }
+
+    for (const block of section.children) {
+      if (
+        (block.type === "image" || block.type === "banner")
+        && block.assetId
+        && !availableAssetIds.has(block.assetId)
+      ) {
+        if (block.type === "image") repairedImageBlockIds.push(block.id);
+        delete block.assetId;
+        repairedReferences += 1;
+      }
+    }
+  });
+
+  return { document, repairedReferences, repairedImageBlockIds };
+}
+
+export function createWidgetNodeId(prefix: "section" | "group" | "image" | "banner" | "text" | "button" | "divider" | "spacer") {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`;
 }

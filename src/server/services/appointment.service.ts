@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma";
-import type { Prisma } from "@prisma/client";
+import type { AppointmentStatus, Prisma } from "@prisma/client";
+import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 
 /**
  * Verifica si existe una cita que colisione con el rango de tiempo dado
@@ -68,6 +69,9 @@ export async function createAppointment(data: {
   selectedOptions?: Prisma.InputJsonValue;
   depositRequired?: boolean;
   depositAmount?: number;
+  status?: AppointmentStatus;
+  internalNotes?: string;
+  allowPrioritySlots?: boolean;
 }) {
   // Check collision for the specific staff member (or business-wide if no staff)
   const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
@@ -91,6 +95,9 @@ export async function createAppointment(data: {
         staffId: data.staffId,
         startTime: { lt: data.endTime },
         endTime: { gt: data.startTime },
+        ...(data.allowPrioritySlots
+          ? { type: "UNAVAILABLE" as const }
+          : getPublicBlockingScheduleBlockWhere()),
       },
     });
     if (blockCollision) {
@@ -102,7 +109,7 @@ export async function createAppointment(data: {
   }
 
   // Determine initial status based on deposit config
-  const initialStatus = data.depositRequired ? "AWAITING_PAYMENT" : "PENDING";
+  const initialStatus = data.status ?? (data.depositRequired ? "AWAITING_PAYMENT" : "PENDING");
 
   const appointment = await prisma.appointment.create({
     data: {
@@ -127,6 +134,7 @@ export async function createAppointment(data: {
       selectedOptions: data.selectedOptions,
       depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",
+      internalNotes: data.internalNotes?.trim() || null,
     },
     include: { service: true },
   });
@@ -185,6 +193,7 @@ export async function getBlockedSlots(
           staffId,
           startTime: { lt: dateEnd },
           endTime: { gt: dateStart },
+          ...getPublicBlockingScheduleBlockWhere(),
         },
         select: { startTime: true, endTime: true },
         orderBy: { startTime: "asc" },

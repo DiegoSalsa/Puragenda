@@ -4,15 +4,24 @@ import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2 } from "lucide-react";
+import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown } from "lucide-react";
+import {
+  AppointmentEditor,
+  type AppointmentEditorClient,
+  type AppointmentEditorService,
+  type AppointmentEditorStaff,
+  type EditableAppointment,
+} from "./appointment-editor";
 
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
-  serviceName: string; staffName: string;
-  selectedOptions?: { categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
+  serviceId: string; serviceName: string; staffId: string | null; staffName: string;
+  clientId: string | null; customerPhone: string | null;
+  selectedOptions?: { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
   recurringBookingId?: string | null;
   clientNotes?: string | null;
+  internalNotes?: string | null;
 }
 
 interface CalendarBusinessHour {
@@ -22,13 +31,27 @@ interface CalendarBusinessHour {
   isOpen: boolean;
 }
 
+interface CalendarPriorityBlock {
+  id: string;
+  staffId: string;
+  staffName: string;
+  startTime: string;
+  endTime: string;
+  reason: string | null;
+  releaseAt: string | null;
+}
+
 function timeToMinutes(time: string) {
   const [hours, minutes] = time.split(":").map(Number);
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
   return hours * 60 + minutes;
 }
 
-function buildVisibleHours(businessHours: CalendarBusinessHour[], appointments: CalendarAppointment[]) {
+function buildVisibleHours(
+  businessHours: CalendarBusinessHour[],
+  appointments: CalendarAppointment[],
+  priorityBlocks: CalendarPriorityBlock[],
+) {
   const openHours = businessHours.filter((h) => h.isOpen);
   // Keep the previous dashboard range as a floor, then expand it with configured
   // business hours and any appointments that already exist.
@@ -47,6 +70,13 @@ function buildVisibleHours(businessHours: CalendarBusinessHour[], appointments: 
   for (const apt of appointments) {
     const start = parseISO(apt.startTime);
     const end = parseISO(apt.endTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
+    minMinutes = Math.min(minMinutes, start.getHours() * 60 + start.getMinutes());
+    maxMinutes = Math.max(maxMinutes, end.getHours() * 60 + end.getMinutes());
+  }
+  for (const block of priorityBlocks) {
+    const start = parseISO(block.startTime);
+    const end = parseISO(block.endTime);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
     minMinutes = Math.min(minMinutes, start.getHours() * 60 + start.getMinutes());
     maxMinutes = Math.max(maxMinutes, end.getHours() * 60 + end.getMinutes());
@@ -78,14 +108,24 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function WeeklyCalendar({
   appointments,
+  priorityBlocks = [],
   weekStartISO,
   agendaMode,
   businessHours = [],
+  services = [],
+  staff = [],
+  clients = [],
+  canManageAppointments = false,
 }: {
   appointments: CalendarAppointment[];
+  priorityBlocks?: CalendarPriorityBlock[];
   weekStartISO: string;
   agendaMode?: "mine";
   businessHours?: CalendarBusinessHour[];
+  services?: AppointmentEditorService[];
+  staff?: AppointmentEditorStaff[];
+  clients?: AppointmentEditorClient[];
+  canManageAppointments?: boolean;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
@@ -93,6 +133,11 @@ export function WeeklyCalendar({
   const [cancellingSession, setCancellingSession] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDayIdx, setSelectedDayIdx] = useState<number>(0);
+  const [editor, setEditor] = useState<{
+    appointment?: EditableAppointment;
+    initialStart?: Date;
+    initialStaffId?: string;
+  } | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   const weekStart = useMemo(() => {
@@ -190,10 +235,50 @@ export function WeeklyCalendar({
     });
   }
 
+  function getPriorityBlocksForDayHour(day: Date, hour: number) {
+    return priorityBlocks.filter((block) => {
+      const start = parseISO(block.startTime);
+      return isSameDay(start, day) && start.getHours() === hour;
+    });
+  }
+
+  function openNewAppointment(start?: Date, preferredStaffId?: string) {
+    if (!canManageAppointments) return;
+    const suggested = start ? new Date(start) : new Date(Date.now() + 60 * 60 * 1000);
+    if (!start) suggested.setMinutes(0, 0, 0);
+    if (suggested <= new Date()) suggested.setHours(suggested.getHours() + 1);
+    setEditor({
+      initialStart: suggested,
+      initialStaffId: preferredStaffId ?? (staff.length === 1 ? staff[0].id : undefined),
+    });
+  }
+
+  function openEditAppointment(appointment: CalendarAppointment) {
+    if (!canManageAppointments || appointment.recurringBookingId) return;
+    setSelected(null);
+    setEditor({
+      appointment: {
+        id: appointment.id,
+        customerName: appointment.customerName,
+        customerEmail: appointment.customerEmail,
+        customerPhone: appointment.customerPhone,
+        clientId: appointment.clientId,
+        serviceId: appointment.serviceId,
+        staffId: appointment.staffId,
+        startTime: appointment.startTime,
+        internalNotes: appointment.internalNotes ?? null,
+        selectedOptions: appointment.selectedOptions ?? [],
+      },
+    });
+  }
+
   const isCurrentWeek = isSameDay(startOfWeek(today, { weekStartsOn: 1 }), weekStart);
   const selectedDay = days[selectedDayIdx] ?? days[0];
   const isDayToday = isSameDay(selectedDay, today);
-  const visibleHours = useMemo(() => buildVisibleHours(businessHours, appointments), [businessHours, appointments]);
+  const visibleHours = useMemo(
+    () => buildVisibleHours(businessHours, appointments, priorityBlocks),
+    [businessHours, appointments, priorityBlocks],
+  );
 
   return (
     <>
@@ -209,20 +294,30 @@ export function WeeklyCalendar({
                 </button>
               )}
             </div>
-            {/* View toggle */}
-            <div className="flex items-center rounded-xl border border-border bg-muted p-0.5">
-              <button
-                onClick={() => setViewMode("day")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Día
-              </button>
-              <button
-                onClick={() => setViewMode("week")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Semana
-              </button>
+            <div className="flex items-center gap-2">
+              {canManageAppointments && (
+                <button
+                  type="button"
+                  onClick={() => openNewAppointment()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9]"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Nueva cita
+                </button>
+              )}
+              <div className="flex items-center rounded-xl border border-border bg-muted p-0.5">
+                <button
+                  onClick={() => setViewMode("day")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Día
+                </button>
+                <button
+                  onClick={() => setViewMode("week")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Semana
+                </button>
+              </div>
             </div>
           </div>
           {/* Navigation row */}
@@ -280,11 +375,50 @@ export function WeeklyCalendar({
                     const apts = getAptsForDayHour(day, hour);
                     const isToday = isSameDay(day, today);
                     return (
-                      <div key={day.toISOString()} className={`border-l border-border min-h-[52px] p-1 min-w-0 overflow-hidden ${isToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                      <div
+                        key={day.toISOString()}
+                        onClick={() => {
+                          const start = new Date(day);
+                          start.setHours(hour, 0, 0, 0);
+                          if (start > new Date()) openNewAppointment(start);
+                        }}
+                        className={`border-l border-border min-h-[52px] p-1 min-w-0 overflow-hidden ${isToday ? "bg-[#7C3AED]/[0.02]" : ""} ${canManageAppointments ? "cursor-pointer hover:bg-[#7C3AED]/5" : ""}`}
+                      >
+                        {getPriorityBlocksForDayHour(day, hour).map((block) => {
+                          const start = parseISO(block.startTime);
+                          const released = !!block.releaseAt && parseISO(block.releaseAt) <= today;
+                          return (
+                            <button
+                              key={block.id}
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openNewAppointment(start, block.staffId);
+                              }}
+                              disabled={!canManageAppointments || start <= today}
+                              className={`mb-1 w-full rounded-lg border p-1.5 text-left transition-colors disabled:cursor-default ${
+                                released
+                                  ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
+                                  : "border-amber-500/25 bg-amber-500/10 text-amber-400"
+                              }`}
+                              title={canManageAppointments ? "Agendar una clienta en este cupo prioritario" : "Cupo prioritario"}
+                            >
+                              <div className="flex items-center gap-1">
+                                <Crown className="h-2.5 w-2.5 shrink-0" />
+                                <span className="truncate text-[10px] font-semibold">
+                                  {released ? "Cupo liberado" : "Prioritario"}
+                                </span>
+                              </div>
+                              <p className="mt-0.5 truncate text-[9px] opacity-80">
+                                {format(start, "HH:mm")} · {block.staffName}
+                              </p>
+                            </button>
+                          );
+                        })}
                         {apts.map((apt) => {
                           const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
                           return (
-                            <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1 overflow-hidden`}>
+                            <button key={apt.id} onClick={(event) => { event.stopPropagation(); setSelected(apt); }} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-1.5 text-left transition-all hover:scale-[1.02] mb-1 overflow-hidden`}>
                               <div className="flex items-center gap-1.5">
                                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                                 <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
@@ -309,11 +443,50 @@ export function WeeklyCalendar({
                 <div className="flex items-start justify-end pr-2 pt-2 text-[10px] sm:text-[11px] text-muted-foreground/60 font-mono">
                   {formatHour(hour)}
                 </div>
-                <div className={`border-l border-border min-h-[56px] p-1.5 ${isDayToday ? "bg-[#7C3AED]/[0.02]" : ""}`}>
+                <div
+                  onClick={() => {
+                    const start = new Date(selectedDay);
+                    start.setHours(hour, 0, 0, 0);
+                    if (start > new Date()) openNewAppointment(start);
+                  }}
+                  className={`border-l border-border min-h-[56px] p-1.5 ${isDayToday ? "bg-[#7C3AED]/[0.02]" : ""} ${canManageAppointments ? "cursor-pointer hover:bg-[#7C3AED]/5" : ""}`}
+                >
+                  {getPriorityBlocksForDayHour(selectedDay, hour).map((block) => {
+                    const start = parseISO(block.startTime);
+                    const released = !!block.releaseAt && parseISO(block.releaseAt) <= today;
+                    return (
+                      <button
+                        key={block.id}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openNewAppointment(start, block.staffId);
+                        }}
+                        disabled={!canManageAppointments || start <= today}
+                        className={`mb-1.5 w-full rounded-lg border p-2 text-left transition-colors disabled:cursor-default ${
+                          released
+                            ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
+                            : "border-amber-500/25 bg-amber-500/10 text-amber-400"
+                        }`}
+                        title={canManageAppointments ? "Agendar una clienta en este cupo prioritario" : "Cupo prioritario"}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-3 w-3 shrink-0" />
+                          <span className="text-xs font-semibold">
+                            {released ? "Cupo prioritario liberado" : "Cupo prioritario"}
+                          </span>
+                          <span className="ml-auto text-[10px] opacity-80">{format(start, "HH:mm")}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] opacity-75">
+                          {block.staffName}{block.reason ? ` · ${block.reason}` : ""}
+                        </p>
+                      </button>
+                    );
+                  })}
                   {getAptsForDayHour(selectedDay, hour).map((apt) => {
                     const sc = STATUS_COLORS[apt.status] || STATUS_COLORS.PENDING;
                     return (
-                      <button key={apt.id} onClick={() => setSelected(apt)} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-2 text-left transition-all hover:scale-[1.01] mb-1`}>
+                      <button key={apt.id} onClick={(event) => { event.stopPropagation(); setSelected(apt); }} className={`w-full rounded-lg border ${sc.bg} ${sc.border} p-2 text-left transition-all hover:scale-[1.01] mb-1`}>
                         <div className="flex items-center gap-2">
                           <div className={`h-2 w-2 shrink-0 rounded-full ${sc.dot}`} />
                           <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
@@ -378,6 +551,16 @@ export function WeeklyCalendar({
                 </div>
               )}
 
+              {selected.internalNotes && (
+                <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-3">
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-[#A78BFA]" />
+                    <span className="text-[11px] font-medium text-[#A78BFA]">Nota de la cita</span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{selected.internalNotes}</p>
+                </div>
+              )}
+
               {/* Recurring-specific section */}
               {selected.recurringBookingId && (
                 <div className="space-y-2">
@@ -423,9 +606,30 @@ export function WeeklyCalendar({
                   </div>
                 </div>
               )}
+
+              {canManageAppointments && !selected.recurringBookingId && !["CANCELLED", "COMPLETED", "NO_SHOW"].includes(selected.status) && (
+                <button
+                  type="button"
+                  onClick={() => openEditAppointment(selected)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 py-2.5 text-sm font-medium text-[#A78BFA]"
+                >
+                  <Pencil className="h-4 w-4" /> Editar o reagendar
+                </button>
+              )}
             </div>
           </div>
         </div>
+      )}
+      {editor && (
+        <AppointmentEditor
+          appointment={editor.appointment}
+          initialStart={editor.initialStart}
+          initialStaffId={editor.initialStaffId}
+          services={services}
+          staff={staff}
+          clients={clients}
+          onClose={() => setEditor(null)}
+        />
       )}
     </>
   );

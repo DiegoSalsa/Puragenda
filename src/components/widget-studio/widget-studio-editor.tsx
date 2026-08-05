@@ -22,6 +22,7 @@ import {
   Copy,
   Eye,
   EyeOff,
+  Grid3x3,
   History,
   Image as ImageIcon,
   Layers3,
@@ -47,6 +48,7 @@ import {
   SquareMousePointer,
   Tablet,
   Trash2,
+  TriangleAlert,
   Type,
   Undo2,
   Unlock,
@@ -55,12 +57,50 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
+  clampOverlayTransform,
+  type WidgetOverlayTransform,
+} from "@/core/widget-studio/canvas-transform";
+import {
+  applyCanvasLayoutCommand,
+  type CanvasLayoutCommand,
+  type CanvasLayoutItem,
+} from "@/core/widget-studio/canvas-layout";
+import {
+  detectWidgetCanvasLayoutHealth,
+  type WidgetCanvasLayoutHealth,
+  type WidgetCanvasRect,
+} from "@/core/widget-studio/canvas-collision";
+import {
+  assignCanvasGroup,
+  canvasSelectionUnitIds,
+  clearCanvasGroup,
+  remapCanvasGroupIds,
+  sharedCanvasGroupId,
+  transformCanvasSelection,
+} from "@/core/widget-studio/canvas-group";
+import {
+  getWidgetCanvasPlacement,
+  getWidgetCanvasPlacementForDevice,
+  hasWidgetCanvasBreakpointOverride,
+  isWidgetCanvasBlock,
+  setWidgetCanvasBreakpointOverride,
+  setWidgetCanvasMode,
+  supportsFreeCanvas,
+  updateWidgetCanvasPlacement,
+  updateWidgetCanvasPlacementForDevice,
+} from "@/core/widget-studio/canvas-block";
+import {
   createWidgetNodeId,
+  type WidgetCanvasDevice,
   type WidgetContentBlock,
   type WidgetDesignDocument,
   type WidgetSection,
   type WidgetStepSlotName,
 } from "@/core/widget-studio/schema";
+import {
+  canRemoveWidgetNodes,
+  removeWidgetNodes,
+} from "@/core/widget-studio/document-selection";
 import {
   archiveWidgetStudioAssetAction,
   publishWidgetStudioAction,
@@ -91,6 +131,10 @@ type StudioVersion = {
   publishedBy: { name: string; email: string };
 };
 
+function hasLimitedPromotionalResolution(asset: StudioAsset) {
+  return asset.width < 1200 || asset.height < 675;
+}
+
 export type WidgetStudioInitialState = {
   designId: string;
   draftDocument: WidgetDesignDocument;
@@ -110,14 +154,27 @@ export type WidgetStudioInitialState = {
   } | null;
   versions: StudioVersion[];
   assets: StudioAsset[];
+  assetRepairCount: number;
+  repairedImageBlockIds: string[];
 };
 
 type SaveState = "saved" | "dirty" | "saving" | "error" | "conflict" | "offline";
 type EditorMode = "basic" | "advanced";
-type Device = "mobile" | "tablet" | "desktop";
+type Device = WidgetCanvasDevice;
 type PanelTab = "pages" | "blocks" | "layers" | "properties" | "preview";
 type PreviewInteraction = "design" | "test";
 type StudioStep = "service" | "staff" | "datetime" | "details";
+type CanvasGridStep = 2.5 | 5 | 10;
+
+const CANVAS_GRID_STEPS: CanvasGridStep[] = [2.5, 5, 10];
+
+function storedCanvasGridStep(): CanvasGridStep {
+  if (typeof window === "undefined") return 5;
+  const value = Number(window.localStorage.getItem("puragenda_widget_studio_grid_step"));
+  return CANVAS_GRID_STEPS.includes(value as CanvasGridStep)
+    ? value as CanvasGridStep
+    : 5;
+}
 
 const DEVICE_WIDTH: Record<Device, number> = {
   mobile: 360,
@@ -430,6 +487,7 @@ function Button({
   disabled,
   variant = "secondary",
   title,
+  ariaLabel,
   className = "",
   type = "button",
 }: {
@@ -438,6 +496,7 @@ function Button({
   disabled?: boolean;
   variant?: "primary" | "secondary" | "ghost" | "danger";
   title?: string;
+  ariaLabel?: string;
   className?: string;
   type?: "button" | "submit";
 }) {
@@ -453,6 +512,7 @@ function Button({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={ariaLabel}
       className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${styles} ${className}`}
     >
       {children}
@@ -513,18 +573,36 @@ export function WidgetStudioEditor({
   const [zoom, setZoom] = useState(55);
   const [panelTab, setPanelTab] = useState<PanelTab>("pages");
   const [slotPath, setSlotPath] = useState("global.afterHeader");
+  const [addTargetSectionId, setAddTargetSectionId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(
     allSections(initialState.draftDocument)[0]?.section.children[0]?.id || null,
   );
-  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    const initialId = allSections(initialState.draftDocument)[0]?.section.children[0]?.id;
+    return initialId ? [initialId] : [];
+  });
+  const [saveState, setSaveState] = useState<SaveState>(
+    initialState.assetRepairCount > 0 ? "dirty" : "saved",
+  );
   const [saveMessage, setSaveMessage] = useState("");
+  const [showAssetRecovery, setShowAssetRecovery] = useState(
+    initialState.assetRepairCount > 0,
+  );
   const [previewInteraction, setPreviewInteraction] = useState<PreviewInteraction>("design");
+  const [previewReadyInteraction, setPreviewReadyInteraction] = useState<PreviewInteraction | null>(null);
   const [activeStep, setActiveStep] = useState<StudioStep>("service");
   const [history, setHistory] = useState<WidgetDesignDocument[]>([]);
   const [future, setFuture] = useState<WidgetDesignDocument[]>([]);
-  const [assetModal, setAssetModal] = useState<{ open: boolean; blockType: "image" | "banner" | null }>({ open: false, blockType: null });
+  const [assetModal, setAssetModal] = useState<{ open: boolean; blockType: "image" | "banner" | "logo" | null }>({ open: false, blockType: null });
   const [canvasUploading, setCanvasUploading] = useState(false);
   const [canvasDropError, setCanvasDropError] = useState("");
+  const [canvasGridEnabled, setCanvasGridEnabled] = useState(
+    () => typeof window !== "undefined" &&
+      window.localStorage.getItem("puragenda_widget_studio_grid") === "enabled",
+  );
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [canvasClipboardCount, setCanvasClipboardCount] = useState(0);
+  const [canvasGridStep, setCanvasGridStep] = useState<CanvasGridStep>(storedCanvasGridStep);
   const [publishOpen, setPublishOpen] = useState(false);
   const [publishSummary, setPublishSummary] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -534,17 +612,38 @@ export function WidgetStudioEditor({
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [saveTrigger, setSaveTrigger] = useState(0);
   const [canvasViewportHeight, setCanvasViewportHeight] = useState(0);
+  const [canvasLayoutHealth, setCanvasLayoutHealth] = useState<WidgetCanvasLayoutHealth>({
+    overflowIds: [],
+    collisions: [],
+  });
   const documentRef = useRef(document);
   const lastSavedDocumentRef = useRef(cloneDocument(initialState.draftDocument));
   const revisionRef = useRef(revision);
   const saveInFlightRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const suppressAutosaveRef = useRef(true);
+  const suppressAutosaveRef = useRef(initialState.assetRepairCount === 0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const canvasViewportRef = useRef<HTMLDivElement | null>(null);
+  const canvasClipboardRef = useRef<WidgetContentBlock[]>([]);
 
   useEffect(() => { documentRef.current = document; }, [document]);
   useEffect(() => { revisionRef.current = revision; }, [revision]);
+
+  const toggleCanvasGrid = useCallback(() => {
+    setCanvasGridEnabled((enabled) => {
+      const next = !enabled;
+      window.localStorage.setItem(
+        "puragenda_widget_studio_grid",
+        next ? "enabled" : "disabled",
+      );
+      return next;
+    });
+  }, []);
+
+  const changeCanvasGridStep = useCallback((step: CanvasGridStep) => {
+    setCanvasGridStep(step);
+    window.localStorage.setItem("puragenda_widget_studio_grid_step", String(step));
+  }, []);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
@@ -557,6 +656,7 @@ export function WidgetStudioEditor({
       producer(next);
       setHistory((items) => [...items.slice(-49), current]);
       setFuture([]);
+      setSaveMessage("");
       setSaveState("dirty");
       return next;
     });
@@ -596,11 +696,19 @@ export function WidgetStudioEditor({
         event.preventDefault();
         redo();
       }
-      if (!typing && event.key === "Escape") setSelectedId(null);
+      if (event.key === "Escape" && inspectorOpen) {
+        event.preventDefault();
+        setInspectorOpen(false);
+        return;
+      }
+      if (!typing && event.key === "Escape") {
+        setSelectedId(null);
+        setSelectedIds([]);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [redo, undo]);
+  }, [inspectorOpen, redo, undo]);
 
   const resolvedAssets = useMemo(
     () => Object.fromEntries(assets.map((asset) => [asset.id, {
@@ -620,8 +728,70 @@ export function WidgetStudioEditor({
     }, window.location.origin);
   }, []);
 
-  const selectStudioElement = useCallback((id: string) => {
+  const resetPreviewScroll = useCallback(() => {
+    const reset = () => {
+      const frame = iframeRef.current;
+      try {
+        frame?.contentWindow?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        if (frame?.contentDocument?.documentElement) frame.contentDocument.documentElement.scrollTop = 0;
+        if (frame?.contentDocument?.body) frame.contentDocument.body.scrollTop = 0;
+      } catch {
+        // Keep the editor usable if the iframe is navigating between same-origin states.
+      }
+    };
+    reset();
+    window.requestAnimationFrame(reset);
+  }, []);
+
+  const changePreviewDevice = useCallback((nextDevice: Device) => {
+    setDevice(nextDevice);
+    resetPreviewScroll();
+  }, [resetPreviewScroll]);
+
+  const resetPreviewSimulation = useCallback(() => {
+    setActiveStep("service");
+    postToPreview({ type: "RESET_SIMULATION" });
+    resetPreviewScroll();
+  }, [postToPreview, resetPreviewScroll]);
+
+  const selectStudioElement = useCallback((id: string, intent?: { additive?: boolean }) => {
+    const entry = findBlock(documentRef.current, id);
+    const selectionUnit = entry && isWidgetCanvasBlock(entry.block)
+      ? canvasSelectionUnitIds(entry.section, entry.block)
+      : [id];
+    const additiveOverlay = Boolean(
+      intent?.additive === true &&
+      entry &&
+      isWidgetCanvasBlock(entry.block) &&
+      !entry.block.locked &&
+      !entry.section.locked,
+    );
+
+    if (additiveOverlay && entry) {
+      setInspectorOpen(false);
+      setSelectedIds((current) => {
+        const sameCanvas = current.filter((selectedId) => {
+          const selectedEntry = findBlock(documentRef.current, selectedId);
+          return selectedEntry?.path === entry.path &&
+            selectedEntry.section.id === entry.section.id &&
+            isWidgetCanvasBlock(selectedEntry.block);
+        });
+        const next = new Set(sameCanvas);
+        const removeUnit = selectionUnit.every((unitId) => next.has(unitId));
+        for (const unitId of selectionUnit) {
+          if (removeUnit) next.delete(unitId);
+          else next.add(unitId);
+        }
+        const nextIds = [...next];
+        setSelectedId(nextIds.includes(id) ? id : nextIds.at(-1) ?? null);
+        return nextIds;
+      });
+      setSlotPath(entry.path);
+      return;
+    }
+
     setSelectedId(id);
+    setSelectedIds(selectionUnit);
     if (id.startsWith("system.")) {
       setSlotPath(defaultSlotForSystem(id));
       const stepBySystem: Partial<Record<string, StudioStep>> = {
@@ -641,6 +811,7 @@ export function WidgetStudioEditor({
   const applyInlineTextEdit = useCallback((id: string, field: string, rawValue: string) => {
     const value = rawValue.replace(/\r/g, "");
     setSelectedId(id);
+    setSelectedIds([id]);
     changeDocument((draft) => {
       if (id.startsWith("system.")) {
         if (id === "system.header" && field === "eyebrow") {
@@ -678,18 +849,19 @@ export function WidgetStudioEditor({
   }, [changeDocument]);
 
   const fitPreview = useCallback((targetDevice: Device) => {
-    const availableWidth = Math.max(320, (canvasViewportRef.current?.clientWidth || 720) - 40);
+    const availableWidth = Math.max(240, (canvasViewportRef.current?.clientWidth || 720) - 32);
     const exactZoom = (availableWidth / DEVICE_WIDTH[targetDevice]) * 100;
-    setZoom(Math.max(35, Math.min(100, Math.floor(exactZoom / 5) * 5)));
+    setZoom(Math.max(20, Math.min(100, Math.floor(exactZoom / 5) * 5)));
   }, []);
 
   useEffect(() => {
-    if (mode !== "advanced") return;
     const viewport = canvasViewportRef.current;
     if (!viewport) return;
     let measuredWidth = 0;
     const measure = () => {
-      setCanvasViewportHeight(viewport.clientHeight);
+      if (mode === "advanced") {
+        setCanvasViewportHeight(viewport.clientHeight);
+      }
       if (Math.abs(viewport.clientWidth - measuredWidth) > 1) {
         measuredWidth = viewport.clientWidth;
         fitPreview(device);
@@ -703,6 +875,14 @@ export function WidgetStudioEditor({
       observer.disconnect();
     };
   }, [device, fitPreview, leftPanelOpen, mode]);
+
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 799px)").matches) return;
+    const frame = window.requestAnimationFrame(() => {
+      setDevice((currentDevice) => currentDevice === "desktop" ? "mobile" : currentDevice);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -720,29 +900,147 @@ export function WidgetStudioEditor({
   }, [postToPreview, previewInteraction]);
 
   useEffect(() => {
-    postToPreview({ type: "SET_SELECTED", id: selectedId });
-  }, [postToPreview, selectedId]);
+    postToPreview({
+      type: "SET_CANVAS_TRANSFORMS",
+      enabled: mode === "advanced" && previewInteraction === "design",
+    });
+  }, [mode, postToPreview, previewInteraction]);
 
   useEffect(() => {
+    postToPreview({
+      type: "SET_CANVAS_GRID",
+      enabled:
+        mode === "advanced" &&
+        previewInteraction === "design" &&
+        canvasGridEnabled,
+      step: canvasGridStep,
+    });
+  }, [canvasGridEnabled, canvasGridStep, mode, postToPreview, previewInteraction]);
+
+  useEffect(() => {
+    postToPreview({ type: "SET_CANVAS_DEVICE", device });
+  }, [device, postToPreview]);
+
+  const measureCanvasLayoutHealth = useCallback(() => {
+    const frameDocument = iframeRef.current?.contentDocument;
+    if (!frameDocument) return { overflowIds: [], collisions: [] };
+    const rectangles: WidgetCanvasRect[] = [];
+    for (const section of frameDocument.querySelectorAll<HTMLElement>("[data-widget-section-id]")) {
+      const sectionBounds = section.getBoundingClientRect();
+      if (!sectionBounds.width || !sectionBounds.height) continue;
+      for (const block of section.querySelectorAll<HTMLElement>("[data-widget-canvas-responsive='true']")) {
+        const blockBounds = block.getBoundingClientRect();
+        const id = block.dataset.widgetBlockId;
+        if (!id || !blockBounds.width || !blockBounds.height) continue;
+        rectangles.push({
+          id,
+          sectionId: section.dataset.widgetSectionId || "section",
+          x: ((blockBounds.left - sectionBounds.left) / sectionBounds.width) * 100,
+          y: ((blockBounds.top - sectionBounds.top) / sectionBounds.height) * 100,
+          width: (blockBounds.width / sectionBounds.width) * 100,
+          height: (blockBounds.height / sectionBounds.height) * 100,
+        });
+      }
+    }
+    return detectWidgetCanvasLayoutHealth(rectangles);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setCanvasLayoutHealth(
+        mode === "advanced" && previewInteraction === "design"
+          ? measureCanvasLayoutHealth()
+          : { overflowIds: [], collisions: [] },
+      );
+    }, mode === "advanced" && previewInteraction === "design" ? 220 : 0);
+    return () => window.clearTimeout(timer);
+  }, [activeStep, device, document, measureCanvasLayoutHealth, mode, previewInteraction, zoom]);
+
+  const changePreviewInteraction = useCallback((nextMode: PreviewInteraction) => {
+    setPreviewInteraction(nextMode);
+    setPreviewReadyInteraction(null);
+    setInspectorOpen(false);
+    postToPreview({ type: "SET_INTERACTION_MODE", mode: nextMode });
+    if (nextMode === "test") {
+      resetPreviewSimulation();
+    } else {
+      resetPreviewScroll();
+    }
+  }, [postToPreview, resetPreviewScroll, resetPreviewSimulation]);
+
+  useEffect(() => {
+    postToPreview({ type: "SET_SELECTED", id: selectedId, ids: selectedIds });
+  }, [postToPreview, selectedId, selectedIds]);
+
+  useEffect(() => {
+    postToPreview({
+      type: "SET_MULTI_SELECT_MODE",
+      enabled:
+        mode === "advanced" &&
+        previewInteraction === "design" &&
+        multiSelectMode,
+    });
+  }, [mode, multiSelectMode, postToPreview, previewInteraction]);
+
+  useEffect(() => {
+    if (previewInteraction !== "design") return;
     postToPreview({ type: "SET_STEP", step: activeStep });
-  }, [activeStep, postToPreview]);
+  }, [activeStep, postToPreview, previewInteraction]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.source !== "puragenda-widget-preview") return;
       if (event.data.type === "PREVIEW_READY") {
+        setPreviewReadyInteraction(null);
         postToPreview({
           type: "UPDATE_DOCUMENT",
           document: documentRef.current,
           assets: resolvedAssets,
         });
         postToPreview({ type: "SET_INTERACTION_MODE", mode: previewInteraction });
-        postToPreview({ type: "SET_SELECTED", id: selectedId });
-        postToPreview({ type: "SET_STEP", step: activeStep });
+        postToPreview({
+          type: "SET_CANVAS_TRANSFORMS",
+          enabled: mode === "advanced" && previewInteraction === "design",
+        });
+        postToPreview({
+          type: "SET_CANVAS_GRID",
+          enabled:
+            mode === "advanced" &&
+            previewInteraction === "design" &&
+            canvasGridEnabled,
+          step: canvasGridStep,
+        });
+        postToPreview({ type: "SET_CANVAS_DEVICE", device });
+        postToPreview({ type: "SET_SELECTED", id: selectedId, ids: selectedIds });
+        postToPreview({
+          type: "SET_MULTI_SELECT_MODE",
+          enabled:
+            mode === "advanced" &&
+            previewInteraction === "design" &&
+            multiSelectMode,
+        });
+        if (previewInteraction === "design") {
+          postToPreview({ type: "SET_STEP", step: activeStep });
+        }
+      }
+      if (
+        event.data.type === "INTERACTION_MODE_CHANGED" &&
+        (event.data.mode === "design" || event.data.mode === "test")
+      ) {
+        setPreviewReadyInteraction(event.data.mode);
+      }
+      if (
+        previewInteraction === "test" &&
+        event.data.type === "STEP_CHANGED" &&
+        ["service", "staff", "datetime", "details"].includes(event.data.step)
+      ) {
+        setActiveStep(event.data.step as StudioStep);
       }
       if (event.data.type === "BLOCK_SELECTED" && typeof event.data.blockId === "string") {
-        selectStudioElement(event.data.blockId);
+        selectStudioElement(event.data.blockId, {
+          additive: event.data.additive === true,
+        });
       }
       if (
         event.data.type === "INLINE_TEXT_COMMIT" &&
@@ -752,10 +1050,52 @@ export function WidgetStudioEditor({
       ) {
         applyInlineTextEdit(event.data.blockId, event.data.field, event.data.value);
       }
+      if (
+        event.data.type === "OVERLAY_TRANSFORM_COMMIT" &&
+        typeof event.data.blockId === "string" &&
+        event.data.transform &&
+        typeof event.data.transform === "object"
+      ) {
+        const rawTransform = event.data.transform as Partial<WidgetOverlayTransform>;
+        if (
+          typeof rawTransform.x !== "number" ||
+          typeof rawTransform.y !== "number" ||
+          typeof rawTransform.width !== "number"
+        ) {
+          return;
+        }
+        const transform = clampOverlayTransform({
+          x: rawTransform.x,
+          y: rawTransform.y,
+          width: rawTransform.width,
+        });
+        setSelectedId(event.data.blockId);
+        changeDocument((draft) => {
+          const found = findBlock(draft, event.data.blockId);
+          if (!found || !isWidgetCanvasBlock(found.block)) return;
+          const selectionIds = selectedIds.includes(found.block.id)
+            ? selectedIds
+            : canvasSelectionUnitIds(found.section, found.block);
+          const blocks = selectionIds.flatMap((id) => {
+            const entry = findBlock(draft, id);
+            return entry &&
+              entry.section.id === found.section.id &&
+              isWidgetCanvasBlock(entry.block) &&
+              !entry.block.locked
+              ? [entry.block]
+              : [];
+          });
+          const updates = transformCanvasSelection(blocks, found.block.id, transform, device);
+          for (const [id, next] of Object.entries(updates)) {
+            const entry = findBlock(draft, id);
+            if (entry) updateWidgetCanvasPlacementForDevice(entry.block, device, next);
+          }
+        });
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [activeStep, applyInlineTextEdit, postToPreview, previewInteraction, resolvedAssets, selectStudioElement, selectedId]);
+  }, [activeStep, applyInlineTextEdit, canvasGridEnabled, canvasGridStep, changeDocument, device, mode, multiSelectMode, postToPreview, previewInteraction, resolvedAssets, selectStudioElement, selectedId, selectedIds]);
 
   useEffect(() => {
     if (suppressAutosaveRef.current) {
@@ -838,9 +1178,18 @@ export function WidgetStudioEditor({
     }
     const block = createBlock(type, asset);
     changeDocument((draft) => {
-      sectionsAtPath(draft, slotPath).push(createSection(block.name, block));
+      const targetSection = addTargetSectionId
+        ? findSection(draft, addTargetSectionId)?.section
+        : null;
+      if (targetSection && !targetSection.locked) {
+        targetSection.children.push(block);
+      } else {
+        sectionsAtPath(draft, slotPath).push(createSection(block.name, block));
+      }
     });
+    setAddTargetSectionId(null);
     setSelectedId(block.id);
+    setSelectedIds([block.id]);
     setPanelTab(window.innerWidth < 800 ? "properties" : "layers");
   }
 
@@ -866,6 +1215,190 @@ export function WidgetStudioEditor({
     setAssets((items) => [result.asset, ...items]);
     addBlock("image", result.asset);
   }
+
+  const selectedCanvasEntries = useMemo(() => selectedIds.flatMap((id) => {
+    const entry = findBlock(document, id);
+    if (!entry || !isWidgetCanvasBlock(entry.block)) return [];
+    return [entry];
+  }), [document, selectedIds]);
+
+  const canvasSelectionIsValid = selectedCanvasEntries.length === selectedIds.length &&
+    selectedCanvasEntries.length > 0 &&
+    selectedCanvasEntries.every((entry) =>
+      entry.section.id === selectedCanvasEntries[0].section.id &&
+      !entry.section.locked &&
+      !entry.block.locked,
+    );
+  const selectedCanvasGroupId = canvasSelectionIsValid
+    ? sharedCanvasGroupId(selectedCanvasEntries.map((entry) => entry.block))
+    : null;
+
+  function measureCanvasSelection(): CanvasLayoutItem[] {
+    if (!canvasSelectionIsValid) return [];
+    const frameDocument = iframeRef.current?.contentDocument;
+    if (!frameDocument) return [];
+    const sectionId = selectedCanvasEntries[0].section.id;
+    const sectionElement = frameDocument.querySelector<HTMLElement>(
+      `[data-widget-section-id="${CSS.escape(sectionId)}"]`,
+    );
+    const sectionBounds = sectionElement?.getBoundingClientRect();
+    if (!sectionBounds?.height) return [];
+
+    return selectedCanvasEntries.flatMap((entry) => {
+      if (!isWidgetCanvasBlock(entry.block)) return [];
+      const placement = getWidgetCanvasPlacementForDevice(entry.block, device);
+      const element = frameDocument.querySelector<HTMLElement>(
+        `[data-widget-block-id="${CSS.escape(entry.block.id)}"]`,
+      );
+      const bounds = element?.getBoundingClientRect();
+      if (!bounds?.height) return [];
+      return [{
+        id: entry.block.id,
+        transform: {
+          x: placement.x,
+          y: placement.y,
+          width: placement.width,
+        },
+        height: (bounds.height / sectionBounds.height) * 100,
+      }];
+    });
+  }
+
+  function runCanvasLayoutCommand(command: CanvasLayoutCommand) {
+    const measured = measureCanvasSelection();
+    if (measured.length !== selectedCanvasEntries.length) {
+      setCanvasDropError("La vista previa todavía está midiendo los elementos. Intenta nuevamente en un instante.");
+      return;
+    }
+    if ((command === "distribute-x" || command === "distribute-y") && measured.length < 3) return;
+    const updates = applyCanvasLayoutCommand(measured, command);
+    setCanvasDropError("");
+    changeDocument((draft) => {
+      for (const [id, transform] of Object.entries(updates)) {
+        const found = findBlock(draft, id);
+        if (!found || !isWidgetCanvasBlock(found.block)) continue;
+        updateWidgetCanvasPlacementForDevice(found.block, device, transform);
+      }
+    });
+  }
+
+  function adjustSelectedLayers(direction: -1 | 1) {
+    if (!canvasSelectionIsValid) return;
+    changeDocument((draft) => {
+      for (const id of selectedIds) {
+        const found = findBlock(draft, id);
+        if (!found || !isWidgetCanvasBlock(found.block)) continue;
+        const placement = getWidgetCanvasPlacement(found.block);
+        updateWidgetCanvasPlacement(found.block, { zIndex: Math.max(
+          1,
+          Math.min(5, placement.zIndex + direction),
+        ) });
+      }
+    });
+  }
+
+  function toggleSelectedCanvasGroup() {
+    if (!canvasSelectionIsValid || selectedCanvasEntries.length < 2) return;
+    changeDocument((draft) => {
+      const blocks = selectedIds.flatMap((id) => {
+        const found = findBlock(draft, id);
+        return found && isWidgetCanvasBlock(found.block) ? [found.block] : [];
+      });
+      if (selectedCanvasGroupId) clearCanvasGroup(blocks);
+      else assignCanvasGroup(blocks, createWidgetNodeId("group"));
+    });
+  }
+
+  function duplicateCanvasSelection() {
+    if (!canvasSelectionIsValid) return;
+    const copies = selectedCanvasEntries.flatMap((entry) => {
+      if (!isWidgetCanvasBlock(entry.block)) return [];
+      const copy = structuredClone(entry.block);
+      copy.id = createWidgetNodeId(copy.type);
+      copy.name = `${copy.name} copia`;
+      copy.locked = false;
+      const placement = getWidgetCanvasPlacement(copy);
+      updateWidgetCanvasPlacement(copy, {
+        x: Math.min(100 - placement.width, placement.x + 6),
+        y: Math.min(90, placement.y + 6),
+        zIndex: Math.min(5, placement.zIndex + 1),
+      });
+      return [copy];
+    });
+    remapCanvasGroupIds(copies, () => createWidgetNodeId("group"));
+    const nextIds = copies.map((copy) => copy.id);
+    changeDocument((draft) => {
+      const targetSection = findSection(draft, selectedCanvasEntries[0].section.id)?.section;
+      if (!targetSection) return;
+      targetSection.children.push(...copies);
+    });
+    if (nextIds.length) {
+      setSelectedIds(nextIds);
+      setSelectedId(nextIds.at(-1) ?? null);
+    }
+  }
+
+  const copyCanvasSelection = useCallback(() => {
+    const entries = selectedIds.flatMap((id) => {
+      const entry = findBlock(documentRef.current, id);
+      return entry && isWidgetCanvasBlock(entry.block) && !entry.block.locked
+        ? [entry]
+        : [];
+    });
+    if (!entries.length || entries.length !== selectedIds.length) return;
+    canvasClipboardRef.current = entries.map((entry) => structuredClone(entry.block));
+    setCanvasClipboardCount(entries.length);
+  }, [selectedIds]);
+
+  const pasteCanvasSelection = useCallback(() => {
+    if (!canvasClipboardRef.current.length) return;
+    const selectedEntry = selectedId ? findBlock(documentRef.current, selectedId) : null;
+    const selectedSection = selectedId ? findSection(documentRef.current, selectedId) : null;
+    const targetSectionId = selectedEntry?.section.id || selectedSection?.section.id;
+    if (!targetSectionId) return;
+
+    const copies = canvasClipboardRef.current.map((source) => {
+      const copy = structuredClone(source);
+      copy.id = createWidgetNodeId(copy.type);
+      copy.name = `${copy.name} copia`;
+      copy.locked = false;
+      const placement = getWidgetCanvasPlacement(copy);
+      setWidgetCanvasMode(copy, "free");
+      updateWidgetCanvasPlacement(copy, {
+        x: Math.min(100 - placement.width, placement.x + 6),
+        y: Math.min(90, placement.y + 6),
+        zIndex: Math.min(5, placement.zIndex + 1),
+      });
+      return copy;
+    });
+    remapCanvasGroupIds(copies, () => createWidgetNodeId("group"));
+    changeDocument((draft) => {
+      const target = findSection(draft, targetSectionId)?.section;
+      if (!target || target.locked) return;
+      target.children.push(...copies);
+    });
+    const nextIds = copies.map((copy) => copy.id);
+    setSelectedIds(nextIds);
+    setSelectedId(nextIds.at(-1) ?? null);
+  }, [changeDocument, selectedId]);
+
+  useEffect(() => {
+    const onClipboardShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.matches("input, textarea, select, [contenteditable=true]");
+      if (typing || !(event.ctrlKey || event.metaKey)) return;
+      if (event.key.toLowerCase() === "c") {
+        event.preventDefault();
+        copyCanvasSelection();
+      }
+      if (event.key.toLowerCase() === "v") {
+        event.preventDefault();
+        pasteCanvasSelection();
+      }
+    };
+    window.addEventListener("keydown", onClipboardShortcut);
+    return () => window.removeEventListener("keydown", onClipboardShortcut);
+  }, [copyCanvasSelection, pasteCanvasSelection]);
 
   function updateSelectedBlock(updater: (block: WidgetContentBlock) => void) {
     if (!selectedId) return;
@@ -920,28 +1453,23 @@ export function WidgetStudioEditor({
         id: createWidgetNodeId(block.type),
         name: `${block.name} copia`,
       })) as WidgetContentBlock[];
+      remapCanvasGroupIds(copy.children, () => createWidgetNodeId("group"));
       sectionsAtPath(draft, found.path).splice(found.index + 1, 0, copy);
-      setSelectedId(copy.children[0]?.id || copy.id);
+      const nextId = copy.children[0]?.id || copy.id;
+      setSelectedId(nextId);
+      setSelectedIds([nextId]);
     });
   }
 
   function removeSelected() {
     if (!selectedId) return;
+    const targets = selectedIds.length > 0 ? selectedIds : [selectedId];
+    if (!canRemoveWidgetNodes(documentRef.current, targets)) return;
     changeDocument((draft) => {
-      const block = findBlock(draft, selectedId);
-      if (block) {
-        if (block.section.locked || block.block.locked) return;
-        if (block.section.children.length === 1) {
-          sectionsAtPath(draft, block.path).splice(block.index, 1);
-        } else {
-          block.section.children.splice(block.blockIndex, 1);
-        }
-      } else {
-        const section = findSection(draft, selectedId);
-        if (section && !section.section.locked) sectionsAtPath(draft, section.path).splice(section.index, 1);
-      }
+      removeWidgetNodes(draft, targets);
     });
     setSelectedId(null);
+    setSelectedIds([]);
   }
 
   function changeSelectedSlot(nextPath: string) {
@@ -1015,9 +1543,9 @@ export function WidgetStudioEditor({
         : "-mx-3 -mt-2 sm:-mx-5 xl:-mx-7"}
       data-tour="widget-studio"
     >
-      <header className="sticky top-0 z-30 shrink-0 border-y border-border bg-background/95 px-3 py-3 shadow-sm backdrop-blur sm:px-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+      <header className={`studio-main-header relative sticky z-30 shrink-0 border-y border-border bg-background/95 px-3 py-3 shadow-sm backdrop-blur sm:px-5 ${mode === "advanced" ? "top-0" : "top-[52px] md:top-0"}`}>
+        <div className="studio-header-row flex flex-wrap items-center justify-between gap-3">
+          <div className="studio-header-title min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-3">
               {mode === "advanced" && (
                 <button
@@ -1032,15 +1560,16 @@ export function WidgetStudioEditor({
               <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#7C3AED]">{mode === "advanced" ? "Puragenda Studio" : "Editor del widget"}</p>
               <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 className="min-w-0 truncate text-lg font-bold">{document.meta.name}</h2>
+                <h2 className="min-w-0 truncate text-lg font-bold" title={document.meta.name}>{document.meta.name}</h2>
                 <SaveBadge state={saveState} />
               </div>
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="studio-header-tools flex flex-wrap items-center gap-2">
             {mode === "advanced" && (
               <Button
+                className="studio-desktop-secondary-action"
                 variant={leftPanelOpen ? "secondary" : "ghost"}
                 onClick={() => setLeftPanelOpen((open) => !open)}
                 title={leftPanelOpen ? "Ocultar estructura" : "Mostrar estructura"}
@@ -1050,24 +1579,32 @@ export function WidgetStudioEditor({
               </Button>
             )}
             {mode === "advanced" && (
-              <div className="flex rounded-xl border border-border bg-muted p-1" role="group" aria-label="Comportamiento de la vista previa" data-tour="studio-interaction">
+              <div className="studio-interaction-toggle flex rounded-xl border border-border bg-muted p-1" role="group" aria-label="Comportamiento de la vista previa" data-tour="studio-interaction">
                 <button
                   type="button"
-                  onClick={() => setPreviewInteraction("design")}
+                  onClick={() => changePreviewInteraction("design")}
+                  aria-pressed={previewInteraction === "design"}
+                  aria-busy={previewInteraction === "design" && previewReadyInteraction !== "design"}
                   className={`flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${previewInteraction === "design" ? "bg-background text-[#7C3AED] shadow-sm" : "text-muted-foreground"}`}
                 >
-                  <MousePointer2 className="h-3.5 w-3.5" /> Diseñar
+                  {previewInteraction === "design" && previewReadyInteraction !== "design"
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <MousePointer2 className="h-3.5 w-3.5" />} Diseñar
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPreviewInteraction("test")}
+                  onClick={() => changePreviewInteraction("test")}
+                  aria-pressed={previewInteraction === "test"}
+                  aria-busy={previewInteraction === "test" && previewReadyInteraction !== "test"}
                   className={`flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${previewInteraction === "test" ? "bg-background text-[#7C3AED] shadow-sm" : "text-muted-foreground"}`}
                 >
-                  <Play className="h-3.5 w-3.5" /> Probar
+                  {previewInteraction === "test" && previewReadyInteraction !== "test"
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <Play className="h-3.5 w-3.5" />} Probar
                 </button>
               </div>
             )}
-            <div className="flex rounded-xl border border-border bg-muted p-1" role="tablist" aria-label="Modo de edición">
+            <div className="studio-mode-toggle flex rounded-xl border border-border bg-muted p-1" role="tablist" aria-label="Modo de edición">
               {(["basic", "advanced"] as const).map((value) => (
                 <button
                   key={value}
@@ -1076,8 +1613,12 @@ export function WidgetStudioEditor({
                   aria-selected={mode === value}
                   onClick={() => {
                     setMode(value);
-                    if (value === "advanced" && window.innerWidth < 800 && device === "desktop") {
-                      setDevice("mobile");
+                    setInspectorOpen(false);
+                    if (value === "advanced" && window.innerWidth < 800) {
+                      if (device === "desktop") setDevice("mobile");
+                      setPanelTab("preview");
+                      setLeftPanelOpen(false);
+                      setInspectorOpen(false);
                     }
                   }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${mode === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
@@ -1086,15 +1627,16 @@ export function WidgetStudioEditor({
                 </button>
               ))}
             </div>
-            <Button variant="ghost" onClick={undo} disabled={!history.length} title="Deshacer (Ctrl+Z)"><Undo2 className="h-4 w-4" /></Button>
-            <Button variant="ghost" onClick={redo} disabled={!future.length} title="Rehacer (Ctrl+Y)"><Redo2 className="h-4 w-4" /></Button>
+            <Button className="studio-desktop-secondary-action" variant="ghost" onClick={undo} disabled={!history.length} title="Deshacer (Ctrl+Z)"><Undo2 className="h-4 w-4" /></Button>
+            <Button className="studio-desktop-secondary-action" variant="ghost" onClick={redo} disabled={!future.length} title="Rehacer (Ctrl+Y)"><Redo2 className="h-4 w-4" /></Button>
             {mode === "advanced" && previewInteraction === "test" && (
-              <Button variant="ghost" onClick={() => postToPreview({ type: "RESET_SIMULATION" })} title="Reiniciar simulación">
+              <Button className="studio-desktop-secondary-action" variant="ghost" onClick={resetPreviewSimulation} title="Reiniciar simulación">
                 <RotateCcw className="h-4 w-4" />
               </Button>
             )}
             {mode === "advanced" && (
               <Button
+                className="studio-desktop-secondary-action"
                 variant="ghost"
                 onClick={() => window.document.dispatchEvent(new CustomEvent("puragenda:start-contextual-help"))}
                 title="Ayuda del Studio"
@@ -1104,9 +1646,11 @@ export function WidgetStudioEditor({
                 <span className="hidden xl:inline">Ayuda</span>
               </Button>
             )}
-            <Link href="/dashboard/appearance/historial" className="hidden min-h-10 items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted sm:inline-flex">
+            <Link href="/dashboard/appearance/historial" className="studio-desktop-secondary-action hidden min-h-10 items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted sm:inline-flex">
               <History className="h-4 w-4" /> Historial
             </Link>
+          </div>
+          <div className="studio-header-primary-actions flex items-center gap-2">
             <Button
               variant="primary"
               onClick={() => setPublishOpen(true)}
@@ -1115,12 +1659,75 @@ export function WidgetStudioEditor({
             >
               <Rocket className="h-4 w-4" /> Publicar
             </Button>
+            <details className="studio-mobile-actions relative hidden">
+              <summary
+                className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-background"
+                aria-label="Más acciones del Studio"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </summary>
+              <div className="absolute right-0 top-12 z-[80] grid w-56 gap-1 rounded-2xl border border-border bg-background p-2 shadow-2xl">
+                <button type="button" onClick={undo} disabled={!history.length} className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /> Deshacer</button>
+                <button type="button" onClick={redo} disabled={!future.length} className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /> Rehacer</button>
+                {previewInteraction === "test" && <button type="button" onClick={resetPreviewSimulation} className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold hover:bg-muted"><RotateCcw className="h-4 w-4" /> Reiniciar prueba</button>}
+                <button type="button" onClick={() => window.document.dispatchEvent(new CustomEvent("puragenda:start-contextual-help"))} className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-left text-sm font-semibold hover:bg-muted"><CircleHelp className="h-4 w-4" /> Ayuda del Studio</button>
+                <Link href="/dashboard/appearance/historial" className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold hover:bg-muted"><History className="h-4 w-4" /> Historial</Link>
+              </div>
+            </details>
           </div>
         </div>
-        {saveMessage && (
-          <div role="status" className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${saveState === "error" ? "bg-red-500/10 text-red-700" : "bg-amber-500/10 text-amber-800"}`}>
-            {saveState === "saving" || saveState === "dirty" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            <span>{saveMessage}</span>
+        {(showAssetRecovery || saveMessage) && (
+          <div className="studio-editor-feedback border-t border-border/70 bg-background px-3 py-2 sm:px-5">
+            {showAssetRecovery && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
+              >
+                <TriangleAlert className="h-4 w-4 shrink-0" />
+                <span className="min-w-48 flex-1 leading-relaxed">
+                  Recuperamos el borrador sin borrar su composiciÃ³n: {initialState.assetRepairCount === 1 ? "una referencia de imagen ya no estaba disponible" : `${initialState.assetRepairCount} referencias de imagen ya no estaban disponibles`}. Los bloques conservan su posiciÃ³n y estilos para que puedas reemplazarlos.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstRecoveredId = initialState.repairedImageBlockIds.find((id) => findBlock(documentRef.current, id));
+                    if (firstRecoveredId) {
+                      selectStudioElement(firstRecoveredId);
+                      setInspectorOpen(true);
+                    }
+                  }}
+                  disabled={!initialState.repairedImageBlockIds.length}
+                  className="min-h-8 rounded-lg border border-amber-700/25 bg-white/70 px-2.5 font-bold transition hover:bg-white disabled:hidden dark:bg-black/20 dark:hover:bg-black/30"
+                >
+                  Revisar bloque
+                </button>
+                <button type="button" onClick={() => setShowAssetRecovery(false)} aria-label="Cerrar aviso de recuperaciÃ³n" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10"><X className="h-4 w-4" /></button>
+              </div>
+            )}
+            {saveMessage && (
+              <div
+                role={saveState === "error" ? "alert" : "status"}
+                aria-live={saveState === "error" ? "assertive" : "polite"}
+                className={`flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-xs ${showAssetRecovery ? "mt-2" : ""} ${saveState === "error" ? "border-red-500/25 bg-red-50 text-red-800 dark:bg-red-950/45 dark:text-red-100" : "border-amber-500/25 bg-amber-50 text-amber-900 dark:bg-amber-950/45 dark:text-amber-100"}`}
+              >
+                {saveState === "saving" || saveState === "dirty" ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <TriangleAlert className="h-4 w-4 shrink-0" />}
+                <span className="min-w-48 flex-1 leading-relaxed">{saveMessage}</span>
+                {saveState === "error" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSaveMessage("");
+                      setSaveState("dirty");
+                      setSaveTrigger((value) => value + 1);
+                    }}
+                    className="min-h-8 rounded-lg border border-red-700/25 bg-white/70 px-2.5 font-bold transition hover:bg-white dark:bg-black/20 dark:hover:bg-black/30"
+                  >
+                    Reintentar
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -1128,7 +1735,10 @@ export function WidgetStudioEditor({
       <div className={mode === "advanced" ? `studio-advanced-grid ${leftPanelOpen ? "" : "studio-left-closed"}` : "studio-basic-grid"}>
         {mode === "advanced" && leftPanelOpen && (
           <aside className={`studio-left-panel border-r border-border bg-card ${panelTab === "properties" || panelTab === "preview" ? "studio-panel-hidden" : ""}`} data-tour="studio-layers">
-            <PanelTabs value={visibleLeftPanelTab} onChange={setPanelTab} />
+            <PanelTabs value={visibleLeftPanelTab} onChange={(tab) => {
+              if (tab === "blocks") setAddTargetSectionId(null);
+              setPanelTab(tab);
+            }} />
             <div className="studio-left-panel-scroll min-h-0 flex-1 overflow-y-auto p-3">
               {visibleLeftPanelTab === "pages" && (
                 <StudioPagesPanel
@@ -1137,7 +1747,7 @@ export function WidgetStudioEditor({
                   onStepChange={(step) => {
                     setActiveStep(step);
                     setSlotPath(`${step}.beforeMain`);
-                    setSelectedId(`system.${step}`);
+                    selectStudioElement(`system.${step}`);
                   }}
                   onSelect={selectStudioElement}
                 />
@@ -1145,9 +1755,14 @@ export function WidgetStudioEditor({
               {visibleLeftPanelTab === "blocks" && (
                 <BlockLibrary
                   slotPath={slotPath}
-                  onSlotChange={setSlotPath}
+                  onSlotChange={(path) => {
+                    setAddTargetSectionId(null);
+                    setSlotPath(path);
+                  }}
                   onAdd={addBlock}
                   onOpenAssets={(type) => setAssetModal({ open: true, blockType: type })}
+                  targetSectionName={addTargetSectionId ? findSection(document, addTargetSectionId)?.section.name : undefined}
+                  onCancelTarget={() => setAddTargetSectionId(null)}
                 />
               )}
               {visibleLeftPanelTab === "layers" && (
@@ -1155,6 +1770,8 @@ export function WidgetStudioEditor({
                   document={document}
                   activeStep={activeStep}
                   selectedId={selectedId}
+                  selectedIds={selectedIds}
+                  multiSelectMode={multiSelectMode}
                   onSelect={selectStudioElement}
                   onMove={moveSection}
                   onDuplicate={duplicateSection}
@@ -1180,29 +1797,48 @@ export function WidgetStudioEditor({
           <PreviewToolbar
             device={device}
             zoom={zoom}
-            onDeviceChange={setDevice}
+            showPrecisionTools={mode === "advanced" && previewInteraction === "design"}
+            gridEnabled={canvasGridEnabled}
+            gridStep={canvasGridStep}
+            multiSelectMode={multiSelectMode}
+            canvasHealth={canvasLayoutHealth}
+            onDeviceChange={changePreviewDevice}
             onZoomChange={setZoom}
             onFit={() => fitPreview(device)}
+            onToggleGrid={toggleCanvasGrid}
+            onGridStepChange={changeCanvasGridStep}
+            onToggleMultiSelect={() => setMultiSelectMode((current) => !current)}
           />
-          {mode === "advanced" && (
+          {mode === "advanced" && previewInteraction === "design" && (
             <StudioContextToolbar
               document={document}
+              device={device}
               systemId={selectedSystemId}
               block={selectedBlock}
               section={currentSection}
+              selectedOverlayCount={canvasSelectionIsValid ? selectedCanvasEntries.length : 0}
+              selectionGrouped={Boolean(selectedCanvasGroupId)}
               onDocumentChange={changeDocument}
               onBlockChange={updateSelectedBlock}
               onSectionChange={updateSelectedSection}
+              onCanvasCommand={runCanvasLayoutCommand}
+              onAdjustLayers={adjustSelectedLayers}
+              onToggleGroup={toggleSelectedCanvasGroup}
               onOpenAssets={(type) => setAssetModal({ open: true, blockType: type })}
               onAddHere={() => {
                 if (selectedSystemId) setSlotPath(defaultSlotForSystem(selectedSystemId));
+                setAddTargetSectionId(currentSection?.locked ? null : currentSection?.id ?? null);
                 setPanelTab("blocks");
                 setLeftPanelOpen(true);
               }}
               onOpenInspector={() => setInspectorOpen(true)}
               onDuplicate={() => {
-                if (currentSection) duplicateSection(currentSection.id);
+                if (selectedCanvasEntries.length > 0) duplicateCanvasSelection();
+                else if (currentSection) duplicateSection(currentSection.id);
               }}
+              onCopy={copyCanvasSelection}
+              onPaste={pasteCanvasSelection}
+              canPaste={canvasClipboardCount > 0 && Boolean(currentSection && !currentSection.locked)}
               onDelete={removeSelected}
             />
           )}
@@ -1224,28 +1860,60 @@ export function WidgetStudioEditor({
                 title="Vista previa privada del widget"
                 src={`/widget/${widgetSlug}/preview`}
                 onLoad={() => {
+                  setPreviewReadyInteraction(null);
                   postToPreview({
                     type: "UPDATE_DOCUMENT",
                     document: documentRef.current,
                     assets: resolvedAssets,
                   });
                   postToPreview({ type: "SET_INTERACTION_MODE", mode: previewInteraction });
-                  postToPreview({ type: "SET_SELECTED", id: selectedId });
-                  postToPreview({ type: "SET_STEP", step: activeStep });
+                  postToPreview({
+                    type: "SET_CANVAS_TRANSFORMS",
+                    enabled: mode === "advanced" && previewInteraction === "design",
+                  });
+                  postToPreview({
+                    type: "SET_CANVAS_GRID",
+                    enabled:
+                      mode === "advanced" &&
+                      previewInteraction === "design" &&
+                      canvasGridEnabled,
+                    step: canvasGridStep,
+                  });
+                  postToPreview({ type: "SET_CANVAS_DEVICE", device });
+                  postToPreview({ type: "SET_SELECTED", id: selectedId, ids: selectedIds });
+                  postToPreview({
+                    type: "SET_MULTI_SELECT_MODE",
+                    enabled:
+                      mode === "advanced" &&
+                      previewInteraction === "design" &&
+                      multiSelectMode,
+                  });
+                  if (previewInteraction === "design") {
+                    postToPreview({ type: "SET_STEP", step: activeStep });
+                  }
+                  resetPreviewScroll();
                 }}
                 className="absolute left-0 top-0 origin-top-left rounded-2xl border border-black/20 bg-white shadow-2xl"
                 style={{
                   width: `${DEVICE_WIDTH[device]}px`,
                   height: `${previewViewportHeight}px`,
-                  transform: `scale(${zoom / 100})`,
-                  transformOrigin: "top left",
+                  zoom: zoom / 100,
                 }}
               />
             </div>
           </div>
           <div className="studio-canvas-notes mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>Vista segura · escribe directamente sobre los textos o selecciona un elemento para darle formato.</span>
-            <span>Los cambios llegan al widget público únicamente al presionar Publicar.</span>
+            {previewInteraction === "test" ? (
+              <span>Simulación privada · puedes recorrer la reserva sin crear citas ni cambiar datos reales.</span>
+            ) : (
+              <>
+                <span>Vista segura · escribe directamente sobre los textos o selecciona un elemento para darle formato.</span>
+                {mode === "advanced" && (
+                  <span>Imán de alineación activo · mantén Alt al mover o redimensionar para omitirlo.</span>
+                )}
+                <span>Los cambios llegan al widget público únicamente al presionar Publicar.</span>
+              </>
+            )}
           </div>
         </main>
 
@@ -1263,6 +1931,7 @@ export function WidgetStudioEditor({
               <LayersPanel
                 document={document}
                 selectedId={selectedId}
+                selectedIds={selectedIds}
                 onSelect={selectStudioElement}
                 onMove={moveSection}
                 onDuplicate={duplicateSection}
@@ -1276,6 +1945,7 @@ export function WidgetStudioEditor({
               {selected && (
                 <Inspector
                   document={document}
+                  device={device}
                   section={currentSection}
                   block={selectedBlock}
                   assets={assets}
@@ -1294,6 +1964,7 @@ export function WidgetStudioEditor({
                   systemId={selectedSystemId}
                   document={document}
                   onDocumentChange={changeDocument}
+                  onOpenAssets={(type) => setAssetModal({ open: true, blockType: type })}
                   compact
                 />
               )}
@@ -1338,6 +2009,8 @@ export function WidgetStudioEditor({
       {mode === "advanced" && inspectorOpen && (
         <div className="fixed inset-0 z-[90] flex justify-end bg-black/35 backdrop-blur-[2px]" onMouseDown={() => setInspectorOpen(false)}>
           <aside
+            role="dialog"
+            aria-modal="true"
             className="h-full w-full max-w-[440px] overflow-y-auto border-l border-border bg-background p-5 shadow-2xl"
             onMouseDown={(event) => event.stopPropagation()}
             aria-label="Ajustes detallados"
@@ -1354,10 +2027,12 @@ export function WidgetStudioEditor({
                 systemId={selectedSystemId}
                 document={document}
                 onDocumentChange={changeDocument}
+                onOpenAssets={(type) => setAssetModal({ open: true, blockType: type })}
               />
             ) : (
               <Inspector
                 document={document}
+                device={device}
                 section={currentSection}
                 block={selectedBlock}
                 assets={assets}
@@ -1380,7 +2055,12 @@ export function WidgetStudioEditor({
           onClose={() => setAssetModal({ open: false, blockType: null })}
           onAssetsChange={setAssets}
           onSelect={(asset) => {
-            if (selectedBlock?.type === "image") {
+            if (assetModal.blockType === "logo") {
+              changeDocument((draft) => {
+                draft.shell.logoAssetId = asset.id;
+                draft.system.header.showLogo = true;
+              });
+            } else if (selectedBlock?.type === "image" || selectedBlock?.type === "banner") {
               updateSelectedBlock((block) => {
                 if (block.type === "image") {
                   block.assetId = asset.id;
@@ -1391,7 +2071,7 @@ export function WidgetStudioEditor({
                 }
                 if (block.type === "banner") block.assetId = asset.id;
               });
-            } else if (assetModal.blockType) {
+            } else if (assetModal.blockType === "image" || assetModal.blockType === "banner") {
               addBlock(assetModal.blockType, asset);
             }
             setAssetModal({ open: false, blockType: null });
@@ -1509,6 +2189,8 @@ function StudioLayersPanel({
   document,
   activeStep,
   selectedId,
+  selectedIds,
+  multiSelectMode,
   onSelect,
   onMove,
   onDuplicate,
@@ -1518,7 +2200,9 @@ function StudioLayersPanel({
   document: WidgetDesignDocument;
   activeStep: StudioStep;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  multiSelectMode: boolean;
+  onSelect: (id: string, intent?: { additive?: boolean }) => void;
   onMove: (id: string, direction: -1 | 1) => void;
   onDuplicate: (id: string) => void;
   onDragStart: (id: string) => void;
@@ -1559,6 +2243,8 @@ function StudioLayersPanel({
       <LayersPanel
         document={document}
         selectedId={selectedId}
+        selectedIds={selectedIds}
+        multiSelectMode={multiSelectMode}
         onSelect={onSelect}
         onMove={onMove}
         onDuplicate={onDuplicate}
@@ -1593,11 +2279,13 @@ function SystemInspector({
   systemId,
   document,
   onDocumentChange,
+  onOpenAssets,
   compact = false,
 }: {
   systemId: string;
   document: WidgetDesignDocument;
   onDocumentChange: (producer: (draft: WidgetDesignDocument) => void) => void;
+  onOpenAssets: (type: "image" | "banner" | "logo") => void;
   compact?: boolean;
 }) {
   const names: Record<string, { title: string; description: string }> = {
@@ -1644,6 +2332,8 @@ function SystemInspector({
           </Field>
           <ToggleControl label="Mostrar texto superior" checked={document.system.header.showEyebrow} onChange={(checked) => onDocumentChange((draft) => { draft.system.header.showEyebrow = checked; })} />
           <ToggleControl label="Mostrar logo" checked={document.system.header.showLogo} onChange={(checked) => onDocumentChange((draft) => { draft.system.header.showLogo = checked; })} />
+          <Button variant="secondary" onClick={() => onOpenAssets("logo")} className="w-full"><ImageIcon className="h-4 w-4" /> Elegir imagen del logo</Button>
+          {document.shell.logoAssetId && <Button variant="secondary" onClick={() => onDocumentChange((draft) => { delete draft.shell.logoAssetId; })} className="w-full">Usar logo del negocio</Button>}
         </div>
       )}
 
@@ -1713,24 +2403,40 @@ function SystemInspector({
 function PreviewToolbar({
   device,
   zoom,
+  showPrecisionTools,
+  gridEnabled,
+  gridStep,
+  multiSelectMode,
+  canvasHealth,
   onDeviceChange,
   onZoomChange,
   onFit,
+  onToggleGrid,
+  onGridStepChange,
+  onToggleMultiSelect,
 }: {
   device: Device;
   zoom: number;
+  showPrecisionTools: boolean;
+  gridEnabled: boolean;
+  gridStep: CanvasGridStep;
+  multiSelectMode: boolean;
+  canvasHealth: WidgetCanvasLayoutHealth;
   onDeviceChange: (device: Device) => void;
   onZoomChange: (zoom: number) => void;
   onFit: () => void;
+  onToggleGrid: () => void;
+  onGridStepChange: (step: CanvasGridStep) => void;
+  onToggleMultiSelect: () => void;
 }) {
   return (
     <div className="studio-preview-toolbar flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/10 bg-background p-2 shadow-sm dark:border-white/10">
-      <div className="flex rounded-xl bg-muted p-1">
+      <div className="studio-device-switcher flex rounded-xl bg-muted p-1">
         {([
-          ["mobile", Smartphone, "Móvil 360"],
-          ["tablet", Tablet, "Tablet 768"],
-          ["desktop", Monitor, "Escritorio 1200"],
-        ] as const).map(([value, Icon, label]) => (
+          ["mobile", Smartphone, "Móvil", "Móvil 360"],
+          ["tablet", Tablet, "Tablet", "Tablet 768"],
+          ["desktop", Monitor, "PC", "Escritorio 1200"],
+        ] as const).map(([value, Icon, shortLabel, label]) => (
           <button
             key={value}
             type="button"
@@ -1738,11 +2444,66 @@ function PreviewToolbar({
             title={label}
             className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-bold ${device === value ? "bg-background text-[#7C3AED] shadow-sm" : "text-muted-foreground"}`}
           >
-            <Icon className="h-4 w-4" /><span className="hidden sm:inline">{label}</span>
+            <Icon className="h-4 w-4" />
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2">
+      {showPrecisionTools && (
+        <span
+          role="status"
+          data-responsive-health={canvasHealth.overflowIds.length || canvasHealth.collisions.length ? "warning" : "ok"}
+          title={canvasHealth.overflowIds.length || canvasHealth.collisions.length
+            ? `${canvasHealth.collisions.length} solapamientos y ${canvasHealth.overflowIds.length} elementos fuera de límites en esta vista.`
+            : "No se detectaron solapamientos ni elementos fuera del canvas en esta vista."}
+          className={`studio-responsive-health inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[10px] font-bold ${canvasHealth.overflowIds.length || canvasHealth.collisions.length ? "bg-amber-500/10 text-amber-800 dark:text-amber-200" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`}
+        >
+          {canvasHealth.overflowIds.length || canvasHealth.collisions.length ? <TriangleAlert className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+          {canvasHealth.overflowIds.length || canvasHealth.collisions.length
+            ? `Revisar ${canvasHealth.collisions.length + canvasHealth.overflowIds.length}`
+            : "Sin conflictos"}
+        </span>
+      )}
+      <div className="studio-zoom-controls flex min-w-0 items-center gap-2">
+        {showPrecisionTools && (
+          <div className="flex min-w-0 items-center gap-0.5 rounded-lg border border-border bg-background p-0.5">
+            <button
+              type="button"
+              aria-pressed={multiSelectMode}
+              onClick={onToggleMultiSelect}
+              title={multiSelectMode ? "Salir de selección múltiple" : "Seleccionar varios elementos sin teclado"}
+              className={`flex min-h-7 items-center gap-1.5 rounded-md px-2 text-[10px] font-bold transition ${multiSelectMode ? "bg-[#7C3AED] text-white shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              <SquareMousePointer className="h-3.5 w-3.5" />
+              <span className="hidden xl:inline">Selección múltiple</span>
+              <span className="xl:hidden">Múltiple</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={gridEnabled}
+              onClick={onToggleGrid}
+              title={gridEnabled ? "Ocultar cuadrícula y ajuste magnético" : "Mostrar cuadrícula y activar ajuste magnético"}
+              className={`flex min-h-7 items-center gap-1.5 rounded-md px-2 text-[10px] font-bold transition ${gridEnabled ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              <Grid3x3 className="h-3.5 w-3.5" />
+              <span className="hidden lg:inline">Cuadrícula</span>
+            </button>
+            {gridEnabled && (
+              <select
+                aria-label="Tamaño de cuadrícula"
+                value={gridStep}
+                onChange={(event) => onGridStepChange(Number(event.target.value) as CanvasGridStep)}
+                title="Separación y ajuste de la cuadrícula"
+                className="h-7 min-w-0 rounded-md border-0 bg-transparent px-1 text-[10px] font-bold text-foreground outline-none focus:ring-2 focus:ring-[#7C3AED]/30"
+              >
+                <option value={2.5}>Fina · 2,5%</option>
+                <option value={5}>Media · 5%</option>
+                <option value={10}>Amplia · 10%</option>
+              </select>
+            )}
+          </div>
+        )}
         <button
           type="button"
           onClick={onFit}
@@ -1753,7 +2514,7 @@ function PreviewToolbar({
         <Maximize2 className="h-4 w-4 text-muted-foreground" />
         <input
           type="range"
-          min={35}
+          min={20}
           max={150}
           step={5}
           value={zoom}
@@ -1769,29 +2530,47 @@ function PreviewToolbar({
 
 function StudioContextToolbar({
   document,
+  device,
   systemId,
   block,
   section,
+  selectedOverlayCount,
+  selectionGrouped,
   onDocumentChange,
   onBlockChange,
   onSectionChange,
+  onCanvasCommand,
+  onAdjustLayers,
+  onToggleGroup,
   onOpenAssets,
   onAddHere,
   onOpenInspector,
   onDuplicate,
+  onCopy,
+  onPaste,
+  canPaste,
   onDelete,
 }: {
   document: WidgetDesignDocument;
+  device: Device;
   systemId: string | null;
   block: WidgetContentBlock | null;
   section: WidgetSection | null;
+  selectedOverlayCount: number;
+  selectionGrouped: boolean;
   onDocumentChange: (producer: (draft: WidgetDesignDocument) => void) => void;
   onBlockChange: (updater: (block: WidgetContentBlock) => void) => void;
   onSectionChange: (updater: (section: WidgetSection) => void) => void;
-  onOpenAssets: (type: "image" | "banner") => void;
+  onCanvasCommand: (command: CanvasLayoutCommand) => void;
+  onAdjustLayers: (direction: -1 | 1) => void;
+  onToggleGroup: () => void;
+  onOpenAssets: (type: "image" | "banner" | "logo") => void;
   onAddHere: () => void;
   onOpenInspector: () => void;
   onDuplicate: () => void;
+  onCopy: () => void;
+  onPaste: () => void;
+  canPaste: boolean;
   onDelete: () => void;
 }) {
   const systemNames: Record<string, string> = {
@@ -1806,10 +2585,75 @@ function StudioContextToolbar({
   };
   const selectClass = "h-9 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold outline-none focus:border-[#7C3AED]";
   const label = systemId ? systemNames[systemId] || "Componente" : block?.name || "Ninguna selección";
+  const canvasPlacement = block && supportsFreeCanvas(block)
+    ? getWidgetCanvasPlacementForDevice(block, device)
+    : null;
+
+  if (selectedOverlayCount > 1) {
+    const alignmentButtons: Array<{ command: CanvasLayoutCommand; label: string; short: string }> = [
+      { command: "align-left", label: "Alinear a la izquierda", short: "Izq" },
+      { command: "align-center-x", label: "Centrar horizontalmente", short: "Centro" },
+      { command: "align-right", label: "Alinear a la derecha", short: "Der" },
+      { command: "align-top", label: "Alinear arriba", short: "Arriba" },
+      { command: "align-center-y", label: "Centrar verticalmente", short: "Medio" },
+      { command: "align-bottom", label: "Alinear abajo", short: "Abajo" },
+    ];
+    return (
+      <div className="studio-command-bar studio-multi-command-bar sticky top-0 z-20 mt-3 flex min-h-14 flex-wrap items-center gap-2 rounded-2xl border border-[#7C3AED]/30 bg-background/95 px-3 py-2 shadow-lg backdrop-blur dark:border-[#A78BFA]/35">
+        <div className="studio-context-summary mr-1 flex min-w-44 items-center gap-2 border-r border-border pr-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED] text-xs font-black text-white">
+            {selectedOverlayCount}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-xs font-bold">{selectionGrouped ? "Grupo seleccionado" : "Selección múltiple"}</span>
+            <span className="block text-[10px] text-muted-foreground">
+              {selectionGrouped ? "Se mueve y redimensiona como una unidad" : "Toca otra capa para añadir o quitar"}
+            </span>
+          </span>
+        </div>
+
+        <div className="studio-multi-controls flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="studio-command-group flex flex-wrap rounded-xl border border-border bg-muted p-1" role="group" aria-label="Alinear elementos al canvas">
+            {alignmentButtons.map((item) => (
+              <button
+                key={item.command}
+                type="button"
+                title={item.label}
+                aria-label={item.label}
+                onClick={() => onCanvasCommand(item.command)}
+                className="min-h-8 rounded-lg px-2.5 text-[11px] font-bold text-muted-foreground transition hover:bg-background hover:text-[#7C3AED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/40"
+              >
+                {item.short}
+              </button>
+            ))}
+          </div>
+          <div className="studio-command-group flex rounded-xl border border-border bg-muted p-1" role="group" aria-label="Distribuir elementos">
+            <button type="button" disabled={selectedOverlayCount < 3} onClick={() => onCanvasCommand("distribute-x")} className="min-h-8 rounded-lg px-2.5 text-[11px] font-bold text-muted-foreground transition hover:bg-background hover:text-[#7C3AED] disabled:cursor-not-allowed disabled:opacity-35">Distribuir ↔</button>
+            <button type="button" disabled={selectedOverlayCount < 3} onClick={() => onCanvasCommand("distribute-y")} className="min-h-8 rounded-lg px-2.5 text-[11px] font-bold text-muted-foreground transition hover:bg-background hover:text-[#7C3AED] disabled:cursor-not-allowed disabled:opacity-35">Distribuir ↕</button>
+          </div>
+          <div className="studio-command-group flex rounded-xl border border-border bg-muted p-1" role="group" aria-label="Orden de capas">
+            <button type="button" onClick={() => onAdjustLayers(-1)} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold text-muted-foreground transition hover:bg-background hover:text-foreground"><ArrowDown className="h-3.5 w-3.5" /> Atrás</button>
+            <button type="button" onClick={() => onAdjustLayers(1)} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold text-muted-foreground transition hover:bg-background hover:text-foreground"><ArrowUp className="h-3.5 w-3.5" /> Adelante</button>
+          </div>
+        </div>
+
+        <div className="studio-context-actions ml-auto flex items-center gap-1 border-l border-border pl-2">
+          <Button variant="ghost" onClick={onToggleGroup} ariaLabel={selectionGrouped ? "Desagrupar selección" : "Agrupar selección"}>
+            <Layers3 className="h-4 w-4" />
+            <span className="hidden xl:inline">{selectionGrouped ? "Desagrupar" : "Agrupar"}</span>
+          </Button>
+          <Button variant="ghost" onClick={onCopy} ariaLabel="Copiar selección"><Copy className="h-4 w-4" /><span className="hidden xl:inline">Copiar</span></Button>
+          <Button variant="ghost" disabled={!canPaste} onClick={onPaste} ariaLabel="Pegar selección"><Plus className="h-4 w-4" /><span className="hidden xl:inline">Pegar</span></Button>
+          <Button variant="ghost" onClick={onDuplicate} ariaLabel="Duplicar selección"><Copy className="h-4 w-4" /><span className="hidden xl:inline">Duplicar</span></Button>
+          <Button variant="danger" onClick={onDelete} title="Eliminar selección"><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="studio-command-bar sticky top-0 z-20 mt-3 flex min-h-14 flex-wrap items-center gap-2 rounded-2xl border border-black/10 bg-background/95 px-3 py-2 shadow-lg backdrop-blur dark:border-white/10">
-      <div className="mr-1 flex min-w-36 items-center gap-2 border-r border-border pr-3">
+      <div className="studio-context-summary mr-1 flex min-w-36 items-center gap-2 border-r border-border pr-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
           {systemId ? <Lock className="h-4 w-4" /> : block?.type === "text" ? <Type className="h-4 w-4" /> : block?.type === "image" ? <ImageIcon className="h-4 w-4" /> : <MousePointer2 className="h-4 w-4" />}
         </span>
@@ -1823,6 +2667,7 @@ function StudioContextToolbar({
         </span>
       </div>
 
+      <div className="studio-context-controls flex min-w-0 flex-1 flex-wrap items-center gap-2">
       {systemId === "system.shell" && (
         <>
           <label className="flex items-center gap-2 text-[10px] font-bold">
@@ -1842,6 +2687,7 @@ function StudioContextToolbar({
             <option value="compact">Compacto</option><option value="standard">Estándar</option><option value="centered">Centrado</option>
           </select>
           <Button variant={document.system.header.showLogo ? "primary" : "secondary"} onClick={() => onDocumentChange((draft) => { draft.system.header.showLogo = !draft.system.header.showLogo; })}>Logo</Button>
+          <Button variant="secondary" onClick={() => onOpenAssets("logo")}><ImageIcon className="h-4 w-4" /> Cambiar logo</Button>
           <Button variant={document.system.header.showEyebrow ? "primary" : "secondary"} onClick={() => onDocumentChange((draft) => { draft.system.header.showEyebrow = !draft.system.header.showEyebrow; })}>Texto superior</Button>
         </>
       )}
@@ -1883,6 +2729,53 @@ function StudioContextToolbar({
         <Button variant={document.shell.showPoweredBy ? "primary" : "secondary"} onClick={() => onDocumentChange((draft) => { draft.shell.showPoweredBy = !draft.shell.showPoweredBy; })}>Marca Puragenda</Button>
       )}
 
+      {block && canvasPlacement && block.type !== "image" && (
+        <>
+          <select
+            aria-label="Ubicación del elemento"
+            value={isWidgetCanvasBlock(block) ? "free" : "flow"}
+            onChange={(event) => onBlockChange((current) => {
+              setWidgetCanvasMode(current, event.target.value as "flow" | "free");
+            })}
+            className={selectClass}
+          >
+            <option value="flow">En el flujo</option>
+            <option value="free">Posición libre</option>
+          </select>
+          {isWidgetCanvasBlock(block) && (
+            <>
+              <label className="flex items-center gap-2 text-[10px] font-bold">
+                Ancho
+                <input
+                  aria-label="Ancho del elemento libre"
+                  type="range"
+                  min={10}
+                  max={80}
+                  step={0.1}
+                  value={canvasPlacement.width}
+                  onChange={(event) => onBlockChange((current) => {
+                    const width = Number(event.target.value);
+                    const currentPlacement = getWidgetCanvasPlacementForDevice(current, device);
+                    updateWidgetCanvasPlacementForDevice(current, device, {
+                      width,
+                      x: Math.min(currentPlacement.x, 100 - width),
+                    });
+                  })}
+                  className="w-20 accent-[#7C3AED]"
+                />
+                <span>{canvasPlacement.width}%</span>
+              </label>
+              <select aria-label="Nivel de la capa" value={canvasPlacement.zIndex} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacement(current, { zIndex: Number(event.target.value) }))} className={selectClass}>
+                <option value={1}>Capa 1</option><option value={2}>Capa 2</option><option value={3}>Capa 3</option><option value={4}>Capa 4</option><option value={5}>Capa 5</option>
+              </select>
+              {device === "mobile" && <select aria-label="Comportamiento en celular" value={canvasPlacement.mobileFallback} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacement(current, { mobileFallback: event.target.value as typeof canvasPlacement.mobileFallback }))} className={selectClass}>
+                <option value="flow">Celular: volver al flujo</option><option value="scaled">Celular: mantener posición</option><option value="hidden">Celular: ocultar</option>
+              </select>}
+            </>
+          )}
+        </>
+      )}
+
       {block?.type === "text" && (
         <>
           <select aria-label="Tipo de texto" value={block.semantic} onChange={(event) => onBlockChange((current) => { if (current.type === "text") current.semantic = event.target.value as typeof current.semantic; })} className={selectClass}><option value="heading">Título</option><option value="subheading">Subtítulo</option><option value="paragraph">Párrafo</option><option value="label">Etiqueta</option></select>
@@ -1900,16 +2793,62 @@ function StudioContextToolbar({
       {block?.type === "image" && section && (
         <>
           <Button variant="secondary" onClick={() => onOpenAssets("image")}><ImageIcon className="h-4 w-4" />Cambiar</Button>
-          <select aria-label="Uso de la imagen" value={section.backgroundAssetId === block.assetId ? "background" : block.mode} onChange={(event) => {
+          <select aria-label="Uso de la imagen" disabled={!block.assetId} value={block.assetId && section.backgroundAssetId === block.assetId ? "background" : block.mode} onChange={(event) => {
             const value = event.target.value;
-            if (value === "background") onSectionChange((current) => { current.backgroundAssetId = block.assetId; });
+            if (value === "background" && block.assetId) onSectionChange((current) => { current.backgroundAssetId = block.assetId; });
             else {
               onSectionChange((current) => { if (current.backgroundAssetId === block.assetId) delete current.backgroundAssetId; });
               onBlockChange((current) => { if (current.type === "image") current.mode = value as "flow" | "overlay"; });
             }
           }} className={selectClass}><option value="flow">En el flujo</option><option value="background">Como fondo</option><option value="overlay">Superpuesta</option></select>
           <select aria-label="Ajuste de la imagen" value={block.presentation.fit} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.presentation.fit = event.target.value as "cover" | "contain"; })} className={selectClass}><option value="cover">Cubrir</option><option value="contain">Contener</option></select>
-          <label className="flex items-center gap-2 text-[10px] font-bold">Ancho <input type="range" min={20} max={100} value={block.presentation.width} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.presentation.width = Number(event.target.value); })} className="w-20 accent-[#7C3AED]" /><span>{block.presentation.width}%</span></label>
+          {block.mode === "overlay" && (
+            <>
+              <div className="flex rounded-lg border border-border bg-muted p-0.5" role="group" aria-label="Alinear imagen horizontalmente">
+                {(["left", "center", "right"] as const).map((align) => {
+                  const Icon = align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+                  const command: CanvasLayoutCommand = align === "left" ? "align-left" : align === "center" ? "align-center-x" : "align-right";
+                  return <button key={align} type="button" aria-label={`Alinear imagen ${align === "left" ? "a la izquierda" : align === "center" ? "al centro" : "a la derecha"}`} onClick={() => onCanvasCommand(command)} className="flex h-8 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-[#7C3AED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/40"><Icon className="h-4 w-4" /></button>;
+                })}
+              </div>
+              <div className="flex rounded-lg border border-border bg-muted p-0.5" role="group" aria-label="Alinear imagen verticalmente">
+                <button type="button" aria-label="Alinear imagen arriba" onClick={() => onCanvasCommand("align-top")} className="flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-[10px] font-bold text-muted-foreground hover:bg-background hover:text-[#7C3AED]">Arriba</button>
+                <button type="button" aria-label="Centrar imagen verticalmente" onClick={() => onCanvasCommand("align-center-y")} className="flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-[10px] font-bold text-muted-foreground hover:bg-background hover:text-[#7C3AED]">Medio</button>
+                <button type="button" aria-label="Alinear imagen abajo" onClick={() => onCanvasCommand("align-bottom")} className="flex h-8 min-w-9 items-center justify-center rounded-md px-2 text-[10px] font-bold text-muted-foreground hover:bg-background hover:text-[#7C3AED]">Abajo</button>
+              </div>
+              <select aria-label="Nivel de la capa" value={block.overlay.zIndex} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.zIndex = Number(event.target.value); })} className={selectClass}>
+                <option value={1}>Capa 1</option><option value={2}>Capa 2</option><option value={3}>Capa 3</option><option value={4}>Capa 4</option><option value={5}>Capa 5</option>
+              </select>
+              {device === "mobile" && <select aria-label="Comportamiento de la imagen en celular" value={block.overlay.mobileFallback} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.mobileFallback = event.target.value as typeof current.overlay.mobileFallback; })} className={selectClass}>
+                <option value="flow">Celular: volver al flujo</option><option value="scaled">Celular: mantener posición</option><option value="hidden">Celular: ocultar</option>
+              </select>}
+            </>
+          )}
+          <label className="flex items-center gap-2 text-[10px] font-bold">
+            Ancho
+            <input
+              type="range"
+              min={block.mode === "overlay" ? 10 : 20}
+              max={block.mode === "overlay" ? 80 : 100}
+              step={block.mode === "overlay" ? 0.1 : 1}
+              value={block.mode === "overlay" ? canvasPlacement?.width ?? block.overlay.width : block.presentation.width}
+              onChange={(event) => onBlockChange((current) => {
+                if (current.type !== "image") return;
+                const width = Number(event.target.value);
+                if (current.mode === "overlay") {
+                  const currentPlacement = getWidgetCanvasPlacementForDevice(current, device);
+                  updateWidgetCanvasPlacementForDevice(current, device, {
+                    width,
+                    x: Math.min(currentPlacement.x, 100 - width),
+                  });
+                } else {
+                  current.presentation.width = width;
+                }
+              })}
+              className="w-20 accent-[#7C3AED]"
+            />
+            <span>{block.mode === "overlay" ? canvasPlacement?.width ?? block.overlay.width : block.presentation.width}%</span>
+          </label>
         </>
       )}
 
@@ -1938,12 +2877,15 @@ function StudioContextToolbar({
       {block?.type === "spacer" && (
         <select aria-label="Tamaño del espacio" value={block.size} onChange={(event) => onBlockChange((current) => { if (current.type === "spacer") current.size = event.target.value as typeof current.size; })} className={selectClass}><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xl">XL</option><option value="custom">Personalizado</option></select>
       )}
+      </div>
 
-      <div className="ml-auto flex items-center gap-1 border-l border-border pl-2">
-        <Button variant="ghost" onClick={onAddHere}><Plus className="h-4 w-4" /><span className="hidden xl:inline">Añadir aquí</span></Button>
-        {block && <Button variant="ghost" onClick={() => onBlockChange((current) => { current.hidden = !current.hidden; })} title={block.hidden ? "Mostrar" : "Ocultar"}>{block.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</Button>}
-        {block && <Button variant="ghost" onClick={onDuplicate} title="Duplicar"><Copy className="h-4 w-4" /></Button>}
-        <Button variant="secondary" onClick={onOpenInspector}><SlidersHorizontal className="h-4 w-4" /><span className="hidden xl:inline">Más ajustes</span></Button>
+      <div className="studio-context-actions ml-auto flex items-center gap-1 border-l border-border pl-2">
+        <Button variant="ghost" onClick={onAddHere} ariaLabel="Añadir contenido aquí"><Plus className="h-4 w-4" /><span className="hidden xl:inline">Añadir aquí</span></Button>
+        {block && isWidgetCanvasBlock(block) && <Button variant="ghost" onClick={onCopy} ariaLabel="Copiar elemento"><Copy className="h-4 w-4" /><span className="hidden xl:inline">Copiar</span></Button>}
+        {block && isWidgetCanvasBlock(block) && <Button variant="ghost" disabled={!canPaste} onClick={onPaste} ariaLabel="Pegar elemento"><Plus className="h-4 w-4" /><span className="hidden xl:inline">Pegar</span></Button>}
+        {block && <Button className="studio-context-secondary-action" variant="ghost" onClick={() => onBlockChange((current) => { current.hidden = !current.hidden; })} title={block.hidden ? "Mostrar" : "Ocultar"}>{block.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</Button>}
+        {block && <Button className="studio-context-secondary-action" variant="ghost" onClick={onDuplicate} title="Duplicar"><Copy className="h-4 w-4" /></Button>}
+        <Button variant="secondary" onClick={onOpenInspector} ariaLabel="Abrir ajustes detallados"><SlidersHorizontal className="h-4 w-4" /><span className="studio-inspector-label hidden xl:inline">Más ajustes</span></Button>
         {block && <Button variant="danger" onClick={onDelete} disabled={block.locked || section?.locked} title="Eliminar"><Trash2 className="h-4 w-4" /></Button>}
       </div>
     </div>
@@ -1975,11 +2917,13 @@ function BasicIdentity({
             <div className="flex gap-2">
               <input
                 type="color"
+                aria-label={`${label}: selector de color`}
                 value={document.tokens.colors[key].slice(0, 7)}
                 onChange={(event) => onChange((draft) => { draft.tokens.colors[key] = event.target.value; })}
                 className="h-10 w-11 rounded-lg border border-border bg-transparent p-1"
               />
               <input
+                aria-label={`${label}: código hexadecimal`}
                 value={document.tokens.colors[key]}
                 onChange={(event) => onChange((draft) => { draft.tokens.colors[key] = event.target.value.toUpperCase(); })}
                 className={`${inputClass} font-mono`}
@@ -1987,9 +2931,10 @@ function BasicIdentity({
             </div>
           </Field>
         ))}
-        <Field label="Tamaño base">
+        <Field label={`Tamaño base · ${document.tokens.typography.baseSize}px`}>
           <input
             type="range"
+            aria-label="Tamaño base de la tipografía"
             min={12}
             max={20}
             value={document.tokens.typography.baseSize}
@@ -1997,9 +2942,10 @@ function BasicIdentity({
             className="w-full accent-[#7C3AED]"
           />
         </Field>
-        <Field label="Radio de bordes">
+        <Field label={`Radio de bordes · ${document.tokens.shape.radius}px`}>
           <input
             type="range"
+            aria-label="Radio general de los bordes"
             min={0}
             max={40}
             value={document.tokens.shape.radius}
@@ -2017,12 +2963,16 @@ function BlockLibrary({
   onSlotChange,
   onAdd,
   onOpenAssets,
+  targetSectionName,
+  onCancelTarget,
   compact,
 }: {
   slotPath: string;
   onSlotChange: (value: string) => void;
   onAdd: (type: WidgetContentBlock["type"]) => void;
-  onOpenAssets: (type: "image" | "banner") => void;
+  onOpenAssets: (type: "image" | "banner" | "logo") => void;
+  targetSectionName?: string;
+  onCancelTarget?: () => void;
   compact?: boolean;
 }) {
   const activeLocation = SLOT_OPTIONS.find((slot) => slot.value === slotPath);
@@ -2032,12 +2982,25 @@ function BlockLibrary({
         <h3 className="text-sm font-bold">Agregar contenido</h3>
         <p className="mt-1 text-xs text-muted-foreground">Elige qué añadir y dónde aparecerá.</p>
       </div>
-      <Field label="Ubicación">
-        <select value={slotPath} onChange={(event) => onSlotChange(event.target.value)} className={inputClass}>
-          {SLOT_OPTIONS.map((slot) => <option key={slot.value} value={slot.value}>{slot.label}</option>)}
-        </select>
-        {activeLocation && <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{activeLocation.description}</p>}
-      </Field>
+      {targetSectionName ? (
+        <div className="rounded-xl border border-[#7C3AED]/25 bg-[#7C3AED]/8 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[#7C3AED]">Añadir dentro del canvas</span>
+              <span className="mt-1 block text-xs font-semibold">{targetSectionName}</span>
+              <span className="mt-1 block text-[10px] leading-relaxed text-muted-foreground">El nuevo elemento compartirá el mismo lienzo y podrá alinearse con los demás.</span>
+            </span>
+            <button type="button" onClick={onCancelTarget} aria-label="Cancelar destino dentro del canvas" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
+          </div>
+        </div>
+      ) : (
+        <Field label="Ubicación">
+          <select value={slotPath} onChange={(event) => onSlotChange(event.target.value)} className={inputClass}>
+            {SLOT_OPTIONS.map((slot) => <option key={slot.value} value={slot.value}>{slot.label}</option>)}
+          </select>
+          {activeLocation && <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{activeLocation.description}</p>}
+        </Field>
+      )}
       <div className={compact ? "grid grid-cols-2 gap-2" : "space-y-2"}>
         {BLOCK_META.map(({ type, label, description, icon: Icon }) => (
           <button
@@ -2058,6 +3021,8 @@ function BlockLibrary({
 function LayersPanel({
   document,
   selectedId,
+  selectedIds = selectedId ? [selectedId] : [],
+  multiSelectMode = false,
   onSelect,
   onMove,
   onDuplicate,
@@ -2067,7 +3032,9 @@ function LayersPanel({
 }: {
   document: WidgetDesignDocument;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedIds?: string[];
+  multiSelectMode?: boolean;
+  onSelect: (id: string, intent?: { additive?: boolean }) => void;
   onMove: (id: string, direction: -1 | 1) => void;
   onDuplicate: (id: string) => void;
   onDragStart: (id: string) => void;
@@ -2085,18 +3052,53 @@ function LayersPanel({
       {entries.map(({ section, path, index }) => (
         <div
           key={section.id}
+          data-layer-section-id={section.id}
           draggable={!section.locked}
           onDragStart={() => onDragStart(section.id)}
           onDragOver={(event) => event.preventDefault()}
           onDrop={() => onDrop(section.id)}
-          className={`rounded-xl border bg-background p-2 ${section.children.some((block) => block.id === selectedId) || section.id === selectedId ? "border-[#7C3AED] ring-2 ring-[#7C3AED]/10" : "border-border"}`}
+          className={`rounded-xl border bg-background p-2 ${section.children.some((block) => selectedIds.includes(block.id)) || section.id === selectedId ? "border-[#7C3AED] ring-2 ring-[#7C3AED]/10" : "border-border"}`}
         >
-          <button type="button" onClick={() => onSelect(section.children[0]?.id || section.id)} className="flex w-full items-center gap-2 text-left">
+          <button type="button" onClick={() => onSelect(section.id)} className="flex w-full items-center gap-2 text-left">
             <Layers3 className="h-4 w-4 shrink-0 text-[#7C3AED]" />
             <span className="min-w-0 flex-1"><span className="block truncate text-xs font-bold">{section.name}</span><span className="block truncate text-[9px] uppercase tracking-wide text-muted-foreground">{SLOT_OPTIONS.find((slot) => slot.value === path)?.label || path}</span></span>
             {section.locked ? <Lock className="h-3 w-3" /> : section.hidden ? <EyeOff className="h-3 w-3" /> : null}
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
+          {section.children.length > 0 && (
+            <div className="mt-2 space-y-1 border-t border-border pt-2">
+              {section.children.map((block) => {
+                const meta = BLOCK_META.find((item) => item.type === block.type);
+                const Icon = meta?.icon || SquareMousePointer;
+                const canAdd =
+                  multiSelectMode &&
+                  isWidgetCanvasBlock(block) &&
+                  !block.locked &&
+                  !section.locked;
+                const isSelected = selectedIds.includes(block.id);
+                return (
+                  <button
+                    key={block.id}
+                    type="button"
+                    data-layer-block-id={block.id}
+                    aria-pressed={isSelected}
+                    onClick={() => onSelect(block.id, { additive: canAdd })}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition ${isSelected ? "bg-[#7C3AED] text-white shadow-sm" : "bg-muted/45 text-foreground hover:bg-muted"}`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-[11px] font-semibold">{block.name}</span>
+                    {block.type === "image" && block.mode === "overlay" && (
+                      <span className={`rounded px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${isSelected ? "bg-white/18" : "bg-[#7C3AED]/10 text-[#7C3AED]"}`}>Canvas</span>
+                    )}
+                    {block.groupId && (
+                      <span className={`rounded px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${isSelected ? "bg-white/18" : "bg-black/5 text-muted-foreground dark:bg-white/10"}`}>Grupo</span>
+                    )}
+                    {block.locked ? <Lock className="h-3 w-3 shrink-0" /> : block.hidden ? <EyeOff className="h-3 w-3 shrink-0" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {!compact && (
             <div className="mt-2 flex gap-1 border-t border-border pt-2">
               <button type="button" onClick={() => onMove(section.id, -1)} disabled={index === 0} title="Mover arriba" className="rounded-lg p-1.5 hover:bg-muted disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
@@ -2112,6 +3114,7 @@ function LayersPanel({
 
 function Inspector({
   document,
+  device,
   section,
   block,
   assets,
@@ -2125,6 +3128,7 @@ function Inspector({
   compact,
 }: {
   document: WidgetDesignDocument;
+  device: Device;
   section: WidgetSection | null;
   block: WidgetContentBlock | null;
   assets: StudioAsset[];
@@ -2133,7 +3137,7 @@ function Inspector({
   onDocumentChange: (producer: (draft: WidgetDesignDocument) => void) => void;
   onBlockChange: (updater: (block: WidgetContentBlock) => void) => void;
   onSectionChange: (updater: (section: WidgetSection) => void) => void;
-  onOpenAssets: (type: "image" | "banner") => void;
+  onOpenAssets: (type: "image" | "banner" | "logo") => void;
   onDelete: () => void;
   compact?: boolean;
 }) {
@@ -2146,9 +3150,15 @@ function Inspector({
       </div>
     );
   }
-  const asset = block.type === "image" || block.type === "banner"
+  const asset = (block.type === "image" || block.type === "banner") && block.assetId
     ? assets.find((item) => item.id === block.assetId)
     : null;
+  const imageNeedsReplacement = block.type === "image" && !block.assetId;
+  const canvasPlacement = supportsFreeCanvas(block)
+    ? getWidgetCanvasPlacementForDevice(block, device)
+    : null;
+  const hasDeviceOverride = supportsFreeCanvas(block) &&
+    hasWidgetCanvasBreakpointOverride(block, device);
   const setBlock = <K extends keyof WidgetContentBlock>(key: K, value: WidgetContentBlock[K]) => {
     onBlockChange((current) => { (current as WidgetContentBlock)[key] = value; });
   };
@@ -2175,13 +3185,89 @@ function Inspector({
         </select>
       </Field>
 
-      {(block.type === "image" || block.type === "banner") && (
-        <div className="rounded-2xl border border-border p-3">
-          <div className="flex items-center gap-3">
-            {asset ? <img src={asset.url} alt="" className="h-16 w-20 rounded-xl object-cover" /> : <div className="flex h-16 w-20 items-center justify-center rounded-xl bg-muted"><ImageIcon className="h-5 w-5" /></div>}
-            <div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{asset?.altDefault || "Sin imagen seleccionada"}</p><p className="text-[10px] text-muted-foreground">{asset ? `${asset.width}×${asset.height}` : "Elige una imagen de la biblioteca"}</p></div>
-            <Button variant="secondary" onClick={() => onOpenAssets(block.type)}>Cambiar</Button>
+      {canvasPlacement && (block.type !== "image" || isWidgetCanvasBlock(block)) && (
+        <div className="space-y-3 rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold">Posición responsive</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">El diseño general funciona en todos los dispositivos. Personaliza solo cuando este tamaño necesite una composición distinta.</p>
+            </div>
+            {isWidgetCanvasBlock(block) && (
+              <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${hasDeviceOverride ? "bg-[#7C3AED] text-white" : "bg-background text-muted-foreground"}`}>
+                {device === "mobile" ? "Móvil" : device === "tablet" ? "Tablet" : "PC"}
+              </span>
+            )}
           </div>
+          {block.type !== "image" && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant={!isWidgetCanvasBlock(block) ? "primary" : "secondary"} onClick={() => onBlockChange((current) => setWidgetCanvasMode(current, "flow"))}>En el flujo</Button>
+              <Button variant={isWidgetCanvasBlock(block) ? "primary" : "secondary"} onClick={() => onBlockChange((current) => setWidgetCanvasMode(current, "free"))}>Posición libre</Button>
+            </div>
+          )}
+          {isWidgetCanvasBlock(block) && (
+            <div className="space-y-3 border-t border-[#7C3AED]/15 pt-3">
+              <button
+                type="button"
+                aria-pressed={hasDeviceOverride}
+                onClick={() => onBlockChange((current) => {
+                  setWidgetCanvasBreakpointOverride(current, device, !hasDeviceOverride);
+                })}
+                className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl border px-3 text-left text-xs font-bold transition ${hasDeviceOverride ? "border-[#7C3AED]/35 bg-background text-[#7C3AED] shadow-sm" : "border-border bg-background/70 text-foreground hover:border-[#7C3AED]/35"}`}
+              >
+                <span>{hasDeviceOverride ? `Ajuste ${device === "mobile" ? "móvil" : device === "tablet" ? "tablet" : "de escritorio"} activo` : "Diseño general activo"}</span>
+                <span className="text-[10px] font-semibold text-muted-foreground">{hasDeviceOverride ? "Restablecer" : "Personalizar"}</span>
+              </button>
+              <div className="grid grid-cols-3 gap-2">
+                {(["left", "center", "right"] as const).map((align) => {
+                  const Icon = align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight;
+                  const targetX = align === "left" ? 0 : align === "center" ? (100 - canvasPlacement.width) / 2 : 100 - canvasPlacement.width;
+                  const active = Math.abs(canvasPlacement.x - targetX) < 0.11;
+                  return (
+                    <button
+                      key={align}
+                      type="button"
+                      aria-label={`Alinear ${align === "left" ? "a la izquierda" : align === "center" ? "al centro" : "a la derecha"} en ${device === "mobile" ? "móvil" : device === "tablet" ? "tablet" : "escritorio"}`}
+                      onClick={() => onBlockChange((current) => updateWidgetCanvasPlacementForDevice(current, device, { x: Math.round(targetX * 10) / 10 }))}
+                      className={`flex min-h-10 items-center justify-center rounded-xl border transition ${active ? "border-[#7C3AED]/40 bg-background text-[#7C3AED] shadow-sm" : "border-border bg-background/70 text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={`Horizontal · ${canvasPlacement.x}%`}><input aria-label={`Posición horizontal en ${device}`} type="range" min={0} max={90} step={0.1} value={canvasPlacement.x} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacementForDevice(current, device, { x: Number(event.target.value) }))} className="w-full accent-[#7C3AED]" /></Field>
+                <Field label={`Vertical · ${canvasPlacement.y}%`}><input aria-label={`Posición vertical en ${device}`} type="range" min={0} max={90} step={0.1} value={canvasPlacement.y} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacementForDevice(current, device, { y: Number(event.target.value) }))} className="w-full accent-[#7C3AED]" /></Field>
+                <Field label={`Ancho · ${canvasPlacement.width}%`}><input aria-label={`Ancho en ${device}`} type="range" min={10} max={80} step={0.1} value={canvasPlacement.width} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacementForDevice(current, device, { width: Number(event.target.value) }))} className="w-full accent-[#7C3AED]" /></Field>
+                <Field label="Capa"><select value={canvasPlacement.zIndex} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacement(current, { zIndex: Number(event.target.value) }))} className={inputClass}><option value={1}>1 · fondo</option><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option><option value={5}>5 · frente</option></select></Field>
+              </div>
+              {device === "mobile" && (
+                <Field label="Comportamiento móvil">
+                  <select value={canvasPlacement.mobileFallback} onChange={(event) => onBlockChange((current) => updateWidgetCanvasPlacement(current, { mobileFallback: event.target.value as typeof canvasPlacement.mobileFallback }))} className={inputClass}><option value="flow">Volver al flujo</option><option value="scaled">Mantener composición libre</option><option value="hidden">Ocultar en celular</option></select>
+                </Field>
+              )}
+              {device === "mobile" && canvasPlacement.mobileFallback === "flow" && <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-[10px] leading-relaxed text-amber-800 dark:text-amber-200">En móvil este elemento vuelve al flujo para evitar solapamientos. Elige “Mantener composición libre” si quieres posicionarlo de forma independiente.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {(block.type === "image" || block.type === "banner") && (
+        <div className={`rounded-2xl border p-3 ${imageNeedsReplacement ? "border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/25" : "border-border"}`}>
+          <div className="flex items-center gap-3">
+            {asset ? <img src={asset.url} alt="" className="h-16 w-20 rounded-xl object-cover" /> : <div className={`flex h-16 w-20 shrink-0 items-center justify-center rounded-xl ${imageNeedsReplacement ? "border border-dashed border-amber-500/40 bg-white/70 text-amber-700 dark:bg-black/20 dark:text-amber-200" : "bg-muted"}`}><ImageIcon className="h-5 w-5" /></div>}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-bold">{asset?.altDefault || (imageNeedsReplacement ? "Imagen pendiente de reemplazo" : "Sin imagen seleccionada")}</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">{asset ? `${asset.width}×${asset.height}` : imageNeedsReplacement ? "El archivo original ya no está disponible. La posición, el tamaño y los estilos del bloque siguen intactos." : "Elige una imagen de la biblioteca"}</p>
+            </div>
+            <Button variant={imageNeedsReplacement ? "primary" : "secondary"} onClick={() => onOpenAssets(block.type)}>{imageNeedsReplacement ? "Elegir reemplazo" : "Cambiar"}</Button>
+          </div>
+          {asset && hasLimitedPromotionalResolution(asset) && (
+            <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-[10px] leading-relaxed text-amber-800 dark:text-amber-200">
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Puede verse pixelada como banner o fondo. Para una imagen promocional nítida recomendamos al menos 1200×675 px.
+            </p>
+          )}
         </div>
       )}
 
@@ -2193,8 +3279,11 @@ function Inspector({
           <label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={block.decorative} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.decorative = event.target.checked; })} className="accent-[#7C3AED]" /> Es decorativa</label>
           <Field label="Uso de la imagen">
             <div className="grid grid-cols-3 gap-2">
-              <Button variant={block.mode === "flow" && section.backgroundAssetId !== block.assetId ? "primary" : "secondary"} onClick={() => onBlockChange((current) => { if (current.type === "image") current.mode = "flow"; })}>Flujo</Button>
-              <Button variant={section.backgroundAssetId === block.assetId ? "primary" : "secondary"} onClick={() => onSectionChange((current) => { current.backgroundAssetId = block.assetId; })}>Fondo</Button>
+              <Button variant={block.mode === "flow" && (!block.assetId || section.backgroundAssetId !== block.assetId) ? "primary" : "secondary"} onClick={() => onBlockChange((current) => { if (current.type === "image") current.mode = "flow"; })}>Flujo</Button>
+              <Button variant={block.assetId && section.backgroundAssetId === block.assetId ? "primary" : "secondary"} disabled={!block.assetId} title={!block.assetId ? "Elige una imagen antes de usarla como fondo" : undefined} onClick={() => {
+                if (!block.assetId) return;
+                onSectionChange((current) => { current.backgroundAssetId = block.assetId; });
+              }}>Fondo</Button>
               <Button variant={block.mode === "overlay" ? "primary" : "secondary"} onClick={() => onBlockChange((current) => { if (current.type === "image") current.mode = "overlay"; })}>Overlay</Button>
             </div>
           </Field>
@@ -2207,14 +3296,6 @@ function Inspector({
           <Field label={`Punto focal Y · ${block.presentation.focalPoint.y}%`}>
             <input type="range" min={0} max={100} value={block.presentation.focalPoint.y} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.presentation.focalPoint.y = Number(event.target.value); })} className="w-full accent-[#7C3AED]" />
           </Field>
-          {block.mode === "overlay" && (
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-3">
-              <Field label={`Horizontal · ${block.overlay.x}%`}><input type="range" min={0} max={90} value={block.overlay.x} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.x = Number(event.target.value); })} className="w-full accent-[#7C3AED]" /></Field>
-              <Field label={`Vertical · ${block.overlay.y}%`}><input type="range" min={0} max={90} value={block.overlay.y} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.y = Number(event.target.value); })} className="w-full accent-[#7C3AED]" /></Field>
-              <Field label={`Ancho · ${block.overlay.width}%`}><input type="range" min={10} max={80} value={block.overlay.width} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.width = Number(event.target.value); })} className="w-full accent-[#7C3AED]" /></Field>
-              <Field label="Fallback móvil"><select value={block.overlay.mobileFallback} onChange={(event) => onBlockChange((current) => { if (current.type === "image") current.overlay.mobileFallback = event.target.value as "flow" | "hidden" | "scaled"; })} className={inputClass}><option value="flow">Convertir a flujo</option><option value="scaled">Escalar</option><option value="hidden">Ocultar</option></select></Field>
-            </div>
-          )}
         </>
       )}
 
@@ -2235,7 +3316,7 @@ function Inspector({
             <Field label="Tipo"><select value={block.semantic} onChange={(event) => onBlockChange((current) => { if (current.type === "text") current.semantic = event.target.value as typeof current.semantic; })} className={inputClass}><option value="heading">Título</option><option value="subheading">Subtítulo</option><option value="paragraph">Párrafo</option><option value="label">Etiqueta</option></select></Field>
             <Field label="Tamaño"><select value={block.size} onChange={(event) => onBlockChange((current) => { if (current.type === "text") current.size = event.target.value as typeof current.size; })} className={inputClass}><option value="sm">Pequeño</option><option value="base">Base</option><option value="lg">Grande</option><option value="xl">XL</option><option value="2xl">2XL</option></select></Field>
           </div>
-          <Field label="Alineación"><div className="grid grid-cols-3 gap-2">{(["left", "center", "right"] as const).map((align) => { const Icon = align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight; return <Button key={align} variant={block.align === align ? "primary" : "secondary"} onClick={() => onBlockChange((current) => { if (current.type === "text") current.align = align; })}><Icon className="h-4 w-4" /></Button>; })}</div></Field>
+          <Field label="Alineación"><div className="grid grid-cols-3 gap-2">{(["left", "center", "right"] as const).map((align) => { const Icon = align === "left" ? AlignLeft : align === "center" ? AlignCenter : AlignRight; const label = align === "left" ? "Alinear texto a la izquierda" : align === "center" ? "Centrar texto" : "Alinear texto a la derecha"; return <Button key={align} ariaLabel={label} variant={block.align === align ? "primary" : "secondary"} onClick={() => onBlockChange((current) => { if (current.type === "text") current.align = align; })}><Icon className="h-4 w-4" /></Button>; })}</div></Field>
         </>
       )}
 
@@ -2329,7 +3410,7 @@ function AssetLibraryModal({
         <div className="flex flex-wrap gap-3 border-b border-border p-4">
           <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-bold text-white">
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {uploading ? "Validando y subiendo…" : "Subir nueva"}
+            {uploading ? "Optimizando y subiendo…" : "Subir nueva"}
             <input type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} className="sr-only" />
           </label>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre…" className={`${inputClass} min-w-52 flex-1`} />
@@ -2337,7 +3418,12 @@ function AssetLibraryModal({
         {error && <p role="alert" className="mx-4 mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-700">{error}</p>}
         <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((asset) => (
-            <div key={asset.id} className="group overflow-hidden rounded-2xl border border-border bg-card">
+            <div key={asset.id} className="group relative overflow-hidden rounded-2xl border border-border bg-card">
+              {hasLimitedPromotionalResolution(asset) && (
+                <span title="Puede verse pixelada como banner o fondo" className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-amber-100/95 px-2 py-1 text-[9px] font-black text-amber-900 shadow-sm">
+                  <TriangleAlert className="h-3 w-3" /> Resolución baja
+                </span>
+              )}
               <button type="button" onClick={() => onSelect(asset)} className="block w-full text-left">
                 <img src={asset.url} alt={asset.altDefault || ""} className="aspect-[4/3] w-full object-cover" />
                 <div className="p-3"><p className="truncate text-xs font-bold">{asset.altDefault || "Imagen sin nombre"}</p><p className="mt-1 text-[10px] text-muted-foreground">{asset.width}×{asset.height} · {(asset.byteSize / 1024).toFixed(0)} KB</p></div>

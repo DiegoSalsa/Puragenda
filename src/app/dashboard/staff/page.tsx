@@ -30,7 +30,7 @@ export default async function StaffPage() {
         schedule: { orderBy: { dayOfWeek: "asc" } },
         services: { select: { id: true } },
         scheduleBlocks: {
-          where: { startTime: { gte: new Date() } },
+          where: { endTime: { gte: new Date() } },
           orderBy: { startTime: "asc" },
           take: 20,
         },
@@ -65,6 +65,8 @@ export default async function StaffPage() {
       startTime: b.startTime.toISOString(),
       endTime: b.endTime.toISOString(),
       reason: b.reason,
+      type: b.type,
+      releaseAt: b.releaseAt?.toISOString() ?? null,
     })),
   }));
 

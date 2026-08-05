@@ -18,6 +18,7 @@ import {
 import {
   archiveWidgetAsset,
   uploadWidgetAsset,
+  WidgetAssetRateLimitError,
 } from "@/server/services/widget-assets.service";
 import { prisma } from "@/server/db/prisma";
 import { parseWidgetDesignDocument } from "@/core/widget-studio/schema";
@@ -34,6 +35,13 @@ async function requireWidgetStudioContext() {
 }
 
 function actionError(error: unknown) {
+  if (error instanceof WidgetAssetRateLimitError) {
+    return {
+      error: error.message,
+      code: "RATE_LIMIT" as const,
+      retryAfterSeconds: error.retryAfterSeconds,
+    };
+  }
   if (error instanceof WidgetDraftConflictError) {
     return {
       error: error.message,

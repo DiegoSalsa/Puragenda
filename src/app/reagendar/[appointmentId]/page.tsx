@@ -1,52 +1,39 @@
-import { prisma } from "@/server/db/prisma";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { XCircle, AlertTriangle, Clock } from "lucide-react";
 import { RescheduleClient } from "./reschedule-client";
+import { getCustomerAppointmentByToken } from "@/server/services/customer-appointment-action.service";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ appointmentId: string }> }) {
+export const metadata = {
+  title: "Reagendar cita | Puragenda",
+  robots: { index: false, follow: false },
+};
+
+export default async function ReagendarPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ appointmentId: string }>;
+  searchParams: Promise<{ token?: string }>;
+}) {
   const { appointmentId } = await params;
-  const apt = await prisma.appointment.findUnique({
-    where: { id: appointmentId },
-    select: { service: { select: { name: true } }, business: { select: { name: true } } },
-  });
-  if (!apt) return { title: "Cita no encontrada" };
-  return {
-    title: `Reagendar — ${apt.service.name} | ${apt.business.name}`,
-    description: `Reagenda tu cita de ${apt.service.name} en ${apt.business.name}`,
-  };
-}
+  const { token = "" } = await searchParams;
 
-export default async function ReagendarPage({ params }: { params: Promise<{ appointmentId: string }> }) {
-  const { appointmentId } = await params;
+  const appointment = await getCustomerAppointmentByToken(token);
 
-  const appointment = await prisma.appointment.findUnique({
-    where: { id: appointmentId },
-    include: {
-      business: {
-        select: {
-          name: true,
-          slug: true,
-          primaryColor: true,
-          allowRescheduling: true,
-          rescheduleHoursLimit: true,
-          timezone: true,
-        },
-      },
-      service: { select: { name: true, duration: true } },
-      staff: { select: { id: true, name: true } },
-    },
-  });
-
-  if (!appointment) {
+  if (
+    !appointment ||
+    appointment.id !== appointmentId ||
+    !appointment.business.includeAppointmentActionsInConfirmationEmail
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
         <div className="text-center space-y-4">
           <XCircle className="mx-auto h-16 w-16 text-red-400" />
           <h1 className="text-2xl font-bold">Cita no encontrada</h1>
-          <p className="text-muted-foreground">La cita que buscas no existe o fue eliminada.</p>
+          <p className="text-muted-foreground">El enlace no es válido, ya fue utilizado o venció.</p>
         </div>
       </div>
     );
@@ -116,6 +103,7 @@ export default async function ReagendarPage({ params }: { params: Promise<{ appo
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] p-4 text-white">
       <RescheduleClient
         appointmentId={appointment.id}
+        token={token}
         business={{
           name: appointment.business.name,
           slug: appointment.business.slug,

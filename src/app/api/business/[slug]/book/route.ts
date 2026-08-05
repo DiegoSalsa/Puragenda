@@ -9,6 +9,7 @@ import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
 import { resolveWidgetPromotion } from "@/server/services/widget-promotion.service";
+import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -539,6 +540,7 @@ export async function POST(
             staffId: assignedStaffId,
             startTime: { lt: groupEnd },
             endTime: { gt: requestedStart },
+            ...getPublicBlockingScheduleBlockWhere(),
           },
         });
 

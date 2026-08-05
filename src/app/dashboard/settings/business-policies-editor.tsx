@@ -7,6 +7,7 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 interface Props {
   initialAllowRescheduling: boolean;
   initialRescheduleHoursLimit: number;
+  initialIncludeAppointmentActionsInConfirmationEmail: boolean;
   initialRequiresClientRut: boolean;
   initialAllowSameDayBookings: boolean;
   initialSlotInterval: number;
@@ -27,6 +28,7 @@ const SLOT_INTERVAL_OPTIONS = [
 export function BusinessPoliciesEditor({
   initialAllowRescheduling,
   initialRescheduleHoursLimit,
+  initialIncludeAppointmentActionsInConfirmationEmail,
   initialRequiresClientRut,
   initialAllowSameDayBookings,
   initialSlotInterval,
@@ -34,6 +36,8 @@ export function BusinessPoliciesEditor({
 }: Props) {
   const [allowRescheduling, setAllowRescheduling] = useState(initialAllowRescheduling);
   const [rescheduleHoursLimit, setRescheduleHoursLimit] = useState(initialRescheduleHoursLimit);
+  const [includeAppointmentActionsInConfirmationEmail, setIncludeAppointmentActionsInConfirmationEmail] =
+    useState(initialIncludeAppointmentActionsInConfirmationEmail);
   const [requiresClientRut, setRequiresClientRut] = useState(initialRequiresClientRut);
   const [allowSameDayBookings, setAllowSameDayBookings] = useState(initialAllowSameDayBookings);
   const [slotInterval, setSlotInterval] = useState(initialSlotInterval);
@@ -47,6 +51,7 @@ export function BusinessPoliciesEditor({
       const res = await updateBusinessPoliciesAction({
         allowRescheduling,
         rescheduleHoursLimit,
+        includeAppointmentActionsInConfirmationEmail,
         requiresClientRut,
         allowSameDayBookings,
         slotInterval,
@@ -100,6 +105,34 @@ export function BusinessPoliciesEditor({
           </div>
         </div>
       )}
+
+      <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium">Acciones en el correo de confirmación</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              Incluye un botón seguro para cancelar. También incluye reagendamiento cuando esa política está activa.
+              La cancelación exige una segunda confirmación y el enlace vence al comenzar la cita.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={includeAppointmentActionsInConfirmationEmail}
+            aria-label="Incluir acciones en el correo de confirmación"
+            onClick={() => setIncludeAppointmentActionsInConfirmationEmail((value) => !value)}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
+              includeAppointmentActionsInConfirmationEmail ? "bg-[#7C3AED]" : "bg-muted"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                includeAppointmentActionsInConfirmationEmail ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
 
       {/* Require RUT toggle */}
       <div className="flex items-start justify-between gap-4">

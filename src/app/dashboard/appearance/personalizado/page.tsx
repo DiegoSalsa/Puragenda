@@ -47,6 +47,8 @@ export default async function PersonalizadoPage() {
       ...asset,
       createdAt: asset.createdAt.toISOString(),
     })),
+    assetRepairCount: state.assetRepairCount,
+    repairedImageBlockIds: state.repairedImageBlockIds,
   } : null;
 
   return (

@@ -193,54 +193,55 @@ model Subscription {
 // ==========================================
 
 model Business {
-  id                       String    @id @default(cuid())
-  name                     String
-  slug                     String    @unique
-  apiKey                   String    @unique
-  logoUrl                  String?
-  address                  String?
-  mapsUrl                  String?
-  primaryColor             String    @default("#7C3AED")
-  secondaryColor           String    @default("#5B21B6")
-  backgroundColor          String    @default("#0A0A0A")
-  textColor                String    @default("#FFFFFF")
-  textMutedColor           String    @default("#FFFFFF66")
-  widgetFontSize           Int       @default(14)
-  brandColor               String?
-  maxServicesPerBooking    Int       @default(1)
-  groupServicesByCategory  Boolean   @default(false)
-  widgetCornerRadius       Int       @default(16)
-  widgetShadowStyle        String    @default("soft")
-  widgetHeaderAlign        String    @default("left")
+  id                                           String    @id @default(cuid())
+  name                                         String
+  slug                                         String    @unique
+  apiKey                                       String    @unique
+  logoUrl                                      String?
+  address                                      String?
+  mapsUrl                                      String?
+  primaryColor                                 String    @default("#7C3AED")
+  secondaryColor                               String    @default("#5B21B6")
+  backgroundColor                              String    @default("#0A0A0A")
+  textColor                                    String    @default("#FFFFFF")
+  textMutedColor                               String    @default("#FFFFFF66")
+  widgetFontSize                               Int       @default(14)
+  brandColor                                   String?
+  maxServicesPerBooking                        Int       @default(1)
+  groupServicesByCategory                      Boolean   @default(false)
+  widgetCornerRadius                           Int       @default(16)
+  widgetShadowStyle                            String    @default("soft")
+  widgetHeaderAlign                            String    @default("left")
   // ── Abono (Deposit) Config ──
-  depositRequired          Boolean   @default(false)
-  allowedOrigins           String[]  @default([])
-  timezone                 String    @default("America/Santiago")
-  ownerId                  String?
-  referredByAffiliateId    String?
+  depositRequired                              Boolean   @default(false)
+  allowedOrigins                               String[]  @default([])
+  timezone                                     String    @default("America/Santiago")
+  ownerId                                      String?
+  referredByAffiliateId                        String?
   // ── Mercado Pago OAuth (Marketplace) ──
-  mpAccessToken            String?
-  mpRefreshToken           String?
-  mpUserId                 String?
-  mpTokenExpiresAt         DateTime?
+  mpAccessToken                                String?
+  mpRefreshToken                               String?
+  mpUserId                                     String?
+  mpTokenExpiresAt                             DateTime?
   // ── Loyalty / Fidelización ──
-  isLoyaltyEnabled         Boolean   @default(false)
-  stampsRequired           Int       @default(5)
-  rewardName               String?
-  discountType             String? // 'PERCENTAGE' | 'FIXED'
-  discountValue            Int?
+  isLoyaltyEnabled                             Boolean   @default(false)
+  stampsRequired                               Int       @default(5)
+  rewardName                                   String?
+  discountType                                 String? // 'PERCENTAGE' | 'FIXED'
+  discountValue                                Int?
   // ── Politicas del negocio ──
-  requiresClientRut        Boolean   @default(false) // Pedir RUT en el widget
-  allowRescheduling        Boolean   @default(false) // Permitir que clientes reagenden
-  rescheduleHoursLimit     Int       @default(24) // Horas minimas de anticipacion para reagendar
+  requiresClientRut                            Boolean   @default(false) // Pedir RUT en el widget
+  allowRescheduling                            Boolean   @default(false) // Permitir que clientes reagenden
+  rescheduleHoursLimit                         Int       @default(24) // Horas minimas de anticipacion para reagendar
+  includeAppointmentActionsInConfirmationEmail Boolean   @default(false)
   // ── Configuración de agenda ──
-  allowSameDayBookings     Boolean   @default(false) // Permite agendar para hoy
-  slotInterval             Int       @default(60) // Minutos entre cada bloque de hora disponible
-  minAdvanceBookingMinutes Int       @default(120) // Minutos de anticipación (solo si allowSameDayBookings=true)
-  productionOrdersEnabled  Boolean   @default(false)
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  deletedAt                DateTime?
+  allowSameDayBookings                         Boolean   @default(false) // Permite agendar para hoy
+  slotInterval                                 Int       @default(60) // Minutos entre cada bloque de hora disponible
+  minAdvanceBookingMinutes                     Int       @default(120) // Minutos de anticipación (solo si allowSameDayBookings=true)
+  productionOrdersEnabled                      Boolean   @default(false)
+  createdAt                                    DateTime  @default(now())
+  updatedAt                                    DateTime  @updatedAt
+  deletedAt                                    DateTime?
 
   owner                       User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   referredByAffiliate         Affiliate?                   @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)
@@ -317,7 +318,7 @@ model WidgetPromoBlock {
   appointments Appointment[]
 
   @@index([businessId, placement, position])
-  @@index([businessId, isVisible, discountStartsAt, discountEndsAt])
+  @@index([businessId, isVisible, discountStartsAt, discountEndsAt], map: "WidgetPromoBlock_discount_active_idx")
 }
 
 model WidgetDesign {
@@ -623,18 +624,26 @@ model StaffSchedule {
   @@index([staffId])
 }
 
+enum ScheduleBlockType {
+  UNAVAILABLE
+  PRIORITY
+}
+
 model ScheduleBlock {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   staffId   String
   startTime DateTime
   endTime   DateTime
   reason    String?
-  createdAt DateTime @default(now())
+  type      ScheduleBlockType @default(UNAVAILABLE)
+  releaseAt DateTime?
+  createdAt DateTime          @default(now())
 
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@index([staffId])
   @@index([staffId, startTime, endTime])
+  @@index([staffId, type, releaseAt])
 }
 
 model Service {
@@ -919,36 +928,41 @@ enum PaymentStatus {
 }
 
 model Appointment {
-  id                   String            @id @default(cuid())
-  customerName         String
-  customerEmail        String
-  customerPhone        String?
-  customerAddress      String?
-  startTime            DateTime
-  endTime              DateTime
-  status               AppointmentStatus @default(PENDING)
-  additionalServiceIds String[]          @default([])
-  totalDuration        Int?
-  totalPrice           Float?
-  originalTotalPrice   Float?
-  discountAmount       Float?
-  promotionId          String?
-  promotionTitle       String?
-  selectedOptions      Json?
-  businessId           String
-  serviceId            String
-  staffId              String?
-  clientId             String?
-  reminderSent         Boolean           @default(false)
-  actionToken          String?           @unique
+  id                           String            @id @default(cuid())
+  customerName                 String
+  customerEmail                String
+  customerPhone                String?
+  customerAddress              String?
+  startTime                    DateTime
+  endTime                      DateTime
+  status                       AppointmentStatus @default(PENDING)
+  additionalServiceIds         String[]          @default([])
+  totalDuration                Int?
+  totalPrice                   Float?
+  originalTotalPrice           Float?
+  discountAmount               Float?
+  promotionId                  String?
+  promotionTitle               String?
+  selectedOptions              Json?
+  businessId                   String
+  serviceId                    String
+  staffId                      String?
+  clientId                     String?
+  reminderSent                 Boolean           @default(false)
+  actionToken                  String?           @unique
+  customerActionTokenHash      String?           @unique
+  customerActionTokenExpiresAt DateTime?
+  customerActionTokenUsedAt    DateTime?
+  internalNotes                String?
   // ── Deposit Payment ──
-  depositAmount        Int? // CLP amount charged as deposit
-  paymentStatus        PaymentStatus     @default(NONE)
-  mpPaymentId          String? // MercadoPago payment ID
-  mpPreferenceId       String? // MercadoPago preference ID
+  depositAmount                Int? // CLP amount charged as deposit
+  paymentStatus                PaymentStatus     @default(NONE)
+  mpPaymentId                  String? // MercadoPago payment ID
+  mpPreferenceId               String? // MercadoPago preference ID
   // ── Recurring ──
-  recurringBookingId   String? // FK a RecurringBooking si es parte de un plan
-  createdAt            DateTime          @default(now())
+  recurringBookingId           String? // FK a RecurringBooking si es parte de un plan
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
 
   business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   service          Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)

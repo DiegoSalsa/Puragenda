@@ -10,6 +10,7 @@ import { rescheduleAppointmentAction } from "@/server/actions/appointment.action
 
 interface Props {
   appointmentId: string;
+  token: string;
   business: { name: string; slug: string; primaryColor: string; rescheduleHoursLimit: number };
   service: { name: string; duration: number };
   staff: { id: string; name: string } | null;
@@ -17,7 +18,7 @@ interface Props {
   currentEnd: string;
 }
 
-export function RescheduleClient({ appointmentId, business, service, staff, currentStart, currentEnd }: Props) {
+export function RescheduleClient({ appointmentId, token, business, service, staff, currentStart, currentEnd }: Props) {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,8 @@ export function RescheduleClient({ appointmentId, business, service, staff, curr
       const result = await rescheduleAppointmentAction(
         appointmentId,
         newStart.toISOString(),
-        newEnd.toISOString()
+        newEnd.toISOString(),
+        token,
       );
       if (result.error) {
         setError(result.error);

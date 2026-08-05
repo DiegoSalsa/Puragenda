@@ -12,6 +12,7 @@ import { sendStaffInviteEmail } from "@/server/email/send";
 import { isValidTime, isValidTimeRange } from "@/lib/time";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { calculatePriorityReleaseAt } from "@/server/services/schedule-block.service";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -127,6 +128,20 @@ export async function createStaffAction(data: { name: string; email: string; rol
   if (!["ADMIN", "RECEPTIONIST", "STAFF"].includes(assignedRole)) {
     return { error: "Rol inválido" };
   }
+  const canAssignPrivilegedRole = business.ownerId === user.id || user.role === "SUPERADMIN";
+  if (!canAssignPrivilegedRole && assignedRole !== "STAFF") {
+    return { error: "Solo la cuenta owner puede asignar roles con acceso administrativo" };
+  }
+
+  const serviceIds = [...new Set(data.serviceIds || [])];
+  if (serviceIds.length > 0) {
+    const scopedServiceCount = await prisma.service.count({
+      where: { businessId: business.id, id: { in: serviceIds } },
+    });
+    if (scopedServiceCount !== serviceIds.length) {
+      return { error: "Uno o más servicios no pertenecen a este negocio" };
+    }
+  }
 
   // Enforce staff limit
   const limitInfo = await getStaffLimitInfo(business.id);
@@ -147,8 +162,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
     const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
 
     // Build service connections if provided
-    const serviceConnect = data.serviceIds && data.serviceIds.length > 0
-      ? { connect: data.serviceIds.map((id) => ({ id })) }
+    const serviceConnect = serviceIds.length > 0
+      ? { connect: serviceIds.map((id) => ({ id })) }
       : undefined;
 
     // Create User + Staff in a transaction
@@ -294,6 +309,9 @@ export async function updateServiceCategoryGroupingAction(enabled: boolean) {
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
+    return { error: "No tienes permisos para modificar la organización de servicios" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },
@@ -366,12 +384,21 @@ export async function updateStaffServicesAction(staffId: string, serviceIds: str
   }
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
+  const uniqueServiceIds = [...new Set(serviceIds)];
+  if (uniqueServiceIds.length > 0) {
+    const scopedServiceCount = await prisma.service.count({
+      where: { businessId: business.id, id: { in: uniqueServiceIds } },
+    });
+    if (scopedServiceCount !== uniqueServiceIds.length) {
+      return { error: "Uno o más servicios no pertenecen a este negocio" };
+    }
+  }
 
   await prisma.staff.update({
     where: { id: staffId },
     data: {
       services: {
-        set: serviceIds.map((id) => ({ id })),
+        set: uniqueServiceIds.map((id) => ({ id })),
       },
     },
   });
@@ -610,6 +637,8 @@ export async function createScheduleBlockAction(data: {
   startTime: string;  // HH:mm
   endTime: string;    // HH:mm
   reason?: string;
+  type?: "UNAVAILABLE" | "PRIORITY";
+  releaseHoursBefore?: number | null;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -623,14 +652,34 @@ export async function createScheduleBlockAction(data: {
   const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
-  // Build DateTimes from date + time in America/Santiago timezone
+  // Build DateTimes from the business timezone (Vercel runs in UTC).
   // Instead of new Date(`${date}T${time}:00`) which parses as UTC on Vercel
   const { fromZonedTime } = await import("date-fns-tz");
-  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, "America/Santiago");
-  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, "America/Santiago");
+  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, business.timezone);
+  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, business.timezone);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
   if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
+
+  const blockType = data.type ?? "UNAVAILABLE";
+  if (!["UNAVAILABLE", "PRIORITY"].includes(blockType)) {
+    return { error: "Tipo de bloqueo inválido" };
+  }
+  const allowedReleaseHours = new Set([24, 48, 72]);
+  if (
+    blockType === "PRIORITY" &&
+    data.releaseHoursBefore != null &&
+    !allowedReleaseHours.has(data.releaseHoursBefore)
+  ) {
+    return { error: "El plazo de liberación no es válido" };
+  }
+  const releaseAt =
+    blockType === "PRIORITY"
+      ? calculatePriorityReleaseAt(start, data.releaseHoursBefore)
+      : null;
+  if (releaseAt && releaseAt <= new Date()) {
+    return { error: "El cupo ya estaría liberado. Elige una fecha posterior o un plazo menor." };
+  }
 
   // Check for overlapping blocks
   const overlap = await prisma.scheduleBlock.findFirst({
@@ -642,70 +691,88 @@ export async function createScheduleBlockAction(data: {
   });
   if (overlap) return { error: "Ya existe un bloqueo en ese rango horario" };
 
+  if (blockType === "PRIORITY") {
+    const occupied = await prisma.appointment.findFirst({
+      where: {
+        staffId: data.staffId,
+        status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+      select: { id: true },
+    });
+    if (occupied) return { error: "Ese horario ya tiene una cita y no puede reservarse como prioritario" };
+  }
+
   const block = await prisma.scheduleBlock.create({
     data: {
       staffId: data.staffId,
       startTime: start,
       endTime: end,
       reason: data.reason?.trim() || null,
+      type: blockType,
+      releaseAt,
     },
   });
 
   // ── Logic 3: Check if this block collides with any active recurring appointments ──
-  try {
-    const collidingAppointments = await prisma.appointment.findMany({
-      where: {
-        staffId: data.staffId,
-        startTime: { lt: block.endTime },
-        endTime: { gt: block.startTime },
-        status: { notIn: ["CANCELLED", "NO_SHOW"] },
-        recurringBookingId: { not: null },
-      },
-      include: {
-        recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
-        service: { select: { name: true } },
-        business: { select: { name: true } },
-      },
-    });
+  if (blockType === "UNAVAILABLE") {
+    try {
+      const collidingAppointments = await prisma.appointment.findMany({
+        where: {
+          staffId: data.staffId,
+          startTime: { lt: block.endTime },
+          endTime: { gt: block.startTime },
+          status: { notIn: ["CANCELLED", "NO_SHOW"] },
+          recurringBookingId: { not: null },
+        },
+        include: {
+          recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
+          service: { select: { name: true } },
+          business: { select: { name: true } },
+        },
+      });
 
-    if (collidingAppointments.length > 0) {
-      const { sendRecurringSessionCancelledClient } = await import("@/server/email/send");
+      if (collidingAppointments.length > 0) {
+        const { sendRecurringSessionCancelledClient } = await import("@/server/email/send");
 
-      for (const apt of collidingAppointments) {
-        // Cancel the appointment
-        await prisma.appointment.update({
-          where: { id: apt.id },
-          data: { status: "CANCELLED" },
-        });
+        for (const apt of collidingAppointments) {
+          // Cancel the appointment
+          await prisma.appointment.update({
+            where: { id: apt.id },
+            data: { status: "CANCELLED" },
+          });
 
-        // Create a session override record
-        await prisma.recurringSessionOverride.create({
-          data: {
-            recurringBookingId: apt.recurringBookingId!,
-            originalDate: apt.startTime,
-            action: "CANCELLED",
-            reason: "Bloqueo de agenda",
-            requestedByClient: false,
-          },
-        });
+          // Create a session override record
+          await prisma.recurringSessionOverride.create({
+            data: {
+              recurringBookingId: apt.recurringBookingId!,
+              originalDate: apt.startTime,
+              action: "CANCELLED",
+              reason: "Bloqueo de agenda",
+              requestedByClient: false,
+            },
+          });
 
-        // Notify the client
-        await sendRecurringSessionCancelledClient({
-          customerEmail: apt.recurringBooking!.customerEmail,
-          customerName: apt.recurringBooking!.customerName,
-          serviceName: apt.service.name,
-          sessionDate: apt.startTime,
-          businessName: apt.business.name,
-        });
+          // Notify the client
+          await sendRecurringSessionCancelledClient({
+            customerEmail: apt.recurringBooking!.customerEmail,
+            customerName: apt.recurringBooking!.customerName,
+            serviceName: apt.service.name,
+            sessionDate: apt.startTime,
+            businessName: apt.business.name,
+          });
+        }
+
+        console.log(`[ScheduleBlock] Cancelled ${collidingAppointments.length} recurring appointments due to block`);
       }
-
-      console.log(`[ScheduleBlock] Cancelled ${collidingAppointments.length} recurring appointments due to block`);
+    } catch (err) {
+      console.error("[ScheduleBlock] Error checking recurring collisions:", err);
     }
-  } catch (err) {
-    console.error("[ScheduleBlock] Error checking recurring collisions:", err);
   }
 
   revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -727,6 +794,7 @@ export async function deleteScheduleBlockAction(blockId: string) {
 
   await prisma.scheduleBlock.delete({ where: { id: blockId } });
   revalidatePath("/dashboard/staff");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -829,6 +897,7 @@ export async function saveDepositConfigAction(data: {
 export async function updateBusinessPoliciesAction(data: {
   allowRescheduling: boolean;
   rescheduleHoursLimit: number;
+  includeAppointmentActionsInConfirmationEmail: boolean;
   requiresClientRut: boolean;
   allowSameDayBookings: boolean;
   slotInterval: number;
@@ -840,6 +909,13 @@ export async function updateBusinessPoliciesAction(data: {
   if (!business) return { error: "No tienes un negocio" };
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
     return { error: "No tienes permisos para configurar las políticas" };
+  }
+  if (
+    !Number.isFinite(data.rescheduleHoursLimit) ||
+    !Number.isFinite(data.slotInterval) ||
+    !Number.isFinite(data.minAdvanceBookingMinutes)
+  ) {
+    return { error: "Usa valores numéricos válidos para las políticas de reserva" };
   }
 
   const hoursLimit = Math.max(1, Math.min(168, Math.floor(data.rescheduleHoursLimit)));
@@ -856,6 +932,7 @@ export async function updateBusinessPoliciesAction(data: {
     data: {
       allowRescheduling: data.allowRescheduling,
       rescheduleHoursLimit: hoursLimit,
+      includeAppointmentActionsInConfirmationEmail: Boolean(data.includeAppointmentActionsInConfirmationEmail),
       requiresClientRut: data.requiresClientRut,
       allowSameDayBookings: data.allowSameDayBookings,
       slotInterval,
@@ -872,12 +949,11 @@ export async function updateBusinessPoliciesAction(data: {
 export async function updateProductionOrdersEnabledAction(enabled: boolean) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
-  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
-    return { error: "Solo el administrador puede configurar los encargos" };
-  }
-
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para configurar los encargos" };
+  }
 
   await prisma.business.update({
     where: { id: business.id },

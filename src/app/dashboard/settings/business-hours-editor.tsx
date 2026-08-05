@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "lucide-react";
 import { saveBusinessHoursAction } from "@/server/actions/dashboard.actions";
-import { isValidTimeRange } from "@/lib/time";
+import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
 import { TimeTextInput } from "@/components/ui/time-text-input";
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -192,8 +192,17 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
                   <button
                     type="button"
                     onClick={() => {
-                      update(entry.dayOfWeek, "breakStart", hasBreak ? null : "13:00");
-                      update(entry.dayOfWeek, "breakEnd", hasBreak ? null : "14:00");
+                      const suggestedBreak = getDefaultBreakRange(entry.startTime, entry.endTime);
+                      update(
+                        entry.dayOfWeek,
+                        "breakStart",
+                        hasBreak ? null : suggestedBreak?.startTime ?? null,
+                      );
+                      update(
+                        entry.dayOfWeek,
+                        "breakEnd",
+                        hasBreak ? null : suggestedBreak?.endTime ?? null,
+                      );
                     }}
                     aria-label={`${hasBreak ? "Quitar" : "Añadir"} pausa de ${day}`}
                     className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors md:col-span-2 xl:col-span-1 ${

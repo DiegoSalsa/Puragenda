@@ -28,6 +28,7 @@ import {
   recurringConflictWarningClientEmail,
 } from "./templates";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
+import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -61,12 +62,45 @@ async function deliverEmail(
     const result = await resend.emails.send(params);
     if (result.error) {
       console.error(`[Email] Resend rejected ${context}:`, result.error);
-      return;
+      return false;
     }
     console.log(`[Email] Sent ${context}: ${result.data?.id ?? "no-id"}`);
+    return true;
   } catch (err) {
     console.error(`[Email] Error sending ${context}:`, err);
+    return false;
   }
+}
+
+async function buildCustomerAppointmentActionUrls(appointment: AppointmentWithRelations) {
+  if (!appointment.id || !appointment.businessId || appointment.recurringBookingId) {
+    return { cancelUrl: undefined, rescheduleUrl: undefined };
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: appointment.businessId },
+    select: {
+      includeAppointmentActionsInConfirmationEmail: true,
+      allowRescheduling: true,
+    },
+  });
+  if (!business?.includeAppointmentActionsInConfirmationEmail) {
+    return { cancelUrl: undefined, rescheduleUrl: undefined };
+  }
+
+  const token = await issueCustomerAppointmentToken(appointment.id, appointment.startTime);
+  if (!token) return { cancelUrl: undefined, rescheduleUrl: undefined };
+
+  const appUrl = process.env.NODE_ENV === "production"
+    ? "https://www.puragenda.cl"
+    : "http://localhost:3000";
+
+  return {
+    cancelUrl: `${appUrl}/cita/cancelar?manageToken=${token}`,
+    rescheduleUrl: business.allowRescheduling
+      ? `${appUrl}/reagendar/${appointment.id}?token=${token}`
+      : undefined,
+  };
 }
 
 // ═══════════════════════════════════════════
@@ -139,8 +173,11 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     );
   }
 
-  await Promise.allSettled(tasks);
-  console.log(`[Email] Booking notifications sent for appointment with ${data.customerName}`);
+  const results = await Promise.all(tasks);
+  const delivered = results.filter((result) => result === true).length;
+  console.log(
+    `[Email] Booking notifications complete for appointment ${appointment.id ?? "unknown"}: ${delivered}/${tasks.length} delivered`
+  );
 }
 
 /**
@@ -156,6 +193,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
  * Errors are logged but never thrown.
  */
 export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations) {
+  const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
   const data = {
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
@@ -168,6 +206,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     businessName: appointment.business.name,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
+    ...actionUrls,
   };
 
   const tasks: Promise<unknown>[] = [];
@@ -221,18 +260,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
  * Send confirmation email to the customer when appointment status changes to CONFIRMED.
  */
 export async function sendConfirmationEmail(appointment: AppointmentWithRelations) {
-  // Check if business allows rescheduling
-  let rescheduleUrl: string | undefined;
-  if (!appointment.recurringBookingId && appointment.businessId && appointment.id) {
-    const business = await prisma.business.findUnique({
-      where: { id: appointment.businessId },
-      select: { allowRescheduling: true },
-    });
-    if (business?.allowRescheduling) {
-      const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-      rescheduleUrl = `${appUrl}/reagendar/${appointment.id}`;
-    }
-  }
+  const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
 
   const data = {
     customerName: appointment.customerName,
@@ -245,7 +273,7 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     businessName: appointment.business.name,
     businessAddress: appointment.business.address,
     businessMapsUrl: appointment.business.mapsUrl,
-    rescheduleUrl,
+    ...actionUrls,
   };
 
   const { subject, html } = confirmedBookingClientEmail(data);

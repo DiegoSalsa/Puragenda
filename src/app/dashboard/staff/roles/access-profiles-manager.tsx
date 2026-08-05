@@ -21,17 +21,17 @@ const TEMPLATES = [
   {
     name: "Profesional",
     description: "Ve sus citas y sus análisis personales.",
-    permissions: ["appointments.view_own", "analytics.view_own"],
+    permissions: ["appointments.view_own", "appointments.manage_own", "analytics.view_own"],
   },
   {
     name: "Recepción",
     description: "Gestiona agenda, clientes, servicios y suscripciones.",
-    permissions: ["appointments.view_all", "analytics.view_business", "services.manage", "clients.manage", "recurring.manage"],
+    permissions: ["appointments.view_all", "appointments.manage_all", "analytics.view_business", "services.manage", "clients.manage", "recurring.manage"],
   },
   {
     name: "Encargado de marca",
     description: "Puede mantener servicios, imágenes, temas y widget.",
-    permissions: ["appointments.view_own", "analytics.view_own", "services.manage", "appearance.manage"],
+    permissions: ["appointments.view_own", "appointments.manage_own", "analytics.view_own", "services.manage", "appearance.manage"],
   },
 ];
 
@@ -58,7 +58,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
     setEditing(null);
     setName(template?.name || "");
     setDescription(template?.description || "");
-    setPermissions(template?.permissions || ["appointments.view_own", "analytics.view_own"]);
+    setPermissions(template?.permissions || ["appointments.view_own", "appointments.manage_own", "analytics.view_own"]);
     setError("");
     setFormOpen(true);
   }
