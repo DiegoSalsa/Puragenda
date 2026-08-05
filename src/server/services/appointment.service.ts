@@ -21,7 +21,8 @@ export async function checkAppointmentCollision(
   startTime: Date,
   endTime: Date,
   staffId?: string | null,
-  excludeAppointmentId?: string
+  excludeAppointmentId?: string,
+  locationId?: string | null,
 ): Promise<{
   hasCollision: boolean;
   conflictingAppointment?: { customerName: string; startTime: Date; endTime: Date };
@@ -31,6 +32,7 @@ export async function checkAppointmentCollision(
       businessId,
       status: { not: "CANCELLED" },
       ...(staffId && { staffId }),
+      ...(!staffId && locationId && { locationId }),
       ...(excludeAppointmentId && { id: { not: excludeAppointmentId } }),
       // Overlap condition: newStart < existingEnd AND newEnd > existingStart
       startTime: { lt: endTime },
@@ -87,6 +89,7 @@ export async function createAppointment(data: {
   startTime: Date;
   endTime: Date;
   businessId: string;
+  locationId?: string;
   serviceId: string;
   staffId?: string;
   clientId?: string;
@@ -109,7 +112,9 @@ export async function createAppointment(data: {
     data.businessId,
     data.startTime,
     data.endTime,
-    data.staffId
+    data.staffId,
+    undefined,
+    data.locationId,
   );
 
   if (hasCollision) {
@@ -152,6 +157,7 @@ export async function createAppointment(data: {
       endTime: data.endTime,
       status: initialStatus,
       businessId: data.businessId,
+      locationId: data.locationId,
       serviceId: data.serviceId,
       staffId: data.staffId,
       clientId: data.clientId,
@@ -204,7 +210,8 @@ export async function getBlockedSlots(
   businessId: string,
   dateStart: Date,
   dateEnd: Date,
-  staffId?: string
+  staffId?: string,
+  locationId?: string,
 ) {
   // 1) Blocked by existing appointments
   const appointments = await prisma.appointment.findMany({
@@ -212,6 +219,7 @@ export async function getBlockedSlots(
       businessId,
       status: { not: "CANCELLED" },
       ...(staffId && { staffId }),
+      ...(!staffId && locationId && { locationId }),
       startTime: { lt: dateEnd },
       endTime: { gt: dateStart },
     },

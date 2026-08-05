@@ -21,13 +21,17 @@ export default async function StaffPage() {
     return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar profesionales</div>;
   }
 
-  const [staffMembers, limitInfo, allServices, accessProfiles] = await Promise.all([
+  const [staffMembers, limitInfo, allServices, accessProfiles, businessLocations] = await Promise.all([
     prisma.staff.findMany({
       where: { businessId: business.id },
       include: {
         user: { select: { id: true, role: true } },
         accessProfile: { select: { id: true, name: true } },
         schedule: { orderBy: { dayOfWeek: "asc" } },
+        locations: {
+          where: { isActive: true, location: { isActive: true } },
+          include: { location: { select: { id: true, name: true } }, schedule: { orderBy: { dayOfWeek: "asc" } } },
+        },
         services: { select: { id: true } },
         scheduleBlocks: {
           where: { endTime: { gte: new Date() } },
@@ -48,6 +52,11 @@ export default async function StaffPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true, description: true },
     }),
+    prisma.businessLocation.findMany({
+      where: { businessId: business.id, isActive: true },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    }),
   ]);
 
   const serialized = staffMembers.map((s) => ({
@@ -59,6 +68,11 @@ export default async function StaffPage() {
     userId: s.user?.id ?? null,
     isOwner: s.user?.id === business.ownerId,
     schedule: s.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking, breakStart: sc.breakStart, breakEnd: sc.breakEnd })),
+    locations: s.locations.map((assignment) => ({
+      locationId: assignment.location.id,
+      name: assignment.location.name,
+      schedule: assignment.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking, breakStart: sc.breakStart, breakEnd: sc.breakEnd })),
+    })),
     serviceIds: s.services.map((sv) => sv.id),
     blocks: s.scheduleBlocks.map((b) => ({
       id: b.id,
@@ -98,6 +112,7 @@ export default async function StaffPage() {
         allServices={allServices}
         accessProfiles={accessProfiles}
         canManageRoles={business.ownerId === user.id}
+        allLocations={businessLocations}
       />
 
       <PageTutorial

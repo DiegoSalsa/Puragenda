@@ -5,10 +5,20 @@ import { DAYS_OF_WEEK } from "@/core/constants";
  * Get business hours for a business. Returns all 7 days (creates defaults if missing).
  */
 export async function getBusinessHours(businessId: string) {
-  const existing = await prisma.businessHours.findMany({
-    where: { businessId },
-    orderBy: { dayOfWeek: "asc" },
-  });
+  const [primaryLocation, existing] = await Promise.all([
+    prisma.businessLocation.findFirst({
+      where: { businessId, isPrimary: true },
+      include: { hours: { orderBy: { dayOfWeek: "asc" } } },
+    }),
+    prisma.businessHours.findMany({
+      where: { businessId },
+      orderBy: { dayOfWeek: "asc" },
+    }),
+  ]);
+
+  if (primaryLocation?.hours.length) {
+    return primaryLocation.hours.map((hour) => ({ ...hour, businessId }));
+  }
 
   // If no hours configured, return defaults
   if (existing.length === 0) {

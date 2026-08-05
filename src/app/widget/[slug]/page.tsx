@@ -73,7 +73,7 @@ export default async function WidgetPage({
   searchParams: Promise<{
     color?: string; primary?: string; secondary?: string;
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
-    radius?: string; shadow?: string; headerAlign?: string;
+    radius?: string; shadow?: string; headerAlign?: string; location?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -91,6 +91,7 @@ export default async function WidgetPage({
             orderBy: { position: "asc" },
             include: { alternatives: { orderBy: { position: "asc" } } },
           },
+          locations: { select: { locationId: true } },
         },
       },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
@@ -99,6 +100,7 @@ export default async function WidgetPage({
         include: {
           schedule: { orderBy: { dayOfWeek: "asc" } },
           services: { select: { id: true } },
+          locations: { where: { isActive: true }, select: { locationId: true, schedule: { orderBy: { dayOfWeek: "asc" } } } },
         },
       },
       widgetPromoBlocks: {
@@ -107,6 +109,14 @@ export default async function WidgetPage({
       },
       scheduleOverrides: {
         orderBy: { date: "asc" },
+      },
+      locations: {
+        where: { isActive: true },
+        orderBy: [{ position: "asc" }, { name: "asc" }],
+        include: {
+          hours: { orderBy: { dayOfWeek: "asc" } },
+          scheduleOverrides: { orderBy: { date: "asc" } },
+        },
       },
     },
   });
@@ -197,6 +207,7 @@ export default async function WidgetPage({
         productionLeadTimeWeeks: s.productionLeadTimeWeeks,
         productionDepositPercent: s.productionDepositPercent,
         requiresReferenceImages: s.requiresReferenceImages,
+        locationIds: s.locations.map((assignment) => assignment.locationId),
         category: s.category
           ? {
               id: s.category.id,
@@ -250,6 +261,11 @@ export default async function WidgetPage({
         name: s.name,
         imageUrl: s.imageUrl,
         serviceIds: s.services.map((sv) => sv.id),
+        locationIds: s.locations.map((assignment) => assignment.locationId),
+        locationSchedules: s.locations.map((assignment) => ({
+          locationId: assignment.locationId,
+          schedule: assignment.schedule.map((sc) => ({ dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking, breakStart: sc.breakStart, breakEnd: sc.breakEnd })),
+        })),
         schedule: s.schedule.map((sc) => ({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
           breakStart: sc.breakStart, breakEnd: sc.breakEnd,
@@ -276,6 +292,17 @@ export default async function WidgetPage({
         discountEndsAt: block.discountEndsAt?.toISOString() ?? null,
         discountMinSubtotal: block.discountMinSubtotal,
       }))}
+      locations={business.locations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        slug: location.slug,
+        address: location.address,
+        mapsUrl: location.mapsUrl,
+        timezone: location.timezone,
+        hours: location.hours.map((hour) => ({ dayOfWeek: hour.dayOfWeek, startTime: hour.startTime, endTime: hour.endTime, isOpen: hour.isOpen, breakStart: hour.breakStart, breakEnd: hour.breakEnd })),
+        scheduleOverrides: location.scheduleOverrides.map((override) => ({ date: override.date.toISOString().split("T")[0], isOpen: override.isOpen, startTime: override.startTime, endTime: override.endTime, breakStart: override.breakStart, breakEnd: override.breakEnd })),
+      }))}
+      initialLocationSlug={sp.location}
     />
     </>
   );

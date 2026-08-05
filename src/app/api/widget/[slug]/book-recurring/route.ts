@@ -34,6 +34,7 @@ export async function POST(
 
     const {
       serviceId,
+      locationId,
       staffId,
       selectedDays,
       selectedTimes,
@@ -104,6 +105,7 @@ export async function POST(
     const result = await createRecurringBookingAction({
       businessSlug: slug,
       serviceId,
+      locationId,
       staffId: staffId || undefined,
       selectedDays,
       selectedTimes,

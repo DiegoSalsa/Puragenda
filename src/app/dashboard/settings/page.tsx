@@ -22,6 +22,7 @@ import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { SecretField } from "@/components/dashboard/secret-field";
 import { ScheduleOverridesEditor } from "./schedule-overrides";
 import { BusinessCountryEditor } from "./business-country-editor";
+import { LocationsManager } from "./locations-manager";
 import {
   getCountryConfig,
   getMercadoPagoCurrency,
@@ -41,9 +42,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
   if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
 
-  const [hours, subscription] = await Promise.all([
+  const [hours, subscription, locations, services] = await Promise.all([
     getBusinessHours(business.id),
     prisma.subscription.findUnique({ where: { businessId: business.id } }),
+    prisma.businessLocation.findMany({
+      where: { businessId: business.id },
+      orderBy: [{ position: "asc" }, { name: "asc" }],
+      include: { services: { select: { serviceId: true } }, hours: { orderBy: { dayOfWeek: "asc" } } },
+    }),
+    prisma.service.findMany({ where: { businessId: business.id }, orderBy: [{ position: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
   ]);
 
   const params = await searchParams;
@@ -248,21 +255,37 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <BusinessLocationEditor initialAddress={business.address} initialMapsUrl={business.mapsUrl} />
         </div>
 
+        <div id="business-locations" className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
+            <MapPin className="h-4 w-4 text-[#7C3AED]" /> Sucursales
+          </div>
+          <LocationsManager
+            locations={locations.map((location) => ({ ...location, serviceIds: location.services.map((service) => service.serviceId) }))}
+            services={services}
+            defaultTimezone={business.timezone}
+            countryCode={business.countryCode}
+          />
+        </div>
+
         <div id="business-hours" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Clock className="h-4 w-4 text-[#7C3AED]" /> Horario de Atención
           </div>
-          <BusinessHoursEditor initialHours={hours.map((h) => ({
-            dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen,
-            breakStart: h.breakStart, breakEnd: h.breakEnd,
-          }))} />
+          <BusinessHoursEditor
+            initialHours={hours.map((h) => ({ dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart, breakEnd: h.breakEnd }))}
+            locations={locations.filter((location) => location.isActive).map((location) => ({
+              id: location.id,
+              name: location.name,
+              hours: location.hours.map((hour) => ({ dayOfWeek: hour.dayOfWeek, startTime: hour.startTime, endTime: hour.endTime, isOpen: hour.isOpen, breakStart: hour.breakStart, breakEnd: hour.breakEnd })),
+            }))}
+          />
         </div>
 
         <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <CalendarRange className="h-4 w-4 text-[#7C3AED]" /> Horarios por Fecha (Excepciones)
           </div>
-          <ScheduleOverridesEditor />
+          <ScheduleOverridesEditor locations={locations.filter((location) => location.isActive).map((location) => ({ id: location.id, name: location.name }))} />
         </div>
 
         <div id="business-slug" className="rounded-2xl border border-border bg-card p-6">

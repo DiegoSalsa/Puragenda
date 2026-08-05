@@ -147,6 +147,7 @@ export function buildRecurringSessions(
  */
 export async function generateAppointments(params: {
   recurringBookingId: string;
+  locationId?: string | null;
   businessId: string;
   serviceId: string;
   staffId: string | null;
@@ -193,6 +194,7 @@ export async function generateAppointments(params: {
       staffId: params.staffId ?? undefined,
       clientId: params.clientId ?? undefined,
       recurringBookingId: params.recurringBookingId,
+      locationId: params.locationId ?? undefined,
       additionalServiceIds: [],
     }));
 

@@ -10,6 +10,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.7.0",
+    date: "2026-08-05",
+    title: "Sucursales, Horarios por Local y Operación Internacional",
+    description:
+      "Puragenda ahora permite operar varias sucursales bajo una misma cuenta, con disponibilidad, horarios y reservas organizadas por local sin cambiar de plan.",
+    notice:
+      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
+    features: [
+      "Todas las cuentas pueden crear y administrar varias sucursales, cada una con dirección, enlace de mapas, zona horaria y servicios disponibles propios.",
+      "El widget pide primero la sucursal cuando hay más de una y muestra únicamente los servicios, profesionales y horarios de ese local.",
+      "Cada profesional se asigna explícitamente a las sucursales donde atiende y su horario semanal se configura por local; una sucursal no marcada no ofrecerá reservas para esa persona.",
+      "Las excepciones de horario por fecha ahora incluyen selector de sucursal, para cerrar o abrir un local sin afectar a los demás.",
+      "Las reservas guardan la sucursal elegida y la validación de choques del profesional se mantiene entre todos sus locales.",
+      "Nuevos selectores de zona horaria con alternativas por país, incluyendo Chile continental, Magallanes e Isla de Pascua, además de las zonas de México.",
+      "La moneda de las reservas se elige desde un selector ISO internacional y se muestra con su código correspondiente.",
+      "Las sucursales se pueden editar, archivar o eliminar con confirmación; el sistema protege el historial de reservas antes de permitir un borrado.",
+      "El panel de administración muestra directamente el enlace público del widget de cada negocio.",
+    ],
+    fixes: [
+      "Se evita que un profesional aparezca automáticamente disponible en todas las sucursales cuando su asignación no está configurada.",
+      "Los horarios y las excepciones de una sucursal ya no modifican la agenda de las demás.",
+    ],
+  },
+  {
     version: "v1.6.0",
     date: "2026-08-01",
     title: "Google Calendar y Operación más Clara",

@@ -12,6 +12,7 @@ import { resolveWidgetPromotion } from "@/server/services/widget-promotion.servi
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
+import { getLocationForBusiness } from "@/server/services/location.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -85,7 +86,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId, locationId } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -100,6 +101,9 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    const location = await getLocationForBusiness(business.id, locationId);
+    if (!location) return Response.json({ error: "La sucursal seleccionada no está disponible" }, { status: 400 });
 
     // ── Anti-No-Show: Check if client is blocked ──
     const existingClient = await prisma.client.findUnique({
@@ -130,6 +134,8 @@ export async function POST(
     // Handle multi-service: validate all serviceIds
     const allServiceIds = serviceIds && serviceIds.length > 0 ? serviceIds : [serviceId];
     const additionalIds = allServiceIds.filter((id) => id !== serviceId);
+    const availableServiceCount = await prisma.locationService.count({ where: { locationId: location.id, serviceId: { in: allServiceIds } } });
+    if (availableServiceCount !== allServiceIds.length) return Response.json({ error: "Uno o más servicios no se ofrecen en esta sucursal" }, { status: 400 });
 
     // Validate max services per booking
     if (allServiceIds.length > business.maxServicesPerBooking) {
@@ -288,7 +294,7 @@ export async function POST(
       );
     }
 
-    const timezone = business.timezone || "America/Santiago";
+    const timezone = location.timezone || business.timezone || "America/Santiago";
     const localStart = toZonedTime(requestedStart, timezone);
     const localEnd = toZonedTime(expectedEnd, timezone);
     const localNow = toZonedTime(new Date(), timezone);
@@ -342,20 +348,20 @@ export async function POST(
       );
     }
 
-    const businessHour = await prisma.businessHours.findUnique({
+    const businessHour = await prisma.locationHours.findUnique({
       where: {
-        businessId_dayOfWeek: {
-          businessId: business.id,
+        locationId_dayOfWeek: {
+          locationId: location.id,
           dayOfWeek: localStart.getDay(),
         },
       },
     });
 
     // ── Check for business schedule override for this specific date ──
-    const businessOverride = await prisma.businessScheduleOverride.findUnique({
+    const businessOverride = await prisma.locationScheduleOverride.findUnique({
       where: {
-        businessId_date: {
-          businessId: business.id,
+        locationId_date: {
+          locationId: location.id,
           date: new Date(`${bookingDateKey}T00:00:00.000Z`),
         },
       },
@@ -411,6 +417,7 @@ export async function POST(
         include: {
           services: { select: { id: true } },
           schedule: { orderBy: { dayOfWeek: "asc" } },
+          locations: { where: { locationId: location.id, isActive: true }, select: { id: true, schedule: { orderBy: { dayOfWeek: "asc" } } } },
         },
       });
 
@@ -420,6 +427,7 @@ export async function POST(
           { status: 400 }
         );
       }
+      if (selectedStaff.locations.length === 0) return Response.json({ error: "El profesional no atiende en esta sucursal" }, { status: 400 });
 
       const assignedServiceIds = new Set(selectedStaff.services.map((item) => item.id));
       const canPerformAll =
@@ -432,7 +440,8 @@ export async function POST(
         );
       }
 
-      if (selectedStaff.schedule.length > 0) {
+      const selectedStaffSchedule = selectedStaff.locations[0]?.schedule ?? selectedStaff.schedule;
+      if (selectedStaffSchedule.length > 0) {
         // Check for staff schedule override for this specific date
         const staffOverride = await prisma.staffScheduleOverride.findUnique({
           where: {
@@ -467,7 +476,7 @@ export async function POST(
             }
           }
         } else {
-          const staffDay = selectedStaff.schedule.find(
+          const staffDay = selectedStaffSchedule.find(
             (entry) => entry.dayOfWeek === localStart.getDay()
           );
           if (!staffDay?.isWorking) {
@@ -549,7 +558,7 @@ export async function POST(
       const assignedStaffIds = Array.from(new Set(staffAssignments.map((assignment) => assignment.staffId)));
       const assignedStaff = await prisma.staff.findMany({
         where: { id: { in: assignedStaffIds }, businessId: business.id, isActive: true },
-        include: { services: { select: { id: true } } },
+        include: { services: { select: { id: true } }, schedule: { orderBy: { dayOfWeek: "asc" } }, locations: { where: { locationId: location.id, isActive: true }, select: { id: true, schedule: { orderBy: { dayOfWeek: "asc" } } } } },
       });
 
       if (assignedStaff.length !== assignedStaffIds.length) {
@@ -558,6 +567,7 @@ export async function POST(
           { status: 400 }
         );
       }
+      if (assignedStaff.some((member) => member.locations.length === 0)) return Response.json({ error: "Uno o más profesionales no atienden en esta sucursal" }, { status: 400 });
 
       const staffById = new Map(assignedStaff.map((staff) => [staff.id, staff]));
       const serviceById = new Map(allSelectedServices.map((s) => [s.id, s]));
@@ -587,10 +597,7 @@ export async function POST(
         const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
         const assigned = staffById.get(assignedStaffId);
         if (assigned) {
-          const schedule = await prisma.staffSchedule.findMany({
-            where: { staffId: assignedStaffId },
-            orderBy: { dayOfWeek: "asc" },
-          });
+          const schedule = assigned.locations[0]?.schedule ?? assigned.schedule;
           if (schedule.length > 0) {
             // Check for staff schedule override for this specific date
             const staffOverrideMulti = await prisma.staffScheduleOverride.findUnique({
@@ -651,7 +658,9 @@ export async function POST(
           business.id,
           requestedStart,
           groupEnd,
-          assignedStaffId
+          assignedStaffId,
+          undefined,
+          location.id,
         );
 
         if (hasCollision) {
@@ -709,6 +718,7 @@ export async function POST(
           startTime: requestedStart,
           endTime: groupEnd,
           businessId: business.id,
+          locationId: location.id,
           serviceId: groupPrimary.id,
           staffId: assignedStaffId,
           additionalServiceIds: groupServices.slice(1).map((s) => s.id),
@@ -849,6 +859,7 @@ export async function POST(
       startTime: requestedStart,
       endTime: expectedEnd,
       businessId: business.id,
+      locationId: location.id,
       serviceId: service.id,
       staffId,
       additionalServiceIds: additionalIds,

@@ -21,6 +21,7 @@ import {
   isSupportedCountryCode,
   isValidTimeZone,
 } from "@/core/countries";
+import { createBusinessLocation, getLocationForBusiness, updateBusinessLocation } from "@/server/services/location.service";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -87,7 +88,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
 }
 
 // â”€â”€â”€ Business Hours â”€â”€â”€
-export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null }[]) {
+export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null }[], locationId?: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -97,6 +98,18 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
   }
   const validationError = validateDailyHours(hours);
   if (validationError) return { error: validationError };
+  if (locationId) {
+    const location = await prisma.businessLocation.findFirst({ where: { id: locationId, businessId: business.id, isActive: true }, select: { id: true } });
+    if (!location) return { error: "Sucursal no encontrada" };
+    await prisma.$transaction(hours.map((h) => prisma.locationHours.upsert({
+      where: { locationId_dayOfWeek: { locationId: location.id, dayOfWeek: h.dayOfWeek } },
+      create: { locationId: location.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
+      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
+    })));
+    revalidatePath("/dashboard/settings");
+    revalidatePath(`/widget/${business.slug}`);
+    return { success: true };
+  }
   const ops = hours.map((h) =>
     prisma.businessHours.upsert({
       where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek: h.dayOfWeek } },
@@ -104,7 +117,18 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
       update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
     })
   );
-  await prisma.$transaction(ops);
+  const primaryLocation = await prisma.businessLocation.findFirst({
+    where: { businessId: business.id, isPrimary: true },
+    select: { id: true },
+  });
+  const locationOps = primaryLocation
+    ? hours.map((h) => prisma.locationHours.upsert({
+        where: { locationId_dayOfWeek: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek } },
+        create: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
+        update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
+      }))
+    : [];
+  await prisma.$transaction([...ops, ...locationOps]);
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
@@ -203,6 +227,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
           ...(serviceConnect ? { services: serviceConnect } : {}),
         },
       });
+
     });
 
     // Send invite email with temporary password (fire and forget)
@@ -230,7 +255,7 @@ export async function toggleStaffActiveAction(staffId: string) {
   return { success: true };
 }
 
-export async function saveStaffScheduleAction(staffId: string, schedule: { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null }[]) {
+export async function saveStaffScheduleAction(staffId: string, schedule: { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null }[], locationId?: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -242,6 +267,21 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
   if (validationError) return { error: validationError };
   const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
   if (!staff) return { error: "Staff no encontrado" };
+  if (locationId) {
+    const staffLocation = await prisma.staffLocation.findFirst({
+      where: { staffId, locationId, isActive: true, location: { businessId: business.id, isActive: true } },
+      select: { id: true },
+    });
+    if (!staffLocation) return { error: "El profesional no atiende en esta sucursal" };
+    await prisma.$transaction(schedule.map((s) => prisma.staffLocationSchedule.upsert({
+      where: { staffLocationId_dayOfWeek: { staffLocationId: staffLocation.id, dayOfWeek: s.dayOfWeek } },
+      create: { staffLocationId: staffLocation.id, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking, breakStart: s.breakStart || null, breakEnd: s.breakEnd || null },
+      update: { startTime: s.startTime, endTime: s.endTime, isWorking: s.isWorking, breakStart: s.breakStart || null, breakEnd: s.breakEnd || null },
+    })));
+    revalidatePath("/dashboard/staff");
+    revalidatePath(`/widget/${business.slug}`);
+    return { success: true };
+  }
   const ops = schedule.map((s) =>
     prisma.staffSchedule.upsert({
       where: { staffId_dayOfWeek: { staffId, dayOfWeek: s.dayOfWeek } },
@@ -255,6 +295,42 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
 }
 
 // â”€â”€â”€ Appearance â”€â”€â”€
+export async function setStaffLocationAssignmentAction(staffId: string, locationId: string, isActive: boolean) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) return { error: "No tienes permisos para administrar profesionales" };
+
+  const [staff, location] = await Promise.all([
+    prisma.staff.findFirst({ where: { id: staffId, businessId: business.id }, select: { id: true } }),
+    prisma.businessLocation.findFirst({ where: { id: locationId, businessId: business.id, isActive: true }, select: { id: true } }),
+  ]);
+  if (!staff || !location) return { error: "El profesional o la sucursal no pertenecen a este negocio" };
+
+  const initialSchedule = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    startTime: "09:00",
+    endTime: "19:00",
+    isWorking: false,
+    breakStart: null,
+    breakEnd: null,
+  }));
+  await prisma.staffLocation.upsert({
+    where: { staffId_locationId: { staffId, locationId } },
+    create: {
+      staffId,
+      locationId,
+      isActive,
+      schedule: { create: initialSchedule.map((entry) => ({ dayOfWeek: entry.dayOfWeek, startTime: entry.startTime, endTime: entry.endTime, isWorking: entry.isWorking, breakStart: entry.breakStart || null, breakEnd: entry.breakEnd || null })) },
+    },
+    update: { isActive },
+  });
+  revalidatePath("/dashboard/staff");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 export async function saveAppearanceAction(data: {
   primaryColor: string;
   secondaryColor: string;
@@ -934,7 +1010,101 @@ export async function updateBusinessLocationAction(data: { address: string; maps
   return { success: true };
 }
 
+// ─── Business locations / sucursales ───────────────────────────────────────
+export async function createBusinessLocationAction(data: { name: string; address: string; mapsUrl?: string; timezone: string }) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) return { error: "No tienes permisos para administrar sucursales" };
+  if (data.name.trim().length < 2 || data.address.trim().length < 5) return { error: "Indica el nombre y una dirección válida" };
+  if (!isValidTimeZone(data.timezone)) return { error: "La zona horaria no es válida" };
+  await createBusinessLocation({ businessId: business.id, ...data });
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
+export async function updateBusinessLocationRecordAction(locationId: string, data: { name: string; address: string; mapsUrl?: string; timezone: string; isActive: boolean }) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) return { error: "No tienes permisos para administrar sucursales" };
+  if (data.name.trim().length < 2 || data.address.trim().length < 5) return { error: "Indica el nombre y una dirección válida" };
+  if (!isValidTimeZone(data.timezone)) return { error: "La zona horaria no es válida" };
+  try {
+    const result = await updateBusinessLocation(business.id, locationId, data);
+    if (!result) return { error: "Sucursal no encontrada" };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "No se pudo actualizar la sucursal" };
+  }
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
 // ─── Deposit / Abono Config ───
+
+export async function deleteBusinessLocationAction(locationId: string) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) return { error: "No tienes permisos para administrar sucursales" };
+
+  const location = await prisma.businessLocation.findFirst({
+    where: { id: locationId, businessId: business.id },
+    select: { id: true, isPrimary: true },
+  });
+  if (!location) return { error: "Sucursal no encontrada" };
+  if (location.isPrimary) return { error: "La sucursal principal no puede eliminarse" };
+
+  const [appointments, recurringBookings, productionOrders, scheduleBlocks] = await Promise.all([
+    prisma.appointment.count({ where: { locationId } }),
+    prisma.recurringBooking.count({ where: { locationId } }),
+    prisma.productionOrder.count({ where: { locationId } }),
+    prisma.scheduleBlock.count({ where: { locationId } }),
+  ]);
+  if (appointments + recurringBookings + productionOrders + scheduleBlocks > 0) {
+    return { error: "No puedes eliminar una sucursal con historial o agenda. Archívala para dejar de mostrarla al público." };
+  }
+
+  await prisma.businessLocation.delete({ where: { id: location.id } });
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
+
+export async function setLocationServiceAvailabilityAction(locationId: string, serviceId: string, isAvailable: boolean) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) return { error: "No tienes permisos para administrar sucursales" };
+
+  const [location, service] = await Promise.all([
+    prisma.businessLocation.findFirst({ where: { id: locationId, businessId: business.id }, select: { id: true } }),
+    prisma.service.findFirst({ where: { id: serviceId, businessId: business.id }, select: { id: true } }),
+  ]);
+  if (!location || !service) return { error: "La sucursal o el servicio no pertenecen a este negocio" };
+
+  if (isAvailable) {
+    await prisma.locationService.upsert({
+      where: { locationId_serviceId: { locationId, serviceId } },
+      create: { locationId, serviceId },
+      update: {},
+    });
+  } else {
+    await prisma.locationService.deleteMany({ where: { locationId, serviceId } });
+  }
+  revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
+  return { success: true };
+}
 
 export async function saveDepositConfigAction(data: {
   depositRequired: boolean;
@@ -1091,6 +1261,7 @@ export async function markChangelogSeenAction(version: string) {
 // ─── Schedule Overrides ───
 
 export async function saveScheduleOverrideAction(data: {
+  locationId?: string;
   date: string;        // YYYY-MM-DD
   isOpen: boolean;
   startTime?: string;
@@ -1135,16 +1306,12 @@ export async function saveScheduleOverrideAction(data: {
     }
   }
 
-  // Upsert both Business and Staff overrides (simplified UX for solo businesses)
-  const staff = await prisma.staff.findFirst({
-    where: { businessId: business.id, isActive: true },
-    select: { id: true },
-  });
-
-  await prisma.businessScheduleOverride.upsert({
-    where: { businessId_date: { businessId: business.id, date: dateObj } },
+  const location = await getLocationForBusiness(business.id, data.locationId);
+  if (!location) return { error: "Sucursal no encontrada" };
+  await prisma.locationScheduleOverride.upsert({
+    where: { locationId_date: { locationId: location.id, date: dateObj } },
     create: {
-      businessId: business.id,
+      locationId: location.id,
       date: dateObj,
       isOpen: data.isOpen,
       startTime: data.isOpen ? data.startTime || null : null,
@@ -1161,34 +1328,12 @@ export async function saveScheduleOverrideAction(data: {
     },
   });
 
-  // Also upsert a matching StaffScheduleOverride for the first active staff member
-  if (staff) {
-    await prisma.staffScheduleOverride.upsert({
-      where: { staffId_date: { staffId: staff.id, date: dateObj } },
-      create: {
-        staffId: staff.id,
-        date: dateObj,
-        isWorking: data.isOpen,
-        startTime: data.isOpen ? data.startTime || null : null,
-        endTime: data.isOpen ? data.endTime || null : null,
-        breakStart: data.isOpen ? data.breakStart || null : null,
-        breakEnd: data.isOpen ? data.breakEnd || null : null,
-      },
-      update: {
-        isWorking: data.isOpen,
-        startTime: data.isOpen ? data.startTime || null : null,
-        endTime: data.isOpen ? data.endTime || null : null,
-        breakStart: data.isOpen ? data.breakStart || null : null,
-        breakEnd: data.isOpen ? data.breakEnd || null : null,
-      },
-    });
-  }
-
   revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
   return { success: true };
 }
 
-export async function deleteScheduleOverrideAction(date: string) {
+export async function deleteScheduleOverrideAction(date: string, locationId?: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
   const business = await getBusinessForUser(user.id);
@@ -1203,37 +1348,25 @@ export async function deleteScheduleOverrideAction(date: string) {
 
   const dateObj = new Date(`${date}T00:00:00.000Z`);
 
-  // Delete business override
-  await prisma.businessScheduleOverride.deleteMany({
-    where: { businessId: business.id, date: dateObj },
-  });
-
-  // Delete matching staff overrides
-  const staffIds = await prisma.staff.findMany({
-    where: { businessId: business.id },
-    select: { id: true },
-  });
-  if (staffIds.length > 0) {
-    await prisma.staffScheduleOverride.deleteMany({
-      where: {
-        staffId: { in: staffIds.map((s) => s.id) },
-        date: dateObj,
-      },
-    });
-  }
+  const location = await getLocationForBusiness(business.id, locationId);
+  if (!location) return { error: "Sucursal no encontrada" };
+  await prisma.locationScheduleOverride.deleteMany({ where: { locationId: location.id, date: dateObj } });
 
   revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
   return { success: true };
 }
 
-export async function getScheduleOverridesAction() {
+export async function getScheduleOverridesAction(locationId?: string) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado", overrides: [] };
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio", overrides: [] };
 
-  const overrides = await prisma.businessScheduleOverride.findMany({
-    where: { businessId: business.id },
+  const location = await getLocationForBusiness(business.id, locationId);
+  if (!location) return { error: "Sucursal no encontrada", overrides: [] };
+  const overrides = await prisma.locationScheduleOverride.findMany({
+    where: { locationId: location.id },
     orderBy: { date: "asc" },
   });
 

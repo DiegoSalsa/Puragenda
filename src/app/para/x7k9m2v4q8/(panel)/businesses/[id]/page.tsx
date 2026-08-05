@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { SubscriptionEditor } from "./subscription-editor";
 import { DeleteBusinessButton } from "./delete-business-button";
+import { absoluteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -256,8 +257,8 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                 </div>
               </div>
               <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                <span className="text-xs font-black uppercase text-black/40">URL del widget</span>
-                <span className="font-mono text-xs font-bold text-black">/widget/{business.slug}</span>
+                <span className="text-xs font-black uppercase text-black/40">Enlace público</span>
+                <a href={absoluteUrl(`/widget/${business.slug}`)} target="_blank" rel="noreferrer" className="font-mono text-xs font-bold text-black underline decoration-2 underline-offset-2">{absoluteUrl(`/widget/${business.slug}`)}</a>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase text-black/40">API Key</span>

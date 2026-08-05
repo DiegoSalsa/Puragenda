@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   COUNTRY_CONFIG,
   getCountryConfig,
+  getCurrencyOptions,
   getMercadoPagoCurrency,
+  getTimezoneOptions,
   isMercadoPagoCurrencyCompatible,
   isSupportedCountryCode,
   normalizeAndValidateTaxId,
@@ -52,6 +54,18 @@ describe("business country configuration", () => {
     expect(isMercadoPagoCurrencyCompatible("AR", "USD")).toBe(false);
     expect(isMercadoPagoCurrencyCompatible("PE", "COP")).toBe(false);
     expect(isMercadoPagoCurrencyCompatible("US", "USD")).toBe(false);
+  });
+
+  it("offers the regional timezones needed for Chile and Mexico", () => {
+    const chile = getTimezoneOptions("CL").filter((option) => option.preferred).map((option) => option.value);
+    const mexico = getTimezoneOptions("MX").filter((option) => option.preferred).map((option) => option.value);
+    expect(chile).toEqual(expect.arrayContaining(["America/Santiago", "America/Punta_Arenas", "Pacific/Easter"]));
+    expect(mexico).toEqual(expect.arrayContaining(["America/Mexico_City", "America/Tijuana", "America/Cancun"]));
+  });
+
+  it("offers selectable ISO currencies including the supported Latin American ones", () => {
+    const currencies = getCurrencyOptions().map((option) => option.value);
+    expect(currencies).toEqual(expect.arrayContaining(["CLP", "ARS", "COP", "USD", "MXN"]));
   });
 });
 

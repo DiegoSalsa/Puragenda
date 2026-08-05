@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Loader2, UserCheck, UserX, Clock, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff, Upload, ImageIcon, Coffee, MoreHorizontal } from "lucide-react";
-import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
+import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, setStaffLocationAssignmentAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
@@ -35,6 +35,7 @@ interface StaffMember {
   userId: string | null;
   isOwner: boolean;
   schedule: ScheduleEntry[];
+  locations: { locationId: string; name: string; schedule: ScheduleEntry[] }[];
   serviceIds: string[];
   blocks?: BlockEntry[];
 }
@@ -44,6 +45,10 @@ interface AccessProfileOption { id: string; name: string; description: string; }
 
 function defaultSchedule(): ScheduleEntry[] {
   return Array.from({ length: 7 }, (_, i) => ({ dayOfWeek: i, startTime: "09:00", endTime: "19:00", isWorking: i >= 1 && i <= 5, breakStart: null, breakEnd: null }));
+}
+
+function scheduleKey(staffId: string, locationId?: string) {
+  return locationId ? `${staffId}:${locationId}` : staffId;
 }
 
 function generateCode(): string {
@@ -129,12 +134,14 @@ export function StaffList({
   staff: initialStaff,
   limitInfo,
   allServices = [],
+  allLocations = [],
   accessProfiles = [],
   canManageRoles = false,
 }: {
   staff: StaffMember[];
   limitInfo: LimitInfo;
   allServices?: ServiceOption[];
+  allLocations?: { id: string; name: string }[];
   accessProfiles?: AccessProfileOption[];
   canManageRoles?: boolean;
 }) {
@@ -151,10 +158,15 @@ export function StaffList({
   const [menuId, setMenuId] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<Record<string, ScheduleEntry[]>>(() => {
     const map: Record<string, ScheduleEntry[]> = {};
-    for (const s of initialStaff) { map[s.id] = s.schedule.length === 7 ? s.schedule : defaultSchedule(); }
+    for (const s of initialStaff) {
+      map[s.id] = s.schedule.length === 7 ? s.schedule : defaultSchedule();
+      for (const location of s.locations) map[scheduleKey(s.id, location.locationId)] = location.schedule.length === 7 ? location.schedule : defaultSchedule();
+    }
     return map;
   });
+  const [scheduleLocationIds, setScheduleLocationIds] = useState<Record<string, string>>(() => Object.fromEntries(initialStaff.map((staff) => [staff.id, staff.locations[0]?.locationId || ""])));
   const [savingSchedule, setSavingSchedule] = useState<string | null>(null);
+  const [savingLocationAssignment, setSavingLocationAssignment] = useState<string | null>(null);
   const [scheduleErrors, setScheduleErrors] = useState<Record<string, string>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
@@ -226,16 +238,17 @@ export function StaffList({
     router.refresh();
   }
 
-  function updateSchedule(staffId: string, dow: number, field: string, value: string | boolean | null) {
+  function updateSchedule(staffId: string, locationId: string | undefined, dow: number, field: string, value: string | boolean | null) {
+    const key = scheduleKey(staffId, locationId);
     setSchedules((prev) => ({
       ...prev,
-      [staffId]: (prev[staffId] || defaultSchedule()).map((s) => s.dayOfWeek === dow ? { ...s, [field]: value } : s),
+      [key]: (prev[key] || defaultSchedule()).map((s) => s.dayOfWeek === dow ? { ...s, [field]: value } : s),
     }));
     setScheduleErrors((prev) => ({ ...prev, [staffId]: "" }));
   }
 
-  async function handleSaveSchedule(staffId: string) {
-    const schedule = schedules[staffId] || defaultSchedule();
+  async function handleSaveSchedule(staffId: string, locationId?: string) {
+    const schedule = schedules[scheduleKey(staffId, locationId)] || defaultSchedule();
     const invalidWorkday = schedule.find(
       (entry) => entry.isWorking && !isValidTimeRange(entry.startTime, entry.endTime),
     );
@@ -266,11 +279,20 @@ export function StaffList({
 
     setSavingSchedule(staffId);
     setScheduleErrors((prev) => ({ ...prev, [staffId]: "" }));
-    const result = await saveStaffScheduleAction(staffId, schedule);
+    const result = await saveStaffScheduleAction(staffId, schedule, locationId || undefined);
     if (result.error) {
       setScheduleErrors((prev) => ({ ...prev, [staffId]: result.error }));
     }
     setSavingSchedule(null);
+  }
+
+  async function toggleLocationAssignment(staffId: string, locationId: string, isActive: boolean) {
+    const key = `${staffId}:${locationId}`;
+    setSavingLocationAssignment(key);
+    const result = await setStaffLocationAssignmentAction(staffId, locationId, isActive);
+    if (result.error) setScheduleErrors((current) => ({ ...current, [staffId]: result.error }));
+    setSavingLocationAssignment(null);
+    router.refresh();
   }
 
   async function handleDelete() {
@@ -454,7 +476,9 @@ export function StaffList({
         {/* ═══ STAFF LIST ═══ */}
         {initialStaff.map((s) => {
           const expanded = expandedId === s.id;
-          const sched = schedules[s.id] || defaultSchedule();
+          const selectedLocationId = scheduleLocationIds[s.id] || s.locations[0]?.locationId || "";
+          const scheduleStateKey = scheduleKey(s.id, selectedLocationId || undefined);
+          const sched = schedules[scheduleStateKey] || schedules[s.id] || defaultSchedule();
           const assignedServiceNames = (staffServices[s.id] || []).map((id) => serviceNameMap[id]).filter(Boolean);
 
           return (
@@ -689,10 +713,27 @@ export function StaffList({
 
                   {/* ── Section: Schedule ── */}
                   {drawerTab === "schedule" && <div className="space-y-3">
+                    {allLocations.length > 0 && <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="mb-2 text-xs font-semibold text-foreground">Sucursales donde atiende</p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        {allLocations.map((location) => {
+                          const assigned = s.locations.some((item) => item.locationId === location.id);
+                          const assignmentKey = `${s.id}:${location.id}`;
+                          return <label key={location.id} className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                            <input type="checkbox" checked={assigned} disabled={savingLocationAssignment === assignmentKey} onChange={(event) => toggleLocationAssignment(s.id, location.id, event.target.checked)} />
+                            {location.name}
+                          </label>;
+                        })}
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">Solo se ofrecerán reservas para este profesional en las sucursales marcadas.</p>
+                    </div>}
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
                         <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> Horario laboral
                       </p>
+                      {s.locations.length > 0 && <select value={selectedLocationId} onChange={(event) => setScheduleLocationIds((current) => ({ ...current, [s.id]: event.target.value }))} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-semibold">
+                        {s.locations.map((location) => <option key={location.locationId} value={location.locationId}>{location.name}</option>)}
+                      </select>}
                       <button
                         type="button"
                         onClick={() => {
@@ -701,7 +742,7 @@ export function StaffList({
                           const source = activeDays[0];
                           setSchedules(prev => ({
                             ...prev,
-                            [s.id]: (prev[s.id] || defaultSchedule()).map(ds => ({
+                            [scheduleStateKey]: (prev[scheduleStateKey] || defaultSchedule()).map(ds => ({
                               ...ds,
                               isWorking: ds.dayOfWeek === 0 ? false : true, // Dom (0) libre by default
                               startTime: source.startTime,
@@ -735,7 +776,7 @@ export function StaffList({
                                 aria-label={`${entry.isWorking ? "Marcar libre" : "Marcar laboral"} ${dayLabel} de ${s.name}`}
                                 aria-pressed={entry.isWorking}
                                 type="button"
-                                onClick={() => updateSchedule(s.id, entry.dayOfWeek, "isWorking", !entry.isWorking)}
+                                onClick={() => updateSchedule(s.id, selectedLocationId || undefined, entry.dayOfWeek, "isWorking", !entry.isWorking)}
                                 className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
                                   entry.isWorking
                                     ? "border-[#7C3AED] bg-[#7C3AED]"
@@ -760,14 +801,14 @@ export function StaffList({
                               <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
                                 <TimeTextInput
                                   value={entry.startTime}
-                                  onChange={(value) => updateSchedule(s.id, entry.dayOfWeek, "startTime", value)}
+                                  onChange={(value) => updateSchedule(s.id, selectedLocationId || undefined, entry.dayOfWeek, "startTime", value)}
                                   ariaLabel={`Hora de entrada del ${dayLabel}`}
                                   compact
                                 />
                                 <span className="text-xs font-medium text-muted-foreground">a</span>
                                 <TimeTextInput
                                   value={entry.endTime}
-                                  onChange={(value) => updateSchedule(s.id, entry.dayOfWeek, "endTime", value)}
+                                  onChange={(value) => updateSchedule(s.id, selectedLocationId || undefined, entry.dayOfWeek, "endTime", value)}
                                   ariaLabel={`Hora de salida del ${dayLabel}`}
                                   compact
                                 />
@@ -785,12 +826,14 @@ export function StaffList({
                                   const suggestedBreak = getDefaultBreakRange(entry.startTime, entry.endTime);
                                   updateSchedule(
                                     s.id,
+                                    selectedLocationId || undefined,
                                     entry.dayOfWeek,
                                     "breakStart",
                                     hasBreak ? null : suggestedBreak?.startTime ?? null,
                                   );
                                   updateSchedule(
                                     s.id,
+                                    selectedLocationId || undefined,
                                     entry.dayOfWeek,
                                     "breakEnd",
                                     hasBreak ? null : suggestedBreak?.endTime ?? null,
@@ -816,7 +859,7 @@ export function StaffList({
                               <TimeTextInput
                                 ariaLabel={`Inicio pausa ${dayLabel} de ${s.name}`}
                                 value={entry.breakStart || ""}
-                                onChange={(value) => updateSchedule(s.id, entry.dayOfWeek, "breakStart", value)}
+                                onChange={(value) => updateSchedule(s.id, selectedLocationId || undefined, entry.dayOfWeek, "breakStart", value)}
                                 compact
                                 className="min-w-[110px]"
                               />
@@ -824,7 +867,7 @@ export function StaffList({
                               <TimeTextInput
                                 ariaLabel={`Fin pausa ${dayLabel} de ${s.name}`}
                                 value={entry.breakEnd || ""}
-                                onChange={(value) => updateSchedule(s.id, entry.dayOfWeek, "breakEnd", value)}
+                                onChange={(value) => updateSchedule(s.id, selectedLocationId || undefined, entry.dayOfWeek, "breakEnd", value)}
                                 compact
                                 className="min-w-[110px]"
                               />
@@ -836,7 +879,8 @@ export function StaffList({
                     })}
                     <p className="text-[11px] text-muted-foreground">Puedes escribir horas exactas, por ejemplo 09:15.</p>
                     {scheduleErrors[s.id] && <p role="alert" className="text-xs text-red-500">{scheduleErrors[s.id]}</p>}
-                    <button onClick={() => handleSaveSchedule(s.id)} disabled={savingSchedule === s.id}
+                    <p className="text-[11px] text-muted-foreground">El horario guardado corresponde a la sucursal seleccionada.</p>
+                    <button onClick={() => handleSaveSchedule(s.id, selectedLocationId || undefined)} disabled={savingSchedule === s.id}
                       className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-bold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
                       {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Guardar horario

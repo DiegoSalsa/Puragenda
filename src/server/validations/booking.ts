@@ -60,6 +60,7 @@ export const bookingSchema = z
       .min(1, "El ID del servicio no puede estar vacio"),
 
     serviceIds: z.array(z.string()).optional(),
+    locationId: z.string().min(1).optional(),
 
     selectedOptionAlternativeIds: z.array(z.string()).optional().default([]),
 
@@ -117,6 +118,7 @@ export type BookingInput = z.infer<typeof bookingSchema>;
 
 export const recurringBookingRequestSchema = z.object({
   serviceId: z.string().min(1),
+  locationId: z.string().min(1).optional(),
   staffId: z.string().min(1).optional(),
   selectedDays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
   selectedTimes: z.record(z.string(), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)),

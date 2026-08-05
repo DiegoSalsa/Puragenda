@@ -85,12 +85,18 @@ export async function createService(data: {
     _max: { position: true },
   });
 
+  const activeLocations = await prisma.businessLocation.findMany({
+    where: { businessId: serviceData.businessId, isActive: true },
+    select: { id: true },
+  });
+
   return prisma.service.create({
     data: {
       ...serviceData,
       position: (aggregate._max.position ?? -1) + 1,
       depositAmount: serviceData.depositAmount ?? 0,
       optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
+      locations: activeLocations.length ? { create: activeLocations.map((location) => ({ locationId: location.id })) } : undefined,
     },
     include: serviceOptionsInclude,
   });

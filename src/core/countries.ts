@@ -119,6 +119,53 @@ export function getSupportedTimezones() {
   return intl.supportedValuesOf?.("timeZone") ?? ["UTC", ...Object.values(COUNTRY_CONFIG).map((country) => country.timezone)];
 }
 
+const COUNTRY_TIMEZONES: Record<string, string[]> = {
+  CL: ["America/Santiago", "America/Punta_Arenas", "Pacific/Easter"],
+  MX: ["America/Mexico_City", "America/Cancun", "America/Chihuahua", "America/Mazatlan", "America/Hermosillo", "America/Tijuana"],
+  AR: ["America/Argentina/Buenos_Aires", "America/Argentina/Cordoba", "America/Argentina/Mendoza", "America/Argentina/Salta"],
+  BR: ["America/Sao_Paulo", "America/Manaus", "America/Cuiaba", "America/Rio_Branco", "America/Belem", "America/Noronha"],
+  CA: ["America/Toronto", "America/Vancouver", "America/Edmonton", "America/Winnipeg", "America/Halifax", "America/St_Johns"],
+  US: ["America/New_York", "America/Chicago", "America/Denver", "America/Phoenix", "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu"],
+  ES: ["Europe/Madrid", "Atlantic/Canary"],
+  EC: ["America/Guayaquil", "Pacific/Galapagos"],
+};
+
+const TIMEZONE_LABELS: Record<string, string> = {
+  "America/Santiago": "Chile continental — Santiago",
+  "America/Punta_Arenas": "Chile — Magallanes / Punta Arenas",
+  "Pacific/Easter": "Chile — Isla de Pascua / Rapa Nui",
+  "America/Mexico_City": "México — Ciudad de México",
+  "America/Cancun": "México — Cancún / Quintana Roo",
+  "America/Chihuahua": "México — Chihuahua",
+  "America/Mazatlan": "México — Mazatlán / Sinaloa",
+  "America/Hermosillo": "México — Hermosillo / Sonora",
+  "America/Tijuana": "México — Tijuana / Baja California",
+};
+
+function timezoneLabel(timezone: string) {
+  return TIMEZONE_LABELS[timezone] ?? timezone.replaceAll("_", " ").replaceAll("/", " — ");
+}
+
+export function getTimezoneOptions(countryCode?: string | null) {
+  const preferred = COUNTRY_TIMEZONES[countryCode?.toUpperCase() || ""] ?? [];
+  const timezones = [...new Set([...preferred, ...getSupportedTimezones()])];
+  return timezones.map((value) => ({ value, label: timezoneLabel(value), preferred: preferred.includes(value) }));
+}
+
+const FALLBACK_CURRENCIES = ["ARS", "BOB", "BRL", "CAD", "CLP", "COP", "CRC", "DOP", "EUR", "GTQ", "HNL", "MXN", "NIO", "PAB", "PEN", "PYG", "USD", "UYU", "VES"];
+
+export function getCurrencyOptions(locale = "es") {
+  const intl = Intl as typeof Intl & { supportedValuesOf?: (key: "currency") => string[] };
+  const values = intl.supportedValuesOf?.("currency") ?? FALLBACK_CURRENCIES;
+  let displayNames: Intl.DisplayNames | null = null;
+  try {
+    displayNames = new Intl.DisplayNames([locale], { type: "currency" });
+  } catch {
+    displayNames = null;
+  }
+  return values.map((value) => ({ value, label: `${value} — ${displayNames?.of(value) ?? value}` }));
+}
+
 export function normalizeAndValidateTaxId(countryCode: string | null | undefined, value: string) {
   const region = getCountryConfig(countryCode);
   const trimmed = value.trim();

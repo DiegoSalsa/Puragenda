@@ -44,10 +44,12 @@ interface Service {
   category: { id: string; name: string; position: number } | null;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
+  locationIds?: string[];
 }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null; }
-interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; }
+interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; locationIds?: string[]; locationSchedules?: { locationId: string; schedule: StaffScheduleEntry[] }[]; }
+interface Location { id: string; name: string; slug: string; address: string | null; mapsUrl: string | null; timezone: string; hours: BusinessHour[]; scheduleOverrides: ScheduleOverride[]; }
 interface PromoBlock {
   id: string;
   title: string;
@@ -91,9 +93,11 @@ interface Props {
   slotInterval?: number;
   minAdvanceBookingMinutes?: number;
   promoBlocks?: PromoBlock[];
+  locations?: Location[];
+  initialLocationSlug?: string;
 }
 
-type Step = "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
+type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
 type FormState = { name: string; email: string; phone: string; address: string };
 type BlockedSlot = { startTime: string; endTime: string; staffId?: string };
 type StaffAssignment = { serviceId: string; staffId: string };
@@ -248,10 +252,15 @@ function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], tim
   return false;
 }
 
-function isStaffWorkingOnDay(staff: StaffMember, dow: number): boolean {
-  if (staff.schedule.length === 0) return true; // No schedule = always available
-  const entry = staff.schedule.find((s) => s.dayOfWeek === dow);
+function isStaffWorkingOnDay(staff: StaffMember, dow: number, schedule = staff.schedule): boolean {
+  if (schedule.length === 0) return true; // No schedule = always available
+  const entry = schedule.find((s) => s.dayOfWeek === dow);
   return entry ? entry.isWorking : false;
+}
+
+function getStaffScheduleForLocation(staff: StaffMember | null | undefined, locationId?: string): StaffScheduleEntry[] | undefined {
+  if (!staff) return undefined;
+  return staff.locationSchedules?.find((entry) => entry.locationId === locationId)?.schedule ?? staff.schedule;
 }
 
 function timeToMinutes(date: Date) {
@@ -293,7 +302,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [] }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug }: Props) {
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -303,7 +312,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const shadowStyle = business.shadowStyle || "soft";
   const headerAlign = business.headerAlign || "left";
   const isMultiService = maxServicesPerBooking > 1;
-  const [step, setStep] = useState<Step>("service");
+  const initialLocation = locations.find((location) => location.slug === initialLocationSlug) ?? (locations.length === 1 ? locations[0] : null);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(initialLocation);
+  const [step, setStep] = useState<Step>(initialLocation || locations.length <= 1 ? "service" : "location");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [expandedServiceCategories, setExpandedServiceCategories] = useState<string[]>([]);
@@ -342,13 +353,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringError, setRecurringError] = useState("");
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
 
+  const availableServices = useMemo(() => selectedLocation ? services.filter((service) => service.locationIds?.includes(selectedLocation.id)) : services, [services, selectedLocation]);
+  const effectiveHours = selectedLocation?.hours?.length ? selectedLocation.hours : businessHours;
+  const effectiveOverrides = selectedLocation?.scheduleOverrides?.length ? selectedLocation.scheduleOverrides : scheduleOverrides;
+  const effectiveTimezone = selectedLocation?.timezone || business.timezone;
+  const selectedStaffSchedule = getStaffScheduleForLocation(selectedStaff, selectedLocation?.id);
   const serviceGroups = useMemo(() => {
     const groups = new Map<
       string,
       { id: string; name: string; position: number; services: Service[] }
     >();
 
-    for (const service of services) {
+    for (const service of availableServices) {
       const id = service.category?.id ?? "__uncategorized";
       const current = groups.get(id) ?? {
         id,
@@ -363,7 +379,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return Array.from(groups.values()).sort(
       (a, b) => a.position - b.position || a.name.localeCompare(b.name, "es")
     );
-  }, [services]);
+  }, [availableServices]);
   const shouldGroupServices =
     groupServicesByCategory && serviceGroups.some((group) => group.id !== "__uncategorized");
 
@@ -408,14 +424,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const commonStaffForSelectedServices = useMemo(() => {
     if (!staffMembers) return [];
     if (selectedServiceIds.length === 0) return staffMembers;
-    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, selectedServiceIds));
-  }, [staffMembers, selectedServiceIds]);
+    return staffMembers.filter((staff) => (!selectedLocation || staff.locationIds?.includes(selectedLocation.id)) && canStaffPerformAllServices(staff, selectedServiceIds));
+  }, [staffMembers, selectedServiceIds, selectedLocation]);
   const canChooseStaffPerService = useMemo(() => {
     if (!staffMembers || !isMultiService || activeServices.length <= 1) return false;
     return activeServices.every((service) =>
-      staffMembers.some((staff) => canStaffPerformService(staff, service.id))
+      staffMembers.some((staff) => (!selectedLocation || staff.locationIds?.includes(selectedLocation.id)) && canStaffPerformService(staff, service.id))
     );
-  }, [activeServices, isMultiService, staffMembers]);
+  }, [activeServices, isMultiService, staffMembers, selectedLocation]);
   const needsStaffPerService = isMultiService && activeServices.length > 1 && commonStaffForSelectedServices.length === 0;
   const splitStaffMode = canChooseStaffPerService && (needsStaffPerService || staffSelectionMode === "split");
   const splitStaffAssignments = useMemo(() => activeServices
@@ -471,36 +487,36 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       ? selectedServices.map((s) => s.id)
       : selectedService ? [selectedService.id] : [];
     if (selectedServiceIds.length === 0) return staffMembers;
-    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, selectedServiceIds));
-  }, [staffMembers, selectedService, selectedServices, isMultiService]);
+    return staffMembers.filter((staff) => (!selectedLocation || staff.locationIds?.includes(selectedLocation.id)) && canStaffPerformAllServices(staff, selectedServiceIds));
+  }, [staffMembers, selectedService, selectedServices, isMultiService, selectedLocation]);
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
   const days = useMemo(
-    () => buildDays(business.timezone, businessHours, allowSameDayBookings, scheduleOverrides),
-    [business.timezone, businessHours, allowSameDayBookings, scheduleOverrides],
+    () => buildDays(effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides),
+    [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides],
   );
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
-    const staffSched = selectedStaff?.schedule;
+    const staffSched = selectedStaffSchedule;
     // The API returns appointment timestamps in UTC. Convert their end to the
     // business timezone before using it as a wall-clock start candidate.
     const appointmentEndStarts = blockedSlots.map((blocked) =>
-      toZonedTime(new Date(blocked.endTime), business.timezone),
+      toZonedTime(new Date(blocked.endTime), effectiveTimezone),
     );
     let generated = buildSlots(
       selectedDate,
       dur,
-      businessHours,
+      effectiveHours,
       staffSched,
       slotInterval,
-      scheduleOverrides,
+      effectiveOverrides,
       appointmentEndStarts,
     );
 
     // Same-day filtering logic
-    const now = toZonedTime(new Date(), business.timezone);
+    const now = toZonedTime(new Date(), effectiveTimezone);
     const isToday = selectedDate.getFullYear() === now.getFullYear() &&
       selectedDate.getMonth() === now.getMonth() &&
       selectedDate.getDate() === now.getDate();
@@ -513,7 +529,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return generated;
-  }, [selectedDate, selectedService, businessHours, selectedStaff, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, scheduleOverrides, blockedSlots, business.timezone]);
+  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -536,7 +552,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       const idsToFetch = staffIds.length > 0 ? staffIds : [undefined];
       const responses = await Promise.all(idsToFetch.map(async (staffId) => {
         const staffParam = staffId ? `&staffId=${staffId}` : "";
-        const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}`, { headers: { "x-api-key": business.apiKey } });
+        const locationParam = selectedLocation ? `&locationId=${encodeURIComponent(selectedLocation.id)}` : "";
+        const res = await fetch(`/api/business/${business.slug}/appointments?date=${dateStr}${staffParam}${locationParam}`, { headers: { "x-api-key": business.apiKey } });
         if (!res.ok) return [];
         const data = await res.json();
         return (data as BlockedSlot[]).map((slot) => ({ ...slot, staffId }));
@@ -545,7 +562,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     } catch { /* ignore */ } finally {
       if (blockedRequestRef.current === requestId) setLoadingSlots(false);
     }
-  }, [business.slug, business.apiKey]);
+  }, [business.slug, business.apiKey, selectedLocation]);
 
   useEffect(() => {
     if (!selectedDate) return;
@@ -556,7 +573,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }, [selectedDate, assignedStaffIds, fetchBlocked]);
 
   const isSlotUnavailable = useCallback((slot: { start: Date; end: Date }) => {
-    if (!splitStaffMode) return isBlocked(slot, blockedSlots, business.timezone);
+    if (!splitStaffMode) return isBlocked(slot, blockedSlots, effectiveTimezone);
 
     for (const service of activeServices) {
       const staffId = selectedStaffByServiceId[service.id];
@@ -565,10 +582,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
       const serviceEnd = addMinutes(slot.start, durationByServiceId.get(service.id) ?? service.duration);
       const serviceSlot = { start: slot.start, end: serviceEnd };
-      if (!isStaffAvailableForSlot(staff, serviceSlot)) return true;
+      if (!isStaffAvailableForSlot({ ...staff, schedule: getStaffScheduleForLocation(staff, selectedLocation?.id) ?? staff.schedule }, serviceSlot)) return true;
 
       const staffBlockedSlots = blockedSlots.filter((blocked) => blocked.staffId === staffId);
-      if (isBlocked(serviceSlot, staffBlockedSlots, business.timezone)) return true;
+      if (isBlocked(serviceSlot, staffBlockedSlots, effectiveTimezone)) return true;
     }
 
     return false;
@@ -579,7 +596,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     selectedStaffByServiceId,
     splitStaffMode,
     staffMembers,
-    business.timezone,
+    effectiveTimezone,
+    selectedLocation?.id,
   ]);
 
   useEffect(() => {
@@ -595,12 +613,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   function getStaffForServices(serviceIds: string[]): StaffMember[] {
     if (!staffMembers) return [];
     if (serviceIds.length === 0) return staffMembers;
-    return staffMembers.filter((staff) => canStaffPerformAllServices(staff, serviceIds));
+    return staffMembers.filter((staff) => (!selectedLocation || staff.locationIds?.includes(selectedLocation.id)) && canStaffPerformAllServices(staff, serviceIds));
   }
 
   function getStaffForService(serviceId: string): StaffMember[] {
     if (!staffMembers) return [];
-    return staffMembers.filter((staff) => canStaffPerformService(staff, serviceId));
+    return staffMembers.filter((staff) => (!selectedLocation || staff.locationIds?.includes(selectedLocation.id)) && canStaffPerformService(staff, serviceId));
   }
 
   function handleSelectService(s: Service) {
@@ -765,9 +783,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           serviceId: serviceIds[0], serviceIds,
           selectedOptionAlternativeIds,
           customerName: form.name.trim(), customerEmail: form.email.trim(),
-          customerPhone: form.phone.trim(), startTime: fromZonedTime(selectedSlot.start, business.timezone).toISOString(),
+          customerPhone: form.phone.trim(), startTime: fromZonedTime(selectedSlot.start, effectiveTimezone).toISOString(),
           customerAddress: requiresHomeAddress ? form.address.trim() : undefined,
-          endTime: fromZonedTime(selectedSlot.end, business.timezone).toISOString(),
+          endTime: fromZonedTime(selectedSlot.end, effectiveTimezone).toISOString(),
+          locationId: selectedLocation?.id,
           staffId: splitStaffMode ? undefined : selectedStaff?.id,
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
@@ -876,6 +895,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceId: selectedService!.id,
+          locationId: selectedLocation?.id,
           staffId: selectedStaff?.id,
           selectedDays: recurringSelectedDays,
           selectedTimes: recurringTimes,
@@ -919,6 +939,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     : isRecurringFlow
     ? ["Servicio", "Configurar plan", "Tus datos"]
     : [
+        ...(locations.length > 1 ? ["Sucursal"] : []),
         isMultiService ? "Servicios" : "Servicio",
         ...(servicesNeedOptions ? ["Opciones"] : []),
         ...(needsStaffStep ? [needsStaffPerService ? "Profesionales" : "Profesional"] : []),
@@ -929,11 +950,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     ? step === "options" ? 1 : step === "production" ? stepLabels.length - 1 : 0
     : isRecurringFlow
     ? (step === "recurring-config" || step === "health-form" ? 1 : step === "recurring-confirm" ? 2 : stepLabels.length)
-    : step === "service" || step === "mode-select" ? 0
-    : step === "options" ? 1
-    : step === "staff" ? 1 + optionOffset
-    : step === "datetime" ? 1 + optionOffset + staffOffset
-    : step === "details" ? 2 + optionOffset + staffOffset
+    : step === "location" ? 0
+    : step === "service" || step === "mode-select" ? (locations.length > 1 ? 1 : 0)
+    : step === "options" ? 1 + (locations.length > 1 ? 1 : 0)
+    : step === "staff" ? 1 + optionOffset + (locations.length > 1 ? 1 : 0)
+    : step === "datetime" ? 1 + optionOffset + staffOffset + (locations.length > 1 ? 1 : 0)
+    : step === "details" ? 2 + optionOffset + staffOffset + (locations.length > 1 ? 1 : 0)
     : stepLabels.length;
 
   function renderServiceButton(service: Service) {
@@ -1151,6 +1173,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         {renderPromoBlocks("HEADER")}
 
         <div className="p-5 sm:p-6">
+          {step === "location" && (
+            <div className="animate-fade-up space-y-4">
+              <div><h2 className="text-xl font-bold">¿Dónde quieres reservar?</h2><p className="text-sm" style={{ color: textSecondary }}>Elige la sucursal que te quede mejor.</p></div>
+              <div className="grid gap-3">
+                {locations.map((location) => <button key={location.id} type="button" onClick={() => { setSelectedLocation(location); setSelectedService(null); setSelectedServices([]); setSelectedStaff(null); setSelectedDate(null); setSelectedSlot(null); setStep("service"); }} className="rounded-2xl border p-4 text-left transition hover:-translate-y-0.5" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                  <div className="flex gap-3"><span className="mt-0.5 rounded-lg p-2" style={{ background: `${pc}18`, color: pc }}><MapPin className="h-4 w-4" /></span><span><span className="block font-semibold">{location.name}</span><span className="mt-1 block text-sm" style={{ color: textSecondary }}>{location.address || "Dirección por confirmar"}</span>{location.mapsUrl && <span className="mt-1 block text-xs" style={{ color: pc }}>Ver ubicación en el mapa</span>}</span></div>
+                </button>)}
+              </div>
+            </div>
+          )}
           {/* Step 1: Service */}
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
@@ -1158,7 +1190,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               {renderPromoBlocks("BETWEEN_SERVICES")}
               {!shouldGroupServices && (
               <div className="grid gap-3">
-                {services.map((s) => {
+                {availableServices.map((s) => {
                   const isSelected = isMultiService && selectedServices.some((x) => x.id === s.id);
                   return (
                   <button key={s.id} type="button" onClick={() => handleSelectService(s)}
@@ -1195,6 +1227,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 })}
               </div>
               )}
+              {availableServices.length === 0 && <p className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--wborder)", color: textSecondary }}>Esta sucursal todavía no tiene servicios disponibles.</p>}
               {shouldGroupServices && (
                 <div className="space-y-2">
                   {serviceGroups.map((group) => {
@@ -1452,7 +1485,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
                     // Calculate typical slots for this day based on standard hours
                     const dummyDate = new Date(2024, 0, d.value === 0 ? 7 : d.value);
-                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, businessHours, selectedStaff?.schedule || undefined, slotInterval).map(s => format(s.start, "HH:mm"));
+                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, effectiveHours, selectedStaffSchedule, slotInterval, effectiveOverrides).map(s => format(s.start, "HH:mm"));
 
                     return (
                       <div key={d.value} className="rounded-2xl border transition-all duration-300 overflow-hidden" 
@@ -1867,9 +1900,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     const staffWorking = splitStaffMode
                       ? activeServices.every((service) => {
                           const staff = staffMembers?.find((item) => item.id === selectedStaffByServiceId[service.id]);
-                          return staff ? isStaffWorkingOnDay(staff, day.getDay()) : false;
+                          return staff ? isStaffWorkingOnDay(staff, day.getDay(), getStaffScheduleForLocation(staff, selectedLocation?.id)) : false;
                         })
-                      : selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay()) : true;
+                      : selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay(), selectedStaffSchedule) : true;
                     return (
                       <button key={day.toISOString()} type="button" disabled={!staffWorking}
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}

@@ -1,0 +1,3 @@
+-- Mirror of the canonical Prisma migration. Apply through Prisma migrations;
+-- this copy exists only for controlled Supabase review.
+-- See prisma/migrations/20260805143000_add_business_locations/migration.sql

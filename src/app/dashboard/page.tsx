@@ -17,7 +17,7 @@ import { getCountryConfig } from "@/core/countries";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string; location?: string }> }) {
   const user = await getCurrentSessionUser();
   if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion para acceder al dashboard</div>;
 
@@ -58,16 +58,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     !!agendaScope.ownStaffId;
   const canManageAppointments = canManageAllAppointments || canManageOwnAppointments;
   const params = await searchParams;
+  const locations = await prisma.businessLocation.findMany({ where: { businessId: business.id, isActive: true }, orderBy: [{ position: "asc" }, { name: "asc" }], include: { hours: { orderBy: { dayOfWeek: "asc" } } } });
+  const selectedLocation = locations.find((location) => location.slug === params.location) ?? locations.find((location) => location.isPrimary) ?? locations[0] ?? null;
+  const locationFilter = selectedLocation ? { locationId: selectedLocation.id } : {};
   const canToggleOwnAgenda = agendaScope.canSeeAllAgendas && !!agendaScope.ownStaffId;
   const showingOwnAgenda = canToggleOwnAgenda && params.agenda === "mine";
   const scopedStaffFilter = agendaScope.canSeeAllAgendas
     ? (showingOwnAgenda ? { staffId: agendaScope.ownStaffId ?? "__no_staff_access__" } : {})
     : { staffId: agendaScope.staffId ?? "__no_staff_access__" };
 
-  function dashboardHref(agenda?: "mine") {
+  function dashboardHref(agenda?: "mine", location?: string) {
     const query = new URLSearchParams();
     if (params.date) query.set("date", params.date);
     if (agenda) query.set("agenda", agenda);
+    if (location) query.set("location", location);
     const queryString = query.toString();
     return queryString ? `/dashboard?${queryString}` : "/dashboard";
   }
@@ -88,6 +92,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     prisma.appointment.findMany({
       where: {
         businessId: business.id,
+        ...locationFilter,
         ...scopedStaffFilter,
         startTime: { gte: weekStart, lt: addDays(weekEnd, 1) },
       },
@@ -109,9 +114,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       include: { staff: { select: { name: true } } },
       orderBy: { startTime: "asc" },
     }),
-    getBusinessHours(business.id),
+    selectedLocation ? Promise.resolve(selectedLocation.hours) : getBusinessHours(business.id),
     prisma.recurringBooking.findMany({
-      where: { businessId: business.id, status: "PENDING_APPROVAL", ...scopedStaffFilter },
+      where: { businessId: business.id, status: "PENDING_APPROVAL", ...locationFilter, ...scopedStaffFilter },
       orderBy: { createdAt: "asc" },
       include: {
         service: { select: { id: true, name: true } },
@@ -120,7 +125,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     }),
     canManageAppointments
       ? prisma.service.findMany({
-          where: { businessId: business.id, bookingMode: "APPOINTMENT" },
+          where: { businessId: business.id, bookingMode: "APPOINTMENT", ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id } } } : {}) },
           orderBy: { name: "asc" },
           include: {
             staff: { where: { isActive: true }, select: { id: true } },
@@ -243,6 +248,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         timezone={business.timezone}
         countryCode={business.countryCode}
       />
+
+      {locations.length > 1 && <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3">
+        {locations.map((location) => <Link key={location.id} href={dashboardHref(showingOwnAgenda ? "mine" : undefined, location.slug)} className={`rounded-lg px-3 py-2 text-sm font-medium ${selectedLocation?.id === location.id ? "bg-[#7C3AED] text-white" : "bg-muted text-muted-foreground"}`}>{location.name}</Link>)}
+      </div>}
 
       {pendingSerialized.length > 0 && (
         <PendingRecurringPanel bookings={pendingSerialized} locale={businessLocale} />

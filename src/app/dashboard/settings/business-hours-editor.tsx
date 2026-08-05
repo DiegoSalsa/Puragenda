@@ -17,8 +17,9 @@ interface HourEntry {
   breakEnd?: string | null;
 }
 
-export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[] }) {
+export function BusinessHoursEditor({ initialHours, locations = [] }: { initialHours: HourEntry[]; locations?: { id: string; name: string; hours: HourEntry[] }[] }) {
   const [hours, setHours] = useState<HourEntry[]>(initialHours);
+  const [locationId, setLocationId] = useState(locations[0]?.id || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -27,6 +28,14 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
     setHours((current) =>
       current.map((entry) => entry.dayOfWeek === dayOfWeek ? { ...entry, [field]: value } : entry)
     );
+    setSaved(false);
+    setError("");
+  }
+
+  function selectLocation(nextLocationId: string) {
+    const location = locations.find((item) => item.id === nextLocationId);
+    setLocationId(nextLocationId);
+    setHours(location?.hours?.length ? location.hours : initialHours);
     setSaved(false);
     setError("");
   }
@@ -83,7 +92,7 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
     }
 
     setSaving(true);
-    const result = await saveBusinessHoursAction(hours);
+    const result = await saveBusinessHoursAction(hours, locationId || undefined);
     setSaving(false);
 
     if (result.success) {
@@ -96,6 +105,12 @@ export function BusinessHoursEditor({ initialHours }: { initialHours: HourEntry[
 
   return (
     <div className="space-y-5">
+      {locations.length > 1 && <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+        <label htmlFor="business-hours-location" className="text-sm font-semibold">Sucursal</label>
+        <select id="business-hours-location" value={locationId} onChange={(event) => selectLocation(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+        </select>
+      </div>}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

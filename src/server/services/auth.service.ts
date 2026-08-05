@@ -8,6 +8,7 @@ import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
 import { getCountryConfig } from "@/core/countries";
+import { createPrimaryLocation } from "@/server/services/location.service";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -114,12 +115,14 @@ export async function registerUser(data: {
         currencyCode: data.currencyCode || region.currency,
         timezone: data.timezone || region.timezone,
       },
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, timezone: true },
     });
 
-    await tx.staff.create({
+    const ownerStaff = await tx.staff.create({
       data: { name: data.name, email: data.email, businessId: business.id, userId: user.id, isActive: true },
     });
+
+    await createPrimaryLocation(tx, business, ownerStaff.id);
 
     // Determine subscription plan and status
     const planIntent = data.planIntent;

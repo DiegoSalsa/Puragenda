@@ -269,9 +269,118 @@ model Business {
   accessProfiles              AccessProfile[]
   googleCalendarConnections   GoogleCalendarConnection[]
   scheduleOverrides           BusinessScheduleOverride[]
+  locations                   BusinessLocation[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
+}
+
+// A business is the commercial account. A location is the physical place where
+// appointments happen. Keeping them separate lets one account share its
+// catalogue and subscription while operating independent calendars.
+model BusinessLocation {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  slug       String
+  address    String?
+  mapsUrl    String?
+  timezone   String
+  isPrimary  Boolean  @default(false)
+  isActive   Boolean  @default(false)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business          Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  hours             LocationHours[]
+  scheduleOverrides LocationScheduleOverride[]
+  services          LocationService[]
+  staff             StaffLocation[]
+  appointments      Appointment[]
+  recurringBookings RecurringBooking[]
+  productionOrders  ProductionOrder[]
+  scheduleBlocks    ScheduleBlock[]
+
+  @@unique([businessId, slug])
+  @@index([businessId, isActive, position])
+}
+
+model LocationHours {
+  id         String  @id @default(cuid())
+  locationId String
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  isOpen     Boolean @default(true)
+  breakStart String?
+  breakEnd   String?
+
+  location BusinessLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, dayOfWeek])
+  @@index([locationId])
+}
+
+model LocationScheduleOverride {
+  id         String   @id @default(cuid())
+  locationId String
+  date       DateTime @db.Date
+  startTime  String?
+  endTime    String?
+  isOpen     Boolean  @default(true)
+  breakStart String?
+  breakEnd   String?
+  createdAt  DateTime @default(now())
+
+  location BusinessLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, date])
+  @@index([locationId, date])
+}
+
+model LocationService {
+  locationId String
+  serviceId  String
+  createdAt  DateTime @default(now())
+
+  location BusinessLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  service  Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([locationId, serviceId])
+  @@index([serviceId])
+}
+
+model StaffLocation {
+  id         String   @id @default(cuid())
+  staffId    String
+  locationId String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  staff    Staff                   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  location BusinessLocation        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  schedule StaffLocationSchedule[]
+
+  @@unique([staffId, locationId])
+  @@index([locationId, isActive])
+}
+
+model StaffLocationSchedule {
+  id              String  @id @default(cuid())
+  staffLocationId String
+  dayOfWeek       Int
+  startTime       String
+  endTime         String
+  isWorking       Boolean @default(true)
+  breakStart      String?
+  breakEnd        String?
+
+  staffLocation StaffLocation @relation(fields: [staffLocationId], references: [id], onDelete: Cascade)
+
+  @@unique([staffLocationId, dayOfWeek])
+  @@index([staffLocationId])
 }
 
 model WidgetTheme {
@@ -466,7 +575,7 @@ model BusinessHours {
 model BusinessScheduleOverride {
   id         String   @id @default(cuid())
   date       DateTime @db.Date
-  startTime  String?  // null if isOpen = false
+  startTime  String? // null if isOpen = false
   endTime    String?
   isOpen     Boolean  @default(true)
   breakStart String?
@@ -515,6 +624,7 @@ model Staff {
   recurringBookings         RecurringBooking[]
   googleCalendarConnections GoogleCalendarConnection[]
   scheduleOverrides         StaffScheduleOverride[]
+  locations                 StaffLocation[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -560,20 +670,23 @@ enum ScheduleBlockType {
 }
 
 model ScheduleBlock {
-  id        String            @id @default(cuid())
-  staffId   String
-  startTime DateTime
-  endTime   DateTime
-  reason    String?
-  type      ScheduleBlockType @default(UNAVAILABLE)
-  releaseAt DateTime?
-  createdAt DateTime          @default(now())
+  id         String            @id @default(cuid())
+  staffId    String
+  locationId String?
+  startTime  DateTime
+  endTime    DateTime
+  reason     String?
+  type       ScheduleBlockType @default(UNAVAILABLE)
+  releaseAt  DateTime?
+  createdAt  DateTime          @default(now())
 
-  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staff    Staff             @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  location BusinessLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@index([staffId])
   @@index([staffId, startTime, endTime])
   @@index([staffId, type, releaseAt])
+  @@index([locationId])
 }
 
 model Service {
@@ -604,6 +717,7 @@ model Service {
   recurringBookings RecurringBooking[]
   optionCategories  ServiceOptionCategory[]
   productionOrders  ProductionOrder[]
+  locations         LocationService[]
 
   @@index([businessId])
   @@index([categoryId])
@@ -652,6 +766,7 @@ model ProductionOrder {
   id                    String                @id @default(cuid())
   orderNumber           String                @unique
   businessId            String
+  locationId            String?
   serviceId             String
   clientId              String?
   customerName          String
@@ -681,15 +796,17 @@ model ProductionOrder {
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  client   Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location BusinessLocation? @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  service  Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  client   Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([businessId, status])
   @@index([serviceId, productionWeek])
   @@index([serviceId, productionWindowKey])
   @@index([clientId])
   @@index([businessId, productionWeek])
+  @@index([locationId, productionWeek])
   @@index([depositMpPreferenceId])
 }
 
@@ -767,6 +884,7 @@ model RecurringPlan {
 model RecurringBooking {
   id                    String          @id @default(cuid())
   businessId            String
+  locationId            String?
   serviceId             String
   recurringPlanId       String
   staffId               String?
@@ -801,6 +919,7 @@ model RecurringBooking {
   updatedAt             DateTime        @updatedAt
 
   business         Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location         BusinessLocation?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
   service          Service                    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   recurringPlan    RecurringPlan              @relation(fields: [recurringPlanId], references: [id], onDelete: Cascade)
   staff            Staff?                     @relation(fields: [staffId], references: [id], onDelete: SetNull)
@@ -814,6 +933,7 @@ model RecurringBooking {
   @@index([clientId])
   @@index([status])
   @@index([businessId, status])
+  @@index([locationId, status])
 }
 
 model RecurringSessionOverride {
@@ -877,6 +997,7 @@ model Appointment {
   promotionTitle               String?
   selectedOptions              Json?
   businessId                   String
+  locationId                   String?
   serviceId                    String
   staffId                      String?
   clientId                     String?
@@ -897,6 +1018,7 @@ model Appointment {
   updatedAt                    DateTime          @updatedAt
 
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location            BusinessLocation?    @relation(fields: [locationId], references: [id], onDelete: Restrict)
   service             Service              @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   staff               Staff?               @relation(fields: [staffId], references: [id], onDelete: SetNull)
   client              Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
@@ -911,6 +1033,7 @@ model Appointment {
   @@index([clientId])
   @@index([recurringBookingId])
   @@index([promotionId])
+  @@index([locationId, startTime, endTime])
 }
 
 model GoogleCalendarConnection {

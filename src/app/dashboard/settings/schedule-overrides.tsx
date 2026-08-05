@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   CalendarPlus,
   Check,
@@ -48,8 +48,9 @@ function parseDateKey(key: string) {
   return new Date(y, m - 1, d);
 }
 
-export function ScheduleOverridesEditor() {
+export function ScheduleOverridesEditor({ locations }: { locations: { id: string; name: string }[] }) {
   const [overrides, setOverrides] = useState<ScheduleOverride[]>([]);
+  const [locationId, setLocationId] = useState(locations[0]?.id || "");
   const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
@@ -68,18 +69,20 @@ export function ScheduleOverridesEditor() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    void loadOverrides();
-  }, []);
-
-  async function loadOverrides() {
+  const loadOverrides = useCallback(async () => {
     setLoading(true);
-    const result = await getScheduleOverridesAction();
+    if (!locationId) { setOverrides([]); setLoading(false); return; }
+    const result = await getScheduleOverridesAction(locationId);
     if (result.overrides) {
       setOverrides(result.overrides as ScheduleOverride[]);
     }
     setLoading(false);
-  }
+  }, [locationId]);
+
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => { void loadOverrides(); }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, [loadOverrides]);
 
   function getCalendarDays() {
     const year = currentMonth.getFullYear();
@@ -131,6 +134,7 @@ export function ScheduleOverridesEditor() {
     setSuccess("");
 
     const result = await saveScheduleOverrideAction({
+      locationId,
       date: selectedDate,
       isOpen: editIsOpen,
       startTime: editIsOpen ? editStartTime : undefined,
@@ -156,7 +160,7 @@ export function ScheduleOverridesEditor() {
     setError("");
     setSuccess("");
 
-    const result = await deleteScheduleOverrideAction(selectedDate);
+    const result = await deleteScheduleOverrideAction(selectedDate, locationId);
     setDeleting(false);
 
     if (result.error) {
@@ -196,6 +200,12 @@ export function ScheduleOverridesEditor() {
 
   return (
     <div className="space-y-5">
+      {locations.length > 1 && <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+        <label htmlFor="schedule-override-location" className="text-sm font-semibold">Sucursal</label>
+        <select id="schedule-override-location" value={locationId} onChange={(event) => { setLocationId(event.target.value); setSelectedDate(null); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+        </select>
+      </div>}
       <p className="text-sm text-muted-foreground">
         Selecciona un día del calendario para definir si estará{" "}
         <strong className="text-emerald-500">abierto</strong> o{" "}

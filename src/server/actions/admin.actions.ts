@@ -9,6 +9,7 @@ import { toSlug } from "@/core/validators/slug";
 import { revalidatePath } from "next/cache";
 import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscription-billing.service";
+import { createPrimaryLocation } from "@/server/services/location.service";
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -114,7 +115,7 @@ export async function createBusinessAction(data: {
         },
       });
 
-      await tx.staff.create({
+      const ownerStaff = await tx.staff.create({
         data: {
           name: data.ownerName.trim(),
           email: trimmedEmail,
@@ -123,6 +124,8 @@ export async function createBusinessAction(data: {
           isActive: true,
         },
       });
+
+      await createPrimaryLocation(tx, business, ownerStaff.id);
 
       await tx.subscription.create({
         data: {

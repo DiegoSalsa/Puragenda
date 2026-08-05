@@ -13,7 +13,7 @@ export function formatPrice(price: number, currency: string = "CLP"): string {
   return new Intl.NumberFormat(getLocaleForCurrency(currency), {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
+    currencyDisplay: "code",
   }).format(price);
 }
 

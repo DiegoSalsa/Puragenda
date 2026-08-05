@@ -29,6 +29,7 @@ import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { syncRecurringBookingAppointments } from "@/server/services/google-calendar.service";
 import { normalizeAndValidateTaxId } from "@/core/countries";
+import { getLocationForBusiness } from "@/server/services/location.service";
 
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
 type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
@@ -165,6 +166,7 @@ export async function deleteRecurringPlanAction(serviceId: string) {
 export async function createRecurringBookingAction(data: {
   businessSlug: string;
   serviceId: string;
+  locationId?: string;
   staffId?: string;
   customerName: string;
   customerEmail: string;
@@ -191,6 +193,8 @@ export async function createRecurringBookingAction(data: {
     },
   });
   if (!business) return { error: "Negocio no encontrado" };
+  const location = await getLocationForBusiness(business.id, data.locationId);
+  if (!location) return { error: "La sucursal seleccionada no está disponible" };
 
   const normalizedPhone = data.customerPhone.trim();
   if (!/^\+?[0-9\s()-]{8,18}$/.test(normalizedPhone)) {
@@ -203,12 +207,14 @@ export async function createRecurringBookingAction(data: {
     include: { recurringPlan: true },
   });
   if (!service) return { error: "Servicio no encontrado" };
+  const offeredAtLocation = await prisma.locationService.findUnique({ where: { locationId_serviceId: { locationId: location.id, serviceId: service.id } } });
+  if (!offeredAtLocation) return { error: "Este servicio no se ofrece en la sucursal seleccionada" };
   if (!service.recurringPlan) return { error: "Este servicio no tiene plan recurrente configurado" };
 
   const plan = service.recurringPlan;
 
   if (Number.isNaN(data.startDate.getTime())) return { error: "Fecha de inicio inválida" };
-  const today = dateOnlyInTimezone(new Date(), business.timezone);
+  const today = dateOnlyInTimezone(new Date(), location.timezone);
   const lastAllowedStart = addDaysToDateOnly(today, Math.max(0, plan.startDateRangeDays - 1));
   if (data.startDate < today || data.startDate > lastAllowedStart) {
     return { error: "La fecha de inicio está fuera del rango permitido" };
@@ -278,7 +284,7 @@ export async function createRecurringBookingAction(data: {
     selectedDays: data.selectedDays,
     selectedTimes: data.selectedTimes,
     serviceDurationMinutes: service.duration,
-    timezone: business.timezone,
+    timezone: location.timezone,
   });
 
   const conflictDates = conflicts.map((c) => c.date);
@@ -326,6 +332,7 @@ export async function createRecurringBookingAction(data: {
     const booking = await tx.recurringBooking.create({
       data: {
         businessId: business.id,
+        locationId: location.id,
         serviceId: service.id,
         recurringPlanId: plan.id,
         staffId: data.staffId ?? null,
@@ -352,6 +359,7 @@ export async function createRecurringBookingAction(data: {
     if (initialStatus === "ACTIVE") {
       await generateAppointments({
         recurringBookingId: booking.id,
+        locationId: location.id,
         businessId: business.id,
         serviceId: service.id,
         staffId: data.staffId ?? null,

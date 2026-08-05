@@ -2,6 +2,7 @@ import { getBusinessBySlug, validateApiKey } from "@/server/services/business.se
 import { getBlockedSlots } from "@/server/services/appointment.service";
 import { fromZonedTime } from "date-fns-tz";
 import { NextRequest } from "next/server";
+import { getLocationForBusiness } from "@/server/services/location.service";
 
 /**
  * GET /api/business/[slug]/appointments?date=2026-04-25
@@ -61,12 +62,15 @@ export async function GET(
     }
 
     const staffId = url.searchParams.get("staffId") || undefined;
+    const location = await getLocationForBusiness(business.id, url.searchParams.get("locationId"));
+    if (!location) return Response.json({ error: "Sucursal no encontrada" }, { status: 400 });
 
     const blocked = await getBlockedSlots(
       business.id,
       dateStart,
       dateEnd,
-      staffId
+      staffId,
+      location.id,
     );
 
     return Response.json(

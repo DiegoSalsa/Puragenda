@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getCountryConfig, getCountryOptions } from "@/core/countries";
+import { getCountryConfig, getCountryOptions, getCurrencyOptions, getTimezoneOptions } from "@/core/countries";
 import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";
 
 const countryOptions = getCountryOptions("es");
@@ -22,6 +22,8 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const unchanged = countryCode === initialCountryCode && timezone === initialTimezone && currencyCode === initialCurrencyCode;
+  const timezoneOptions = getTimezoneOptions(countryCode);
+  const currencyOptions = getCurrencyOptions("es");
 
   function applyCountry(next: string) {
     const defaults = getCountryConfig(next);
@@ -63,24 +65,30 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
         </div>
         <div className="space-y-1.5">
           <label htmlFor="business-timezone" className="text-xs text-muted-foreground">Zona horaria</label>
-          <input
+          <select
             id="business-timezone"
             value={timezone}
             onChange={(event) => setTimezone(event.target.value)}
-            placeholder="Ej: America/Argentina/Buenos_Aires"
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none focus:border-[#7C3AED]/30"
-          />
+          >
+            <optgroup label="Zonas recomendadas para el país">
+              {timezoneOptions.filter((option) => option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </optgroup>
+            <optgroup label="Otras zonas horarias">
+              {timezoneOptions.filter((option) => !option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </optgroup>
+          </select>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="business-currency" className="text-xs text-muted-foreground">Moneda de reservas</label>
-          <input
+          <select
             id="business-currency"
             value={currencyCode}
-            onChange={(event) => setCurrencyCode(event.target.value.toUpperCase().slice(0, 3))}
-            pattern="[A-Z]{3}"
-            maxLength={3}
+            onChange={(event) => setCurrencyCode(event.target.value)}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm uppercase outline-none focus:border-[#7C3AED]/30"
-          />
+          >
+            {currencyOptions.map((currency) => <option key={currency.value} value={currency.value}>{currency.label}</option>)}
+          </select>
         </div>
       </div>
       <div className="flex items-center justify-between gap-4">
