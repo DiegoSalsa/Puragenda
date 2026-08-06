@@ -7,6 +7,7 @@ import {
   createGoogleOAuthState,
   googleCalendarAppUrl,
   googleCalendarIsConfigured,
+  googleCalendarOAuthIsAvailableFor,
 } from "@/server/services/google-calendar.service";
 import { getGoogleOAuthScopeContext } from "@/server/services/google-calendar-access.service";
 
@@ -23,6 +24,11 @@ export async function GET(request: NextRequest) {
   }
   if (!googleCalendarIsConfigured()) {
     return NextResponse.redirect(appUrl(request, "/dashboard/google-calendar?google_error=not_configured"));
+  }
+  if (!googleCalendarOAuthIsAvailableFor(user.email)) {
+    return NextResponse.redirect(
+      appUrl(request, "/dashboard/google-calendar?google_error=verification_pending"),
+    );
   }
 
   const requestedScope = request.nextUrl.searchParams.get("scope") ?? "staff";

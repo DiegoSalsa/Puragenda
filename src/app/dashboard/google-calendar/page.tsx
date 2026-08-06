@@ -5,7 +5,10 @@ import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { googleCalendarIsConfigured } from "@/server/services/google-calendar.service";
+import {
+  googleCalendarIsConfigured,
+  googleCalendarOAuthIsAvailableFor,
+} from "@/server/services/google-calendar.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { GoogleCalendarCard } from "./google-calendar-card";
 
@@ -68,6 +71,7 @@ export default async function GoogleCalendarPage({
     ? connections.find((connection) => connection.scope === "STAFF" && connection.staffId === ownStaff.id)
     : null;
   const configured = googleCalendarIsConfigured();
+  const oauthAvailable = googleCalendarOAuthIsAvailableFor(user.email);
 
   const errorMessages: Record<string, string> = {
     denied: "No se otorgaron los permisos de Google Calendar.",
@@ -75,6 +79,8 @@ export default async function GoogleCalendarPage({
     token_exchange: "Google no pudo completar la conexión. Revisa las credenciales OAuth.",
     not_configured: "Faltan las credenciales OAuth de Google en el servidor.",
     forbidden: "No tienes permisos para conectar ese calendario.",
+    verification_pending:
+      "La conexión de nuevas cuentas está limitada temporalmente a usuarios de prueba mientras Google verifica los permisos.",
   };
 
   return (
@@ -131,6 +137,7 @@ export default async function GoogleCalendarPage({
           description="Respaldo para todas las citas. Invita al profesional asignado y al cliente sin duplicar eventos."
           scope="business"
           configured={configured}
+          oauthAvailable={oauthAvailable}
           connection={businessConnection ? connectionSummary(businessConnection) : null}
         />
       )}
@@ -141,6 +148,7 @@ export default async function GoogleCalendarPage({
           description="Tiene prioridad para tus propias citas y sus eventos externos bloquean horas en tu agenda pública."
           scope="staff"
           configured={configured}
+          oauthAvailable={oauthAvailable}
           connection={ownConnection ? connectionSummary(ownConnection) : null}
         />
       )}
@@ -200,6 +208,7 @@ export default async function GoogleCalendarPage({
                   scope="staff"
                   staffId={staff.id}
                   configured={configured}
+                  oauthAvailable={oauthAvailable}
                   connection={connection ? connectionSummary(connection) : null}
                 />
               );

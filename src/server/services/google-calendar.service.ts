@@ -11,6 +11,7 @@ const GOOGLE_SCOPES = [
   "openid",
   "email",
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.events.freebusy",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
 ];
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
@@ -61,6 +62,7 @@ type GoogleCalendarListEntry = {
   id?: string;
   summary?: string;
   primary?: boolean;
+  dataOwner?: string;
   accessRole?: "freeBusyReader" | "reader" | "writer" | "owner";
 };
 
@@ -185,6 +187,22 @@ export function googleCalendarIsConfigured() {
       process.env.GOOGLE_CLIENT_SECRET &&
       googleCalendarRedirectUri(),
   );
+}
+
+/**
+ * Keeps unverified OAuth scopes away from general production traffic while
+ * still allowing named review/test accounts to record the Google demo.
+ */
+export function googleCalendarOAuthIsAvailableFor(email: string) {
+  if (process.env.NODE_ENV !== "production") return true;
+  if (process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC?.trim().toLowerCase() === "true") {
+    return true;
+  }
+  const reviewUsers = (process.env.GOOGLE_CALENDAR_VERIFICATION_USERS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return reviewUsers.includes(email.trim().toLowerCase());
 }
 
 export function googleCalendarRedirectUri() {
@@ -347,6 +365,13 @@ export async function listGoogleCalendars(connection: GoogleCalendarConnection) 
       id: calendar.id as string,
       name: calendar.summary || calendar.id || "Calendario",
       primary: Boolean(calendar.primary),
+      accessRole: calendar.accessRole as "writer" | "owner",
+      shared:
+        calendar.accessRole === "writer" ||
+        Boolean(
+          calendar.dataOwner &&
+            calendar.dataOwner.trim().toLowerCase() !== connection.googleEmail.trim().toLowerCase(),
+        ),
     }));
 }
 

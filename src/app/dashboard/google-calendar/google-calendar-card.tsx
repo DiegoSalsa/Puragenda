@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, CheckCircle2, Loader2, RefreshCw, Unlink } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Info,
+  Loader2,
+  RefreshCw,
+  Unlink,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type ConnectionSummary = {
@@ -20,6 +27,7 @@ export function GoogleCalendarCard({
   scope,
   staffId,
   configured,
+  oauthAvailable,
   connection,
 }: {
   title: string;
@@ -27,10 +35,17 @@ export function GoogleCalendarCard({
   scope: "business" | "staff";
   staffId?: string;
   configured: boolean;
+  oauthAvailable: boolean;
   connection: ConnectionSummary | null;
 }) {
   const router = useRouter();
-  const [calendars, setCalendars] = useState<Array<{ id: string; name: string; primary: boolean }> | null>(null);
+  const [calendars, setCalendars] = useState<Array<{
+    id: string;
+    name: string;
+    primary: boolean;
+    accessRole: "writer" | "owner";
+    shared: boolean;
+  }> | null>(null);
   const [calendarId, setCalendarId] = useState(connection?.calendarId ?? "primary");
   const [includeCustomer, setIncludeCustomer] = useState(
     connection?.includeCustomerAttendee ?? true,
@@ -116,12 +131,38 @@ export function GoogleCalendarCard({
           Falta configurar las credenciales OAuth de Google en el servidor.
         </div>
       ) : !connection ? (
-        <a
-          href={`/api/google-calendar/authorize?scope=${scope}${staffId ? `&staffId=${encodeURIComponent(staffId)}` : ""}`}
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#4285F4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#3367D6]"
-        >
-          <CalendarDays className="h-4 w-4" /> Conectar con Google
-        </a>
+        <div className="mt-5 space-y-4">
+          <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
+            <div className="flex items-start gap-2">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#4285F4]" />
+              <div>
+                <p className="font-medium">Qué permitirá esta conexión</p>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                  <li>Elegir entre tus calendarios propios o compartidos con permiso de edición.</li>
+                  <li>Crear, actualizar y eliminar únicamente los eventos de citas de Puragenda.</li>
+                  <li>Consultar solo intervalos libre/ocupado para evitar reservas superpuestas.</li>
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  El acceso a eventos de todos los calendarios editables es necesario porque puedes elegir
+                  un calendario compartido del negocio; un permiso limitado a calendarios propios no serviría
+                  para ese flujo.
+                </p>
+              </div>
+            </div>
+          </div>
+          {oauthAvailable ? (
+            <a
+              href={`/api/google-calendar/authorize?scope=${scope}${staffId ? `&staffId=${encodeURIComponent(staffId)}` : ""}`}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#4285F4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#3367D6]"
+            >
+              <CalendarDays className="h-4 w-4" /> Conectar con Google
+            </a>
+          ) : (
+            <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400">
+              Nuevas conexiones disponibles próximamente. Google está verificando los permisos de esta integración.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="mt-5 space-y-4">
           <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
@@ -152,7 +193,8 @@ export function GoogleCalendarCard({
               >
                 {calendars.map((calendar) => (
                   <option key={calendar.id} value={calendar.id}>
-                    {calendar.name}{calendar.primary ? " (principal)" : ""}
+                    {calendar.name}
+                    {calendar.primary ? " (principal)" : calendar.shared ? " (compartido)" : ""}
                   </option>
                 ))}
               </select>

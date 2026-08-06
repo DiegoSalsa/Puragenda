@@ -28,6 +28,8 @@ GOOGLE_CLIENT_ID="...apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="..."
 GOOGLE_CALENDAR_REDIRECT_URI="https://TU_DOMINIO/api/google-calendar/callback"
 GOOGLE_TOKEN_ENCRYPTION_KEY="una-clave-aleatoria-de-al-menos-32-caracteres"
+GOOGLE_CALENDAR_OAUTH_PUBLIC="false"
+GOOGLE_CALENDAR_VERIFICATION_USERS="cuenta-demo@ejemplo.com"
 CRON_SECRET="..."
 ```
 
@@ -47,7 +49,10 @@ En local, `GOOGLE_CALENDAR_REDIRECT_URI` puede omitirse cuando `NEXT_PUBLIC_APP_
 - El estado OAuth esta firmado, expira en diez minutos y vuelve a validar negocio, usuario, permisos y profesional al regresar de Google.
 - El trabajador solo puede administrar su propia conexion. La conexion del negocio exige permiso para administrar configuracion.
 - Al desconectar se eliminan los eventos administrados por Puragenda y se intenta revocar el token en Google.
-- La integracion solicita acceso offline, lectura de la lista de calendarios y administracion de eventos. Dependiendo de la publicacion de la app OAuth, Google puede exigir verificacion del consentimiento.
+- La integracion solicita acceso offline, lectura de la lista de calendarios, administracion de eventos y lectura exclusiva de intervalos libre/ocupado.
+- `calendar.events` es necesario porque el usuario puede elegir calendarios compartidos en los que tiene permiso de escritura; `calendar.events.owned` no permite operar ese caso.
+- `calendar.events.freebusy` se usa para bloquear horas externas sin leer titulos, descripciones ni asistentes.
+- Mientras los permisos sigan sin verificar, produccion debe mantener `GOOGLE_CALENDAR_OAUTH_PUBLIC=false` y limitar nuevas conexiones a los correos de `GOOGLE_CALENDAR_VERIFICATION_USERS`. Tras la aprobacion, cambiar la primera variable a `true`.
 
 ## Diagnostico
 
