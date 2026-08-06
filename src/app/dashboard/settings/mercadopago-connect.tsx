@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,11 +27,12 @@ export function MercadoPagoConnect({
   isCurrencyCompatible,
   isOAuthConfigured,
 }: Props) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [disconnecting, setDisconnecting] = useState(false);
 
   async function handleDisconnect() {
-    if (!confirm("¿Estás seguro de desconectar Mercado Pago? Los abonos se desactivarán.")) return;
+    if (!confirm(legacy("gmMC15wdRCcR"))) return;
     setDisconnecting(true);
     const result = await disconnectMercadoPagoAction();
     if (result.error) {
@@ -45,16 +49,16 @@ export function MercadoPagoConnect({
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-400" />
             <span className="text-sm font-medium text-emerald-400">
-              Cuenta conectada
+              <LocalizedText id="8R4D0gWqtkm1" />
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Mercado Pago ID: <span className="font-mono text-foreground/70">{mpUserId || "—"}</span>
+            <LocalizedText id="WST6iivWTi40" /> <span className="font-mono text-foreground/70">{mpUserId || "—"}</span>
           </p>
-          <p className="text-xs text-muted-foreground">Los abonos de reservas se crearán en {currencyCode}.</p>
+          <p className="text-xs text-muted-foreground"><LocalizedText id="ZaTuWP_K83N0" /> {currencyCode}.</p>
           {!isCurrencyCompatible && (
             <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-              La conexión queda bloqueada hasta volver a {mercadoPagoCurrency}. Desconecta Mercado Pago si quieres cobrar manualmente en otra moneda.
+              <LocalizedText id="I0BUW-yMgWOH" /> {mercadoPagoCurrency}<LocalizedText id="z2ZsWkyLYYOI" />
             </p>
           )}
           <button
@@ -67,7 +71,7 @@ export function MercadoPagoConnect({
             ) : (
               <Unlink className="h-4 w-4" />
             )}
-            Desconectar
+            <LocalizedText id="iRMPd7f6Q2vG" />
           </button>
         </div>
       ) : (
@@ -75,20 +79,20 @@ export function MercadoPagoConnect({
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-400" />
             <span className="text-sm font-medium text-amber-400">
-              No conectado
+              <LocalizedText id="X6OYmnbRmVqK" />
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Conecta una cuenta de Mercado Pago de {countryName} para recibir abonos por reservas en {currencyCode}.
+            <LocalizedText id="AKWGLYFQMXXz" /> {countryName} <LocalizedText id="eBsV7htQi9_R" /> {currencyCode}.
           </p>
           {!isCurrencyCompatible && mercadoPagoCurrency && (
             <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
-              En {countryName}, la integración de Mercado Pago cobra en {mercadoPagoCurrency}. Puedes usar {currencyCode} para precios o cobros manuales, pero no para esta integración online.
+              <LocalizedText id="-5LH44G3HO2j" /> {countryName}<LocalizedText id="ZLfl-oma25nK" /> {mercadoPagoCurrency}<LocalizedText id="UMX9_Uo8SRj_" /> {currencyCode} <LocalizedText id="QtY-MECO3KUc" />
             </p>
           )}
           {!isOAuthConfigured && (
             <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-500">
-              Falta configurar la aplicación OAuth de Mercado Pago para {countryName}.
+              <LocalizedText id="WcZFFpRHSmfC" /> {countryName}.
             </p>
           )}
           <a
@@ -99,7 +103,7 @@ export function MercadoPagoConnect({
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-6h2v6zm-2-8h-2V7h2v2z" />
             </svg>
-            Conectar Mercado Pago
+            <LocalizedText id="TnGcJmjGJpRh" />
           </a>
         </div>
       )}

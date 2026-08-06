@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
@@ -15,6 +18,7 @@ interface Props {
 }
 
 export function BusinessCountryEditor({ initialCountryCode, initialTimezone, initialCurrencyCode }: Props) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [countryCode, setCountryCode] = useState(initialCountryCode);
   const [timezone, setTimezone] = useState(initialTimezone);
@@ -35,7 +39,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
   async function handleSave() {
     if (unchanged) return;
     const confirmed = window.confirm(
-      "Cambiar país, zona horaria o moneda no convertirá precios ni moverá automáticamente citas existentes. ¿Quieres continuar?",
+      legacy("oEaGa6IfuovK"),
     );
     if (!confirmed) return;
     setSaving(true);
@@ -43,7 +47,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
     const result = await updateBusinessCountryAction({ countryCode, timezone, currencyCode }, true);
     setMessage(result.error
       ? { type: "error", text: result.error }
-      : { type: "success", text: "País, zona horaria y moneda actualizados" });
+      : { type: "success", text: legacy("X_9vFGXQT-Wz") });
     if (!result.error) router.refresh();
     setSaving(false);
   }
@@ -52,7 +56,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-1.5">
-          <label htmlFor="business-country" className="text-xs text-muted-foreground">País</label>
+          <label htmlFor="business-country" className="text-xs text-muted-foreground"><LocalizedText id="u4khNiQT1Htd" /></label>
           <select
             id="business-country"
             value={countryCode}
@@ -64,7 +68,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
           </select>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="business-timezone" className="text-xs text-muted-foreground">Zona horaria</label>
+          <label htmlFor="business-timezone" className="text-xs text-muted-foreground"><LocalizedText id="Q7IoZUu59-y5" /></label>
           <select
             id="business-timezone"
             value={timezone}
@@ -80,7 +84,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
           </select>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="business-currency" className="text-xs text-muted-foreground">Moneda de reservas</label>
+          <label htmlFor="business-currency" className="text-xs text-muted-foreground"><LocalizedText id="C42wtXfxvNTl" /></label>
           <select
             id="business-currency"
             value={currencyCode}
@@ -93,7 +97,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
       </div>
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
-          Las citas se guardan en UTC y se muestran con la hora local del negocio. En países con varias zonas horarias, selecciona la ciudad correcta.
+          <LocalizedText id="f9-BrGUa14gF" />
         </p>
         <button
           type="button"
@@ -102,7 +106,7 @@ export function BusinessCountryEditor({ initialCountryCode, initialTimezone, ini
           className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[#7C3AED] px-4 text-sm font-semibold text-white disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Guardar
+          <LocalizedText id="E-UaIQ9F7RsJ" />
         </button>
       </div>
       {message && <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>{message.text}</p>}

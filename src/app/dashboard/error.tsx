@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -20,9 +22,9 @@ export default function DashboardError({
         <AlertTriangle className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Algo salió mal</h1>
+        <h1 className="text-2xl font-bold tracking-tight"><LocalizedText id="lX2SaiVFI6Y7" /></h1>
         <p className="text-muted-foreground text-sm max-w-xs">
-          Ocurrió un error cargando esta sección. Podés intentar de nuevo.
+          <LocalizedText id="8EMMmCN1LZig" />
         </p>
       </div>
       <button
@@ -30,7 +32,7 @@ export default function DashboardError({
         className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
       >
         <RefreshCw className="h-4 w-4" />
-        Reintentar
+        <LocalizedText id="qSVMX4EoKa_e" />
       </button>
     </div>
   );

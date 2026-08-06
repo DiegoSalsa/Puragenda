@@ -9,6 +9,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
 import { sendStaffInviteEmail } from "@/server/email/send";
+import { resolveLocale } from "@/i18n/config";
 import { isValidTime, isValidTimeRange } from "@/lib/time";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
@@ -231,7 +232,7 @@ export async function createStaffAction(data: { name: string; email: string; rol
     });
 
     // Send invite email with temporary password (fire and forget)
-    sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword).catch(() => {});
+    sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword, resolveLocale(business.locale)).catch(() => {});
   } catch {
     return { error: "Error al crear. ¿Email duplicado?" };
   }

@@ -8,6 +8,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
 
 export default function ForgotPasswordPage() {
+  const legacy = useTranslations("legacy");
   const t = useTranslations("passwordRecovery");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-end"><LanguageSwitcher /></div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
-          <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
+          <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-16 w-auto -my-3" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">

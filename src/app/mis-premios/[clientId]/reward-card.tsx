@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useState } from "react";
 import { Check, Copy, Gift, Sparkles } from "lucide-react";
@@ -12,6 +13,7 @@ interface RewardCardProps {
 }
 
 export function RewardCard({ code, rewardName, discountType, discountValue, createdAt }: RewardCardProps) {
+  const legacy = useTranslations("legacy");
   const [copied, setCopied] = useState(false);
 
   function handleCopy() {
@@ -46,7 +48,7 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
               </div>
               <div>
                 <p className="text-sm font-bold text-[rgb(var(--color-text))]">
-                  {rewardName || "Premio de fidelización"}
+                  {rewardName || legacy("INezGlmgCjf4")}
                 </p>
                 <p className="text-xs text-[rgb(var(--color-primary)/0.8)] font-medium">{discountLabel}</p>
               </div>
@@ -70,14 +72,14 @@ export function RewardCard({ code, rewardName, discountType, discountValue, crea
                 ? "border-[rgb(var(--color-secondary)/0.4)] bg-[rgb(var(--color-secondary)/0.15)] text-[rgb(var(--color-secondary))] scale-95"
                 : "border-[rgb(var(--color-primary)/0.2)] bg-[rgb(var(--color-primary)/0.06)] text-[rgb(var(--color-primary)/0.7)] hover:border-[rgb(var(--color-primary)/0.4)] hover:text-[rgb(var(--color-primary))] hover:scale-105 active:scale-95"
             }`}
-            aria-label="Copiar código"
+            aria-label={legacy("GrILd5fSD3QS")}
           >
             {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
           </button>
         </div>
 
         <p className="mt-3 text-[11px] text-[rgb(var(--color-text)/0.3)] text-center">
-          {copied ? "✓ Código copiado al portapapeles" : "Presenta este código al agendar tu próxima cita"}
+          {copied ? legacy("-9UuaBka1oWp") : legacy("merEdl3IiBo0")}
         </p>
       </div>
     </div>

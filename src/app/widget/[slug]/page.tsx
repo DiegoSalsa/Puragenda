@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
@@ -128,8 +130,8 @@ export default async function WidgetPage({
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#7C3AED]/10 mb-4">
             <span className="text-[#7C3AED] text-2xl font-bold">!</span>
           </div>
-          <p className="text-xl font-bold text-black dark:text-white">Negocio no encontrado</p>
-          <p className="mt-2 text-sm text-black/60 dark:text-white/60">El enlace no es válido o el negocio ya no existe en Puragenda.</p>
+          <p className="text-xl font-bold text-black dark:text-white"><LocalizedText id="dxkajKZltYag" /></p>
+          <p className="mt-2 text-sm text-black/60 dark:text-white/60"><LocalizedText id="rbdOSbCcy-U9" /></p>
         </div>
       </div>
     );

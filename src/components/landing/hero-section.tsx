@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
 import { ArrowRight, Scissors, Sparkles, Stethoscope, ShieldCheck } from "lucide-react";
 import { WordCarousel } from "@/components/landing/word-carousel";
@@ -19,17 +21,17 @@ export function HeroSection() {
           
           <div className="inline-flex items-center rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/10 px-3 py-1 text-sm font-medium text-[#7C3AED] backdrop-blur-sm shadow-[0_0_15px_rgba(124,58,237,0.15)] mb-4">
             <span className="flex h-2 w-2 rounded-full bg-[#7C3AED] mr-2 animate-pulse" />
-            La nueva era de agendamiento
+            <LocalizedText id="MolWB7Y0b8pL" />
           </div>
 
           <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl drop-shadow-sm">
-            <span className="bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent">Software de</span><br/>
-            <span className="bg-gradient-to-br from-[#7C3AED] to-[#E91E8C] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(124,58,237,0.3)]">Reservas</span> <br />
+            <span className="bg-gradient-to-br from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-transparent"><LocalizedText id="D-IdVfIbRd9D" /></span><br/>
+            <span className="bg-gradient-to-br from-[#7C3AED] to-[#E91E8C] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(124,58,237,0.3)]"><LocalizedText id="UtNwE9aCe2m7" /></span> <br />
             <WordCarousel />
           </h1>
 
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg lg:text-xl mx-auto lg:mx-0">
-            Mucho más que un software de reservas. Agendamiento, fidelización de clientes, marketing automático y widget marca blanca en un solo lugar.
+            <LocalizedText id="eb_R1f76sXGb" />
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -37,18 +39,18 @@ export function HeroSection() {
               <button className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#7C3AED] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:bg-[#6D28D9] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
                 <span className="relative z-10 flex items-center gap-2">
-                  Empezar Gratis <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <LocalizedText id="NqC0Mo3B6h7f" /> <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </button>
             </Link>
             <a href="/api/auth/demo" className="w-full sm:w-auto">
               <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-3.5 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
-                Ver Demo
+                <LocalizedText id="vP-8OnnRFj1a" />
               </button>
             </a>
           </div>
 
-          <p className="text-xs text-muted-foreground/60 font-medium">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+          <p className="text-xs text-muted-foreground/60 font-medium"><LocalizedText id="0-9SNZCT992I" /></p>
 
           <div className="flex flex-wrap justify-center lg:justify-start gap-3 pt-2">
             {[
@@ -67,8 +69,8 @@ export function HeroSection() {
           <div className="flex items-center justify-center lg:justify-start gap-2 pt-1">
             <div className="flex items-center gap-2.5 rounded-full border border-[#009EE3]/25 bg-[#009EE3]/8 px-4 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#009EE3]" />
-              Cobros de planes integrados con
-              <span className="font-bold text-[#009EE3]">MercadoPago</span>
+              <LocalizedText id="rUqE0iBhItxM" />
+              <span className="font-bold text-[#009EE3]"><LocalizedText id="OHWtjcFBNX8d" /></span>
             </div>
           </div>
         </div>

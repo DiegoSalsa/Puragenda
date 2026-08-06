@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition, useEffect } from "react";
 import { Coins, Trophy, Loader2, ChevronRight, ChevronLeft, Gift, Gem, Star, Award, Crown, Search, X } from "lucide-react";
@@ -62,6 +65,7 @@ export function RewardsClient({
   discountPercentage: number;
   prizes: PrizeData[];
 }) {
+  const legacy = useTranslations("legacy");
   const [activeTab, setActiveTab] = useState<"ruleta" | "premios">("ruleta");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +112,7 @@ export function RewardsClient({
     startTransition(async () => {
       const result = await redeemFixedDiscountAction();
       if (!result.success) {
-        setError(result.error || "Error al canjear");
+        setError(result.error || legacy("CKe835ezrZ0b"));
       } else {
         setSuccessMsg("¡Fichas canjeadas con éxito! Tienes un descuento de 50% OFF disponible en la pestaña 'Mis Premios' para activarlo cuando quieras.");
       }
@@ -121,7 +125,7 @@ export function RewardsClient({
     startTransition(async () => {
       const result = await activatePrizeAction(prizeId);
       if (!result.success) {
-        setError(result.error || "Error al activar el premio");
+        setError(result.error || legacy("MWMw4_dRZUTr"));
       }
       setActivatingPrizeId(null);
     });
@@ -143,13 +147,13 @@ export function RewardsClient({
               <p className="text-3xl font-black" style={{ color: tokenBalance > 0 ? "#7C3AED" : undefined }}>
                 {tokenBalance}
               </p>
-              <p className="text-xs text-muted-foreground">Fichas disponibles</p>
+              <p className="text-xs text-muted-foreground"><LocalizedText id="UU_47MkYsLmU" /></p>
             </div>
           </div>
           {hasActiveDiscount && (
             <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2">
               <p className="text-xs font-medium text-[#F59E0B]">
-                {discountPercentage}% OFF pendiente en tu próximo cobro
+                {discountPercentage}<LocalizedText id="DePUoxgwd0Zq" />
               </p>
             </div>
           )}
@@ -168,7 +172,7 @@ export function RewardsClient({
         >
           <span className="flex items-center justify-center gap-2">
             <Coins className="h-4 w-4" />
-            Ruleta y Canje
+            <LocalizedText id="iEELD6ZW9S1m" />
           </span>
         </button>
         <button
@@ -181,7 +185,7 @@ export function RewardsClient({
         >
           <span className="flex items-center justify-center gap-2">
             <Trophy className="h-4 w-4" />
-            Mis Premios
+            <LocalizedText id="-2yqNx4b2mwq" />
             {availablePrizes.length > 0 && (
               <span
                 className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -244,23 +248,23 @@ export function RewardsClient({
               <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 flex-1">
                 <div className="flex items-center gap-2 mb-4">
                   <Trophy className="h-5 w-5 text-[#7C3AED]" />
-                  <h2 className="text-lg font-bold">Probabilidades</h2>
+                  <h2 className="text-lg font-bold"><LocalizedText id="jS0_Dwzb4y0F" /></h2>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    <span>Premio</span>
-                    <span>Probabilidad</span>
+                    <span><LocalizedText id="zQxJh1OOatbP" /></span>
+                    <span><LocalizedText id="AqEMG03kYYZ_" /></span>
                   </div>
                   <div className="space-y-1.5">
                     {[
-                      { name: "Más Suerte", prob: "10%", color: "#4B5563" },
+                      { name: legacy("tEGV72Hcpybw"), prob: "10%", color: "#4B5563" },
                       { name: "1 Ficha Gratis", prob: "15%", color: "#3B82F6" },
                       { name: "Bronce (10% OFF)", prob: "25%", color: "#10B981" },
                       { name: "Plata (15% OFF)", prob: "20%", color: "#0EA5E9" },
                       { name: "Oro (20% OFF)", prob: "13%", color: "#8B5CF6" },
                       { name: "Platino (30% OFF)", prob: "10%", color: "#D946EF" },
                       { name: "Diamante (50% OFF)", prob: "4%", color: "#F43F5E" },
-                      { name: "Mes de Regalo", prob: "2%", color: "#F59E0B" },
+                      { name: legacy("xdknmD-Moe1U"), prob: "2%", color: "#F59E0B" },
                       { name: "Trimestre Invencible", prob: "1%", color: "#EF4444" },
                     ].map((p, i) => (
                       <div key={i} className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
@@ -279,14 +283,14 @@ export function RewardsClient({
               <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <Coins className="h-5 w-5 text-[#7C3AED]" />
-                  <h2 className="text-lg font-bold">Canje Seguro</h2>
+                  <h2 className="text-lg font-bold"><LocalizedText id="JjOG5aC72AOy" /></h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Canjea 3 fichas por un 50% de descuento garantizado en tu próximo mes.
+                  <LocalizedText id="cCWj2OX3NZHL" />
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Progreso</p>
+                    <p className="text-sm font-medium"><LocalizedText id="HUqe6yFdIiHX" /></p>
                     <span className="text-sm font-mono font-bold" style={{ color: "#7C3AED" }}>
                       {fixedProgress}/3
                     </span>
@@ -315,7 +319,7 @@ export function RewardsClient({
                     ) : (
                       <Coins className="h-4 w-4" />
                     )}
-                    Canjear por 50% OFF
+                    <LocalizedText id="_mNYqh5Gn4ET" />
                   </button>
                 </div>
               </div>
@@ -334,7 +338,7 @@ export function RewardsClient({
           {hasActiveDiscount && (
             <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3">
               <p className="text-sm font-medium text-[#F59E0B]">
-                Tienes un descuento activo ({discountPercentage}% OFF). No puedes activar otro hasta que sea cobrado.
+                <LocalizedText id="rF2ZLA0zZW6A" />{discountPercentage}<LocalizedText id="GGTUJ_MnV-Lz" />
               </p>
             </div>
           )}
@@ -359,7 +363,7 @@ export function RewardsClient({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#F59E0B] animate-pulse" />
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Premio activo</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="nRVlol3NvqL6" /></h3>
               </div>
               {activePrizes.map((prize) => {
                 const { Icon, color } = getPrizeVisuals(prize);
@@ -377,7 +381,7 @@ export function RewardsClient({
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B" }}>
-                      Se aplica en tu próximo cobro
+                      <LocalizedText id="yySYGeu_Pqfo" />
                     </span>
                   </div>
                 );
@@ -392,7 +396,7 @@ export function RewardsClient({
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Buscar premio por nombre..."
+                placeholder={legacy("iHOJgQrBYHxr")}
                 value={prizeSearch}
                 onChange={(e) => { setPrizeSearch(e.target.value); setPrizePage(1); }}
                 className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-9 text-sm outline-none focus:border-[#7C3AED]/40 transition-colors"
@@ -459,7 +463,7 @@ export function RewardsClient({
                   onClick={() => { setPrizeSearch(""); setTierFilter("Todos"); setStatusFilter("Todos"); setPrizePage(1); }}
                   className="flex items-center gap-1 text-[11px] text-[#7C3AED] hover:underline"
                 >
-                  <X className="h-3 w-3" /> Limpiar filtros
+                  <X className="h-3 w-3" /> <LocalizedText id="v8LRYjWGjnzE" />
                 </button>
               )}
             </div>
@@ -533,12 +537,12 @@ export function RewardsClient({
                         >
                           {activatingPrizeId === prize.id
                             ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : <>Activar premio <ChevronRight className="h-3 w-3" /></>}
+                            : <><LocalizedText id="YrfHSN52KfpI" /> <ChevronRight className="h-3 w-3" /></>}
                         </button>
                       )}
                       {prize.status === "ACTIVE" && (
                         <div className="w-full rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3 py-2 text-center">
-                          <p className="text-[11px] font-semibold text-[#F59E0B]">Se aplica en tu próximo cobro</p>
+                          <p className="text-[11px] font-semibold text-[#F59E0B]"><LocalizedText id="yySYGeu_Pqfo" /></p>
                         </div>
                       )}
                     </div>
@@ -553,15 +557,15 @@ export function RewardsClient({
               </div>
               {prizes.length === 0 ? (
                 <>
-                  <p className="text-sm font-medium mb-1">Sin premios aún</p>
+                  <p className="text-sm font-medium mb-1"><LocalizedText id="w7_GiCg22I7o" /></p>
                   <p className="text-xs text-muted-foreground max-w-xs">
-                    Gira la ruleta o canjea 3 fichas desde la pestaña &quot;Ruleta y Canje&quot; para ganar premios.
+                    <LocalizedText id="Xy4HM2VbuPBo" />
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium mb-1">Sin resultados</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">Prueba cambiando los filtros.</p>
+                  <p className="text-sm font-medium mb-1"><LocalizedText id="v5_BmD_6eEES" /></p>
+                  <p className="text-xs text-muted-foreground max-w-xs"><LocalizedText id="lcMQ4hcFhNBN" /></p>
                 </>
               )}
             </div>
@@ -575,7 +579,7 @@ export function RewardsClient({
                 disabled={prizePage === 1}
                 className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
               >
-                <ChevronLeft className="h-4 w-4" /> Anterior
+                <ChevronLeft className="h-4 w-4" /> <LocalizedText id="5M58CdUeO4gx" />
               </button>
               <div className="flex gap-1">
                 {Array.from({ length: totalPrizePages }, (_, i) => i + 1).map((p) => (
@@ -595,7 +599,7 @@ export function RewardsClient({
                 disabled={prizePage === totalPrizePages}
                 className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
               >
-                Siguiente <ChevronRight className="h-4 w-4" />
+                <LocalizedText id="SWg7ccas9SJB" /> <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}

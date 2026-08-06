@@ -3,8 +3,9 @@
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
-import { es } from "date-fns/locale";
 import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { getDateLocale } from "@/i18n/date-locale";
 import {
   AppointmentEditor,
   type AppointmentEditorClient,
@@ -101,11 +102,6 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
   NO_SHOW:          { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Pendiente", AWAITING_PAYMENT: "Esperando pago", CONFIRMED: "Confirmada", CANCELLED: "Cancelada",
-  CHECKED_IN: "Asistió", NO_SHOW: "Inasistencia",
-};
-
 export function WeeklyCalendar({
   appointments,
   priorityBlocks = [],
@@ -129,6 +125,9 @@ export function WeeklyCalendar({
   currencyCode: string;
   canManageAppointments?: boolean;
 }) {
+  const t = useTranslations("dashboard.calendar");
+  const locale = useLocale();
+  const dateLocale = getDateLocale(locale);
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -289,10 +288,10 @@ export function WeeklyCalendar({
         <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3">
-              <h2 className="text-base sm:text-lg font-semibold">Calendario</h2>
+              <h2 className="text-base sm:text-lg font-semibold">{t("title")}</h2>
               {!isCurrentWeek && (
                 <button onClick={goToday} className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-xs font-medium text-[#A78BFA] transition-all hover:bg-[#7C3AED]/20">
-                  Hoy
+                  {t("today")}
                 </button>
               )}
             </div>
@@ -303,7 +302,7 @@ export function WeeklyCalendar({
                   onClick={() => openNewAppointment()}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9]"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Nueva cita
+                  <Plus className="h-3.5 w-3.5" /> {t("newAppointment")}
                 </button>
               )}
               <div className="flex items-center rounded-xl border border-border bg-muted p-0.5">
@@ -311,13 +310,13 @@ export function WeeklyCalendar({
                   onClick={() => setViewMode("day")}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  Día
+                  {t("day")}
                 </button>
                 <button
                   onClick={() => setViewMode("week")}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  Semana
+                  {t("week")}
                 </button>
               </div>
             </div>
@@ -326,6 +325,7 @@ export function WeeklyCalendar({
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={viewMode === "week" ? () => navigateWeek("prev") : prevDay}
+              aria-label={t("previous")}
               className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -333,16 +333,17 @@ export function WeeklyCalendar({
             <span className="flex-1 text-center text-sm">
               {viewMode === "week" ? (
                 <span className="text-muted-foreground">
-                  {format(weekStart, "d MMM", { locale: es })} — {format(addDays(weekStart, 6), "d MMM yyyy", { locale: es })}
+                  {format(weekStart, "d MMM", { locale: dateLocale })} — {format(addDays(weekStart, 6), "d MMM yyyy", { locale: dateLocale })}
                 </span>
               ) : (
                 <span className="font-medium capitalize">
-                  {format(selectedDay, "EEEE d 'de' MMMM", { locale: es })}
+                  {format(selectedDay, "PPPP", { locale: dateLocale })}
                 </span>
               )}
             </span>
             <button
               onClick={viewMode === "week" ? () => navigateWeek("next") : nextDay}
+              aria-label={t("next")}
               className="rounded-lg border border-border p-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
             >
               <ChevronRight className="h-4 w-4" />
@@ -361,7 +362,7 @@ export function WeeklyCalendar({
                   const isToday = isSameDay(day, today);
                   return (
                     <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: es })}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: dateLocale })}</p>
                       <p className={`text-xl font-bold ${isToday ? "text-[#7C3AED]" : ""}`}>{format(day, "d")}</p>
                     </div>
                   );
@@ -403,12 +404,12 @@ export function WeeklyCalendar({
                                   ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
                                   : "border-amber-500/25 bg-amber-500/10 text-amber-400"
                               }`}
-                              title={canManageAppointments ? "Agendar una clienta en este cupo prioritario" : "Cupo prioritario"}
+                              title={canManageAppointments ? t("bookPriority") : t("prioritySlot")}
                             >
                               <div className="flex items-center gap-1">
                                 <Crown className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate text-[10px] font-semibold">
-                                  {released ? "Cupo liberado" : "Prioritario"}
+                                  {released ? t("releasedSlot") : t("priority")}
                                 </span>
                               </div>
                               <p className="mt-0.5 truncate text-[9px] opacity-80">
@@ -476,12 +477,12 @@ export function WeeklyCalendar({
                             ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
                             : "border-amber-500/25 bg-amber-500/10 text-amber-400"
                         }`}
-                        title={canManageAppointments ? "Agendar una clienta en este cupo prioritario" : "Cupo prioritario"}
+                        title={canManageAppointments ? t("bookPriority") : t("prioritySlot")}
                       >
                         <div className="flex items-center gap-2">
                           <Crown className="h-3 w-3 shrink-0" />
                           <span className="text-xs font-semibold">
-                            {released ? "Cupo prioritario liberado" : "Cupo prioritario"}
+                            {released ? t("releasedPrioritySlot") : t("prioritySlot")}
                           </span>
                           <span className="ml-auto text-[10px] opacity-80">{format(start, "HH:mm")}</span>
                         </div>
@@ -523,26 +524,33 @@ export function WeeklyCalendar({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
           <div className="mx-4 w-full max-w-md animate-scale-in rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h3 className="text-lg font-semibold">Detalle de Cita</h3>
+              <h3 className="text-lg font-semibold">{t("appointmentDetails")}</h3>
               <button onClick={() => setSelected(null)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-4 p-6">
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${(STATUS_COLORS[selected.status] || STATUS_COLORS.PENDING).dot}`} />
-                <span className="text-sm font-medium">{STATUS_LABELS[selected.status] || selected.status}</span>
+                <span className="text-sm font-medium">{{
+                  PENDING: t("status.pending"),
+                  AWAITING_PAYMENT: t("status.awaitingPayment"),
+                  CONFIRMED: t("status.confirmed"),
+                  CANCELLED: t("status.cancelled"),
+                  CHECKED_IN: t("status.checkedIn"),
+                  NO_SHOW: t("status.noShow"),
+                }[selected.status] || selected.status}</span>
                 {selected.recurringBookingId && (
                   <span className="ml-auto flex items-center gap-1 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 px-2 py-0.5 text-[10px] font-medium text-[#A78BFA]">
-                    <RefreshCw className="h-2.5 w-2.5" /> Recurrente
+                    <RefreshCw className="h-2.5 w-2.5" /> {t("recurring")}
                   </span>
                 )}
               </div>
               <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Cliente:</span><span className="font-medium">{selected.customerName}</span></div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Email:</span><span>{selected.customerEmail}</span></div>
+                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("customer")}</span><span className="font-medium">{selected.customerName}</span></div>
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("email")}</span><span>{selected.customerEmail}</span></div>
                 {selected.customerPhone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Teléfono:</span>
+                    <span className="text-muted-foreground">{t("phone")}</span>
                     <a
                       href={`tel:${selected.customerPhone.replace(/[^\d+]/g, "")}`}
                       className="font-medium text-[#A78BFA] hover:underline"
@@ -551,9 +559,9 @@ export function WeeklyCalendar({
                     </a>
                   </div>
                 )}
-                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Hora:</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
-                <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Servicio:</span><span>{selected.serviceName}</span></div>
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">Staff:</span><span>{selected.staffName}</span></div>
+                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("time")}</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
+                <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("service")}</span><span>{selected.serviceName}</span></div>
+                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("professional")}</span><span>{selected.staffName}</span></div>
                 {(selected.selectedOptions?.length ?? 0) > 0 && (
                   <div className="space-y-1 border-t border-border pt-3">
                     {selected.selectedOptions!.map((option) => (
@@ -571,7 +579,7 @@ export function WeeklyCalendar({
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <FileText className="h-3 w-3 text-amber-400" />
-                    <span className="text-[11px] font-medium text-amber-400">Nota del cliente</span>
+                    <span className="text-[11px] font-medium text-amber-400">{t("customerNote")}</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{selected.clientNotes}</p>
                 </div>
@@ -581,7 +589,7 @@ export function WeeklyCalendar({
                 <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-3">
                   <div className="mb-1 flex items-center gap-1.5">
                     <FileText className="h-3 w-3 text-[#A78BFA]" />
-                    <span className="text-[11px] font-medium text-[#A78BFA]">Nota de la cita</span>
+                    <span className="text-[11px] font-medium text-[#A78BFA]">{t("appointmentNote")}</span>
                   </div>
                   <p className="text-xs leading-relaxed text-muted-foreground">{selected.internalNotes}</p>
                 </div>
@@ -591,7 +599,7 @@ export function WeeklyCalendar({
               {selected.recurringBookingId && (
                 <div className="space-y-2">
                   <a href="/dashboard/recurring" className="flex items-center gap-1.5 text-xs font-medium text-[#A78BFA] hover:text-[#C4B5FD] transition-colors">
-                    <Link2 className="h-3 w-3" /> Ver todas las sesiones de este plan
+                    <Link2 className="h-3 w-3" /> {t("viewPlanSessions")}
                   </a>
                   {!["CANCELLED", "NO_SHOW"].includes(selected.status) && (
                     <div className="grid grid-cols-2 gap-2">
@@ -601,7 +609,7 @@ export function WeeklyCalendar({
                         className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
                       >
                         {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                        Cancelar esta sesion
+                        {t("cancelSession")}
                       </button>
                       <button
                         onClick={() => handleCancelRecurringSession("future")}
@@ -609,7 +617,7 @@ export function WeeklyCalendar({
                         className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
                       >
                         {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                        Cancelar siguientes
+                        {t("cancelFollowing")}
                       </button>
                     </div>
                   )}
@@ -618,16 +626,16 @@ export function WeeklyCalendar({
 
               {!["CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(selected.status) && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Cambiar estado:</p>
+                  <p className="text-xs font-medium text-muted-foreground">{t("changeStatus")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {selected.status === "PENDING" && (<>
-                      <button onClick={() => handleStatus("CONFIRMED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-sm font-medium text-emerald-400 disabled:opacity-50">{loading === "CONFIRMED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Confirmar</button>
-                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancelar</button>
+                      <button onClick={() => handleStatus("CONFIRMED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-sm font-medium text-emerald-400 disabled:opacity-50">{loading === "CONFIRMED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {t("confirm")}</button>
+                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} {t("cancel")}</button>
                     </>)}
                     {selected.status === "CONFIRMED" && (<>
-                      <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} Asistio</button>
-                      <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} Inasistencia</button>
-                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Cancelar cita</button>
+                      <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} {t("attended")}</button>
+                      <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} {t("noShow")}</button>
+                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} {t("cancelAppointment")}</button>
                     </>)}
                   </div>
                 </div>
@@ -639,7 +647,7 @@ export function WeeklyCalendar({
                   onClick={() => openEditAppointment(selected)}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 py-2.5 text-sm font-medium text-[#A78BFA]"
                 >
-                  <Pencil className="h-4 w-4" /> Editar o reagendar
+                  <Pencil className="h-4 w-4" /> {t("editOrReschedule")}
                 </button>
               )}
             </div>

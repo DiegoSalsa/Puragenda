@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { updateBusinessPoliciesAction } from "@/server/actions/dashboard.actions";
@@ -36,6 +39,7 @@ export function BusinessPoliciesEditor({
   initialMinAdvanceBookingMinutes,
   taxIdLabel,
 }: Props) {
+  const legacy = useTranslations("legacy");
   const [allowRescheduling, setAllowRescheduling] = useState(initialAllowRescheduling);
   const [rescheduleHoursLimit, setRescheduleHoursLimit] = useState(initialRescheduleHoursLimit);
   const [includeAppointmentActionsInConfirmationEmail, setIncludeAppointmentActionsInConfirmationEmail] =
@@ -72,8 +76,8 @@ export function BusinessPoliciesEditor({
       {/* Allow rescheduling toggle */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium">Permitir reagendamiento</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">El cliente puede solicitar cambio de horario en sus sesiones recurrentes</p>
+          <p className="text-sm font-medium"><LocalizedText id="RaDYMVMgv01B" /></p>
+          <p className="mt-0.5 text-xs text-muted-foreground"><LocalizedText id="2PD7KhsxHCZx" /></p>
         </div>
         <button
           type="button"
@@ -93,7 +97,7 @@ export function BusinessPoliciesEditor({
       {/* Hours limit (visible only when rescheduling is enabled) */}
       {allowRescheduling && (
         <div className="ml-0 space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Horas minimas de anticipacion para reagendar</label>
+          <label className="text-xs font-medium text-muted-foreground"><LocalizedText id="PpOF8SB50REJ" /></label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -103,7 +107,7 @@ export function BusinessPoliciesEditor({
               onChange={(e) => setRescheduleHoursLimit(parseInt(e.target.value) || 24)}
               className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
             />
-            <span className="text-sm text-muted-foreground">horas</span>
+            <span className="text-sm text-muted-foreground"><LocalizedText id="o9R1Nw01_GOm" /></span>
           </div>
         </div>
       )}
@@ -111,17 +115,16 @@ export function BusinessPoliciesEditor({
       <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium">Acciones en el correo de confirmación</p>
+            <p className="text-sm font-medium"><LocalizedText id="GZPd3XCz7Cr7" /></p>
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              Incluye un botón seguro para cancelar. También incluye reagendamiento cuando esa política está activa.
-              La cancelación exige una segunda confirmación y el enlace vence al comenzar la cita.
+              <LocalizedText id="VhDEyNmX9V9l" />
             </p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={includeAppointmentActionsInConfirmationEmail}
-            aria-label="Incluir acciones en el correo de confirmación"
+            aria-label={legacy("oANGujn3ko-E")}
             onClick={() => setIncludeAppointmentActionsInConfirmationEmail((value) => !value)}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
               includeAppointmentActionsInConfirmationEmail ? "bg-[#7C3AED]" : "bg-muted"
@@ -139,8 +142,8 @@ export function BusinessPoliciesEditor({
       {/* Require RUT toggle */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium">Requerir {taxIdLabel} del cliente</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Se solicita el {taxIdLabel} al completar reservas recurrentes.</p>
+          <p className="text-sm font-medium"><LocalizedText id="inzlqYF3MxjU" /> {taxIdLabel} <LocalizedText id="fMy7ndmqk39C" /></p>
+          <p className="mt-0.5 text-xs text-muted-foreground"><LocalizedText id="-aCXyrCOrzx5" /> {taxIdLabel} <LocalizedText id="8TuWstYTrvl8" /></p>
         </div>
         <button
           type="button"
@@ -159,14 +162,14 @@ export function BusinessPoliciesEditor({
 
       {/* ── Booking Policies Divider ── */}
       <div className="border-t border-border pt-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Configuración de agenda</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4"><LocalizedText id="larH9Mi8jQX0" /></p>
       </div>
 
       {/* Allow same-day bookings toggle */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium">Aceptar reservas el mismo día</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Permite a los clientes agendar citas para el día de hoy</p>
+          <p className="text-sm font-medium"><LocalizedText id="ejCdUlPNZYzK" /></p>
+          <p className="mt-0.5 text-xs text-muted-foreground"><LocalizedText id="SV2yfMjIZ-cq" /></p>
         </div>
         <button
           type="button"
@@ -186,7 +189,7 @@ export function BusinessPoliciesEditor({
       {/* Min advance booking minutes (visible only when same-day is enabled) */}
       {allowSameDayBookings && (
         <div className="ml-0 space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Tiempo mínimo de anticipación (minutos)</label>
+          <label className="text-xs font-medium text-muted-foreground"><LocalizedText id="3O1TCNCVYSDb" /></label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -196,17 +199,17 @@ export function BusinessPoliciesEditor({
               onChange={(e) => setMinAdvanceBookingMinutes(parseInt(e.target.value) || 0)}
               className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
             />
-            <span className="text-sm text-muted-foreground">minutos</span>
+            <span className="text-sm text-muted-foreground"><LocalizedText id="rrYYPjIsjWlx" /></span>
           </div>
-          <p className="text-xs text-muted-foreground">Solo se mostrarán horarios con al menos esta anticipación desde la hora actual.</p>
+          <p className="text-xs text-muted-foreground"><LocalizedText id="P5qLmmtJdrzI" /></p>
         </div>
       )}
 
       {/* Slot interval select */}
       <div className="space-y-1.5">
         <div>
-          <p className="text-sm font-medium">Intervalo de horarios</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Cada cuántos minutos se genera un bloque de hora disponible en el widget</p>
+          <p className="text-sm font-medium"><LocalizedText id="x3n2NNkGcI7c" /></p>
+          <p className="mt-0.5 text-xs text-muted-foreground"><LocalizedText id="JNaaIExxD7t5" /></p>
         </div>
         <div className="flex flex-wrap gap-2">
           {SLOT_INTERVAL_OPTIONS.map((opt) => (
@@ -214,9 +217,9 @@ export function BusinessPoliciesEditor({
           ))}
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Valor personalizado</span>
+          <span className="text-muted-foreground"><LocalizedText id="Thfy7F5U46Ug" /></span>
           <input type="number" min={5} max={240} step={5} value={slotInterval} onChange={(e) => setSlotInterval(Math.max(5, Math.min(240, parseInt(e.target.value) || 5)))} className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30" />
-          <span className="text-muted-foreground">min</span>
+          <span className="text-muted-foreground"><LocalizedText id="H2-m9p0YXmCG" /></span>
         </label>
       </div>
 
@@ -228,7 +231,7 @@ export function BusinessPoliciesEditor({
           onClick={handleSave}
           className="rounded-xl bg-[#7C3AED] px-5 py-2 text-sm font-bold text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
         >
-          {pending ? "Guardando..." : "Guardar politicas"}
+          {pending ? "Guardando..." : legacy("SrRqWzSQqoBT")}
         </button>
         {result && (
           <span className={`flex items-center gap-1.5 text-sm ${result.ok ? "text-emerald-500" : "text-red-500"}`}>

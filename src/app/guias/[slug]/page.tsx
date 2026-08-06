@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -107,7 +109,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
       <main className="mx-auto w-full max-w-5xl px-6 py-12">
         <Link href="/guias" className="inline-flex items-center gap-2 text-sm font-black uppercase hover:text-[#7C3AED]">
           <ArrowLeft className="h-4 w-4" />
-          Todas las guías
+          <LocalizedText id="yLCeyXMhIRBj" />
         </Link>
 
         <article className="mt-10">
@@ -124,11 +126,11 @@ export default async function GuidePage({ params }: GuidePageProps) {
             <div className="mt-7 flex flex-wrap gap-5 text-sm font-black uppercase opacity-65">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4" />
-                Actualizada el 23 de julio de 2026
+                <LocalizedText id="1DBAi64RIZpt" />
               </span>
               <span className="flex items-center gap-2">
                 <Clock3 className="h-4 w-4" />
-                {guide.readingMinutes} min de lectura
+                {guide.readingMinutes} <LocalizedText id="40AgLH_frvYD" />
               </span>
             </div>
           </header>
@@ -159,7 +161,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
           </div>
 
           <section className="mx-auto mt-16 max-w-3xl border-t-4 border-black pt-12 dark:border-white">
-            <h2 className="text-3xl font-black uppercase">Preguntas frecuentes</h2>
+            <h2 className="text-3xl font-black uppercase"><LocalizedText id="o_NRzgWAdoNW" /></h2>
             <div className="mt-7 space-y-5">
               {guide.faq.map((item) => (
                 <div key={item.question} className="rounded-2xl border-4 border-black bg-white p-6 shadow-[5px_5px_0_#000] dark:border-white dark:bg-black">
@@ -172,7 +174,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
         </article>
 
         <aside className="mt-20 border-t-4 border-black pt-12 dark:border-white">
-          <h2 className="text-2xl font-black uppercase">Continúa leyendo</h2>
+          <h2 className="text-2xl font-black uppercase"><LocalizedText id="ith8agD-xiEU" /></h2>
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             {relatedGuides.map((related) => (
               <Link
@@ -183,7 +185,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
                 <p className="text-xs font-black uppercase tracking-wider">{related.eyebrow}</p>
                 <p className="mt-2 text-lg font-black">{related.title}</p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase">
-                  Leer <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <LocalizedText id="9OCsCAQsmHqb" /> <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
             ))}

@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
@@ -25,6 +28,7 @@ function getFriendlyBillingError(data: { error?: string; code?: string }, status
 }
 
 export function ActivatePlanButton({ plan }: { plan: string }) {
+  const legacy = useTranslations("legacy");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +55,7 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
 
       await startBillingCheckout(data);
     } catch {
-      setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
+      setError(legacy("dGRmlTb5tOKJ"));
       setLoading(false);
     }
   }
@@ -67,11 +71,11 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
       >
         {loading ? (
           <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Redirigiendo…
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> <LocalizedText id="tbQgxZgIsmmC" />
           </>
         ) : (
           <>
-            <CreditCard className="h-3.5 w-3.5" /> Activar Plan {planLabel}
+            <CreditCard className="h-3.5 w-3.5" /> <LocalizedText id="tNLbGaX0JoaI" /> {planLabel}
           </>
         )}
       </button>
@@ -84,7 +88,7 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
         >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div>
-            <p className="text-xs font-bold">No pudimos iniciar el pago</p>
+            <p className="text-xs font-bold"><LocalizedText id="oMrg9u0AQSHc" /></p>
             <p className="mt-0.5 text-xs leading-relaxed text-red-600">{error}</p>
           </div>
         </div>

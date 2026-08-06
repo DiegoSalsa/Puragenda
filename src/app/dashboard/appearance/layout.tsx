@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { Palette } from "lucide-react";
 
 export default function AppearanceLayout({ children }: { children: React.ReactNode }) {
@@ -8,8 +10,8 @@ export default function AppearanceLayout({ children }: { children: React.ReactNo
           <Palette className="h-5 w-5 text-[#7C3AED]" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Apariencia</h1>
-          <p className="text-sm text-muted-foreground">Personaliza los colores y logo de tu widget de reservas.</p>
+          <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="4-nLrMrsPSof" /></h1>
+          <p className="text-sm text-muted-foreground"><LocalizedText id="vJlaQhIdse2F" /></p>
         </div>
       </div>
       {children}

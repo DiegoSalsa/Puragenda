@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { saveLoyaltyConfigAction } from "@/server/actions/dashboard.actions";
@@ -16,6 +19,7 @@ interface LoyaltyConfigFormProps {
 }
 
 export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
+  const legacy = useTranslations("legacy");
   const [isEnabled, setIsEnabled] = useState(initialData.isLoyaltyEnabled);
   const [stampsRequired, setStampsRequired] = useState(initialData.stampsRequired);
   const [rewardName, setRewardName] = useState(initialData.rewardName);
@@ -42,7 +46,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
     if (result.error) {
       setMessage({ type: "error", text: result.error });
     } else {
-      setMessage({ type: "success", text: "Configuración guardada correctamente" });
+      setMessage({ type: "success", text: legacy("u3_t2x7hfcU6") });
     }
 
     setLoading(false);
@@ -54,9 +58,9 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
       {/* Toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">Programa de Fidelización</p>
+          <p className="text-sm font-medium"><LocalizedText id="3Fsd3_4p-Tbb" /></p>
           <p className="text-xs text-muted-foreground">
-            {isEnabled ? "Activo — los clientes acumulan timbres" : "Inactivo — no se acumulan timbres"}
+            {isEnabled ? legacy("dsOLd6Gjm_X_") : legacy("eMrosfqSnkAk")}
           </p>
         </div>
         <button
@@ -81,7 +85,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         <div className="space-y-1.5">
           <label htmlFor="stampsRequired" className="flex items-center gap-2 text-sm font-medium">
             <Hash className="h-4 w-4 text-[#7C3AED]" />
-            Timbres necesarios para el premio
+            <LocalizedText id="-ArpPW2eBDfG" />
           </label>
           <input
             id="stampsRequired"
@@ -92,21 +96,21 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
             onChange={(e) => setStampsRequired(Number(e.target.value))}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
           />
-          <p className="text-xs text-muted-foreground">¿Cuántas visitas completas debe acumular un cliente para ganar su premio?</p>
+          <p className="text-xs text-muted-foreground"><LocalizedText id="aHvTYQHcYTL7" /></p>
         </div>
 
         {/* Reward Name */}
         <div className="space-y-1.5">
           <label htmlFor="rewardName" className="flex items-center gap-2 text-sm font-medium">
             <Gift className="h-4 w-4 text-[#7C3AED]" />
-            Nombre del premio
+            <LocalizedText id="nBMscV3Ms_bs" />
           </label>
           <input
             id="rewardName"
             type="text"
             value={rewardName}
             onChange={(e) => setRewardName(e.target.value)}
-            placeholder="Ej: Corte gratis, Descuento especial..."
+            placeholder={legacy("jdduhvPed4B1")}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
           />
         </div>
@@ -114,7 +118,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         <div className="space-y-1.5">
           <label htmlFor="loyaltyCodePrefix" className="flex items-center gap-2 text-sm font-medium">
             <Hash className="h-4 w-4 text-[#7C3AED]" />
-            Prefijo personalizado del código
+            <LocalizedText id="3YuhjeQbqnP2" />
           </label>
           <input
             id="loyaltyCodePrefix"
@@ -122,18 +126,18 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
             maxLength={16}
             value={loyaltyCodePrefix}
             onChange={(e) => setLoyaltyCodePrefix(e.target.value.toUpperCase())}
-            placeholder="Ej: TERAPIAS"
+            placeholder={legacy("sy2FbBPdnUOR")}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm uppercase outline-none transition-colors focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED]/30"
           />
           <p className="text-xs text-muted-foreground">
-            Cada premio seguirá siendo único y personal, por ejemplo: {(loyaltyCodePrefix.trim() || "PREMIO").toUpperCase()}-A1B2C3D4E5.
+            <LocalizedText id="qrqZksCKT4dw" /> {(loyaltyCodePrefix.trim() || "PREMIO").toUpperCase()}<LocalizedText id="11MsNcjpBRgW" />
           </p>
         </div>
 
         {/* Discount Type */}
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-sm font-medium">
-            Tipo de descuento
+            <LocalizedText id="KrtBnOO1iiH9" />
           </label>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -146,7 +150,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
               }`}
             >
               <Percent className="h-4 w-4" />
-              Porcentaje
+              <LocalizedText id="tKXpGZhUl_nJ" />
             </button>
             <button
               type="button"
@@ -158,7 +162,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
               }`}
             >
               <DollarSign className="h-4 w-4" />
-              Monto fijo
+              <LocalizedText id="1z9Mmx_dtMYH" />
             </button>
           </div>
         </div>
@@ -166,7 +170,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         {/* Discount Value */}
         <div className="space-y-1.5">
           <label htmlFor="discountValue" className="flex items-center gap-2 text-sm font-medium">
-            Valor del descuento
+            <LocalizedText id="H90hEZUL3lxa" />
           </label>
           <div className="relative">
             <input
@@ -184,8 +188,8 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             {discountType === "PERCENTAGE"
-              ? "Porcentaje de descuento (1–100)"
-              : "Monto fijo de descuento en pesos"}
+              ? legacy("i5a43xBc4JAn")
+              : legacy("pI4AjEmucA2d")}
           </p>
         </div>
       </div>
@@ -193,9 +197,9 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
       {/* Preview */}
       {isEnabled && (
         <div className="rounded-xl border border-dashed border-[#7C3AED]/30 bg-[#7C3AED]/5 p-4 animate-fade-up">
-          <p className="text-xs font-medium text-[#7C3AED] mb-2">Vista previa del premio</p>
+          <p className="text-xs font-medium text-[#7C3AED] mb-2"><LocalizedText id="yeYAoB9GrrMB" /></p>
           <p className="text-sm text-foreground">
-            Después de <strong>{stampsRequired}</strong> visitas completadas, el cliente recibe:{" "}
+            <LocalizedText id="mytP-rADnT4T" /> <strong>{stampsRequired}</strong> <LocalizedText id="ME9d-yHEObYK" />{" "}
             <strong>{rewardName || "Premio"}</strong> —{" "}
             {discountType === "PERCENTAGE"
               ? `${discountValue}% de descuento`
@@ -212,7 +216,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
           className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 h-11 text-sm font-medium text-white transition-all duration-200 hover:bg-[#6D28D9] disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Guardar configuración
+          <LocalizedText id="dowjI1lRaqyF" />
         </button>
 
         {message && (

@@ -1,10 +1,14 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Crown, Loader2, Sparkles } from "lucide-react";
 import { startBillingCheckout } from "@/components/paddle/checkout";
 
 export function UpgradeButton() {
+  const legacy = useTranslations("legacy");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,14 +25,14 @@ export function UpgradeButton() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Error al iniciar el proceso de pago.");
+        setError(data.error || legacy("9xSo3rhgfFpo"));
         setLoading(false);
         return;
       }
 
       await startBillingCheckout(data);
     } catch {
-      setError("Error de conexión. Verifica tu internet e intenta de nuevo.");
+      setError(legacy("dGRmlTb5tOKJ"));
       setLoading(false);
     }
   }
@@ -46,12 +50,12 @@ export function UpgradeButton() {
         {loading ? (
           <>
             <Loader2 className="h-4.5 w-4.5 animate-spin" />
-            <span>Abriendo Checkout…</span>
+            <span><LocalizedText id="YXBOkgaFWB6z" /></span>
           </>
         ) : (
           <>
             <Crown className="h-4.5 w-4.5" />
-            <span>Mejorar a Plan Equipo</span>
+            <span><LocalizedText id="0U0LUZQBWsgk" /></span>
             <Sparkles className="h-3.5 w-3.5 text-white/70" />
           </>
         )}

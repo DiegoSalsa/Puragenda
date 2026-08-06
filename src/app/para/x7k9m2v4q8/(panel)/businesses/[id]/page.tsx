@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
@@ -91,7 +93,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           href={`${ADMIN_SECRET_PATH}/businesses`}
           className="mb-4 inline-flex items-center gap-1 text-sm font-black uppercase text-black hover:underline"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Volver a negocios
+          <ArrowLeft className="h-3.5 w-3.5" /> <LocalizedText id="JhxPoaC3z5e_" />
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -113,7 +115,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           {/* Owner */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Mail className="h-4 w-4" /> Dueño
+              <Mail className="h-4 w-4" /> <LocalizedText id="q4vTSeOrpjxF" />
             </h3>
             {business.owner ? (
               <div className="space-y-2">
@@ -130,14 +132,14 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                 ))}
               </div>
             ) : (
-              <p className="text-sm font-bold text-black/40">Sin dueño asignado</p>
+              <p className="text-sm font-bold text-black/40"><LocalizedText id="EoRb_H-g01Mi" /></p>
             )}
           </div>
 
           {/* Staff */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Users className="h-4 w-4" /> Profesionales ({business.staff.length})
+              <Users className="h-4 w-4" /> <LocalizedText id="ZSo0EwUAEOqG" />{business.staff.length})
             </h3>
             <div className="space-y-2">
               {business.staff.map((s) => (
@@ -151,33 +153,33 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   </span>
                 </div>
               ))}
-              {business.staff.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin profesionales</p>}
+              {business.staff.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40"><LocalizedText id="dzZ1MpWkNLPc" /></p>}
             </div>
           </div>
 
           {/* Services */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Briefcase className="h-4 w-4" /> Servicios ({business.services.length})
+              <Briefcase className="h-4 w-4" /> <LocalizedText id="Ano8TWhO0atr" />{business.services.length})
             </h3>
             <div className="space-y-2">
               {business.services.map((svc) => (
                 <div key={svc.id} className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000]">
                   <div>
                     <p className="text-sm font-black text-black">{svc.name}</p>
-                    <p className="text-xs font-bold text-black/40">{svc.duration} min</p>
+                    <p className="text-xs font-bold text-black/40">{svc.duration} <LocalizedText id="H2-m9p0YXmCG" /></p>
                   </div>
                   <p className="font-black text-black">${svc.price.toLocaleString("es-CL")}</p>
                 </div>
               ))}
-              {business.services.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin servicios</p>}
+              {business.services.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40"><LocalizedText id="9hE0hsT-qFzZ" /></p>}
             </div>
           </div>
 
           {/* Recent Appointments */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Calendar className="h-4 w-4" /> Citas Recientes ({business._count.appointments} total)
+              <Calendar className="h-4 w-4" /> <LocalizedText id="fsQ34d9KEetZ" />{business._count.appointments} <LocalizedText id="ZlwChXJ9c2rq" />
             </h3>
             <div className="space-y-2">
               {recentAppointments.map((apt) => (
@@ -199,7 +201,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   </span>
                 </div>
               ))}
-              {recentAppointments.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40">Sin citas</p>}
+              {recentAppointments.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40"><LocalizedText id="ze8bGLfz4ge3" /></p>}
             </div>
           </div>
         </div>
@@ -219,13 +221,13 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             }} />
           ) : (
             <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-              <p className="text-sm font-bold text-black/40">Sin suscripción</p>
+              <p className="text-sm font-bold text-black/40"><LocalizedText id="FihAURvq5ieW" /></p>
             </div>
           )}
 
           {/* Quick Stats */}
           <div className="border-4 border-black bg-[#85E3FF] p-6 shadow-[4px_4px_0_#000]">
-            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Resumen</h3>
+            <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="7XvcZ8hLPta7" /></h3>
             <div className="space-y-3">
               {[
                 { label: "Clientes", value: business._count.clients, icon: Users },
@@ -246,22 +248,22 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           {/* Widget Info */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Palette className="h-4 w-4" /> Widget
+              <Palette className="h-4 w-4" /> <LocalizedText id="fdeijC_54wir" />
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                <span className="text-xs font-black uppercase text-black/40">Color primario</span>
+                <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="lj5T0HoHYtu1" /></span>
                 <div className="flex items-center gap-2">
                   <div className="h-5 w-5 border-2 border-black" style={{ backgroundColor: business.primaryColor }} />
                   <span className="font-mono text-xs font-bold text-black">{business.primaryColor}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                <span className="text-xs font-black uppercase text-black/40">Enlace público</span>
+                <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="S-XlACNsnZRw" /></span>
                 <a href={absoluteUrl(`/widget/${business.slug}`)} target="_blank" rel="noreferrer" className="font-mono text-xs font-bold text-black underline decoration-2 underline-offset-2">{absoluteUrl(`/widget/${business.slug}`)}</a>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase text-black/40">API Key</span>
+                <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="IxidVfaXPyzl" /></span>
                 <span className="font-mono text-xs font-bold text-black/50">{business.apiKey.slice(0, 12)}...</span>
               </div>
             </div>
@@ -270,30 +272,30 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           {/* Referral Info */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-              <Share2 className="h-4 w-4" /> Referidos
+              <Share2 className="h-4 w-4" /> <LocalizedText id="wgPakJ2NbGW3" />
             </h3>
             <div className="space-y-3">
               {business.affiliate ? (
                 <>
                   <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                    <span className="text-xs font-black uppercase text-black/40">Código</span>
+                    <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="9YuFVwOYwMyd" /></span>
                     <span className="font-mono text-sm font-black text-black">{business.affiliate.referralCode}</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                    <span className="text-xs font-black uppercase text-black/40">Referidos pagados</span>
+                    <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="QqIeCLd-4KlO" /></span>
                     <span className="text-sm font-black text-black">{business.affiliate.paidReferrals}</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                    <span className="text-xs font-black uppercase text-black/40">Fichas gastadas</span>
+                    <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="JZ2y1viU1_Gm" /></span>
                     <span className="text-sm font-black text-black">{business.affiliate.spentTokens}</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-black/10 pb-2">
-                    <span className="text-xs font-black uppercase text-black/40">Fichas disponibles</span>
+                    <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="UU_47MkYsLmU" /></span>
                     <span className="text-sm font-black text-black">{business.affiliate.paidReferrals - business.affiliate.spentTokens}</span>
                   </div>
                   {business.affiliate.referredBusinesses.length > 0 && (
                     <div className="mt-3">
-                      <p className="mb-2 text-xs font-black uppercase text-black/40">Negocios referidos</p>
+                      <p className="mb-2 text-xs font-black uppercase text-black/40"><LocalizedText id="OXlU7jhQGTi4" /></p>
                       <div className="space-y-1.5">
                         {business.affiliate.referredBusinesses.map((ref) => (
                           <Link
@@ -317,11 +319,11 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   )}
                 </>
               ) : (
-                <p className="text-sm font-bold text-black/40">Sin programa de afiliados</p>
+                <p className="text-sm font-bold text-black/40"><LocalizedText id="1bfUHPBEy5h4" /></p>
               )}
               {business.referredByAffiliate && (
                 <div className="border-t-2 border-black/10 pt-3">
-                  <p className="text-xs font-black uppercase text-black/40 mb-1">Referido por</p>
+                  <p className="text-xs font-black uppercase text-black/40 mb-1"><LocalizedText id="eirgSz1lhR8W" /></p>
                   <Link
                     href={`${ADMIN_SECRET_PATH}/businesses/${business.referredByAffiliate.business.id}`}
                     className="inline-flex items-center gap-1.5 border-2 border-black bg-[#B28DFF] px-2.5 py-1.5 text-xs font-black text-black shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"

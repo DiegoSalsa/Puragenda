@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { format, differenceInDays } from "date-fns";
@@ -76,6 +79,7 @@ export function SubscriptionsClient({
   active: Sub[];
   allSubscriptions: Sub[];
 }) {
+  const legacy = useTranslations("legacy");
   const [extending, setExtending] = useState<string | null>(null);
   const [billingAction, setBillingAction] = useState<string | null>(null);
   const [expandedBillingId, setExpandedBillingId] = useState<string | null>(null);
@@ -172,7 +176,7 @@ export function SubscriptionsClient({
     setBillingMessage(null);
     startTransition(async () => {
       const result = await syncSubscriptionBillingAction(subscriptionId);
-      setBillingMessage(result.error || "Monto sincronizado con MercadoPago.");
+      setBillingMessage(result.error || legacy("L9jrE-02w0wr"));
       setBillingAction(null);
     });
   }
@@ -181,8 +185,8 @@ export function SubscriptionsClient({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-black">Suscripciones</h1>
-        <p className="text-sm font-bold text-black/50">{allSubscriptions.length} en total</p>
+        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-black"><LocalizedText id="XrCu9JcLPsJe" /></h1>
+        <p className="text-sm font-bold text-black/50">{allSubscriptions.length} <LocalizedText id="TY6m0l48IUB6" /></p>
       </div>
 
       {/* Stats row */}
@@ -206,10 +210,10 @@ export function SubscriptionsClient({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Zap className="h-5 w-5 text-black" />
           <h2 className="text-lg sm:text-xl font-black uppercase tracking-tighter text-black">
-            Control de cobros y beneficios
+            <LocalizedText id="WU36w7S1G3B7" />
           </h2>
           <span className="border-2 border-black bg-[#E9D5FF] px-2 py-0.5 text-xs font-black">
-            Sorteo y descuentos
+            <LocalizedText id="Xju67jZ8UmMa" />
           </span>
         </div>
 
@@ -223,11 +227,11 @@ export function SubscriptionsClient({
           <table className="w-full min-w-[1120px] text-sm">
             <thead>
               <tr className="border-b-4 border-black bg-[#E9D5FF] text-left text-xs uppercase font-black text-black">
-                <th className="px-5 py-3">Negocio</th>
-                <th className="px-4 py-3">Proximo cobro</th>
-                <th className="px-4 py-3">Beneficio activo</th>
-                <th className="px-4 py-3">MercadoPago</th>
-                <th className="px-4 py-3">Acciones rapidas</th>
+                <th className="px-5 py-3"><LocalizedText id="B8s6yKMYEqy_" /></th>
+                <th className="px-4 py-3"><LocalizedText id="CFBVcrG_9ncY" /></th>
+                <th className="px-4 py-3"><LocalizedText id="u-CL4GYIztCu" /></th>
+                <th className="px-4 py-3"><LocalizedText id="OHWtjcFBNX8d" /></th>
+                <th className="px-4 py-3"><LocalizedText id="gCByBuhF6XGt" /></th>
               </tr>
             </thead>
             <tbody>
@@ -261,28 +265,28 @@ export function SubscriptionsClient({
                     </td>
                     <td className="px-4 py-4">
                       <p className="text-lg font-black text-black">{formatCLP(preview.amountDue)}</p>
-                      <p className="text-xs font-bold text-black/50">Base {formatCLP(preview.baseAmount)}</p>
+                      <p className="text-xs font-bold text-black/50"><LocalizedText id="e0c2Gq0Zu0g6" /> {formatCLP(preview.baseAmount)}</p>
                       <p className="mt-1 text-xs font-bold text-black/60">{preview.reason}</p>
                       {preview.usesMercadoPagoMinimum && (
                         <p className="mt-1 border border-black bg-[#FFF5BA] px-2 py-1 text-[10px] font-black text-black">
-                          MP queda en minimo tecnico {formatCLP(preview.mpAmount)}
+                          <LocalizedText id="VH5G-medcI9K" /> {formatCLP(preview.mpAmount)}
                         </p>
                       )}
                     </td>
                     <td className="px-4 py-4">
                       <p className="max-w-[230px] text-xs font-bold text-black">
-                        {activeBenefit || "Sin beneficio"}
+                        {activeBenefit || legacy("jOU1S2HsyWeu")}
                       </p>
                       {s.promoName && <p className="mt-1 text-xs font-black text-black/60">{s.promoName}</p>}
                       {s.billingNotes && <p className="mt-1 max-w-[230px] text-[11px] font-bold text-black/40">{s.billingNotes}</p>}
                     </td>
                     <td className="px-4 py-4">
                       <span className={`border-2 border-black px-2 py-0.5 text-[10px] font-black ${s.mpSubscriptionId ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
-                        {s.mpSubscriptionId ? "Enlazada" : "Sin MP"}
+                        {s.mpSubscriptionId ? "Enlazada" : legacy("YC6rvtyt7ihv")}
                       </span>
                       {s.lastBillingSyncAt && (
                         <p className="mt-1 text-[10px] font-bold text-black/40">
-                          Sync {format(new Date(s.lastBillingSyncAt), "dd/MM HH:mm")}
+                          <LocalizedText id="jSYaNy_eFGHM" /> {format(new Date(s.lastBillingSyncAt), "dd/MM HH:mm")}
                         </p>
                       )}
                       {s.lastBillingSyncError && (
@@ -313,7 +317,7 @@ export function SubscriptionsClient({
                           className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-1 text-[10px] font-black shadow-[2px_2px_0_#000] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none disabled:opacity-40"
                         >
                           <Percent className="h-3 w-3" />
-                          Manual
+                          <LocalizedText id="sLn-JP-pYpEl" />
                         </button>
                         <button
                           disabled={isPending}
@@ -330,13 +334,13 @@ export function SubscriptionsClient({
                           <input
                             value={edit.promoName}
                             onChange={(e) => updateBillingEdit(s.id, "promoName", e.target.value)}
-                            placeholder="Nombre beneficio"
+                            placeholder={legacy("JDOhJoKx-48C")}
                             className="border-2 border-black bg-white px-2 py-1.5 text-xs font-bold outline-none"
                           />
                           <input
                             value={edit.nextBillingOverrideAmount}
                             onChange={(e) => updateBillingEdit(s.id, "nextBillingOverrideAmount", e.target.value)}
-                            placeholder="Override proximo cobro"
+                            placeholder={legacy("RNdWkTJvj7sW")}
                             type="number"
                             min={0}
                             className="border-2 border-black bg-white px-2 py-1.5 text-xs font-bold outline-none"
@@ -344,7 +348,7 @@ export function SubscriptionsClient({
                           <input
                             value={edit.promoFreeMonthsRemaining}
                             onChange={(e) => updateBillingEdit(s.id, "promoFreeMonthsRemaining", e.target.value)}
-                            placeholder="Meses gratis"
+                            placeholder={legacy("vuzx22LjAWFe")}
                             type="number"
                             min={0}
                             max={36}
@@ -354,7 +358,7 @@ export function SubscriptionsClient({
                             <input
                               value={edit.promoDiscountPercentage}
                               onChange={(e) => updateBillingEdit(s.id, "promoDiscountPercentage", e.target.value)}
-                              placeholder="% descuento"
+                              placeholder={legacy("WS0QnUP0PhDw")}
                               type="number"
                               min={1}
                               max={100}
@@ -363,7 +367,7 @@ export function SubscriptionsClient({
                             <input
                               value={edit.promoDiscountMonthsRemaining}
                               onChange={(e) => updateBillingEdit(s.id, "promoDiscountMonthsRemaining", e.target.value)}
-                              placeholder="Meses"
+                              placeholder={legacy("0qaLCNhaVgDO")}
                               type="number"
                               min={0}
                               max={36}
@@ -373,7 +377,7 @@ export function SubscriptionsClient({
                           <textarea
                             value={edit.billingNotes}
                             onChange={(e) => updateBillingEdit(s.id, "billingNotes", e.target.value)}
-                            placeholder="Notas internas"
+                            placeholder={legacy("dM2vqmftDgku")}
                             rows={2}
                             className="border-2 border-black bg-white px-2 py-1.5 text-xs font-bold outline-none sm:col-span-2"
                           />
@@ -411,25 +415,25 @@ export function SubscriptionsClient({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-black" />
           <h2 className="text-lg sm:text-xl font-black uppercase tracking-tighter text-black">
-            Trials por expirar
+            <LocalizedText id="yTSPwWjtFNIL" />
           </h2>
           <span className="border-2 border-black bg-[#FFF5BA] px-2 py-0.5 text-xs font-black">
-            {expiringSoon.length} en 7 dias o menos
+            {expiringSoon.length} <LocalizedText id="yke6gzJ5hg6J" />
           </span>
         </div>
         {expiringSoon.length === 0 ? (
           <div className="border-4 border-black bg-white p-8 shadow-[4px_4px_0_#000] text-center">
-            <p className="text-sm font-bold text-black/40">Ningun trial expira pronto</p>
+            <p className="text-sm font-bold text-black/40"><LocalizedText id="VSYjqjNj43CN" /></p>
           </div>
         ) : (
           <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase font-black text-black">
-                  <th className="px-6 py-3">Negocio</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Expira</th>
-                  <th className="px-4 py-3">Dias restantes</th>
+                  <th className="px-6 py-3"><LocalizedText id="B8s6yKMYEqy_" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="-o7Qvavda8sc" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="1ggYqXlJSrCV" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="vfkelD3b02KM" /></th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -481,7 +485,7 @@ export function SubscriptionsClient({
         <div className="mb-3 flex items-center gap-2">
           <XCircle className="h-5 w-5 text-black" />
           <h2 className="text-xl font-black uppercase tracking-tighter text-black">
-            Canceladas
+            <LocalizedText id="WGDD64BpItWg" />
           </h2>
           <span className="border-2 border-black bg-[#FFB5E8] px-2 py-0.5 text-xs font-black">
             {cancelled.length}
@@ -489,17 +493,17 @@ export function SubscriptionsClient({
         </div>
         {cancelled.length === 0 ? (
           <div className="border-4 border-black bg-white p-8 shadow-[4px_4px_0_#000] text-center">
-            <p className="text-sm font-bold text-black/40">Sin cancelaciones</p>
+            <p className="text-sm font-bold text-black/40"><LocalizedText id="MNuBdz3QJjm7" /></p>
           </div>
         ) : (
           <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black bg-[#FFB5E8] text-left text-xs uppercase font-black text-black">
-                  <th className="px-6 py-3">Negocio</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Ciclo</th>
-                  <th className="px-4 py-3">Registro</th>
+                  <th className="px-6 py-3"><LocalizedText id="B8s6yKMYEqy_" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="-o7Qvavda8sc" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="S4wainXMC9yR" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="iQCGsWtIBAcO" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -532,7 +536,7 @@ export function SubscriptionsClient({
         <div className="mb-3 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-black" />
           <h2 className="text-xl font-black uppercase tracking-tighter text-black">
-            Activas por plan
+            <LocalizedText id="P0haVjmD4LmY" />
           </h2>
         </div>
         <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000]">
@@ -549,18 +553,18 @@ export function SubscriptionsClient({
               <div key={`${row.plan}-${row.cycle}`} className="flex items-center justify-between border-b-2 border-black/10 py-3 last:border-0">
                 <span className="text-sm font-black uppercase text-black">{row.label}</span>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                  <span className="text-sm font-bold text-black/60">{count} subs</span>
+                  <span className="text-sm font-bold text-black/60">{count} <LocalizedText id="_Go9D_-TOWKv" /></span>
                   <span className="w-28 text-right text-sm font-black text-black">
-                    {formatCLP(mrrContrib * count)} / mes
+                    {formatCLP(mrrContrib * count)} <LocalizedText id="anUC14rjj--1" />
                   </span>
                 </div>
               </div>
             );
           })}
           <div className="flex items-center justify-between pt-4">
-            <span className="text-sm font-black uppercase text-black">MRR Total</span>
+            <span className="text-sm font-black uppercase text-black"><LocalizedText id="YZg7V0A6QUlh" /></span>
             <span className="border-2 border-black bg-[#BFFCC6] px-3 py-1 text-sm font-black text-black">
-              {formatCLP(mrr)} / mes
+              {formatCLP(mrr)} <LocalizedText id="anUC14rjj--1" />
             </span>
           </div>
         </div>
@@ -571,7 +575,7 @@ export function SubscriptionsClient({
         <div className="mb-3 flex items-center gap-2">
           <Clock className="h-5 w-5 text-black" />
           <h2 className="text-xl font-black uppercase tracking-tighter text-black">
-            Todos en trial
+            <LocalizedText id="2m1ZiCio73_J" />
           </h2>
           <span className="border-2 border-black bg-[#FFF5BA] px-2 py-0.5 text-xs font-black">
             {trialing.length}
@@ -579,17 +583,17 @@ export function SubscriptionsClient({
         </div>
         {trialing.length === 0 ? (
           <div className="border-4 border-black bg-white p-8 shadow-[4px_4px_0_#000] text-center">
-            <p className="text-sm font-bold text-black/40">Sin trials activos</p>
+            <p className="text-sm font-bold text-black/40"><LocalizedText id="QnuEYYJf2MT4" /></p>
           </div>
         ) : (
           <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000] overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase font-black text-black">
-                  <th className="px-6 py-3">Negocio</th>
-                  <th className="px-4 py-3">Plan</th>
-                  <th className="px-4 py-3">Expira</th>
-                  <th className="px-4 py-3">Dias restantes</th>
+                  <th className="px-6 py-3"><LocalizedText id="B8s6yKMYEqy_" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="-o7Qvavda8sc" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="1ggYqXlJSrCV" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="vfkelD3b02KM" /></th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>

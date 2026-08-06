@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { redirect } from "next/navigation";
 import { getBusinessForUser } from "@/server/services/business.service";
@@ -21,7 +23,7 @@ export default async function MarketingPage() {
   const business = await getBusinessForUser(user.id);
   if (!business) redirect("/dashboard/settings");
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.MARKETING_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar marketing.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="cw5m0x2piRZB" /></div>;
   }
 
   const subscription = await getSubscriptionByBusinessId(business.id);
@@ -37,9 +39,9 @@ export default async function MarketingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Marketing & Win-Back</h1>
+        <h1 className="text-2xl font-bold tracking-tight"><LocalizedText id="dyefH5KVKfWL" /></h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Envía campañas inteligentes para reactivar a tus clientes menos frecuentes
+          <LocalizedText id="kPIxO74WxmE3" />
         </p>
       </div>
       <MarketingDashboard

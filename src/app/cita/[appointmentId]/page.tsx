@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { es } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
@@ -30,8 +32,8 @@ export default async function CitaPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
         <div className="text-center space-y-4">
           <XCircle className="mx-auto h-16 w-16 text-red-400" />
-          <h1 className="text-2xl font-bold">Cita no encontrada</h1>
-          <p className="text-muted-foreground">La cita que buscas no existe o fue eliminada.</p>
+          <h1 className="text-2xl font-bold"><LocalizedText id="mMWo3jW6vyD6" /></h1>
+          <p className="text-muted-foreground"><LocalizedText id="VWmE8x1HpzzY" /></p>
         </div>
       </div>
     );
@@ -92,19 +94,19 @@ export default async function CitaPage({
           <div className="space-y-3 text-sm">
             <div className="flex items-center gap-3">
               <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Servicio:</span>
+              <span className="text-muted-foreground"><LocalizedText id="Xn5rZDSz0P56" /></span>
               <span className="font-medium">{appointment.service.name}</span>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Fecha:</span>
+              <span className="text-muted-foreground"><LocalizedText id="WWT00Jnfn8u5" /></span>
               <span className="font-medium capitalize">
                 {formatInTimeZone(appointment.startTime, appointment.business.timezone, "EEEE, d 'de' MMMM yyyy", { locale: es })}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Hora:</span>
+              <span className="text-muted-foreground"><LocalizedText id="Mx9xGHq4mBDy" /></span>
               <span className="font-medium">
                 {formatInTimeZone(appointment.startTime, appointment.business.timezone, "HH:mm")} - {formatInTimeZone(appointment.endTime, appointment.business.timezone, "HH:mm")}
               </span>
@@ -112,7 +114,7 @@ export default async function CitaPage({
             {appointment.staff && (
               <div className="flex items-center gap-3">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Profesional:</span>
+                <span className="text-muted-foreground"><LocalizedText id="NHxI0zxNEBCQ" /></span>
                 <span className="font-medium">{appointment.staff.name}</span>
               </div>
             )}
@@ -128,7 +130,7 @@ export default async function CitaPage({
             )}
             {appointment.depositAmount && appointment.depositAmount > 0 && (
               <div className="flex items-center gap-3 pt-2 border-t border-border">
-                <span className="text-muted-foreground">Abono pagado:</span>
+                <span className="text-muted-foreground"><LocalizedText id="90VPGZDh2yQa" /></span>
                 <span className="font-bold" style={{ color: pc }}>
                   {formatPrice(appointment.depositAmount, appointment.business.currencyCode)}
                 </span>
@@ -143,7 +145,7 @@ export default async function CitaPage({
               appointment.status === "CANCELLED" ? "bg-red-400" :
               "bg-muted-foreground"
             }`} />
-            <span className="text-muted-foreground">Estado:</span>
+            <span className="text-muted-foreground"><LocalizedText id="XhlPZF5dHq77" /></span>
             <span className="font-medium">
               {appointment.status === "CONFIRMED" ? "Confirmada" :
                appointment.status === "AWAITING_PAYMENT" ? "Esperando pago" :
@@ -159,12 +161,12 @@ export default async function CitaPage({
             href={`/widget/${appointment.business.slug}`}
             className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
           >
-            Agendar otra cita
+            <LocalizedText id="XpyG5YXG1JuO" />
           </a>
         </div>
 
         <p className="text-center text-xs text-muted-foreground/50">
-          Powered by <span className="font-semibold" style={{ color: pc }}>Puragenda</span>
+          <LocalizedText id="_cXS6UEMLYjl" /> <span className="font-semibold" style={{ color: pc }}>Puragenda</span>
         </p>
       </div>
     </div>

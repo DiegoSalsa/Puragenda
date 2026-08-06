@@ -11,6 +11,8 @@ import {
 } from "@/server/services/marketing.service";
 import { resend } from "@/server/email/resend";
 import { marketingCampaignEmail, withClientPortalAccess } from "@/server/email/templates";
+import { localizeEmailTemplate } from "@/server/email/localization";
+import { resolveLocale } from "@/i18n/config";
 import {
   getClientPortalAppUrl,
   issueClientPortalEmailTokens,
@@ -106,12 +108,13 @@ export async function POST(request: NextRequest) {
         widgetUrl,
       });
       const token = portalTokens.get(normalizeClientPortalEmail(client.email));
-      const { html } = token
+      const template = token
         ? withClientPortalAccess(
             baseTemplate,
             `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`,
           )
         : baseTemplate;
+      const { html } = localizeEmailTemplate(template, resolveLocale(business.locale));
 
       return {
         from,

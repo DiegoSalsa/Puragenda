@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "lucide-react";
@@ -18,6 +21,7 @@ interface HourEntry {
 }
 
 export function BusinessHoursEditor({ initialHours, locations = [] }: { initialHours: HourEntry[]; locations?: { id: string; name: string; hours: HourEntry[] }[] }) {
+  const legacy = useTranslations("legacy");
   const [hours, setHours] = useState<HourEntry[]>(initialHours);
   const [locationId, setLocationId] = useState(locations[0]?.id || "");
   const [saving, setSaving] = useState(false);
@@ -99,14 +103,14 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
       setSaved(true);
       setError("");
     } else {
-      setError(result.error || "No se pudieron guardar los horarios.");
+      setError(result.error || legacy("NLtLjHhnx_OX"));
     }
   }
 
   return (
     <div className="space-y-5">
       {locations.length > 1 && <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
-        <label htmlFor="business-hours-location" className="text-sm font-semibold">Sucursal</label>
+        <label htmlFor="business-hours-location" className="text-sm font-semibold"><LocalizedText id="dmqONaKvA3Th" /></label>
         <select id="business-hours-location" value={locationId} onChange={(event) => selectLocation(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
           {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
         </select>
@@ -118,7 +122,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
           className="flex items-center gap-2 rounded-xl border border-[#7C3AED] bg-[#7C3AED] px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#6D28D9]"
         >
           <Copy className="h-3.5 w-3.5" />
-          Copiar a lunes–viernes
+          <LocalizedText id="d9onzGigACmE" />
         </button>
         <button
           type="button"
@@ -126,7 +130,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
           className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          Cerrar fin de semana
+          <LocalizedText id="L7vMDch7y5K4" />
         </button>
       </div>
 
@@ -172,7 +176,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {entry.isOpen ? "Atención activa" : "Cerrado"}
+                      {entry.isOpen ? legacy("4mShX0yzYUqZ") : "Cerrado"}
                     </span>
                   </div>
                 </div>
@@ -180,7 +184,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                 {entry.isOpen ? (
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
                     <label className="grid min-w-0 gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Desde</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground"><LocalizedText id="i06T6Sjf1spy" /></span>
                       <TimeTextInput
                         ariaLabel={`Inicio ${day}`}
                         value={entry.startTime}
@@ -189,7 +193,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                     </label>
                     <span className="mb-3.5 text-xs font-medium text-muted-foreground">a</span>
                     <label className="grid min-w-0 gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Hasta</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground"><LocalizedText id="PIPjVYEHgYOb" /></span>
                       <TimeTextInput
                         ariaLabel={`Fin ${day}`}
                         value={entry.endTime}
@@ -199,7 +203,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground lg:col-span-2">
-                    No se ofrecerán horas reservables durante este día.
+                    <LocalizedText id="Uyni3cMu0rqX" />
                   </p>
                 )}
 
@@ -219,7 +223,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                         hasBreak ? null : suggestedBreak?.endTime ?? null,
                       );
                     }}
-                    aria-label={`${hasBreak ? "Quitar" : "Añadir"} pausa de ${day}`}
+                    aria-label={`${hasBreak ? "Quitar" : legacy("dUKl6AD5KAp5")} pausa de ${day}`}
                     className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors md:col-span-2 xl:col-span-1 ${
                       hasBreak
                         ? "border-[#7C3AED] bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
@@ -227,7 +231,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                     }`}
                   >
                     <Coffee className="h-3.5 w-3.5" />
-                    {hasBreak ? "Quitar pausa" : "Añadir pausa"}
+                    {hasBreak ? "Quitar pausa" : legacy("pMAWENYxGXI3")}
                   </button>
                 )}
               </div>
@@ -239,8 +243,8 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
                       <Coffee className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="text-xs font-bold text-foreground">Pausa / almuerzo</p>
-                      <p className="text-[11px] text-muted-foreground">Este tramo no estará disponible para reservas.</p>
+                      <p className="text-xs font-bold text-foreground"><LocalizedText id="tAGIuN6rN_3C" /></p>
+                      <p className="text-[11px] text-muted-foreground"><LocalizedText id="deC89mXNNtTj" /></p>
                     </div>
                   </div>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
@@ -266,7 +270,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Puedes escribir horas exactas. Las pausas se excluyen automáticamente de los horarios reservables.
+        <LocalizedText id="PRKLWYfAUkRa" />
       </p>
       {error && <p role="alert" className="text-sm font-medium text-red-500">{error}</p>}
       <button
@@ -282,7 +286,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
         ) : (
           <Save className="h-4 w-4" />
         )}
-        {saved ? "Horarios guardados" : "Guardar horarios"}
+        {saved ? "Horarios guardados" : legacy("wpsbca2D-yPs")}
       </button>
     </div>
   );

@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +11,7 @@ import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
 import { X, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function ChangelogPopup() {
+  const legacy = useTranslations("legacy");
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
   const latestUpdate = CHANGELOG_DATA[0];
@@ -55,7 +59,7 @@ export function ChangelogPopup() {
             <button
               type="button"
               onClick={() => void handleDismiss()}
-              aria-label="Cerrar novedades"
+              aria-label={legacy("oHTC44S-WJHN")}
               className="absolute right-4 top-4 z-10 rounded-full border-2 border-black bg-white p-1.5 text-black shadow-[2px_2px_0_#000] transition-colors hover:translate-x-[1px] hover:translate-y-[1px] hover:bg-gray-100 hover:shadow-none [@media(max-height:620px)]:right-3 [@media(max-height:620px)]:top-3"
             >
               <X className="h-5 w-5" strokeWidth={3} />
@@ -63,7 +67,7 @@ export function ChangelogPopup() {
 
             <div className="mb-3 inline-flex items-center gap-1.5 rounded-lg border-2 border-black bg-[#FFB5E8] px-3 py-1 text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0_#000] [@media(max-height:620px)]:mb-2 [@media(max-height:620px)]:py-0.5">
               <Sparkles className="h-4 w-4" strokeWidth={3} />
-              <span>Nueva versión - {latestUpdate.version}</span>
+              <span><LocalizedText id="FqY53T3vJtA_" /> {latestUpdate.version}</span>
             </div>
 
             <h2
@@ -102,7 +106,7 @@ export function ChangelogPopup() {
               ))}
               {latestUpdate.features.length > 3 && (
                 <p className="pl-2 text-xs font-black uppercase text-black/50 dark:text-white/50">
-                  y {latestUpdate.features.length - 3} mejoras más...
+                  y {latestUpdate.features.length - 3} <LocalizedText id="WxrPO8oAejmN" />
                 </p>
               )}
             </div>
@@ -113,14 +117,14 @@ export function ChangelogPopup() {
                 onClick={() => void handleDismiss()}
                 className="rounded-xl border-4 border-black bg-white px-5 py-2.5 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none dark:bg-gray-800 dark:text-white"
               >
-                Entendido
+                <LocalizedText id="Pz99iOBauxfC" />
               </button>
               <button
                 type="button"
                 onClick={() => void handleViewDetails()}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border-4 border-black bg-[#B28DFF] px-5 py-2.5 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
               >
-                Ver todos los cambios <ArrowRight className="h-4 w-4" strokeWidth={3} />
+                <LocalizedText id="EQsELjdzcDwe" /> <ArrowRight className="h-4 w-4" strokeWidth={3} />
               </button>
             </div>
           </div>

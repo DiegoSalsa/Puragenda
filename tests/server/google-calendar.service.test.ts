@@ -28,6 +28,8 @@ import {
   encryptGoogleToken,
   getGoogleCalendarBusySlots,
   googleCalendarAppUrl,
+  googleCalendarOAuthIsAvailableFor,
+  listGoogleCalendars,
   syncAppointmentToGoogle,
   verifyGoogleOAuthState,
 } from "@/server/services/google-calendar.service";
@@ -144,7 +146,68 @@ describe("Google Calendar integration", () => {
       "https://app.example.com/api/google-calendar/callback",
     );
     expect(url.searchParams.get("scope")).toContain("calendar.events");
+    expect(url.searchParams.get("scope")).toContain("calendar.events.freebusy");
     expect(url.searchParams.get("scope")).toContain("calendar.calendarlist.readonly");
+  });
+
+  it("limits production OAuth to allowlisted reviewers until the scope is verified", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC = "false";
+    process.env.GOOGLE_CALENDAR_VERIFICATION_USERS = "reviewer@example.com, Owner@Example.com";
+
+    expect(googleCalendarOAuthIsAvailableFor("owner@example.com")).toBe(true);
+    expect(googleCalendarOAuthIsAvailableFor("customer@example.com")).toBe(false);
+
+    process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC = "true";
+    expect(googleCalendarOAuthIsAvailableFor("customer@example.com")).toBe(true);
+  });
+
+  it("labels writable shared calendars for the destination selector", async () => {
+    const connection = {
+      ...staffConnection,
+      accessTokenEncrypted: encryptGoogleToken("staff-access"),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: "worker@gmail.com",
+                summary: "Principal",
+                primary: true,
+                accessRole: "owner",
+              },
+              {
+                id: "shared@example.com",
+                summary: "Agenda del negocio",
+                dataOwner: "business-owner@example.com",
+                accessRole: "writer",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+
+    await expect(listGoogleCalendars(connection)).resolves.toEqual([
+      {
+        id: "worker@gmail.com",
+        name: "Principal",
+        primary: true,
+        accessRole: "owner",
+        shared: false,
+      },
+      {
+        id: "shared@example.com",
+        name: "Agenda del negocio",
+        primary: false,
+        accessRole: "writer",
+        shared: true,
+      },
+    ]);
   });
 
   it("never redirects the Google Calendar flow to a Vercel deployment domain", () => {

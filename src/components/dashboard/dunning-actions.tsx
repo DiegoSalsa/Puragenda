@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import Script from "next/script";
 import { useEffect, useId, useRef, useState } from "react";
@@ -48,6 +51,7 @@ declare global {
 }
 
 export function DunningActions({ compact = false }: { compact?: boolean }) {
+  const legacy = useTranslations("legacy");
   const rawId = useId();
   const fieldId = `mp-security-code-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const [scriptReady, setScriptReady] = useState(false);
@@ -115,7 +119,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
       setError(
         recoveryError instanceof Error
           ? recoveryError.message
-          : "No se pudo abrir el pago"
+          : legacy("pxH9-B2c4ffa")
       );
     } finally {
       setLoading(null);
@@ -158,7 +162,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
       setError(
         paymentError instanceof Error
           ? paymentError.message
-          : "No se pudo regularizar el pago"
+          : legacy("vatmrSbvBlxj")
       );
     } finally {
       setLoading(null);
@@ -181,18 +185,18 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
       }
 
       if (data.status === "ACTIVE") {
-        setMessage("Pago confirmado. Actualizando tu acceso...");
+        setMessage(legacy("Ydu7-15U0k-L"));
         window.setTimeout(() => window.location.reload(), 700);
       } else {
         setMessage(
-          "El pago todavía está pendiente. Mantendremos tu periodo de gracia."
+          legacy("a1pi6U3CxCDZ")
         );
       }
     } catch (verificationError) {
       setError(
         verificationError instanceof Error
           ? verificationError.message
-          : "No se pudo verificar el cobro"
+          : legacy("13dWH2O0BY9s")
       );
     } finally {
       setLoading(null);
@@ -222,7 +226,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
           ) : (
             <CreditCard className="h-4 w-4" />
           )}
-          Regularizar pago
+          <LocalizedText id="a7Czv6v1_6eF" />
         </button>
         <button
           type="button"
@@ -235,7 +239,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
-          Verificar pago
+          <LocalizedText id="lmUfLODwF7kO" />
         </button>
       </div>
 
@@ -256,16 +260,15 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
               <div>
                 <p className="flex items-center gap-2 text-lg font-bold">
                   <ShieldCheck className="h-5 w-5 text-emerald-500" />
-                  Reautorizar tarjeta
+                  <LocalizedText id="Nv5HtqlVM6BT" />
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Ingresa el CVV de la tarjeta guardada. Puragenda no recibe ni
-                  almacena este código.
+                  <LocalizedText id="Zr6B3a8p4yd_" />
                 </p>
               </div>
               <button
                 type="button"
-                aria-label="Cerrar"
+                aria-label={legacy("rsyuNC5L0KcN")}
                 onClick={() => setModalOpen(false)}
                 className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
               >
@@ -276,7 +279,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
             <form onSubmit={submitRecovery} className="mt-6 space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Código de seguridad (CVV)
+                  <LocalizedText id="16IrBrk0m6ae" />
                 </label>
                 <div
                   id={fieldId}
@@ -306,7 +309,7 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
                 ) : (
                   <CreditCard className="h-4 w-4" />
                 )}
-                Autorizar y regularizar
+                <LocalizedText id="U3uIoBwEkJoW" />
               </button>
             </form>
           </div>

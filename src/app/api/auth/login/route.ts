@@ -7,6 +7,8 @@ import {
 import { loginSchema } from "@/server/validations/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { loginLimiter } from "@/server/lib/rate-limit";
+import { getBusinessForUser } from "@/server/services/business.service";
+import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 
 
 export async function POST(request: NextRequest) {
@@ -50,6 +52,15 @@ export async function POST(request: NextRequest) {
     );
 
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
+    const business = await getBusinessForUser(user.id);
+    if (business) {
+      response.cookies.set(LOCALE_COOKIE, resolveLocale(business.locale), {
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
     return response;
   } catch (error) {
     console.error("[route] Error:", error);

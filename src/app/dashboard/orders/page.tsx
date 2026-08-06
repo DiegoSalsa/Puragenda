@@ -5,26 +5,28 @@ import { OrdersBoard } from "./orders-board";
 import Link from "next/link";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
+  const t = await getTranslations("dashboard.orders");
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">{t("authRequired")}</div>;
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">Negocio no encontrado</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">{t("businessMissing")}</div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar encargos.</div>;
+    return <div className="py-20 text-center text-muted-foreground">{t("permissionDenied")}</div>;
   }
   if (!business.productionOrdersEnabled) {
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-border p-10 text-center">
-        <h1 className="text-xl font-bold">Encargos no está activo</h1>
+        <h1 className="text-xl font-bold">{t("disabledTitle")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Esta cuenta usa solo la agenda de citas. Puedes habilitar el módulo cuando lo necesites.
+          {t("disabledDescription")}
         </p>
         <Link href="/dashboard/settings#encargos" className="mt-5 inline-flex rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-semibold text-white">
-          Ir a Configuración
+          {t("settings")}
         </Link>
       </div>
     );

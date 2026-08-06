@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import Image from "next/image";
 
 export function PageSkeleton({ cards = 6 }: { cards?: number }) {
@@ -24,7 +26,7 @@ export function PageSkeleton({ cards = 6 }: { cards?: number }) {
           </div>
         ))}
       </div>
-      <span className="sr-only">Cargando Puragenda…</span>
+      <span className="sr-only"><LocalizedText id="WuyNzoRGgAOq" /></span>
     </div>
   );
 }

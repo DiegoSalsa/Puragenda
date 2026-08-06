@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Loader2, LocateFixed, MapPin } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
@@ -64,6 +65,7 @@ export function LanguageSwitcher({ compact = false, className = "", align = "rig
   const locale = useLocale() as AppLocale;
   const t = useTranslations("common");
   const router = useRouter();
+  const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [locationState, setLocationState] = useState<LocationState>("idle");
@@ -88,8 +90,17 @@ export function LanguageSwitcher({ compact = false, className = "", align = "rig
   function changeLocale(nextLocale: AppLocale, source: "manual" | "location" = "manual") {
     setOpen(false);
     if (source === "location") setLocationState("success");
-    persistLocalePreference(nextLocale);
-    startTransition(() => router.refresh());
+    startTransition(async () => {
+      if (pathname.startsWith("/dashboard")) {
+        await fetch("/api/dashboard/locale", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locale: nextLocale }),
+        }).catch(() => null);
+      }
+      persistLocalePreference(nextLocale);
+      router.refresh();
+    });
   }
 
   function detectFromLocation() {

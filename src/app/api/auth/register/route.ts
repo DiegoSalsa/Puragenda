@@ -7,6 +7,7 @@ import {
 import { registerSchema } from "@/server/validations/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { registerLimiter } from "@/server/lib/rate-limit";
+import { LOCALE_COOKIE, resolveInitialLocale } from "@/i18n/config";
 
 
 export async function POST(request: NextRequest) {
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
       || "unknown";
 
     const { email, password, name, businessName, countryCode, timezone, currencyCode, referralCode, planIntent, extraStaffCount } = parsed.data;
-    const result = await registerUser({ email, password, name, businessName, countryCode, timezone, currencyCode, ip, referralCode, planIntent, extraStaffCount });
+    const locale = resolveInitialLocale(request.cookies.get(LOCALE_COOKIE)?.value);
+    const result = await registerUser({ email, password, name, businessName, countryCode, timezone, currencyCode, ip, referralCode, planIntent, extraStaffCount, locale });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });
@@ -65,6 +67,12 @@ export async function POST(request: NextRequest) {
     );
 
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: "/",
+      maxAge: 365 * 24 * 60 * 60,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
     return response;
   } catch (error) {
     console.error("[route] Error:", error);

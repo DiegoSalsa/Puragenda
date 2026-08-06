@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,6 +21,7 @@ interface SubscriptionData {
 }
 
 export function SubscriptionEditor({ subscription }: { subscription: SubscriptionData }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [plan, setPlan] = useState(subscription.plan);
   const [status, setStatus] = useState(subscription.status);
@@ -48,7 +52,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         setTimeout(() => setSaved(false), 2000);
       }
     } catch {
-      setError("Error al guardar");
+      setError(legacy("z78xVmJB3PIC"));
     } finally {
       setLoading(false);
     }
@@ -60,12 +64,12 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
   return (
     <div className="border-4 border-black bg-[#FFF5BA] p-6 shadow-[4px_4px_0_#000]">
       <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
-        <CreditCard className="h-4 w-4" /> Suscripción
+        <CreditCard className="h-4 w-4" /> <LocalizedText id="Wqk3gBDPmBHB" />
       </h3>
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-black uppercase text-black/60">Plan</label>
+          <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="-o7Qvavda8sc" /></label>
           <select value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
             <option value="INDIVIDUAL">Individual ($12.990/mes)</option>
             <option value="EQUIPO">Equipo ($29.990/mes)</option>
@@ -73,7 +77,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-black uppercase text-black/60">Estado</label>
+          <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="mOWs3bbEaiSP" /></label>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
             <option value="ACTIVE">Activo</option>
             <option value="TRIALING">En trial</option>
@@ -84,7 +88,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-black uppercase text-black/60">Ciclo de facturación</label>
+          <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="54jNtp3o_hzy" /></label>
           <select value={billingCycle} onChange={(e) => setBillingCycle(e.target.value)} className={selectClass}>
             <option value="MONTHLY">Mensual</option>
             <option value="ANNUAL">Anual</option>
@@ -92,7 +96,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-black uppercase text-black/60">Profesionales extra</label>
+          <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="vRHBmKIdI2Ti" /></label>
           <input
             type="number"
             min={0}
@@ -103,7 +107,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
           />
           {plan === "EQUIPO" && (
             <p className="text-xs font-bold text-black/50">
-              Equipo incluye {STAFF_LIMITS.EQUIPO}. Este campo cobra desde el profesional {STAFF_LIMITS.EQUIPO + 1}.
+              <LocalizedText id="fEkJPD20uVSY" /> {STAFF_LIMITS.EQUIPO}<LocalizedText id="fy_ghNZ9TscP" /> {STAFF_LIMITS.EQUIPO + 1}.
             </p>
           )}
         </div>
@@ -111,7 +115,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
         {subscription.isTrial && subscription.trialEndsAt && (
           <div className="border-2 border-black bg-[#FFF5BA] px-3 py-2">
             <p className="text-xs font-black text-black">
-              Trial activo · Expira: {new Date(subscription.trialEndsAt).toLocaleDateString("es-CL")}
+              <LocalizedText id="FjwQffrXoXGL" /> {new Date(subscription.trialEndsAt).toLocaleDateString("es-CL")}
             </p>
           </div>
         )}
@@ -128,11 +132,11 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
           className="flex w-full items-center justify-center gap-2 border-4 border-black bg-black py-2.5 text-sm font-black uppercase text-white shadow-[3px_3px_0_#7C3AED] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
         >
           {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</>
+            <><Loader2 className="h-4 w-4 animate-spin" /> <LocalizedText id="Nns87zWABS3j" /></>
           ) : saved ? (
-            <><CheckCircle2 className="h-4 w-4" /> Guardado!</>
+            <><CheckCircle2 className="h-4 w-4" /> <LocalizedText id="8XwQSbnobQwE" /></>
           ) : (
-            <><Save className="h-4 w-4" /> Guardar Cambios</>
+            <><Save className="h-4 w-4" /> <LocalizedText id="4sJwCqAtyNLm" /></>
           )}
         </button>
       </div>

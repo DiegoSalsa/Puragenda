@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 
@@ -261,7 +263,7 @@ export function FAQSection() {
               : "bg-white dark:bg-black text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] hover:-translate-y-0.5"
           }`}
         >
-          Todas
+          <LocalizedText id="r_TRnW7kOyBL" />
         </button>
         {categories.map((cat) => {
           const s = CAT_STYLES[cat];

@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -153,7 +155,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("findOption")}</p>
-                        <p className="text-muted-foreground mt-0.5">&quot;{t("addHomeScreen")}&quot;</p>
+                        <p className="text-muted-foreground mt-0.5"><LocalizedText id="SXVYIwAnGSDR" />{t("addHomeScreen")}<LocalizedText id="SXVYIwAnGSDR" /></p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">

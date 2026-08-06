@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { AlertTriangle, AtSign, CheckCircle2, FileText, Mail, MousePointerClick, Send, Users } from "lucide-react";
@@ -62,6 +65,7 @@ Recuerda referir Puragenda para obtener descuentos. Tambien puedes compartir tu 
 const TOKENS = ["{{nombre}}", "{{email}}", "{{negocio}}", "{{codigoReferido}}", "{{linkWidget}}", "{{linkRegistro}}"];
 
 export default function CommunicationsPage() {
+  const legacy = useTranslations("legacy");
   const [recipientMode, setRecipientMode] = useState<RecipientMode>("SEGMENT");
   const [segment, setSegment] = useState<Segment>("ALL");
   const [targetEmail, setTargetEmail] = useState("");
@@ -91,12 +95,12 @@ export default function CommunicationsPage() {
 
   function handleSend() {
     if (!subject.trim() || !body.trim()) {
-      setError("El asunto y el cuerpo son obligatorios.");
+      setError(legacy("heSkoWLuCUAm"));
       return;
     }
 
     if (recipientMode === "SINGLE_EMAIL" && !targetEmail.trim()) {
-      setError("Ingresa el correo de destino.");
+      setError(legacy("zLjhUdd4BS8y"));
       return;
     }
 
@@ -121,7 +125,7 @@ export default function CommunicationsPage() {
         setResult({ sent: res.sent!, failed: res.failed!, total: res.total! });
         if (recipientMode === "SINGLE_EMAIL") setTargetEmail("");
       } else {
-        setError(res.error ?? "Error al enviar");
+        setError(res.error ?? legacy("x5O8gE-HwrQe"));
       }
     });
   }
@@ -129,19 +133,19 @@ export default function CommunicationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-black">Comunicaciones</h1>
-        <p className="text-sm font-bold text-black/50">Envio de emails por segmento, cuenta activa o correo puntual</p>
+        <h1 className="text-3xl font-black uppercase tracking-tighter text-black"><LocalizedText id="hQkNGeu5vCGi" /></h1>
+        <p className="text-sm font-bold text-black/50"><LocalizedText id="Yqg4-v9GTUqd" /></p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000] space-y-5">
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Destinatarios</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="scxv4bJjoA-I" /></p>
 
             <div className="flex flex-wrap gap-3">
               {[
                 { value: "SEGMENT" as const, label: "Segmento", icon: Users },
-                { value: "SINGLE_EMAIL" as const, label: "Correo puntual", icon: AtSign },
+                { value: "SINGLE_EMAIL" as const, label: legacy("ZytmASivb7BE"), icon: AtSign },
               ].map((option) => {
                 const Icon = option.icon;
                 const active = recipientMode === option.value;
@@ -182,13 +186,13 @@ export default function CommunicationsPage() {
 
                 <div className={`border-4 border-black p-3 ${selectedSegment.bg}`}>
                   <p className="text-xs font-black uppercase text-black/70">
-                    Enviando a: <span className="text-black">{selectedSegment.label}</span>
+                    <LocalizedText id="lbZpwdg9mMIu" /> <span className="text-black">{selectedSegment.label}</span>
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase text-black/60">Email destino</label>
+                <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="hk_ZfB7yR00u" /></label>
                 <input
                   type="email"
                   value={targetEmail}
@@ -201,40 +205,40 @@ export default function CommunicationsPage() {
           </div>
 
           <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000] space-y-4">
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Redactar</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="noGHtuvaFBxj" /></p>
 
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase text-black/60">Asunto</label>
+              <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="Sc_7-FpoqETz" /></label>
               <input
                 type="text"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="Ej: Novedades de Puragenda"
+                placeholder={legacy("8sCy9wjigRKm")}
                 className="w-full border-4 border-black bg-white px-4 py-3 text-sm font-bold text-black placeholder:text-black/30 focus:border-[#B28DFF] focus:outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase text-black/60">Mensaje</label>
+              <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="0q8xcS6tBBRo" /></label>
               <textarea
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
                 rows={10}
-                placeholder="Redacta el contenido del email..."
+                placeholder={legacy("LTXSRtf-d8_3")}
                 className="w-full resize-y border-4 border-black bg-white px-4 py-3 text-sm font-bold text-black placeholder:text-black/30 focus:border-[#B28DFF] focus:outline-none"
               />
-              <p className="text-xs font-bold text-black/40">Acepta HTML basico y variables dinamicas.</p>
+              <p className="text-xs font-bold text-black/40"><LocalizedText id="3cdX9HD8TiFU" /></p>
             </div>
 
             <div className="border-4 border-black bg-[#FFFAEB] p-4 space-y-4">
               <div className="flex items-center gap-2">
                 <MousePointerClick className="h-4 w-4" />
-                <p className="text-xs font-black uppercase tracking-widest text-black/60">Interaccion</p>
+                <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="dLw5Nyh1kcJx" /></p>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
-                  { value: "NONE" as const, label: "Sin interaccion" },
+                  { value: "NONE" as const, label: legacy("pOs47PXHEaEN") },
                   { value: "SATISFACTION" as const, label: "Nota 1 a 7" },
                   { value: "FORM" as const, label: "Formulario" },
                 ].map((option) => (
@@ -254,7 +258,7 @@ export default function CommunicationsPage() {
               {interactiveType !== "NONE" && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-black uppercase text-black/60">Pregunta principal</label>
+                    <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="wc_3sMTy2_9E" /></label>
                     <input
                       type="text"
                       value={interactiveQuestion}
@@ -265,14 +269,14 @@ export default function CommunicationsPage() {
 
                   {interactiveType === "FORM" && (
                     <div className="space-y-1">
-                      <label className="text-xs font-black uppercase text-black/60">Preguntas del formulario</label>
+                      <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="hmp4BbF9100C" /></label>
                       <textarea
                         value={formQuestions}
                         onChange={(event) => setFormQuestions(event.target.value)}
                         rows={5}
                         className="w-full resize-y border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black focus:outline-none"
                       />
-                      <p className="text-xs font-bold text-black/40">Una pregunta por linea. Las respuestas llegan a contacto@purocode.com.</p>
+                      <p className="text-xs font-bold text-black/40"><LocalizedText id="lkzKcnNhwc7p" /></p>
                     </div>
                   )}
                 </div>
@@ -301,7 +305,7 @@ export default function CommunicationsPage() {
           <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000] space-y-4">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <p className="text-xs font-black uppercase tracking-widest text-black/60">Plantillas</p>
+              <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="z5qQdEKvaqbz" /></p>
             </div>
 
             <div className="grid gap-3">
@@ -322,7 +326,7 @@ export default function CommunicationsPage() {
           </div>
 
           <div className="border-4 border-black bg-[#FFF5BA] p-5 shadow-[6px_6px_0_#000] space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Variables</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="AttVusXj9865" /></p>
             <div className="flex flex-wrap gap-2">
               {TOKENS.map((token) => (
                 <span key={token} className="border-2 border-black bg-white px-2 py-1 font-mono text-[11px] font-black text-black">
@@ -336,7 +340,7 @@ export default function CommunicationsPage() {
             <div className="flex gap-2">
               <Mail className="mt-0.5 h-4 w-4 shrink-0" />
               <p className="text-xs font-bold text-black/70">
-                Los correos usan Resend. En local, si no hay API key, quedan registrados como mock en consola.
+                <LocalizedText id="6fXdH88xDZfx" />
               </p>
             </div>
           </div>
@@ -347,7 +351,7 @@ export default function CommunicationsPage() {
         <div className="border-4 border-black bg-[#BFFCC6] p-6 shadow-[6px_6px_0_#000]">
           <div className="mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />
-            <p className="font-black uppercase">Envio completado</p>
+            <p className="font-black uppercase"><LocalizedText id="BSJujYP6gJ6n" /></p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {[

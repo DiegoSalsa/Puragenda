@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { ResponseForm } from "./response-form";
 
@@ -44,8 +46,8 @@ export default async function RespondPage({
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="max-w-md rounded-2xl border border-border bg-card p-8 text-center">
-          <h1 className="text-xl font-bold">Enlace no disponible</h1>
-          <p className="mt-2 text-sm text-muted-foreground">No encontramos este formulario o el enlace no es valido.</p>
+          <h1 className="text-xl font-bold"><LocalizedText id="EeOFoQI73p1U" /></h1>
+          <p className="mt-2 text-sm text-muted-foreground"><LocalizedText id="lYRJQl_TD0bm" /></p>
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { CalendarPlus, CheckCircle2, Loader2, Mail, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export interface AppointmentEditorService {
   id: string;
@@ -70,6 +71,7 @@ export function AppointmentEditor({
   currencyCode: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("dashboard.editor");
   const router = useRouter();
   const initialDate = appointment ? new Date(appointment.startTime) : initialStart ?? new Date(0);
   const [clientId, setClientId] = useState(appointment?.clientId ?? "");
@@ -138,7 +140,7 @@ export function AppointmentEditor({
     setError(null);
     const startTime = new Date(`${date}T${time}:00`);
     if (Number.isNaN(startTime.getTime())) {
-      setError("Selecciona una fecha y hora válidas");
+      setError(t("invalidDate"));
       return;
     }
 
@@ -164,7 +166,7 @@ export function AppointmentEditor({
       );
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error || "No se pudo guardar la cita");
+        setError(result.error || t("saveError"));
         return;
       }
       onClose();
@@ -184,8 +186,8 @@ export function AppointmentEditor({
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-[#7C3AED]"><CalendarPlus className="h-5 w-5" /></div>
               <div>
-                <h2 className="font-semibold">{appointment ? "Editar cita" : "Nueva cita"}</h2>
-                <p className="text-xs text-muted-foreground">Los horarios y opciones se validan al guardar.</p>
+                <h2 className="font-semibold">{appointment ? t("editTitle") : t("newTitle")}</h2>
+                <p className="text-xs text-muted-foreground">{t("validationHint")}</p>
               </div>
             </div>
             <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted">
@@ -195,26 +197,26 @@ export function AppointmentEditor({
 
           <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
             <section className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Cliente</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("customerSection")}</p>
               <select value={clientId} onChange={(event) => chooseClient(event.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
-                <option value="">Crear cliente nuevo</option>
+                <option value="">{t("newCustomer")}</option>
                 {clients.map((client) => <option key={client.id} value={client.id}>{client.name} · {client.email}</option>)}
               </select>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input required value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nombre del cliente" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
-                <input required type="email" value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} placeholder="Correo" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
-                <input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="Teléfono (opcional)" className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm sm:col-span-2" />
+                <input required value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder={t("customerName")} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                <input required type="email" value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} placeholder={t("email")} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                <input value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder={t("phoneOptional")} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm sm:col-span-2" />
               </div>
             </section>
 
             <section className="space-y-3 border-t border-border pt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Servicio y profesional</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("serviceSection")}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <select required value={serviceId} onChange={(event) => chooseService(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
                   {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
                 </select>
                 <select required value={staffId} onChange={(event) => setStaffId(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
-                  <option value="">Selecciona profesional</option>
+                  <option value="">{t("selectProfessional")}</option>
                   {eligibleStaff.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
                 </select>
               </div>
@@ -224,7 +226,7 @@ export function AppointmentEditor({
                   <p className="text-sm font-medium">
                     {category.name}
                     {category.isRequired && <span className="ml-1 text-red-400">*</span>}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">máx. {category.maxSelections}</span>
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{t("maxSelections", { count: category.maxSelections })}</span>
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {category.alternatives.map((alternative) => {
@@ -254,20 +256,20 @@ export function AppointmentEditor({
             </section>
 
             <section className="space-y-3 border-t border-border pt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fecha y hora</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("dateSection")}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <input required type="date" value={date} onChange={(event) => setDate(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
                 <input required type="time" value={time} onChange={(event) => setTime(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-muted px-3 py-1.5">{totalDuration} minutos</span>
+                <span className="rounded-full bg-muted px-3 py-1.5">{t("minutes", { count: totalDuration })}</span>
                 <span className="rounded-full bg-muted px-3 py-1.5">{formatPrice(Math.round(totalPrice), currencyCode)}</span>
               </div>
-              <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Nota interna para el equipo (opcional)" rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+              <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
               <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 p-3 text-sm">
                 <input type="checkbox" checked={sendConfirmation} onChange={(event) => setSendConfirmation(event.target.checked)} className="h-4 w-4 accent-[#7C3AED]" />
                 <Mail className="h-4 w-4 text-[#7C3AED]" />
-                Enviar correo de confirmación al cliente
+                {t("sendConfirmation")}
               </label>
             </section>
 
@@ -275,10 +277,10 @@ export function AppointmentEditor({
           </div>
 
           <div className="flex flex-col-reverse gap-3 border-t border-border bg-muted/20 px-5 py-4 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium">Cancelar</button>
+            <button type="button" onClick={onClose} className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium">{t("cancel")}</button>
             <button type="submit" disabled={pending || !services.length || !staffId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              {pending ? "Guardando…" : appointment ? "Guardar cambios" : "Crear cita"}
+              {pending ? t("saving") : appointment ? t("saveChanges") : t("create")}
             </button>
           </div>
         </form>

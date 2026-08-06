@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
@@ -12,12 +14,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RewardsPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="JzdJYFMcoEJN" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REWARDS_VIEW))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para ver recompensas.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="SIKvmcRyDw3d" /></div>;
   }
 
   const affiliate = await getOrCreateAffiliate(business.id);
@@ -34,8 +36,8 @@ export default async function RewardsPage() {
           <Trophy className="h-5 w-5 text-[#7C3AED]" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recompensas</h1>
-          <p className="text-sm text-muted-foreground">Gira la ruleta o canjea fichas por descuentos en tu suscripción.</p>
+          <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="vO8s3A-JNUsV" /></h1>
+          <p className="text-sm text-muted-foreground"><LocalizedText id="j-YlAYc4RPry" /></p>
         </div>
       </div>
       <RewardsClient

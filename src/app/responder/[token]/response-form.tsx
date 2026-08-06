@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useState } from "react";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
@@ -21,6 +24,7 @@ export function ResponseForm({
   fields: Field[];
   initialThanks?: boolean;
 }) {
+  const legacy = useTranslations("legacy");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState<number | null>(null);
@@ -40,12 +44,12 @@ export function ResponseForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "No pudimos guardar tu respuesta.");
+        setError(data.error || legacy("FwkZ9mZ4ThOE"));
         return;
       }
       setDone(true);
     } catch {
-      setError("No pudimos guardar tu respuesta.");
+      setError(legacy("FwkZ9mZ4ThOE"));
     } finally {
       setLoading(false);
     }
@@ -56,8 +60,8 @@ export function ResponseForm({
       <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center p-6">
         <div className="w-full rounded-2xl border border-emerald-500/20 bg-card p-8 text-center shadow-2xl">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-          <h1 className="mt-4 text-2xl font-bold">Gracias por responder</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Tu respuesta fue enviada correctamente al equipo de Puragenda.</p>
+          <h1 className="mt-4 text-2xl font-bold"><LocalizedText id="uyT8RFVFy_L8" /></h1>
+          <p className="mt-2 text-sm text-muted-foreground"><LocalizedText id="XhNCvhuOLYyV" /></p>
         </div>
       </div>
     );
@@ -74,7 +78,7 @@ export function ResponseForm({
         <form onSubmit={handleSubmit} className="space-y-5">
           {fields.length === 0 && (
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Nota del 1 al 7</label>
+              <label className="text-sm font-medium text-muted-foreground"><LocalizedText id="TfiIBI7rb_0z" /></label>
               <div className="grid grid-cols-7 gap-2">
                 {Array.from({ length: 7 }, (_, index) => index + 1).map((value) => (
                   <button
@@ -109,7 +113,7 @@ export function ResponseForm({
           ))}
 
           <div className="space-y-2">
-            <label htmlFor="comment" className="text-sm font-medium text-muted-foreground">Comentario adicional</label>
+            <label htmlFor="comment" className="text-sm font-medium text-muted-foreground"><LocalizedText id="Iyn5mpiewA6f" /></label>
             <textarea
               id="comment"
               value={comment}
@@ -127,7 +131,7 @@ export function ResponseForm({
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5B21B6] disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Enviar respuesta
+            <LocalizedText id="WjSK3kX6TUW2" />
           </button>
         </form>
       </div>

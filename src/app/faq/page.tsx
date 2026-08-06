@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
@@ -19,12 +21,12 @@ export default async function FAQPage() {
     <LandingLayout user={user} business={business}>
       {/* Hero */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">
-        <div className="inline-block bg-[#B28DFF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">Soporte</div>
+        <div className="inline-block bg-[#B28DFF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]"><LocalizedText id="EEugEQcKJy4G" /></div>
         <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-7xl mb-6">
-          Preguntas Frecuentes
+          <LocalizedText id="qxZSqw0Uc5Il" />
         </h1>
         <p className="text-xl font-bold opacity-80 max-w-3xl mx-auto">
-          Todo lo que necesitas saber antes de empezar con Puragenda. Si no encuentras tu respuesta, contáctanos directamente.
+          <LocalizedText id="6S0uszxuAMKl" />
         </p>
       </section>
 
@@ -34,11 +36,11 @@ export default async function FAQPage() {
       {/* CTA */}
       <section className="border-t-4 border-black dark:border-white py-20 bg-[#FFF5BA] dark:bg-black text-center">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-4xl font-black uppercase tracking-tighter mb-6 text-black dark:text-white">¿Aún tienes dudas?</h2>
-          <p className="text-lg font-bold opacity-80 mb-8 text-black dark:text-white">Escríbenos directamente y te responderemos lo antes posible.</p>
+          <h2 className="text-4xl font-black uppercase tracking-tighter mb-6 text-black dark:text-white"><LocalizedText id="cbKZRzHEqPbW" /></h2>
+          <p className="text-lg font-bold opacity-80 mb-8 text-black dark:text-white"><LocalizedText id="g-vkbJlOudNh" /></p>
           <a href="/contacto">
             <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-10 py-5 font-black uppercase text-xl shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF] hover:translate-y-2 hover:shadow-none transition-all mx-auto">
-              Ir a Contacto
+              <LocalizedText id="IgYYYPanfcEa" />
             </button>
           </a>
         </div>

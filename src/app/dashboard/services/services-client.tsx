@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon, CalendarRange, Clock3 } from "lucide-react";
@@ -189,6 +192,8 @@ export function ServicesClient({
   taxIdLabel?: string;
   businessPolicies?: { requiresClientRut: boolean; allowRescheduling: boolean };
 }) {
+  const legacy = useTranslations("legacy");
+  const servicesT = useTranslations("dashboard.services");
   const [services, setServices] = useState<Service[]>(initialServices);
   const [categories, setCategories] = useState<ServiceCategorySummary[]>(initialCategories);
   const [groupingEnabled, setGroupingEnabled] = useState(groupServicesByCategory);
@@ -310,7 +315,7 @@ export function ServicesClient({
       setNewCategoryName("");
       await fetchCategories();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo crear la categoría.");
+      alert(error instanceof Error ? error.message : legacy("ciR0QT0bsmBm"));
     } finally {
       setAddingCategory(false);
     }
@@ -333,7 +338,7 @@ export function ServicesClient({
       setEditingCategoryName("");
       await Promise.all([fetchCategories(), fetchServices()]);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo renombrar la categoría.");
+      alert(error instanceof Error ? error.message : legacy("O5TI8sMj6Bf0"));
     } finally {
       setSavingCategoryId(null);
     }
@@ -355,7 +360,7 @@ export function ServicesClient({
       if (!res.ok) throw new Error(data.error || "No se pudo eliminar la categoría.");
       await Promise.all([fetchCategories(), fetchServices()]);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo eliminar la categoría.");
+      alert(error instanceof Error ? error.message : legacy("fGfhFsbJ3Dib"));
     } finally {
       setSavingCategoryId(null);
     }
@@ -380,7 +385,7 @@ export function ServicesClient({
       if (!response.ok) throw new Error(data.error || "No se pudieron ordenar las categorías.");
     } catch (error) {
       setCategories(previous);
-      alert(error instanceof Error ? error.message : "No se pudieron ordenar las categorías.");
+      alert(error instanceof Error ? error.message : legacy("iwGPFhAUwc9d"));
     } finally {
       setSavingOrder(null);
     }
@@ -405,7 +410,7 @@ export function ServicesClient({
       if (!response.ok) throw new Error(data.error || "No se pudieron ordenar los servicios.");
     } catch (error) {
       setServices(previous);
-      alert(error instanceof Error ? error.message : "No se pudieron ordenar los servicios.");
+      alert(error instanceof Error ? error.message : legacy("ZfyICZvK9Bp7"));
     } finally {
       setSavingOrder(null);
     }
@@ -586,7 +591,7 @@ export function ServicesClient({
       await Promise.all([fetchServices(), fetchCategories()]);
     } catch (error) {
       console.error("Error saving service:", error);
-      alert(error instanceof Error ? error.message : "No se pudo guardar el servicio.");
+      alert(error instanceof Error ? error.message : legacy("ByucUzMIeXd0"));
     } finally {
       setSaving(false);
     }
@@ -601,7 +606,7 @@ export function ServicesClient({
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setServiceImageError("La imagen es muy pesada. Maximo 5MB.");
+      setServiceImageError(legacy("-Kd4LlLSofNc"));
       return;
     }
 
@@ -622,7 +627,7 @@ export function ServicesClient({
         });
         if (!res.ok) {
           const data = await res.json();
-          setServiceImageError(data.error || "La imagen se subio, pero no se pudo guardar en el servicio.");
+          setServiceImageError(data.error || legacy("KnmeOt8wRh6f"));
         } else {
           await fetchServices();
         }
@@ -633,7 +638,7 @@ export function ServicesClient({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("¿Estás seguro de eliminar este servicio?")) return;
+    if (!confirm(legacy("qXDI8YuwJX_1"))) return;
 
     try {
       await fetch(`/api/dashboard/services/${id}`, { method: "DELETE" });
@@ -748,9 +753,9 @@ export function ServicesClient({
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Servicios</h1>
+          <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="UnRPpCLeNiGc" /></h1>
           <p className="mt-1 text-muted-foreground">
-            Gestiona los servicios que ofrece tu negocio.
+            <LocalizedText id="g0qjLN911BR_" />
           </p>
         </div>
 
@@ -759,7 +764,7 @@ export function ServicesClient({
           onClick={openCreate}
           className="flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#5B21B6]"
         >
-          <Plus className="h-4 w-4" /> Nuevo Servicio
+          <Plus className="h-4 w-4" /> <LocalizedText id="c0AibySZ7Bzk" />
         </button>
       </div>
 
@@ -771,8 +776,8 @@ export function ServicesClient({
           </div>
           <div className="flex-1 space-y-3">
             <div>
-              <p className="text-sm font-medium">Servicios por reserva</p>
-              <p className="text-xs text-muted-foreground">Permite que tus clientes seleccionen varios servicios en una sola cita.</p>
+              <p className="text-sm font-medium"><LocalizedText id="AutUYEBAZQW-" /></p>
+              <p className="text-xs text-muted-foreground"><LocalizedText id="RpsFO7OKqXhS" /></p>
             </div>
             <div className="flex items-center gap-4">
               <input
@@ -787,7 +792,7 @@ export function ServicesClient({
                 {savingMax ? "..." : maxServices}
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground/70">{maxServices === 1 ? "Solo un servicio por cita (modo estándar)." : `Hasta ${maxServices} servicios por cita. Las duraciones y precios se suman automáticamente.`}</p>
+            <p className="text-[11px] text-muted-foreground/70">{maxServices === 1 ? legacy("DFAMuYiKxw8d") : servicesT("appointmentLimit", { count: maxServices })}</p>
           </div>
         </div>
       </div>
@@ -801,9 +806,9 @@ export function ServicesClient({
                 <ChevronDown className="h-4 w-4 text-[#7C3AED]" />
               </div>
               <div>
-                <p className="text-sm font-medium">Categorías desplegables en el widget</p>
+                <p className="text-sm font-medium"><LocalizedText id="4becVXhXiUlv" /></p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Agrupa catálogos grandes para mostrar primero sólo las categorías. Es opcional y no cambia tus reservas.
+                  <LocalizedText id="DEsIhrtwfWhc" />
                 </p>
               </div>
             </div>
@@ -813,13 +818,13 @@ export function ServicesClient({
                   groupingEnabled ? "text-[#7C3AED]" : "text-muted-foreground"
                 }`}
               >
-                {savingGrouping ? "Guardando..." : groupingEnabled ? "Activado" : "Desactivado"}
+                {savingGrouping ? servicesT("saving") : groupingEnabled ? servicesT("enabled") : servicesT("disabled")}
               </span>
             <button
               type="button"
               role="switch"
               aria-checked={groupingEnabled}
-              aria-label="Agrupar servicios por categorías en el widget"
+              aria-label={legacy("M2LKlFHwLqeW")}
               disabled={savingGrouping}
               onClick={() => handleGroupingChange(!groupingEnabled)}
               className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors disabled:opacity-50 ${
@@ -842,7 +847,7 @@ export function ServicesClient({
               <input
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Ej: Cabello, Manicure, Masajes..."
+                placeholder={legacy("GrPuO86U3rZZ")}
                 maxLength={80}
                 className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/40"
               />
@@ -852,13 +857,13 @@ export function ServicesClient({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {addingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Agregar categoría
+                <LocalizedText id="JN4lhtXVhJEc" />
               </button>
             </form>
 
             {categories.length === 0 ? (
               <p className="pt-3 text-xs text-muted-foreground">
-                Todavía no hay categorías. Los servicios seguirán mostrándose como hasta ahora.
+                <LocalizedText id="hH2lHJ677Y_1" />
               </p>
             ) : (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -889,7 +894,7 @@ export function ServicesClient({
                           disabled={savingCategoryId === category.id || !editingCategoryName.trim()}
                           className="rounded-lg px-2 py-1 text-xs font-medium text-[#7C3AED] disabled:opacity-40"
                         >
-                          Guardar
+                          <LocalizedText id="E-UaIQ9F7RsJ" />
                         </button>
                       </>
                     ) : (
@@ -900,7 +905,7 @@ export function ServicesClient({
                             onClick={() => moveCategory(categoryIndex, -1)}
                             disabled={categoryIndex === 0 || savingOrder !== null}
                             className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
-                            aria-label={`Subir ${category.name}`}
+                            aria-label={servicesT("moveUp", { name: category.name })}
                           >
                             <ChevronUp className="h-3.5 w-3.5" />
                           </button>
@@ -909,14 +914,14 @@ export function ServicesClient({
                             onClick={() => moveCategory(categoryIndex, 1)}
                             disabled={categoryIndex === categories.length - 1 || savingOrder !== null}
                             className="rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
-                            aria-label={`Bajar ${category.name}`}
+                            aria-label={servicesT("moveDown", { name: category.name })}
                           >
                             <ChevronDown className="h-3.5 w-3.5" />
                           </button>
                         </div>
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
                         <span className="text-[11px] text-muted-foreground">
-                          {category._count.services} servicio(s)
+                          {servicesT("servicesCount", { count: category._count.services })}
                         </span>
                         <button
                           type="button"
@@ -925,7 +930,7 @@ export function ServicesClient({
                             setEditingCategoryName(category.name);
                           }}
                           className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          aria-label={`Renombrar ${category.name}`}
+                          aria-label={servicesT("rename", { name: category.name })}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
@@ -934,7 +939,7 @@ export function ServicesClient({
                           onClick={() => handleDeleteCategory(category)}
                           disabled={savingCategoryId === category.id}
                           className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 disabled:opacity-40"
-                          aria-label={`Eliminar ${category.name}`}
+                          aria-label={servicesT("delete", { name: category.name })}
                         >
                           {savingCategoryId === category.id ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -958,7 +963,7 @@ export function ServicesClient({
           <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-2xl animate-scale-in flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-border shrink-0">
               <h3 className="text-lg font-semibold">
-                {editingService ? "Editar Servicio" : "Nuevo Servicio"}
+                {editingService ? legacy("eR9Ma1yyRL8x") : legacy("c0AibySZ7Bzk")}
               </h3>
             </div>
 
@@ -967,17 +972,17 @@ export function ServicesClient({
 
                 {/* ── Base fields ── */}
                 <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">Nombre</label>
+                  <label className="text-sm text-muted-foreground"><LocalizedText id="ViuxV1eotZPW" /></label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Ej: Consultoria Web"
+                    placeholder={legacy("JlT8wJtHHSkO")}
                     required
                     className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">Categoría del servicio (opcional)</label>
+                  <label className="text-sm text-muted-foreground"><LocalizedText id="2HOUnzPlsTVu" /></label>
                   <select
                     value={form.categoryId}
                     onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
@@ -992,16 +997,16 @@ export function ServicesClient({
                   </select>
                   {categories.length === 0 && (
                     <p className="text-[11px] text-muted-foreground">
-                      Crea las categorías desde el panel superior para poder asignarlas.
+                      <LocalizedText id="XUT5g_nnTSiY" />
                     </p>
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground">Descripcion</label>
+                  <label className="text-sm text-muted-foreground"><LocalizedText id="xAYlrZz8MTts" /></label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Descripcion del servicio..."
+                    placeholder={legacy("c9HBi_6jNlD5")}
                     rows={3}
                     className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                   />
@@ -1010,7 +1015,7 @@ export function ServicesClient({
                   <div className="flex items-start gap-4">
                     <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
                       {form.imageUrl ? (
-                        <img src={form.imageUrl} alt="Imagen del servicio" className="h-full w-full object-cover" />
+                        <img src={form.imageUrl} alt={legacy("CqHH8PP-yk6k")} className="h-full w-full object-cover" />
                       ) : (
                         <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                       )}
@@ -1022,8 +1027,8 @@ export function ServicesClient({
                     </div>
                     <div className="min-w-0 flex-1 space-y-2">
                       <div>
-                        <p className="text-sm font-medium">Foto del servicio</p>
-                        <p className="text-xs text-muted-foreground">Se muestra en el widget de reservas.</p>
+                        <p className="text-sm font-medium"><LocalizedText id="UQsM00Gkm0Fj" /></p>
+                        <p className="text-xs text-muted-foreground"><LocalizedText id="4emrhcPw0lA3" /></p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -1033,7 +1038,7 @@ export function ServicesClient({
                           className="inline-flex items-center gap-2 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                         >
                           {uploadingServiceImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                          Subir foto
+                          <LocalizedText id="HFGOSCnl8cRA" />
                         </button>
                         {form.imageUrl && (
                           <button
@@ -1048,7 +1053,7 @@ export function ServicesClient({
                                 });
                                 if (!res.ok) {
                                   const data = await res.json();
-                                  setServiceImageError(data.error || "No se pudo eliminar la foto del servicio.");
+                                  setServiceImageError(data.error || legacy("RsdesAzd2SvA"));
                                 } else {
                                   await fetchServices();
                                 }
@@ -1057,11 +1062,11 @@ export function ServicesClient({
                             className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Eliminar
+                            <LocalizedText id="yYlM8AL5C9C-" />
                           </button>
                         )}
                       </div>
-                      <p className="text-[11px] text-muted-foreground/60">PNG, JPG o WebP. Maximo 5MB.</p>
+                      <p className="text-[11px] text-muted-foreground/60"><LocalizedText id="Z6cHjVDKnN5z" /></p>
                       {serviceImageError && <p className="text-xs text-red-400">{serviceImageError}</p>}
                     </div>
                   </div>
@@ -1075,8 +1080,8 @@ export function ServicesClient({
                 </div>
                 <div className="rounded-xl border border-border p-4 space-y-3">
                   <div>
-                    <p className="text-sm font-medium">¿Cómo se reserva este servicio?</p>
-                    <p className="text-xs text-muted-foreground">Elige el flujo que verá el cliente. Los demás servicios no cambian.</p>
+                    <p className="text-sm font-medium"><LocalizedText id="Ma1BlObOGpS8" /></p>
+                    <p className="text-xs text-muted-foreground"><LocalizedText id="o3OYfjPq6F_i" /></p>
                   </div>
                   <div className={`grid gap-3 ${productionOrdersEnabled ? "sm:grid-cols-2" : ""}`}>
                     <button
@@ -1084,8 +1089,8 @@ export function ServicesClient({
                       onClick={() => setForm((current) => ({ ...current, bookingMode: "APPOINTMENT" }))}
                       className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "APPOINTMENT" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4 text-[#7C3AED]" />Cita con fecha y hora</span>
-                      <span className="mt-1 block text-xs text-muted-foreground">El flujo tradicional de Puragenda.</span>
+                      <span className="flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="SaO6UqxqBow9" /></span>
+                      <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="HAZDGkrnnGHM" /></span>
                     </button>
                     {productionOrdersEnabled && (
                     <button
@@ -1096,21 +1101,21 @@ export function ServicesClient({
                       }}
                       className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "PRODUCTION" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" />Encargo con cupos</span>
-                      <span className="mt-1 block text-xs text-muted-foreground">El cliente elige un período de entrega.</span>
+                      <span className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="GDhCuWrf-Qul" /></span>
+                      <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="P8wh8A0PWMMP" /></span>
                     </button>
                     )}
                   </div>
                   {!productionOrdersEnabled && (
                     <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                      Si vendes productos por encargo, activa el módulo en Configuración para ver esta opción.
+                      <LocalizedText id="-vkxWYdU6boR" />
                     </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`space-y-1.5 ${form.bookingMode === "PRODUCTION" ? "hidden" : ""}`}>
-                    <label className="text-sm text-muted-foreground">Duracion (minutos)</label>
+                    <label className="text-sm text-muted-foreground"><LocalizedText id="JuE5r_W3IL-U" /></label>
                     <input
                       type="number"
                       value={form.duration}
@@ -1122,7 +1127,7 @@ export function ServicesClient({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm text-muted-foreground">Precio ({currencyCode})</label>
+                    <label className="text-sm text-muted-foreground"><LocalizedText id="tcmTwDZHzXWR" />{currencyCode})</label>
                     <input
                       type="number"
                       value={form.price}
@@ -1138,40 +1143,40 @@ export function ServicesClient({
                 {form.bookingMode === "PRODUCTION" && productionOrdersEnabled && (
                   <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4 space-y-4">
                     <div>
-                      <p className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" />Configuración de encargos</p>
-                      <p className="mt-1 text-xs text-muted-foreground">Estas reglas solo se aplican a este servicio.</p>
+                      <p className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="1VeOtcmEPjbp" /></p>
+                      <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="4HBBlkL8aVfQ" /></p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <button type="button"
                         onClick={() => setForm((current) => ({ ...current, productionScheduleMode: "WEEKLY" }))}
                         className={`rounded-xl border p-3 text-left ${form.productionScheduleMode === "WEEKLY" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-background"}`}>
-                        <span className="text-sm font-medium">Semanas automáticas</span>
-                        <span className="mt-1 block text-xs text-muted-foreground">La agenda abre semanas continuamente según la anticipación.</span>
+                        <span className="text-sm font-medium"><LocalizedText id="U2zWqGKFW3wk" /></span>
+                        <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="zRpuMfPqMbc_" /></span>
                       </button>
                       <button type="button"
                         onClick={() => setForm((current) => ({ ...current, productionScheduleMode: "CUSTOM" }))}
                         className={`rounded-xl border p-3 text-left ${form.productionScheduleMode === "CUSTOM" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-background"}`}>
-                        <span className="text-sm font-medium">Períodos personalizados</span>
-                        <span className="mt-1 block text-xs text-muted-foreground">Crea campañas como “Entrega Navidad” con sus propios cupos.</span>
+                        <span className="text-sm font-medium"><LocalizedText id="-fRgCAzaToui" /></span>
+                        <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="LfWaZwa6YPKx" /></span>
                       </button>
                     </div>
 
                     {form.productionScheduleMode === "WEEKLY" ? (
                       <div className="grid gap-4 sm:grid-cols-3">
                         <label className="space-y-1.5">
-                          <span className="text-xs text-muted-foreground">Cupos por semana</span>
+                          <span className="text-xs text-muted-foreground"><LocalizedText id="lUzFZAZA18Lj" /></span>
                           <input type="number" min={1} max={100} required value={form.weeklyProductionCapacity}
                             onChange={(e) => setForm({ ...form, weeklyProductionCapacity: e.target.value })}
                             className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
                         </label>
                         <label className="space-y-1.5">
-                          <span className="text-xs text-muted-foreground">Semanas que se muestran</span>
+                          <span className="text-xs text-muted-foreground"><LocalizedText id="j5Jez7salzJq" /></span>
                           <input type="number" min={1} max={104} required value={form.productionWeeksAhead}
                             onChange={(e) => setForm({ ...form, productionWeeksAhead: e.target.value })}
                             className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
                         </label>
                         <label className="space-y-1.5">
-                          <span className="text-xs text-muted-foreground">Anticipación mínima (semanas)</span>
+                          <span className="text-xs text-muted-foreground"><LocalizedText id="GGPcQdasNTfo" /></span>
                           <input type="number" min={0} max={104} required value={form.productionLeadTimeWeeks}
                             onChange={(e) => setForm({ ...form, productionLeadTimeWeeks: e.target.value })}
                             className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
@@ -1183,8 +1188,8 @@ export function ServicesClient({
                           <div key={window.key} className="rounded-xl border border-border bg-background p-3">
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                               <label className="space-y-1.5 sm:col-span-2">
-                                <span className="text-xs text-muted-foreground">Nombre visible</span>
-                                <input required value={window.label} placeholder="Entrega Navidad"
+                                <span className="text-xs text-muted-foreground"><LocalizedText id="Rbfr462LyiZQ" /></span>
+                                <input required value={window.label} placeholder={legacy("jdYcRpV1rRxD")}
                                   onChange={(e) => setForm((current) => ({
                                     ...current,
                                     customProductionWindows: current.customProductionWindows.map((item, itemIndex) =>
@@ -1193,7 +1198,7 @@ export function ServicesClient({
                                   className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
                               </label>
                               <label className="space-y-1.5">
-                                <span className="text-xs text-muted-foreground">Desde</span>
+                                <span className="text-xs text-muted-foreground"><LocalizedText id="i06T6Sjf1spy" /></span>
                                 <input type="date" required value={window.startDate}
                                   onChange={(e) => setForm((current) => ({
                                     ...current,
@@ -1203,7 +1208,7 @@ export function ServicesClient({
                                   className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
                               </label>
                               <label className="space-y-1.5">
-                                <span className="text-xs text-muted-foreground">Hasta</span>
+                                <span className="text-xs text-muted-foreground"><LocalizedText id="PIPjVYEHgYOb" /></span>
                                 <input type="date" required value={window.endDate}
                                   onChange={(e) => setForm((current) => ({
                                     ...current,
@@ -1213,7 +1218,7 @@ export function ServicesClient({
                                   className="w-full rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none" />
                               </label>
                               <label className="space-y-1.5">
-                                <span className="text-xs text-muted-foreground">Cupos totales</span>
+                                <span className="text-xs text-muted-foreground"><LocalizedText id="UkASCEVzZwTA" /></span>
                                 <input type="number" min={1} max={10000} required value={window.capacity}
                                   onChange={(e) => setForm((current) => ({
                                     ...current,
@@ -1232,7 +1237,7 @@ export function ServicesClient({
                                       itemIndex === index ? { ...item, isActive: e.target.checked } : item),
                                   }))}
                                   className="accent-[#7C3AED]" />
-                                Visible para clientes
+                                <LocalizedText id="shTd_sfrzbR2" />
                               </label>
                               <button type="button"
                                 onClick={() => setForm((current) => ({
@@ -1240,7 +1245,7 @@ export function ServicesClient({
                                   customProductionWindows: current.customProductionWindows.filter((_, itemIndex) => itemIndex !== index),
                                 }))}
                                 className="inline-flex items-center gap-1 text-xs text-red-400">
-                                <Trash2 className="h-3.5 w-3.5" />Eliminar
+                                <Trash2 className="h-3.5 w-3.5" /><LocalizedText id="yYlM8AL5C9C-" />
                               </button>
                             </div>
                           </div>
@@ -1261,13 +1266,13 @@ export function ServicesClient({
                             ],
                           }))}
                           className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 px-3 py-2 text-xs font-medium text-[#7C3AED]">
-                          <Plus className="h-4 w-4" />Agregar período de entrega
+                          <Plus className="h-4 w-4" /><LocalizedText id="XTE_zIidauTv" />
                         </button>
                       </div>
                     )}
 
                     <label className="block max-w-xs space-y-1.5">
-                      <span className="text-xs text-muted-foreground">Abono del total (%)</span>
+                      <span className="text-xs text-muted-foreground"><LocalizedText id="Gb52pmLH6hTq" /></span>
                       <input type="number" min={0} max={100} required value={form.productionDepositPercent}
                         onChange={(e) => setForm({ ...form, productionDepositPercent: e.target.value })}
                         className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none" />
@@ -1277,8 +1282,8 @@ export function ServicesClient({
                         onChange={(e) => setForm({ ...form, requiresReferenceImages: e.target.checked })}
                         className="mt-0.5 h-4 w-4 accent-[#7C3AED]" />
                       <span>
-                        <span className="block text-sm font-medium">Exigir fotos de referencia</span>
-                        <span className="block text-xs text-muted-foreground">El cliente deberá subir al menos una imagen antes de reservar el cupo.</span>
+                        <span className="block text-sm font-medium"><LocalizedText id="G4EN5iLVd315" /></span>
+                        <span className="block text-xs text-muted-foreground"><LocalizedText id="3KLNJSy9PlWQ" /></span>
                       </span>
                     </label>
                   </div>
@@ -1288,19 +1293,19 @@ export function ServicesClient({
                   <div className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
-                      Abono / Deposito ({currencyCode})
+                      <LocalizedText id="VvjICQfMU1lM" />{currencyCode})
                     </label>
                     <input
                       type="number"
                       value={form.depositAmount}
                       onChange={(e) => setForm({ ...form, depositAmount: e.target.value })}
-                      placeholder="0 = sin abono"
+                      placeholder={legacy("vIgS7jnm1TbV")}
                       min="0"
                       step="500"
                       className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
                     />
                     <p className="text-[11px] text-muted-foreground/70">
-                      Monto que el cliente debe pagar al reservar este servicio. Dejalo en 0 para no requerir abono.
+                      <LocalizedText id="lf7yWjCtiUsq" />
                     </p>
                   </div>
                 )}
@@ -1309,8 +1314,8 @@ export function ServicesClient({
                 <div className="rounded-xl border border-border overflow-hidden">
                   <div className="flex items-center justify-between gap-3 px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium">Opciones del servicio</p>
-                      <p className="text-xs text-muted-foreground">Suma precio y minutos segun lo que elija el cliente.</p>
+                      <p className="text-sm font-medium"><LocalizedText id="1o3RWqFfSOWU" /></p>
+                      <p className="text-xs text-muted-foreground"><LocalizedText id="-eeToV6QRPi4" /></p>
                     </div>
                     <button
                       type="button"
@@ -1318,7 +1323,7 @@ export function ServicesClient({
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1.5 text-xs font-medium text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/20"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Categoria
+                      <LocalizedText id="VCdqoDB_g8sH" />
                     </button>
                   </div>
 
@@ -1328,11 +1333,11 @@ export function ServicesClient({
                         <div key={category.id ?? categoryIndex} className="rounded-xl border border-border bg-background p-3 space-y-3">
                           <div className="flex items-start gap-3">
                             <div className="flex-1 space-y-1.5">
-                              <label className="text-xs text-muted-foreground">Categoria</label>
+                              <label className="text-xs text-muted-foreground"><LocalizedText id="VCdqoDB_g8sH" /></label>
                               <input
                                 value={category.name}
                                 onChange={(e) => updateOptionCategory(categoryIndex, { name: e.target.value })}
-                                placeholder="Ej: Tamano del perro"
+                                placeholder={legacy("hjynqvk7EpZ7")}
                                 className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                               />
                             </div>
@@ -1344,10 +1349,10 @@ export function ServicesClient({
                                   onChange={(e) => updateOptionCategory(categoryIndex, { isRequired: e.target.checked })}
                                   className="h-3.5 w-3.5 rounded accent-[#7C3AED]"
                                 />
-                                Obligatoria
+                                <LocalizedText id="6tqRIX8DKScB" />
                               </label>
                               <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                Maximo
+                                <LocalizedText id="fwgEb6ZELYuZ" />
                                 <input
                                   type="number"
                                   min={1}
@@ -1355,7 +1360,7 @@ export function ServicesClient({
                                   value={category.maxSelections}
                                   onChange={(e) => updateOptionCategory(categoryIndex, { maxSelections: Math.max(1, Math.min(category.alternatives.length, Number(e.target.value) || 1)) })}
                                   className="w-14 rounded-lg border border-border bg-muted px-2 py-1.5 text-center text-xs outline-none"
-                                  aria-label={`Maximo de selecciones para ${category.name || "la categoria"}`}
+                                  aria-label={`Maximo de selecciones para ${category.name || legacy("5ycwv4Lv919z")}`}
                                 />
                               </label>
                             </div>
@@ -1370,10 +1375,10 @@ export function ServicesClient({
 
                           <div className="space-y-2">
                             <div className="hidden sm:grid sm:grid-cols-[1fr_96px_96px_110px_32px] gap-2 px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                              <span>Alternativa</span>
-                              <span>Precio +</span>
-                              <span>Min +</span>
-                              <span>Modalidad</span>
+                              <span><LocalizedText id="_Q332iLdhLAO" /></span>
+                              <span><LocalizedText id="OhsGAOY1DneS" /></span>
+                              <span><LocalizedText id="H8bDPiVkQyTA" /></span>
+                              <span><LocalizedText id="DnNWw_Yxw0eq" /></span>
                               <span />
                             </div>
                             {category.alternatives.map((alternative, alternativeIndex) => (
@@ -1381,7 +1386,7 @@ export function ServicesClient({
                                 <input
                                   value={alternative.name}
                                   onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { name: e.target.value })}
-                                  placeholder="Ej: Mediano"
+                                  placeholder={legacy("5Z2ljrBFWxkJ")}
                                   className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                                 />
                                 <input
@@ -1389,7 +1394,7 @@ export function ServicesClient({
                                   min={0}
                                   value={alternative.priceDelta}
                                   onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { priceDelta: e.target.value })}
-                                  aria-label="Precio adicional"
+                                  aria-label={legacy("MchJ8rZP5Ro-")}
                                   className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                                 />
                                 <input
@@ -1397,7 +1402,7 @@ export function ServicesClient({
                                   min={0}
                                   value={alternative.durationDelta}
                                   onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { durationDelta: e.target.value })}
-                                  aria-label="Minutos adicionales"
+                                  aria-label={legacy("dNJBwVVFUWWq")}
                                   className="min-w-0 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none"
                                 />
                                 <label className="flex items-center gap-2 rounded-lg border border-border bg-muted px-2 py-2 text-xs text-muted-foreground">
@@ -1407,7 +1412,7 @@ export function ServicesClient({
                                     onChange={(e) => updateOptionAlternative(categoryIndex, alternativeIndex, { isHomeService: e.target.checked })}
                                     className="h-3.5 w-3.5 accent-[#7C3AED]"
                                   />
-                                  A domicilio
+                                  <LocalizedText id="Wzupy32cyQJ0" />
                                 </label>
                                 <button
                                   type="button"
@@ -1425,7 +1430,7 @@ export function ServicesClient({
                               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#7C3AED] hover:bg-[#7C3AED]/10"
                             >
                               <Plus className="h-3.5 w-3.5" />
-                              Alternativa
+                              <LocalizedText id="_Q332iLdhLAO" />
                             </button>
                           </div>
                         </div>
@@ -1443,15 +1448,15 @@ export function ServicesClient({
                       className="flex flex-1 items-center gap-2 text-sm font-medium transition-colors hover:text-[#7C3AED]"
                     >
                       <RefreshCw className="h-4 w-4 text-[#7C3AED]" />
-                      <span>Reservas Recurrentes</span>
+                      <span><LocalizedText id="uOE9qFXDDD_P" /></span>
                       {recurringEnabled && (
                         <span className="rounded-full bg-[#7C3AED] px-2 py-0.5 text-[10px] font-semibold text-white">
-                          Activo
+                          <LocalizedText id="cjhYFEvVSC1K" />
                         </span>
                       )}
                       {editingService && (editingService._count?.recurringBookings ?? 0) > 0 && (
                         <span className="rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 text-[10px] font-semibold">
-                          {editingService._count.recurringBookings} suscripcion(es)
+                          {editingService._count.recurringBookings} <LocalizedText id="5vXk8psEJpDE" />
                         </span>
                       )}
                       {recurringOpen
@@ -1491,13 +1496,13 @@ export function ServicesClient({
 
                       {/* Mode */}
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Modo de dias</label>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide"><LocalizedText id="oofolWIoLZ3R" /></label>
                         <div className="grid grid-cols-3 gap-2">
                           {(["FIXED_DAYS", "DAYS_WITH_REST", "FREE_MINIMUM"] as const).map((m) => {
                             const labels = {
                               FIXED_DAYS: "Dias fijos",
                               DAYS_WITH_REST: "N dias + descanso",
-                              FREE_MINIMUM: "Libre con minimo",
+                              FREE_MINIMUM: legacy("RtK3WB_jv_Zn"),
                             };
                             return (
                               <button
@@ -1520,7 +1525,7 @@ export function ServicesClient({
                       {/* Mode-specific fields */}
                       {recurringForm.mode === "FIXED_DAYS" && (
                         <div className="space-y-2">
-                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dias habilitados</label>
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide"><LocalizedText id="RaTOAEQ-RthS" /></label>
                           <div className="flex flex-wrap gap-2">
                             {WEEK_DAYS.map((d) => (
                               <button
@@ -1543,7 +1548,7 @@ export function ServicesClient({
                       {recurringForm.mode === "DAYS_WITH_REST" && (
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <label className="text-xs text-muted-foreground">Dias por semana</label>
+                            <label className="text-xs text-muted-foreground"><LocalizedText id="zfZdE0vS---Y" /></label>
                             <input
                               type="number"
                               min={1}
@@ -1554,7 +1559,7 @@ export function ServicesClient({
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs text-muted-foreground">Descanso minimo (dias)</label>
+                            <label className="text-xs text-muted-foreground"><LocalizedText id="85mQFvCR0Azf" /></label>
                             <input
                               type="number"
                               min={1}
@@ -1568,7 +1573,7 @@ export function ServicesClient({
 
                       {recurringForm.mode === "FREE_MINIMUM" && (
                         <div className="space-y-1.5">
-                          <label className="text-xs text-muted-foreground">Minimo de dias por semana</label>
+                          <label className="text-xs text-muted-foreground"><LocalizedText id="VRMLQc3MMsfC" /></label>
                           <input
                             type="number"
                             min={1}
@@ -1582,7 +1587,7 @@ export function ServicesClient({
 
                       {/* Duration options */}
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Duraciones disponibles</label>
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide"><LocalizedText id="mT07wkmGEccx" /></label>
                         <div className="flex gap-4">
                           {[1, 2, 3].map((m) => (
                             <label key={m} className="flex items-center gap-1.5 cursor-pointer">
@@ -1600,7 +1605,7 @@ export function ServicesClient({
 
                       {/* Start date range */}
                       <div className="space-y-1.5">
-                        <label className="text-xs text-muted-foreground">El cliente puede empezar hasta X dias desde hoy</label>
+                        <label className="text-xs text-muted-foreground"><LocalizedText id="q8bW-REihetm" /></label>
                         <input
                           type="number"
                           min={1}
@@ -1614,8 +1619,8 @@ export function ServicesClient({
                       {/* Toggles */}
                       <div className="space-y-3">
                         {([
-                          { key: "requiresApproval", label: "Requiere aprobación del negocio" },
-                          { key: "requiresHealthForm", label: "Formulario de salud" },
+                          { key: "requiresApproval", label: legacy("TNerLkS9tXR-") },
+                          { key: "requiresHealthForm", label: legacy("LyTjbgn_C_Eu") },
                           { key: "requiresRut", label: `Pedir ${taxIdLabel} al cliente` },
                         ] as const).map(({ key, label }) => {
                           // Check if this toggle is affected by a business-level policy
@@ -1629,7 +1634,7 @@ export function ServicesClient({
                                   <span className={`text-sm ${rutForcedByPolicy ? "text-muted-foreground" : ""}`}>{label}</span>
                                   {rutForcedByPolicy && (
                                     <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-medium">
-                                      Activado globalmente
+                                      <LocalizedText id="Oedv1M8zY3jF" />
                                     </span>
                                   )}
                                 </div>
@@ -1649,7 +1654,7 @@ export function ServicesClient({
                               {rutForcedByPolicy && (
                                 <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
                                   <Info className="h-3 w-3" />
-                                  Configurado en Ajustes → Políticas de Suscripciones
+                                  <LocalizedText id="BaXlkl1eVUO8" />
                                 </p>
                               )}
                             </div>
@@ -1660,7 +1665,7 @@ export function ServicesClient({
                       {/* Health questions */}
                       {recurringForm.requiresHealthForm && (
                         <div className="space-y-2">
-                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preguntas del formulario de salud</label>
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide"><LocalizedText id="uk5oMYPA9lPe" /></label>
                           {recurringForm.healthQuestions.map((q, i) => (
                             <div key={i} className="flex items-center gap-2">
                               <span className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs">{q}</span>
@@ -1678,7 +1683,7 @@ export function ServicesClient({
                               value={newQuestion}
                               onChange={(e) => setNewQuestion(e.target.value)}
                               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addQuestion(); } }}
-                              placeholder="Ej: Tenes alguna enfermedad cardiovascular?"
+                              placeholder={legacy("xrZqVBL3yYKT")}
                               className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none"
                             />
                             <button
@@ -1694,11 +1699,11 @@ export function ServicesClient({
 
                       {/* Renewal message */}
                       <div className="space-y-1.5">
-                        <label className="text-xs text-muted-foreground">Mensaje de renovacion personalizado (opcional)</label>
+                        <label className="text-xs text-muted-foreground"><LocalizedText id="XotKs0dZTu6O" /></label>
                         <textarea
                           value={recurringForm.renewalMessage}
                           onChange={(e) => setRecurringForm((p) => ({ ...p, renewalMessage: e.target.value }))}
-                          placeholder="Ej: Contactanos para renovar tu plan con descuento especial!"
+                          placeholder={legacy("azm7DJwuxSHi")}
                           rows={2}
                           className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none"
                         />
@@ -1706,7 +1711,7 @@ export function ServicesClient({
 
                       {/* Expiration warning */}
                       <div className="space-y-1.5">
-                        <label className="text-xs text-muted-foreground">Avisar al cliente X dias antes del vencimiento</label>
+                        <label className="text-xs text-muted-foreground"><LocalizedText id="MC3IRABJe2QH" /></label>
                         <input
                           type="number"
                           min={1}
@@ -1721,7 +1726,7 @@ export function ServicesClient({
                       {editingService && (editingService._count?.recurringBookings ?? 0) > 0 && (
                         <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30 p-3">
                           <p className="text-xs text-amber-800 dark:text-amber-400">
-                            Este servicio tiene {editingService._count.recurringBookings} suscripcion(es) activa(s). Los cambios al plan no afectan suscripciones ya creadas.
+                            <LocalizedText id="rvSfvG55vPLt" /> {editingService._count.recurringBookings} <LocalizedText id="jHyKkJsDcEkr" />
                           </p>
                         </div>
                       )}
@@ -1738,7 +1743,7 @@ export function ServicesClient({
                   onClick={() => setDialogOpen(false)}
                   className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Cancelar
+                  <LocalizedText id="u527QG3L1SSL" />
                 </button>
                 <button
                   type="submit"
@@ -1748,9 +1753,9 @@ export function ServicesClient({
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : editingService ? (
-                    "Guardar Cambios"
+                    legacy("4sJwCqAtyNLm")
                   ) : (
-                    "Crear Servicio"
+                    legacy("UoRwpFJOHChS")
                   )}
                 </button>
               </div>
@@ -1762,7 +1767,7 @@ export function ServicesClient({
       {/* Services Table */}
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border p-6">
-          <h2 className="text-lg font-semibold">Listado de Servicios</h2>
+          <h2 className="text-lg font-semibold"><LocalizedText id="yOCZCoqkmrWP" /></h2>
         </div>
         <div className="p-6">
           {loading ? (
@@ -1772,23 +1777,23 @@ export function ServicesClient({
           ) : services.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               <Wrench className="mx-auto mb-4 h-12 w-12 opacity-30" />
-              <p>No hay servicios aún. Crea el primero.</p>
+              <p><LocalizedText id="qjAFqBBb6d6V" /></p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                    <th className="pb-3 pr-4">Foto</th>
-                    <th className="pb-3 pr-4">Nombre</th>
-                    <th className="pb-3 pr-4">Categoría</th>
-                    <th className="pb-3 pr-4">Descripción</th>
-                    <th className="pb-3 pr-4">Duración</th>
-                    <th className="pb-3 pr-4">Precio</th>
-                    {depositEnabled && <th className="pb-3 pr-4">Abono</th>}
-                    <th className="pb-3 pr-4">Opciones</th>
-                    <th className="pb-3 pr-4">Recurrente</th>
-                    <th className="pb-3 text-right">Acciones</th>
+                    <th className="pb-3 pr-4"><LocalizedText id="SU4IQ9lYuYgV" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="ViuxV1eotZPW" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="VYuyCoLt5abR" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="7gC5b_8mb-JW" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="1agERVszksqI" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="LkOFtgV_bX-b" /></th>
+                    {depositEnabled && <th className="pb-3 pr-4"><LocalizedText id="qq8PaMYa8YRG" /></th>}
+                    <th className="pb-3 pr-4"><LocalizedText id="gds7VwnQupX9" /></th>
+                    <th className="pb-3 pr-4"><LocalizedText id="Q2Wy0nrpErM-" /></th>
+                    <th className="pb-3 text-right"><LocalizedText id="-4mjC6f2TRhu" /></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1811,7 +1816,7 @@ export function ServicesClient({
                           <span>{service.name}</span>
                           {service.bookingMode === "PRODUCTION" && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-600 dark:text-fuchsia-400">
-                              <CalendarRange className="h-3 w-3" />Encargo
+                              <CalendarRange className="h-3 w-3" /><LocalizedText id="1-L2HAv9XQki" />
                             </span>
                           )}
                         </div>
@@ -1822,7 +1827,7 @@ export function ServicesClient({
                             {service.category.name}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Sin categoría</span>
+                          <span className="text-xs text-muted-foreground"><LocalizedText id="AggpTqSauu6f" /></span>
                         )}
                       </td>
                       <td className="max-w-xs truncate py-3.5 pr-4 text-muted-foreground">
@@ -1832,7 +1837,7 @@ export function ServicesClient({
                         <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
                           {service.bookingMode === "PRODUCTION"
                             ? service.productionScheduleMode === "CUSTOM"
-                              ? `${getCustomProductionWindows(service.customProductionWindows).filter((window) => window.isActive).length} período(s)`
+                              ? servicesT("periods", { count: getCustomProductionWindows(service.customProductionWindows).filter((window) => window.isActive).length })
                               : `${service.weeklyProductionCapacity} cupos/sem`
                             : `${service.duration} min`}
                         </span>
@@ -1853,14 +1858,14 @@ export function ServicesClient({
                               {formatPrice(service.depositAmount, currencyCode)}
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Sin abono</span>
+                            <span className="text-xs text-muted-foreground"><LocalizedText id="2invgoh3oDZD" /></span>
                           )}
                         </td>
                       )}
                       <td className="py-3.5 pr-4">
                         {(service.optionCategories?.length ?? 0) > 0 ? (
                           <span className="inline-flex items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                            {service.optionCategories.length} categoria(s)
+                            {servicesT("categoriesCount", { count: service.optionCategories.length })}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
@@ -1870,7 +1875,7 @@ export function ServicesClient({
                         {service.recurringPlan ? (
                           <span className="inline-flex items-center gap-1 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
                             <RefreshCw className="h-3 w-3" />
-                            {service._count?.recurringBookings ?? 0} activa(s)
+                            {servicesT("activeCount", { count: service._count?.recurringBookings ?? 0 })}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
@@ -1883,7 +1888,7 @@ export function ServicesClient({
                             onClick={() => moveService(serviceIndex, -1)}
                             disabled={serviceIndex === 0 || savingOrder !== null}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
-                            aria-label={`Subir ${service.name}`}
+                            aria-label={servicesT("moveUp", { name: service.name })}
                           >
                             <ChevronUp className="h-3.5 w-3.5" />
                           </button>
@@ -1892,7 +1897,7 @@ export function ServicesClient({
                             onClick={() => moveService(serviceIndex, 1)}
                             disabled={serviceIndex === services.length - 1 || savingOrder !== null}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-20"
-                            aria-label={`Bajar ${service.name}`}
+                            aria-label={servicesT("moveDown", { name: service.name })}
                           >
                             <ChevronDown className="h-3.5 w-3.5" />
                           </button>

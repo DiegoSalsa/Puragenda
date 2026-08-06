@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +10,7 @@ import { KeyRound, Loader2, Mail, ShieldCheck } from "lucide-react";
 type Step = "email" | "code";
 
 export default function AdminLoginPage() {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -36,7 +40,7 @@ export default function AdminLoginPage() {
     setStep("code");
     setCode("");
     setResendIn(60);
-    setMessage(data.message || "Revisa tu correo para continuar.");
+    setMessage(data.message || legacy("TL_ALuZOxCnd"));
   }
 
   async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +53,7 @@ export default function AdminLoginPage() {
       await fetch("/api/auth/logout", { method: "POST" });
       await requestCode();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No fue posible enviar el código");
+      setError(requestError instanceof Error ? requestError.message : legacy("Jiou2jHDuVYa"));
     } finally {
       setLoading(false);
     }
@@ -69,7 +73,7 @@ export default function AdminLoginPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data.error || "Código inválido o vencido");
+        setError(data.error || legacy("JcAAj_oPQDa-"));
         return;
       }
 
@@ -88,7 +92,7 @@ export default function AdminLoginPage() {
     try {
       await requestCode();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No fue posible reenviar el código");
+      setError(requestError instanceof Error ? requestError.message : legacy("npZfUN7kp0HR"));
     } finally {
       setLoading(false);
     }
@@ -119,11 +123,11 @@ export default function AdminLoginPage() {
         <div className="rounded-2xl border border-white/[0.06] bg-[#0e0e12] p-6 shadow-2xl">
           <div className="mb-6 space-y-1.5 text-center">
             <h1 className="text-xl font-bold text-white">
-              {step === "email" ? "Acceso restringido" : "Revisa tu correo"}
+              {step === "email" ? "Acceso restringido" : legacy("DD1umyLNHnxt")}
             </h1>
             <p className="text-xs text-[#888]">
               {step === "email"
-                ? "Recibirás un código de acceso de un solo uso"
+                ? legacy("nny38-DcZ5m_")
                 : `Enviamos un código de 6 dígitos a ${email}`}
             </p>
           </div>
@@ -131,7 +135,7 @@ export default function AdminLoginPage() {
           {step === "email" ? (
             <form className="space-y-4" onSubmit={handleEmailSubmit}>
               <div className="space-y-1.5">
-                <label htmlFor="admin-email" className="text-xs font-medium text-[#888]">Email</label>
+                <label htmlFor="admin-email" className="text-xs font-medium text-[#888]"><LocalizedText id="lpzL089jAOzV" /></label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#555]" />
                   <input
@@ -155,13 +159,13 @@ export default function AdminLoginPage() {
                 disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#7C3AED]/20 disabled:opacity-50"
               >
-                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : <><Mail className="h-4 w-4" /> Enviar código</>}
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> <LocalizedText id="SJ9ZmHAHL_nZ" /></> : <><Mail className="h-4 w-4" /> <LocalizedText id="Jw4kakAAoNmt" /></>}
               </button>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={handleCodeSubmit}>
               <div className="space-y-1.5">
-                <label htmlFor="admin-code" className="text-xs font-medium text-[#888]">Código de acceso</label>
+                <label htmlFor="admin-code" className="text-xs font-medium text-[#888]"><LocalizedText id="VLsA3e2zhLX_" /></label>
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#555]" />
                   <input
@@ -189,12 +193,12 @@ export default function AdminLoginPage() {
                 disabled={loading || code.length !== 6}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] py-2.5 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-[#7C3AED]/20 disabled:opacity-50"
               >
-                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</> : <><ShieldCheck className="h-4 w-4" /> Verificar y acceder</>}
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> <LocalizedText id="Kd6ECFPSuHDK" /></> : <><ShieldCheck className="h-4 w-4" /> <LocalizedText id="26Z1O9iSzBfk" /></>}
               </button>
 
               <div className="flex items-center justify-between text-xs">
                 <button type="button" onClick={changeEmail} className="text-[#888] hover:text-white">
-                  Cambiar correo
+                  <LocalizedText id="KZo36SL3fXLs" />
                 </button>
                 <button
                   type="button"
@@ -202,7 +206,7 @@ export default function AdminLoginPage() {
                   disabled={loading || resendIn > 0}
                   className="text-[#7C3AED] hover:underline disabled:text-[#555] disabled:no-underline"
                 >
-                  {resendIn > 0 ? `Reenviar en ${resendIn}s` : "Reenviar código"}
+                  {resendIn > 0 ? `Reenviar en ${resendIn}s` : legacy("rBcuXA9Cvbg_")}
                 </button>
               </div>
             </form>

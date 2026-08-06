@@ -1,5 +1,6 @@
 import { formatInTimeZone } from "date-fns-tz";
-import { es } from "date-fns/locale";
+import type { AppLocale } from "@/i18n/config";
+import { getDateLocale } from "@/i18n/date-locale";
 
 // Zona horaria por defecto para formatear fechas en emails
 const BUSINESS_TZ = "America/Santiago";
@@ -18,7 +19,11 @@ function escapeHtml(value: string): string {
 // TYPES
 // ═══════════════════════════════════════════
 
-interface BookingEmailData {
+interface LocalizedEmailData {
+  locale?: AppLocale;
+}
+
+interface BookingEmailData extends LocalizedEmailData {
   customerName: string;
   customerEmail: string;
   customerPhone?: string | null;
@@ -123,7 +128,7 @@ function enterpriseLayout(title: string, body: string): string {
 
 function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): string {
   const timezone = data.timezone || BUSINESS_TZ;
-  const date = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const date = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
   const time = `${formatInTimeZone(data.startTime, timezone, "HH:mm")} - ${formatInTimeZone(data.endTime, timezone, "HH:mm")}`;
   
   let html = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;display:table;">`;
@@ -683,7 +688,7 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
 // APPOINTMENT REMINDER (day before)
 // ═══════════════════════════════════════════
 
-interface ReminderEmailData {
+interface ReminderEmailData extends LocalizedEmailData {
   customerName: string;
   serviceName: string;
   staffName: string;
@@ -700,7 +705,7 @@ interface ReminderEmailData {
 /** Email to client the day before their appointment */
 export function reminderEmail(data: ReminderEmailData): { subject: string; html: string } {
   const timezone = data.timezone || BUSINESS_TZ;
-  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const dateStr = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
   const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
   const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
 
@@ -923,7 +928,7 @@ export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: strin
 // APPOINTMENT ACTION — OWNER NOTIFICATION
 // ═══════════════════════════════════════════
 
-interface AppointmentActionEmailData {
+interface AppointmentActionEmailData extends LocalizedEmailData {
   action: "confirmed" | "cancelled";
   customerName: string;
   serviceName: string;
@@ -937,7 +942,7 @@ interface AppointmentActionEmailData {
 /** Email to business owner when customer confirms or cancels via reminder link */
 export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
   const timezone = data.timezone || BUSINESS_TZ;
-  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const dateStr = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
   const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
   const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
 
@@ -993,7 +998,7 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
 
 export function appointmentActionStaffEmail(data: AppointmentActionEmailData): { subject: string; html: string } {
   const timezone = data.timezone || BUSINESS_TZ;
-  const dateStr = formatInTimeZone(data.startTime, timezone, "EEEE, d 'de' MMMM yyyy", { locale: es });
+  const dateStr = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
   const timeStr = formatInTimeZone(data.startTime, timezone, "HH:mm");
   const timeEnd = formatInTimeZone(data.endTime, timezone, "HH:mm");
   const isConfirm = data.action === "confirmed";
@@ -1052,6 +1057,7 @@ function recurringSessionsTable(
   startDate: Date,
   endDate: Date,
   timezone: string,
+  locale: AppLocale = "es",
 ): string {
   const rows = selectedDays.map((day) => {
     const time = selectedTimes[String(day)] ?? "";
@@ -1063,8 +1069,9 @@ function recurringSessionsTable(
 
   // Recurring plan boundaries are date-only DB values represented at UTC midnight.
   // Formatting them in the business timezone can shift western timezones one day back.
-  const start = formatInTimeZone(startDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
-  const end = formatInTimeZone(endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const dateLocale = getDateLocale(locale);
+  const start = formatInTimeZone(startDate, "UTC", "PPP", { locale: dateLocale });
+  const end = formatInTimeZone(endDate, "UTC", "PPP", { locale: dateLocale });
 
   return `
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
@@ -1081,7 +1088,7 @@ function recurringSessionsTable(
   `;
 }
 
-interface RecurringCreatedClientData {
+interface RecurringCreatedClientData extends LocalizedEmailData {
   customerEmail: string;
   customerName: string;
   serviceName: string;
@@ -1105,7 +1112,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
         <p style="margin:0 0 8px;font-size:13px;color:#92400E;font-weight:700;">Atencion: hay ${data.conflicts.length} sesion(es) con conflicto de horario</p>
         <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5;">
           Las siguientes fechas no pudieron ser agendadas porque ya tenian turnos ocupados: 
-          ${data.conflicts.map(d => formatInTimeZone(d, data.timezone || BUSINESS_TZ, "d MMM", { locale: es })).join(", ")}.
+          ${data.conflicts.map(d => formatInTimeZone(d, data.timezone || BUSINESS_TZ, "MMM d", { locale: getDateLocale(data.locale ?? "es") })).join(", ")}.
           El negocio te contactara para coordinar esas sesiones.
         </p>
       </div>`
@@ -1121,7 +1128,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
         en <strong style="color:#111827;">${data.businessName}</strong> ha sido confirmado.
       </p>
       <p style="margin:0 0 8px;font-size:14px;color:#374151;font-weight:600;">Tus sesiones semanales:</p>
-      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ)}
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ, data.locale)}
       ${conflictsHtml}
       <div style="text-align:center;margin:24px 0;">
         <a href="${portalUrl}" style="display:inline-block;padding:12px 32px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:600;border-radius:8px;">
@@ -1133,7 +1140,7 @@ export function recurringBookingCreatedClientEmail(data: RecurringCreatedClientD
   };
 }
 
-interface RecurringPendingApprovalBusinessData {
+interface RecurringPendingApprovalBusinessData extends LocalizedEmailData {
   ownerEmail: string;
   ownerName: string | null | undefined;
   customerName: string;
@@ -1174,7 +1181,7 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
         <strong style="color:#111827;">${data.customerName}</strong> (${data.customerEmail}) solicito un plan recurrente de
         <strong style="color:#111827;">${data.serviceName}</strong> por <strong style="color:#111827;">${data.durationMonths} mes(es)</strong>.
       </p>
-      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ)}
+      ${recurringSessionsTable(data.selectedDays, data.selectedTimes, data.startDate, data.endDate, data.timezone || BUSINESS_TZ, data.locale)}
       ${data.customerAddress ? `<div style="margin:0 0 16px;padding:16px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;"><p style="margin:0 0 6px;font-size:12px;color:#6B7280;text-transform:uppercase;font-weight:600;">Direccion de las visitas</p><p style="margin:0;font-size:14px;color:#111827;font-weight:600;">${escapeHtml(data.customerAddress)}</p></div>` : ""}
       ${healthHtml}
       <div style="margin:16px 0;padding:16px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;">
@@ -1189,7 +1196,7 @@ export function recurringBookingPendingApprovalBusinessEmail(data: RecurringPend
   };
 }
 
-interface RecurringApprovedClientData {
+interface RecurringApprovedClientData extends LocalizedEmailData {
   customerEmail: string;
   customerName: string;
   serviceName: string;
@@ -1203,8 +1210,9 @@ interface RecurringApprovedClientData {
 export function recurringBookingApprovedClientEmail(data: RecurringApprovedClientData): { subject: string; html: string } {
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
-  const start = formatInTimeZone(data.startDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
-  const end = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const dateLocale = getDateLocale(data.locale ?? "es");
+  const start = formatInTimeZone(data.startDate, "UTC", "PPP", { locale: dateLocale });
+  const end = formatInTimeZone(data.endDate, "UTC", "PPP", { locale: dateLocale });
 
   return {
     subject: `Tu plan en ${data.businessName} fue aprobado`,
@@ -1281,7 +1289,7 @@ export function recurringBookingCancelledClientEmail(data: RecurringCancelledCli
   };
 }
 
-interface RecurringSessionCancelledClientData {
+interface RecurringSessionCancelledClientData extends LocalizedEmailData {
   customerEmail: string;
   customerName: string;
   serviceName: string;
@@ -1291,7 +1299,7 @@ interface RecurringSessionCancelledClientData {
 }
 
 export function recurringSessionCancelledClientEmail(data: RecurringSessionCancelledClientData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.sessionDate, data.timezone || BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+  const dateStr = formatInTimeZone(data.sessionDate, data.timezone || BUSINESS_TZ, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
 
   return {
     subject: `Tu sesion del ${dateStr} fue cancelada - ${data.businessName}`,
@@ -1307,7 +1315,7 @@ export function recurringSessionCancelledClientEmail(data: RecurringSessionCance
   };
 }
 
-interface RecurringExpiringClientData {
+interface RecurringExpiringClientData extends LocalizedEmailData {
   customerEmail: string;
   customerName: string;
   serviceName: string;
@@ -1322,7 +1330,7 @@ interface RecurringExpiringClientData {
 export function recurringExpiringClientEmail(data: RecurringExpiringClientData): { subject: string; html: string } {
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const portalUrl = `${appUrl}/mi-plan/${data.managementToken}`;
-  const endStr = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const endStr = formatInTimeZone(data.endDate, "UTC", "PPP", { locale: getDateLocale(data.locale ?? "es") });
 
   return {
     subject: `Tu plan en ${data.businessName} vence en ${data.daysLeft} dias`,
@@ -1348,7 +1356,7 @@ export function recurringExpiringClientEmail(data: RecurringExpiringClientData):
   };
 }
 
-interface RecurringExpiringBusinessData {
+interface RecurringExpiringBusinessData extends LocalizedEmailData {
   ownerEmail: string;
   customerName: string;
   serviceName: string;
@@ -1362,7 +1370,7 @@ export function recurringExpiringBusinessEmail(data: RecurringExpiringBusinessDa
   const dashboardUrl = process.env.NODE_ENV === "production"
     ? "https://www.puragenda.cl/dashboard/recurring"
     : "http://localhost:3000/dashboard/recurring";
-  const endStr = formatInTimeZone(data.endDate, "UTC", "d 'de' MMMM yyyy", { locale: es });
+  const endStr = formatInTimeZone(data.endDate, "UTC", "PPP", { locale: getDateLocale(data.locale ?? "es") });
 
   return {
     subject: `El plan de ${data.customerName} vence en ${data.daysLeft} dias`,
@@ -1387,7 +1395,7 @@ export function recurringExpiringBusinessEmail(data: RecurringExpiringBusinessDa
 // RECURRING — CONFLICT WARNING (Email 8)
 // ═══════════════════════════════════════════
 
-interface RecurringConflictWarningClientData {
+interface RecurringConflictWarningClientData extends LocalizedEmailData {
   customerName: string;
   serviceName: string;
   originalDate: Date;
@@ -1397,7 +1405,7 @@ interface RecurringConflictWarningClientData {
 
 /** Email to client warning about a conflict/override on a specific recurring session */
 export function recurringConflictWarningClientEmail(data: RecurringConflictWarningClientData): { subject: string; html: string } {
-  const dateStr = formatInTimeZone(data.originalDate, data.timezone || BUSINESS_TZ, "EEEE d 'de' MMMM", { locale: es });
+  const dateStr = formatInTimeZone(data.originalDate, data.timezone || BUSINESS_TZ, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
 
   return {
     subject: `Tu sesion del ${dateStr} tiene un cambio pendiente - ${data.businessName}`,
@@ -1420,7 +1428,7 @@ export function recurringConflictWarningClientEmail(data: RecurringConflictWarni
   };
 }
 
-interface SubscriptionPaymentFailedEmailData {
+interface SubscriptionPaymentFailedEmailData extends LocalizedEmailData {
   ownerName?: string | null;
   businessName: string;
   gracePeriodEndsAt: Date;
@@ -1439,15 +1447,15 @@ export function subscriptionPaymentFailedEmail(
   const graceEnd = formatInTimeZone(
     data.gracePeriodEndsAt,
     BUSINESS_TZ,
-    "d 'de' MMMM 'a las' HH:mm",
-    { locale: es }
+    "PPPp",
+    { locale: getDateLocale(data.locale ?? "es") }
   );
   const nextAttempt = data.nextPaymentAttemptAt
     ? formatInTimeZone(
         data.nextPaymentAttemptAt,
         BUSINESS_TZ,
-        "d 'de' MMMM 'a las' HH:mm",
-        { locale: es }
+        "PPPp",
+        { locale: getDateLocale(data.locale ?? "es") }
       )
     : null;
   const amount =
@@ -1487,7 +1495,7 @@ export function subscriptionPaymentFailedEmail(
   };
 }
 
-interface SubscriptionPaymentRecoveredEmailData {
+interface SubscriptionPaymentRecoveredEmailData extends LocalizedEmailData {
   ownerName?: string | null;
   businessName: string;
   periodEnd: Date;
@@ -1499,8 +1507,8 @@ export function subscriptionPaymentRecoveredEmail(
   const periodEnd = formatInTimeZone(
     data.periodEnd,
     BUSINESS_TZ,
-    "d 'de' MMMM 'de' yyyy",
-    { locale: es }
+    "PPP",
+    { locale: getDateLocale(data.locale ?? "es") }
   );
 
   return {

@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -24,6 +26,7 @@ const neoVars: React.CSSProperties & Record<string, string> = {
 };
 
 export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
+  const legacy = useTranslations("legacy");
   const t = useTranslations("landing");
   const [easterEggCount, setEasterEggCount] = useState(0);
   const [show70s, setShow70s] = useState(false);
@@ -165,7 +168,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.1em] text-black/60 dark:text-white/60">{t("onlineBooking")}</p>
-                    <p className="text-base font-black">Estética Bella</p>
+                    <p className="text-base font-black"><LocalizedText id="PSudvDdmZJlG" /></p>
                   </div>
                   <span className="rounded-full border-2 border-black bg-[#FFB5E8] px-3 py-1 text-[10px] font-black text-black">{t("stepByStep")}</span>
                 </div>
@@ -182,7 +185,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                       <div>
                         <p className="text-sm font-black text-black">{t("haircut")}</p>
                         <div className="mt-1 flex gap-2 text-[11px] font-bold text-black/80">
-                          <span>30 min</span>
+                          <span><LocalizedText id="9p-ikd4TTjzF" /></span>
                           <span>$15.000</span>
                         </div>
                       </div>
@@ -194,7 +197,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                       <div>
                         <p className="text-sm font-black dark:text-white">{t("gelManicure")}</p>
                         <div className="mt-1 flex gap-2 text-[11px] font-bold text-black/60 dark:text-white/60">
-                          <span>60 min</span>
+                          <span><LocalizedText id="tj8fSPedw8Ax" /></span>
                           <span>$25.000</span>
                         </div>
                       </div>
@@ -204,7 +207,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 </div>
                 
                 <div className="grid grid-cols-5 gap-1.5 mb-4">
-                  {["Lun", "Mar", "Mié", "Jue", "Vie"].map((d, i) => (
+                  {["Lun", "Mar", legacy("wk1GRWMFhb2b"), "Jue", "Vie"].map((d, i) => (
                     <div key={d} className={`rounded-lg border-2 border-black dark:border-white px-1 py-1.5 text-center text-[10px] ${i === 1 ? "bg-[#FFB5E8] shadow-[2px_2px_0_#000] text-black" : "dark:text-white"}`}>
                       <p className={`font-bold ${i === 1 ? "text-black" : "text-black/60 dark:text-white/60"}`}>{d}</p>
                       <p className="text-sm font-black">{14 + i}</p>
@@ -221,7 +224,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 </div>
                 
                 <div className="border-t-2 border-black/10 dark:border-white/20 pt-3 text-center text-[9px] font-bold text-black/50 dark:text-white/50">
-                  PurAgenda Powered by PuroCode
+                  <LocalizedText id="rBGEuo8AmdZu" />
                 </div>
               </div>
             </div>
@@ -269,9 +272,9 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 <div className="px-4 pb-4 space-y-2">
                   <p className="text-[11px] font-black uppercase text-black/50 dark:text-white/50 mb-2">{t("upcoming")}</p>
                   {[
-                    { name: "Juan Pérez", service: "Consultoría Web", time: "10:00", staff: "Diego S.", status: "confirmed" },
-                    { name: "María González", service: "Desarrollo Landing", time: "11:00", staff: "Diego S.", status: "pending" },
-                    { name: "Ana Torres", service: "Consultoría Web", time: "15:00", staff: "Camila R.", status: "checked" },
+                    { name: legacy("CQ_WJP7-7ahj"), service: legacy("Yzf6yfxwkh4U"), time: "10:00", staff: "Diego S.", status: "confirmed" },
+                    { name: legacy("hPyv89zH2tum"), service: "Desarrollo Landing", time: "11:00", staff: "Diego S.", status: "pending" },
+                    { name: "Ana Torres", service: legacy("Yzf6yfxwkh4U"), time: "15:00", staff: "Camila R.", status: "checked" },
                   ].map((apt) => (
                     <div key={apt.name} className="flex items-center justify-between rounded-xl border-2 border-black dark:border-white bg-gray-50 dark:bg-gray-800 px-3 py-2">
                       <div className="flex items-center gap-3">
@@ -328,19 +331,19 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 dark:text-white" />
-                <p className="text-base font-black uppercase dark:text-white">Sin solapamientos</p>
+                <p className="text-base font-black uppercase dark:text-white"><LocalizedText id="a2yoi_zh6rND" /></p>
               </div>
               <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("collisionProtectionText")}</p>
               <div className="space-y-2 text-[10px] font-black">
                 <div className="flex items-center gap-2 rounded-lg border-2 border-black bg-[#BFFCC6] px-2.5 py-1.5 shadow-[2px_2px_0_#000]">
                   <div className="h-2 w-2 rounded-full border border-black bg-white" />
                   <span className="text-black">10:00 - 11:00</span>
-                  <span className="ml-auto text-black/60">OK</span>
+                  <span className="ml-auto text-black/60"><LocalizedText id="VlM5vE0z1ygX" /></span>
                 </div>
                 <div className="flex items-center gap-2 rounded-lg border-2 border-black bg-gray-200 px-2.5 py-1.5 opacity-60">
                   <div className="h-2 w-2 rounded-full border border-black bg-black" />
                   <span className="text-black line-through">10:30 - 11:30</span>
-                  <span className="ml-auto text-black/60">Bloqueada</span>
+                  <span className="ml-auto text-black/60"><LocalizedText id="D_8czenqI3pC" /></span>
                 </div>
               </div>
             </div>
@@ -367,7 +370,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 <CalendarClock className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-sm font-black uppercase">Google Calendar · integración opcional</h2>
+                <h2 className="text-sm font-black uppercase"><LocalizedText id="vcni4knTgNJJ" /></h2>
                 <p className="mt-0.5 text-xs font-semibold leading-relaxed text-black/65 dark:text-white/65">
                   {t("calendarSyncText")}
                 </p>
@@ -377,7 +380,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               href="/politica-de-privacidad#google-calendar"
               className="shrink-0 text-xs font-bold text-[#1A73E8] underline underline-offset-4 dark:text-[#85E3FF] sm:ml-auto"
             >
-              Privacidad de datos de Google
+              <LocalizedText id="FtS0eyHNOtQA" />
             </Link>
           </div>
         </section>
@@ -386,7 +389,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
         <section className="flex justify-center pb-16">
           <Link href="/caracteristicas">
              <button className="bg-transparent text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
-                Ver todas las características
+                <LocalizedText id="Zef1fEdWSEAC" />
              </button>
           </Link>
         </section>
@@ -394,41 +397,41 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
         {/* TESTIMONIALS */}
         <section className="mx-auto w-full max-w-6xl px-6 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Negocios reales. Resultados reales.</h2>
+            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl"><LocalizedText id="XbEgTlbh1dKU" /></h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {/* Card 1 - amarillo, rotada levemente */}
             <div className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
-              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
               <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialOne")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">V</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white">Valentina R.</p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Centro de estética, Stgo</p>
+                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="Hle8mLHoThST" /></p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60"><LocalizedText id="v8gaH59R-d6E" /></p>
                 </div>
               </div>
             </div>
             {/* Card 2 - verde, un poco mas grande visualmente */}
             <div className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
-              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
               <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialTwo")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">M</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white">Marcelo T.</p>
+                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="D8s4ptaGQnCI" /></p>
                   <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("clinicType")}</p>
                 </div>
               </div>
             </div>
             {/* Card 3 - cyan, rotada al otro lado */}
             <div className="rounded-2xl border-4 border-black bg-[#85E3FF] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#85E3FF] flex flex-col gap-4 rotate-[0.8deg]">
-              <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
+              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
               <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialThree")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#B28DFF] flex items-center justify-center text-lg font-black text-black shrink-0">C</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white">Carolina S.</p>
+                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="LCmtJSuhpp_c" /></p>
                   <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("salonType")}</p>
                 </div>
               </div>

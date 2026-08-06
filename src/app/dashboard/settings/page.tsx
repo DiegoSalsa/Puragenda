@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
@@ -35,12 +37,12 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ mp_connected?: string; mp_error?: string; billing_notice?: string }> }) {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
   const business = await getBusinessForUser(user.id);
   if (business && !(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para administrar la configuración</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="dCMi1o2zp5QS" /></div>;
   }
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="8rEGoq2nl-vn" /></div>;
 
   const [hours, subscription, locations, services] = await Promise.all([
     getBusinessHours(business.id),
@@ -88,15 +90,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
-        <p className="mt-1 text-muted-foreground">Datos de integración, horarios y pagos del negocio.</p>
+        <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="u1BxN-NjE3kV" /></h1>
+        <p className="mt-1 text-muted-foreground"><LocalizedText id="M-ZrZLBNmuDs" /></p>
       </div>
 
       {/* ── MP Connection Success/Error banners ── */}
       {mpConnectedSuccess && (
         <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3 text-sm font-medium text-emerald-400">
           <CheckCircle2 className="h-5 w-5" />
-          ¡Mercado Pago conectado exitosamente!
+          <LocalizedText id="jajPc0hanO4D" />
         </div>
       )}
       {mpError && (
@@ -118,7 +120,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       {params.billing_notice === "international" && (
         <div className="flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-5 py-3 text-sm text-amber-400">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <span>Tu cuenta quedó creada y mantiene su período de prueba. Para pagos internacionales usamos Paddle: el precio base está en USD y el Checkout mostrará moneda e impuestos aplicables.</span>
+          <span><LocalizedText id="m_X_wElxS5rL" /></span>
         </div>
       )}
 
@@ -130,10 +132,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Sparkles className="h-4 w-4 text-[#7C3AED]" /> Version de la app
+                <Sparkles className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="0fnZmBU27M9U" />
               </div>
               <p className="text-sm text-muted-foreground">
-                Estas usando Puragenda {LATEST_CHANGELOG_VERSION}. Revisa las novedades de esta version.
+                <LocalizedText id="bYoyKusUmkuq" /> {LATEST_CHANGELOG_VERSION}<LocalizedText id="9VBN8M4YQ1ci" />
               </p>
             </div>
             <span className="inline-flex w-fit items-center rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1 text-sm font-semibold text-[#7C3AED]">
@@ -145,30 +147,30 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {/* ── Plan / Suscripción ── */}
         <div id="plan" className="rounded-2xl border border-[#7C3AED]/20 bg-gradient-to-br from-[#7C3AED]/5 via-card to-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Crown className="h-4 w-4 text-[#7C3AED]" /> Tu Plan
+            <Crown className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="OlZo-uLCatLm" />
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold">Plan {planName}</h3>
+                <h3 className="text-lg font-bold"><LocalizedText id="-o7Qvavda8sc" /> {planName}</h3>
                 {isActive && !isTrial && (
                   <span className="flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-                    <CheckCircle2 className="h-3 w-3" /> Activo
+                    <CheckCircle2 className="h-3 w-3" /> <LocalizedText id="cjhYFEvVSC1K" />
                   </span>
                 )}
                 {isTrial && (
                   <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400">
-                    <AlertCircle className="h-3 w-3" /> Prueba
+                    <AlertCircle className="h-3 w-3" /> <LocalizedText id="rD8JHKNBCcVC" />
                   </span>
                 )}
                 {subscription?.status === "INACTIVE" && (
                   <span className="flex items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-400">
-                    <AlertCircle className="h-3 w-3" /> Inactivo
+                    <AlertCircle className="h-3 w-3" /> <LocalizedText id="BkI9GsOm7oh3" />
                   </span>
                 )}
                 {subscription?.status === "PAST_DUE" && (
                   <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
-                    <AlertCircle className="h-3 w-3" /> Pago pendiente
+                    <AlertCircle className="h-3 w-3" /> <LocalizedText id="-q80VQzuGF7x" />
                   </span>
                 )}
               </div>
@@ -177,7 +179,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
                   : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
                 {subscription?.currentPeriodEnd && (
-                  <> · Próxima renovación: {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
+                  <> <LocalizedText id="U34Bfej7YVY-" /> {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}
               </p>
             </div>
@@ -208,7 +210,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {/* ── Deposit / Abono Config ── */}
         <div id="abonos" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Banknote className="h-4 w-4 text-[#7C3AED]" /> Abonos / Depósitos
+            <Banknote className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="HraE--oj_ANc" />
           </div>
           <DepositConfig
             initialDepositRequired={business.depositRequired}
@@ -218,21 +220,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="encargos" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Package className="h-4 w-4 text-[#7C3AED]" /> Encargos
+            <Package className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="FPmh86BAXjU5" />
           </div>
           <ProductionOrdersConfig initialEnabled={business.productionOrdersEnabled} />
         </div>
 
         <div id="business-name" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Store className="h-4 w-4 text-[#7C3AED]" /> Nombre del Negocio
+            <Store className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="FW2JHoThaqiE" />
           </div>
           <BusinessNameEditor initialName={business.name} />
         </div>
 
         <div id="business-country" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Globe2 className="h-4 w-4 text-[#7C3AED]" /> País, hora y moneda
+            <Globe2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="AzILVqHZj-3Z" />
           </div>
           <BusinessCountryEditor
             initialCountryCode={business.countryCode}
@@ -243,21 +245,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-logo" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> Logo del Negocio
+            <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="TBHo5ixeBXEe" />
           </div>
           <LogoUploader currentLogoUrl={business.logoUrl} />
         </div>
 
         <div id="business-location" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <MapPin className="h-4 w-4 text-[#7C3AED]" /> Ubicación del Negocio
+            <MapPin className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="BU7iT1K1Hdbc" />
           </div>
           <BusinessLocationEditor initialAddress={business.address} initialMapsUrl={business.mapsUrl} />
         </div>
 
         <div id="business-locations" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <MapPin className="h-4 w-4 text-[#7C3AED]" /> Sucursales
+            <MapPin className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="n0PHfrlQk39K" />
           </div>
           <LocationsManager
             locations={locations.map((location) => ({ ...location, serviceIds: location.services.map((service) => service.serviceId) }))}
@@ -269,7 +271,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-hours" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Clock className="h-4 w-4 text-[#7C3AED]" /> Horario de Atención
+            <Clock className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="0oqN3_JG9XpQ" />
           </div>
           <BusinessHoursEditor
             initialHours={hours.map((h) => ({ dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart, breakEnd: h.breakEnd }))}
@@ -283,14 +285,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <CalendarRange className="h-4 w-4 text-[#7C3AED]" /> Horarios por Fecha (Excepciones)
+            <CalendarRange className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="1cGLUQ-u54FK" />
           </div>
           <ScheduleOverridesEditor locations={locations.filter((location) => location.isActive).map((location) => ({ id: location.id, name: location.name }))} />
         </div>
 
         <div id="business-slug" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Link2 className="h-4 w-4 text-[#7C3AED]" /> Slug del Negocio
+            <Link2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="eucIRMJoFPm0" />
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm">{business.slug}</div>
@@ -300,28 +302,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-api" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Key className="h-4 w-4 text-[#7C3AED]" /> API Key
-            <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]">Secreta</span>
+            <Key className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="IxidVfaXPyzl" />
+            <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]"><LocalizedText id="muJBmzNYAb4r" /></span>
           </div>
           <SecretField value={business.apiKey} label="API Key" />
         </div>
 
         <div id="business-embed" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Code2 className="h-4 w-4 text-[#7C3AED]" /> Código de Embebido
+            <Code2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="r6FidjgC5-92" />
           </div>
           <div className="flex items-start gap-3">
             <div className="flex-1 break-all rounded-xl border border-border bg-muted px-4 py-3 font-mono text-xs leading-relaxed">{iframeCode}</div>
             <CopyButton text={iframeCode} />
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Agrega <code className="text-foreground/60">?color=HEX</code> para personalizar colores.
+            <LocalizedText id="VYJmunMHtf6W" /> <code className="text-foreground/60">?color=HEX</code> <LocalizedText id="ppDW_x87C6_q" />
           </p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <RefreshCw className="h-4 w-4 text-[#7C3AED]" /> Politicas de Suscripciones
+            <RefreshCw className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="VUmrpDXFPPHt" />
           </div>
           <BusinessPoliciesEditor
             initialAllowRescheduling={business.allowRescheduling}
@@ -336,7 +338,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
-          <h3 className="mb-4 text-sm font-medium">Previsualización del Widget</h3>
+          <h3 className="mb-4 text-sm font-medium"><LocalizedText id="j9W53ydqvfcK" /></h3>
           <div className="overflow-hidden rounded-2xl border border-border">
             <iframe src={widgetUrl} width="100%" style={{ border: "none", height: "min(90vh, 700px)" }} />
           </div>

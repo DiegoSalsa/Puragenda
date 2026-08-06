@@ -9,7 +9,7 @@ vi.mock("@/server/email/resend", () => ({
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
-    business: { findUnique: vi.fn() },
+    business: { findUnique: vi.fn(), findFirst: vi.fn(async () => ({ locale: "es" })) },
   },
 }));
 

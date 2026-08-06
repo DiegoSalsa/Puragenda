@@ -17,6 +17,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, business }: NavbarProps = {}) {
+  const legacy = useTranslations("legacy");
   const t = useTranslations("navigation");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -54,7 +55,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           {/* Logo */}
           <div className="flex w-[8.5rem] shrink-0 items-center justify-start min-[1500px]:w-[9.75rem]">
             <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]">
-              <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-10 w-auto origin-left scale-[1.2] sm:h-12 min-[1500px]:h-14 min-[1500px]:scale-[1.35]" />
+              <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-10 w-auto origin-left scale-[1.2] sm:h-12 min-[1500px]:h-14 min-[1500px]:scale-[1.35]" />
             </Link>
           </div>
 
@@ -145,7 +146,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/50 p-6">
                 <div className="flex items-center gap-2.5">
-                  <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-10 sm:h-12 w-auto scale-[1.3] origin-left" />
+                  <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-10 sm:h-12 w-auto scale-[1.3] origin-left" />
                 </div>
                 <button aria-label={t("closeMenu")} onClick={() => setMobileOpen(false)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <X className="h-5 w-5" />

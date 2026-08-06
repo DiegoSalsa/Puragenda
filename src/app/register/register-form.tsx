@@ -18,6 +18,7 @@ export function RegisterForm({
   paymentSimulatorEnabled: boolean;
   initialCountryCode?: string;
 }) {
+  const legacy = useTranslations("legacy");
   const t = useTranslations("register");
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -304,7 +305,7 @@ export function RegisterForm({
           <input
             id="referralCode"
             type="text"
-            placeholder="Ej: PG-ABC123"
+            placeholder={legacy("y9N5m2QP3-PU")}
             value={referralCode}
             onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             maxLength={20}
@@ -321,7 +322,7 @@ export function RegisterForm({
             <input
               id="discountCode"
               type="text"
-              placeholder="Ej: LANZAMIENTO50"
+              placeholder={legacy("UnRX2tyHMgNp")}
               value={discountCode}
               onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
               maxLength={32}

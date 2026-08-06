@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { Copy, Loader2, Pause, Play, Plus, Tag } from "lucide-react";
@@ -31,6 +34,7 @@ function discountLabel(code: DiscountCode) {
 }
 
 export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
+  const legacy = useTranslations("legacy");
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -99,8 +103,8 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-black">Codigos de descuento</h1>
-        <p className="text-sm font-bold text-black/50">Cupones de plataforma para el primer cobro de Puragenda.</p>
+        <h1 className="text-3xl font-black uppercase tracking-tighter text-black"><LocalizedText id="E6DyZEMvc_8i" /></h1>
+        <p className="text-sm font-bold text-black/50"><LocalizedText id="O5SCZXqBtUzY" /></p>
       </div>
 
       <section className="grid gap-6 lg:grid-cols-[420px_1fr]">
@@ -110,35 +114,35 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
               <Tag className="h-5 w-5 text-black" />
             </div>
             <div>
-              <h2 className="text-lg font-black uppercase text-black">Nuevo codigo</h2>
-              <p className="text-xs font-bold text-black/50">Personaliza monto, uso y planes.</p>
+              <h2 className="text-lg font-black uppercase text-black"><LocalizedText id="zAmBiXjB84ad" /></h2>
+              <p className="text-xs font-bold text-black/50"><LocalizedText id="pPA6G9glBVD8" /></p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-black/60">Codigo</label>
+              <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="gN8dF3WUeal7" /></label>
               <input
                 value={form.code}
                 onChange={(e) => setForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
-                placeholder="LANZAMIENTO50"
+                placeholder={legacy("dzxB0qKo9SJg")}
                 className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 font-mono text-sm font-black uppercase outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-black uppercase tracking-widest text-black/60">Nombre interno</label>
+              <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="yK09DLjFU34E" /></label>
               <input
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Campana lanzamiento julio"
+                placeholder={legacy("hX3ppP4zUpy8")}
                 className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 text-sm font-bold outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-black/60">Tipo</label>
+                <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="OGjShD1ZJMGS" /></label>
                 <select
                   value={form.discountType}
                   onChange={(e) => setForm((p) => ({ ...p, discountType: e.target.value as "PERCENTAGE" | "FIXED" }))}
@@ -149,7 +153,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-black/60">Valor</label>
+                <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="svUwxGmRMRzT" /></label>
                 <input
                   type="number"
                   min={1}
@@ -163,18 +167,18 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-black/60">Max usos</label>
+                <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="a-dLheF8IR82" /></label>
                 <input
                   type="number"
                   min={1}
                   value={form.maxRedemptions}
                   onChange={(e) => setForm((p) => ({ ...p, maxRedemptions: e.target.value }))}
-                  placeholder="Sin limite"
+                  placeholder={legacy("rsI9phZeUoOW")}
                   className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 text-sm font-bold outline-none"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-black uppercase tracking-widest text-black/60">Expira</label>
+                <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="1ggYqXlJSrCV" /></label>
                 <input
                   type="date"
                   value={form.expiresAt}
@@ -185,7 +189,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-black/60">Planes</label>
+              <label className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="3w8McbDtpybS" /></label>
               <div className="flex flex-wrap gap-2">
                 {PLAN_OPTIONS.map((plan) => {
                   const selected = form.appliesToPlans.includes(plan);
@@ -215,25 +219,25 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
               className="flex w-full items-center justify-center gap-2 border-4 border-black bg-[#B28DFF] px-4 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none disabled:opacity-50"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Crear codigo
+              <LocalizedText id="9A0KrYqnKZ9Y" />
             </button>
           </div>
         </div>
 
         <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000]">
           <div className="border-b-4 border-black bg-[#FFF5BA] p-5">
-            <h2 className="text-lg font-black uppercase text-black">Codigos creados</h2>
-            <p className="text-xs font-bold text-black/50">{codes.length} en total</p>
+            <h2 className="text-lg font-black uppercase text-black"><LocalizedText id="b7u9gFsFHlPV" /></h2>
+            <p className="text-xs font-bold text-black/50">{codes.length} <LocalizedText id="TY6m0l48IUB6" /></p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black bg-black text-left text-xs font-black uppercase text-white">
-                  <th className="px-4 py-3">Codigo</th>
-                  <th className="px-4 py-3">Descuento</th>
-                  <th className="px-4 py-3">Uso</th>
-                  <th className="px-4 py-3">Planes</th>
-                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3"><LocalizedText id="gN8dF3WUeal7" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="uMuwsBwzAsIP" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="2okggh4jYAl4" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="3w8McbDtpybS" /></th>
+                  <th className="px-4 py-3"><LocalizedText id="mOWs3bbEaiSP" /></th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -241,7 +245,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                 {codes.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-sm font-black text-black/40">
-                      Aun no hay codigos creados.
+                      <LocalizedText id="V1-CrCu24Lhu" />
                     </td>
                   </tr>
                 ) : (
@@ -286,7 +290,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                         </span>
                         {code.expiresAt && (
                           <p className="mt-1 text-[10px] font-bold text-black/40">
-                            hasta {new Date(code.expiresAt).toLocaleDateString("es-CL")}
+                            <LocalizedText id="tRO7gX711Oys" /> {new Date(code.expiresAt).toLocaleDateString("es-CL")}
                           </p>
                         )}
                       </td>

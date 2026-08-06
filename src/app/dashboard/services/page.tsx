@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getServicesByBusinessId } from "@/server/services/service.service";
@@ -16,7 +18,7 @@ export default async function ServicesPage() {
   if (!user) {
     return (
       <div className="py-20 text-center text-muted-foreground">
-        Debes iniciar sesión para ver tus servicios
+        <LocalizedText id="-B5_BYLsijuy" />
       </div>
     );
   }
@@ -26,12 +28,12 @@ export default async function ServicesPage() {
   if (!business) {
     return (
       <div className="py-20 text-center text-muted-foreground">
-        No tienes un negocio configurado aún
+        <LocalizedText id="8rEGoq2nl-vn" />
       </div>
     );
   }
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar servicios.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="dudTX5IaHXL4" /></div>;
   }
 
   const [services, serviceCategories] = await Promise.all([

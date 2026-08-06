@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { format, parseISO, isPast } from "date-fns";
@@ -54,6 +57,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 export function PlanClient({ token }: { token: string }) {
+  const legacy = useTranslations("legacy");
   const [step, setStep] = useState<"identity" | "main">("identity");
   const [email, setEmail] = useState("");
   const [booking, setBooking] = useState<BookingData | null>(null);
@@ -70,13 +74,13 @@ export function PlanClient({ token }: { token: string }) {
     setError(null);
     try {
       const res = await fetch(`/api/mi-plan/${token}?email=${encodeURIComponent(email.trim())}`);
-      if (res.status === 403) { setError("El email ingresado no coincide con el de la suscripción"); return; }
-      if (res.status === 404) { setError("Link inválido o expirado"); return; }
-      if (!res.ok) { setError("Error al verificar"); return; }
+      if (res.status === 403) { setError(legacy("4gcWkB-hVkD7")); return; }
+      if (res.status === 404) { setError(legacy("-sSk3SB4d0u_")); return; }
+      if (!res.ok) { setError(legacy("Bwre6fku562O")); return; }
       const data = await res.json();
       setBooking(data);
       setStep("main");
-    } catch { setError("Error de conexión"); }
+    } catch { setError(legacy("vxSElhZC5gMs")); }
     finally { setLoading(false); }
   }
 
@@ -97,11 +101,11 @@ export function PlanClient({ token }: { token: string }) {
         body: JSON.stringify({ email, action, ...extra }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Error al ejecutar acción"); return; }
+      if (!res.ok) { setError(data.error || legacy("OcLMr9tZ1iIw")); return; }
       await refetchBooking();
       setConfirmCancel(false);
       setPauseDate("");
-    } catch { setError("Error de conexión"); }
+    } catch { setError(legacy("vxSElhZC5gMs")); }
     finally { setActionLoading(null); }
   }
 
@@ -111,15 +115,15 @@ export function PlanClient({ token }: { token: string }) {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Shield className="mx-auto h-12 w-12 text-[#7C3AED]" />
-          <h1 className="text-2xl font-bold">Gestionar mi plan</h1>
+          <h1 className="text-2xl font-bold"><LocalizedText id="S6uPHxSoViLS" /></h1>
           <p className="text-sm text-muted-foreground">
-            Ingresa el email con el que te suscribiste para verificar tu identidad.
+            <LocalizedText id="xOqObhuSqwca" />
           </p>
         </div>
 
         <form onSubmit={handleVerify} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Email</label>
+            <label className="text-sm font-medium text-muted-foreground"><LocalizedText id="lpzL089jAOzV" /></label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -146,12 +150,12 @@ export function PlanClient({ token }: { token: string }) {
             className="w-full rounded-xl bg-[#7C3AED] py-3 text-sm font-semibold text-white transition-all hover:bg-[#6D28D9] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            Verificar identidad
+            <LocalizedText id="FNM8K577Yprx" />
           </button>
         </form>
 
         <p className="text-center text-xs text-muted-foreground/50">
-          Powered by <span className="font-semibold text-[#7C3AED]">Puragenda</span>
+          <LocalizedText id="_cXS6UEMLYjl" /> <span className="font-semibold text-[#7C3AED]">Puragenda</span>
         </p>
       </div>
     );
@@ -185,26 +189,26 @@ export function PlanClient({ token }: { token: string }) {
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Cliente:</span>
+            <span className="text-muted-foreground"><LocalizedText id="B9xVnD10aTj_" /></span>
             <span className="font-medium">{booking.customerName}</span>
           </div>
           {booking.staff && (
             <div className="flex items-center gap-2">
               <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">Profesional:</span>
+              <span className="text-muted-foreground"><LocalizedText id="NHxI0zxNEBCQ" /></span>
               <span className="font-medium">{booking.staff.name}</span>
             </div>
           )}
           <div className="flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Período:</span>
+            <span className="text-muted-foreground"><LocalizedText id="CloqSO1Lkgxz" /></span>
             <span className="font-medium">
               {format(parseISO(booking.startDate), "d MMM", { locale: es })} — {format(parseISO(booking.endDate), "d MMM yyyy", { locale: es })}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Horario:</span>
+            <span className="text-muted-foreground"><LocalizedText id="qxOKhgCrvIYA" /></span>
             <span className="font-medium">
               {booking.selectedDays.map((d) => DAY_NAMES[d]).join(", ")}
             </span>
@@ -214,8 +218,8 @@ export function PlanClient({ token }: { token: string }) {
         {/* Progress */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Progreso</span>
-            <span className="font-medium">{completedCount} / {totalCount} sesiones</span>
+            <span className="text-muted-foreground"><LocalizedText id="HUqe6yFdIiHX" /></span>
+            <span className="font-medium">{completedCount} / {totalCount} <LocalizedText id="paAtLujKKryW" /></span>
           </div>
           <div className="h-2 rounded-full bg-muted">
             <div
@@ -230,9 +234,9 @@ export function PlanClient({ token }: { token: string }) {
           <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
             <Calendar className="h-5 w-5 shrink-0" style={{ color: pc }} />
             <div>
-              <p className="text-xs text-muted-foreground">Próxima sesión</p>
+              <p className="text-xs text-muted-foreground"><LocalizedText id="k8ZPKHZNNPr8" /></p>
               <p className="text-sm font-semibold capitalize">
-                {format(parseISO(nextSession.startTime), "EEEE d 'de' MMMM", { locale: es })}
+                {format(parseISO(nextSession.startTime), legacy("Bf2E3WGvETs7"), { locale: es })}
                 <span className="text-muted-foreground font-normal"> · {format(parseISO(nextSession.startTime), "HH:mm")} - {format(parseISO(nextSession.endTime), "HH:mm")}</span>
               </p>
             </div>
@@ -242,7 +246,7 @@ export function PlanClient({ token }: { token: string }) {
         {booking.pausedUntil && (
           <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-xs text-blue-400">
             <PauseCircle className="h-4 w-4 shrink-0" />
-            Pausado hasta {format(parseISO(booking.pausedUntil), "d 'de' MMMM yyyy", { locale: es })}
+            <LocalizedText id="1scwJfh8yBB-" /> {format(parseISO(booking.pausedUntil), legacy("idixX4nKJAog"), { locale: es })}
           </div>
         )}
       </div>
@@ -250,7 +254,7 @@ export function PlanClient({ token }: { token: string }) {
       {/* Actions */}
       {(booking.status === "ACTIVE" || booking.status === "PAUSED") && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <h2 className="text-sm font-semibold">Acciones</h2>
+          <h2 className="text-sm font-semibold"><LocalizedText id="-4mjC6f2TRhu" /></h2>
 
           {error && (
             <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs text-red-400">
@@ -276,7 +280,7 @@ export function PlanClient({ token }: { token: string }) {
                   className="w-full flex items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 py-2.5 text-sm font-medium text-blue-400 transition-all hover:bg-blue-500/20 disabled:opacity-50"
                 >
                   {actionLoading === "pause" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PauseCircle className="h-4 w-4" />}
-                  Pausar plan
+                  <LocalizedText id="yOkmUxntUR0n" />
                 </button>
               </div>
             </>
@@ -289,7 +293,7 @@ export function PlanClient({ token }: { token: string }) {
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 py-2.5 text-sm font-medium text-emerald-400 transition-all hover:bg-emerald-500/20 disabled:opacity-50"
             >
               {actionLoading === "resume" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
-              Reanudar plan
+              <LocalizedText id="1ZsuxVkFaPE1" />
             </button>
           )}
 
@@ -300,17 +304,17 @@ export function PlanClient({ token }: { token: string }) {
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 py-2.5 text-sm font-medium text-red-400 transition-all hover:bg-red-500/10"
             >
               <XCircle className="h-4 w-4" />
-              Cancelar todo el plan
+              <LocalizedText id="Zbnxlm76ycNV" />
             </button>
           ) : (
             <div className="space-y-2 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-              <p className="text-xs text-red-400 font-medium">¿Estás seguro? Esta acción cancela todas las sesiones futuras y no se puede deshacer.</p>
+              <p className="text-xs text-red-400 font-medium"><LocalizedText id="vAycN3CGlwiV" /></p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
                   className="rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
-                  No, volver
+                  <LocalizedText id="nq0c76Z0qwuQ" />
                 </button>
                 <button
                   onClick={() => handleAction("cancel")}
@@ -318,7 +322,7 @@ export function PlanClient({ token }: { token: string }) {
                   className="rounded-xl bg-red-500 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   {actionLoading === "cancel" ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
-                  Sí, cancelar
+                  <LocalizedText id="0lOtUZKpxSgA" />
                 </button>
               </div>
             </div>
@@ -328,7 +332,7 @@ export function PlanClient({ token }: { token: string }) {
 
       {/* Sessions list */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold">Sesiones ({totalCount})</h2>
+        <h2 className="text-sm font-semibold"><LocalizedText id="03aozig9yeUr" />{totalCount})</h2>
         <div className="max-h-[320px] overflow-y-auto space-y-1.5 pr-1">
           {booking.appointments.map((apt) => {
             const past = isPast(parseISO(apt.startTime));
@@ -354,7 +358,7 @@ export function PlanClient({ token }: { token: string }) {
                   past ? "bg-muted text-muted-foreground" :
                   "bg-[#7C3AED]/10 text-[#A78BFA]"
                 }`}>
-                  {cancelled ? "Cancelada" : apt.status === "COMPLETED" || apt.status === "CHECKED_IN" ? "Realizada" : past ? "Pasada" : "Próxima"}
+                  {cancelled ? "Cancelada" : apt.status === "COMPLETED" || apt.status === "CHECKED_IN" ? "Realizada" : past ? "Pasada" : legacy("L-lmr9f53UbM")}
                 </span>
               </div>
             );
@@ -365,7 +369,7 @@ export function PlanClient({ token }: { token: string }) {
       {/* Overrides history */}
       {booking.sessionOverrides.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <h2 className="text-sm font-semibold">Historial de cambios</h2>
+          <h2 className="text-sm font-semibold"><LocalizedText id="3xRV0q2OT6pr" /></h2>
           <div className="space-y-2">
             {booking.sessionOverrides.map((ov) => (
               <div key={ov.id} className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
@@ -379,8 +383,8 @@ export function PlanClient({ token }: { token: string }) {
                     {ov.action === "CANCELLED" ? "Cancelada" : "Hora cambiada"}
                   </span>
                 </div>
-                {ov.reason && <p className="text-muted-foreground">Motivo: {ov.reason}</p>}
-                {ov.newTime && <p className="text-muted-foreground">Nueva hora: {ov.newTime}</p>}
+                {ov.reason && <p className="text-muted-foreground"><LocalizedText id="H2ozp5ekzMcc" /> {ov.reason}</p>}
+                {ov.newTime && <p className="text-muted-foreground"><LocalizedText id="93xQpK2XC2yY" /> {ov.newTime}</p>}
               </div>
             ))}
           </div>
@@ -388,7 +392,7 @@ export function PlanClient({ token }: { token: string }) {
       )}
 
       <p className="text-center text-xs text-muted-foreground/50">
-        Powered by <span className="font-semibold" style={{ color: pc }}>Puragenda</span>
+        <LocalizedText id="_cXS6UEMLYjl" /> <span className="font-semibold" style={{ color: pc }}>Puragenda</span>
       </p>
     </div>
   );

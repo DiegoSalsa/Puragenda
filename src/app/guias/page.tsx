@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock3 } from "lucide-react";
@@ -48,13 +50,13 @@ export default async function GuidesPage() {
         <header className="mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 border-2 border-black bg-[#85E3FF] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
             <BookOpen className="h-4 w-4" />
-            Biblioteca práctica
+            <LocalizedText id="LUeR3_CU1l8s" />
           </div>
           <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-7xl">
-            Decisiones mejores para tu agenda
+            <LocalizedText id="U5gbA7C93cOu" />
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-bold opacity-75">
-            Explicaciones concretas para organizar reservas, encargos, abonos y capacidad sin depender de promesas de marketing.
+            <LocalizedText id="iZw_89OGupgq" />
           </p>
         </header>
 
@@ -72,13 +74,13 @@ export default async function GuidesPage() {
               <div className="mt-8 flex items-center justify-between gap-4">
                 <span className="flex items-center gap-2 text-xs font-black uppercase">
                   <Clock3 className="h-4 w-4" />
-                  {guide.readingMinutes} min
+                  {guide.readingMinutes} <LocalizedText id="H2-m9p0YXmCG" />
                 </span>
                 <Link
                   href={`/guias/${guide.slug}`}
                   className="inline-flex items-center gap-2 rounded-xl border-2 border-black bg-white px-4 py-2 text-sm font-black uppercase shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5"
                 >
-                  Leer guía <ArrowRight className="h-4 w-4" />
+                  <LocalizedText id="JpF7xFX9W7cW" /> <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </article>
@@ -86,15 +88,15 @@ export default async function GuidesPage() {
         </section>
 
         <section className="mx-auto mt-20 max-w-4xl border-t-4 border-black pt-12 text-center dark:border-white">
-          <h2 className="text-3xl font-black uppercase">¿Necesitas evaluar tu caso?</h2>
+          <h2 className="text-3xl font-black uppercase"><LocalizedText id="1gktyGn4SBwd" /></h2>
           <p className="mx-auto mt-4 max-w-2xl font-bold opacity-75">
-            Cuéntanos cómo vendes tiempo o capacidad y revisamos si una agenda de citas, encargos o una combinación representa mejor tu operación.
+            <LocalizedText id="U1NR2bZMBG5E" />
           </p>
           <Link
             href="/contacto"
             className="mt-8 inline-flex items-center gap-2 border-4 border-black bg-[#7C3AED] px-7 py-4 font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white"
           >
-            Conversar con el equipo <ArrowRight className="h-5 w-5" />
+            <LocalizedText id="vMuWeVfzosRe" /> <ArrowRight className="h-5 w-5" />
           </Link>
         </section>
       </main>

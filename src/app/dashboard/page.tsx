@@ -14,15 +14,17 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { DASHBOARD_PERMISSIONS, type DashboardPermission } from "@/core/permissions";
 import { redirect } from "next/navigation";
 import { getCountryConfig } from "@/core/countries";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string; location?: string }> }) {
+  const t = await getTranslations("dashboard.home");
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion para acceder al dashboard</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">{t("authRequired")}</div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">{t("businessRequired")}</div>;
   const businessLocale = getCountryConfig(business.countryCode).locale;
 
   const permissions = await getEffectiveBusinessPermissions(user, business);
@@ -48,7 +50,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     const firstAllowedRoute = landingRoutes.find(([permission]) => permissions.includes(permission))?.[1];
 
     if (firstAllowedRoute) redirect(firstAllowedRoute);
-    return <div className="py-20 text-center text-muted-foreground">Tu cuenta no tiene funcionalidades asignadas. Solicita acceso al administrador del negocio.</div>;
+    return <div className="py-20 text-center text-muted-foreground">{t("noFeatures")}</div>;
   }
 
   const agendaScope = await getStaffAgendaScope(user, business);
@@ -171,7 +173,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     serviceId: appointment.serviceId,
     serviceName: appointment.service.name,
     staffId: appointment.staffId,
-    staffName: appointment.staff?.name || "Sin asignar",
+    staffName: appointment.staff?.name || t("unassigned"),
     selectedOptions: (appointment.selectedOptions as { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[] | null) ?? [],
     recurringBookingId: appointment.recurringBookingId ?? null,
     clientNotes: appointment.client?.privateNotes ?? null,
@@ -207,10 +209,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Citas</h1>
-          <p className="mt-1 text-muted-foreground">
-            Calendario de reservas para <span className="font-medium text-[#7C3AED]">{business.name}</span>
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("subtitle", { business: business.name })}</p>
         </div>
         <div className="flex flex-col items-stretch gap-3 sm:items-end">
           <CopyWidgetLink slug={business.slug} />
@@ -225,7 +225,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 }`}
               >
                 <Building2 className="h-4 w-4" />
-                Todo el negocio
+                {t("wholeBusiness")}
               </Link>
               <Link
                 href={dashboardHref("mine")}
@@ -236,7 +236,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 }`}
               >
                 <UserRound className="h-4 w-4" />
-                Mi agenda
+                {t("mySchedule")}
               </Link>
             </div>
           )}
@@ -300,8 +300,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         steps={[
           {
             popover: {
-              title: "CALENDARIO DE CITAS",
-              description: "Aqui veras todas las reservas en tiempo real. Puedes cambiar a vista de semana o dia y revisar el detalle de cada cita.",
+              title: t("tutorialTitle"),
+              description: t("tutorialDescription"),
             },
           },
         ]}

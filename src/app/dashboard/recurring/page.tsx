@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
@@ -11,12 +13,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RecurringPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion para acceder al dashboard</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="sHS_BPq6bc__" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="cAo2JMIpl23f" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.RECURRING_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar suscripciones.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="S6rXjhnbI8lA" /></div>;
   }
   const country = getCountryConfig(business.countryCode);
 
@@ -88,9 +90,9 @@ export default async function RecurringPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Suscripciones recurrentes</h1>
+        <h1 className="text-2xl font-bold tracking-tight"><LocalizedText id="LJaEyV9lV-lK" /></h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gestiona los planes de reserva fija de tus clientes · {bookings.length} total
+          <LocalizedText id="VDiwdIEBIKRi" /> {bookings.length} <LocalizedText id="ESOYctF4cprM" />
         </p>
       </div>
       <RecurringClient

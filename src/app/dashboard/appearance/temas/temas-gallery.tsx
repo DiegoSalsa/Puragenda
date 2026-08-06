@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -186,6 +189,7 @@ function isActive(current: PresetColors, preset: PresetColors) {
 }
 
 function MiniPreview({ preset }: { preset: ThemeCard }) {
+  const legacy = useTranslations("legacy");
   return (
     <div
       className="relative h-40 w-full overflow-hidden rounded-xl"
@@ -201,7 +205,7 @@ function MiniPreview({ preset }: { preset: ThemeCard }) {
           className="flex h-7 items-center rounded-lg px-3 text-[10px] font-bold text-white shadow-sm"
           style={{ backgroundColor: preset.primaryColor }}
         >
-          Reservar
+          <LocalizedText id="8URcXhRpqHKE" />
         </div>
       </div>
 
@@ -224,7 +228,7 @@ function MiniPreview({ preset }: { preset: ThemeCard }) {
 
       {/* Service cards */}
       <div className="space-y-1.5 px-4">
-        {["Corte + Barba", "Corte Clásico"].map((svc, i) => (
+        {["Corte + Barba", legacy("H1uNoa7gITz_")].map((svc, i) => (
           <div
             key={svc}
             className="flex items-center justify-between rounded-lg px-3 py-2"
@@ -274,6 +278,7 @@ export function TemasGallery({
     cornerRadius: number; shadowStyle: string; headerAlign: string; logoUrl: string | null;
   }[];
 }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("Todos");
@@ -402,14 +407,14 @@ export function TemasGallery({
     <div className="space-y-5">
       {/* Search + Filters */}
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4" data-tour="theme-filters">
-        <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4 text-[#7C3AED]" /> Filtros avanzados</div>
+        <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="e25ZDmqlUpM7" /></div>
         {/* Search + sort row */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar por nombre, estilo o categoría..."
+              placeholder={legacy("NWyza6OKEIk3")}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-9 text-sm outline-none transition-colors focus:border-[#7C3AED]/40"
@@ -457,14 +462,14 @@ export function TemasGallery({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-xs font-medium text-muted-foreground">Origen</span>
-          {([["todos", "Todos"], ["catalogo", "Catálogo"], ["mios", `Mis temas (${savedThemes.length})`]] as const).map(([value, label]) => (
+          <span className="mr-1 text-xs font-medium text-muted-foreground"><LocalizedText id="FnqUDGJ4inrs" /></span>
+          {([["todos", "Todos"], ["catalogo", legacy("3Hq6vETMljUH")], ["mios", `Mis temas (${savedThemes.length})`]] as const).map(([value, label]) => (
             <button key={value} onClick={() => { setOrigin(value); setPage(1); }} className={`rounded-full border px-3 py-1.5 text-xs font-medium ${origin === value ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black" : "border-border text-muted-foreground hover:text-foreground"}`}>{label}</button>
           ))}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-xs font-medium text-muted-foreground">Color</span>
+          <span className="mr-1 text-xs font-medium text-muted-foreground"><LocalizedText id="a3MZGgpLZ0IO" /></span>
           {["Todos", "Violeta", "Azul", "Verde", "Rojo", "Naranja", "Neutro"].map((family) => (
             <button key={family} onClick={() => { setColorFamily(family); setPage(1); }} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${colorFamily === family ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>
               {family !== "Todos" && <span className={`h-2.5 w-2.5 rounded-full ${family === "Violeta" ? "bg-violet-500" : family === "Azul" ? "bg-sky-500" : family === "Verde" ? "bg-emerald-500" : family === "Rojo" ? "bg-red-500" : family === "Naranja" ? "bg-orange-500" : "bg-zinc-500"}`} />}
@@ -476,15 +481,15 @@ export function TemasGallery({
         {/* Result count + clear all */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{sorted.length}</span> tema{sorted.length !== 1 ? "s" : ""}
-            {search && <> para <span className="font-medium text-foreground">&quot;{search}&quot;</span></>}
+            <span className="font-semibold text-foreground">{sorted.length}</span> <LocalizedText id="fASFNh3jAgXM" />{sorted.length !== 1 ? "s" : ""}
+            {search && <> <LocalizedText id="oUU_OA-p8aCO" /> <span className="font-medium text-foreground"><LocalizedText id="SXVYIwAnGSDR" />{search}<LocalizedText id="SXVYIwAnGSDR" /></span></>}
           </p>
           {(search || category !== "Todos" || origin !== "todos" || colorFamily !== "Todos") && (
             <button
               onClick={() => { setSearch(""); setCategory("Todos"); setOrigin("todos"); setColorFamily("Todos"); setSortBy("defecto"); setPage(1); }}
               className="flex items-center gap-1 text-xs text-[#7C3AED] hover:underline"
             >
-              <X className="h-3 w-3" /> Limpiar filtros
+              <X className="h-3 w-3" /> <LocalizedText id="v8LRYjWGjnzE" />
             </button>
           )}
         </div>
@@ -513,12 +518,12 @@ export function TemasGallery({
                     className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100"
                   >
                     <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm border border-white/20">
-                      <Eye className="h-4 w-4" /> Vista previa
+                      <Eye className="h-4 w-4" /> <LocalizedText id="xTQfGY_C9PhH" />
                     </div>
                   </button>
                   {active && (
                     <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-green-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
-                      <Check className="h-2.5 w-2.5" /> Activo
+                      <Check className="h-2.5 w-2.5" /> <LocalizedText id="cjhYFEvVSC1K" />
                     </div>
                   )}
                 </div>
@@ -529,7 +534,7 @@ export function TemasGallery({
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">{preset.name}</span>
                       <div className="flex items-center gap-1.5">
-                        {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]">Mío</span>}
+                        {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]"><LocalizedText id="ZUHHL4fw4nHf" /></span>}
                         <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{preset.category}</span>
                       </div>
                     </div>
@@ -538,8 +543,8 @@ export function TemasGallery({
 
                   {preset.customId && (
                     <div className="grid grid-cols-2 gap-2">
-                      <button disabled={mutating === preset.customId} onClick={() => handleDuplicate(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground"><Copy className="h-3.5 w-3.5" /> Duplicar</button>
-                      <button disabled={mutating === preset.customId} onClick={() => handleDelete(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /> Eliminar</button>
+                      <button disabled={mutating === preset.customId} onClick={() => handleDuplicate(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground"><Copy className="h-3.5 w-3.5" /> <LocalizedText id="iPdyh8vbqCdl" /></button>
+                      <button disabled={mutating === preset.customId} onClick={() => handleDelete(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /> <LocalizedText id="yYlM8AL5C9C-" /></button>
                     </div>
                   )}
 
@@ -566,7 +571,7 @@ export function TemasGallery({
                     }`}
                   >
                     {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : active ? <Check className="h-4 w-4" /> : null}
-                    {isApplying ? "Aplicando…" : active ? "Tema activo" : "Aplicar tema"}
+                    {isApplying ? "Aplicando…" : active ? legacy("Z7e1oLdDlIS-") : "Aplicar tema"}
                   </button>
                 </div>
               </div>
@@ -576,7 +581,7 @@ export function TemasGallery({
       ) : (
         <div className="py-20 text-center text-muted-foreground">
           <Search className="mx-auto h-8 w-8 opacity-30 mb-3" />
-          <p className="text-sm">No se encontraron temas para &quot;{search}&quot; en esta categoría.</p>
+          <p className="text-sm"><LocalizedText id="uOjZlZEaPJAY" />{search}<LocalizedText id="vTvxY0npSOrG" /></p>
         </div>
       )}
 
@@ -588,7 +593,7 @@ export function TemasGallery({
             disabled={page === 1}
             className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 flex items-center gap-1.5"
           >
-            <ChevronLeft className="h-4 w-4" /> Anterior
+            <ChevronLeft className="h-4 w-4" /> <LocalizedText id="5M58CdUeO4gx" />
           </button>
           <span className="text-sm text-muted-foreground">{page} / {totalPages}</span>
           <button
@@ -596,7 +601,7 @@ export function TemasGallery({
             disabled={page === totalPages}
             className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 flex items-center gap-1.5"
           >
-            Siguiente <ChevronRight className="h-4 w-4" />
+            <LocalizedText id="SWg7ccas9SJB" /> <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -622,7 +627,7 @@ export function TemasGallery({
                   className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5B21B6] disabled:opacity-60 transition-colors"
                 >
                   {applying === previewing.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {applying === previewing.id ? "Aplicando…" : isActive(currentColors, previewing) ? "✓ Activo" : "Aplicar tema"}
+                  {applying === previewing.id ? "Aplicando…" : isActive(currentColors, previewing) ? legacy("VCkfu3qZ20FS") : "Aplicar tema"}
                 </button>
                 <button
                   onClick={() => setPreviewing(null)}

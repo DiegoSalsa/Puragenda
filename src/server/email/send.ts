@@ -32,6 +32,9 @@ import {
   withClientPortalAccess,
   type EmailTemplate,
 } from "./templates";
+import type { AppLocale } from "@/i18n/config";
+import { isSupportedLocale, resolveLocale } from "@/i18n/config";
+import { localizeEmailTemplate } from "./localization";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
 import {
@@ -61,7 +64,46 @@ interface AppointmentWithRelations {
     owner?: { email: string; name: string } | null;
     address?: string | null;
     mapsUrl?: string | null;
+    locale?: string;
   };
+}
+
+interface EmailLocaleLookup {
+  locale?: string | null;
+  businessId?: string | null;
+  businessName?: string | null;
+  customerEmail?: string | null;
+  ownerEmail?: string | null;
+  staffEmail?: string | null;
+  email?: string | null;
+}
+
+async function resolveEmailLocale(lookup: EmailLocaleLookup): Promise<AppLocale> {
+  if (isSupportedLocale(lookup.locale)) return lookup.locale;
+  const email = lookup.customerEmail || lookup.ownerEmail || lookup.staffEmail || lookup.email;
+  const or = [
+    lookup.businessId ? { id: lookup.businessId } : null,
+    lookup.ownerEmail ? { owner: { email: { equals: lookup.ownerEmail, mode: "insensitive" as const } } } : null,
+    lookup.staffEmail ? { staff: { some: { email: { equals: lookup.staffEmail, mode: "insensitive" as const } } } } : null,
+    email && lookup.businessName ? {
+      name: lookup.businessName,
+      clients: { some: { email: { equals: email, mode: "insensitive" as const } } },
+    } : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  if (or.length > 0) {
+    const business = await prisma.business.findFirst({
+      where: { OR: or },
+      orderBy: { updatedAt: "desc" },
+      select: { locale: true },
+    });
+    if (business) return resolveLocale(business.locale);
+  }
+  return "es";
+}
+
+async function localized(template: EmailTemplate, lookup: EmailLocaleLookup): Promise<EmailTemplate> {
+  return localizeEmailTemplate(template, await resolveEmailLocale(lookup));
 }
 
 async function deliverEmail(
@@ -126,7 +168,9 @@ async function buildCustomerAppointmentActionUrls(appointment: AppointmentWithRe
  * Errors are logged but never thrown — email failures should not block booking flow.
  */
 export async function sendBookingNotifications(appointment: AppointmentWithRelations) {
+  const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
   const data = {
+    locale,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
@@ -145,7 +189,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
 
   // 1. Email to business owner
   if (appointment.business.owner?.email) {
-    const { subject, html } = newBookingOwnerEmail(data);
+    const { subject, html } = localizeEmailTemplate(newBookingOwnerEmail(data), locale);
     tasks.push(
       deliverEmail(`new booking to owner ${appointment.business.owner.email}`, {
         from: EMAIL_FROM,
@@ -158,7 +202,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
 
   // 2. Email to staff
   if (appointment.staff?.email) {
-    const { subject, html } = newBookingStaffEmail(data);
+    const { subject, html } = localizeEmailTemplate(newBookingStaffEmail(data), locale);
     tasks.push(
       deliverEmail(`new booking to staff ${appointment.staff.email}`, {
         from: EMAIL_FROM,
@@ -173,10 +217,11 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
 
   // 3. Email to customer
   {
-    const { subject, html } = await addClientPortalLinkToEmail(
+    const template = await addClientPortalLinkToEmail(
       appointment.customerEmail,
       newBookingClientEmail(data),
     );
+    const { subject, html } = localizeEmailTemplate(template, locale);
     tasks.push(
       deliverEmail(`new booking to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
@@ -207,8 +252,10 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
  * Errors are logged but never thrown.
  */
 export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations) {
+  const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
   const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
   const data = {
+    locale,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
@@ -228,7 +275,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
 
   // 1. Email to business owner — notify about the new confirmed + paid booking
   if (appointment.business.owner?.email) {
-    const { subject, html } = newBookingOwnerEmail(data);
+    const { subject, html } = localizeEmailTemplate(newBookingOwnerEmail(data), locale);
     tasks.push(
       deliverEmail(`deposit confirmed to owner ${appointment.business.owner.email}`, {
         from: EMAIL_FROM,
@@ -241,7 +288,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
 
   // 2. Email to staff
   if (appointment.staff?.email) {
-    const { subject, html } = newBookingStaffEmail(data);
+    const { subject, html } = localizeEmailTemplate(newBookingStaffEmail(data), locale);
     tasks.push(
       deliverEmail(`deposit confirmed to staff ${appointment.staff.email}`, {
         from: EMAIL_FROM,
@@ -256,10 +303,11 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
 
   // 3. Email to customer — use CONFIRMED template (they paid, so it's confirmed immediately)
   {
-    const { subject, html } = await addClientPortalLinkToEmail(
+    const template = await addClientPortalLinkToEmail(
       appointment.customerEmail,
       confirmedBookingClientEmail(data),
     );
+    const { subject, html } = localizeEmailTemplate(template, locale);
     tasks.push(
       deliverEmail(`deposit confirmed to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
@@ -278,9 +326,11 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
  * Send confirmation email to the customer when appointment status changes to CONFIRMED.
  */
 export async function sendConfirmationEmail(appointment: AppointmentWithRelations) {
+  const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
   const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
 
   const data = {
+    locale,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
@@ -295,10 +345,11 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     ...actionUrls,
   };
 
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const template = await addClientPortalLinkToEmail(
     appointment.customerEmail,
     confirmedBookingClientEmail(data),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
 
   await deliverEmail(`confirmation to client ${appointment.customerEmail}`, {
     from: EMAIL_FROM,
@@ -316,7 +367,9 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
  * Send cancellation email to the customer when appointment status changes to CANCELLED.
  */
 export async function sendCancellationEmail(appointment: AppointmentWithRelations) {
+  const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
   const data = {
+    locale,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
@@ -330,10 +383,11 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
     businessMapsUrl: appointment.business.mapsUrl,
   };
 
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const template = await addClientPortalLinkToEmail(
     appointment.customerEmail,
     cancellationClientEmail(data),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
 
   await deliverEmail(`cancellation to client ${appointment.customerEmail}`, {
     from: EMAIL_FROM,
@@ -350,8 +404,8 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
 /**
  * Send welcome email to owner after registration.
  */
-export async function sendWelcomeEmail(ownerEmail: string, ownerName: string, businessName: string) {
-  const { subject, html } = welcomeEmail({ ownerName, businessName });
+export async function sendWelcomeEmail(ownerEmail: string, ownerName: string, businessName: string, locale: AppLocale = "es") {
+  const { subject, html } = localizeEmailTemplate(welcomeEmail({ ownerName, businessName }), locale);
 
   try {
     await resend.emails.send({
@@ -377,9 +431,13 @@ export async function sendStaffInviteEmail(
   staffEmail: string,
   staffName: string,
   businessName: string,
-  tempPassword: string
+  tempPassword: string,
+  locale?: AppLocale,
 ) {
-  const { subject, html } = staffInviteEmail({ staffName, businessName, email: staffEmail, tempPassword });
+  const { subject, html } = await localized(
+    staffInviteEmail({ staffName, businessName, email: staffEmail, tempPassword }),
+    { locale, staffEmail, businessName },
+  );
 
   try {
     await resend.emails.send({
@@ -404,7 +462,7 @@ export async function sendStaffInviteEmail(
 export async function sendForgotPasswordEmail(email: string, token: string) {
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const resetLink = `${appUrl}/auth/new-password?token=${token}`;
-  const { subject, html } = forgotPasswordEmail({ resetLink });
+  const { subject, html } = await localized(forgotPasswordEmail({ resetLink }), { email });
 
   try {
     await resend.emails.send({
@@ -432,7 +490,10 @@ export async function sendClientPortalAccessEmail(
   portalUrl: string,
   expiresInMinutes: number,
 ) {
-  const { subject, html } = clientPortalAccessEmail({ portalUrl, expiresInMinutes });
+  const { subject, html } = await localized(
+    clientPortalAccessEmail({ portalUrl, expiresInMinutes }),
+    { customerEmail: email },
+  );
   return deliverEmail("client portal access link", {
     from: EMAIL_FROM,
     to: email,
@@ -498,18 +559,20 @@ export async function sendLoyaltyStampEmail(data: {
   rewardName: string;
   businessName: string;
   clientId: string;
+  locale?: AppLocale;
 }) {
+  const locale = await resolveEmailLocale({ locale: data.locale, businessName: data.businessName, customerEmail: data.clientEmail });
   const portalUrl = await createClientPortalEmailUrl(data.clientEmail)
     ?? `${getClientPortalAppUrl()}/mi-agenda`;
 
-  const { subject, html } = loyaltyStampEarnedEmail({
+  const { subject, html } = localizeEmailTemplate(loyaltyStampEarnedEmail({
     clientName: data.clientName,
     currentStamps: data.currentStamps,
     stampsRequired: data.stampsRequired,
     rewardName: data.rewardName,
     businessName: data.businessName,
     portalUrl,
-  });
+  }), locale);
 
   try {
     await resend.emails.send({
@@ -537,11 +600,13 @@ export async function sendLoyaltyRewardEmail(data: {
   discountValue: number;
   businessName: string;
   clientId: string;
+  locale?: AppLocale;
 }) {
+  const locale = await resolveEmailLocale({ locale: data.locale, businessName: data.businessName, customerEmail: data.clientEmail });
   const portalUrl = await createClientPortalEmailUrl(data.clientEmail)
     ?? `${getClientPortalAppUrl()}/mi-agenda`;
 
-  const { subject, html } = loyaltyRewardWonEmail({
+  const { subject, html } = localizeEmailTemplate(loyaltyRewardWonEmail({
     clientName: data.clientName,
     stampsRequired: data.stampsRequired,
     rewardName: data.rewardName,
@@ -550,7 +615,7 @@ export async function sendLoyaltyRewardEmail(data: {
     discountValue: data.discountValue,
     businessName: data.businessName,
     portalUrl,
-  });
+  }), locale);
 
   try {
     await resend.emails.send({
@@ -578,8 +643,9 @@ export async function sendTrialExpiringEmail(data: {
   businessName: string;
   plan: string;
   daysLeft: number;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = trialExpiringEmail(data);
+  const { subject, html } = await localized(trialExpiringEmail(data), { locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
 
   try {
     await resend.emails.send({
@@ -602,8 +668,9 @@ export async function sendTrialExpiredEmail(data: {
   ownerName: string;
   businessName: string;
   plan: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = trialExpiredEmail(data);
+  const { subject, html } = await localized(trialExpiredEmail(data), { locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
 
   try {
     await resend.emails.send({
@@ -633,8 +700,10 @@ export async function sendSubscriptionPaymentFailedEmail(data: {
   nextPaymentAttemptAt?: Date | null;
   amount?: number | null;
   finalWarning?: boolean;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = subscriptionPaymentFailedEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(subscriptionPaymentFailedEmail({ ...data, locale }), locale);
   return deliverEmail(`subscription payment warning to ${data.ownerEmail}`, {
     from: EMAIL_FROM,
     to: data.ownerEmail,
@@ -648,8 +717,10 @@ export async function sendSubscriptionPaymentRecoveredEmail(data: {
   ownerName?: string | null;
   businessName: string;
   periodEnd: Date;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = subscriptionPaymentRecoveredEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(subscriptionPaymentRecoveredEmail({ ...data, locale }), locale);
   return deliverEmail(`subscription payment recovered to ${data.ownerEmail}`, {
     from: EMAIL_FROM,
     to: data.ownerEmail,
@@ -668,8 +739,10 @@ export async function sendAppointmentActionNotification(data: {
   businessName: string;
   timezone?: string;
   ownerEmail: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = appointmentActionOwnerEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(appointmentActionOwnerEmail({ ...data, locale }), locale);
 
   await deliverEmail(`appointment ${data.action} to owner ${data.ownerEmail}`, {
     from: EMAIL_FROM,
@@ -686,7 +759,7 @@ export async function sendAdminLoginCodeEmail(
   code: string,
   expiresInMinutes: number
 ) {
-  const { subject, html } = adminLoginCodeEmail({ name, code, expiresInMinutes });
+  const { subject, html } = await localized(adminLoginCodeEmail({ name, code, expiresInMinutes }), { email });
   const result = await resend.emails.send({
     from: EMAIL_FROM,
     to: email,
@@ -711,8 +784,10 @@ export async function sendAppointmentActionStaffNotification(data: {
   endTime: Date;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = appointmentActionStaffEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, staffEmail: data.staffEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(appointmentActionStaffEmail({ ...data, locale }), locale);
 
   await deliverEmail(`appointment ${data.action} to staff ${data.staffEmail}`, {
     from: EMAIL_FROM,
@@ -739,11 +814,14 @@ export async function sendRecurringBookingCreatedClient(data: {
   managementToken: string;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
-    recurringBookingCreatedClientEmail(data),
+    recurringBookingCreatedClientEmail({ ...data, locale }),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring created sent to ${data.customerEmail}`);
@@ -768,8 +846,10 @@ export async function sendRecurringBookingPendingApprovalBusiness(data: {
   healthFreeText?: string;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = recurringBookingPendingApprovalBusinessEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(recurringBookingPendingApprovalBusinessEmail({ ...data, locale }), locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
     console.log(`[Email] Recurring pending approval sent to ${data.ownerEmail}`);
@@ -787,11 +867,14 @@ export async function sendRecurringBookingApprovedClient(data: {
   managementToken: string;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
-    recurringBookingApprovedClientEmail(data),
+    recurringBookingApprovedClientEmail({ ...data, locale }),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring approved sent to ${data.customerEmail}`);
@@ -806,11 +889,14 @@ export async function sendRecurringBookingRejectedClient(data: {
   serviceName: string;
   reason: string;
   businessName: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
     recurringBookingRejectedClientEmail(data),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring rejected sent to ${data.customerEmail}`);
@@ -824,11 +910,14 @@ export async function sendRecurringBookingCancelledClient(data: {
   customerName: string;
   serviceName: string;
   businessName: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
     recurringBookingCancelledClientEmail(data),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring cancelled sent to ${data.customerEmail}`);
@@ -844,11 +933,14 @@ export async function sendRecurringSessionCancelledClient(data: {
   sessionDate: Date;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
-    recurringSessionCancelledClientEmail(data),
+    recurringSessionCancelledClientEmail({ ...data, locale }),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring session cancelled sent to ${data.customerEmail}`);
@@ -867,11 +959,14 @@ export async function sendRecurringExpiringClient(data: {
   managementToken: string;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
-    recurringExpiringClientEmail(data),
+    recurringExpiringClientEmail({ ...data, locale }),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring expiring sent to ${data.customerEmail}`);
@@ -888,8 +983,10 @@ export async function sendRecurringExpiringBusiness(data: {
   daysLeft: number;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = recurringExpiringBusinessEmail(data);
+  const locale = await resolveEmailLocale({ locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
+  const { subject, html } = localizeEmailTemplate(recurringExpiringBusinessEmail({ ...data, locale }), locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
     console.log(`[Email] Recurring expiring business sent to ${data.ownerEmail}`);
@@ -905,11 +1002,14 @@ export async function sendRecurringConflictWarningClient(data: {
   originalDate: Date;
   businessName: string;
   timezone?: string;
+  locale?: AppLocale;
 }) {
-  const { subject, html } = await addClientPortalLinkToEmail(
+  const locale = await resolveEmailLocale({ locale: data.locale, customerEmail: data.customerEmail, businessName: data.businessName });
+  const template = await addClientPortalLinkToEmail(
     data.customerEmail,
-    recurringConflictWarningClientEmail(data),
+    recurringConflictWarningClientEmail({ ...data, locale }),
   );
+  const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
     console.log(`[Email] Recurring conflict warning sent to ${data.customerEmail}`);

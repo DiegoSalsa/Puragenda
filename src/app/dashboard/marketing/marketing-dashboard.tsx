@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import {
@@ -41,6 +44,7 @@ export function MarketingDashboard({
   maxAudienceSize,
   history,
 }: MarketingDashboardProps) {
+  const legacy = useTranslations("legacy");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -122,7 +126,7 @@ export function MarketingDashboard({
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Envíos este mes
+                <LocalizedText id="xKN0BWAaalV0" />
               </p>
               <p className="text-2xl font-bold tracking-tight">
                 {campaignsSentThisMonth}
@@ -146,8 +150,8 @@ export function MarketingDashboard({
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
             {hasReachedLimit
-              ? "Límite alcanzado. Podrás enviar otra el próximo mes."
-              : "Tienes 1 envío disponible este mes."}
+              ? legacy("xwr21iB8a9da")
+              : legacy("h-gOuZwe_Cak")}
           </p>
         </div>
 
@@ -159,12 +163,12 @@ export function MarketingDashboard({
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                Audiencia máxima
+                <LocalizedText id="gI18MBWbnlEd" />
               </p>
               <p className="text-2xl font-bold tracking-tight">
                 {maxAudienceSize}
                 <span className="text-base font-normal text-muted-foreground ml-1">
-                  clientes
+                  <LocalizedText id="YSdLUttbKVDp" />
                 </span>
               </p>
             </div>
@@ -172,7 +176,7 @@ export function MarketingDashboard({
           <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" />
             <p className="text-xs text-muted-foreground">
-              Plan{" "}
+              <LocalizedText id="-o7Qvavda8sc" />{" "}
               <span className="font-semibold text-foreground">
                 {plan === "EQUIPO" ? "Equipo" : "Individual"}
               </span>
@@ -188,20 +192,19 @@ export function MarketingDashboard({
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="h-5 w-5 text-[#7C3AED]" />
-                <p className="text-sm font-bold text-[#7C3AED]">Duplica tu alcance</p>
+                <p className="text-sm font-bold text-[#7C3AED]"><LocalizedText id="tZPxciA1J9Lf" /></p>
               </div>
               <p className="text-sm text-foreground font-medium mb-1">
-                Mejora al plan Equipo
+                <LocalizedText id="Svh1yjA2EoHN" />
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                Pasa de 50 a <strong className="text-foreground">100 clientes</strong> por campaña
-                y desbloquea funciones avanzadas de marketing.
+                <LocalizedText id="puS1LzzdPQDP" /> <strong className="text-foreground"><LocalizedText id="rKYC_KbSPWUU" /></strong> <LocalizedText id="XBFytghkURh4" />
               </p>
               <a
                 href="/pricing"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-[#7C3AED] px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-[#6D28D9] hover:shadow-lg hover:shadow-[#7C3AED]/25"
               >
-                Mejorar plan
+                <LocalizedText id="xVhYWNLErACL" />
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -244,10 +247,10 @@ export function MarketingDashboard({
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight">
-              Nueva Campaña
+              <LocalizedText id="sdgyG7X7yxoJ" />
             </h2>
             <p className="text-xs text-muted-foreground">
-              Redacta tu correo y envíalo a tus clientes menos frecuentes
+              <LocalizedText id="HVMQ4aWUALBz" />
             </p>
           </div>
         </div>
@@ -259,14 +262,14 @@ export function MarketingDashboard({
               htmlFor="campaign-subject"
               className="mb-1.5 block text-sm font-medium"
             >
-              Asunto del correo
+              <LocalizedText id="6Ah5cch1Mkxm" />
             </label>
             <input
               id="campaign-subject"
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Ej: ¡Te extrañamos! Vuelve con un descuento especial"
+              placeholder={legacy("EsL_BIJzBuMt")}
               disabled={isLoading || hasReachedLimit}
               maxLength={120}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm transition-colors placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/50 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -279,13 +282,13 @@ export function MarketingDashboard({
               htmlFor="campaign-message"
               className="mb-1.5 block text-sm font-medium"
             >
-              Mensaje
+              <LocalizedText id="0q8xcS6tBBRo" />
             </label>
             <textarea
               id="campaign-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Escribe tu mensaje aquí... El correo incluirá automáticamente un botón para que tus clientes agenden una cita."
+              placeholder={legacy("mQ6uhq4BsgMr")}
               disabled={isLoading || hasReachedLimit}
               rows={5}
               maxLength={2000}
@@ -311,12 +314,12 @@ export function MarketingDashboard({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Enviando campaña...
+                <LocalizedText id="gW3Ouj6Rm0Rb" />
               </>
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                Enviar Campaña
+                <LocalizedText id="uz8Tq3Oj2sV1" />
               </>
             )}
           </button>
@@ -324,8 +327,7 @@ export function MarketingDashboard({
           {/* Strategic text */}
           <p className="text-xs text-muted-foreground leading-relaxed pt-1">
             <Sparkles className="inline h-3 w-3 text-[#7C3AED] mr-1" />
-            Puragenda enviará esta campaña inteligentemente a tus clientes menos
-            frecuentes para reactivar sus reservas.
+            <LocalizedText id="BEJP7d-AmnCE" />
           </p>
         </form>
       </div>
@@ -339,10 +341,10 @@ export function MarketingDashboard({
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight">
-                Historial de campañas
+                <LocalizedText id="XNlCvrrxIS2U" />
               </h2>
               <p className="text-xs text-muted-foreground">
-                Tus últimas campañas enviadas
+                <LocalizedText id="JOaSOXvqeaDg" />
               </p>
             </div>
           </div>
@@ -352,13 +354,13 @@ export function MarketingDashboard({
               <thead>
                 <tr className="border-b border-border">
                   <th className="pb-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Asunto
+                    <LocalizedText id="Sc_7-FpoqETz" />
                   </th>
                   <th className="pb-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Audiencia
+                    <LocalizedText id="jKqRfKGFWUnr" />
                   </th>
                   <th className="pb-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Fecha
+                    <LocalizedText id="k7Kp73gsrNZx" />
                   </th>
                 </tr>
               </thead>

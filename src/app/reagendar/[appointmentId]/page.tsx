@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { XCircle, AlertTriangle, Clock } from "lucide-react";
@@ -32,8 +34,8 @@ export default async function ReagendarPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white">
         <div className="text-center space-y-4">
           <XCircle className="mx-auto h-16 w-16 text-red-400" />
-          <h1 className="text-2xl font-bold">Cita no encontrada</h1>
-          <p className="text-muted-foreground">El enlace no es válido, ya fue utilizado o venció.</p>
+          <h1 className="text-2xl font-bold"><LocalizedText id="mMWo3jW6vyD6" /></h1>
+          <p className="text-muted-foreground"><LocalizedText id="GQ1YopSk3kbO" /></p>
         </div>
       </div>
     );
@@ -46,11 +48,11 @@ export default async function ReagendarPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white p-4">
         <div className="w-full max-w-md text-center space-y-4">
           <XCircle className="mx-auto h-16 w-16 text-red-400" />
-          <h1 className="text-2xl font-bold">Cita cancelada</h1>
-          <p className="text-muted-foreground">Esta cita ya fue cancelada y no se puede reagendar.</p>
+          <h1 className="text-2xl font-bold"><LocalizedText id="NPDbki-l2i52" /></h1>
+          <p className="text-muted-foreground"><LocalizedText id="7mMAlMm9Jr2L" /></p>
           <a href={`/widget/${appointment.business.slug}`}
             className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
-            Agendar nueva cita
+            <LocalizedText id="Vd8dZZkwEjcT" />
           </a>
         </div>
       </div>
@@ -62,8 +64,8 @@ export default async function ReagendarPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white p-4">
         <div className="w-full max-w-md text-center space-y-4">
           <AlertTriangle className="mx-auto h-16 w-16 text-amber-400" />
-          <h1 className="text-2xl font-bold">No disponible</h1>
-          <p className="text-muted-foreground">Las sesiones de un plan recurrente no se pueden reagendar por esta vía. Contacta al negocio directamente.</p>
+          <h1 className="text-2xl font-bold"><LocalizedText id="t4H2vZuY5D1V" /></h1>
+          <p className="text-muted-foreground"><LocalizedText id="Cge9YE4_zqxu" /></p>
         </div>
       </div>
     );
@@ -74,8 +76,8 @@ export default async function ReagendarPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white p-4">
         <div className="w-full max-w-md text-center space-y-4">
           <AlertTriangle className="mx-auto h-16 w-16 text-amber-400" />
-          <h1 className="text-2xl font-bold">Reagendamiento no permitido</h1>
-          <p className="text-muted-foreground">Este negocio no permite reagendamiento online. Contacta directamente a {appointment.business.name}.</p>
+          <h1 className="text-2xl font-bold"><LocalizedText id="fUMCoWzvAanJ" /></h1>
+          <p className="text-muted-foreground"><LocalizedText id="zIJ4AlksuUWi" /> {appointment.business.name}.</p>
         </div>
       </div>
     );
@@ -89,10 +91,9 @@ export default async function ReagendarPage({
       <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] text-white p-4">
         <div className="w-full max-w-md text-center space-y-4">
           <Clock className="mx-auto h-16 w-16 text-amber-400" />
-          <h1 className="text-2xl font-bold">Tiempo excedido</h1>
+          <h1 className="text-2xl font-bold"><LocalizedText id="JOztGH-hM96k" /></h1>
           <p className="text-muted-foreground">
-            Solo puedes reagendar con al menos {appointment.business.rescheduleHoursLimit} horas de anticipación.
-            Tu cita es el {format(new Date(appointment.startTime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}.
+            <LocalizedText id="-Yla4hbAWIUS" /> {appointment.business.rescheduleHoursLimit} <LocalizedText id="yerk0QOxT_KQ" /> {format(new Date(appointment.startTime), "d 'de' MMMM 'a las' HH:mm", { locale: es })}.
           </p>
         </div>
       </div>

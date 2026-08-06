@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { RefreshCw, CheckCircle2, XCircle, ChevronDown, ChevronUp, User, Calendar, Clock } from "lucide-react";
@@ -24,6 +27,7 @@ interface PendingBooking {
 }
 
 export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingBooking[]; locale: string }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(bookings.length === 1 ? bookings[0].id : null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -61,10 +65,10 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
         <div>
           <h2 className="text-sm font-bold text-foreground">
             {bookings.length === 1
-              ? "1 suscripcion pendiente de aprobacion"
+              ? legacy("cp3Hn9RNvw2d")
               : `${bookings.length} suscripciones pendientes de aprobacion`}
           </h2>
-          <p className="text-xs text-muted-foreground">Revisa y aprueba o rechaza cada solicitud</p>
+          <p className="text-xs text-muted-foreground"><LocalizedText id="gOVKrBFs2WaI" /></p>
         </div>
       </div>
 
@@ -113,7 +117,7 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
-                          {new Date(b.startDate).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" })} al{" "}
+                          {new Date(b.startDate).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" })} <LocalizedText id="Y1GCUDAVWDZm" />{" "}
                           {new Date(b.endDate).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
                         </span>
                       </div>
@@ -132,16 +136,16 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                   {/* Health answers */}
                   {(b.healthAnswers && Object.keys(b.healthAnswers).length > 0) && (
                     <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Formulario de salud</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="LyTjbgn_C_Eu" /></p>
                       {Object.entries(b.healthAnswers).map(([k, v]) => (
                         <div key={k} className="text-sm">
-                          <span className="text-muted-foreground">Pregunta {parseInt(k) + 1}: </span>
+                          <span className="text-muted-foreground"><LocalizedText id="r-dbcEev9j_A" /> {parseInt(k) + 1}: </span>
                           <span>{v}</span>
                         </div>
                       ))}
                       {b.healthFreeText && (
                         <div className="text-sm">
-                          <span className="text-muted-foreground">Comentarios: </span>
+                          <span className="text-muted-foreground"><LocalizedText id="IHQedcFUmsMN" /> </span>
                           <span>{b.healthFreeText}</span>
                         </div>
                       )}
@@ -151,12 +155,12 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                   {/* Reject reason input */}
                   {isRejecting && (
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Motivo del rechazo (se enviara al cliente)</label>
+                      <label className="text-xs font-medium text-muted-foreground"><LocalizedText id="Ebc_QOiNRllP" /></label>
                       <textarea
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                         rows={2}
-                        placeholder="Ej: No tenemos disponibilidad para esos horarios..."
+                        placeholder={legacy("8lihZqC3NHpc")}
                         className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-red-500/50 transition-colors"
                       />
                     </div>
@@ -182,7 +186,7 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                           className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-2.5 text-sm font-bold text-red-500 transition-all hover:bg-red-500/10 disabled:opacity-50"
                         >
                           <XCircle className="h-4 w-4" />
-                          Rechazar
+                          <LocalizedText id="KgUVYC0xWHYb" />
                         </button>
                       </>
                     ) : (
@@ -201,7 +205,7 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                           onClick={() => { setRejectingId(null); setRejectReason(""); }}
                           className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
                         >
-                          Cancelar
+                          <LocalizedText id="u527QG3L1SSL" />
                         </button>
                       </>
                     )}

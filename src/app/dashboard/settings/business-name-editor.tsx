@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
@@ -6,6 +9,7 @@ import { updateBusinessNameAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 
 export function BusinessNameEditor({ initialName }: { initialName: string }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [saving, setSaving] = useState(false);
@@ -36,7 +40,7 @@ export function BusinessNameEditor({ initialName }: { initialName: string }) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Nombre de tu negocio"
+          placeholder={legacy("9k41vzFeu33A")}
           className="flex-1 w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm min-h-[44px] outline-none transition-colors focus:border-[#7C3AED]/30"
         />
         <button
@@ -45,7 +49,7 @@ export function BusinessNameEditor({ initialName }: { initialName: string }) {
           className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 h-11 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Guardar
+          <LocalizedText id="E-UaIQ9F7RsJ" />
         </button>
       </div>
       {message && (
@@ -54,7 +58,7 @@ export function BusinessNameEditor({ initialName }: { initialName: string }) {
         </p>
       )}
       <p className="text-xs text-muted-foreground">
-        Este nombre aparecerá en el widget de reservas y en los emails a tus clientes.
+        <LocalizedText id="dbDW2mPQOKHh" />
       </p>
     </div>
   );

@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getAffiliateInfo, getOrCreateAffiliate, getTokenBalance } from "@/server/services/affiliate.service";
@@ -11,12 +13,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="JzdJYFMcoEJN" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.REFERRALS_VIEW))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para ver referidos.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="HALnXywCzk0E" /></div>;
   }
 
   const affiliate = await getOrCreateAffiliate(business.id);
@@ -30,8 +32,8 @@ export default async function ReferralsPage() {
           <Gift className="h-5 w-5 text-[#7C3AED]" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Referidos</h1>
-          <p className="text-sm text-muted-foreground">Invita negocios y gana fichas para la ruleta de recompensas.</p>
+          <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="wgPakJ2NbGW3" /></h1>
+          <p className="text-sm text-muted-foreground"><LocalizedText id="_W04AZJL-pen" /></p>
         </div>
       </div>
       <ReferralsClient

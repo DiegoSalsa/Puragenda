@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
@@ -25,7 +27,7 @@ export default function TerminosPage() {
             href="/" 
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#7C3AED] transition-colors mb-8"
           >
-            <ChevronLeft className="h-4 w-4" /> Volver al inicio
+            <ChevronLeft className="h-4 w-4" /> <LocalizedText id="OQbDhyWfr8QA" />
           </Link>
 
           <div className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-2xl p-8 shadow-2xl sm:p-12 md:p-16 relative">
@@ -34,10 +36,10 @@ export default function TerminosPage() {
             
             <header className="mb-12 border-b border-border/50 pb-8 text-center sm:text-left">
               <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
-                Términos y Condiciones
+                <LocalizedText id="uhStBvjh28Mg" />
               </h1>
               <p className="mt-4 text-sm text-[#7C3AED] uppercase tracking-widest font-medium">
-                Última actualización: Abril 2026
+                <LocalizedText id="KGTlDvlp8CKt" />
               </p>
             </header>
 
@@ -51,92 +53,75 @@ export default function TerminosPage() {
               [&_a]:text-[#7C3AED] hover:[&_a]:text-[#A78BFA] [&_a]:underline [&_a]:transition-colors
               [&_strong]:text-foreground [&_strong]:font-semibold
             ">
-              <h2>1. Aceptación de los Términos</h2>
+              <h2><LocalizedText id="jOfGxiiMWFYm" /></h2>
               <p>
-                Al acceder y utilizar la plataforma Puragenda (&quot;el Servicio&quot;), operada por PuroCode (&quot;la Empresa&quot;),
-                usted acepta cumplir con estos Términos y Condiciones. Si no está de acuerdo con alguno de estos términos,
-                le recomendamos no utilizar el Servicio.
+                <LocalizedText id="prGRTcfxsuCH" />
               </p>
 
-              <h2>2. Descripción del Servicio</h2>
+              <h2><LocalizedText id="deq_4_BtrkrB" /></h2>
               <p>
-                Puragenda es una plataforma SaaS de agendamiento online que permite a negocios gestionar citas,
-                reservas y disponibilidad de sus profesionales a través de un widget embebible y un panel de administración.
+                <LocalizedText id="2n6zO6faULKF" />
               </p>
 
-              <h3>2.1 Funcionalidades principales</h3>
+              <h3><LocalizedText id="hkXHEM9t17lZ" /></h3>
               <ul>
-                <li>Gestión de citas y reservas online</li>
-                <li>Widget de reservas personalizable para sitios web</li>
-                <li>Gestión de múltiples profesionales y servicios</li>
-                <li>Detección automática de colisiones de horarios</li>
-                <li>Panel de administración para el negocio</li>
+                <li><LocalizedText id="qG_hIlQ8iQ_e" /></li>
+                <li><LocalizedText id="eBOqFaGfr10B" /></li>
+                <li><LocalizedText id="9BfgfzwdU516" /></li>
+                <li><LocalizedText id="Jy0i7Ke5sySS" /></li>
+                <li><LocalizedText id="q70437XJJgV8" /></li>
               </ul>
 
-              <h2>3. Registro y Cuentas</h2>
+              <h2><LocalizedText id="g5BahbfsJndg" /></h2>
               <p>
-                Para utilizar el Servicio, debe crear una cuenta proporcionando información veraz y actualizada.
-                Usted es responsable de mantener la confidencialidad de sus credenciales de acceso y de todas
-                las actividades que ocurran bajo su cuenta.
+                <LocalizedText id="0XLde9-kl66M" />
               </p>
 
-              <h2>4. Planes y Pagos</h2>
+              <h2><LocalizedText id="nKqP5gicGu1C" /></h2>
               <p>
-                Puragenda ofrece diferentes planes de suscripción. Los precios, límites y características de cada
-                plan están detallados en nuestra página de precios. La Empresa se reserva el derecho de modificar
-                los precios con previo aviso de 30 días.
+                <LocalizedText id="ELxTTb44womF" />
               </p>
               <p>
-                <strong>Procesamiento de Pagos:</strong> Todos los pagos de suscripciones y abonos de clientes
-                son procesados de forma segura a través de nuestra integración oficial con <strong>Mercado Pago</strong>. 
-                Puragenda no almacena ni procesa directamente la información de tarjetas de crédito o débito.
+                <strong><LocalizedText id="3AxUY2q5lo5U" /></strong> <LocalizedText id="uR4flolgoHXg" /> <strong>Mercado Pago</strong><LocalizedText id="hM5SdqrWhaIP" />
               </p>
 
-              <h2>5. Uso Aceptable</h2>
-              <p>El usuario se compromete a:</p>
+              <h2><LocalizedText id="eZg_EFB3xMOs" /></h2>
+              <p><LocalizedText id="0H95DFsg0SU0" /></p>
               <ul>
-                <li>No utilizar el Servicio para fines ilegales o no autorizados</li>
-                <li>No intentar acceder a cuentas o datos de otros usuarios</li>
-                <li>No interferir con el funcionamiento normal del Servicio</li>
-                <li>No enviar contenido malicioso, spam o virus a través del Servicio</li>
+                <li><LocalizedText id="5jsspjh2q2Ba" /></li>
+                <li><LocalizedText id="XIGHwymkRlSK" /></li>
+                <li><LocalizedText id="wH1bCw4-JEOb" /></li>
+                <li><LocalizedText id="NijUNtZdssf_" /></li>
               </ul>
 
-              <h2>6. Propiedad Intelectual</h2>
+              <h2><LocalizedText id="MT59Q_8OLydn" /></h2>
               <p>
-                Todo el contenido, diseño, código y funcionalidades de Puragenda son propiedad exclusiva
-                de PuroCode. Los datos ingresados por los usuarios son propiedad del usuario respectivo.
+                <LocalizedText id="zwK3P29EJz87" />
               </p>
 
-              <h2>7. Limitación de Responsabilidad</h2>
+              <h2><LocalizedText id="nGRScWubyXBw" /></h2>
               <p>
-                El Servicio se proporciona &quot;tal cual&quot; y &quot;según disponibilidad&quot;. La Empresa no garantiza
-                que el Servicio será ininterrumpido o libre de errores. En ningún caso la Empresa será responsable
-                por daños indirectos, incidentales o consecuentes.
+                <LocalizedText id="0yYEhCj_lNcn" />
               </p>
 
-              <h2>8. Terminación</h2>
+              <h2><LocalizedText id="SJdvA5Ty0xVw" /></h2>
               <p>
-                La Empresa puede suspender o cancelar su cuenta si se detecta un uso que viole estos términos.
-                El usuario puede cancelar su cuenta en cualquier momento desde el panel de configuración.
+                <LocalizedText id="skHys6sxOt8y" />
               </p>
 
-              <h2>9. Modificaciones</h2>
+              <h2><LocalizedText id="aTcElJBECg0s" /></h2>
               <p>
-                La Empresa se reserva el derecho de modificar estos términos en cualquier momento.
-                Los cambios serán notificados a través de la plataforma o por correo electrónico.
-                El uso continuado del Servicio después de los cambios constituye la aceptación de los mismos.
+                <LocalizedText id="f7k1gLFu_h5t" />
               </p>
 
-              <h2>10. Legislación Aplicable</h2>
+              <h2><LocalizedText id="q178-PXXTsSJ" /></h2>
               <p>
-                Estos términos se rigen por las leyes de la República de Chile. Cualquier disputa será
-                sometida a la jurisdicción de los tribunales competentes de Santiago de Chile.
+                <LocalizedText id="41hv-MgzNFVg" />
               </p>
 
-              <h2>11. Contacto</h2>
+              <h2><LocalizedText id="AJ8323mbJw1Y" /></h2>
               <p>
-                Para consultas sobre estos términos, puede contactarnos a través de correo electrónico
-                en <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
+                <LocalizedText id="4X4EZZxNRueh" /> <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
             </article>
           </div>

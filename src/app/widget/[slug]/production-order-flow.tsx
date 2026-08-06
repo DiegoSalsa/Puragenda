@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
@@ -52,6 +55,7 @@ export function ProductionOrderFlow({
   textSecondary,
   onBack,
 }: Props) {
+  const legacy = useTranslations("legacy");
   const inputRef = useRef<HTMLInputElement>(null);
   const [windows, setWindows] = useState<ProductionWindow[]>([]);
   const [loadingWeeks, setLoadingWeeks] = useState(true);
@@ -86,10 +90,10 @@ export function ProductionOrderFlow({
         if (!response.ok) throw new Error(payload.error || "No se pudieron cargar los cupos");
         if (active) setWindows(payload.windows);
       })
-      .catch((reason) => active && setError(reason instanceof Error ? reason.message : "No se pudieron cargar los cupos"))
+      .catch((reason) => active && setError(reason instanceof Error ? reason.message : legacy("BoWN8xn69iqz")))
       .finally(() => active && setLoadingWeeks(false));
     return () => { active = false; };
-  }, [business.apiKey, business.slug, service.id]);
+  }, [business.apiKey, business.slug, service.id, legacy]);
 
   async function uploadImages(files: File[]) {
     const remaining = 6 - images.length;
@@ -117,7 +121,7 @@ export function ProductionOrderFlow({
       }
       setImages((current) => [...current, ...uploaded]);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudieron subir las imagenes");
+      setError(reason instanceof Error ? reason.message : legacy("pCDCdT_R3JSD"));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -128,8 +132,8 @@ export function ProductionOrderFlow({
     event.preventDefault();
     setError("");
     const selectedWindow = windows.find((window) => window.key === selectedWindowKey);
-    if (!selectedWindow) return setError("Elige un período de entrega");
-    if (service.requiresReferenceImages && images.length === 0) return setError("Sube al menos una foto de referencia");
+    if (!selectedWindow) return setError(legacy("4s5v5rjL67xc"));
+    if (service.requiresReferenceImages && images.length === 0) return setError(legacy("ekdmj92ximYB"));
     setSubmitting(true);
     try {
       const response = await fetch(`/api/business/${business.slug}/production-orders`, {
@@ -158,7 +162,7 @@ export function ProductionOrderFlow({
       }
       setResult(payload);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "No se pudo enviar el encargo");
+      setError(reason instanceof Error ? reason.message : legacy("5zlS8TJtHN93"));
     } finally {
       setSubmitting(false);
     }
@@ -171,23 +175,23 @@ export function ProductionOrderFlow({
           <CheckCircle2 className="h-10 w-10" style={{ color: primaryColor }} />
         </div>
         <div>
-          <h2 className="text-2xl font-bold">Encargo recibido</h2>
+          <h2 className="text-2xl font-bold"><LocalizedText id="_UkJ93Gbrdmx" /></h2>
           <p className="mt-2 text-sm" style={{ color: textSecondary }}>
-            Reservamos tu cupo de produccion. El negocio coordinara contigo el abono y validara las fotografias.
+            <LocalizedText id="xMJrX5NTAFhU" />
           </p>
         </div>
         <div className="mx-auto max-w-md rounded-2xl border p-5 text-left text-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
           <p className="mb-3 flex items-center gap-2 font-semibold" style={{ color: primaryColor }}><Package className="h-4 w-4" />{result.orderNumber}</p>
           <div className="space-y-2">
-            <p><span style={{ color: textSecondary }}>Servicio:</span> {service.name}</p>
-            <p><span style={{ color: textSecondary }}>Mascota:</span> {form.petName}</p>
-            <p><span style={{ color: textSecondary }}>Total:</span> {formatPrice(totalPrice, business.currencyCode)}</p>
-            <p><span style={{ color: textSecondary }}>Abono para confirmar:</span> {formatPrice(result.depositAmount, business.currencyCode)}</p>
-            <p><span style={{ color: textSecondary }}>Saldo:</span> {formatPrice(result.balanceAmount, business.currencyCode)}</p>
+            <p><span style={{ color: textSecondary }}><LocalizedText id="Xn5rZDSz0P56" /></span> {service.name}</p>
+            <p><span style={{ color: textSecondary }}><LocalizedText id="II9i55cJhFRf" /></span> {form.petName}</p>
+            <p><span style={{ color: textSecondary }}><LocalizedText id="GOhyviNZ126R" /></span> {formatPrice(totalPrice, business.currencyCode)}</p>
+            <p><span style={{ color: textSecondary }}><LocalizedText id="R5FTETj45I0u" /></span> {formatPrice(result.depositAmount, business.currencyCode)}</p>
+            <p><span style={{ color: textSecondary }}><LocalizedText id="VBwE9DuUb3G3" /></span> {formatPrice(result.balanceAmount, business.currencyCode)}</p>
           </div>
         </div>
         <button type="button" onClick={onBack} className="rounded-xl border px-6 py-3 text-sm font-medium" style={{ borderColor: "var(--wborder)", color: textColor }}>
-          Volver al catalogo
+          <LocalizedText id="fqmnIJ72A0eJ" />
         </button>
       </div>
     );
@@ -197,19 +201,19 @@ export function ProductionOrderFlow({
     <form onSubmit={submitOrder} className="animate-fade-up space-y-6">
       <div className="flex items-center justify-between gap-3">
         <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm opacity-60 hover:opacity-90" style={{ color: textColor }}>
-          <ChevronLeft className="h-4 w-4" />Volver
+          <ChevronLeft className="h-4 w-4" /><LocalizedText id="qyaue8o2IZU4" />
         </button>
-        <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${primaryColor}15`, color: primaryColor }}>Encargo personalizado</span>
+        <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${primaryColor}15`, color: primaryColor }}><LocalizedText id="lXykB3U2NQbL" /></span>
       </div>
 
       <div>
-        <h2 className="text-xl font-bold">Elige tu período de entrega</h2>
-        <p className="mt-1 text-sm" style={{ color: textSecondary }}>Cada período tiene su propia capacidad. Tu cupo queda reservado al confirmar el abono.</p>
+        <h2 className="text-xl font-bold"><LocalizedText id="XgZg8s6g3tfr" /></h2>
+        <p className="mt-1 text-sm" style={{ color: textSecondary }}><LocalizedText id="QWNSFBoon2iD" /></p>
       </div>
 
       {loadingWeeks ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border p-8 text-sm" style={{ borderColor: "var(--wborder)", color: textSecondary }}>
-          <Loader2 className="h-4 w-4 animate-spin" />Cargando cupos...
+          <Loader2 className="h-4 w-4 animate-spin" /><LocalizedText id="P1Q-3qBnNGKr" />
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
@@ -244,23 +248,23 @@ export function ProductionOrderFlow({
       )}
       {!loadingWeeks && windows.length === 0 && (
         <div className="rounded-2xl border border-dashed p-6 text-center text-sm" style={{ borderColor: "var(--wborder)", color: textSecondary }}>
-          No hay períodos de entrega disponibles por ahora.
+          <LocalizedText id="By7yCBiK3QhC" />
         </div>
       )}
 
       <div className="space-y-3">
-        <h3 className="font-semibold">Cuéntanos sobre tu mascota</h3>
-        <input required value={form.petName} onChange={(event) => setForm({ ...form, petName: event.target.value })} placeholder="Nombre de la mascota" maxLength={80}
+        <h3 className="font-semibold"><LocalizedText id="tQ9mhcNVfPvd" /></h3>
+        <input required value={form.petName} onChange={(event) => setForm({ ...form, petName: event.target.value })} placeholder={legacy("YLa2UCHuy8Cw")} maxLength={80}
           className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
         <textarea required value={form.petDetails} onChange={(event) => setForm({ ...form, petDetails: event.target.value })}
-          placeholder="Raza, colores, manchas, pose, accesorios y cualquier detalle que no debemos olvidar..." minLength={10} maxLength={2000} rows={5}
+          placeholder={legacy("nMmAXcs2Bz7A")} minLength={10} maxLength={2000} rows={5}
           className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
       </div>
 
       <div className="space-y-3">
         <div>
-          <h3 className="font-semibold">Fotos de referencia {service.requiresReferenceImages && <span style={{ color: primaryColor }}>*</span>}</h3>
-          <p className="text-xs" style={{ color: textSecondary }}>Sube hasta 6 fotos claras, idealmente de frente, perfil y detalles especiales.</p>
+          <h3 className="font-semibold"><LocalizedText id="SlnOrZ25kFj0" /> {service.requiresReferenceImages && <span style={{ color: primaryColor }}>*</span>}</h3>
+          <p className="text-xs" style={{ color: textSecondary }}><LocalizedText id="k_Y_8gdeemue" /></p>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {images.map((url, index) => (
@@ -286,9 +290,9 @@ export function ProductionOrderFlow({
       </div>
 
       <div className="space-y-3">
-        <h3 className="font-semibold">Tus datos</h3>
+        <h3 className="font-semibold"><LocalizedText id="IAkiAUdTqKb9" /></h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Nombre completo"
+          <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder={legacy("rMLiRdW5UYo2")}
             className="rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
           <input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="Email"
             className="rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
@@ -302,15 +306,15 @@ export function ProductionOrderFlow({
           <option value="SHIPPING">Despacho</option>
         </select>
         {form.deliveryMethod === "SHIPPING" && (
-          <textarea required value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} placeholder="Direccion completa de despacho" rows={3}
+          <textarea required value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} placeholder={legacy("6ztNJLQsAho8")} rows={3}
             className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
         )}
       </div>
 
       <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: `${primaryColor}35`, background: `${primaryColor}08` }}>
-        <div className="flex justify-between"><span style={{ color: textSecondary }}>Total</span><strong>{formatPrice(totalPrice, business.currencyCode)}</strong></div>
-        <div className="mt-2 flex justify-between"><span style={{ color: textSecondary }}>Abono para reservar ({service.productionDepositPercent}%)</span><strong style={{ color: primaryColor }}>{formatPrice(depositAmount, business.currencyCode)}</strong></div>
-        <p className="mt-2 text-xs" style={{ color: textSecondary }}>El saldo de {formatPrice(Math.max(0, totalPrice - depositAmount), business.currencyCode)} se paga cuando el pedido esté listo.</p>
+        <div className="flex justify-between"><span style={{ color: textSecondary }}><LocalizedText id="ybPDgkf3ROF9" /></span><strong>{formatPrice(totalPrice, business.currencyCode)}</strong></div>
+        <div className="mt-2 flex justify-between"><span style={{ color: textSecondary }}><LocalizedText id="buQuL4y1MA4L" />{service.productionDepositPercent}%)</span><strong style={{ color: primaryColor }}>{formatPrice(depositAmount, business.currencyCode)}</strong></div>
+        <p className="mt-2 text-xs" style={{ color: textSecondary }}><LocalizedText id="Phnqs7VW5uof" /> {formatPrice(Math.max(0, totalPrice - depositAmount), business.currencyCode)} <LocalizedText id="YW2TfB_BvG6J" /></p>
       </div>
 
       {error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">{error}</div>}
@@ -318,7 +322,7 @@ export function ProductionOrderFlow({
       <button type="submit" disabled={submitting || uploading || loadingWeeks}
         className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all disabled:opacity-40"
         style={{ background: primaryColor, color: "#fff" }}>
-        {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />Enviando encargo...</> : <><Upload className="h-4 w-4" />Reservar cupo</>}
+        {submitting ? <><Loader2 className="h-5 w-5 animate-spin" /><LocalizedText id="sVyzoigicdJO" /></> : <><Upload className="h-4 w-4" /><LocalizedText id="C_wwe35JyY8L" /></>}
       </button>
     </form>
   );

@@ -1,10 +1,14 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { Check, Loader2, Package } from "lucide-react";
 import { updateProductionOrdersEnabledAction } from "@/server/actions/dashboard.actions";
 
 export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boolean }) {
+  const legacy = useTranslations("legacy");
   const [enabled, setEnabled] = useState(initialEnabled);
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -19,7 +23,7 @@ export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boo
         return;
       }
       setEnabled(next);
-      setMessage(next ? "Encargos activados." : "Encargos ocultos para esta cuenta.");
+      setMessage(next ? "Encargos activados." : legacy("D95pTLweLoWR"));
     });
   }
 
@@ -27,10 +31,9 @@ export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boo
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-2xl">
-          <p className="font-medium">Módulo de encargos</p>
+          <p className="font-medium"><LocalizedText id="jJJgIeeqe7wC" /></p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Actívalo solo si vendes trabajos que se reservan con abono y se entregan en una fecha o período futuro.
-            Al desactivarlo, Encargos desaparece del menú y del widget; tus datos se conservan.
+            <LocalizedText id="isKuGZznbG5s" />
           </p>
         </div>
         <button
@@ -56,7 +59,7 @@ export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boo
         enabled ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"
       }`}>
         <Package className="h-4 w-4" />
-        {enabled ? "Visible en Servicios, menú lateral y widget." : "El flujo normal de citas sigue funcionando sin cambios."}
+        {enabled ? legacy("ZiOX93MdX8xq") : legacy("r3FLqdwngsPY")}
       </div>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
     </div>

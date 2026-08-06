@@ -220,6 +220,7 @@ model Business {
   countryCode                                  String    @default("CL")
   currencyCode                                 String    @default("CLP")
   timezone                                     String    @default("America/Santiago")
+  locale                                       String    @default("es")
   ownerId                                      String?
   referredByAffiliateId                        String?
   // ── Mercado Pago OAuth (Marketplace) ──

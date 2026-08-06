@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function LogoutButton() {
+  const t = useTranslations("dashboard.shell");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +34,7 @@ export function LogoutButton() {
       ) : (
         <LogOut className="h-4 w-4" />
       )}
-      Cerrar sesión
+      {t("logout")}
     </button>
   );
 }

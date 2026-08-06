@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useRouter } from "next/navigation";
 import { Check, CheckCircle, Loader2, X, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
@@ -40,19 +42,19 @@ export function AppointmentActions({
   const available = STATUS_ACTIONS.filter((a) => a.status !== currentStatus);
 
   if (currentStatus === "CANCELLED") {
-    return <span className="flex items-center gap-1 text-xs text-red-400/70"><X className="h-3 w-3" /> Cancelada</span>;
+    return <span className="flex items-center gap-1 text-xs text-red-400/70"><X className="h-3 w-3" /> <LocalizedText id="PRXmHyzNUYbc" /></span>;
   }
 
   if (currentStatus === "CHECKED_IN") {
-    return <span className="flex items-center gap-1 text-xs text-blue-400/70"><UserCheck className="h-3 w-3" /> Asistió</span>;
+    return <span className="flex items-center gap-1 text-xs text-blue-400/70"><UserCheck className="h-3 w-3" /> <LocalizedText id="4JMk0th_eaNU" /></span>;
   }
 
   if (currentStatus === "COMPLETED") {
-    return <span className="flex items-center gap-1 text-xs text-purple-400/70"><CheckCircle className="h-3 w-3" /> Completada</span>;
+    return <span className="flex items-center gap-1 text-xs text-purple-400/70"><CheckCircle className="h-3 w-3" /> <LocalizedText id="sUhZDAsLj9kJ" /></span>;
   }
 
   if (currentStatus === "NO_SHOW") {
-    return <span className="flex items-center gap-1 text-xs text-amber-400/70"><UserX className="h-3 w-3" /> Inasistencia</span>;
+    return <span className="flex items-center gap-1 text-xs text-amber-400/70"><UserX className="h-3 w-3" /> <LocalizedText id="j9N8XK0feKmm" /></span>;
   }
 
   return (

@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { CheckCircle2, Clock3, Package, XCircle } from "lucide-react";
 import { prisma } from "@/server/db/prisma";
 import { formatPrice } from "@/lib/utils";
@@ -25,7 +27,7 @@ export default async function ProductionOrderStatusPage({
       business: { select: { name: true, primaryColor: true, currencyCode: true } },
     },
   });
-  if (!order) return <div className="flex min-h-screen items-center justify-center">Encargo no encontrado</div>;
+  if (!order) return <div className="flex min-h-screen items-center justify-center"><LocalizedText id="Gmznwtp7FdeA" /></div>;
 
   const approved = order.depositPaymentStatus === "APPROVED";
   const failed = payment === "failed";
@@ -44,10 +46,10 @@ export default async function ProductionOrderStatusPage({
         </p>
         <div className="mt-6 rounded-2xl bg-muted/50 p-5 text-left text-sm">
           <p className="mb-3 flex items-center gap-2 font-semibold" style={{ color: order.business.primaryColor }}><Package className="h-4 w-4" />{order.orderNumber}</p>
-          <p><span className="text-muted-foreground">Servicio:</span> {order.service.name}</p>
-          <p className="mt-1"><span className="text-muted-foreground">Mascota:</span> {order.petName}</p>
-          <p className="mt-1"><span className="text-muted-foreground">Abono:</span> {formatPrice(order.depositAmount, order.business.currencyCode)}</p>
-          <p className="mt-1"><span className="text-muted-foreground">Saldo al finalizar:</span> {formatPrice(order.balanceAmount, order.business.currencyCode)}</p>
+          <p><span className="text-muted-foreground"><LocalizedText id="Xn5rZDSz0P56" /></span> {order.service.name}</p>
+          <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="II9i55cJhFRf" /></span> {order.petName}</p>
+          <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="AZ_Rh8tklB9e" /></span> {formatPrice(order.depositAmount, order.business.currencyCode)}</p>
+          <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="F8KoVWBpyA0r" /></span> {formatPrice(order.balanceAmount, order.business.currencyCode)}</p>
         </div>
       </div>
     </main>

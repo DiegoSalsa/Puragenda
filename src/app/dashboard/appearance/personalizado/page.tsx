@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { AppearanceForm } from "../appearance-form";
@@ -10,12 +12,12 @@ export const dynamic = "force-dynamic";
 
 export default async function PersonalizadoPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="JzdJYFMcoEJN" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para editar la apariencia</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="e4JJfspZWBvA" /></div>;
   }
   const promoBlocks = await prisma.widgetPromoBlock.findMany({
     where: { businessId: business.id },

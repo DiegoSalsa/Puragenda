@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -63,9 +65,9 @@ export function AdminPanelShell({
               </div>
               <div>
                 <span className="text-lg font-black uppercase tracking-tight text-black">
-                  Super<span className="text-white">Admin</span>
+                  <LocalizedText id="gYXIrEZWIZ9K" /><span className="text-white"><LocalizedText id="wcIksDzZvHtq" /></span>
                 </span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-black/50">Purocode · Admin</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-black/50"><LocalizedText id="D47r2JulTmF5" /></p>
               </div>
             </Link>
             <button
@@ -79,7 +81,7 @@ export function AdminPanelShell({
 
         {/* Navigation */}
         <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-          <p className="mb-3 px-1 text-[10px] font-black uppercase tracking-widest text-black/40">Plataforma</p>
+          <p className="mb-3 px-1 text-[10px] font-black uppercase tracking-widest text-black/40"><LocalizedText id="XXMl3QB8zCje" /></p>
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || (item.href !== ADMIN_SECRET_PATH && pathname.startsWith(item.href));
             return (
@@ -99,13 +101,13 @@ export function AdminPanelShell({
             );
           })}
           <div className="my-4 border-t-2 border-black/20" />
-          <p className="mb-3 px-1 text-[10px] font-black uppercase tracking-widest text-black/40">Accesos rápidos</p>
+          <p className="mb-3 px-1 text-[10px] font-black uppercase tracking-widest text-black/40"><LocalizedText id="XJyhAWbkZhXE" /></p>
           <Link
             href="/dashboard"
             className="flex items-center gap-3 border-2 border-black px-3 py-2.5 text-sm font-black uppercase transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none bg-black/10 text-black/60 shadow-[2px_2px_0_#000] hover:bg-black/20 hover:text-black"
           >
             <CalendarClock className="h-4 w-4" />
-            Mi Negocio
+            <LocalizedText id="mmi-JUzXAKSI" />
           </Link>
         </nav>
 
@@ -114,7 +116,7 @@ export function AdminPanelShell({
           <div className="border-2 border-black bg-black/10 p-3 shadow-[3px_3px_0_#000]">
             <div className="flex items-center gap-2 mb-1">
               <Shield className="h-3 w-3 text-black" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-black">Superadmin</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-black"><LocalizedText id="n1P5bBu3ohgX" /></p>
             </div>
             <p className="text-sm font-black text-black">{userName}</p>
             <p className="text-[11px] font-bold text-black/60">{userEmail}</p>
@@ -134,7 +136,7 @@ export function AdminPanelShell({
             <Menu className="h-4 w-4" />
           </button>
           <p className="text-[10px] font-black uppercase tracking-widest text-black/50">
-            Puragenda · Vista global de administración
+            <LocalizedText id="H7E4bjOiLaRF" />
           </p>
         </div>
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>

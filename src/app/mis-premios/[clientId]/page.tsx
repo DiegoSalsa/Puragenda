@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { notFound } from "next/navigation";
 import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "lucide-react";
@@ -103,8 +105,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
         <div className="text-center text-white/60">
           <Stamp className="h-12 w-12 mx-auto mb-4 opacity-40" />
-          <p className="text-lg font-medium">Programa no disponible</p>
-          <p className="text-sm mt-1">Este negocio no tiene un programa de fidelización activo.</p>
+          <p className="text-lg font-medium"><LocalizedText id="jisTk9LwKYkr" /></p>
+          <p className="text-sm mt-1"><LocalizedText id="f4YlhbzaXjx9" /></p>
         </div>
       </div>
     );
@@ -159,14 +161,14 @@ export default async function MisPremiosPage({ params }: PageProps) {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase tracking-[0.15em] text-[rgb(var(--color-text)/0.4)] font-medium">Programa de fidelización</p>
+              <p className="text-xs uppercase tracking-[0.15em] text-[rgb(var(--color-text)/0.4)] font-medium"><LocalizedText id="54tr0vGiMqeK" /></p>
               <p className="text-sm font-bold text-[rgb(var(--color-text))]">{business.name}</p>
             </div>
           </div>
 
           {/* Greeting */}
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Hola, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-primary)/0.8)] to-[rgb(var(--color-primary))]">{client.name.split(" ")[0]}</span> 👋
+            <LocalizedText id="-DINcEjYeVEU" /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-primary)/0.8)] to-[rgb(var(--color-primary))]">{client.name.split(" ")[0]}</span> 👋
           </h1>
           <p className="mt-3 text-base text-[rgb(var(--color-text)/0.5)] font-medium leading-relaxed max-w-sm">
             {motivationalCopy}
@@ -186,8 +188,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
                   <Stamp className="h-4.5 w-4.5 text-[rgb(var(--color-primary))] opacity-80" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold">Tu Tarjeta de Timbres</p>
-                  <p className="text-[11px] text-[rgb(var(--color-text)/0.35)]">{client.currentStamps} de {business.stampsRequired} completados</p>
+                  <p className="text-sm font-bold"><LocalizedText id="ker1NFAGWSq7" /></p>
+                  <p className="text-[11px] text-[rgb(var(--color-text)/0.35)]">{client.currentStamps} <LocalizedText id="lZpF1E5vz1g2" /> {business.stampsRequired} <LocalizedText id="n4gHI75ptyeJ" /></p>
                 </div>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[rgb(var(--color-primary)/0.2)] to-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)]">
@@ -203,8 +205,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
             {remaining > 0 && (
               <p className="mt-4 text-center text-sm font-medium text-[rgb(var(--color-text)/0.4)]">
                 {remaining === 1
-                  ? <span className="text-[rgb(var(--color-primary))]">¡Solo 1 visita más! 🔥</span>
-                  : <>{remaining} visitas para tu premio</>
+                  ? <span className="text-[rgb(var(--color-primary))]"><LocalizedText id="3AWwS_tbwT39" /></span>
+                  : <>{remaining} <LocalizedText id="rETsmnZDnscW" /></>
                 }
               </p>
             )}
@@ -216,7 +218,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
               <TrendingUp className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
             </div>
             <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{completedVisits.length}</p>
-            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5">Visitas completadas</p>
+            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5"><LocalizedText id="4l_KGdDgL7pv" /></p>
           </div>
 
           {/* ── Card 3: Stats - Rewards (Half) ── */}
@@ -225,7 +227,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
               <Trophy className="h-4 w-4 text-[rgb(var(--color-primary))]" />
             </div>
             <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{availableRewards.length}</p>
-            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5">Premios disponibles</p>
+            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5"><LocalizedText id="2x_QU98WKYa1" /></p>
           </div>
 
           {/* ── Card 4: Prize Info (Full Width) ── */}
@@ -237,7 +239,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
                   <Gift className="h-5 w-5 text-[rgb(var(--color-primary))]" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-[rgb(var(--color-primary)/0.6)] font-semibold mb-1">Premio al completar</p>
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-[rgb(var(--color-primary)/0.6)] font-semibold mb-1"><LocalizedText id="GxSefNw60Fbu" /></p>
                   <p className="text-base font-bold text-[rgb(var(--color-text))]">{business.rewardName}</p>
                   {business.discountType && business.discountValue && (
                     <p className="text-sm text-[rgb(var(--color-primary)/0.8)] font-medium mt-0.5">
@@ -255,7 +257,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
           <div className="col-span-2 space-y-3">
             <div className="flex items-center gap-2.5 px-1">
               <Gift className="h-4.5 w-4.5 text-[rgb(var(--color-primary))]" />
-              <p className="text-sm font-bold">Tus Premios</p>
+              <p className="text-sm font-bold"><LocalizedText id="8ihda1XR5muv" /></p>
               {availableRewards.length > 0 && (
                 <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--color-primary)/0.2)] text-[11px] font-bold text-[rgb(var(--color-primary))]">
                   {availableRewards.length}
@@ -268,9 +270,9 @@ export default async function MisPremiosPage({ params }: PageProps) {
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgb(var(--color-text)/0.03)] border border-[rgb(var(--color-text)/0.06)]">
                   <Gift className="h-7 w-7 text-[rgb(var(--color-text)/0.15)]" />
                 </div>
-                <p className="text-sm font-medium text-[rgb(var(--color-text)/0.35)]">Aún no tienes premios</p>
+                <p className="text-sm font-medium text-[rgb(var(--color-text)/0.35)]"><LocalizedText id="9zuUDZAjhUZK" /></p>
                 <p className="text-xs text-[rgb(var(--color-text)/0.2)] mt-1 max-w-[200px] mx-auto">
-                  Sigue acumulando timbres con cada visita para ganar tu premio
+                  <LocalizedText id="u8i90Kr_OdwA" />
                 </p>
               </div>
             ) : (
@@ -296,7 +298,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-secondary)/0.15)]">
                   <Calendar className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
                 </div>
-                <p className="text-sm font-bold">Últimas Visitas</p>
+                <p className="text-sm font-bold"><LocalizedText id="kTMvJxut1hEM" /></p>
               </div>
 
               <div className="space-y-2">
@@ -319,7 +321,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
                         </div>
                       </div>
                       <span className="text-[10px] font-medium text-[rgb(var(--color-secondary)/0.8)] bg-[rgb(var(--color-secondary)/0.1)] px-2 py-0.5 rounded-full border border-[rgb(var(--color-secondary)/0.15)]">
-                        +1 timbre
+                        <LocalizedText id="mjnokc6ETJog" />
                       </span>
                     </div>
                   );
@@ -331,7 +333,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
 
         {/* Footer */}
         <p className="text-center text-[10px] text-[rgb(var(--color-text)/0.15)] pt-8 pb-4">
-          Powered by <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="text-[rgb(var(--color-primary)/0.4)] font-medium hover:underline">Puragenda</a>
+          <LocalizedText id="_cXS6UEMLYjl" /> <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="text-[rgb(var(--color-primary)/0.4)] font-medium hover:underline">Puragenda</a>
         </p>
       </div>
     </div>

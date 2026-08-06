@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +10,7 @@ import { Loader2, ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
 import { createBusinessAction } from "@/server/actions/admin.actions";
 
 export default function NewBusinessPage() {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -43,7 +47,7 @@ export default function NewBusinessPage() {
         }, 1500);
       }
     } catch {
-      setError("Error al crear el negocio");
+      setError(legacy("aBq68c8Woqdq"));
     } finally {
       setLoading(false);
     }
@@ -54,8 +58,8 @@ export default function NewBusinessPage() {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="border-4 border-black bg-[#BFFCC6] p-12 shadow-[8px_8px_0_#000] space-y-4 text-center">
           <CheckCircle2 className="h-12 w-12 text-black mx-auto" />
-          <h2 className="text-3xl font-black uppercase tracking-tight text-black">Negocio creado!</h2>
-          <p className="text-sm font-bold text-black/60">Redirigiendo a la lista de negocios...</p>
+          <h2 className="text-3xl font-black uppercase tracking-tight text-black"><LocalizedText id="8Q3f-E5zI7fr" /></h2>
+          <p className="text-sm font-bold text-black/60"><LocalizedText id="Nb1VKkF7krAL" /></p>
         </div>
       </div>
     );
@@ -69,21 +73,21 @@ export default function NewBusinessPage() {
           href="/para/x7k9m2v4q8/businesses"
           className="mb-4 inline-flex items-center gap-1 text-sm font-black uppercase text-black hover:underline"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Volver a negocios
+          <ArrowLeft className="h-3.5 w-3.5" /> <LocalizedText id="JhxPoaC3z5e_" />
         </Link>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-black">Agregar Negocio</h1>
-        <p className="text-sm font-bold text-black/50">Crear un nuevo negocio manualmente</p>
+        <h1 className="text-3xl font-black uppercase tracking-tight text-black"><LocalizedText id="VvuwYQzMj7ZD" /></h1>
+        <p className="text-sm font-bold text-black/50"><LocalizedText id="2SUqhBm4C1Df" /></p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Business Info */}
         <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Información del Negocio</h3>
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="tPW9tglHzyJq" /></h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="businessName" className="text-xs font-black uppercase text-black/60">
-                Nombre del negocio
+                <LocalizedText id="uYWMtrFSTiuJ" />
               </label>
               <input
                 id="businessName"
@@ -91,7 +95,7 @@ export default function NewBusinessPage() {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 required
-                placeholder="Ej: Barbería Santiago"
+                placeholder={legacy("f0ROMAfkxcRG")}
                 className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
             </div>
@@ -100,11 +104,11 @@ export default function NewBusinessPage() {
 
         {/* Owner Info */}
         <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Datos del Dueño</h3>
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="XJXmjLZG21sh" /></h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="ownerName" className="text-xs font-black uppercase text-black/60">
-                Nombre completo
+                <LocalizedText id="rMLiRdW5UYo2" />
               </label>
               <input
                 id="ownerName"
@@ -112,14 +116,14 @@ export default function NewBusinessPage() {
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 required
-                placeholder="Ej: Carlos Ruiz"
+                placeholder={legacy("5RDKtaPPxSjo")}
                 className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="ownerEmail" className="text-xs font-black uppercase text-black/60">
-                Email
+                <LocalizedText id="lpzL089jAOzV" />
               </label>
               <input
                 id="ownerEmail"
@@ -134,7 +138,7 @@ export default function NewBusinessPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="ownerPassword" className="text-xs font-black uppercase text-black/60">
-                Contraseña
+                <LocalizedText id="o4mmON7DJTj1" />
               </label>
               <input
                 id="ownerPassword"
@@ -142,17 +146,17 @@ export default function NewBusinessPage() {
                 value={ownerPassword}
                 onChange={(e) => setOwnerPassword(e.target.value)}
                 required
-                placeholder="Contraseña temporal"
+                placeholder={legacy("VQqJDNz_dTRX")}
                 className="w-full border-2 border-black px-4 py-2.5 text-sm font-bold text-black outline-none placeholder:text-black/30 focus:border-black"
               />
-              <p className="text-xs font-bold text-black/40">El dueño podrá cambiar esta contraseña después.</p>
+              <p className="text-xs font-bold text-black/40"><LocalizedText id="tchIHoWfhQJ9" /></p>
             </div>
           </div>
         </div>
 
         {/* Plan */}
         <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Plan de Suscripción</h3>
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="zUaeys5mjq98" /></h3>
           <div className="grid grid-cols-2 gap-3">
             {(["INDIVIDUAL", "EQUIPO"] as const).map((p) => (
               <button
@@ -169,7 +173,7 @@ export default function NewBusinessPage() {
                   {p === "INDIVIDUAL" ? "Individual" : "Equipo"}
                 </p>
                 <p className="mt-1 text-xs font-bold text-black/50">
-                  {p === "INDIVIDUAL" ? "$12.990/mes" : "$29.990/mes"}
+                  {p === "INDIVIDUAL" ? legacy("fD0CEPfbwqQ-") : legacy("6sVYiNpWrR5U")}
                 </p>
               </button>
             ))}
@@ -177,14 +181,14 @@ export default function NewBusinessPage() {
         </div>
 
         <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
-          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black">Beneficio inicial</h3>
+          <h3 className="mb-4 text-xs font-black uppercase tracking-wider text-black"><LocalizedText id="yy8m1fx5vXHM" /></h3>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { value: "NONE", title: "Sin beneficio", detail: "Cuenta normal" },
-              { value: "PRIZE_12", title: "Ganador 12 meses", detail: "Activa sin tarjeta por 12 meses" },
-              { value: "PRIZE_6", title: "Ganador 6 meses", detail: "Activa sin tarjeta por 6 meses" },
-              { value: "PRIZE_3", title: "Ganador 3 meses", detail: "Activa sin tarjeta por 3 meses" },
-              { value: "PARTICIPANT_OFFER", title: "Participante 2+2", detail: "2 meses sin tarjeta y luego 2 meses al 50%" },
+              { value: "NONE", title: legacy("jOU1S2HsyWeu"), detail: "Cuenta normal" },
+              { value: "PRIZE_12", title: legacy("jpbil_C9FsAB"), detail: legacy("yx3nIzs8mfeG") },
+              { value: "PRIZE_6", title: legacy("BN9ro8pt_XFw"), detail: legacy("_8OleFuDPCKV") },
+              { value: "PRIZE_3", title: legacy("o9j3WYJOL7Nz"), detail: legacy("9r1g9y8GLZAp") },
+              { value: "PARTICIPANT_OFFER", title: "Participante 2+2", detail: legacy("xxOnLBiH2u44") },
             ].map((option) => (
               <button
                 key={option.value}
@@ -203,7 +207,7 @@ export default function NewBusinessPage() {
           </div>
           {initialBenefit !== "NONE" && (
             <div className="mt-4 border-2 border-black bg-[#FFF5BA] px-3 py-2 text-xs font-black text-black">
-              Esta cuenta se crea activa sin pedir tarjeta. Al vencer el beneficio pasara a requerir suscripcion.
+              <LocalizedText id="gobJy9iyLPcp" />
             </div>
           )}
         </div>
@@ -219,7 +223,7 @@ export default function NewBusinessPage() {
             href="/para/x7k9m2v4q8/businesses"
             className="border-4 border-black bg-white px-6 py-2.5 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
           >
-            Cancelar
+            <LocalizedText id="u527QG3L1SSL" />
           </Link>
           <button
             type="submit"
@@ -227,9 +231,9 @@ export default function NewBusinessPage() {
             className="flex flex-1 items-center justify-center gap-2 border-4 border-black bg-black py-2.5 text-sm font-black uppercase text-white shadow-[3px_3px_0_#7C3AED] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
           >
             {loading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Creando...</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> <LocalizedText id="cZFdvI75RJfV" /></>
             ) : (
-              <><Building2 className="h-4 w-4" /> Crear Negocio</>
+              <><Building2 className="h-4 w-4" /> <LocalizedText id="6ws1rmKVXYrK" /></>
             )}
           </button>
         </div>

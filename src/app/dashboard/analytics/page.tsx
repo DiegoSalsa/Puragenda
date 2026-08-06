@@ -2,13 +2,15 @@ import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/busin
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { addDays, differenceInMinutes, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
-import { es } from "date-fns/locale";
+import type { Locale } from "date-fns/locale";
 import Link from "next/link";
 import { Building2, UserRound } from "lucide-react";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { BusinessInsights } from "../business-insights";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { getLocale, getTranslations } from "next-intl/server";
+import { getDateLocale } from "@/i18n/date-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,8 @@ function buildAnalytics(
     service: { name: string; price: number };
     staff: { name: string } | null;
   }[],
+  dateLocale: Locale,
+  unassignedProfessional: string,
 ) {
   const activeAppointments = appointments.filter((appointment) => ACTIVE_REVENUE_STATUSES.has(appointment.status));
   const previousActiveAppointments = previousAppointments.filter((appointment) => ACTIVE_REVENUE_STATUSES.has(appointment.status));
@@ -73,7 +77,7 @@ function buildAnalytics(
     serviceEntry.revenue += getRevenue(appointment);
     serviceMap.set(appointment.service.name, serviceEntry);
 
-    const staffName = appointment.staff?.name ?? "Sin profesional";
+    const staffName = appointment.staff?.name ?? unassignedProfessional;
     const staffEntry = staffMap.get(staffName) ?? { label: staffName, value: 0, revenue: 0 };
     staffEntry.value += 1;
     staffEntry.revenue += getRevenue(appointment);
@@ -81,7 +85,7 @@ function buildAnalytics(
   }
 
   const dayDistribution = dayOrder.map((day) => ({
-    label: titleCase(format(new Date(2026, 5, day === 0 ? 7 : day), "EEEE", { locale: es })),
+    label: titleCase(format(new Date(2026, 5, day === 0 ? 7 : day), "EEEE", { locale: dateLocale })),
     value: dayCounts.get(day) ?? 0,
   }));
   const busiestDay = dayDistribution.reduce(
@@ -113,17 +117,23 @@ function buildAnalytics(
 }
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ date?: string; agenda?: string; period?: string }> }) {
+  const [t, homeT, locale] = await Promise.all([
+    getTranslations("dashboard.analytics"),
+    getTranslations("dashboard.home"),
+    getLocale(),
+  ]);
+  const dateLocale = getDateLocale(locale);
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesion para acceder al dashboard</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground">{homeT("authRequired")}</div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aun</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground">{homeT("businessRequired")}</div>;
   const permissions = await getEffectiveBusinessPermissions(user, business);
   if (
     !permissions.includes(DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN) &&
     !permissions.includes(DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS)
   ) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para ver analítica.</div>;
+    return <div className="py-20 text-center text-muted-foreground">{t("permissionDenied")}</div>;
   }
 
   const agendaScope = await getStaffAgendaScope(user, business);
@@ -196,21 +206,19 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     }),
   ]);
 
-  const metrics = buildAnalytics(appointments, previousAppointments);
+  const metrics = buildAnalytics(appointments, previousAppointments, dateLocale, t("unassigned"));
   const currentAgendaMode = showingOwnAgenda ? "mine" : undefined;
-  const scopeLabel = showingOwnAgenda || !agendaScope.canSeeAllAgendas ? "tu agenda" : "todo el negocio";
+  const scopeLabel = showingOwnAgenda || !agendaScope.canSeeAllAgendas ? t("mySchedule") : t("entireBusiness");
   const periodLabel = period === "month"
-    ? titleCase(format(analysisStart, "MMMM yyyy", { locale: es }))
-    : `${format(analysisStart, "d MMM", { locale: es })} - ${format(analysisEnd, "d MMM yyyy", { locale: es })}`;
+    ? titleCase(format(analysisStart, "MMMM yyyy", { locale: dateLocale }))
+    : `${format(analysisStart, "d MMM", { locale: dateLocale })} - ${format(analysisEnd, "d MMM yyyy", { locale: dateLocale })}`;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analitica</h1>
-          <p className="mt-1 text-muted-foreground">
-            Resumen de rendimiento para <span className="font-medium text-[#7C3AED]">{business.name}</span>
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("subtitle", { business: business.name })}</p>
         </div>
 
         {canToggleOwnAgenda && (
@@ -224,7 +232,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
               }`}
             >
               <Building2 className="h-4 w-4" />
-              Todo el negocio
+              {t("wholeBusiness")}
             </Link>
             <Link
               href={analyticsHref("mine")}
@@ -235,7 +243,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
               }`}
             >
               <UserRound className="h-4 w-4" />
-              Mi analisis
+              {t("myAnalysis")}
             </Link>
           </div>
         )}
@@ -260,8 +268,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         steps={[
           {
             popover: {
-              title: "ANALITICA",
-              description: "Aqui puedes revisar el rendimiento semanal o mensual de tu negocio, servicios y equipo.",
+              title: t("tutorialTitle"),
+              description: t("tutorialDescription"),
             },
           },
         ]}

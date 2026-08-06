@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
@@ -6,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarClock, Check, Loader2, LogOut, RefreshCw, X } from "lucide-react";
 
 export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: boolean }) {
+  const legacy = useTranslations("legacy");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
@@ -29,7 +33,7 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
       if (!response.ok) throw new Error(payload.error || "No pudimos enviar el enlace");
       setMessage(payload.message);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No pudimos enviar el enlace");
+      setError(requestError instanceof Error ? requestError.message : legacy("_7Dgboa2a61e"));
     } finally {
       setLoading(false);
     }
@@ -47,29 +51,29 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border-3 border-black bg-[#c4b5fd] shadow-[4px_4px_0_#000]">
           <CalendarClock className="h-7 w-7" strokeWidth={2.5} />
         </div>
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-[#6d28d9]">Portal del cliente</p>
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Tu agenda, sin contraseña.</h1>
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-[#6d28d9]"><LocalizedText id="Sc8irODpRcS2" /></p>
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl"><LocalizedText id="t5QNRkOadW5k" /></h1>
         <p className="mt-3 text-sm font-medium leading-6 text-black/60">
-          Escribe el correo que usaste al reservar. Te enviaremos un enlace privado para ver tus citas, historial y premios.
+          <LocalizedText id="yWKkkqcHknnu" />
         </p>
 
         {message ? (
           <div className="mt-7 rounded-2xl border-3 border-black bg-[#bffcc6] p-5 shadow-[4px_4px_0_#000]">
             <Check className="mb-3 h-6 w-6" strokeWidth={3} />
-            <p className="font-black">Revisa tu correo</p>
+            <p className="font-black"><LocalizedText id="DD1umyLNHnxt" /></p>
             <p className="mt-1 text-sm font-medium leading-5">{message}</p>
             <button
               type="button"
               onClick={() => setMessage(null)}
               className="mt-4 text-xs font-black uppercase underline underline-offset-4"
             >
-              Usar otro correo
+              <LocalizedText id="X_BImI43yMzv" />
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="mt-7 space-y-4">
             <div>
-              <label htmlFor="portal-email" className="mb-2 block text-sm font-black">Correo electrónico</label>
+              <label htmlFor="portal-email" className="mb-2 block text-sm font-black"><LocalizedText id="7GTcMKSDzc-v" /></label>
               <input
                 id="portal-email"
                 type="email"
@@ -92,13 +96,13 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
               disabled={loading}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border-3 border-black bg-[#7c3aed] px-5 font-black text-white shadow-[4px_4px_0_#000] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Enviarme el enlace <ArrowRight className="h-5 w-5" /></>}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><LocalizedText id="Q5_J1QMnWQUD" /> <ArrowRight className="h-5 w-5" /></>}
             </button>
           </form>
         )}
 
         <p className="mt-6 text-xs font-medium leading-5 text-black/45">
-          El enlace dura 15 minutos y se puede usar una sola vez. No necesitas crear una cuenta.
+          <LocalizedText id="KYkp8gpIEYuo" />
         </p>
       </div>
     </main>
@@ -114,6 +118,7 @@ export function ClientPortalAppointmentActions({
   canCancel: boolean;
   canReschedule: boolean;
 }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [loading, setLoading] = useState<"cancel" | "reschedule" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +138,7 @@ export function ClientPortalAppointmentActions({
   }
 
   async function cancel() {
-    if (!window.confirm("¿Seguro que quieres cancelar esta cita? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm(legacy("9qZ2Kd698ckx"))) return;
     setLoading("cancel");
     setError(null);
     try {
@@ -142,7 +147,7 @@ export function ClientPortalAppointmentActions({
       if (!response.ok) throw new Error(payload.error);
       router.refresh();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No pudimos cancelar");
+      setError(requestError instanceof Error ? requestError.message : legacy("RHPwHw5PnayN"));
     } finally {
       setLoading(null);
     }
@@ -156,13 +161,13 @@ export function ClientPortalAppointmentActions({
         {canReschedule && (
           <button type="button" onClick={reschedule} disabled={loading !== null} className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-[#fff5ba] px-3 py-2 text-xs font-black shadow-[2px_2px_0_#000] disabled:opacity-50">
             {loading === "reschedule" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Reagendar
+            <LocalizedText id="NGxxzQRpxnrQ" />
           </button>
         )}
         {canCancel && (
           <button type="button" onClick={cancel} disabled={loading !== null} className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-white px-3 py-2 text-xs font-black text-red-700 shadow-[2px_2px_0_#000] disabled:opacity-50">
             {loading === "cancel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
-            Cancelar
+            <LocalizedText id="u527QG3L1SSL" />
           </button>
         )}
       </div>
@@ -183,7 +188,7 @@ export function ClientPortalLogout() {
   return (
     <button type="button" onClick={logout} disabled={loading} className="inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-4 py-2 text-sm font-black shadow-[3px_3px_0_#000] disabled:opacity-60">
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-      Salir
+      <LocalizedText id="k__79855nzP6" />
     </button>
   );
 }

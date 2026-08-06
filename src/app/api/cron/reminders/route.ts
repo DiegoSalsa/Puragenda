@@ -3,6 +3,8 @@ import { prisma } from "@/server/db/prisma";
 import { resend, EMAIL_FROM } from "@/server/email/resend";
 import { reminderEmail } from "@/server/email/templates";
 import { addClientPortalLinkToEmail } from "@/server/email/send";
+import { localizeEmailTemplate } from "@/server/email/localization";
+import { resolveLocale } from "@/i18n/config";
 import { isTomorrowInTimezone } from "@/lib/date";
 
 // ── Vercel Cron: runs daily at 14:00 UTC (10:00 AM Chile) ──
@@ -37,7 +39,7 @@ export async function GET(req: Request) {
       include: {
         service: { select: { name: true } },
         staff: { select: { name: true } },
-        business: { select: { name: true, timezone: true } },
+        business: { select: { name: true, timezone: true, locale: true } },
       },
     });
     const appointments = candidates.filter((appointment) =>
@@ -62,7 +64,7 @@ export async function GET(req: Request) {
         // Generate unique action token for confirm/cancel links
         const actionToken = `${apt.id}-${crypto.randomUUID()}`;
 
-        const email = await addClientPortalLinkToEmail(
+        const baseEmail = await addClientPortalLinkToEmail(
           apt.customerEmail,
           reminderEmail({
             customerName: apt.customerName,
@@ -72,10 +74,12 @@ export async function GET(req: Request) {
             endTime: apt.endTime,
             businessName: apt.business.name,
             timezone: apt.business.timezone,
+            locale: resolveLocale(apt.business.locale),
             confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
             cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
           }),
         );
+        const email = localizeEmailTemplate(baseEmail, resolveLocale(apt.business.locale));
 
         const { error } = await resend.emails.send({
           from: EMAIL_FROM,
@@ -120,7 +124,7 @@ export async function GET(req: Request) {
               recurringPlan: { select: { expirationWarningDays: true, renewalMessage: true } },
             },
           },
-              business: { select: { name: true, timezone: true, owner: { select: { email: true } } } },
+              business: { select: { name: true, timezone: true, locale: true, owner: { select: { email: true } } } },
         },
       });
 
@@ -142,6 +146,7 @@ export async function GET(req: Request) {
             managementToken: booking.managementToken || "",
             businessName: booking.business.name,
             timezone: booking.business.timezone,
+            locale: resolveLocale(booking.business.locale),
           });
 
           if (booking.business.owner?.email) {
@@ -153,6 +158,7 @@ export async function GET(req: Request) {
               daysLeft,
               businessName: booking.business.name,
               timezone: booking.business.timezone,
+              locale: resolveLocale(booking.business.locale),
             });
           }
 
@@ -189,7 +195,7 @@ export async function GET(req: Request) {
           recurringBooking: {
             include: {
               service: { select: { name: true } },
-              business: { select: { name: true, timezone: true } },
+              business: { select: { name: true, timezone: true, locale: true } },
             },
           },
         },
@@ -203,6 +209,7 @@ export async function GET(req: Request) {
           originalDate: override.originalDate,
           businessName: override.recurringBooking.business.name,
           timezone: override.recurringBooking.business.timezone,
+          locale: resolveLocale(override.recurringBooking.business.locale),
         });
 
         await prisma.recurringSessionOverride.update({

@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import { format, differenceInDays, startOfWeek, endOfWeek, startOfMonth, subMonths } from "date-fns";
@@ -142,9 +144,9 @@ export default async function AdminDashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter text-black">Panel SuperAdmin</h1>
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter text-black"><LocalizedText id="ZBJB7fe6MCnt" /></h1>
           <p className="text-sm font-bold text-black/50 uppercase tracking-wide mt-1">
-            Puragenda · métricas en tiempo real
+            <LocalizedText id="rwKNi7u5YMWW" />
           </p>
         </div>
         <Link
@@ -152,7 +154,7 @@ export default async function AdminDashboardPage() {
           className="flex items-center gap-2 border-4 border-black bg-[#B28DFF] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] hover:translate-x-[3px] hover:translate-y-[3px] hover:shadow-none transition-all w-fit"
         >
           <CalendarPlus className="h-4 w-4" />
-          Agregar Negocio
+          <LocalizedText id="VvuwYQzMj7ZD" />
         </Link>
       </div>
 
@@ -206,7 +208,7 @@ export default async function AdminDashboardPage() {
         <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000]">
           <div className="flex items-center gap-2 mb-2">
             <CalendarCheck className="h-4 w-4 text-black/50" />
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Citas esta semana</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="ZPecIxA2OpW9" /></p>
           </div>
           <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{weeklyAppointments}</p>
           <p className="mt-1 text-xs font-bold text-black/50">
@@ -216,20 +218,20 @@ export default async function AdminDashboardPage() {
         <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000]">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-black/50" />
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Pagando hoy</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="zeq85aKrJskM" /></p>
           </div>
           <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{paidActive}</p>
           <p className="mt-1 text-xs font-bold text-black/50">
-            {paidIndividual} Individual · {paidEquipo} Equipo
+            {paidIndividual} <LocalizedText id="XYqeAm4QjvCB" /> {paidEquipo} <LocalizedText id="wpRGdUrhm5Ag" />
           </p>
         </div>
         <div className="border-4 border-black bg-white p-5 shadow-[6px_6px_0_#000]">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-4 w-4 text-black/50" />
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">Nuevos esta semana</p>
+            <p className="text-xs font-black uppercase tracking-widest text-black/60"><LocalizedText id="eA95MSuBjkIF" /></p>
           </div>
           <p className="text-2xl sm:text-4xl font-black text-black tracking-tighter">{newLast7Days}</p>
-          <p className="mt-1 text-xs font-bold text-black/50">Registros últimos 7 días</p>
+          <p className="mt-1 text-xs font-bold text-black/50"><LocalizedText id="gRf70YepJdID" /></p>
         </div>
       </div>
 
@@ -238,7 +240,7 @@ export default async function AdminDashboardPage() {
         <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000] space-y-4">
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-black">
             <Sparkles className="h-4 w-4" />
-            Desglose de Revenue
+            <LocalizedText id="_UHKOTeixzbb" />
           </h3>
           <div className="space-y-3">
             {[
@@ -252,7 +254,7 @@ export default async function AdminDashboardPage() {
                 <div>
                   <p className="text-sm font-black text-black">{item.name}</p>
                   <p className="text-xs font-bold text-black/50">
-                    {item.count} × ${item.price.toLocaleString("es-CL")}
+                    {item.count} <LocalizedText id="AwdhISD-lGxr" />{item.price.toLocaleString("es-CL")}
                   </p>
                 </div>
                 <p className="font-black text-lg text-black">
@@ -261,7 +263,7 @@ export default async function AdminDashboardPage() {
               </div>
             ))}
             <div className="flex items-center justify-between border-2 border-black bg-black p-3">
-              <p className="text-sm font-black text-white uppercase">Total MRR</p>
+              <p className="text-sm font-black text-white uppercase"><LocalizedText id="Tn8diBjwh9QB" /></p>
               <p className="font-black text-lg text-[#BFFCC6]">
                 ${estimatedMRR.toLocaleString("es-CL")}
               </p>
@@ -272,12 +274,12 @@ export default async function AdminDashboardPage() {
         <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000] space-y-4">
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-black">
             <AlertTriangle className="h-4 w-4" />
-            Trials por expirar (≤5 días)
+            <LocalizedText id="tQLISr4zl0B4" />
           </h3>
           <div className="space-y-2">
             {expiringTrials.length === 0 ? (
               <div className="border-2 border-black bg-[#BFFCC6] p-4">
-                <p className="text-sm font-black text-black/60 text-center">Sin urgencias por ahora</p>
+                <p className="text-sm font-black text-black/60 text-center"><LocalizedText id="1HBubG9k9GXM" /></p>
               </div>
             ) : (
               expiringTrials.slice(0, 5).map((s) => {
@@ -312,8 +314,8 @@ export default async function AdminDashboardPage() {
         {/* Top 5 by appointments */}
         <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000]">
           <div className="border-b-4 border-black p-5 bg-[#85E3FF]">
-            <h2 className="text-base font-black uppercase tracking-tight text-black">Top 5 por Citas</h2>
-            <p className="text-xs font-bold text-black/50">Total histórico de appointments</p>
+            <h2 className="text-base font-black uppercase tracking-tight text-black"><LocalizedText id="vXtXrTWzQO_I" /></h2>
+            <p className="text-xs font-bold text-black/50"><LocalizedText id="e7KAbnAi1FW6" /></p>
           </div>
           <div className="p-4 space-y-2">
             {topBusinessesByAppointments.map((biz, i) => (
@@ -332,7 +334,7 @@ export default async function AdminDashboardPage() {
                   </div>
                 </div>
                 <span className="border-2 border-black bg-[#85E3FF] px-2 py-0.5 text-xs font-black">
-                  {biz._count.appointments} citas
+                  {biz._count.appointments} <LocalizedText id="IbYb8ye64-ek" />
                 </span>
               </Link>
             ))}
@@ -343,14 +345,14 @@ export default async function AdminDashboardPage() {
         <div className="border-4 border-black bg-white shadow-[6px_6px_0_#000]">
           <div className="flex items-center justify-between border-b-4 border-black p-5 bg-[#FFF5BA]">
             <div>
-              <h2 className="text-base font-black uppercase tracking-tight text-black">Registros Recientes</h2>
-              <p className="text-xs font-bold text-black/50">{newLast7Days} nuevos en los últimos 7 días</p>
+              <h2 className="text-base font-black uppercase tracking-tight text-black"><LocalizedText id="XDtVlAiZUd0o" /></h2>
+              <p className="text-xs font-bold text-black/50">{newLast7Days} <LocalizedText id="_ZQWd-A2W4Ck" /></p>
             </div>
             <Link
               href={`${ADMIN_SECRET_PATH}/businesses`}
               className="flex items-center gap-1 border-2 border-black bg-black px-3 py-1.5 text-xs font-black uppercase text-white shadow-[2px_2px_0_#7C3AED] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all"
             >
-              Ver todos <ArrowUpRight className="h-3 w-3" />
+              <LocalizedText id="4w-8lJiRwEv2" /> <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
           <div className="p-4 space-y-2">

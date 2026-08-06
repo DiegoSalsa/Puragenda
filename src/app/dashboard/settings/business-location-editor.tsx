@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Loader2, Save, MapPin, Map } from "lucide-react";
@@ -11,6 +14,7 @@ interface BusinessLocationEditorProps {
 }
 
 export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: BusinessLocationEditorProps) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [address, setAddress] = useState(initialAddress || "");
   const [mapsUrl, setMapsUrl] = useState(initialMapsUrl || "");
@@ -29,7 +33,7 @@ export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: Busin
     if (result.error) {
       setMessage({ type: "error", text: result.error });
     } else {
-      setMessage({ type: "success", text: "Ubicación actualizada" });
+      setMessage({ type: "success", text: legacy("lPSAo-onvh0b") });
       router.refresh();
     }
 
@@ -46,7 +50,7 @@ export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: Busin
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Dirección física (ej. Av. Providencia 1234, Oficina 501)"
+            placeholder={legacy("LWBCrpCY6x9s")}
             className="flex-1 w-full rounded-xl border border-border bg-muted px-4 py-2 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
@@ -56,7 +60,7 @@ export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: Busin
             type="url"
             value={mapsUrl}
             onChange={(e) => setMapsUrl(e.target.value)}
-            placeholder="Enlace de Google Maps (ej. https://maps.app.goo.gl/...)"
+            placeholder={legacy("zRPDinyCySrs")}
             className="flex-1 w-full rounded-xl border border-border bg-muted px-4 py-2 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           />
         </div>
@@ -64,7 +68,7 @@ export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: Busin
       
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Estos datos se incluirán en los correos enviados a tus clientes (confirmación, recordatorios).
+          <LocalizedText id="a-fe8IWlbtaI" />
         </p>
         <button
           onClick={handleSave}
@@ -72,7 +76,7 @@ export function BusinessLocationEditor({ initialAddress, initialMapsUrl }: Busin
           className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 h-10 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Guardar Ubicación
+          <LocalizedText id="JcSByUrrTJU1" />
         </button>
       </div>
 

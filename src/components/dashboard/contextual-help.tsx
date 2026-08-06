@@ -1,4 +1,8 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
+import { GUIDED_HELP_KEYS } from "@/i18n/guided-help-keys";
 
 import { CircleHelp } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -512,6 +516,11 @@ function resolveSteps(steps: TourStepSpec[]): DriveStep[] {
 }
 
 export function ContextualHelpButton() {
+  const legacy = useTranslations("legacy");
+  const translate = (source: string) => {
+    const key = GUIDED_HELP_KEYS[source];
+    return key ? legacy(key) : source;
+  };
   const pathname = usePathname();
   const activeTour = useRef<ReturnType<typeof driver> | null>(null);
 
@@ -525,14 +534,22 @@ export function ContextualHelpButton() {
   function startTour() {
     activeTour.current?.destroy();
     const tour = getTour(pathname);
-    const steps = resolveSteps(tour.steps);
+    const localizedSteps = tour.steps.map((step) => ({
+      ...step,
+      popover: {
+        ...step.popover,
+        title: typeof step.popover.title === "string" ? translate(step.popover.title) : step.popover.title,
+        description: typeof step.popover.description === "string" ? translate(step.popover.description) : step.popover.description,
+      },
+    }));
+    const steps = resolveSteps(localizedSteps);
     const safeSteps = steps.length > 0
       ? steps
       : [{
           element: "#tutorial-main",
           popover: {
-            title: tour.title,
-            description: "Esta sección aún no tiene controles visibles para explicar.",
+            title: translate(tour.title),
+            description: translate("Esta sección aún no tiene controles visibles para explicar."),
             side: "top" as const,
             align: "start" as const,
           },
@@ -548,10 +565,10 @@ export function ContextualHelpButton() {
       overlayColor: "#09090B",
       overlayOpacity: 0.72,
       popoverClass: "neo-brutalism-driver",
-      nextBtnText: "Siguiente",
-      prevBtnText: "Anterior",
-      doneBtnText: "Finalizar",
-      progressText: "{{current}} de {{total}}",
+      nextBtnText: translate("Siguiente"),
+      prevBtnText: translate("Anterior"),
+      doneBtnText: translate("Finalizar"),
+      progressText: translate("{{current}} de {{total}}"),
       steps: safeSteps,
     });
 
@@ -564,12 +581,12 @@ export function ContextualHelpButton() {
       type="button"
       onClick={startTour}
       className="fixed right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex h-10 items-center justify-center gap-2 rounded-xl border border-black bg-[#7C3AED] px-3 text-white shadow-[2px_2px_0_#111] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 active:translate-y-0 md:static md:z-auto md:h-9 md:shadow-none"
-      aria-label="Abrir ayuda de esta página"
-      title="Ayuda de esta página"
+      aria-label={legacy("HQh8lXGkO4Rc")}
+      title={legacy("bYVYfo_pBKdr")}
       data-tour="contextual-help"
     >
       <CircleHelp className="h-5 w-5" />
-      <span className="hidden text-xs font-bold lg:inline">Ayuda</span>
+      <span className="hidden text-xs font-bold lg:inline"><LocalizedText id="MrQANbCAQ653" /></span>
     </button>
   );
 }

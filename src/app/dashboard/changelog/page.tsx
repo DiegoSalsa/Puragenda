@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { CHANGELOG_DATA } from "@/config/changelog";
 import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
 
@@ -5,8 +7,8 @@ export default function ChangelogPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Novedades y Actualizaciones</h1>
-        <p className="text-muted-foreground mt-2">Descubre las últimas mejoras, correcciones y nuevas funcionalidades añadidas a Puragenda.</p>
+        <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="LPKEuQgC4a6c" /></h1>
+        <p className="text-muted-foreground mt-2"><LocalizedText id="Hu__nLwfZD5k" /></p>
       </div>
 
       <div className="max-w-3xl space-y-12 pb-12 mt-6">
@@ -68,7 +70,7 @@ export default function ChangelogPage() {
                 {entry.features.length > 0 && (
                   <div>
                     <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
-                      Nuevas Funcionalidades
+                      <LocalizedText id="e_ARYQ91-kY6" />
                     </h3>
                     <ul className="space-y-2.5">
                       {entry.features.map((feature, i) => (
@@ -84,7 +86,7 @@ export default function ChangelogPage() {
                 {entry.fixes && entry.fixes.length > 0 && (
                   <div>
                     <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
-                      Mejoras y Correcciones
+                      <LocalizedText id="D7f-ur6F_CU0" />
                     </h3>
                     <ul className="space-y-2.5">
                       {entry.fixes.map((fix, i) => (

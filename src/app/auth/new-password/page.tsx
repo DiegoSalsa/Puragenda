@@ -164,6 +164,7 @@ function NewPasswordForm() {
 }
 
 export default function NewPasswordPage() {
+  const legacy = useTranslations("legacy");
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -173,7 +174,7 @@ export default function NewPasswordPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-end"><LanguageSwitcher /></div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
-          <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
+          <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-16 w-auto -my-3" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">

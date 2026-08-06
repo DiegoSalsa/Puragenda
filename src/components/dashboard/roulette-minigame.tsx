@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useRef, useState, useEffect, useCallback } from "react";
 
@@ -263,6 +266,7 @@ interface RouletteMinigameProps {
 }
 
 export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMinigameProps) {
+  const legacy = useTranslations("legacy");
   const [isSpinning, setIsSpinning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -294,7 +298,7 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
       const result = await onSpin();
 
       if (!result.success || !result.prize) {
-        setError(result.error || "Error al girar la ruleta");
+        setError(result.error || legacy("veFfCKO2PjE4"));
         return;
       }
 
@@ -347,11 +351,11 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
         setRotation(finalNorm);
       }, SPIN_DURATION);
     } catch {
-      setError("Error de conexi\u00f3n. Intenta de nuevo.");
+      setError(legacy("LMn4610GEcXq"));
     } finally {
       setIsFetching(false);
     }
-  }, [isSpinning, isFetching, disabled, tokenBalance, onSpin]);
+  }, [isSpinning, isFetching, disabled, tokenBalance, onSpin, legacy]);
 
   // Auto-hide result
   useEffect(() => {
@@ -537,7 +541,7 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
           {resultType === "win" ? (
             <>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                Premio ganado
+                <LocalizedText id="Joio5p7bKlZI" />
               </p>
               <p className="text-lg font-black text-[#7C3AED]">{wonPrize.name}</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -546,14 +550,14 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
                   : `${wonPrize.freeMonths} mes${wonPrize.freeMonths! > 1 ? "es" : ""} gratis`}
               </p>
               <p className="text-xs text-muted-foreground/70 mt-2">
-                Actívalo desde la pestaña Premios cuando quieras.
+                <LocalizedText id="QzwZ4TDO9NwK" />
               </p>
             </>
           ) : (
             <>
               <p className="text-sm font-bold text-muted-foreground">{wonPrize.name}</p>
               <p className="text-xs text-muted-foreground/60 mt-1">
-                Sigue intentando, la suerte cambia.
+                <LocalizedText id="eho8mdg21Ty6" />
               </p>
             </>
           )}
@@ -580,14 +584,14 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2a10 10 0 1 0 10 10" strokeLinecap="round" />
               </svg>
-              Girando...
+              <LocalizedText id="SL-8HdJDTwKI" />
             </>
           ) : isFetching ? (
             <>
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2a10 10 0 1 0 10 10" strokeLinecap="round" />
               </svg>
-              Cargando...
+              <LocalizedText id="eBZObIj2z2vo" />
             </>
           ) : (
             "Girar Ruleta · 1 ficha"

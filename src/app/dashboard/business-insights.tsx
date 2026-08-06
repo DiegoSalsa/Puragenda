@@ -13,6 +13,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 type PeriodMode = "week" | "month";
 
@@ -60,15 +61,14 @@ interface BusinessInsightsProps {
   showTeamBreakdown: boolean;
 }
 
-function formatPercent(value: number | null) {
-  if (value === null) return "Sin periodo anterior";
+function formatPercent(value: number, comparisonLabel: string) {
   const sign = value > 0 ? "+" : "";
-  return `${sign}${value.toFixed(0)}% vs periodo anterior`;
+  return `${sign}${value.toFixed(0)}% ${comparisonLabel}`;
 }
 
-function TrendPill({ value }: { value: number | null }) {
+function TrendPill({ value, noComparisonLabel, comparisonLabel }: { value: number | null; noComparisonLabel: string; comparisonLabel: string }) {
   if (value === null) {
-    return <span className="text-xs text-muted-foreground">Sin comparacion</span>;
+    return <span className="text-xs text-muted-foreground">{noComparisonLabel}</span>;
   }
 
   const positive = value >= 0;
@@ -79,7 +79,7 @@ function TrendPill({ value }: { value: number | null }) {
       positive ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
     }`}>
       <Icon className="h-3 w-3" />
-      {formatPercent(value)}
+      {formatPercent(value, comparisonLabel)}
     </span>
   );
 }
@@ -126,7 +126,7 @@ function BarList({
   );
 }
 
-export function BusinessInsights({
+export async function BusinessInsights({
   currencyCode,
   period,
   scopeLabel,
@@ -137,15 +137,16 @@ export function BusinessInsights({
   metrics,
   showTeamBreakdown,
 }: BusinessInsightsProps) {
+  const t = await getTranslations("dashboard.analytics");
   const activeStatuses = metrics.activeAppointmentCount;
   const attendanceBase = Math.max(1, activeStatuses + metrics.cancelledCount + metrics.noShowCount);
   const reliabilityRate = Math.round((activeStatuses / attendanceBase) * 100);
 
   const statusItems = [
-    { label: "Confirmadas", value: metrics.confirmedCount },
-    { label: "Pendientes", value: metrics.pendingCount },
-    { label: "Canceladas", value: metrics.cancelledCount },
-    { label: "No asistio", value: metrics.noShowCount },
+    { label: t("status.confirmed"), value: metrics.confirmedCount },
+    { label: t("status.pending"), value: metrics.pendingCount },
+    { label: t("status.cancelled"), value: metrics.cancelledCount },
+    { label: t("status.noShow"), value: metrics.noShowCount },
   ].filter((item) => item.value > 0);
 
   return (
@@ -154,9 +155,9 @@ export function BusinessInsights({
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#7C3AED]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#A78BFA]">
             <LineChart className="h-3.5 w-3.5" />
-            Resumen {period === "week" ? "semanal" : "mensual"}
+            {period === "week" ? t("weeklySummary") : t("monthlySummary")}
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Pulso de {scopeLabel}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("pulse", { scope: scopeLabel })}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{periodLabel}</p>
         </div>
 
@@ -168,7 +169,7 @@ export function BusinessInsights({
                 period === "week" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Semana
+              {t("week")}
             </Link>
             <Link
               href={monthHref}
@@ -176,11 +177,11 @@ export function BusinessInsights({
                 period === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Mes
+              {t("month")}
             </Link>
           </div>
           <Link href={currentHref} className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Ver calendario
+            {t("viewCalendar")}
           </Link>
         </div>
       </div>
@@ -188,29 +189,29 @@ export function BusinessInsights({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Ingresos estimados",
+            label: t("estimatedRevenue"),
             value: formatPrice(metrics.estimatedRevenue, currencyCode),
-            helper: "Reservas no canceladas",
+            helper: t("nonCancelled"),
             icon: DollarSign,
             trend: metrics.revenueChangePercent,
           },
           {
-            label: "Citas",
+            label: t("appointments"),
             value: metrics.appointmentCount.toString(),
-            helper: `${metrics.activeAppointmentCount} activas`,
+            helper: t("activeCount", { count: metrics.activeAppointmentCount }),
             icon: CalendarDays,
             trend: metrics.appointmentChangePercent,
           },
           {
-            label: "Ticket promedio",
+            label: t("averageTicket"),
             value: formatPrice(metrics.averageTicket, currencyCode),
-            helper: `${metrics.uniqueClients} clientes unicos`,
+            helper: t("uniqueClients", { count: metrics.uniqueClients }),
             icon: Users,
           },
           {
-            label: "Horas reservadas",
+            label: t("reservedHours"),
             value: metrics.reservedHours.toFixed(metrics.reservedHours % 1 === 0 ? 0 : 1),
-            helper: `${reliabilityRate}% activas sobre total`,
+            helper: t("activeRate", { rate: reliabilityRate }),
             icon: Clock3,
           },
         ].map((stat) => (
@@ -222,7 +223,7 @@ export function BusinessInsights({
             <p className="mt-3 text-2xl font-bold tracking-tight">{stat.value}</p>
             <div className="mt-2 flex min-h-6 items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">{stat.helper}</span>
-              {"trend" in stat && <TrendPill value={stat.trend ?? null} />}
+              {"trend" in stat && <TrendPill value={stat.trend ?? null} noComparisonLabel={t("noComparison")} comparisonLabel={t("versusPrevious")} />}
             </div>
           </div>
         ))}
@@ -232,68 +233,68 @@ export function BusinessInsights({
         <div className="rounded-xl border border-border bg-background/60 p-4">
           <div className="mb-4 flex items-center gap-2">
             <Flame className="h-4 w-4 text-[#F97316]" />
-            <h3 className="font-semibold">Dia con mas citas</h3>
+            <h3 className="font-semibold">{t("busiestDay")}</h3>
           </div>
           {metrics.busiestDay ? (
             <div>
               <p className="text-2xl font-bold">{metrics.busiestDay.label}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {metrics.busiestDay.value} citas en el periodo
+                {t("appointmentsInPeriod", { count: metrics.busiestDay.value })}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Aun no hay citas en este periodo.</p>
+            <p className="text-sm text-muted-foreground">{t("noAppointments")}</p>
           )}
         </div>
 
         <div className="rounded-xl border border-border bg-background/60 p-4">
           <div className="mb-4 flex items-center gap-2">
             <Scissors className="h-4 w-4 text-[#7C3AED]" />
-            <h3 className="font-semibold">Servicio estrella</h3>
+            <h3 className="font-semibold">{t("topService")}</h3>
           </div>
           {metrics.topService ? (
             <div>
               <p className="text-2xl font-bold">{metrics.topService.label}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {metrics.topService.value} citas · {formatPrice(metrics.topService.revenue, currencyCode)}
+                {t("serviceResult", { count: metrics.topService.value, revenue: formatPrice(metrics.topService.revenue, currencyCode) })}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Sin servicios reservados todavia.</p>
+            <p className="text-sm text-muted-foreground">{t("noServices")}</p>
           )}
         </div>
 
         <div className="rounded-xl border border-border bg-background/60 p-4">
           <div className="mb-4 flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-400" />
-            <h3 className="font-semibold">Estado de citas</h3>
+            <h3 className="font-semibold">{t("appointmentStatus")}</h3>
           </div>
-          <BarList items={statusItems} emptyText="Sin estados para mostrar en este periodo." />
+          <BarList items={statusItems} emptyText={t("noStatuses")} />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-background/60 p-4">
-          <h3 className="mb-4 font-semibold">Distribucion por dia</h3>
-          <BarList items={metrics.dayDistribution} emptyText="Cuando entren citas, veras tus dias mas fuertes aqui." />
+          <h3 className="mb-4 font-semibold">{t("dayDistribution")}</h3>
+          <BarList items={metrics.dayDistribution} emptyText={t("dayDistributionEmpty")} />
         </div>
 
         <div className="rounded-xl border border-border bg-background/60 p-4">
-          <h3 className="mb-4 font-semibold">Servicios mas reservados</h3>
+          <h3 className="mb-4 font-semibold">{t("mostBooked")}</h3>
           <BarList
             items={metrics.topServices.map((item) => ({
               label: item.label,
               value: item.value,
               helper: formatPrice(item.revenue, currencyCode),
             }))}
-            emptyText="Aun no hay servicios reservados en este periodo."
+            emptyText={t("noServices")}
           />
         </div>
 
         <div className="rounded-xl border border-border bg-background/60 p-4">
           <div className="mb-4 flex items-center gap-2">
             {showTeamBreakdown ? <Users className="h-4 w-4 text-muted-foreground" /> : <UserRound className="h-4 w-4 text-muted-foreground" />}
-            <h3 className="font-semibold">{showTeamBreakdown ? "Rendimiento del equipo" : "Analisis personal"}</h3>
+            <h3 className="font-semibold">{showTeamBreakdown ? t("teamPerformance") : t("personalAnalysis")}</h3>
           </div>
           <BarList
             items={metrics.topStaff.map((item) => ({
@@ -301,7 +302,7 @@ export function BusinessInsights({
               value: item.value,
               helper: formatPrice(item.revenue, currencyCode),
             }))}
-            emptyText={showTeamBreakdown ? "Aun no hay citas asignadas al equipo." : "Aun no tienes citas asignadas en este periodo."}
+            emptyText={showTeamBreakdown ? t("teamEmpty") : t("personalEmpty")}
           />
         </div>
       </div>

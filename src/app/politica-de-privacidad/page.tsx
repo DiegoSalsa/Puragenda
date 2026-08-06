@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
@@ -25,7 +27,7 @@ export default function PrivacidadPage() {
             href="/" 
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#7C3AED] transition-colors mb-8"
           >
-            <ChevronLeft className="h-4 w-4" /> Volver al inicio
+            <ChevronLeft className="h-4 w-4" /> <LocalizedText id="OQbDhyWfr8QA" />
           </Link>
 
           <div className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-2xl p-8 shadow-2xl sm:p-12 md:p-16 relative">
@@ -34,10 +36,10 @@ export default function PrivacidadPage() {
             
             <header className="mb-12 border-b border-border/50 pb-8 text-center sm:text-left">
               <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
-                Política de Privacidad
+                <LocalizedText id="-jIqo26JQhOu" />
               </h1>
               <p className="mt-4 text-sm text-[#7C3AED] uppercase tracking-widest font-medium">
-                Última actualización: Agosto 2026
+                <LocalizedText id="RlrmFTR10Hlj" />
               </p>
             </header>
 
@@ -51,180 +53,151 @@ export default function PrivacidadPage() {
               [&_a]:text-[#7C3AED] hover:[&_a]:text-[#A78BFA] [&_a]:underline [&_a]:transition-colors
               [&_strong]:text-foreground [&_strong]:font-semibold
             ">
-              <h2>1. Introducción</h2>
+              <h2><LocalizedText id="4J9I31Uf1b_H" /></h2>
               <p>
-                En PuroCode (&quot;la Empresa&quot;), operadores de Puragenda (&quot;el Servicio&quot;), nos comprometemos
-                a proteger la privacidad de nuestros usuarios. Esta política describe cómo recopilamos,
-                utilizamos, almacenamos y protegemos su información personal en conformidad con la
-                Ley N° 19.628 de Protección de la Vida Privada de Chile.
+                <LocalizedText id="4Xpy66dI30T8" />
               </p>
 
-              <h2>2. Datos que Recopilamos</h2>
+              <h2><LocalizedText id="bo7QHUsrpl2Y" /></h2>
 
-              <h3>2.1 Datos de los negocios (clientes del SaaS)</h3>
+              <h3><LocalizedText id="VfkIg8IdakKw" /></h3>
               <ul>
-                <li>Nombre del negocio y datos de contacto</li>
-                <li>Correo electrónico y contraseña (encriptada)</li>
-                <li>Información de servicios, profesionales y horarios configurados</li>
-                <li>Dirección IP al momento del registro (prevención de fraude)</li>
+                <li><LocalizedText id="DOksAPqTO9nS" /></li>
+                <li><LocalizedText id="w6fWdnC6vMxL" /></li>
+                <li><LocalizedText id="kNOwSnlh_4b5" /></li>
+                <li><LocalizedText id="jInsz-wjGYZh" /></li>
               </ul>
 
-              <h3>2.2 Datos de los clientes finales (quienes reservan)</h3>
+              <h3><LocalizedText id="PTL4d5janQKn" /></h3>
               <ul>
-                <li>Nombre, correo electrónico y teléfono (proporcionados al agendar)</li>
-                <li>Historial de reservas y citas</li>
+                <li><LocalizedText id="2IJJQ-YAmczm" /></li>
+                <li><LocalizedText id="TFnrde9AHl_-" /></li>
               </ul>
 
-              <h3>2.3 Datos técnicos</h3>
+              <h3><LocalizedText id="CaaD-cIH5uX8" /></h3>
               <ul>
-                <li>Cookies esenciales para el funcionamiento del sitio</li>
-                <li>Información del navegador y dispositivo</li>
-                <li>Datos de uso y navegación (analítica)</li>
+                <li><LocalizedText id="VcbR_YL6pJFp" /></li>
+                <li><LocalizedText id="AUmEyBbWkYlc" /></li>
+                <li><LocalizedText id="WobTAU9jNuWp" /></li>
               </ul>
 
-              <h2>3. Uso de los Datos</h2>
-              <p>Utilizamos los datos recopilados para:</p>
+              <h2><LocalizedText id="ZCYpqduQCcf7" /></h2>
+              <p><LocalizedText id="HPZzGnJjcXst" /></p>
               <ul>
-                <li>Proporcionar y mantener el Servicio</li>
-                <li>Procesar reservas y gestionar citas</li>
-                <li>Enviar notificaciones relacionadas con el Servicio</li>
-                <li>Prevenir fraudes y abusos</li>
-                <li>Mejorar la experiencia del usuario</li>
-                <li>Cumplir con obligaciones legales</li>
+                <li><LocalizedText id="U5WPgJSNkTwM" /></li>
+                <li><LocalizedText id="OCGEODQ9BA5L" /></li>
+                <li><LocalizedText id="Af4srV6e4NVM" /></li>
+                <li><LocalizedText id="KPaQW3rG8V2g" /></li>
+                <li><LocalizedText id="qi4sbbgLk4-v" /></li>
+                <li><LocalizedText id="Pma_zQmR9Uuy" /></li>
               </ul>
 
-              <h2>4. Almacenamiento y Seguridad</h2>
+              <h2><LocalizedText id="Wt-PfIJvt4cd" /></h2>
               <p>
-                Los datos se almacenan en servidores seguros proporcionados por proveedores de infraestructura
-                en la nube con certificaciones de seguridad internacionales. Las contraseñas se almacenan
-                con cifrado bcrypt. Las comunicaciones se realizan mediante protocolo HTTPS/TLS.
+                <LocalizedText id="ikO9slrHiEgc" />
               </p>
 
-              <h2>5. Cookies</h2>
-              <p>Utilizamos los siguientes tipos de cookies:</p>
+              <h2><LocalizedText id="XUQ6YnR8kiTh" /></h2>
+              <p><LocalizedText id="mF39R-sxINL8" /></p>
               <ul>
-                <li><strong>Cookies esenciales:</strong> Necesarias para el funcionamiento del sitio (sesión, autenticación)</li>
-                <li><strong>Cookies de preferencias:</strong> Guardan configuraciones del usuario (tema oscuro/claro)</li>
-                <li><strong>Cookies analíticas:</strong> Nos ayudan a entender cómo se utiliza el Servicio (pueden ser desactivadas)</li>
+                <li><strong><LocalizedText id="0a3uHu7eqkLi" /></strong> <LocalizedText id="pBfAX6xsBcqU" /></li>
+                <li><strong><LocalizedText id="JJHqwxOeXJyX" /></strong> <LocalizedText id="e4PC8Gcoyl7v" /></li>
+                <li><strong><LocalizedText id="CXUNt7L62OYN" /></strong> <LocalizedText id="pZrE59u9nnVi" /></li>
               </ul>
               <p>
-                Puede gestionar sus preferencias de cookies a través del banner que aparece al visitar el sitio
-                por primera vez, o desde la configuración de su navegador.
+                <LocalizedText id="EELb1kD6pqTv" />
               </p>
 
-              <h2>6. Compartir Datos con Terceros</h2>
+              <h2><LocalizedText id="nYLtv7CQehjY" /></h2>
               <p>
-                No vendemos ni compartimos datos personales con terceros para fines publicitarios.
-                Los datos pueden ser compartidos únicamente con:
+                <LocalizedText id="aLE5TVKZ7RRq" />
               </p>
               <ul>
-                <li>Proveedores de infraestructura (hosting, base de datos)</li>
-                <li>Servicios de procesamiento de pagos (cuando aplique)</li>
-                <li>Autoridades legales cuando sea requerido por ley</li>
+                <li><LocalizedText id="tp4aeko-Miat" /></li>
+                <li><LocalizedText id="0rUUCN-l1Xut" /></li>
+                <li><LocalizedText id="Kr1OKNQyQLG9" /></li>
               </ul>
 
-              <h2>7. Derechos del Usuario</h2>
-              <p>De acuerdo con la legislación vigente, usted tiene derecho a:</p>
+              <h2><LocalizedText id="y92y3Qn-L2TS" /></h2>
+              <p><LocalizedText id="rgPOxjN6T3OC" /></p>
               <ul>
-                <li>Acceder a sus datos personales almacenados</li>
-                <li>Solicitar la rectificación de datos incorrectos</li>
-                <li>Solicitar la eliminación de sus datos</li>
-                <li>Oponerse al tratamiento de sus datos</li>
-                <li>Solicitar la portabilidad de sus datos</li>
+                <li><LocalizedText id="IIbImOGer2Ww" /></li>
+                <li><LocalizedText id="R3q6u3VCyFHZ" /></li>
+                <li><LocalizedText id="cAPO3fq1jSiD" /></li>
+                <li><LocalizedText id="6nmuvF_GMbtY" /></li>
+                <li><LocalizedText id="ktMyB51N3Zve" /></li>
               </ul>
               <p>
-                Para ejercer estos derechos, puede contactarnos a través de nuestro sitio web.
+                <LocalizedText id="0F08rp-YZ7Tz" />
               </p>
 
-              <h2>8. Retención de Datos</h2>
+              <h2><LocalizedText id="c9zyCDABmN7a" /></h2>
               <p>
-                Los datos se conservan mientras la cuenta esté activa o según sea necesario para
-                proporcionar el Servicio. Al eliminar una cuenta, los datos se eliminan en un plazo
-                de 30 días, salvo que la ley requiera su conservación por un período mayor.
+                <LocalizedText id="h3oD6LFsCJeF" />
               </p>
 
-              <h2 id="google-calendar" className="scroll-mt-32">9. Integración con Google Calendar y datos de Google</h2>
+              <h2 id="google-calendar" className="scroll-mt-32"><LocalizedText id="3GM_qTuOKmLf" /></h2>
 
-              <h3>9.1 Datos de Google a los que accede Puragenda</h3>
+              <h3><LocalizedText id="tdXVzZau8Kk4" /></h3>
               <p>
-                La integración con Google Calendar es opcional y solo se activa cuando el usuario
-                selecciona &quot;Conectar con Google&quot; y concede su autorización. Puragenda accede únicamente a:
+                <LocalizedText id="anebBeBWtgtc" />
               </p>
               <ul>
-                <li>El correo de la cuenta de Google, para identificar qué cuenta está conectada.</li>
-                <li>La lista de calendarios y sus datos básicos, como identificador, nombre, calendario principal y nivel de acceso, para permitir que el usuario elija el calendario de destino.</li>
-                <li>Los intervalos de disponibilidad ocupada del calendario seleccionado, para impedir reservas que se superpongan. Puragenda no consulta ni muestra el título, descripción o contenido de los eventos externos.</li>
-                <li>Los eventos de citas administrados por Puragenda, para crearlos, actualizarlos o eliminarlos cuando una reserva cambia o se cancela.</li>
+                <li><LocalizedText id="dGOP01p5I0Jw" /></li>
+                <li><LocalizedText id="ZT0tbZKtZKiN" /></li>
+                <li><LocalizedText id="9EKIV6-xubAj" /></li>
+                <li><LocalizedText id="ojn2pVoyTwV_" /></li>
               </ul>
 
-              <h3>9.2 Finalidad del uso</h3>
+              <h3><LocalizedText id="EcOHCN3ZKCqv" /></h3>
               <p>
-                Los datos de Google se utilizan exclusivamente para ofrecer la sincronización visible de citas,
-                seleccionar el calendario conectado, enviar las actualizaciones autorizadas y bloquear horarios
-                ocupados en la agenda pública del profesional. No se utilizan para publicidad, elaboración de
-                perfiles, evaluación crediticia ni entrenamiento de modelos de inteligencia artificial.
+                <LocalizedText id="_oPKqH98g6ZW" />
               </p>
 
-              <h3>9.3 Almacenamiento y protección</h3>
+              <h3><LocalizedText id="_UXc7oN_2xP_" /></h3>
               <p>
-                Puragenda conserva el correo conectado, el identificador y nombre del calendario elegido, los
-                identificadores de los eventos sincronizados y el estado de la conexión. Los tokens OAuth se
-                cifran en reposo mediante AES-256-GCM y se transmiten únicamente mediante HTTPS/TLS. Los intervalos
-                ocupados consultados desde eventos externos se usan para calcular disponibilidad y no se almacenan
-                como contenido de dichos eventos.
+                <LocalizedText id="zL2YFZZYMgEY" />
               </p>
 
-              <h3>9.4 Transferencia, divulgación y uso limitado</h3>
+              <h3><LocalizedText id="hvU7PqtTbI3L" /></h3>
               <p>
-                No vendemos, transferimos ni compartimos datos de usuarios de Google con plataformas publicitarias,
-                corredores de datos u otros terceros. Solo pueden ser procesados por proveedores de infraestructura
-                necesarios para operar Puragenda, bajo obligaciones de confidencialidad y seguridad, o cuando una
-                ley aplicable lo exija. El uso y la transferencia de información recibida desde las APIs de Google
-                cumplen con la Política de Datos de Usuario de los Servicios de API de Google, incluidos sus
-                requisitos de Uso Limitado.
+                <LocalizedText id="Xp0a66TL6V04" />
               </p>
               <p lang="en">
-                Puragenda&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+                <LocalizedText id="vOV9GFToAxRx" />{" "}
                 <a
                   href="https://developers.google.com/terms/api-services-user-data-policy"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Google API Services User Data Policy
-                </a>, including the Limited Use requirements.
+                  <LocalizedText id="H9f9JFP0L4Tr" />
+                </a><LocalizedText id="g0HRDV5DFDYk" />
               </p>
 
-              <h3>9.5 Control, revocación y eliminación</h3>
+              <h3><LocalizedText id="-qLo0z-Qv3sl" /></h3>
               <p>
-                El usuario puede desconectar Google Calendar en cualquier momento desde la misma sección del
-                dashboard. Al desconectar, Puragenda revoca el token, elimina las credenciales y la configuración
-                de conexión almacenadas, y retira del calendario los eventos creados por esa conexión. También se
-                puede revocar el acceso desde la página de conexiones de la cuenta de Google. Los datos de reservas
-                creados directamente en Puragenda se conservan conforme a las reglas generales de retención de esta
-                política.
+                <LocalizedText id="CvSPc4a0FnEy" />
               </p>
               <p>
-                Para administrar o revocar el acceso concedido, visite{" "}
+                <LocalizedText id="yN47zeWJ5z_t" />{" "}
                 <a href="https://myaccount.google.com/connections" target="_blank" rel="noreferrer">
-                  las conexiones de su cuenta de Google
+                  <LocalizedText id="TJibwXxF44f3" />
                 </a>.
               </p>
 
-              <h2>10. Menores de Edad</h2>
+              <h2><LocalizedText id="vK9UPAf_LO34" /></h2>
               <p>
-                El Servicio no está dirigido a menores de 18 años. No recopilamos intencionalmente
-                datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos.
+                <LocalizedText id="eArZoELEY3hx" />
               </p>
 
-              <h2>11. Cambios en esta Política</h2>
+              <h2><LocalizedText id="af8tpeDTHFaP" /></h2>
               <p>
-                Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados
-                a través de la plataforma. La fecha de última actualización se indica al inicio del documento.
+                <LocalizedText id="F0qmQxLxlBdc" />
               </p>
 
-              <h2>12. Contacto</h2>
+              <h2><LocalizedText id="oRH6scHWE1Au" /></h2>
               <p>
-                Para consultas sobre privacidad y protección de datos, contáctenos en{" "}
+                <LocalizedText id="YsoWWonoNMp6" />{" "}
                 <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
             </article>

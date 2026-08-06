@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
@@ -13,12 +15,12 @@ export const dynamic = "force-dynamic";
 
 export default async function StaffPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="JzdJYFMcoEJN" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar profesionales</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="DASMDa3AfehR" /></div>;
   }
 
   const [staffMembers, limitInfo, allServices, accessProfiles, businessLocations] = await Promise.all([
@@ -92,16 +94,16 @@ export default async function StaffPage() {
             <Users className="h-5 w-5 text-[#7C3AED]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Profesionales</h1>
-            <p className="text-sm text-muted-foreground">Gestiona tu equipo, horarios y accesos individuales.</p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl"><LocalizedText id="WvNULhqPYqbr" /></h1>
+            <p className="text-sm text-muted-foreground"><LocalizedText id="EwuJRp2-YIYn" /></p>
           </div>
         </div>
         {business.ownerId === user.id && (
           <Link href="/dashboard/staff/roles" className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#6D28D9] bg-[#7C3AED] px-4 py-2.5 text-left text-white shadow-[2px_2px_0_#111] transition-transform hover:-translate-y-0.5 lg:w-auto lg:min-w-[250px]">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15"><ShieldCheck className="h-4 w-4" /></span>
             <span>
-              <span className="block text-sm font-black">Roles y funcionalidades</span>
-              <span className="block text-[11px] font-medium text-white/75">Define qué puede ver cada persona</span>
+              <span className="block text-sm font-black"><LocalizedText id="ZbvRWWfJzdSu" /></span>
+              <span className="block text-[11px] font-medium text-white/75"><LocalizedText id="2UY6bKLAF44s" /></span>
             </span>
           </Link>
         )}

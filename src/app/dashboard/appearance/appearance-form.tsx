@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -120,6 +123,7 @@ function ThemeSaveModal({
   saving: boolean;
   error: string;
 }) {
+  const legacy = useTranslations("legacy");
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Personalizado");
   return (
@@ -127,24 +131,24 @@ function ThemeSaveModal({
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-lg font-bold">Guardar como nuevo tema</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Crea un preset reutilizable para este negocio.</p>
+            <h3 className="text-lg font-bold"><LocalizedText id="FULgAuu7OKLT" /></h3>
+            <p className="mt-1 text-sm text-muted-foreground"><LocalizedText id="jJjuTHobptB3" /></p>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>
         </div>
         <div className="mt-6 space-y-4">
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium">Nombre del tema</span>
-            <input autoFocus maxLength={60} value={name} onChange={(event) => setName(event.target.value)} placeholder="Ej: Verano PuroCode" className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm outline-none focus:border-[#7C3AED]/50" />
+            <span className="text-sm font-medium"><LocalizedText id="JtKFn8dADEjV" /></span>
+            <input autoFocus maxLength={60} value={name} onChange={(event) => setName(event.target.value)} placeholder={legacy("zBlzZfqQyHPo")} className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm outline-none focus:border-[#7C3AED]/50" />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium">Categoría o etiqueta</span>
-            <input maxLength={40} value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Ej: Verano, Oscuro, Minimalista" className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm outline-none focus:border-[#7C3AED]/50" />
+            <span className="text-sm font-medium"><LocalizedText id="j_UqPoyCWv3e" /></span>
+            <input maxLength={40} value={category} onChange={(event) => setCategory(event.target.value)} placeholder={legacy("lTlNJLliq1n-")} className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm outline-none focus:border-[#7C3AED]/50" />
           </label>
           {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
           <button disabled={saving || name.trim().length < 2} onClick={() => onSave(name, category)} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white hover:bg-[#6D28D9] disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Guardar tema
+            <LocalizedText id="bVof_tZPcGcb" />
           </button>
         </div>
       </div>
@@ -174,6 +178,7 @@ export function AppearanceForm({
   promoBlocks: PromoBlock[];
   currencyCode?: string;
 }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [data, setData] = useState<FormData>({
     primaryColor: initialData.primaryColor,
@@ -247,12 +252,12 @@ export function AppearanceForm({
     if (!file) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       event.target.value = "";
-      setPromoError("Usa una imagen PNG, JPG o WebP.");
+      setPromoError(legacy("X36fqGFEUCRb"));
       return;
     }
     if (file.size > 8 * 1024 * 1024) {
       event.target.value = "";
-      setPromoError("La imagen no puede superar 8 MB.");
+      setPromoError(legacy("dapM7Y2J56Fn"));
       return;
     }
     const url = URL.createObjectURL(file);
@@ -320,7 +325,7 @@ export function AppearanceForm({
       setPreviewUrl(buildPreviewUrl(data));
       setPreviewRevision((current) => current + 1);
     } else {
-      setSaveError(result.error || "No se pudieron guardar los cambios");
+      setSaveError(result.error || legacy("i2oZM8bdDkAz"));
     }
     setSaving(false);
   }
@@ -346,7 +351,7 @@ export function AppearanceForm({
       setThemeModalOpen(false);
       router.refresh();
     } else {
-      setThemeError(result.error || "No se pudo guardar el tema");
+      setThemeError(result.error || legacy("ArDOLHZlFguY"));
     }
     setSavingTheme(false);
   }
@@ -368,10 +373,10 @@ export function AppearanceForm({
         setPromoOpen(false);
         refreshWidgetPreview();
       } else {
-        setPromoError(result.error || "No se pudo crear el bloque");
+        setPromoError(result.error || legacy("8iLNA-yLQYNq"));
       }
     } catch {
-      setPromoError("No se pudo completar la subida. Intenta nuevamente.");
+      setPromoError(legacy("CyUVDgDYEAb4"));
     } finally {
       setPromoSaving(false);
     }
@@ -384,14 +389,14 @@ export function AppearanceForm({
     try {
       const result = await updateWidgetPromoBlockAction(blockId, mutation);
       if (!("success" in result) || !result.success) {
-        setPromoError(result.error || "No se pudo actualizar el bloque");
+        setPromoError(result.error || legacy("ajKPFa2-3mPM"));
         setPreviewLoading(false);
         return;
       }
       setLocalPromoBlocks(result.blocks);
       refreshWidgetPreview();
     } catch {
-      setPromoError("No se pudo actualizar el bloque");
+      setPromoError(legacy("ajKPFa2-3mPM"));
       setPreviewLoading(false);
     } finally {
       setPromoBusyId(null);
@@ -399,19 +404,19 @@ export function AppearanceForm({
   }
 
   async function removePromo(blockId: string) {
-    if (!window.confirm("¿Eliminar esta imagen promocional? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm(legacy("5ARgQtNIdNE7"))) return;
     setPromoBusyId(blockId);
     setPromoError("");
     try {
       const result = await deleteWidgetPromoBlockAction(blockId);
       if (!("success" in result) || !result.success) {
-        setPromoError(result.error || "No se pudo eliminar el bloque");
+        setPromoError(result.error || legacy("aW5D3r_pGodX"));
         return;
       }
       setLocalPromoBlocks(result.blocks);
       refreshWidgetPreview();
     } catch {
-      setPromoError("No se pudo eliminar el bloque");
+      setPromoError(legacy("aW5D3r_pGodX"));
     } finally {
       setPromoBusyId(null);
     }
@@ -429,14 +434,14 @@ export function AppearanceForm({
     try {
       const result = await updateWidgetPromoDiscountAction(blockId, formData);
       if (!("success" in result) || !result.success) {
-        setPromoError(result.error || "No se pudo guardar el descuento");
+        setPromoError(result.error || legacy("OXN4LfZyTdaQ"));
         return;
       }
       setLocalPromoBlocks(result.blocks);
       setEditingPromoId(null);
       refreshWidgetPreview();
     } catch {
-      setPromoError("No se pudo guardar el descuento");
+      setPromoError(legacy("OXN4LfZyTdaQ"));
     } finally {
       setPromoBusyId(null);
     }
@@ -448,7 +453,7 @@ export function AppearanceForm({
         <section className="space-y-3 xl:sticky xl:top-6" data-tour="appearance-preview">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Eye className="h-4 w-4 text-[#7C3AED]" /> Vista previa en tiempo real
+              <Eye className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="g7lEnc8xsC-m" />
             </div>
             <button
               onClick={() => {
@@ -458,7 +463,7 @@ export function AppearanceForm({
               }}
               className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Recargar
+              <RefreshCw className="h-3.5 w-3.5" /> <LocalizedText id="lWXxl4c_gd_C" />
             </button>
           </div>
           <div
@@ -482,15 +487,15 @@ export function AppearanceForm({
                     <Sparkles className="h-5 w-5" />
                   </span>
                 </div>
-                <p className="text-base font-bold">Preparando tu widget</p>
-                <p className="mt-1 max-w-xs text-xs opacity-60">Aplicando diseño, imágenes y promociones…</p>
-                <span className="sr-only">Cargando vista previa</span>
+                <p className="text-base font-bold"><LocalizedText id="PjwTE92o3nVw" /></p>
+                <p className="mt-1 max-w-xs text-xs opacity-60"><LocalizedText id="3hQ3U9ImnEQP" /></p>
+                <span className="sr-only"><LocalizedText id="pTh4MrFdipm5" /></span>
               </div>
             )}
             {previewUrl && (
               <iframe
                 key={previewRevision}
-                title="Vista previa del widget"
+                title={legacy("mYUbEmHGVub-")}
                 src={previewUrl}
                 width="100%"
                 height="760"
@@ -499,15 +504,15 @@ export function AppearanceForm({
               />
             )}
           </div>
-          <p className="text-center text-[11px] text-muted-foreground">Edita a la derecha; la vista previa permanece visible mientras trabajas.</p>
+          <p className="text-center text-[11px] text-muted-foreground"><LocalizedText id="EX7WEFjFstUK" /></p>
         </section>
 
         <section className="space-y-6" data-tour="appearance-controls">
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-[#7C3AED]" /> Identidad visual</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Controla cada color de la experiencia de reserva.</p>
+                <h2 className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="sKD9pt34z5cG" /></h2>
+                <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="1tn9UOSP-_8N" /></p>
               </div>
               <div className="flex gap-1">
                 {[data.backgroundColor, data.primaryColor, data.secondaryColor, data.textColor].map((color, index) => (
@@ -523,18 +528,18 @@ export function AppearanceForm({
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-base font-bold"><Type className="h-4 w-4 text-[#7C3AED]" /> Forma y tipografía</h2>
+            <h2 className="flex items-center gap-2 text-base font-bold"><Type className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="P2Rhc0Xq3jqs" /></h2>
             <div className="mt-5 grid gap-6 sm:grid-cols-2">
               <label className="space-y-2">
-                <span className="flex justify-between text-sm font-medium">Tamaño base <b className="font-mono">{data.fontSize}px</b></span>
+                <span className="flex justify-between text-sm font-medium"><LocalizedText id="k9QrzlRUbN5E" /> <b className="font-mono">{data.fontSize}<LocalizedText id="buLMEFpndDFA" /></b></span>
                 <input type="range" min={10} max={24} value={data.fontSize} onChange={(event) => update("fontSize", Number(event.target.value))} className="w-full accent-[#7C3AED]" />
               </label>
               <label className="space-y-2">
-                <span className="flex justify-between text-sm font-medium">Radio de bordes <b className="font-mono">{data.cornerRadius}px</b></span>
+                <span className="flex justify-between text-sm font-medium"><LocalizedText id="PotBjR-y8RaS" /> <b className="font-mono">{data.cornerRadius}<LocalizedText id="buLMEFpndDFA" /></b></span>
                 <input type="range" min={0} max={40} value={data.cornerRadius} onChange={(event) => update("cornerRadius", Number(event.target.value))} className="w-full accent-[#7C3AED]" />
               </label>
               <label className="space-y-2">
-                <span className="text-sm font-medium">Profundidad de sombra</span>
+                <span className="text-sm font-medium"><LocalizedText id="acnyA-832jbj" /></span>
                 <select value={data.shadowStyle} onChange={(event) => update("shadowStyle", event.target.value)} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm">
                   <option value="none">Sin sombra</option>
                   <option value="soft">Sombra suave</option>
@@ -542,7 +547,7 @@ export function AppearanceForm({
                 </select>
               </label>
               <div className="space-y-2">
-                <span className="text-sm font-medium">Alineación del encabezado</span>
+                <span className="text-sm font-medium"><LocalizedText id="HZQQCYlxVV2f" /></span>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     ["left", AlignLeft, "Izquierda"],
@@ -561,8 +566,8 @@ export function AppearanceForm({
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-bold"><Layers3 className="h-4 w-4 text-[#7C3AED]" /> Bloques promocionales</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Sube banners y decide dónde aparecen. Las flechas recorren Encabezado → Servicios → Pie.</p>
+                <h2 className="flex items-center gap-2 text-base font-bold"><Layers3 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="c2kJDqQXbSb6" /></h2>
+                <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="LMtsVQMjMt_f" /></p>
               </div>
               <button
                 type="button"
@@ -575,24 +580,24 @@ export function AppearanceForm({
                 className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-black"
               >
                 {promoOpen ? <X className="h-4 w-4" /> : <ImagePlus className="h-4 w-4" />}
-                {promoOpen ? "Cerrar" : "Agregar imagen"}
+                {promoOpen ? "Cerrar" : legacy("vSQETwwC5F_O")}
               </button>
             </div>
 
             {promoOpen && (
               <form onSubmit={handlePromoSubmit} className="mt-5 space-y-4 rounded-2xl border border-dashed border-[#7C3AED]/40 bg-[#7C3AED]/5 p-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="space-y-1.5"><span className="text-xs font-medium">Título</span><input name="title" required maxLength={90} placeholder="20% en tu primera cita" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
-                  <label className="space-y-1.5"><span className="text-xs font-medium">Ubicación</span><select name="placement" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"><option value="HEADER">Encabezado</option><option value="BETWEEN_SERVICES">Antes de los servicios</option><option value="FOOTER">Pie del widget</option></select></label>
-                  <label className="space-y-1.5 sm:col-span-2"><span className="text-xs font-medium">Texto secundario</span><input name="subtitle" maxLength={180} placeholder="Promoción válida durante julio" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
+                  <label className="space-y-1.5"><span className="text-xs font-medium"><LocalizedText id="TAil1f6yLOKT" /></span><input name="title" required maxLength={90} placeholder={legacy("LCEFBrykaBgq")} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
+                  <label className="space-y-1.5"><span className="text-xs font-medium"><LocalizedText id="c7kYm2xu9pPx" /></span><select name="placement" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"><option value="HEADER">Encabezado</option><option value="BETWEEN_SERVICES">Antes de los servicios</option><option value="FOOTER">Pie del widget</option></select></label>
+                  <label className="space-y-1.5 sm:col-span-2"><span className="text-xs font-medium"><LocalizedText id="29jBHEqzjHLT" /></span><input name="subtitle" maxLength={180} placeholder={legacy("469bToRLSJNR")} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium">Imagen</span>
+                    <span className="text-xs font-medium"><LocalizedText id="WNbymwYzcGk5" /></span>
                     <input name="image" type="file" required accept="image/png,image/jpeg,image/webp" onChange={handlePromoFileChange} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs" />
-                    <span className="block text-[11px] text-muted-foreground">PNG, JPG o WebP · máximo 8 MB · recomendado 2:1.</span>
+                    <span className="block text-[11px] text-muted-foreground"><LocalizedText id="xZfk_jVUHRGz" /></span>
                   </label>
-                  <label className="space-y-1.5"><span className="text-xs font-medium">Enlace opcional</span><input name="linkUrl" type="url" placeholder="https://..." className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
+                  <label className="space-y-1.5"><span className="text-xs font-medium"><LocalizedText id="VDKBjRgpYAWu" /></span><input name="linkUrl" type="url" placeholder="https://..." className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" /></label>
                   <label className="space-y-1.5">
-                    <span className="text-xs font-medium">Alineación del texto</span>
+                    <span className="text-xs font-medium"><LocalizedText id="4XcwwrPpIKnt" /></span>
                     <select name="textAlign" defaultValue="left" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
                       <option value="left">Izquierda</option>
                       <option value="center">Centro</option>
@@ -609,40 +614,40 @@ export function AppearanceForm({
                       className="mt-0.5 h-4 w-4 accent-[#7C3AED]"
                     />
                     <span>
-                      <span className="flex items-center gap-1.5 text-sm font-semibold"><BadgePercent className="h-4 w-4 text-[#7C3AED]" /> Aplicar un descuento real</span>
-                      <span className="mt-1 block text-[11px] text-muted-foreground">El servidor descontará este valor del precio de la reserva. No es solo texto promocional.</span>
+                      <span className="flex items-center gap-1.5 text-sm font-semibold"><BadgePercent className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="Z8VTk3ll8Dc8" /></span>
+                      <span className="mt-1 block text-[11px] text-muted-foreground"><LocalizedText id="QDyDZqHqE6Gh" /></span>
                     </span>
                   </label>
                   {promoDiscountEnabled && (
                     <div className="grid gap-4 rounded-xl border border-border bg-background p-3 sm:col-span-2 sm:grid-cols-2">
                       <label className="space-y-1.5">
-                        <span className="text-xs font-medium">Tipo de descuento</span>
+                        <span className="text-xs font-medium"><LocalizedText id="KrtBnOO1iiH9" /></span>
                         <select name="discountType" defaultValue="PERCENTAGE" className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm">
                           <option value="PERCENTAGE">Porcentaje</option>
                           <option value="FIXED">Monto fijo ({currencyCode})</option>
                         </select>
                       </label>
                       <label className="space-y-1.5">
-                        <span className="text-xs font-medium">Valor</span>
+                        <span className="text-xs font-medium"><LocalizedText id="svUwxGmRMRzT" /></span>
                         <input name="discountValue" type="number" min={1} required defaultValue={10} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
                       </label>
                       <label className="space-y-1.5">
-                        <span className="text-xs font-medium">Compra mínima ({currencyCode})</span>
+                        <span className="text-xs font-medium"><LocalizedText id="SxER0NR4dM4n" />{currencyCode})</span>
                         <input name="discountMinSubtotal" type="number" min={0} defaultValue={0} className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm" />
                       </label>
                       <div className="grid grid-cols-2 gap-2">
-                        <label className="space-y-1.5"><span className="text-xs font-medium">Desde</span><input name="discountStartsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
-                        <label className="space-y-1.5"><span className="text-xs font-medium">Hasta</span><input name="discountEndsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
+                        <label className="space-y-1.5"><span className="text-xs font-medium"><LocalizedText id="i06T6Sjf1spy" /></span><input name="discountStartsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
+                        <label className="space-y-1.5"><span className="text-xs font-medium"><LocalizedText id="PIPjVYEHgYOb" /></span><input name="discountEndsAt" type="date" className="w-full rounded-xl border border-border bg-muted px-2 py-2.5 text-xs" /></label>
                       </div>
-                      <p className="text-[11px] text-muted-foreground sm:col-span-2">Se aplica a todos los servicios de cita y no se acumula con códigos de premio.</p>
+                      <p className="text-[11px] text-muted-foreground sm:col-span-2"><LocalizedText id="ZQS0r57frhBZ" /></p>
                     </div>
                   )}
                   {promoFilePreview && (
                     <div className="overflow-hidden rounded-2xl border border-border bg-background sm:col-span-2">
-                      <img src={promoFilePreview.url} alt="Vista previa de la imagen seleccionada" className="aspect-[2/1] w-full object-cover" />
+                      <img src={promoFilePreview.url} alt={legacy("eBAlKBTcW0O3")} className="aspect-[2/1] w-full object-cover" />
                       <div className="flex items-center justify-between gap-3 px-3 py-2 text-[11px] text-muted-foreground">
                         <span className="truncate">{promoFilePreview.name}</span>
-                        <span className="shrink-0">{(promoFilePreview.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <span className="shrink-0">{(promoFilePreview.size / 1024 / 1024).toFixed(2)} <LocalizedText id="HQn2-iMjWIFR" /></span>
                       </div>
                     </div>
                   )}
@@ -654,7 +659,7 @@ export function AppearanceForm({
 
             <div className="mt-5 space-y-3">
               {displayedPromoBlocks.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Aún no hay imágenes promocionales.</div>
+                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"><LocalizedText id="RJkipA-P3kob" /></div>
               ) : displayedPromoBlocks.map((block) => (
                 <div key={block.id} className="flex gap-3 rounded-2xl border border-border bg-muted/30 p-3">
                   <img src={block.imageUrl} alt={block.title} className="h-20 w-28 shrink-0 rounded-xl object-cover" />
@@ -666,16 +671,16 @@ export function AppearanceForm({
                         {block.discountType && block.discountValue ? (
                           <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
                             <BadgePercent className="h-3 w-3" />
-                            {block.discountType === "PERCENTAGE" ? `${block.discountValue}%` : `$${block.discountValue.toLocaleString("es-CL")}`} de descuento
+                            {block.discountType === "PERCENTAGE" ? `${block.discountValue}%` : `$${block.discountValue.toLocaleString("es-CL")}`} <LocalizedText id="EIWULeUtZHQf" />
                           </span>
                         ) : null}
                       </div>
                       <div className="flex gap-1">
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title="Subir orden o mover a la zona anterior" aria-label={`Subir ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowUp className="h-3.5 w-3.5" /></button>
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title="Bajar orden o mover a la zona siguiente" aria-label={`Bajar ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowDown className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title={legacy("4BiojLTPA9Ft")} aria-label={`Subir ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowUp className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title={legacy("QEto2IHPOec4")} aria-label={`Bajar ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowDown className="h-3.5 w-3.5" /></button>
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { isVisible: !block.isVisible })} title={block.isVisible ? "Ocultar" : "Mostrar"} aria-label={`${block.isVisible ? "Ocultar" : "Mostrar"} ${block.title}`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50">{block.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => setEditingPromoId((current) => current === block.id ? null : block.id)} title="Configurar descuento" aria-label={`Configurar descuento de ${block.title}`} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"><BadgePercent className="h-3.5 w-3.5" /></button>
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title="Eliminar bloque" aria-label={`Eliminar ${block.title}`} className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => setEditingPromoId((current) => current === block.id ? null : block.id)} title={legacy("rVB2TMpXD7v-")} aria-label={`Configurar descuento de ${block.title}`} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"><BadgePercent className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title={legacy("WJHnyOkmLaQ6")} aria-label={`Eliminar ${block.title}`} className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                     {block.subtitle && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{block.subtitle}</p>}
@@ -683,7 +688,7 @@ export function AppearanceForm({
                       <form onSubmit={(event) => handlePromoDiscountSubmit(event, block.id)} className="mt-3 grid gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3 sm:grid-cols-2">
                         <input type="hidden" name="discountEnabled" value="true" />
                         <label className="space-y-1">
-                          <span className="text-[11px] font-medium">Descuento</span>
+                          <span className="text-[11px] font-medium"><LocalizedText id="uMuwsBwzAsIP" /></span>
                           <select name="discountType" defaultValue={block.discountType || "NONE"} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs">
                             <option value="NONE">Sin descuento</option>
                             <option value="PERCENTAGE">Porcentaje</option>
@@ -691,20 +696,20 @@ export function AppearanceForm({
                           </select>
                         </label>
                         <label className="space-y-1">
-                          <span className="text-[11px] font-medium">Valor</span>
+                          <span className="text-[11px] font-medium"><LocalizedText id="svUwxGmRMRzT" /></span>
                           <input name="discountValue" type="number" min={1} defaultValue={block.discountValue || 10} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs" />
                         </label>
                         <label className="space-y-1">
-                          <span className="text-[11px] font-medium">Compra mínima</span>
+                          <span className="text-[11px] font-medium"><LocalizedText id="nAbG3MwQbKBd" /></span>
                           <input name="discountMinSubtotal" type="number" min={0} defaultValue={block.discountMinSubtotal} className="w-full rounded-lg border border-border bg-background px-2.5 py-2 text-xs" />
                         </label>
                         <div className="grid grid-cols-2 gap-2">
-                          <label className="space-y-1"><span className="text-[11px] font-medium">Desde</span><input name="discountStartsAt" type="date" defaultValue={toDateInputValue(block.discountStartsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
-                          <label className="space-y-1"><span className="text-[11px] font-medium">Hasta</span><input name="discountEndsAt" type="date" defaultValue={toDateInputValue(block.discountEndsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
+                          <label className="space-y-1"><span className="text-[11px] font-medium"><LocalizedText id="i06T6Sjf1spy" /></span><input name="discountStartsAt" type="date" defaultValue={toDateInputValue(block.discountStartsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
+                          <label className="space-y-1"><span className="text-[11px] font-medium"><LocalizedText id="PIPjVYEHgYOb" /></span><input name="discountEndsAt" type="date" defaultValue={toDateInputValue(block.discountEndsAt)} className="w-full rounded-lg border border-border bg-background px-2 py-2 text-[11px]" /></label>
                         </div>
                         <div className="flex gap-2 sm:col-span-2">
-                          <button type="submit" disabled={promoBusyId === block.id} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Guardar descuento</button>
-                          <button type="button" onClick={() => setEditingPromoId(null)} className="rounded-lg border border-border px-3 py-2 text-xs">Cancelar</button>
+                          <button type="submit" disabled={promoBusyId === block.id} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"><LocalizedText id="6XuSH3v2To81" /></button>
+                          <button type="button" onClick={() => setEditingPromoId(null)} className="rounded-lg border border-border px-3 py-2 text-xs"><LocalizedText id="u527QG3L1SSL" /></button>
                         </div>
                       </form>
                     )}
@@ -716,11 +721,11 @@ export function AppearanceForm({
 
           <div className="sticky bottom-4 z-20 grid gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-xl backdrop-blur sm:grid-cols-2">
             <button onClick={() => { setThemeError(""); setThemeModalOpen(true); }} data-tour="save-theme" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 text-sm font-bold text-[#7C3AED] hover:bg-[#7C3AED]/15">
-              <Sparkles className="h-4 w-4" /> Guardar como tema
+              <Sparkles className="h-4 w-4" /> <LocalizedText id="U_uEslczx-g5" />
             </button>
             <button onClick={handleSave} disabled={saving} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white hover:bg-[#6D28D9] disabled:opacity-50">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saved ? "Cambios guardados" : "Guardar cambios"}
+              {saved ? "Cambios guardados" : legacy("FL368vrOOgfe")}
             </button>
             {saveError && <p role="alert" className="text-sm text-red-500 sm:col-span-2">{saveError}</p>}
           </div>

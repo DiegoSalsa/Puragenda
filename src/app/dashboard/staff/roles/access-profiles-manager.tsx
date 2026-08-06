@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -36,6 +39,7 @@ const TEMPLATES = [
 ];
 
 export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [editing, setEditing] = useState<Profile | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -90,7 +94,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
     if ("success" in result && result.success) {
       setFormOpen(false);
       router.refresh();
-    } else setError(result.error || "No se pudo guardar el perfil");
+    } else setError(result.error || legacy("ixRT8OWjCyNK"));
   }
 
   async function remove(profileId: string) {
@@ -99,28 +103,28 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
     const result = await deleteAccessProfileAction(profileId);
     setDeleting(null);
     if ("success" in result && result.success) router.refresh();
-    else setError(result.error || "No se pudo eliminar el perfil");
+    else setError(result.error || legacy("LDOAL_dtx4ee"));
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" data-tour="page-header">
         <div>
-          <Link href="/dashboard/staff" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Volver a profesionales</Link>
-          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight"><ShieldCheck className="h-7 w-7 text-[#7C3AED]" /> Roles y funcionalidades</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Crea tipos de usuario reutilizables y define qué puede hacer cada uno.</p>
+          <Link href="/dashboard/staff" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> <LocalizedText id="fV-b-49rx1Zb" /></Link>
+          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight"><ShieldCheck className="h-7 w-7 text-[#7C3AED]" /> <LocalizedText id="ZbvRWWfJzdSu" /></h1>
+          <p className="mt-1 text-sm text-muted-foreground"><LocalizedText id="kxPs0H5trOHo" /></p>
         </div>
-        <button onClick={() => openNew()} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 text-sm font-bold text-white hover:bg-[#6D28D9]"><Plus className="h-4 w-4" /> Nuevo rol</button>
+        <button onClick={() => openNew()} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 text-sm font-bold text-white hover:bg-[#6D28D9]"><Plus className="h-4 w-4" /> <LocalizedText id="f4NNCnsZjLN8" /></button>
       </div>
 
       <section className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-bold">Comenzar con una recomendación</h2>
+        <h2 className="text-sm font-bold"><LocalizedText id="YWuV-iOJntte" /></h2>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           {TEMPLATES.map((template) => (
             <button key={template.name} onClick={() => openNew(template)} className="rounded-2xl border border-border p-4 text-left transition-all hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5">
               <p className="font-bold">{template.name}</p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{template.description}</p>
-              <span className="mt-3 inline-flex rounded-full bg-[#7C3AED]/10 px-2.5 py-1 text-[11px] font-bold text-[#7C3AED]">{template.permissions.length} funciones</span>
+              <span className="mt-3 inline-flex rounded-full bg-[#7C3AED]/10 px-2.5 py-1 text-[11px] font-bold text-[#7C3AED]">{template.permissions.length} <LocalizedText id="wGkQB_6TEiGy" /></span>
             </button>
           ))}
         </div>
@@ -134,9 +138,9 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-bold">{profile.name}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{profile.description || "Sin descripción"}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{profile.description || legacy("nj1IL6yQ0YTr")}</p>
               </div>
-              <span className="shrink-0 rounded-full bg-black px-2.5 py-1 text-[10px] font-bold text-white dark:bg-white dark:text-black">{profile.accountCount} personas</span>
+              <span className="shrink-0 rounded-full bg-black px-2.5 py-1 text-[10px] font-bold text-white dark:bg-white dark:text-black">{profile.accountCount} <LocalizedText id="UrP_VVytf1B3" /></span>
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">
               {profile.permissions.slice(0, 5).map((code) => {
@@ -146,24 +150,24 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
               {profile.permissions.length > 5 && <span className="rounded-full bg-muted px-2 py-1 text-[10px]">+{profile.permissions.length - 5}</span>}
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => openEdit(profile)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-bold hover:bg-muted"><Pencil className="h-3.5 w-3.5" /> Editar</button>
-              <button disabled={deleting === profile.id || profile.accountCount > 0} onClick={() => remove(profile.id)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-bold text-red-500 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={profile.accountCount ? "Reasigna las personas antes de eliminar" : "Eliminar rol"}>{deleting === profile.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} Eliminar</button>
+              <button onClick={() => openEdit(profile)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-bold hover:bg-muted"><Pencil className="h-3.5 w-3.5" /> <LocalizedText id="LrqUay4e5LYq" /></button>
+              <button disabled={deleting === profile.id || profile.accountCount > 0} onClick={() => remove(profile.id)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-bold text-red-500 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40" title={profile.accountCount ? legacy("bVT0_I0JYODf") : legacy("zM9k6dfico7L")}>{deleting === profile.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} <LocalizedText id="yYlM8AL5C9C-" /></button>
             </div>
           </article>
         ))}
-        {profiles.length === 0 && <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3">Crea tu primer rol o usa una recomendación.</div>}
+        {profiles.length === 0 && <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3"><LocalizedText id="A5RlWjFN4SZS" /></div>}
       </section>
 
       {formOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setFormOpen(false)}>
           <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between">
-              <div><h2 className="text-xl font-bold">{editing ? "Editar rol" : "Nuevo rol"}</h2><p className="mt-1 text-sm text-muted-foreground">Las funciones recomendadas pueden ajustarse persona por persona en futuras iteraciones.</p></div>
+              <div><h2 className="text-xl font-bold">{editing ? "Editar rol" : "Nuevo rol"}</h2><p className="mt-1 text-sm text-muted-foreground"><LocalizedText id="i_-QTFFgcGGM" /></p></div>
               <button onClick={() => setFormOpen(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1.5"><span className="text-sm font-medium">Nombre</span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={60} placeholder="Ej: Encargado del widget" className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm" /></label>
-              <label className="space-y-1.5"><span className="text-sm font-medium">Descripción</span><input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={280} placeholder="Para qué se usa este rol" className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm" /></label>
+              <label className="space-y-1.5"><span className="text-sm font-medium"><LocalizedText id="ViuxV1eotZPW" /></span><input value={name} onChange={(event) => setName(event.target.value)} maxLength={60} placeholder={legacy("edSa9zcTRsho")} className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm" /></label>
+              <label className="space-y-1.5"><span className="text-sm font-medium"><LocalizedText id="7gC5b_8mb-JW" /></span><input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={280} placeholder={legacy("vfYZmfn8TlMR")} className="w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm" /></label>
             </div>
             <div className="mt-6 space-y-5">
               {grouped.map(([group, items]) => (
@@ -175,7 +179,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
                       return (
                         <label key={permission.code} className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${checked ? "border-[#7C3AED]/50 bg-[#7C3AED]/5" : "border-border"}`}>
                           <button type="button" role="checkbox" aria-checked={checked} onClick={() => togglePermission(permission.code)} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${checked ? "border-[#7C3AED] bg-[#7C3AED] text-white" : "border-border"}`}>{checked && <Check className="h-3.5 w-3.5" />}</button>
-                          <span><span className="block text-sm font-semibold">{permission.label}{permission.critical && <b className="ml-1.5 text-[9px] uppercase text-amber-500">Sensible</b>}</span><span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{permission.description}</span></span>
+                          <span><span className="block text-sm font-semibold">{permission.label}{permission.critical && <b className="ml-1.5 text-[9px] uppercase text-amber-500"><LocalizedText id="TAC4RZkrBKdB" /></b>}</span><span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{permission.description}</span></span>
                         </label>
                       );
                     })}
@@ -184,7 +188,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
               ))}
             </div>
             {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
-            <button disabled={saving || name.trim().length < 2 || !permissions.length} onClick={save} className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Guardar rol</button>
+            <button disabled={saving || name.trim().length < 2 || !permissions.length} onClick={save} className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} <LocalizedText id="mxFaFxBfiwh3" /></button>
           </div>
         </div>
       )}

@@ -9,6 +9,7 @@ import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
 import { getCountryConfig } from "@/core/countries";
 import { createPrimaryLocation } from "@/server/services/location.service";
+import { type AppLocale, resolveLocale } from "@/i18n/config";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -73,6 +74,7 @@ export async function registerUser(data: {
   referralCode?: string | null;
   planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
   extraStaffCount?: number;
+  locale?: AppLocale;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
@@ -114,8 +116,9 @@ export async function registerUser(data: {
         countryCode: region.code,
         currencyCode: data.currencyCode || region.currency,
         timezone: data.timezone || region.timezone,
+        locale: resolveLocale(data.locale),
       },
-      select: { id: true, name: true, slug: true, timezone: true },
+      select: { id: true, name: true, slug: true, timezone: true, locale: true },
     });
 
     const ownerStaff = await tx.staff.create({
@@ -182,7 +185,7 @@ export async function registerUser(data: {
   }
 
   // Send welcome email (fire and forget)
-  sendWelcomeEmail(created.user.email, created.user.name, created.business.name).catch(() => {});
+  sendWelcomeEmail(created.user.email, created.user.name, created.business.name, resolveLocale(created.business.locale)).catch(() => {});
 
   // Notify platform admins about new registration (fire and forget)
   sendNewRegistrationNotification({

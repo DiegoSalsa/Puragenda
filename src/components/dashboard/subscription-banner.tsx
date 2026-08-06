@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "lucide-react";
@@ -53,11 +55,10 @@ export async function SubscriptionBanner({
           <div className="space-y-2">
             <p className="flex items-center gap-2 text-sm font-bold text-amber-500">
               <AlertTriangle className="h-4 w-4" />
-              No pudimos cobrar tu suscripción
+              <LocalizedText id="026WjhW_EHgc" />
             </p>
             <p className="max-w-2xl text-sm text-foreground">
-              Sigues teniendo acceso durante el periodo de gracia. Regulariza
-              el pago antes del <strong>{graceLabel}</strong>
+              <LocalizedText id="LtQWP9RzoO_0" /> <strong>{graceLabel}</strong>
               {hoursLeft > 0 ? ` (${hoursLeft} horas restantes)` : ""}.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -83,9 +84,9 @@ export async function SubscriptionBanner({
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
             <div className="space-y-1.5">
-              <p className="text-sm font-semibold text-sky-400">Acceso internacional habilitado · Plan {planLabel}</p>
+              <p className="text-sm font-semibold text-sky-400"><LocalizedText id="bNlqXDDdKU8_" /> {planLabel}</p>
               <p className="max-w-2xl text-sm text-muted-foreground">
-                Activa tu suscripción con Paddle. El precio base es en USD y el Checkout mostrará la moneda y los impuestos aplicables para tu país.
+                <LocalizedText id="xpZ6atha7tin" />
               </p>
               <div className="pt-2">
                 <ActivatePlanButton plan={plan} />
@@ -106,11 +107,11 @@ export async function SubscriptionBanner({
                 <Sparkles className="h-4 w-4 text-[#A78BFA]" />
               )}
               <p className={`text-sm font-semibold ${isUrgent ? "text-amber-400" : "text-[#A78BFA]"}`}>
-                Periodo de Prueba · Plan {planLabel}
+                <LocalizedText id="R_qb0_sjtJpU" /> {planLabel}
               </p>
             </div>
             <p className="max-w-md text-sm text-muted-foreground">
-              Te quedan <span className={`font-bold ${isUrgent ? "text-amber-400" : "text-foreground"}`}>{daysLeft} días</span> de prueba gratuita.
+              <LocalizedText id="j8odgN9uH7gk" /> <span className={`font-bold ${isUrgent ? "text-amber-400" : "text-foreground"}`}>{daysLeft} <LocalizedText id="isOcovSJwCM7" /></span> <LocalizedText id="c9gwnOEw-_JE" />
             </p>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
               <Clock className="h-3 w-3" />
@@ -125,7 +126,7 @@ export async function SubscriptionBanner({
             {plan === "INDIVIDUAL" && (
               <Link href="/dashboard/settings#plan">
                 <button className="flex items-center gap-1.5 rounded-xl border border-[#7C3AED]/30 px-4 py-2.5 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#7C3AED] hover:bg-[#7C3AED]/10">
-                  <Crown className="h-3.5 w-3.5" /> Subir a Equipo <ArrowUpRight className="h-3.5 w-3.5" />
+                  <Crown className="h-3.5 w-3.5" /> <LocalizedText id="jxCec3Nc3DIX" /> <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               </Link>
             )}
@@ -141,14 +142,14 @@ export async function SubscriptionBanner({
       <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Plan Individual · ¿Listo para crecer?</p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" /><LocalizedText id="ecv0CSnVXwha" /></p>
             <p className="text-sm text-muted-foreground">
-              Sube a Equipo (${PRICING.EQUIPO.monthly.toLocaleString("es-CL")} CLP/mes) para hasta {STAFF_LIMITS.EQUIPO} profesionales incluidos y extras desde el sexto.
+              <LocalizedText id="ldt0Y3vGeiOY" />{PRICING.EQUIPO.monthly.toLocaleString("es-CL")} <LocalizedText id="DEYY0K7es8d8" /> {STAFF_LIMITS.EQUIPO} <LocalizedText id="gD5EREn2bDGy" />
             </p>
           </div>
           <Link href="/dashboard/settings#plan">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-              <Crown className="h-3.5 w-3.5" /> Ver planes <ArrowUpRight className="h-3.5 w-3.5" />
+              <Crown className="h-3.5 w-3.5" /> <LocalizedText id="B0rydBFNOg1_" /> <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </Link>
         </div>
@@ -161,7 +162,7 @@ export async function SubscriptionBanner({
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5">
         <Crown className="h-4 w-4 text-[#A78BFA]" />
-        <p className="text-sm text-[#A78BFA]">Plan <span className="font-bold">Equipo</span> activo</p>
+        <p className="text-sm text-[#A78BFA]"><LocalizedText id="-o7Qvavda8sc" /> <span className="font-bold"><LocalizedText id="wpRGdUrhm5Ag" /></span> <LocalizedText id="1_f-j6jtjoTN" /></p>
       </div>
     );
   }

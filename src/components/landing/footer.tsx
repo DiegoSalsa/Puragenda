@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -99,7 +101,7 @@ export function Footer() {
       <div className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-center px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Puragenda by PuroCode. {footer("rights")}
+            © {new Date().getFullYear()} <LocalizedText id="28SLln04FkyL" /> {footer("rights")}
           </p>
         </div>
       </div>

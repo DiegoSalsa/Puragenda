@@ -7,9 +7,18 @@ export default getRequestConfig(async () => {
   const savedLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = resolveInitialLocale(savedLocale);
 
+  const [siteMessages, dashboardMessages, dashboardClientsMessages, dashboardAnalyticsMessages, dashboardModulesMessages, legacyMessages] = await Promise.all([
+    import(`../../messages/${locale}.json`).then((module) => module.default),
+    import(`../../messages/dashboard/${locale}.json`).then((module) => module.default),
+    import(`../../messages/dashboard/clients/${locale}.json`).then((module) => module.default),
+    import(`../../messages/dashboard/analytics/${locale}.json`).then((module) => module.default),
+    import(`../../messages/dashboard/modules/${locale}.json`).then((module) => module.default),
+    import(`../../messages/legacy/${locale}.json`).then((module) => module.default),
+  ]);
+
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: { ...siteMessages, legacy: legacyMessages, dashboard: { ...dashboardMessages, ...dashboardModulesMessages, clients: dashboardClientsMessages, analytics: dashboardAnalyticsMessages } },
     timeZone: "America/Santiago",
     onError(error) {
       if (process.env.NODE_ENV !== "production") console.error(error);

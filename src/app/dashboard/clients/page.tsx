@@ -7,15 +7,17 @@ import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { getCountryConfig } from "@/core/countries";
+import { getTranslations } from "next-intl/server";
 
 export default async function ClientsPage() {
+  const t = await getTranslations("dashboard.clients");
   const user = await getCurrentSessionUser();
   if (!user) redirect("/login");
 
   const biz = await getBusinessForUser(user.id);
   if (!biz) redirect("/dashboard/settings");
   if (!(await hasBusinessPermission(user, biz, DASHBOARD_PERMISSIONS.CLIENTS_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar clientes.</div>;
+    return <div className="py-20 text-center text-muted-foreground">{t("permissionDenied")}</div>;
   }
 
   const business = await prisma.business.findUnique({
@@ -68,10 +70,8 @@ export default async function ClientsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          CRM de clientes · {clientsData.length} registrado{clientsData.length !== 1 ? "s" : ""}
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("registered", { count: clientsData.length })}</p>
       </div>
       <ClientsTable
         clients={clientsData}
@@ -87,15 +87,15 @@ export default async function ClientsPage() {
         steps={[
           {
             popover: {
-              title: "BASE DE DATOS CRM",
-              description: "Aquí se guardan automáticamente todos los clientes que agendan contigo. Puedes ver su información de contacto y comportamiento.",
+              title: t("tutorial.databaseTitle"),
+              description: t("tutorial.databaseDescription"),
             }
           },
           {
             element: "table",
             popover: {
-              title: "HISTORIAL Y MÉTRICAS",
-              description: "Observa cuántas veces han asistido, el dinero total que han gastado en tu negocio, y si han faltado a citas (Inasistencias).",
+              title: t("tutorial.metricsTitle"),
+              description: t("tutorial.metricsDescription"),
               side: "top",
               align: "start"
             }
@@ -103,8 +103,8 @@ export default async function ClientsPage() {
           {
             element: ".space-y-6 > div:last-child",
             popover: {
-              title: "NOTAS PRIVADAS",
-              description: "Puedes hacer clic en cualquier cliente para ver sus detalles y dejar notas privadas que el cliente nunca verá.",
+              title: t("tutorial.notesTitle"),
+              description: t("tutorial.notesDescription"),
               side: "top",
               align: "start"
             }

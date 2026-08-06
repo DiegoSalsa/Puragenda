@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -37,6 +40,7 @@ export function PaymentWall({
   paymentSimulatorEnabled = false,
   reason = "pending",
 }: PaymentWallProps) {
+  const legacy = useTranslations("legacy");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -93,9 +97,9 @@ export function PaymentWall({
         await startBillingCheckout(data as Parameters<typeof startBillingCheckout>[0]);
         return;
       }
-      setError(data.error || "Error al iniciar el proceso de pago.");
+      setError(data.error || legacy("9xSo3rhgfFpo"));
     } catch {
-      setError("Error de conexión. Intenta nuevamente.");
+      setError(legacy("S2__BDp5EpSo"));
     } finally {
       setLoading(false);
     }
@@ -103,7 +107,7 @@ export function PaymentWall({
 
   async function handleCancelRegistration() {
     const confirmed = window.confirm(
-      "¿Estás seguro de que quieres cancelar el registro? Tu cuenta será eliminada y tendrás que registrarte nuevamente."
+      legacy("HiMBISCvumXg")
     );
     if (!confirmed) return;
 
@@ -118,9 +122,9 @@ export function PaymentWall({
         return;
       }
       const data = (await response.json()) as { error?: string };
-      setError(data.error || "Error al cancelar el registro.");
+      setError(data.error || legacy("liY-wANk6-V3"));
     } catch {
-      setError("Error de conexión al intentar cancelar.");
+      setError(legacy("TQo_ghtUgYxu"));
     } finally {
       setCancelling(false);
     }
@@ -132,7 +136,7 @@ export function PaymentWall({
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
           <p className="text-sm font-medium text-muted-foreground">
-            Verificando el estado de tu pago...
+            <LocalizedText id="r6UUaKySs_6p" />
           </p>
         </div>
       </div>
@@ -167,13 +171,13 @@ export function PaymentWall({
             </div>
             <h1 className="text-2xl font-bold">
               {isPastDue
-                ? "Tu suscripción está pendiente"
-                : "Completa tu pago"}
+                ? legacy("F1kbZUmYwdct")
+                : legacy("rG7jIc2s79LN")}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isPastDue
-                ? "El periodo de gracia terminó, pero tus datos siguen guardados. Regulariza el cobro de la misma suscripción para recuperar el acceso."
-                : "Tu cuenta fue creada exitosamente. Para acceder al dashboard, completa el pago de tu suscripción."}
+                ? legacy("Za8eWcpRJJq7")
+                : legacy("35zgM7QhNJs4")}
             </p>
           </div>
 
@@ -192,11 +196,11 @@ export function PaymentWall({
           </div>
 
           <div className="mb-6 flex items-center justify-between rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
-            <span className="text-sm font-medium">Plan {planName}</span>
+            <span className="text-sm font-medium"><LocalizedText id="-o7Qvavda8sc" /> {planName}</span>
             <span className="text-lg font-bold text-[#7C3AED]">
               {isInternational
                 ? paymentSimulatorEnabled
-                  ? "Prueba local · sin dinero real"
+                  ? legacy("BnuGonaob6WJ")
                   : "USD base + impuestos locales"
                 : `$${planPrice.toLocaleString("es-CL")} CLP/mes`}
             </span>
@@ -222,12 +226,12 @@ export function PaymentWall({
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Abriendo pago...
+                      <LocalizedText id="I8SSvxW8prnr" />
                     </>
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4" />
-                      Pagar y activar mi cuenta
+                      <LocalizedText id="XFmrQ8WXktfM" />
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -238,7 +242,7 @@ export function PaymentWall({
                   disabled={loading || cancelling}
                   className="flex w-full items-center justify-center rounded-xl border border-border bg-background py-3 text-sm font-medium"
                 >
-                  Ya pagué, verificar estado
+                  <LocalizedText id="Zt4qjj2ZqJFp" />
                 </button>
               </div>
 
@@ -254,10 +258,10 @@ export function PaymentWall({
                   ) : (
                     <UserX className="h-4 w-4" />
                   )}
-                  {cancelling ? "Cancelando..." : "Cancelar y borrar cuenta"}
+                  {cancelling ? "Cancelando..." : legacy("YHuSQvSz0qCl")}
                 </button>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  Si elegiste el plan equivocado, puedes empezar nuevamente.
+                  <LocalizedText id="e5y98L-QSX1C" />
                 </p>
               </div>
             </>
@@ -265,7 +269,7 @@ export function PaymentWall({
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          ¿Necesitas ayuda? Escríbenos a soporte@puragenda.cl
+          <LocalizedText id="ZCvUYfxd9pT9" />
         </p>
       </div>
     </div>

@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Plus, Loader2, UserCheck, UserX, Clock, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff, Upload, ImageIcon, Coffee, MoreHorizontal } from "lucide-react";
@@ -68,6 +71,7 @@ const ROLE_LABELS: Record<StaffAccessRole, string> = {
 
 // ─── Delete Confirmation Modal ───
 function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: string; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
+  const legacy = useTranslations("legacy");
   const [code] = useState(generateCode);
   const [input, setInput] = useState("");
   const canConfirm = input === code;
@@ -79,17 +83,17 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
         <div className="flex items-center justify-between border-b border-red-500/10 px-6 py-4">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-red-400" />
-            <h3 className="text-lg font-semibold text-red-400">Eliminar Profesional</h3>
+            <h3 className="text-lg font-semibold text-red-400"><LocalizedText id="5dK9EfWHLB17" /></h3>
           </div>
           <button onClick={onCancel} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         {/* Body */}
         <div className="space-y-5 p-6">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Esta acción <span className="font-semibold text-red-400">no se puede deshacer</span>. Se eliminarán todos los horarios y se desvinculará de las citas existentes.
+            <LocalizedText id="xkCSOkEWgFOM" /> <span className="font-semibold text-red-400"><LocalizedText id="ucmdzi01yjIE" /></span><LocalizedText id="zrVExQoMUthT" />
           </p>
           <p className="text-sm text-muted-foreground">
-            Para confirmar que deseas eliminar a <span className="font-semibold text-foreground">{staffName}</span>, escribe el siguiente código de seguridad:
+            <LocalizedText id="AUFxDzUhPw9c" /> <span className="font-semibold text-foreground">{staffName}</span><LocalizedText id="qS9cPvX4U6fg" />
           </p>
           {/* Code display */}
           <div className="flex justify-center">
@@ -99,12 +103,12 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
           </div>
           {/* Input */}
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Escribe el código exacto:</label>
+            <label className="text-xs text-muted-foreground"><LocalizedText id="Oqht24zwho6Q" /></label>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
-              placeholder="DEL-XXXX"
+              placeholder={legacy("WxxzfXeB9bHY")}
               autoFocus
               className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm outline-none placeholder:text-muted-foreground/50 focus:border-red-500/30 transition-colors"
             />
@@ -112,7 +116,7 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
           {/* Actions */}
           <div className="flex gap-3">
             <button onClick={onCancel} className="flex-1 rounded-xl border border-border py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Cancelar
+              <LocalizedText id="u527QG3L1SSL" />
             </button>
             <button
               onClick={onConfirm}
@@ -120,7 +124,7 @@ function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: 
               className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              Confirmar Eliminación
+              <LocalizedText id="RJRhV7-mNWqe" />
             </button>
           </div>
         </div>
@@ -145,6 +149,7 @@ export function StaffList({
   accessProfiles?: AccessProfileOption[];
   canManageRoles?: boolean;
 }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -212,7 +217,7 @@ export function StaffList({
   async function handleCreate() {
     if (!name.trim()) return;
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setCreateError("Debes ingresar un email válido");
+      setCreateError(legacy("otrV5HvywKgA"));
       return;
     }
     setCreating(true); setCreateError("");
@@ -372,12 +377,12 @@ export function StaffList({
       <div className="min-w-0 max-w-full space-y-4" data-tour="staff-list">
         {/* Limit indicator */}
         <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-3">
-          <div><p className="text-2xl font-black text-foreground">{limitInfo.currentCount}<span className="text-sm text-muted-foreground">/{limitInfo.maxAllowed}</span></p><p className="text-xs text-muted-foreground">Profesionales · Plan {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</p></div>
-          <div><p className="text-2xl font-black text-foreground">{activeCount}</p><p className="text-xs text-muted-foreground">Activos para recibir reservas</p></div>
-          <div className="flex items-start justify-between gap-3"><div><p className="text-2xl font-black text-foreground">{accessCount}</p><p className="text-xs text-muted-foreground">Con acceso a Puragenda</p></div>
+          <div><p className="text-2xl font-black text-foreground">{limitInfo.currentCount}<span className="text-sm text-muted-foreground">/{limitInfo.maxAllowed}</span></p><p className="text-xs text-muted-foreground"><LocalizedText id="9tjpfWpFfEqb" /> {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</p></div>
+          <div><p className="text-2xl font-black text-foreground">{activeCount}</p><p className="text-xs text-muted-foreground"><LocalizedText id="U7h2pDi6KzCO" /></p></div>
+          <div className="flex items-start justify-between gap-3"><div><p className="text-2xl font-black text-foreground">{accessCount}</p><p className="text-xs text-muted-foreground"><LocalizedText id="_qMpPGdN4JRX" /></p></div>
           {atLimit && (
             <Link href="/dashboard/settings#plan" className="flex items-center gap-1.5 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 px-3 py-1.5 text-xs font-medium text-[#A78BFA] hover:bg-[#7C3AED]/20 transition-all">
-              <Crown className="h-3 w-3" /> Mejorar plan
+              <Crown className="h-3 w-3" /> <LocalizedText id="xVhYWNLErACL" />
             </Link>
           )}
           </div>
@@ -388,8 +393,8 @@ export function StaffList({
           <div className="flex items-start gap-3 rounded-xl border-[3px] border-black dark:border-white bg-[#FFDB58] px-4 py-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]">
             <AlertTriangle className="h-5 w-5 shrink-0 text-black mt-0.5" />
             <div>
-              <p className="text-sm font-black text-black uppercase tracking-wider">Límite alcanzado</p>
-              <p className="text-xs font-bold text-black/80 mt-1">Tu plan {PLAN_LABELS[limitInfo.plan]} permite máximo {limitInfo.maxAllowed} profesional(es). Mejora tu plan para agregar más.</p>
+              <p className="text-sm font-black text-black uppercase tracking-wider"><LocalizedText id="5Sy8aq0vHtse" /></p>
+              <p className="text-xs font-bold text-black/80 mt-1"><LocalizedText id="OkDVa6Lli3zn" /> {PLAN_LABELS[limitInfo.plan]} <LocalizedText id="PLNDdMqMG-f-" /> {limitInfo.maxAllowed} <LocalizedText id="wDLM9Aa37rh9" /></p>
             </div>
           </div>
         )}
@@ -404,18 +409,18 @@ export function StaffList({
               atLimit ? "cursor-not-allowed border border-dashed border-border bg-muted/30 text-muted-foreground" : "border border-[#7C3AED] bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]"
             }`}
           >
-            <Plus className="h-4 w-4" /> {atLimit ? "Límite de profesionales alcanzado" : "Agregar profesional"}
+            <Plus className="h-4 w-4" /> {atLimit ? legacy("tu3PVYY4ePYa") : legacy("vvbkvOGyA1f-")}
           </button>
         ) : (
           <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-5 space-y-4">
-            <p className="text-sm font-medium">Nuevo profesional</p>
+            <p className="text-sm font-medium"><LocalizedText id="HzSHBwopAzo3" /></p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre completo" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email del profesional" type="email" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={legacy("rMLiRdW5UYo2")} required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={legacy("o182iTCVpksF")} type="email" required className="rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50" />
             </div>
             {canManageRoles ? (
               <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">Rol asignado</label>
+                <label className="mb-1.5 block text-xs text-muted-foreground"><LocalizedText id="tBL91EcRE7Kw" /></label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as "ADMIN" | "RECEPTIONIST" | "STAFF")}
@@ -428,9 +433,9 @@ export function StaffList({
               </div>
             ) : (
               <div className="rounded-xl border border-border bg-background px-4 py-3">
-                <p className="text-xs font-bold text-foreground">Cuenta profesional</p>
+                <p className="text-xs font-bold text-foreground"><LocalizedText id="H3UaDcRKIleV" /></p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Se creará con acceso únicamente a sus citas. La cuenta owner puede ampliar sus funciones después.
+                  <LocalizedText id="WdVBBOkrBf28" />
                 </p>
               </div>
             )}
@@ -439,7 +444,7 @@ export function StaffList({
             {allServices.length > 0 && (
               <div className="space-y-2">
                 <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <Wrench className="h-3 w-3" /> Servicios que puede realizar
+                  <Wrench className="h-3 w-3" /> <LocalizedText id="I2nHC0fKrwH5" />
                 </label>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {allServices.map((svc) => {
@@ -458,7 +463,7 @@ export function StaffList({
                   })}
                 </div>
                 {createServiceIds.length === 0 && (
-                  <p className="text-xs text-amber-400/80">⚠ Si no seleccionas ninguno, el profesional podrá atender todos los servicios.</p>
+                  <p className="text-xs text-amber-400/80"><LocalizedText id="2OuPQ7pTXw-7" /></p>
                 )}
               </div>
             )}
@@ -466,9 +471,9 @@ export function StaffList({
             {createError && <p className="text-sm text-red-400">{createError}</p>}
             <div className="flex gap-2">
               <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} <LocalizedText id="P-X_Jm_DzqwO" />
               </button>
-              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); setCreateServiceIds([]); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
+              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); setCreateServiceIds([]); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
             </div>
           </div>
         )}
@@ -495,15 +500,15 @@ export function StaffList({
                   </div>
                   <div className="min-w-0">
                     <p className={`flex items-center gap-2 truncate font-semibold ${s.isActive ? "" : "text-muted-foreground"}`}><span className={`h-2 w-2 shrink-0 rounded-full ${s.isActive ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />{s.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{s.email || "Sin email"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{s.email || legacy("NpJzWaEviXMd")}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap sm:ml-auto sm:shrink-0">
                   <span className="max-w-[190px] truncate rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground">
-                    {s.accessProfileName || (s.role ? ROLE_LABELS[s.role] : "Sin cuenta")}
+                    {s.accessProfileName || (s.role ? ROLE_LABELS[s.role] : legacy("tMEL0sL8WBp-"))}
                   </span>
                   <button aria-label={`Configurar ${s.name}`} onClick={() => { setExpandedId(s.id); setDrawerTab("general"); setMenuId(null); }} className="flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-3 py-2 text-xs font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/10">
-                    <Settings2 className="h-3.5 w-3.5" /> Configurar
+                    <Settings2 className="h-3.5 w-3.5" /> <LocalizedText id="1oXdubv62vlH" />
                   </button>
                   <button aria-label={`Más acciones para ${s.name}`} onClick={() => setMenuId(menuId === s.id ? null : s.id)} className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                     <MoreHorizontal className="h-4 w-4" />
@@ -514,7 +519,7 @@ export function StaffList({
                         {s.isActive ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}{s.isActive ? "Desactivar" : "Activar"}
                       </button>
                       <button onClick={() => { setDeleteTarget(s); setMenuId(null); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
-                        <Trash2 className="h-3.5 w-3.5" /> Eliminar profesional
+                        <Trash2 className="h-3.5 w-3.5" /> <LocalizedText id="5bCfOB3vQULg" />
                       </button>
                     </div>
                   )}
@@ -535,7 +540,7 @@ export function StaffList({
               {assignedServiceNames.length === 0 && allServices.length > 0 && (
                 <div className="px-4 pb-3 sm:px-5 sm:pb-4 -mt-1">
                   <span className="inline-flex items-center gap-1 rounded-full border border-black bg-black px-2.5 py-1 text-[11px] font-medium text-white dark:border-white dark:bg-white dark:text-black">
-                    ⚠ Todos los servicios (sin asignar)
+                    <LocalizedText id="2wtWWsw4Yuyj" />
                   </span>
                 </div>
               )}
@@ -543,7 +548,7 @@ export function StaffList({
               {/* ── Expanded Panel ── */}
               {expanded && (
                 <>
-                <button type="button" aria-label="Cerrar configuración" onClick={() => setExpandedId(null)} className="fixed inset-0 z-[60] cursor-default bg-black/35 backdrop-blur-[1px]" />
+                <button type="button" aria-label={legacy("LjtOMqWnbjbl")} onClick={() => setExpandedId(null)} className="fixed inset-0 z-[60] cursor-default bg-black/35 backdrop-blur-[1px]" />
                 <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl">
                   <div className="border-b border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6">
                     <div className="flex items-center gap-3">
@@ -551,7 +556,7 @@ export function StaffList({
                         {s.imageUrl ? <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" /> : s.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1"><p className="truncate font-bold">{s.name}</p><p className="truncate text-xs text-muted-foreground">{s.email}</p></div>
-                      <button type="button" onClick={() => setExpandedId(null)} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Cerrar panel"><X className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setExpandedId(null)} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={legacy("nUCY4THlFves")}><X className="h-4 w-4" /></button>
                     </div>
                     <div className="mt-4 flex gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
                       {([
@@ -569,7 +574,7 @@ export function StaffList({
                   <div className="space-y-6">
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <ImageIcon className="h-3.5 w-3.5 text-[#7C3AED]" /> Foto del profesional
+                      <ImageIcon className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="9JTgJRuLA1zA" />
                     </p>
                     <div className="flex items-start gap-4 rounded-xl border border-border bg-muted/30 p-4">
                       <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
@@ -585,11 +590,11 @@ export function StaffList({
                         )}
                       </div>
                       <div className="min-w-0 flex-1 space-y-2">
-                        <p className="text-sm text-muted-foreground">Se muestra cuando el cliente elige profesional en el widget.</p>
+                        <p className="text-sm text-muted-foreground"><LocalizedText id="sEE2ey8K-ykk" /></p>
                         <div className="flex flex-wrap gap-2">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-[#6D28D9]">
                             {uploadingStaffImage === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                            Subir foto
+                            <LocalizedText id="HFGOSCnl8cRA" />
                             <input
                               type="file"
                               accept="image/png,image/jpeg,image/webp"
@@ -606,27 +611,27 @@ export function StaffList({
                               className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                              Eliminar
+                              <LocalizedText id="yYlM8AL5C9C-" />
                             </button>
                           )}
                         </div>
-                        <p className="text-[11px] text-muted-foreground/60">PNG, JPG o WebP. Maximo 5MB.</p>
+                        <p className="text-[11px] text-muted-foreground/60"><LocalizedText id="Z6cHjVDKnN5z" /></p>
                         {staffImageErrors[s.id] && <p className="text-xs text-red-400">{staffImageErrors[s.id]}</p>}
                       </div>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <ShieldAlert className="h-3.5 w-3.5 text-[#7C3AED]" /> Rol de acceso
+                      <ShieldAlert className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="4X_UEp5jpc1R" />
                     </p>
                     <div className="rounded-xl border border-border bg-muted/30 p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm font-medium text-foreground">
-                            {s.accessProfileName || (s.role ? ROLE_LABELS[s.role] : "Sin cuenta vinculada")}
+                            {s.accessProfileName || (s.role ? ROLE_LABELS[s.role] : legacy("f_l-iqLw8nAs"))}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Admin y recepcionista pueden ver la agenda completa. Trabajador ve solo sus citas.
+                            <LocalizedText id="LOA3ojtWe_Bh" />
                           </p>
                         </div>
                         <select
@@ -642,7 +647,7 @@ export function StaffList({
                       </div>
                       {accessProfiles.length > 0 && (
                         <div className="mt-4 border-t border-border pt-4">
-                          <label className="mb-1.5 block text-xs font-semibold text-foreground">Perfil personalizado</label>
+                          <label className="mb-1.5 block text-xs font-semibold text-foreground"><LocalizedText id="qsafXL-Bkr4p" /></label>
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <select
                               aria-label={`Perfil personalizado de ${s.name}`}
@@ -656,17 +661,17 @@ export function StaffList({
                             </select>
                             {savingProfileId === s.id && <Loader2 className="h-4 w-4 animate-spin text-[#7C3AED]" />}
                           </div>
-                          <p className="mt-1.5 text-[11px] text-muted-foreground">Los roles clásicos siguen activos si no eliges un perfil personalizado.</p>
+                          <p className="mt-1.5 text-[11px] text-muted-foreground"><LocalizedText id="KV-v-UdQob4Q" /></p>
                         </div>
                       )}
                       {!canManageRoles && (
-                        <p className="mt-3 text-xs text-muted-foreground">Solo la cuenta owner puede cambiar roles.</p>
+                        <p className="mt-3 text-xs text-muted-foreground"><LocalizedText id="MagpoaFTfw9G" /></p>
                       )}
                       {s.isOwner && (
-                        <p className="mt-3 text-xs text-muted-foreground">La cuenta owner no se puede cambiar desde aqui.</p>
+                        <p className="mt-3 text-xs text-muted-foreground"><LocalizedText id="JuOe55fvYxb7" /></p>
                       )}
                       {!s.userId && (
-                        <p className="mt-3 text-xs text-amber-400">Este profesional no tiene una cuenta de acceso vinculada.</p>
+                        <p className="mt-3 text-xs text-amber-400"><LocalizedText id="MmqU70QpEsTE" /></p>
                       )}
                       {roleErrors[s.id] && (
                         <p className="mt-3 text-xs text-red-400">{roleErrors[s.id]}</p>
@@ -679,7 +684,7 @@ export function StaffList({
                   {drawerTab === "services" && allServices.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                        <Wrench className="h-3.5 w-3.5 text-[#7C3AED]" /> Servicios asignados
+                        <Wrench className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="Mm2FcceAWe1N" />
                       </p>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {allServices.map((svc) => {
@@ -698,23 +703,23 @@ export function StaffList({
                         })}
                       </div>
                       {(staffServices[s.id] || []).length === 0 && (
-                        <p className="flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-xs font-medium text-white dark:bg-white dark:text-black"><AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> Sin servicios asignados: estará disponible para todos.</p>
+                        <p className="flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-xs font-medium text-white dark:bg-white dark:text-black"><AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> <LocalizedText id="3nFZYntceFS9" /></p>
                       )}
                       <button onClick={() => handleSaveServices(s.id)} disabled={savingServices === s.id}
                         className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
                         {savingServices === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Guardar servicios
+                        <LocalizedText id="L2t147qE1BDe" />
                       </button>
                     </div>
                   )}
                   {drawerTab === "services" && allServices.length === 0 && (
-                    <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Primero crea servicios para poder asignarlos.</p>
+                    <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"><LocalizedText id="CKuujRVQ7zTU" /></p>
                   )}
 
                   {/* ── Section: Schedule ── */}
                   {drawerTab === "schedule" && <div className="space-y-3">
                     {allLocations.length > 0 && <div className="rounded-xl border border-border bg-muted/30 p-3">
-                      <p className="mb-2 text-xs font-semibold text-foreground">Sucursales donde atiende</p>
+                      <p className="mb-2 text-xs font-semibold text-foreground"><LocalizedText id="5KyhZArQLuI9" /></p>
                       <div className="flex flex-wrap gap-x-4 gap-y-2">
                         {allLocations.map((location) => {
                           const assigned = s.locations.some((item) => item.locationId === location.id);
@@ -725,11 +730,11 @@ export function StaffList({
                           </label>;
                         })}
                       </div>
-                      <p className="mt-2 text-[11px] text-muted-foreground">Solo se ofrecerán reservas para este profesional en las sucursales marcadas.</p>
+                      <p className="mt-2 text-[11px] text-muted-foreground"><LocalizedText id="Wz9ntfJY8Kk0" /></p>
                     </div>}
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                        <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> Horario laboral
+                        <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="9PPZ6eSGqpBe" />
                       </p>
                       {s.locations.length > 0 && <select value={selectedLocationId} onChange={(event) => setScheduleLocationIds((current) => ({ ...current, [s.id]: event.target.value }))} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-semibold">
                         {s.locations.map((location) => <option key={location.locationId} value={location.locationId}>{location.name}</option>)}
@@ -754,7 +759,7 @@ export function StaffList({
                         }}
                         className="text-[10px] font-bold uppercase underline decoration-2 underline-offset-2 hover:text-[#7C3AED]"
                       >
-                        Copiar horario a todos
+                        <LocalizedText id="HbZd7eXeC-XN" />
                       </button>
                     </div>
                     {sched.map((entry) => {
@@ -792,7 +797,7 @@ export function StaffList({
                               <div>
                                 <p className="text-xs font-bold uppercase tracking-wider text-foreground">{dayLabel}</p>
                                 <p className={`text-[10px] font-semibold ${entry.isWorking ? "text-emerald-600 dark:text-emerald-300" : "text-muted-foreground"}`}>
-                                  {entry.isWorking ? "Horario activo" : "Día libre"}
+                                  {entry.isWorking ? legacy("VUd8CwDPWN3I") : legacy("te8uY9Aiglv-")}
                                 </p>
                               </div>
                             </div>
@@ -815,7 +820,7 @@ export function StaffList({
                               </div>
                             ) : (
                               <p className="text-xs text-muted-foreground md:col-span-2">
-                                Este profesional no recibirá reservas durante este día.
+                                <LocalizedText id="8eHxeZUTE3BQ" />
                               </p>
                             )}
 
@@ -839,7 +844,7 @@ export function StaffList({
                                     hasBreak ? null : suggestedBreak?.endTime ?? null,
                                   );
                                 }}
-                                aria-label={`${hasBreak ? "Quitar" : "Añadir"} pausa ${dayLabel} de ${s.name}`}
+                                aria-label={`${hasBreak ? "Quitar" : legacy("dUKl6AD5KAp5")} pausa ${dayLabel} de ${s.name}`}
                                 className={`flex h-9 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-colors ${
                                   hasBreak
                                     ? "border-[#7C3AED] bg-[#7C3AED] text-white"
@@ -847,7 +852,7 @@ export function StaffList({
                                 }`}
                               >
                                 <Coffee className="h-3.5 w-3.5" />
-                                {hasBreak ? "Quitar pausa" : "Añadir pausa"}
+                                {hasBreak ? "Quitar pausa" : legacy("pMAWENYxGXI3")}
                               </button>
                             )}
                           </div>
@@ -855,7 +860,7 @@ export function StaffList({
                           {entry.isWorking && hasBreak && (
                             <div className="flex flex-wrap items-center gap-2 border-t border-[#7C3AED]/15 bg-[#7C3AED]/5 px-3 py-2.5">
                               <Coffee className="h-3.5 w-3.5 text-[#7C3AED]" />
-                              <span className="mr-1 text-[11px] font-bold text-foreground">Pausa</span>
+                              <span className="mr-1 text-[11px] font-bold text-foreground"><LocalizedText id="m9TR4ErVHfOj" /></span>
                               <TimeTextInput
                                 ariaLabel={`Inicio pausa ${dayLabel} de ${s.name}`}
                                 value={entry.breakStart || ""}
@@ -871,29 +876,29 @@ export function StaffList({
                                 compact
                                 className="min-w-[110px]"
                               />
-                              <span className="text-[11px] text-muted-foreground">No se ofrecerán horas dentro de este tramo.</span>
+                              <span className="text-[11px] text-muted-foreground"><LocalizedText id="7PNA19LnKB2w" /></span>
                             </div>
                           )}
                         </div>
                       );
                     })}
-                    <p className="text-[11px] text-muted-foreground">Puedes escribir horas exactas, por ejemplo 09:15.</p>
+                    <p className="text-[11px] text-muted-foreground"><LocalizedText id="2qadpiYxZRkA" /></p>
                     {scheduleErrors[s.id] && <p role="alert" className="text-xs text-red-500">{scheduleErrors[s.id]}</p>}
-                    <p className="text-[11px] text-muted-foreground">El horario guardado corresponde a la sucursal seleccionada.</p>
+                    <p className="text-[11px] text-muted-foreground"><LocalizedText id="qLsZYHKk_hom" /></p>
                     <button onClick={() => handleSaveSchedule(s.id, selectedLocationId || undefined)} disabled={savingSchedule === s.id}
                       className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-bold text-white disabled:opacity-50 transition-all hover:bg-[#6D28D9]">
                       {savingSchedule === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      Guardar horario
+                      <LocalizedText id="N5n1TAfl6hv8" />
                     </button>
                   </div>}
 
                   {/* ── Section: Schedule Blocks ── */}
                   {drawerTab === "blocks" && <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> Bloqueos y cupos prioritarios
+                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="Rb1Ige_aW69O" />
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Un bloqueo impide cualquier cita. Un cupo prioritario se oculta de la reserva pública, pero puedes ocuparlo desde tu calendario.
+                      <LocalizedText id="320zjvXVwVej" />
                     </p>
 
                     {/* Existing blocks */}
@@ -926,7 +931,7 @@ export function StaffList({
                                 </span>
                                 {block.type === "PRIORITY" && block.releaseAt && (
                                   <span className="hidden text-[10px] text-muted-foreground lg:inline">
-                                    se libera {new Date(block.releaseAt).toLocaleString("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                    <LocalizedText id="mDK9J79oHTV_" /> {new Date(block.releaseAt).toLocaleString("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                                   </span>
                                 )}
                               </div>
@@ -934,7 +939,7 @@ export function StaffList({
                                 onClick={async () => { setDeletingBlockId(block.id); await deleteScheduleBlockAction(block.id); setDeletingBlockId(null); router.refresh(); }}
                                 disabled={deletingBlockId === block.id}
                                 className="rounded p-2 min-h-[32px] min-w-[32px] text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center justify-center"
-                                title="Eliminar bloqueo"
+                                title={legacy("-hKMcozLfrkN")}
                               >
                                 {deletingBlockId === block.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                               </button>
@@ -949,7 +954,7 @@ export function StaffList({
                       <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
-                            <label className="block text-xs text-muted-foreground mb-1">Tipo</label>
+                            <label className="block text-xs text-muted-foreground mb-1"><LocalizedText id="OGjShD1ZJMGS" /></label>
                             <select
                               value={blockType}
                               onChange={(event) => setBlockType(event.target.value as "UNAVAILABLE" | "PRIORITY")}
@@ -960,31 +965,31 @@ export function StaffList({
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs text-muted-foreground mb-1">Fecha</label>
+                            <label className="block text-xs text-muted-foreground mb-1"><LocalizedText id="k7Kp73gsrNZx" /></label>
                             <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)}
                               min={new Date().toISOString().split("T")[0]}
                               className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none" />
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="block text-xs text-muted-foreground mb-1">Motivo (opcional)</label>
+                            <label className="block text-xs text-muted-foreground mb-1"><LocalizedText id="3s1C0njuIUrC" /></label>
                             <input type="text" value={blockReason} onChange={(e) => setBlockReason(e.target.value)}
-                              placeholder={blockType === "PRIORITY" ? "Ej: Clientas frecuentes" : "Ej: Colación, médico..."}
+                              placeholder={blockType === "PRIORITY" ? "Ej: Clientas frecuentes" : legacy("NoEJSLEpU1pJ")}
                               className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none placeholder:text-muted-foreground/50" />
                           </div>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div>
-                            <label className="block text-xs text-muted-foreground mb-1">Hora inicio</label>
-                            <TimeTextInput value={blockStart} onChange={setBlockStart} ariaLabel="Hora de inicio del bloqueo" />
+                            <label className="block text-xs text-muted-foreground mb-1"><LocalizedText id="JxhvvnxYbSqV" /></label>
+                            <TimeTextInput value={blockStart} onChange={setBlockStart} ariaLabel={legacy("kioVb9ASsX0K")} />
                           </div>
                           <div>
-                            <label className="block text-xs text-muted-foreground mb-1">Hora fin</label>
-                            <TimeTextInput value={blockEnd} onChange={setBlockEnd} ariaLabel="Hora de fin del bloqueo" />
+                            <label className="block text-xs text-muted-foreground mb-1"><LocalizedText id="GbD4tTdvvpN_" /></label>
+                            <TimeTextInput value={blockEnd} onChange={setBlockEnd} ariaLabel={legacy("YZFYc3Zn3Pc5")} />
                           </div>
                         </div>
                         {blockType === "PRIORITY" && (
                           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                            <label className="mb-1 block text-xs font-medium text-amber-500">Liberación automática</label>
+                            <label className="mb-1 block text-xs font-medium text-amber-500"><LocalizedText id="muETJIMWVNf3" /></label>
                             <select
                               value={blockReleaseHours}
                               onChange={(event) => setBlockReleaseHours(event.target.value as "never" | "24" | "48" | "72")}
@@ -996,7 +1001,7 @@ export function StaffList({
                               <option value="72">72 horas antes</option>
                             </select>
                             <p className="mt-1.5 text-[11px] text-muted-foreground">
-                              Mientras esté protegido solo podrás agendarlo desde el calendario interno. Al liberarse aparecerá en la reserva pública si sigue vacío.
+                              <LocalizedText id="LHyTjNNk_jPc" />
                             </p>
                           </div>
                         )}
@@ -1004,7 +1009,7 @@ export function StaffList({
                         <div className="flex gap-2">
                           <button
                             onClick={async () => {
-                              if (!blockDate) { setBlockError("Selecciona una fecha"); return; }
+                              if (!blockDate) { setBlockError(legacy("quhzeJ1PaInz")); return; }
                               setSavingBlock(true); setBlockError("");
                               const res = await createScheduleBlockAction({
                                 staffId: s.id,
@@ -1035,13 +1040,13 @@ export function StaffList({
                             {savingBlock ? <Loader2 className="h-4 w-4 animate-spin" /> : blockType === "PRIORITY" ? <Crown className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                             {blockType === "PRIORITY" ? "Crear cupo prioritario" : "Crear bloqueo"}
                           </button>
-                          <button onClick={() => { setBlockStaffId(null); setBlockError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground">Cancelar</button>
+                          <button onClick={() => { setBlockStaffId(null); setBlockError(""); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
                         </div>
                       </div>
                     ) : (
                       <button onClick={() => { setBlockStaffId(s.id); setBlockDate(""); setBlockReason(""); setBlockType("UNAVAILABLE"); setBlockReleaseHours("48"); setBlockError(""); }}
                         className="flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-[#7C3AED]/30 transition-all">
-                        <Plus className="h-4 w-4" /> Agregar bloqueo o cupo
+                        <Plus className="h-4 w-4" /> <LocalizedText id="x_DHwUNWFKO7" />
                       </button>
                     )}
                   </div>}

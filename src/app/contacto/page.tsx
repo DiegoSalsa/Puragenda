@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
@@ -33,7 +35,7 @@ export default async function ContactoPage() {
             <a href="mailto:contacto@purocode.com" className="block bg-[#BFFCC6] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#BFFCC6] text-black dark:text-white hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-4 mb-2">
                 <Mail className="h-6 w-6" />
-                <h3 className="text-xl font-black uppercase">Email</h3>
+                <h3 className="text-xl font-black uppercase"><LocalizedText id="lpzL089jAOzV" /></h3>
               </div>
               <p className="font-bold opacity-80">contacto@purocode.com</p>
             </a>
@@ -41,7 +43,7 @@ export default async function ContactoPage() {
             <a href="https://wa.me/56949255006" target="_blank" rel="noopener noreferrer" className="block bg-[#FFF5BA] dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF5BA] text-black dark:text-white hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-4 mb-2">
                 <Phone className="h-6 w-6" />
-                <h3 className="text-xl font-black uppercase">WhatsApp</h3>
+                <h3 className="text-xl font-black uppercase"><LocalizedText id="akDt8fyHop8k" /></h3>
               </div>
               <p className="font-bold opacity-80">+56 9 4925 5006</p>
             </a>

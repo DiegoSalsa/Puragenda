@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -92,6 +95,7 @@ export function RecurringClient({
   timezone: string;
   taxIdLabel: string;
 }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const [filter, setFilter] = useState<FilterStatus>("ALL");
   const [search, setSearch] = useState("");
@@ -186,7 +190,7 @@ export function RecurringClient({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar cliente, servicio..."
+            placeholder={legacy("I0awLAEsGcyb")}
             className="w-full rounded-xl border border-border bg-muted pl-9 pr-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
           />
         </div>
@@ -196,7 +200,7 @@ export function RecurringClient({
           {filtered.length === 0 && (
             <div className="rounded-2xl border border-dashed border-border py-12 text-center">
               <RefreshCw className="mx-auto h-6 w-6 text-muted-foreground/30 mb-2" />
-              <p className="text-sm text-muted-foreground">No hay suscripciones{filter !== "ALL" ? ` con estado "${STATUS_LABELS[filter]?.label}"` : ""}</p>
+              <p className="text-sm text-muted-foreground"><LocalizedText id="W2KV5qesDLQQ" />{filter !== "ALL" ? ` con estado "${STATUS_LABELS[filter]?.label}"` : ""}</p>
             </div>
           )}
           {filtered.map((b) => {
@@ -237,7 +241,7 @@ export function RecurringClient({
                     <>
                       <span>·</span>
                       <span className="text-[#7C3AED]">
-                        Prox: {new Date(nextApt.startTime).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: timezone })}
+                        <LocalizedText id="qnPO135fJqiV" /> {new Date(nextApt.startTime).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: timezone })}
                       </span>
                     </>
                   )}
@@ -285,19 +289,19 @@ export function RecurringClient({
             {/* Client info */}
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Datos del cliente</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="wV364-RNk213" /></p>
                 <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span>{selected.customerEmail}</span></div>
                 {selected.customerPhone && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">T</span><span className="text-foreground">{selected.customerPhone}</span></div>}
-                {selected.customerRut && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">ID</span><span className="text-foreground">{taxIdLabel}: {selected.customerRut}</span></div>}
+                {selected.customerRut && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs"><LocalizedText id="OEOXHc_e5Qg-" /></span><span className="text-foreground">{taxIdLabel}: {selected.customerRut}</span></div>}
               </div>
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Plan</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="-o7Qvavda8sc" /></p>
                 <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /><span>{new Date(selected.startDate).toLocaleDateString(locale, { timeZone: "UTC" })} - {new Date(selected.endDate).toLocaleDateString(locale, { timeZone: "UTC" })}</span></div>
                 <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>{selected.selectedDays.map((d) => `${WEEK_NAMES[d]} ${selected.selectedTimes[String(d)]}`).join(" / ")}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {selected.completedAppointments} / {selected.totalAppointments} sesiones completadas
+                  {selected.completedAppointments} / {selected.totalAppointments} <LocalizedText id="Kzy0uzeiNOS_" />
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                   <div
@@ -311,19 +315,19 @@ export function RecurringClient({
             {/* Health form */}
             {selected.healthAnswers && Object.keys(selected.healthAnswers).length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Formulario de salud</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="LyTjbgn_C_Eu" /></p>
                 <div className="rounded-xl border border-border bg-muted/40 p-3 space-y-1.5 text-sm">
                   {Object.entries(selected.healthAnswers).map(([k, v]) => (
                     <div key={k}><span className="text-muted-foreground">P{parseInt(k) + 1}: </span><span>{v}</span></div>
                   ))}
-                  {selected.healthFreeText && <div><span className="text-muted-foreground">Comentarios: </span><span>{selected.healthFreeText}</span></div>}
+                  {selected.healthFreeText && <div><span className="text-muted-foreground"><LocalizedText id="IHQedcFUmsMN" /> </span><span>{selected.healthFreeText}</span></div>}
                 </div>
               </div>
             )}
 
             {/* Appointments mini-calendar */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sesiones ({selected.appointments.length})</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="03aozig9yeUr" />{selected.appointments.length})</p>
               <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                 {selected.appointments.map((a) => {
                   const d = new Date(a.startTime);
@@ -347,17 +351,17 @@ export function RecurringClient({
             {/* Session overrides history */}
             {selected.sessionOverrides.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Historial de cambios ({selected.sessionOverrides.length})</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="SjqN74BwHg7r" />{selected.sessionOverrides.length})</p>
                 <div className="space-y-1.5">
                   {selected.sessionOverrides.map((o) => (
                     <div key={o.id} className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{new Date(o.originalDate).toLocaleDateString(locale, { timeZone: timezone })}</span>
-                        {o.newTime && <span className="text-[#7C3AED]">Nueva hora: {o.newTime}</span>}
-                        {!o.newTime && <span className="text-red-500">Sesion cancelada</span>}
+                        {o.newTime && <span className="text-[#7C3AED]"><LocalizedText id="93xQpK2XC2yY" /> {o.newTime}</span>}
+                        {!o.newTime && <span className="text-red-500"><LocalizedText id="ZkayZHgaY7aC" /></span>}
                       </div>
                       {o.reason && <p className="text-muted-foreground">{o.reason}</p>}
-                      <p className="text-muted-foreground">{o.requestedByClient ? "Solicitado por cliente" : "Modificado por negocio"}</p>
+                      <p className="text-muted-foreground">{o.requestedByClient ? legacy("63wGgHSAlblg") : legacy("l6xN9n4TNjSO")}</p>
                     </div>
                   ))}
                 </div>
@@ -367,12 +371,12 @@ export function RecurringClient({
             {/* Internal notes */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notas internas</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="dM2vqmftDgku" /></p>
                 <button
                   onClick={() => { setShowNoteEditor((v) => !v); setNoteText(selected.internalNotes ?? ""); }}
                   className="text-xs text-[#7C3AED] hover:underline"
                 >
-                  {showNoteEditor ? "Cancelar" : selected.internalNotes ? "Editar" : "Agregar nota"}
+                  {showNoteEditor ? "Cancelar" : selected.internalNotes ? "Editar" : legacy("H-PzUezh1Xbn")}
                 </button>
               </div>
               {!showNoteEditor && selected.internalNotes && (
@@ -381,7 +385,7 @@ export function RecurringClient({
                 </div>
               )}
               {!showNoteEditor && !selected.internalNotes && (
-                <p className="text-xs text-muted-foreground italic">Sin notas internas</p>
+                <p className="text-xs text-muted-foreground italic"><LocalizedText id="_LcWzOUBzPla" /></p>
               )}
               {showNoteEditor && (
                 <div className="space-y-2">
@@ -389,7 +393,7 @@ export function RecurringClient({
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
                     rows={3}
-                    placeholder="Notas privadas sobre esta suscripcion..."
+                    placeholder={legacy("qX7umq4xXlKL")}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
                   />
                   <button
@@ -397,7 +401,7 @@ export function RecurringClient({
                     onClick={() => doAction("note", () => addInternalNoteAction(selected.id, noteText))}
                     className="rounded-xl bg-[#7C3AED] px-4 py-2 text-xs font-bold text-white hover:bg-[#6d28d9] disabled:opacity-50 transition-colors"
                   >
-                    {loadingAction === "note" ? "Guardando..." : "Guardar nota"}
+                    {loadingAction === "note" ? "Guardando..." : legacy("SJFBMH_K9Qep")}
                   </button>
                 </div>
               )}
@@ -405,20 +409,20 @@ export function RecurringClient({
 
             {/* Management link */}
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Link de gestion del cliente</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="rFdHMxO3FDZ5" /></p>
               <button
                 onClick={() => {
                 const url = selected.managementToken
                   ? `${baseUrl}/mi-plan/${selected.managementToken}`
                   : "";
-                if (!url) { alert("Este plan no tiene token de gestión"); return; }
+                if (!url) { alert(legacy("q7JO-7wIgtIG")); return; }
                   navigator.clipboard.writeText(url).catch(() => {});
-                  alert("Link copiado al portapapeles");
+                  alert(legacy("n2S2ZbPnRCgQ"));
                 }}
                 className="flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 bg-[#7C3AED]/5 px-3 py-2 text-xs text-[#7C3AED] hover:bg-[#7C3AED]/10 transition-colors"
               >
                 <Link2 className="h-3.5 w-3.5" />
-                Copiar link de gestion
+                <LocalizedText id="j0oPzpncwq5C" />
               </button>
             </div>
           </div>
@@ -428,13 +432,13 @@ export function RecurringClient({
             {/* Reject form */}
             {showReject && (
               <div className="space-y-2 pb-2">
-                <label className="text-xs font-medium text-muted-foreground">Motivo del rechazo</label>
+                <label className="text-xs font-medium text-muted-foreground"><LocalizedText id="dU9DsJNmy1tF" /></label>
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   rows={2}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-red-500/30 transition-colors"
-                  placeholder="Motivo para el cliente..."
+                  placeholder={legacy("tdVrUcD_tA6e")}
                 />
                 <div className="flex gap-2">
                   <button
@@ -444,7 +448,7 @@ export function RecurringClient({
                   >
                     {loadingAction === "reject" ? "Rechazando..." : "Confirmar rechazo"}
                   </button>
-                  <button onClick={() => setShowReject(false)} className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Cancelar</button>
+                  <button onClick={() => setShowReject(false)} className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
                 </div>
               </div>
             )}
@@ -452,7 +456,7 @@ export function RecurringClient({
             {/* Pause form */}
             {showPause && (
               <div className="space-y-2 pb-2">
-                <label className="text-xs font-medium text-muted-foreground">Pausar hasta</label>
+                <label className="text-xs font-medium text-muted-foreground"><LocalizedText id="HGA1FXj4Hvhd" /></label>
                 <input
                   type="date"
                   value={pauseUntil}
@@ -468,7 +472,7 @@ export function RecurringClient({
                   >
                     {loadingAction === "pause" ? "Pausando..." : "Confirmar pausa"}
                   </button>
-                  <button onClick={() => setShowPause(false)} className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground">Cancelar</button>
+                  <button onClick={() => setShowPause(false)} className="rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
                 </div>
               </div>
             )}
@@ -483,7 +487,7 @@ export function RecurringClient({
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors"
                   >
                     {loadingAction === "approve" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Aprobar
+                    <LocalizedText id="EKAP3xpE3sLS" />
                   </button>
                   <button
                     disabled={pending}
@@ -491,7 +495,7 @@ export function RecurringClient({
                     className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                   >
                     <XCircle className="h-4 w-4" />
-                    Rechazar
+                    <LocalizedText id="KgUVYC0xWHYb" />
                   </button>
                 </>
               )}
@@ -502,7 +506,7 @@ export function RecurringClient({
                   className="flex items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-sm font-medium text-blue-500 hover:bg-blue-500/10 disabled:opacity-50 transition-colors"
                 >
                   <PauseCircle className="h-4 w-4" />
-                  Pausar
+                  <LocalizedText id="zSXuWx249bCq" />
                 </button>
               )}
               {selected.status === "PAUSED" && (
@@ -512,7 +516,7 @@ export function RecurringClient({
                   className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm font-medium text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
                 >
                   {loadingAction === "resume" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
-                  Reanudar
+                  <LocalizedText id="VoXh-vCzjbKD" />
                 </button>
               )}
               {(selected.status === "ACTIVE" || selected.status === "PAUSED") && (
@@ -525,7 +529,7 @@ export function RecurringClient({
                   className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                 >
                   {loadingAction === "cancel" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Cancelar todo
+                  <LocalizedText id="CEF77upoZYJZ" />
                 </button>
               )}
               <button
@@ -533,7 +537,7 @@ export function RecurringClient({
                 className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <StickyNote className="h-4 w-4" />
-                Nota
+                <LocalizedText id="7O-Kh__wXsXQ" />
               </button>
             </div>
           </div>

@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { Stamp } from "lucide-react";
@@ -10,12 +12,12 @@ export const dynamic = "force-dynamic";
 
 export default async function LoyaltyPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground">Debes iniciar sesión</div>;
+  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
 
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground">No tienes un negocio configurado aún</div>;
+  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="8rEGoq2nl-vn" /></div>;
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground">No tienes permisos para gestionar fidelización.</div>;
+    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="6HL0Yo7lttob" /></div>;
   }
 
   return (
@@ -23,10 +25,10 @@ export default async function LoyaltyPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <Stamp className="h-8 w-8 text-[#7C3AED]" />
-          Fidelización
+          <LocalizedText id="KfCnckvorAoy" />
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Configura tu programa de tarjetas de timbres para premiar a tus clientes recurrentes.
+          <LocalizedText id="f8lV4w40Icjf" />
         </p>
       </div>
 
@@ -45,19 +47,19 @@ export default async function LoyaltyPage() {
 
       {/* Info card */}
       <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-6">
-        <h3 className="text-sm font-semibold text-[#7C3AED] mb-2">¿Cómo funciona?</h3>
+        <h3 className="text-sm font-semibold text-[#7C3AED] mb-2"><LocalizedText id="Th8TqSkxybtS" /></h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span>Cada vez que una cita se marca como <strong className="text-foreground">Completada</strong>, el cliente recibe un timbre automáticamente.</span>
+            <span><LocalizedText id="xr-QiqF8b3D-" /> <strong className="text-foreground"><LocalizedText id="sUhZDAsLj9kJ" /></strong><LocalizedText id="SGUQ_qoCfufT" /></span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span>Al acumular la cantidad de timbres configurada, se genera un <strong className="text-foreground">código de premio</strong> único.</span>
+            <span><LocalizedText id="TUqOrwFQUHLZ" /> <strong className="text-foreground"><LocalizedText id="s82urGsq4Nv-" /></strong> <LocalizedText id="HQ-i7ObaZR6S" /></span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span>Los clientes pueden ver su progreso y premios desde un <strong className="text-foreground">portal público</strong> sin necesidad de crear una cuenta.</span>
+            <span><LocalizedText id="hzX8FthTCrHv" /> <strong className="text-foreground"><LocalizedText id="Nuj0ae1yfPk2" /></strong> <LocalizedText id="QcpG5mwlo9K4" /></span>
           </li>
         </ul>
       </div>

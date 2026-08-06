@@ -18,10 +18,10 @@ describe("recurring email date-only boundaries", () => {
       timezone: "America/Argentina/Buenos_Aires",
     });
 
-    expect(result.html).toContain("10 de agosto 2026");
-    expect(result.html).toContain("9 de septiembre 2026");
+    expect(result.html).toContain("10 de agosto de 2026");
+    expect(result.html).toContain("9 de septiembre de 2026");
     expect(result.html).toContain(">10:00<");
     expect(result.html).toContain("Todos los horarios corresponden a America/Argentina/Buenos_Aires.");
-    expect(result.html).not.toContain("9 de agosto 2026");
+    expect(result.html).not.toContain("9 de agosto de 2026");
   });
 });

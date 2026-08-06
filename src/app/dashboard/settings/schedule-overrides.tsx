@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -49,6 +52,7 @@ function parseDateKey(key: string) {
 }
 
 export function ScheduleOverridesEditor({ locations }: { locations: { id: string; name: string }[] }) {
+  const legacy = useTranslations("legacy");
   const [overrides, setOverrides] = useState<ScheduleOverride[]>([]);
   const [locationId, setLocationId] = useState(locations[0]?.id || "");
   const [loading, setLoading] = useState(true);
@@ -193,7 +197,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
     return (
       <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Cargando excepciones...
+        <LocalizedText id="_8WOXXd7wZ7v" />
       </div>
     );
   }
@@ -201,16 +205,15 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
   return (
     <div className="space-y-5">
       {locations.length > 1 && <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
-        <label htmlFor="schedule-override-location" className="text-sm font-semibold">Sucursal</label>
+        <label htmlFor="schedule-override-location" className="text-sm font-semibold"><LocalizedText id="dmqONaKvA3Th" /></label>
         <select id="schedule-override-location" value={locationId} onChange={(event) => { setLocationId(event.target.value); setSelectedDate(null); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
           {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
         </select>
       </div>}
       <p className="text-sm text-muted-foreground">
-        Selecciona un día del calendario para definir si estará{" "}
-        <strong className="text-emerald-500">abierto</strong> o{" "}
-        <strong className="text-red-400">cerrado</strong>, con horario
-        personalizado. Estas excepciones anulan el horario semanal base.
+        <LocalizedText id="FgdMWTgYog9d" />{" "}
+        <strong className="text-emerald-500"><LocalizedText id="3z-STC3Oh2O2" /></strong> o{" "}
+        <strong className="text-red-400"><LocalizedText id="5T7XXBU1_83d" /></strong><LocalizedText id="056hfuX1QgtI" />
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -221,7 +224,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
               type="button"
               onClick={goPrevMonth}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:bg-muted"
-              aria-label="Mes anterior"
+              aria-label={legacy("Uu5fZX8-XFZb")}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -233,7 +236,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
               type="button"
               onClick={goNextMonth}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:bg-muted"
-              aria-label="Mes siguiente"
+              aria-label={legacy("gzNJg1RlQQwI")}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -319,15 +322,15 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
           <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              Abierto (excepción)
+              <LocalizedText id="QayQCmt25CWx" />
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-              Cerrado (excepción)
+              <LocalizedText id="RVTaPJVMBzDL" />
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#7C3AED]" />
-              Hoy
+              <LocalizedText id="VRM9Tm62Fyp8" />
             </span>
           </div>
         </div>
@@ -347,15 +350,15 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                   </h4>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {hasExistingOverride
-                      ? "Excepción existente"
-                      : "Nueva excepción"}
+                      ? legacy("gs3WJXpxKrvQ")
+                      : legacy("ITwyMna8gSss")}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedDate(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-muted"
-                  aria-label="Cerrar panel"
+                  aria-label={legacy("nUCY4THlFves")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -383,11 +386,11 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                 <span className="text-sm font-bold">
                   {editIsOpen ? (
                     <span className="text-emerald-600 dark:text-emerald-400">
-                      Abierto
+                      <LocalizedText id="pEHMzfgS7aPo" />
                     </span>
                   ) : (
                     <span className="text-red-500 dark:text-red-400">
-                      Cerrado
+                      <LocalizedText id="J6qkHsgsm7T9" />
                     </span>
                   )}
                 </span>
@@ -399,10 +402,10 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                   <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
                     <label className="grid gap-1">
                       <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                        Desde
+                        <LocalizedText id="i06T6Sjf1spy" />
                       </span>
                       <TimeTextInput
-                        ariaLabel="Hora de inicio"
+                        ariaLabel={legacy("ujia-dw0NPj4")}
                         value={editStartTime}
                         onChange={setEditStartTime}
                       />
@@ -412,10 +415,10 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                     </span>
                     <label className="grid gap-1">
                       <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                        Hasta
+                        <LocalizedText id="PIPjVYEHgYOb" />
                       </span>
                       <TimeTextInput
-                        ariaLabel="Hora de fin"
+                        ariaLabel={legacy("T5i0RgOGS4PN")}
                         value={editEndTime}
                         onChange={setEditEndTime}
                       />
@@ -443,20 +446,20 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                     >
                       {editBreakStart && editBreakEnd
                         ? "Quitar pausa"
-                        : "Añadir pausa"}
+                        : legacy("pMAWENYxGXI3")}
                     </button>
 
                     {editBreakStart && editBreakEnd && (
                       <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                         <TimeTextInput
-                          ariaLabel="Inicio de pausa"
+                          ariaLabel={legacy("BnB-xeLTeXsI")}
                           value={editBreakStart}
                           onChange={setEditBreakStart}
                           compact
                         />
                         <span className="text-xs text-muted-foreground">a</span>
                         <TimeTextInput
-                          ariaLabel="Fin de pausa"
+                          ariaLabel={legacy("IAFXiRmdaFpf")}
                           value={editBreakEnd}
                           onChange={setEditBreakEnd}
                           compact
@@ -491,7 +494,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  Guardar
+                  <LocalizedText id="E-UaIQ9F7RsJ" />
                 </button>
                 {hasExistingOverride && (
                   <button
@@ -516,11 +519,10 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">
-                  Selecciona un día
+                  <LocalizedText id="yq50Ibjlykui" />
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Haz clic en una fecha para configurar una excepción de
-                  horario.
+                  <LocalizedText id="e06aMH6LtIvc" />
                 </p>
               </div>
             </div>
@@ -532,7 +534,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
       {overrides.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Excepciones configuradas ({overrides.length})
+            <LocalizedText id="7vTOm3gcITCp" />{overrides.length})
           </h4>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {overrides.map((o) => {

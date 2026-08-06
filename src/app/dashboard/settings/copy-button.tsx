@@ -1,5 +1,7 @@
 "use client";
 
+import { LocalizedText } from "@/components/i18n/localized-text";
+
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 
@@ -20,12 +22,12 @@ export function CopyButton({ text }: { text: string }) {
       {copied ? (
         <>
           <Check className="h-3.5 w-3.5 text-emerald-400" />
-          <span className="text-emerald-400">Copiado</span>
+          <span className="text-emerald-400"><LocalizedText id="2N2Hj7FDWekj" /></span>
         </>
       ) : (
         <>
           <Copy className="h-3.5 w-3.5" />
-          <span>Copiar</span>
+          <span><LocalizedText id="Odzxy-ta29CE" /></span>
         </>
       )}
     </button>

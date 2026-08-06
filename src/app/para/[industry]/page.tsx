@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -119,16 +121,16 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link href="/register">
             <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all flex items-center gap-3 mx-auto sm:mx-0">
-              Empezar Gratis <ArrowRight className="h-5 w-5" />
+              <LocalizedText id="NqC0Mo3B6h7f" /> <ArrowRight className="h-5 w-5" />
             </button>
           </Link>
           <a href="/api/auth/demo">
             <button className="bg-white dark:bg-black text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all mx-auto sm:mx-0">
-              Ver Demo
+              <LocalizedText id="vP-8OnnRFj1a" />
             </button>
           </a>
         </div>
-        <p className="mt-8 text-sm font-bold opacity-50">Sin tarjeta de crédito · Configura en 2 minutos · Cancela cuando quieras</p>
+        <p className="mt-8 text-sm font-bold opacity-50"><LocalizedText id="0-9SNZCT992I" /></p>
       </section>
 
       {/* BENEFITS */}
@@ -136,10 +138,10 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         <div className="mx-auto w-full max-w-6xl px-6">
           <div className="text-center mb-16">
             <div className="inline-block bg-[#85E3FF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
-              Diseñado para {data.name}
+              <LocalizedText id="J_K6wcKNmdNt" /> {data.name}
             </div>
             <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-black dark:text-white">
-              ¿Por qué usar Puragenda?
+              <LocalizedText id="UNzN0nO8Ud1f" />
             </h2>
           </div>
 
@@ -161,9 +163,9 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
       <section className="mx-auto w-full max-w-4xl px-6 py-20">
         <div className="text-center mb-12">
           <div className="inline-block bg-[#FFB5E8] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
-            Dudas
+            <LocalizedText id="S5pMm6glV6EC" />
           </div>
-          <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Preguntas Frecuentes</h2>
+          <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl"><LocalizedText id="qxZSqw0Uc5Il" /></h2>
         </div>
         <Accordion className="w-full space-y-4">
           {data.faq.map((faq, index) => (
@@ -188,11 +190,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
       <section className="border-t-4 border-black dark:border-white py-24 bg-[#BFFCC6] dark:bg-black text-center">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-5xl font-black uppercase tracking-tighter mb-8 text-black dark:text-white">
-            Digitaliza tu {data.singularName.toLowerCase()} hoy
+            <LocalizedText id="1oAUcpw8pq5F" /> {data.singularName.toLowerCase()} <LocalizedText id="tA-ba9YWWfmH" />
           </h2>
           <Link href="/pricing">
             <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-10 py-5 font-black uppercase text-2xl shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFFFF] hover:translate-y-2 hover:shadow-none transition-all flex items-center gap-4 mx-auto">
-              Probar Gratis <ArrowRight className="h-8 w-8" />
+              <LocalizedText id="i8SlbEiuwp1f" /> <ArrowRight className="h-8 w-8" />
             </button>
           </Link>
         </div>

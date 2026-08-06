@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "lucide-react";
@@ -79,30 +81,30 @@ export default function AlternativaAgendaProPage() {
         <header className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 border-2 border-black bg-[#FFF5BA] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
             <SearchCheck className="h-4 w-4" />
-            Comparación actualizada el 23 de julio de 2026
+            <LocalizedText id="PpOqzBFB-3yd" />
           </div>
           <h1 className="mt-8 text-4xl font-black uppercase tracking-tighter sm:text-6xl">
-            ¿Buscas una alternativa a AgendaPro?
+            <LocalizedText id="g4b57whrUrpi" />
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg font-bold leading-relaxed opacity-75">
-            La respuesta depende de tu operación. Esta página separa lo que Puragenda publica y puede demostrar de lo que debes verificar directamente en cada proveedor.
+            <LocalizedText id="Zd1r5e2CNA7Z" />
           </p>
         </header>
 
         <section className="mt-16" aria-labelledby="comparison-heading">
           <h2 id="comparison-heading" className="text-3xl font-black uppercase tracking-tight">
-            Comparación para una evaluación real
+            <LocalizedText id="tJca4miZeGXd" />
           </h2>
           <div className="mt-7 overflow-x-auto rounded-3xl border-4 border-black shadow-[8px_8px_0_#000] dark:border-white dark:shadow-[8px_8px_0_#fff]">
             <table className="min-w-[760px] w-full border-collapse bg-white text-left dark:bg-black">
               <caption className="sr-only">
-                Aspectos que un negocio debe verificar al comparar Puragenda con AgendaPro
+                <LocalizedText id="HzoDPPx88iX-" />
               </caption>
               <thead>
                 <tr className="border-b-4 border-black bg-[#85E3FF] text-black dark:border-white">
-                  <th className="p-5 font-black uppercase">Criterio</th>
+                  <th className="p-5 font-black uppercase"><LocalizedText id="W03nWeFJRSfo" /></th>
                   <th className="border-l-4 border-black p-5 font-black uppercase dark:border-white">Puragenda</th>
-                  <th className="border-l-4 border-black p-5 font-black uppercase dark:border-white">Qué verificar en AgendaPro</th>
+                  <th className="border-l-4 border-black p-5 font-black uppercase dark:border-white"><LocalizedText id="R06NJJTE2k4A" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -124,24 +126,24 @@ export default function AlternativaAgendaProPage() {
             </table>
           </div>
           <p className="mt-6 text-sm font-bold leading-relaxed opacity-65">
-            AgendaPro es una marca de su respectivo titular. Sus funciones, precios y condiciones pueden cambiar. Esta comparación no atribuye características que no podamos comprobar y recomienda validar la información en su sitio oficial.
+            <LocalizedText id="w5i8i4pc2Gml" />
           </p>
         </section>
 
         <section className="mx-auto mt-20 max-w-4xl">
-          <h2 className="text-3xl font-black uppercase">Prueba estas seis tareas</h2>
+          <h2 className="text-3xl font-black uppercase"><LocalizedText id="-uojIkY8tDDO" /></h2>
           <p className="mt-5 text-lg font-medium leading-8 opacity-80">
-            Antes de migrar, crea servicios reales y realiza una reserva desde el teléfono. Intenta ocupar el mismo horario dos veces, cobrar un abono, reprogramar, cancelar y exportar clientes. Anota cuántos pasos requiere cada tarea y qué costos adicionales aparecen para tu cantidad de profesionales.
+            <LocalizedText id="BU82Fgd5B_oS" />
           </p>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <Link
               href="/guias/como-elegir-sistema-reservas-chile"
               className="rounded-2xl border-4 border-black bg-[#BFFCC6] p-6 text-black shadow-[5px_5px_0_#000] dark:border-white"
             >
-              <p className="text-sm font-black uppercase">Guía neutral</p>
-              <p className="mt-2 text-xl font-black">Cómo elegir un sistema de reservas en Chile</p>
+              <p className="text-sm font-black uppercase"><LocalizedText id="k_SuAKBA6Lgv" /></p>
+              <p className="mt-2 text-xl font-black"><LocalizedText id="FVHax1TRyRbe" /></p>
               <span className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase">
-                Leer criterios <ArrowRight className="h-4 w-4" />
+                <LocalizedText id="geQUdwd2Hhtz" /> <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
             <a
@@ -150,26 +152,26 @@ export default function AlternativaAgendaProPage() {
               rel="noopener noreferrer"
               className="rounded-2xl border-4 border-black bg-[#FFF5BA] p-6 text-black shadow-[5px_5px_0_#000] dark:border-white"
             >
-              <p className="text-sm font-black uppercase">Fuente externa</p>
-              <p className="mt-2 text-xl font-black">Revisar la información oficial de AgendaPro</p>
+              <p className="text-sm font-black uppercase"><LocalizedText id="VAhlwkTkJMXG" /></p>
+              <p className="mt-2 text-xl font-black"><LocalizedText id="ELDBZQHIDJlT" /></p>
               <span className="mt-5 inline-flex items-center gap-2 text-sm font-black uppercase">
-                Abrir sitio <ExternalLink className="h-4 w-4" />
+                <LocalizedText id="2L7icG6B0ZJi" /> <ExternalLink className="h-4 w-4" />
               </span>
             </a>
           </div>
         </section>
 
         <section className="mt-20 border-t-4 border-black pt-14 text-center dark:border-white">
-          <h2 className="text-3xl font-black uppercase">Compruébalo con tu propio negocio</h2>
+          <h2 className="text-3xl font-black uppercase"><LocalizedText id="YYqZ2YHVEw7O" /></h2>
           <p className="mx-auto mt-4 max-w-2xl font-bold opacity-75">
-            Configura el mismo catálogo que usas hoy y evalúa el recorrido completo durante la prueba.
+            <LocalizedText id="tpJbf1kUMbtj" />
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link href="/pricing" className="inline-flex items-center gap-2 border-4 border-black bg-[#7C3AED] px-7 py-4 font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white">
-              Ver planes <ArrowRight className="h-5 w-5" />
+              <LocalizedText id="B0rydBFNOg1_" /> <ArrowRight className="h-5 w-5" />
             </Link>
             <Link href="/contacto" className="inline-flex items-center border-4 border-black bg-white px-7 py-4 font-black uppercase text-black shadow-[6px_6px_0_#000] dark:border-white">
-              Pedir una demostración
+              <LocalizedText id="8E4L8d1N3hiN" />
             </Link>
           </div>
         </section>

@@ -7,6 +7,7 @@ import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, Che
 import { updateClientNotesAction, updateClientRutAction } from "@/server/actions/client.actions";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
+import { useLocale, useTranslations } from "next-intl";
 
 interface RecurringBookingSummary {
   id: string;
@@ -32,13 +33,9 @@ interface ClientData {
   recurringBookings: RecurringBookingSummary[];
 }
 
-const RECURRING_STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Activa",
-  PENDING_APPROVAL: "Pendiente",
-  PAUSED: "Pausada",
-};
-
 export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlaceholder }: { clients: ClientData[]; currencyCode: string; taxIdLabel: string; taxIdPlaceholder: string }) {
+  const t = useTranslations("dashboard.clients");
+  const locale = useLocale();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -90,7 +87,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
             </div>
             <div>
               <p className="text-2xl font-bold">{totalClients}</p>
-              <p className="text-xs text-muted-foreground">Clientes totales</p>
+              <p className="text-xs text-muted-foreground">{t("totalClients")}</p>
             </div>
           </div>
         </div>
@@ -101,7 +98,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
             </div>
             <div>
               <p className="text-2xl font-bold">{formatPrice(totalRevenue, currencyCode)}</p>
-              <p className="text-xs text-muted-foreground">Ingresos totales</p>
+              <p className="text-xs text-muted-foreground">{t("totalRevenue")}</p>
             </div>
           </div>
         </div>
@@ -112,7 +109,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
             </div>
             <div>
               <p className="text-2xl font-bold">{flaggedClients}</p>
-              <p className="text-xs text-muted-foreground">Clientes bloqueados</p>
+              <p className="text-xs text-muted-foreground">{t("blockedClients")}</p>
             </div>
           </div>
         </div>
@@ -123,7 +120,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Buscar por nombre, email o teléfono..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-border bg-muted pl-10 pr-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/30 transition-colors"
@@ -136,7 +133,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
-              {search ? "No se encontraron clientes con ese término" : "Aún no hay clientes registrados. Aparecerán aquí cuando alguien reserve una cita."}
+              {search ? t("noSearchResults") : t("noClients")}
             </p>
           </div>
         ) : (
@@ -144,12 +141,12 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-3 sm:px-5 py-2 sm:py-3.5">Cliente</th>
-                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5">Contacto</th>
-                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-center">Citas</th>
-                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">Completadas</th>
-                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">Inasistencias</th>
-                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-right">Total Gastado</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5">{t("customer")}</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5">{t("contact")}</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-center">{t("appointments")}</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">{t("completed")}</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-5 py-2 sm:py-3.5 text-center">{t("noShows")}</th>
+                  <th className="px-3 sm:px-5 py-2 sm:py-3.5 text-right">{t("totalSpent")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,7 +174,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                             <div className="min-w-0">
                               <p className="font-medium truncate">{client.name}</p>
                               <p className="text-xs text-muted-foreground truncate">
-                                Cliente desde {new Date(client.createdAt).toLocaleDateString("es-CL", { month: "short", year: "numeric" })}
+                                {t("customerSince", { date: new Date(client.createdAt).toLocaleDateString(locale, { month: "short", year: "numeric" }) })}
                               </p>
                             </div>
                             <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform sm:hidden ${
@@ -223,7 +220,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                           }`}>
                             <AlertTriangle className="h-3 w-3" />
                             {client.noShowCount}
-                            {isBlocked && " · Bloqueado"}
+                            {isBlocked && ` · ${t("blocked")}`}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">0</span>
@@ -256,8 +253,8 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                                 </div>
                               )}
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span>Gastado: <span className="font-mono font-medium text-foreground">{formatPrice(client.totalSpent, currencyCode)}</span></span>
-                                <span>Citas: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
+                                <span>{t("spent")} <span className="font-mono font-medium text-foreground">{formatPrice(client.totalSpent, currencyCode)}</span></span>
+                                <span>{t("appointments")}: <span className="font-medium text-foreground">{client.totalAppointments}</span></span>
                               </div>
                             </div>
 
@@ -283,7 +280,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                               ) : (
                                 <div className="flex items-center gap-2 flex-1">
                                   <span className={client.rut ? "font-medium text-foreground" : "text-muted-foreground italic"}>
-                                    {client.rut ?? `Sin ${taxIdLabel} registrado`}
+                                    {client.rut ?? t("noTaxId", { label: taxIdLabel })}
                                   </span>
                                   <button
                                     onClick={() => { setEditingRut(client.id); setRutValue(client.rut ?? ""); }}
@@ -300,14 +297,14 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                   <StickyNote className="h-3.5 w-3.5" />
-                                  Notas privadas
+                                  {t("privateNotes")}
                                 </div>
                                 {editingNotes !== client.id && (
                                   <button
                                     onClick={() => { setEditingNotes(client.id); setNotesValue(client.privateNotes ?? ""); }}
                                     className="text-xs text-[#7C3AED] hover:underline"
                                   >
-                                    {client.privateNotes ? "Editar" : "Agregar nota"}
+                                    {client.privateNotes ? t("edit") : t("addNote")}
                                   </button>
                                 )}
                               </div>
@@ -318,15 +315,15 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                                     value={notesValue}
                                     onChange={(e) => setNotesValue(e.target.value)}
                                     rows={2}
-                                    placeholder="Notas privadas sobre este cliente..."
+                                    placeholder={t("notesPlaceholder")}
                                     className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-[#7C3AED]/30 transition-colors"
                                   />
                                   <div className="flex gap-2">
                                     <button disabled={pending} onClick={() => saveNotes(client.id)} className="rounded-xl bg-[#7C3AED] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#6d28d9] disabled:opacity-50">
-                                      {pending ? "Guardando..." : "Guardar"}
+                                      {pending ? t("saving") : t("save")}
                                     </button>
                                     <button onClick={() => setEditingNotes(null)} className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">
-                                      Cancelar
+                                      {t("cancel")}
                                     </button>
                                   </div>
                                 </div>
@@ -335,7 +332,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                                   {client.privateNotes}
                                 </div>
                               ) : (
-                                <p className="text-xs text-muted-foreground italic">Sin notas</p>
+                                <p className="text-xs text-muted-foreground italic">{t("noNotes")}</p>
                               )}
                             </div>
 
@@ -344,18 +341,18 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                               <div className="space-y-1.5">
                                 <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                   <RefreshCw className="h-3.5 w-3.5" />
-                                  Suscripciones ({client.recurringBookings.length})
+                                  {t("subscriptions", { count: client.recurringBookings.length })}
                                 </div>
                                 <div className="space-y-1">
                                   {client.recurringBookings.map((r) => (
                                     <div key={r.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs">
-                                      <span className="font-medium">{r.serviceName || "Servicio"} · {r.durationMonths} {r.durationMonths === 1 ? "mes" : "meses"}</span>
+                                      <span className="font-medium">{r.serviceName || t("fallbackService")} · {t("duration", { count: r.durationMonths })}</span>
                                       <span className={`rounded-lg px-2 py-0.5 font-medium ${
                                         r.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600" :
                                         r.status === "PENDING_APPROVAL" ? "bg-amber-500/10 text-amber-600" :
                                         "bg-blue-500/10 text-blue-600"
                                       }`}>
-                                        {RECURRING_STATUS_LABELS[r.status] ?? r.status}
+                                        {{ ACTIVE: t("status.active"), PENDING_APPROVAL: t("status.pending"), PAUSED: t("status.paused") }[r.status] ?? r.status}
                                       </span>
                                     </div>
                                   ))}
@@ -366,8 +363,8 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                             {client.noShowCount > 0 && (
                               <div className="flex items-center gap-1.5 text-xs">
                                 <AlertTriangle className="h-3 w-3 text-amber-500" />
-                                <span className="text-amber-500">{client.noShowCount} inasistencia{client.noShowCount > 1 ? "s" : ""}</span>
-                                {isBlocked && <span className="text-red-500 font-medium">· Bloqueado</span>}
+                                <span className="text-amber-500">{t("noShowCount", { count: client.noShowCount })}</span>
+                                {isBlocked && <span className="text-red-500 font-medium">· {t("blocked")}</span>}
                               </div>
                             )}
                           </div>

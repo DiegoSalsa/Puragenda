@@ -3,14 +3,16 @@
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const themes = [
-  { value: "light", icon: Sun, label: "Claro" },
-  { value: "dark", icon: Moon, label: "Oscuro" },
-  { value: "system", icon: Monitor, label: "Sistema" },
+  { value: "light", icon: Sun, label: "lightTheme" },
+  { value: "dark", icon: Moon, label: "darkTheme" },
+  { value: "system", icon: Monitor, label: "systemTheme" },
 ] as const;
 
 export function ThemeToggle() {
+  const translate = useTranslations("dashboard.shell");
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -37,7 +39,8 @@ export function ThemeToggle() {
           <button
             key={t.value}
             onClick={() => setTheme(t.value)}
-            title={t.label}
+            title={translate(t.label)}
+            aria-label={translate(t.label)}
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
               isActive
                 ? "bg-[#7C3AED]/15 text-[#7C3AED] shadow-sm"

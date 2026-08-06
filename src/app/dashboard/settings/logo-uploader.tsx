@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useRef } from "react";
 import { Upload, Loader2, Trash2, ImageIcon } from "lucide-react";
@@ -6,6 +9,7 @@ import { updateBusinessLogoAction, removeBusinessLogoAction } from "@/server/act
 import { useRouter } from "next/navigation";
 
 export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null }) {
+  const legacy = useTranslations("legacy");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentLogoUrl);
@@ -25,7 +29,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("La imagen es muy pesada. Máximo 5MB.");
+      setError(legacy("w1nTcaJQ0HNf"));
       return;
     }
 
@@ -81,7 +85,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
             {preview ? (
               <img
                 src={preview}
-                alt="Logo del negocio"
+                alt={legacy("CSiaYxnzL4rR")}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -98,7 +102,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
         {/* Actions */}
         <div className="flex flex-col gap-2.5">
           <p className="text-sm text-muted-foreground">
-            Sube el logo de tu negocio. Se redimensionará a 400×400px automáticamente.
+            <LocalizedText id="crHzXhObvPQ1" />
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -109,11 +113,11 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
             >
               {uploading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Subiendo...
+                  <Loader2 className="h-4 w-4 animate-spin" /> <LocalizedText id="c1gMCW92MDWd" />
                 </>
               ) : (
                 <>
-                  <Upload className="h-4 w-4" /> Subir logo
+                  <Upload className="h-4 w-4" /> <LocalizedText id="PZHzA2hgsUm1" />
                 </>
               )}
             </button>
@@ -125,12 +129,12 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
                 className="flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 h-10 text-sm text-red-400 disabled:opacity-50 transition-all hover:bg-red-500/10"
               >
                 {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                Eliminar
+                <LocalizedText id="yYlM8AL5C9C-" />
               </button>
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/60">
-            PNG, JPG, WebP o SVG • Máximo 5MB
+            <LocalizedText id="C9xH_AWyDoAL" />
           </p>
         </div>
       </div>

@@ -1,4 +1,7 @@
 "use client";
+import { useTranslations } from "next-intl";
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useMemo, useTransition } from "react";
 import { format } from "date-fns";
@@ -21,6 +24,7 @@ type User = {
 };
 
 export function UsersClient({ users }: { users: User[] }) {
+  const legacy = useTranslations("legacy");
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -69,8 +73,8 @@ export function UsersClient({ users }: { users: User[] }) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-black">Usuarios</h1>
-        <p className="text-sm font-bold text-black/50">{users.length} usuarios registrados</p>
+        <h1 className="text-3xl font-black uppercase tracking-tighter text-black"><LocalizedText id="sGtBq6zY5rTL" /></h1>
+        <p className="text-sm font-bold text-black/50">{users.length} <LocalizedText id="TvIo3zkt4UL4" /></p>
       </div>
 
       {/* Stats row */}
@@ -95,7 +99,7 @@ export function UsersClient({ users }: { users: User[] }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40" />
           <input
             type="text"
-            placeholder="Buscar por nombre, email, negocio..."
+            placeholder={legacy("QsmzD9cvkWsv")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full border-2 border-black bg-white pl-9 pr-4 py-2 text-sm font-bold text-black placeholder:text-black/30 focus:outline-none focus:border-[#B28DFF]"
@@ -126,7 +130,7 @@ export function UsersClient({ users }: { users: User[] }) {
             onClick={() => { setSearch(""); setRoleFilter("ALL"); setStatusFilter("ALL"); }}
             className="border-2 border-black bg-[#FFB5E8] px-3 py-2 text-xs font-black uppercase text-black hover:bg-black hover:text-[#FFB5E8] transition-colors"
           >
-            Limpiar
+            <LocalizedText id="CN8in6Wtx_p4" />
           </button>
         )}
       </div>
@@ -164,10 +168,10 @@ export function UsersClient({ users }: { users: User[] }) {
                   <Link href={`${ADMIN_SECRET_PATH}/businesses/${linkedBiz.id}`} className="flex items-center gap-1 hover:underline">
                     <Building2 className="h-3 w-3 text-black/40" />
                     <span className="text-xs font-bold text-black">{linkedBiz.name}</span>
-                    {isViaStaff && <span className="border border-black/30 bg-black/5 px-1 py-0.5 text-[10px] font-black uppercase text-black/50">Staff</span>}
+                    {isViaStaff && <span className="border border-black/30 bg-black/5 px-1 py-0.5 text-[10px] font-black uppercase text-black/50"><LocalizedText id="aBkn40t35Lkb" /></span>}
                   </Link>
                 ) : (
-                  <span className="text-xs font-bold text-black/30">Sin negocio</span>
+                  <span className="text-xs font-bold text-black/30"><LocalizedText id="LpHHbbdxRRZG" /></span>
                 )}
                 <span className="text-xs font-bold text-black/40">{format(new Date(user.createdAt), "dd/MM/yy", { locale: es })}</span>
               </div>
@@ -178,9 +182,9 @@ export function UsersClient({ users }: { users: User[] }) {
                   className={`flex items-center gap-1 border-2 border-black px-3 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all disabled:opacity-40 ${isActive ? "bg-[#FFB5E8] text-black" : "bg-[#BFFCC6] text-black"}`}
                 >
                   {loadingId === user.id ? "..." : isActive ? (
-                    <><UserX className="h-3 w-3" /> Desactivar</>
+                    <><UserX className="h-3 w-3" /> <LocalizedText id="fvHNLTSGsj1G" /></>
                   ) : (
-                    <><UserCheck className="h-3 w-3" /> Activar</>
+                    <><UserCheck className="h-3 w-3" /> <LocalizedText id="jjjCVx2H9u69" /></>
                   )}
                 </button>
               )}
@@ -190,7 +194,7 @@ export function UsersClient({ users }: { users: User[] }) {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 border-4 border-black bg-white shadow-[4px_4px_0_#000]">
             <Users className="h-10 w-10 text-black/20" />
-            <p className="mt-3 text-sm font-bold text-black/40">Sin resultados</p>
+            <p className="mt-3 text-sm font-bold text-black/40"><LocalizedText id="v5_BmD_6eEES" /></p>
           </div>
         )}
       </div>
@@ -200,11 +204,11 @@ export function UsersClient({ users }: { users: User[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b-4 border-black bg-[#FFF5BA] text-left text-xs uppercase tracking-wider font-black text-black">
-              <th className="px-6 py-4">Usuario</th>
-              <th className="px-4 py-4">Rol</th>
-              <th className="px-4 py-4">Negocio</th>
-              <th className="px-4 py-4">Estado</th>
-              <th className="px-4 py-4">Registro</th>
+              <th className="px-6 py-4"><LocalizedText id="Y2FP_eLTUN9A" /></th>
+              <th className="px-4 py-4"><LocalizedText id="-59R_pJQLRoI" /></th>
+              <th className="px-4 py-4"><LocalizedText id="B8s6yKMYEqy_" /></th>
+              <th className="px-4 py-4"><LocalizedText id="mOWs3bbEaiSP" /></th>
+              <th className="px-4 py-4"><LocalizedText id="iQCGsWtIBAcO" /></th>
               <th className="px-4 py-4"></th>
             </tr>
           </thead>
@@ -241,11 +245,11 @@ export function UsersClient({ users }: { users: User[] }) {
                           <Link href={`${ADMIN_SECRET_PATH}/businesses/${linkedBiz.id}`} className="flex items-center gap-1.5 hover:underline">
                             <Building2 className="h-3 w-3 text-black/40" />
                             <span className="text-sm font-bold text-black">{linkedBiz.name}</span>
-                            {isViaStaff && <span className="border border-black/30 bg-black/5 px-1.5 py-0.5 text-[10px] font-black uppercase text-black/50">Staff</span>}
+                            {isViaStaff && <span className="border border-black/30 bg-black/5 px-1.5 py-0.5 text-[10px] font-black uppercase text-black/50"><LocalizedText id="aBkn40t35Lkb" /></span>}
                           </Link>
                         );
                       }
-                      return <span className="text-xs font-bold text-black/30">Sin negocio</span>;
+                      return <span className="text-xs font-bold text-black/30"><LocalizedText id="LpHHbbdxRRZG" /></span>;
                     })()}
                   </td>
                   <td className="px-4 py-4">
@@ -264,9 +268,9 @@ export function UsersClient({ users }: { users: User[] }) {
                         className={`flex items-center gap-1 border-2 border-black px-3 py-1.5 text-xs font-black uppercase shadow-[2px_2px_0_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all disabled:opacity-40 ${isActive ? "bg-[#FFB5E8] text-black" : "bg-[#BFFCC6] text-black"}`}
                       >
                         {loadingId === user.id ? "..." : isActive ? (
-                          <><UserX className="h-3 w-3" /> Desactivar</>
+                          <><UserX className="h-3 w-3" /> <LocalizedText id="fvHNLTSGsj1G" /></>
                         ) : (
-                          <><UserCheck className="h-3 w-3" /> Activar</>
+                          <><UserCheck className="h-3 w-3" /> <LocalizedText id="jjjCVx2H9u69" /></>
                         )}
                       </button>
                     )}
@@ -279,7 +283,7 @@ export function UsersClient({ users }: { users: User[] }) {
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <Users className="h-10 w-10 text-black/20" />
-            <p className="mt-3 text-sm font-bold text-black/40">Sin resultados</p>
+            <p className="mt-3 text-sm font-bold text-black/40"><LocalizedText id="v5_BmD_6eEES" /></p>
           </div>
         )}
       </div>

@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { formatInTimeZone } from "date-fns-tz";
@@ -65,10 +67,10 @@ export default async function ClientPortalPage({
         <section className="relative overflow-hidden rounded-[2rem] border-4 border-black bg-[#c4b5fd] p-6 shadow-[8px_8px_0_#000] sm:p-9">
           <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full border-4 border-black bg-[#fff5ba]" />
           <div className="relative max-w-2xl">
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.18em]">Mi agenda</p>
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Hola, {firstName}.</h1>
+            <p className="mb-2 text-xs font-black uppercase tracking-[0.18em]"><LocalizedText id="ghZyVGcTCJ9z" /></p>
+            <h1 className="text-3xl font-black tracking-tight sm:text-5xl"><LocalizedText id="-DINcEjYeVEU" /> {firstName}.</h1>
             <p className="mt-3 max-w-xl text-sm font-semibold leading-6 sm:text-base">
-              Aquí están tus reservas y beneficios, aunque hayas agendado en distintos negocios.
+              <LocalizedText id="2hal186n_8_K" />
             </p>
           </div>
         </section>
@@ -78,15 +80,15 @@ export default async function ClientPortalPage({
             <section>
               <div className="mb-4 flex items-center gap-3">
                 <CalendarDays className="h-6 w-6" strokeWidth={2.8} />
-                <h2 className="text-xl font-black sm:text-2xl">Próximas citas</h2>
+                <h2 className="text-xl font-black sm:text-2xl"><LocalizedText id="3__-DXhULfaV" /></h2>
                 <span className="rounded-full border-2 border-black bg-[#85e3ff] px-2.5 py-0.5 text-xs font-black">{data.upcoming.length}</span>
               </div>
 
               {data.upcoming.length === 0 ? (
                 <div className="rounded-2xl border-3 border-dashed border-black/35 bg-white/60 p-8 text-center">
                   <CalendarDays className="mx-auto h-9 w-9 text-black/35" />
-                  <p className="mt-3 font-black">No tienes citas próximas</p>
-                  <p className="mt-1 text-sm font-medium text-black/55">Cuando reserves con un negocio aparecerá aquí.</p>
+                  <p className="mt-3 font-black"><LocalizedText id="uFafXRRBDIuO" /></p>
+                  <p className="mt-1 text-sm font-medium text-black/55"><LocalizedText id="B7wjsuQ4XlA3" /></p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -132,11 +134,11 @@ export default async function ClientPortalPage({
             <section>
               <div className="mb-4 flex items-center gap-3">
                 <History className="h-6 w-6" strokeWidth={2.8} />
-                <h2 className="text-xl font-black sm:text-2xl">Historial</h2>
+                <h2 className="text-xl font-black sm:text-2xl"><LocalizedText id="mVwHHfrudM6E" /></h2>
               </div>
               <div className="overflow-hidden rounded-2xl border-3 border-black bg-white">
                 {data.history.length === 0 ? (
-                  <p className="p-6 text-sm font-semibold text-black/50">Todavía no hay citas anteriores.</p>
+                  <p className="p-6 text-sm font-semibold text-black/50"><LocalizedText id="GRNXlpeXye_E" /></p>
                 ) : data.history.map((appointment, index) => (
                   <div key={appointment.id} className={`flex items-center justify-between gap-4 p-4 ${index ? "border-t-2 border-black/10" : ""}`}>
                     <div className="min-w-0">
@@ -155,13 +157,13 @@ export default async function ClientPortalPage({
           <aside>
             <div className="mb-4 flex items-center gap-3">
               <Gift className="h-6 w-6" strokeWidth={2.8} />
-              <h2 className="text-xl font-black sm:text-2xl">Premios</h2>
+              <h2 className="text-xl font-black sm:text-2xl"><LocalizedText id="mMz0bV7E_UM0" /></h2>
             </div>
             <div className="space-y-4 lg:sticky lg:top-6">
               {data.clients.filter((client) => client.business.isLoyaltyEnabled).length === 0 ? (
                 <div className="rounded-2xl border-3 border-dashed border-black/35 bg-white/60 p-6 text-center">
                   <Gift className="mx-auto h-8 w-8 text-black/35" />
-                  <p className="mt-3 text-sm font-bold text-black/55">Aún no tienes programas de premios activos.</p>
+                  <p className="mt-3 text-sm font-bold text-black/55"><LocalizedText id="yRfFS3qeRyf_" /></p>
                 </div>
               ) : data.clients.filter((client) => client.business.isLoyaltyEnabled).map((client) => {
                 const required = Math.max(1, client.business.stampsRequired);
@@ -172,21 +174,21 @@ export default async function ClientPortalPage({
                     <div className="mt-4 flex items-end justify-between gap-4">
                       <div>
                         <p className="text-3xl font-black">{client.currentStamps}/{required}</p>
-                        <p className="text-xs font-bold">visitas acumuladas</p>
+                        <p className="text-xs font-bold"><LocalizedText id="9aUWRMrWCOWZ" /></p>
                       </div>
                       <span className="text-xl font-black">{progress}%</span>
                     </div>
                     <div className="mt-3 h-4 overflow-hidden rounded-full border-2 border-black bg-white">
                       <div className="h-full bg-[#7c3aed]" style={{ width: `${progress}%` }} />
                     </div>
-                    {client.business.rewardName && <p className="mt-3 text-sm font-black">Meta: {client.business.rewardName}</p>}
+                    {client.business.rewardName && <p className="mt-3 text-sm font-black"><LocalizedText id="vZnf-Ubjfpbj" /> {client.business.rewardName}</p>}
                     {client.loyaltyCodes.length > 0 && (
                       <div className="mt-4 rounded-xl border-2 border-black bg-[#bffcc6] p-3">
-                        <p className="flex items-center gap-2 text-xs font-black uppercase"><Check className="h-4 w-4" /> Premio disponible</p>
+                        <p className="flex items-center gap-2 text-xs font-black uppercase"><Check className="h-4 w-4" /> <LocalizedText id="SXJTCZrmm2K-" /></p>
                         {client.loyaltyCodes.map((reward) => <p key={reward.id} className="mt-2 font-mono text-sm font-black">{reward.code}</p>)}
                       </div>
                     )}
-                    <Link href={`/widget/${client.business.slug}`} className="mt-4 inline-flex items-center text-xs font-black underline decoration-2 underline-offset-4">Reservar nuevamente</Link>
+                    <Link href={`/widget/${client.business.slug}`} className="mt-4 inline-flex items-center text-xs font-black underline decoration-2 underline-offset-4"><LocalizedText id="6SU94P85w4-J" /></Link>
                   </article>
                 );
               })}
@@ -195,7 +197,7 @@ export default async function ClientPortalPage({
         </div>
 
         <footer className="mt-14 border-t-2 border-black/15 py-6 text-center text-xs font-bold text-black/40">
-          Sesión privada para {data.email} · Puragenda
+          <LocalizedText id="RLylJ9wkQKiB" /> {data.email} <LocalizedText id="7_pfVjmkayXE" />
         </footer>
       </div>
     </main>

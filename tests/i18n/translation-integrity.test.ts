@@ -21,18 +21,42 @@ function flattenMessages(tree: MessageTree, prefix = ""): Record<string, string>
 
 function loadMessages(locale: string) {
   const file = resolve(process.cwd(), "messages", `${locale}.json`);
-  return flattenMessages(JSON.parse(readFileSync(file, "utf8")) as MessageTree);
+  const dashboardFile = resolve(process.cwd(), "messages", "dashboard", `${locale}.json`);
+  const dashboardClientsFile = resolve(process.cwd(), "messages", "dashboard", "clients", `${locale}.json`);
+  const dashboardAnalyticsFile = resolve(process.cwd(), "messages", "dashboard", "analytics", `${locale}.json`);
+  const dashboardModulesFile = resolve(process.cwd(), "messages", "dashboard", "modules", `${locale}.json`);
+  const legacyFile = resolve(process.cwd(), "messages", "legacy", `${locale}.json`);
+  const dashboardMessages = JSON.parse(readFileSync(dashboardFile, "utf8")) as MessageTree;
+  return flattenMessages({
+    ...(JSON.parse(readFileSync(file, "utf8")) as MessageTree),
+    legacy: JSON.parse(readFileSync(legacyFile, "utf8")) as MessageTree,
+    dashboard: {
+      ...dashboardMessages,
+      ...(JSON.parse(readFileSync(dashboardModulesFile, "utf8")) as MessageTree),
+      clients: JSON.parse(readFileSync(dashboardClientsFile, "utf8")) as MessageTree,
+      analytics: JSON.parse(readFileSync(dashboardAnalyticsFile, "utf8")) as MessageTree,
+    },
+  });
 }
 
 describe("internationalization catalogs", () => {
   it("keeps every locale aligned with the Spanish source catalog", () => {
     const sourceKeys = Object.keys(loadMessages(DEFAULT_LOCALE)).sort();
-    expect(sourceKeys.length).toBeGreaterThan(100);
+    expect(sourceKeys.length).toBeGreaterThan(1500);
 
     for (const locale of SUPPORTED_LOCALES) {
       const messages = loadMessages(locale);
       expect(Object.keys(messages).sort(), locale).toEqual(sourceKeys);
       expect(Object.values(messages).every((message) => message.trim().length > 0), locale).toBe(true);
+    }
+  });
+
+  it("does not contain common encoding corruption", () => {
+    const mojibake = /Ã[\u0080-\u00BF]|Â[\u0080-\u00BF]|â€¦|ðŸ|ï¿½/;
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const [key, message] of Object.entries(loadMessages(locale))) {
+        expect(message, `${locale}:${key}`).not.toMatch(mojibake);
+      }
     }
   });
 

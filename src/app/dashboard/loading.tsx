@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@/components/i18n/localized-text";
 import Image from "next/image";
 
 export default function DashboardLoading() {
@@ -26,7 +28,7 @@ export default function DashboardLoading() {
           <div key={index} className="h-12 animate-pulse rounded-xl bg-muted/70" style={{ animationDelay: `${index * 80}ms` }} />
         ))}
       </div>
-      <span className="sr-only">Cargando contenido…</span>
+      <span className="sr-only"><LocalizedText id="y_bpmkumBVUG" /></span>
     </div>
   );
 }
