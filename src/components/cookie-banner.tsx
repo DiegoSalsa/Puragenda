@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { Cookie } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const CONSENT_KEY = "puragenda_cookie_consent";
 
 export function CookieBanner() {
+  const t = useTranslations("cookies");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -41,12 +43,12 @@ export function CookieBanner() {
             <Cookie className="h-5 w-5 text-black dark:text-white" />
           </div>
           <div className="space-y-1">
-            <p className="text-base font-bold uppercase text-black dark:text-white">Usamos cookies</p>
+            <p className="text-base font-bold uppercase text-black dark:text-white">{t("title")}</p>
             <p className="text-sm font-medium text-black/80 dark:text-white/80">
-              Utilizamos cookies esenciales y analíticas para mejorar tu experiencia.
+              {t("description")}
               <br />
               <Link href="/politica-de-privacidad" className="font-bold underline underline-offset-2 hover:text-[#7C3AED]">
-                Política de Privacidad
+                {t("privacy")}
               </Link>.
             </p>
           </div>
@@ -56,13 +58,13 @@ export function CookieBanner() {
             onClick={handleReject}
             className="flex-1 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] sm:flex-none"
           >
-            Rechazar
+            {t("reject")}
           </button>
           <button
             onClick={handleAccept}
             className="flex-1 rounded-lg border-2 border-black bg-[#BFFCC6] px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none sm:flex-none"
           >
-            Aceptar
+            {t("accept")}
           </button>
         </div>
       </div>

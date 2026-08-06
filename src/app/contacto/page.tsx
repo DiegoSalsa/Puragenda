@@ -5,25 +5,26 @@ import { Mail, Phone } from "lucide-react";
 import { Metadata } from "next";
 import { ContactForm } from "@/components/landing/contact-form";
 import { absoluteUrl } from "@/lib/site";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Contacto",
-  description: "Ponte en contacto con el equipo de Puragenda para resolver tus dudas o agendar una demostración.",
-  alternates: { canonical: absoluteUrl("/contacto") },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("contact");
+  return { title: t("metadataTitle"), description: t("metadataDescription"), alternates: { canonical: absoluteUrl("/contacto") } };
+}
 
 export default async function ContactoPage() {
   const user = await getCurrentSessionUser();
   const business = user ? await getBusinessForUser(user.id) : null;
+  const t = await getTranslations("contact");
 
   return (
     <LandingLayout user={user} business={business}>
       <section className="mx-auto w-full max-w-4xl px-6 py-16">
         <h1 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-center mb-6">
-          Hablemos
+          {t("title")}
         </h1>
         <p className="text-xl font-bold text-center mb-16 opacity-80">
-          ¿Tienes dudas sobre cómo Puragenda puede ayudar a tu negocio? Estamos aquí para ayudarte.
+          {t("subtitle")}
         </p>
 
         <div className="grid gap-8 md:grid-cols-2">
@@ -51,33 +52,33 @@ export default async function ContactoPage() {
 
         {/* SLA and Sales FAQ */}
         <div className="mt-24 border-t-4 border-black dark:border-white pt-16">
-          <h2 className="text-3xl font-black uppercase text-center mb-12">Nuestro Compromiso</h2>
+          <h2 className="text-3xl font-black uppercase text-center mb-12">{t("commitment")}</h2>
           <div className="grid md:grid-cols-2 gap-12">
             <div className="space-y-6">
               <div className="bg-[#BFFCC6] text-black border-4 border-black p-6 rounded-2xl shadow-[6px_6px_0_#000]">
-                <h3 className="text-xl font-black uppercase mb-2">Tiempos de Respuesta</h3>
-                <p className="font-bold opacity-80">Priorizamos la respuesta rápida para todos nuestros clientes.</p>
+                <h3 className="text-xl font-black uppercase mb-2">{t("responseTimes")}</h3>
+                <p className="font-bold opacity-80">{t("responseTimesDescription")}</p>
               </div>
               <div className="bg-white dark:bg-black border-4 border-black dark:border-white p-6 rounded-2xl shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF]">
-                <h3 className="text-xl font-black uppercase mb-2">Evaluación de Migración</h3>
-                <p className="font-bold opacity-80">Si vienes de otro software, revisamos el formato de tus datos y confirmamos contigo el alcance de la importación antes de comenzar.</p>
+                <h3 className="text-xl font-black uppercase mb-2">{t("migration")}</h3>
+                <p className="font-bold opacity-80">{t("migrationDescription")}</p>
               </div>
             </div>
 
             <div className="space-y-6">
-              <h3 className="text-2xl font-black uppercase mb-4">Dudas Frecuentes</h3>
+              <h3 className="text-2xl font-black uppercase mb-4">{t("commonQuestions")}</h3>
               <div className="space-y-4">
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
-                  <h4 className="font-black uppercase mb-1">¿Hay contrato de permanencia?</h4>
-                  <p className="text-sm font-bold opacity-80">No. Cobramos mes a mes. Puedes cancelar cuando quieras sin multas.</p>
+                  <h4 className="font-black uppercase mb-1">{t("contractQuestion")}</h4>
+                  <p className="text-sm font-bold opacity-80">{t("contractAnswer")}</p>
                 </div>
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
-                  <h4 className="font-black uppercase mb-1">¿Necesito conocimientos técnicos?</h4>
-                  <p className="text-sm font-bold opacity-80">No. Te acompañamos en la configuración inicial de servicios, horarios, profesionales y enlace de reservas.</p>
+                  <h4 className="font-black uppercase mb-1">{t("technicalQuestion")}</h4>
+                  <p className="text-sm font-bold opacity-80">{t("technicalAnswer")}</p>
                 </div>
                 <div className="border-b-2 border-black dark:border-white/20 pb-4">
-                  <h4 className="font-black uppercase mb-1">¿Puedo probarlo antes de pagar?</h4>
-                  <p className="text-sm font-bold opacity-80">Sí. Tienes 30 días gratuitos para probar Puragenda antes de activar tu plan.</p>
+                  <h4 className="font-black uppercase mb-1">{t("trialQuestion")}</h4>
+                  <p className="text-sm font-bold opacity-80">{t("trialAnswer")}</p>
                 </div>
               </div>
             </div>

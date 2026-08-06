@@ -3,15 +3,22 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { absoluteUrl } from "@/lib/site";
 import { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import { SUPPORTED_LOCALES } from "@/i18n/config";
 
-export const metadata: Metadata = {
-  title: { absolute: "Puragenda — Reservas online, abonos y agenda para negocios" },
-  description:
-    "Recibe reservas y encargos, cobra abonos online y controla clientes, profesionales y capacidad desde un solo lugar. Prueba gratis por 30 días.",
-  alternates: { canonical: absoluteUrl("/") },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  return {
+    title: { absolute: t("homeTitle") },
+    description: t("homeDescription"),
+    alternates: { canonical: absoluteUrl("/") },
+  };
+}
 
 export default async function HomePage() {
+  const locale = await getLocale();
+  const metadataT = await getTranslations({ locale, namespace: "metadata" });
   const user = await getCurrentSessionUser();
   const business = user ? await getBusinessForUser(user.id) : null;
 
@@ -23,8 +30,7 @@ export default async function HomePage() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: absoluteUrl("/"),
-    description:
-      "Sistema de reservas online para negocios de servicios y encargos. Incluye reservas 24/7, abonos, widget personalizable, clientes y agendas por profesional.",
+    description: metadataT("homeDescription"),
     offers: [
       {
         "@type": "Offer",
@@ -61,7 +67,7 @@ export default async function HomePage() {
     name: "Puragenda",
     url: absoluteUrl("/"),
     logo: absoluteUrl("/android-chrome-512x512.png"),
-    description: "Plataforma SaaS de agendamiento online para negocios de servicios en Latinoamérica.",
+    description: metadataT("siteDescription"),
     email: "contacto@purocode.com",
     telephone: "+56949255006",
     areaServed: {
@@ -79,7 +85,7 @@ export default async function HomePage() {
       contactType: "customer service",
       email: "contacto@purocode.com",
       telephone: "+56949255006",
-      availableLanguage: ["es"],
+      availableLanguage: [...SUPPORTED_LOCALES],
       areaServed: "CL",
     },
   };
@@ -90,7 +96,7 @@ export default async function HomePage() {
     "@id": `${absoluteUrl("/")}#website`,
     name: "Puragenda",
     url: absoluteUrl("/"),
-    inLanguage: "es-CL",
+    inLanguage: locale,
     publisher: { "@id": `${absoluteUrl("/")}#organization` },
   };
 

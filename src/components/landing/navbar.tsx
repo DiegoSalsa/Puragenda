@@ -6,16 +6,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
-
-const navLinks = [
-  { href: "/soluciones", label: "Soluciones" },
-  { href: "/caracteristicas", label: "Características" },
-  { href: "/pricing", label: "Precios" },
-  { href: "/guias", label: "Guías" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/sobre-nosotros", label: "Nosotros" },
-  { href: "/contacto", label: "Contacto" },
-];
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
 import { Store } from "lucide-react";
 
@@ -25,10 +17,18 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, business }: NavbarProps = {}) {
+  const t = useTranslations("navigation");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const navLinks = [
+    { href: "/soluciones", label: t("solutions") },
+    { href: "/caracteristicas", label: t("features") },
+    { href: "/pricing", label: t("pricing") },
+    { href: "/faq", label: t("faq") },
+    { href: "/contacto", label: t("contact") },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,24 +49,25 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
   return (
     <>
-      <header className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl z-50 rounded-full border border-border/40 bg-background/70 backdrop-blur-md shadow-sm transition-all duration-300 ${isVisible ? 'top-4 translate-y-0' : 'top-4 -translate-y-[150%]'}`}>
-        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6">
+      <header className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[1640px] z-50 rounded-full border border-border/40 bg-background/70 backdrop-blur-md shadow-sm transition-all duration-300 ${isVisible ? 'top-4 translate-y-0' : 'top-4 -translate-y-[150%]'}`}>
+        <div className="flex w-full items-center justify-center gap-4 px-4 py-3 sm:px-6">
           {/* Logo */}
-          <div className="flex flex-1 items-center justify-start">
+          <div className="flex w-[8.5rem] shrink-0 items-center justify-start min-[1500px]:w-[9.75rem]">
             <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]">
-              <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-12 sm:h-14 w-auto scale-[1.35] origin-left" />
+              <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-10 w-auto origin-left scale-[1.2] sm:h-12 min-[1500px]:h-14 min-[1500px]:scale-[1.35]" />
             </Link>
           </div>
 
+          <div className="hidden min-w-0 items-center gap-3 min-[1280px]:flex min-[1500px]:gap-4">
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-0 xl:flex">
+          <nav className="flex flex-none items-center justify-center gap-0">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`rounded-full px-1.5 py-2 text-sm font-medium transition-all duration-200 min-[1500px]:px-3 min-[1500px]:text-base ${
                     isActive
                       ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
                       : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
@@ -79,8 +80,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           </nav>
 
           {/* Desktop actions */}
-          <div className="hidden flex-1 items-center justify-end gap-2 xl:flex">
-            <ThemeToggle />
+          <div className="flex shrink-0 items-center justify-end gap-1.5 min-[1500px]:gap-2">
             {user ? (
               <Link href="/dashboard">
                 <button className="group flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-2 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
@@ -95,28 +95,34 @@ export function Navbar({ user, business }: NavbarProps = {}) {
             ) : (
               <>
                 <Link href="/mi-agenda">
-                  <button className="rounded-full px-4 py-2 text-sm font-semibold text-[#7C3AED] transition-all duration-200 hover:bg-[#7C3AED]/10">
-                    Mis citas
+                  <button className="rounded-full px-3 py-2 text-sm font-semibold text-[#7C3AED] transition-all duration-200 hover:bg-[#7C3AED]/10 min-[1500px]:px-4 min-[1500px]:text-base">
+                    {t("myAppointments")}
                   </button>
                 </Link>
                 <Link href="/login">
-                  <button className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground">
-                    Entrar
+                  <button className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/80 hover:text-foreground min-[1500px]:px-4 min-[1500px]:text-base">
+                    {t("login")}
                   </button>
                 </Link>
                 <Link href="/pricing">
-                  <button className="group flex items-center gap-2 rounded-full bg-[#7C3AED] px-5 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
-                    Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  <button className="group flex items-center gap-2 rounded-full bg-[#7C3AED] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[#7C3AED]/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40 min-[1500px]:px-5 min-[1500px]:py-2.5 min-[1500px]:text-base">
+                    {t("createAccount")} <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
                 </Link>
               </>
             )}
+            <div className="ml-1 flex shrink-0 items-center gap-1.5" aria-label={t("preferences")}>
+              <ThemeToggle />
+              <LanguageSwitcher compact />
+            </div>
+          </div>
           </div>
 
           {/* Mobile hamburger */}
-          <div className="flex flex-1 items-center justify-end xl:hidden">
+          <div className="flex flex-1 items-center justify-end min-[1280px]:hidden">
             <button
               onClick={() => setMobileOpen(true)}
+              aria-label={t("openMenu")}
               className="rounded-full p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Menu className="h-5 w-5" />
@@ -128,7 +134,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
       {/* ═══ MOBILE DRAWER — rendered via portal OUTSIDE the header ═══ */}
       {mobileOpen && typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] xl:hidden">
+          <div className="fixed inset-0 z-[9999] min-[1280px]:hidden">
             {/* Dark overlay */}
             <div
               className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
@@ -141,7 +147,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
                 <div className="flex items-center gap-2.5">
                   <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-10 sm:h-12 w-auto scale-[1.3] origin-left" />
                 </div>
-                <button onClick={() => setMobileOpen(false)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <button aria-label={t("closeMenu")} onClick={() => setMobileOpen(false)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -169,9 +175,9 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
               {/* Bottom actions */}
               <div className="space-y-4 border-t border-border/50 p-6">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-sm font-medium text-muted-foreground">Tema visual</span>
+                <div className="flex items-center justify-end gap-1.5" aria-label={t("preferences")}>
                   <ThemeToggle />
+                  <LanguageSwitcher compact />
                 </div>
                 {user ? (
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block">
@@ -188,17 +194,17 @@ export function Navbar({ user, business }: NavbarProps = {}) {
                   <>
                     <Link href="/mi-agenda" onClick={() => setMobileOpen(false)} className="block">
                       <button className="w-full rounded-2xl border-2 border-[#7C3AED] py-3 text-sm font-semibold text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10">
-                        Ver mis citas
+                        {t("viewMyAppointments")}
                       </button>
                     </Link>
                     <Link href="/login" onClick={() => setMobileOpen(false)} className="block">
                       <button className="w-full rounded-2xl border border-border/50 py-3 text-sm font-medium text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground">
-                        Entrar
+                        {t("login")}
                       </button>
                     </Link>
                     <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block">
                       <button className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#7C3AED] py-3 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20 transition-all hover:bg-[#6D28D9] hover:shadow-[#7C3AED]/40">
-                        Crear cuenta <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        {t("createAccount")} <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                       </button>
                     </Link>
                   </>

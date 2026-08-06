@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   PRICING,
   EXTRA_STAFF_COST,
@@ -22,60 +23,15 @@ interface PricingCardsProps {
 }
 
 // ═══════════════════════════════════════════
-// ALL FEATURES — AVAILABLE ON BOTH PLANS
-// ═══════════════════════════════════════════
-
-const plans: {
-  key: PlanKey;
-  name: string;
-  description: string;
-  highlighted: boolean;
-  badge?: string;
-  icon: typeof Zap;
-  staffLabel: string;
-  items: string[];
-}[] = [
-  {
-    key: "INDIVIDUAL",
-    name: "Individual",
-    description: "Para profesionales independientes que trabajan solos.",
-    highlighted: false,
-    badge: `${TRIAL_DURATION_DAYS} días gratis`,
-    icon: Zap,
-    staffLabel: `${STAFF_LIMITS.INDIVIDUAL} profesional incluido`,
-    items: [
-      "Reservas ilimitadas",
-      "Widget para tu web y redes",
-      "Fidelización con timbres",
-      "CRM y anti-inasistencias",
-      "Recordatorios y Win-Back",
-      "Programa de Referidos",
-    ],
-  },
-  {
-    key: "EQUIPO",
-    name: "Equipo",
-    description: "Para salones, clínicas y locales con equipo de trabajo.",
-    highlighted: true,
-    badge: `${TRIAL_DURATION_DAYS} días gratis`,
-    icon: Crown,
-    staffLabel: `${STAFF_LIMITS.EQUIPO} profesionales incluidos`,
-    items: [
-      "Todo de Individual",
-      `${STAFF_LIMITS.EQUIPO} profesionales incluidos`,
-      "Roles: Recepcionista y Staff",
-      "Doble capacidad de Marketing",
-      "Profesionales extra a $3.000/mes",
-    ],
-  },
-];
-
-// ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
 
-function formatCLP(amount: number): string {
-  return "$" + amount.toLocaleString("es-CL");
+function formatCLP(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 function getDisplayMonthlyPrice(monthlyBase: number, cycle: BillingCycle): number {
@@ -100,9 +56,13 @@ function getSavingsPercent(): number {
 function BillingToggle({
   cycle,
   onChange,
+  monthlyLabel,
+  annualLabel,
 }: {
   cycle: BillingCycle;
   onChange: (cycle: BillingCycle) => void;
+  monthlyLabel: string;
+  annualLabel: string;
 }) {
   return (
     <div className="flex items-center justify-center gap-1">
@@ -116,7 +76,7 @@ function BillingToggle({
               : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
           }`}
         >
-          Mensual
+          {monthlyLabel}
         </button>
         <button
           type="button"
@@ -127,7 +87,7 @@ function BillingToggle({
               : "text-black dark:text-white border-2 border-transparent hover:border-black dark:hover:border-white"
           }`}
         >
-          Anual
+          {annualLabel}
           <span className={`rounded-md border-2 border-black dark:border-white px-2 py-0.5 text-[10px] font-black shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF] ${cycle === 'annual' ? 'bg-[#BFFCC6] text-black dark:bg-[#BFFCC6]' : 'bg-[#BFFCC6] text-black'}`}>
             -{getSavingsPercent()}%
           </span>
@@ -142,6 +102,39 @@ function BillingToggle({
 // ═══════════════════════════════════════════
 
 export function PricingCards({ mode = "landing" }: PricingCardsProps) {
+  const t = useTranslations("pricing");
+  const locale = useLocale();
+  const plans: {
+    key: PlanKey;
+    name: string;
+    description: string;
+    highlighted: boolean;
+    badge: string;
+    icon: typeof Zap;
+    staffLabel: string;
+    items: string[];
+  }[] = [
+    {
+      key: "INDIVIDUAL",
+      name: t("individual.name"),
+      description: t("individual.description"),
+      highlighted: false,
+      badge: t("trialDays", { days: TRIAL_DURATION_DAYS }),
+      icon: Zap,
+      staffLabel: t("individual.staff", { count: STAFF_LIMITS.INDIVIDUAL }),
+      items: t.raw("individual.features") as string[],
+    },
+    {
+      key: "EQUIPO",
+      name: t("team.name"),
+      description: t("team.description"),
+      highlighted: true,
+      badge: t("trialDays", { days: TRIAL_DURATION_DAYS }),
+      icon: Crown,
+      staffLabel: t("team.staff", { count: STAFF_LIMITS.EQUIPO }),
+      items: t.raw("team.features") as string[],
+    },
+  ];
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const [extras, setExtras] = useState<Record<PlanKey, number>>({
     INDIVIDUAL: 0,
@@ -203,7 +196,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   return (
     <div className="space-y-8">
       {/* Billing Cycle Toggle */}
-      <BillingToggle cycle={cycle} onChange={setCycle} />
+      <BillingToggle cycle={cycle} onChange={setCycle} monthlyLabel={t("monthly")} annualLabel={t("annual")} />
 
 
 
@@ -229,7 +222,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
               {plan.highlighted ? (
                 <div className="absolute -top-6 sm:-top-6 left-0 right-0 w-full flex justify-center items-center gap-2 px-2 z-10">
                   <div className="rounded-full border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-4 sm:px-6 py-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-black dark:text-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
-                    Más popular
+                    {t("mostPopular")}
                   </div>
                   {plan.badge && (
                     <div className="rounded-full border-4 border-black dark:border-white bg-[#FFB5E8] px-3 sm:px-4 py-1.5 text-[10px] sm:text-xs font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] whitespace-nowrap">
@@ -265,28 +258,28 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                 <div className="space-y-2 pt-2">
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                     <p className="min-w-0 text-5xl font-black tracking-tighter sm:text-6xl">
-                      {formatCLP(totalPrice)}
+                      {formatCLP(totalPrice, locale)}
                     </p>
-                    <span className="text-xl font-bold opacity-70">/mes</span>
+                    <span className="text-xl font-bold opacity-70">/{t("month")}</span>
                   </div>
                   <p className="text-sm font-black uppercase tracking-widest pb-1 opacity-70">
-                    IVA incluido
+                    {t("taxIncluded")}
                   </p>
 
                   {cycle === "annual" && (
                     <div className="space-y-2 animate-fade-in mt-4 border-t-4 border-black dark:border-white pt-4">
                       <p className="text-sm font-bold line-through opacity-60">
-                        {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0))}/mes
+                        {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0), locale)}/{t("month")}
                       </p>
                       <p className="text-sm font-black bg-[#BFFCC6] dark:bg-black text-black dark:text-white border-2 border-black dark:border-white rounded-lg px-3 py-1.5 inline-block shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFF]">
-                        {formatCLP(getAnnualTotal(monthlyFull) + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO * ANNUAL_MULTIPLIER : 0))}/año · Ahorras {formatCLP((monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0)) * 2)}
+                        {formatCLP(getAnnualTotal(monthlyFull) + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO * ANNUAL_MULTIPLIER : 0), locale)}/{t("year")} · {t("saveAmount", { amount: formatCLP((monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0)) * 2, locale) })}
                       </p>
                     </div>
                   )}
 
                   {hasExtras && (
                     <p className="text-sm font-black uppercase mt-2 opacity-80 animate-fade-in">
-                      {formatCLP(basePrice)} base + {formatCLP(totalPrice - basePrice)} extras
+                      {t("basePlusExtras", { base: formatCLP(basePrice, locale), extras: formatCLP(totalPrice - basePrice, locale) })}
                     </p>
                   )}
                 </div>
@@ -307,7 +300,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-black dark:border-white bg-[#FFB5E8] dark:bg-transparent">
                       <Sparkles className="h-4 w-4 text-black dark:text-[#BFFCC6]" />
                     </div>
-                    Paga 10 meses, obtén 12
+                    {t("payTenGetTwelve")}
                   </li>
                 )}
               </ul>
@@ -319,7 +312,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     <div className="flex items-center gap-3">
                       <Users className="h-6 w-6 dark:text-white" />
                       <span className="text-base font-black uppercase dark:text-white">
-                        Profesionales extra
+                        {t("extraStaff")}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -328,7 +321,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                         onClick={() => handleExtraChange("EQUIPO", -1)}
                         disabled={extras.EQUIPO === 0}
                         className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
-                        aria-label="Quitar profesional extra"
+                        aria-label={t("removeExtraStaff")}
                       >
                         <Minus className="h-5 w-5" strokeWidth={4} />
                       </button>
@@ -340,7 +333,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                         onClick={() => handleExtraChange("EQUIPO", 1)}
                         disabled={extras.EQUIPO >= 20}
                         className="flex h-10 w-10 items-center justify-center rounded-xl border-4 border-black dark:border-white bg-[#85E3FF] dark:bg-black text-black dark:text-white transition-all shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF] disabled:opacity-50 disabled:translate-y-1 disabled:shadow-[0px_0px_0_#000] active:translate-y-1 active:shadow-[0px_0px_0_#000]"
-                        aria-label="Añadir profesional extra"
+                        aria-label={t("addExtraStaff")}
                       >
                         <Plus className="h-5 w-5" strokeWidth={4} />
                       </button>
@@ -351,15 +344,16 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       +{formatCLP(
                         cycle === "annual"
                           ? Math.round((EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER) / 12)
-                          : EXTRA_STAFF_COST.EQUIPO
-                      )}/mes por profesional ·{" "}
+                          : EXTRA_STAFF_COST.EQUIPO,
+                        locale
+                      )}/{t("month")} {t("perProfessional")} ·{" "}
                       <span className="font-black uppercase">
-                        {formatCLP(totalPrice - basePrice)} total extras
+                        {t("extrasTotal", { amount: formatCLP(totalPrice - basePrice, locale) })}
                       </span>
                     </p>
                   )}
                   <p className="mt-3 text-xs font-black uppercase opacity-60">
-                    Se cobran desde el profesional {STAFF_LIMITS.EQUIPO + 1}.
+                    {t("extrasChargedFrom", { count: STAFF_LIMITS.EQUIPO + 1 })}
                   </p>
                 </div>
               )}
@@ -376,7 +370,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       {loading === "EQUIPO" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        "Suscribirse"
+                        t("subscribe")
                       )}
                     </button>
                     <button
@@ -387,7 +381,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       {loading === "EQUIPO" ? (
                         <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
                       ) : (
-                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {TRIAL_DURATION_DAYS} Días Gratis</>
+                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {t("trialDays", { days: TRIAL_DURATION_DAYS })}</>
                       )}
                     </button>
                   </>
@@ -403,7 +397,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       {loading === "INDIVIDUAL" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        "Suscribirse"
+                        t("subscribe")
                       )}
                     </button>
                     <button
@@ -414,7 +408,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                       {loading === "INDIVIDUAL" ? (
                         <><Loader2 className="h-5 w-5 animate-spin" /> ...</>
                       ) : (
-                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {TRIAL_DURATION_DAYS} Días Gratis</>
+                        <><Sparkles className="h-5 w-5" strokeWidth={3} /> {t("trialDays", { days: TRIAL_DURATION_DAYS })}</>
                       )}
                     </button>
                   </>
@@ -429,7 +423,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     {loading === "TEST" ? (
                       <span className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> ...</span>
                     ) : (
-                      "Probar Pago Real"
+                      t("testPayment")
                     )}
                   </button>
                 )}

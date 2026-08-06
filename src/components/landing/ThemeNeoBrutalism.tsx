@@ -8,6 +8,7 @@ import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
 import { Theme70s } from "@/components/landing/Theme70s";
 import type { LandingIdentityProps } from "@/components/landing/types";
+import { useTranslations } from "next-intl";
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
 
 const neoVars: React.CSSProperties & Record<string, string> = {
@@ -23,6 +24,7 @@ const neoVars: React.CSSProperties & Record<string, string> = {
 };
 
 export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
+  const t = useTranslations("landing");
   const [easterEggCount, setEasterEggCount] = useState(0);
   const [show70s, setShow70s] = useState(false);
 
@@ -83,55 +85,55 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
           <div className="relative z-10 w-full flex flex-col items-center justify-center">
             {/* Differentiator tags */}
             <div className="flex flex-wrap justify-center gap-3 mb-8">
-              <span className="bg-[#BFFCC6] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ Sin comisiones</span>
-              <span className="bg-[#FFF5BA] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] rotate-1 tracking-wide">✓ 30 días gratis</span>
-              <span className="bg-[#FFB5E8] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ Sin contrato</span>
+              <span className="bg-[#BFFCC6] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ {t("noCommissions")}</span>
+              <span className="bg-[#FFF5BA] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] rotate-1 tracking-wide">✓ {t("freeTrial")}</span>
+              <span className="bg-[#FFB5E8] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ {t("noContract")}</span>
             </div>
-            <h1 className="sr-only">Tu agenda online inteligente, automática y disponible 24/7</h1>
-            <div aria-hidden="true" className="text-6xl font-black uppercase tracking-tighter sm:text-8xl lg:text-9xl">
-              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Tu Agenda</span>
-              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">Online</span>
-              <span className="mt-4 block inline-block border-[6px] border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-6 py-2 text-[#7C3AED] dark:text-[#85E3FF] shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] transform -rotate-2">
-                <WordCarousel words={["PURAGENDA.", "INTELIGENTE.", "AUTOMÁTICO.", "24/7 ONLINE.", "SIN ESTRÉS."]} />
+            <h1 className="sr-only">{t("srTitle")}</h1>
+            <div aria-hidden="true" className="text-5xl font-black uppercase tracking-tighter sm:text-8xl lg:text-9xl">
+              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">{t("titleLine1")}</span>
+              <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">{t("titleLine2")}</span>
+              <span className="mt-4 block inline-block max-w-[calc(100vw-2.5rem)] border-[6px] border-black dark:border-white bg-[#85E3FF] dark:bg-[#7C3AED] px-3 py-2 text-[#7C3AED] dark:text-[#85E3FF] shadow-[8px_8px_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_#FFFFFF] transform -rotate-2 sm:max-w-none sm:px-6">
+                <WordCarousel className="text-[clamp(2rem,11.5vw,3rem)] sm:text-8xl lg:text-9xl" words={t("carousel").split("|")} />
               </span>
             </div>
 
             {/* CTAs and badges */}
             <div className="mt-12 flex flex-col items-center gap-8 z-20">
               <p className="max-w-2xl text-xl font-bold sm:text-2xl dark:text-white drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">
-                Recibe reservas sin tocar el WhatsApp, cobra abonos online y lleva el control de tu negocio desde un solo lugar.
+                {t("subtitle")}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto justify-center">
                 <Link href="/register" className="w-full sm:w-auto">
                   <button className="w-full bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center gap-3">
-                    Empezar Gratis <ArrowRight className="h-6 w-6 stroke-[3px]" />
+                    {t("startFree")} <ArrowRight className="h-6 w-6 stroke-[3px]" />
                   </button>
                 </Link>
                 <a href="/api/auth/demo" className="w-full sm:w-auto group relative">
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#BFFCC6] border-2 border-black text-black text-xs font-black uppercase px-2 py-0.5 shadow-[2px_2px_0_#000] whitespace-nowrap z-10">
                     <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse inline-block" />
-                    En vivo
+                    {t("live")}
                   </span>
                   <button className="w-full bg-[#85E3FF] text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center gap-2">
-                    ▶ Ver Demo
+                    ▶ {t("viewDemo")}
                   </button>
                 </a>
               </div>
 
               <p className="text-base font-bold dark:text-gray-300">
-                Sin tarjeta de crédito – Configura en 2 minutos – Cancela cuando quieras
+                {t("trialNote")}
               </p>
               
               <div className="mt-4 flex flex-wrap justify-center gap-4">
                 <div className="flex items-center gap-2 border-2 border-black dark:border-white bg-[#FFF5BA] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
-                  <Scissors className="h-5 w-5" /> Peluquerías
+                  <Scissors className="h-5 w-5" /> {t("hairSalons")}
                 </div>
                 <div className="flex items-center gap-2 border-2 border-black dark:border-white bg-[#85E3FF] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
-                  <Sparkles className="h-5 w-5" /> Estética
+                  <Sparkles className="h-5 w-5" /> {t("beauty")}
                 </div>
                 <div className="flex items-center gap-2 border-2 border-black dark:border-white bg-[#FFB5E8] px-5 py-3 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
-                  <Stethoscope className="h-5 w-5" /> Clínicas
+                  <Stethoscope className="h-5 w-5" /> {t("clinics")}
                 </div>
               </div>
 
@@ -144,7 +146,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
         <section id="como-funciona" className="mx-auto w-full max-w-6xl px-6 py-16 space-y-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-6xl text-center">
-              Todo lo que necesitas, en un solo lugar
+              {t("everythingTitle")}
             </h2>
           </div>
 
@@ -155,30 +157,30 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="lg:col-span-2 relative overflow-hidden rounded-3xl border-4 border-black dark:border-white bg-[#FFF5BA] dark:bg-black p-6 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] transition-transform hover:-translate-y-1">
               <div className="relative flex items-center gap-2 text-sm font-black uppercase tracking-wider text-black dark:text-white mb-6">
                 <div className="h-3 w-3 rounded-full border-2 border-black dark:border-white bg-[#FFB5E8] animate-pulse" />
-                Vista del cliente
+                {t("customerView")}
               </div>
               
               {/* Fake widget mockup */}
               <div className="rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-[#111111] p-5 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-black/60 dark:text-white/60">Reserva online</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-black/60 dark:text-white/60">{t("onlineBooking")}</p>
                     <p className="text-base font-black">Estética Bella</p>
                   </div>
-                  <span className="rounded-full border-2 border-black bg-[#FFB5E8] px-3 py-1 text-[10px] font-black text-black">Paso a paso</span>
+                  <span className="rounded-full border-2 border-black bg-[#FFB5E8] px-3 py-1 text-[10px] font-black text-black">{t("stepByStep")}</span>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="rounded-full border-2 border-black bg-[#FFB5E8] px-2 py-1 text-center text-[10px] font-black text-black shadow-[2px_2px_0_#000]">Servicio</div>
-                  <div className="rounded-full border-2 border-black bg-[#FFB5E8] px-2 py-1 text-center text-[10px] font-black text-black shadow-[2px_2px_0_#000]">Fecha</div>
-                  <div className="rounded-full border-2 border-black dark:border-white px-2 py-1 text-center text-[10px] font-black dark:text-white">Datos</div>
+                  <div className="min-w-0 rounded-full border-2 border-black bg-[#FFB5E8] px-1 py-1 text-center text-[9px] font-black text-black shadow-[2px_2px_0_#000] sm:px-2 sm:text-[10px]">{t("service")}</div>
+                  <div className="min-w-0 rounded-full border-2 border-black bg-[#FFB5E8] px-1 py-1 text-center text-[9px] font-black text-black shadow-[2px_2px_0_#000] sm:px-2 sm:text-[10px]">{t("date")}</div>
+                  <div className="min-w-0 rounded-full border-2 border-black dark:border-white px-1 py-1 text-center text-[9px] font-black dark:text-white sm:px-2 sm:text-[10px]">{t("details")}</div>
                 </div>
                 
                 <div className="space-y-3 mb-4">
                   <div className="rounded-xl border-2 border-black bg-[#FFB5E8] p-3 shadow-[2px_2px_0_#000]">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-black text-black">Corte de pelo</p>
+                        <p className="text-sm font-black text-black">{t("haircut")}</p>
                         <div className="mt-1 flex gap-2 text-[11px] font-bold text-black/80">
                           <span>30 min</span>
                           <span>$15.000</span>
@@ -190,7 +192,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                   <div className="rounded-xl border-2 border-black dark:border-white bg-gray-100 dark:bg-gray-800 p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-black dark:text-white">Manicure Gel</p>
+                        <p className="text-sm font-black dark:text-white">{t("gelManicure")}</p>
                         <div className="mt-1 flex gap-2 text-[11px] font-bold text-black/60 dark:text-white/60">
                           <span>60 min</span>
                           <span>$25.000</span>
@@ -228,7 +230,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="lg:col-span-3 relative overflow-hidden rounded-3xl border-4 border-black dark:border-white bg-[#B28DFF] dark:bg-black p-6 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#B28DFF] transition-transform hover:-translate-y-1">
               <div className="relative flex items-center gap-2 text-sm font-black uppercase tracking-wider text-black dark:text-white mb-6">
                 <div className="h-3 w-3 rounded-full border-2 border-black dark:border-white bg-[#85E3FF] animate-pulse" />
-                Panel de administración · Vista del dueño
+                {t("adminPreview")}
               </div>
               
               {/* Fake dashboard */}
@@ -242,8 +244,8 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                     Puragenda
                   </span>
                   <div className="ml-auto flex gap-2">
-                    {["Citas", "Staff", "Servicios"].map((t) => (
-                      <span key={t} className={`rounded-md border-2 border-black dark:border-white px-2 py-1 text-[10px] font-black ${t === "Citas" ? "bg-[#FFF5BA] text-black shadow-[2px_2px_0_#000]" : "dark:text-white"}`}>{t}</span>
+                    {[t("appointments"), t("team"), t("services")].map((label, index) => (
+                      <span key={label} className={`rounded-md border-2 border-black dark:border-white px-2 py-1 text-[10px] font-black ${index === 0 ? "bg-[#FFF5BA] text-black shadow-[2px_2px_0_#000]" : "dark:text-white"}`}>{label}</span>
                     ))}
                   </div>
                 </div>
@@ -251,7 +253,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 {/* Stats row */}
                 <div className="grid grid-cols-3 gap-3 p-4">
                   {[
-                    { label: "Hoy", value: "8", sub: "citas", bg: "bg-[#85E3FF]" },
+                    { label: t("today"), value: "8", sub: t("appointments").toLowerCase(), bg: "bg-[#85E3FF]" },
                     { label: "Semana", value: "34", sub: "reservas", bg: "bg-[#FFF5BA]" },
                     { label: "Check-in", value: "92%", sub: "asistencia", bg: "bg-[#FFB5E8]" },
                   ].map((stat) => (
@@ -265,7 +267,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 
                 {/* Calendar/Appointments list */}
                 <div className="px-4 pb-4 space-y-2">
-                  <p className="text-[11px] font-black uppercase text-black/50 dark:text-white/50 mb-2">Próximas citas</p>
+                  <p className="text-[11px] font-black uppercase text-black/50 dark:text-white/50 mb-2">{t("upcoming")}</p>
                   {[
                     { name: "Juan Pérez", service: "Consultoría Web", time: "10:00", staff: "Diego S.", status: "confirmed" },
                     { name: "María González", service: "Desarrollo Landing", time: "11:00", staff: "Diego S.", status: "pending" },
@@ -297,9 +299,9 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2">
                 <Palette className="h-5 w-5 dark:text-white" />
-                <p className="text-base font-black uppercase dark:text-white">Personalización</p>
+                <p className="text-base font-black uppercase dark:text-white">{t("customization")}</p>
               </div>
-              <p className="text-sm font-bold text-black/70 dark:text-white/70">Cada negocio define sus colores. El widget se adapta a su marca.</p>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("customizationText")}</p>
               <div className="flex gap-2">
                 {["#7C3AED", "#FFB5E8", "#FFF5BA", "#BFFCC6", "#85E3FF"].map((c) => (
                   <div key={c} className="h-6 w-6 rounded-md border-2 border-black shadow-[2px_2px_0_#000]" style={{ background: c }} />
@@ -310,9 +312,9 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="rounded-2xl border-4 border-black dark:border-white bg-white dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF] hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 dark:text-white" />
-                <p className="text-base font-black uppercase dark:text-white">Multi-profesional</p>
+                <p className="text-base font-black uppercase dark:text-white">{t("multiProfessional")}</p>
               </div>
-              <p className="text-sm font-bold text-black/70 dark:text-white/70">Cada staff tiene su propio horario y agenda independiente.</p>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("multiProfessionalText")}</p>
               <div className="flex -space-x-2">
                 {["D", "C", "M", "V"].map((letter, i) => (
                   <div key={letter} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black text-[10px] font-black text-black shadow-[2px_2px_0_#000]" style={{ background: ["#85E3FF", "#FFB5E8", "#FFF5BA", "#BFFCC6"][i], zIndex: 4 - i }}>
@@ -328,7 +330,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 <Shield className="h-5 w-5 dark:text-white" />
                 <p className="text-base font-black uppercase dark:text-white">Sin solapamientos</p>
               </div>
-              <p className="text-sm font-bold text-black/70 dark:text-white/70">Detección automática de colisiones. Nunca dos citas iguales.</p>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("collisionProtectionText")}</p>
               <div className="space-y-2 text-[10px] font-black">
                 <div className="flex items-center gap-2 rounded-lg border-2 border-black bg-[#BFFCC6] px-2.5 py-1.5 shadow-[2px_2px_0_#000]">
                   <div className="h-2 w-2 rounded-full border border-black bg-white" />
@@ -346,9 +348,9 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <div className="rounded-2xl border-4 border-[#009EE3] bg-[#009EE3]/10 dark:bg-black p-5 space-y-3 shadow-[4px_4px_0_#009EE3] hover:-translate-y-1 transition-transform">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-[#009EE3]" />
-                <p className="text-base font-black uppercase text-[#009EE3]">Abonos online</p>
+                <p className="text-base font-black uppercase text-[#009EE3]">{t("onlineDeposits")}</p>
               </div>
-              <p className="text-sm font-bold text-black/70 dark:text-white/70">Cobra abonos al momento de la reserva, directo desde el Widget.</p>
+              <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("onlineDepositsText")}</p>
               {/* MercadoPago official logo */}
               <div className="flex items-center justify-center rounded-lg border-2 border-[#009EE3] bg-white px-5 py-3.5 shadow-[2px_2px_0_#009EE3]">
                 <img src="/logos/mercadopago.svg" alt="Mercado Pago" className="h-16 w-auto" />
@@ -367,8 +369,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               <div className="min-w-0">
                 <h2 className="text-sm font-black uppercase">Google Calendar · integración opcional</h2>
                 <p className="mt-0.5 text-xs font-semibold leading-relaxed text-black/65 dark:text-white/65">
-                  Sincroniza citas y bloquea horas ocupadas. Solo usamos el correo, la lista de calendarios y los
-                  eventos para esta función; puedes revocar el acceso cuando quieras.
+                  {t("calendarSyncText")}
                 </p>
               </div>
             </div>
@@ -399,7 +400,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             {/* Card 1 - amarillo, rotada levemente */}
             <div className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
               <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Coordinaba todo por WhatsApp y era un caos. Ahora mis clientas reservan solas de noche y yo me entero a la mañana. No volvería atrás.</p>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialOne")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">V</div>
                 <div>
@@ -411,24 +412,24 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             {/* Card 2 - verde, un poco mas grande visualmente */}
             <div className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
               <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">4 kinesiólogos con horarios distintos y nunca hay cruces. Los recordatorios solos bajaron mucho las inasistencias. El equipo ya no toca el teléfono para confirmar citas.</p>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialTwo")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">M</div>
                 <div>
                   <p className="text-sm font-black text-black dark:text-white">Marcelo T.</p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Clínica de kinesiología</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("clinicType")}</p>
                 </div>
               </div>
             </div>
             {/* Card 3 - cyan, rotada al otro lado */}
             <div className="rounded-2xl border-4 border-black bg-[#85E3FF] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#85E3FF] flex flex-col gap-4 rotate-[0.8deg]">
               <span className="text-4xl font-black text-black/20 leading-none select-none">&ldquo;</span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">Los timbres son lo mejor. Los clientes acumulan y vuelven a canjear. Sin pagar publicidad, las visitas repetidas subieron un montón en pocos meses.</p>
+              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialThree")}</p>
               <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
                 <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#B28DFF] flex items-center justify-center text-lg font-black text-black shrink-0">C</div>
                 <div>
                   <p className="text-sm font-black text-black dark:text-white">Carolina S.</p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60">Peluquería &amp; barbería</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("salonType")}</p>
                 </div>
               </div>
             </div>
@@ -438,17 +439,17 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
         {/* CTA FINAL */}
         <section className="border-t-4 border-black dark:border-white py-20 bg-[#85E3FF] dark:bg-[#B28DFF] dark:text-black">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">
-            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">Tu agenda online lista en minutos</h2>
-            <p className="max-w-xl font-bold text-black/70">Te acompañamos desde la configuración inicial hasta la publicación en tu sitio.</p>
+            <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">{t("readyTitle")}</h2>
+            <p className="max-w-xl font-bold text-black/70">{t("readyText")}</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/pricing">
                 <button className="bg-black text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,0.3)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all flex items-center gap-2">
-                  Empezar Gratis <ArrowRight className="h-5 w-5" />
+                  {t("startFree")} <ArrowRight className="h-5 w-5" />
                 </button>
               </Link>
               <a href="/api/auth/demo">
                 <button className="bg-white text-black border-4 border-black px-8 py-4 font-black uppercase text-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_#000000] hover:bg-gray-100 transition-colors">
-                  Ver Demo
+                  {t("viewDemo")}
                 </button>
               </a>
             </div>

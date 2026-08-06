@@ -4,6 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
 import { SITE_URL } from "@/lib/site";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -23,7 +25,7 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Puragenda — Reservas online, abonos y agenda para negocios",
@@ -104,21 +106,53 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "metadata" });
+  const title = t("siteTitle");
+  const description = t("siteDescription");
+  const openGraphLocale = {
+    es: "es_CL", en: "en_US", it: "it_IT", pt: "pt_BR", fr: "fr_FR", de: "de_DE", "zh-CN": "zh_CN",
+  }[locale] ?? "es_CL";
+
+  return {
+    ...baseMetadata,
+    title: { default: title, template: "%s | Puragenda" },
+    description,
+    openGraph: {
+      ...baseMetadata.openGraph,
+      locale: openGraphLocale,
+      title,
+      description,
+    },
+    twitter: {
+      ...baseMetadata.twitter,
+      title,
+      description,
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
+    <html lang={locale} className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
-          <RegisterSW />
-          {children}
-          <CookieBanner />
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
+            <RegisterSW />
+            {children}
+            <CookieBanner />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

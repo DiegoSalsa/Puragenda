@@ -150,7 +150,10 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error("[billing/subscribe] Paddle no está configurado", error);
         return NextResponse.json(
-          { error: "El Checkout internacional no está configurado todavía." },
+          {
+            error: "El Checkout internacional no está configurado todavía.",
+            code: "INTERNATIONAL_BILLING_NOT_CONFIGURED",
+          },
           { status: 503 },
         );
       }

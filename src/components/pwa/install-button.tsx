@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -21,6 +22,7 @@ if (typeof window !== "undefined" && !_listenerAdded) {
 }
 
 export function InstallPWAButton({ variant = "default" }: { variant?: "default" | "sidebar" | "nav" }) {
+  const t = useTranslations("pwa");
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -101,7 +103,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
     <>
       <button onClick={handleClick} className={cls}>
         <Download className="h-4 w-4" />
-        {variant === "nav" ? "Instalar" : "Instalar App"}
+        {variant === "nav" ? t("install") : t("installApp")}
       </button>
 
       {/* Instructions modal (iOS or unsupported browsers) */}
@@ -121,7 +123,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED]/10">
                   <Download className="h-4 w-4 text-[#7C3AED]" />
                 </div>
-                <h3 className="text-base font-semibold text-foreground">Instalar Puragenda</h3>
+                <h3 className="text-base font-semibold text-foreground">{t("title")}</h3>
               </div>
               <button onClick={() => setShowIOSModal(false)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
@@ -132,15 +134,15 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
               {isIOS ? (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Para instalar la app en tu iPhone o iPad:
+                    {t("iosIntro")}
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Toca el ícono de Compartir</p>
+                        <p className="text-foreground font-medium">{t("shareTitle")}</p>
                         <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                          Es el cuadrado con la flecha hacia arriba
+                          {t("shareDescription")}
                           <svg className="h-4 w-4 text-[#007AFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                           </svg>
@@ -150,15 +152,15 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Busca la opción</p>
-                        <p className="text-muted-foreground mt-0.5">&quot;Agregar a la pantalla de inicio&quot;</p>
+                        <p className="text-foreground font-medium">{t("findOption")}</p>
+                        <p className="text-muted-foreground mt-0.5">&quot;{t("addHomeScreen")}&quot;</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Confirma tocando &quot;Agregar&quot;</p>
-                        <p className="text-muted-foreground mt-0.5">¡Listo! La app aparecerá en tu pantalla.</p>
+                        <p className="text-foreground font-medium">{t("confirmAdd")}</p>
+                        <p className="text-muted-foreground mt-0.5">{t("iosDone")}</p>
                       </div>
                     </div>
                   </div>
@@ -166,21 +168,21 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Tu navegador no soporta la instalación automática.
+                    {t("unsupportedIntro")}
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Abre esta página en Google Chrome</p>
-                        <p className="text-muted-foreground mt-0.5">La instalación automática requiere Chrome o Edge.</p>
+                        <p className="text-foreground font-medium">{t("openChrome")}</p>
+                        <p className="text-muted-foreground mt-0.5">{t("chromeRequired")}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
                       <div className="text-sm">
-                        <p className="text-foreground font-medium">Presiona &quot;Instalar App&quot;</p>
-                        <p className="text-muted-foreground mt-0.5">Se instalará automáticamente con ícono en tu pantalla.</p>
+                        <p className="text-foreground font-medium">{t("pressInstall")}</p>
+                        <p className="text-muted-foreground mt-0.5">{t("automaticInstall")}</p>
                       </div>
                     </div>
                   </div>
@@ -191,7 +193,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                 onClick={() => setShowIOSModal(false)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6]"
               >
-                Entendido
+                {t("understood")}
               </button>
             </div>
           </div>
