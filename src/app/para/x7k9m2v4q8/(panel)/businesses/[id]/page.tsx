@@ -18,6 +18,7 @@ import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { SubscriptionEditor } from "./subscription-editor";
 import { DeleteBusinessButton } from "./delete-business-button";
+import { ImpersonateButton } from "./impersonate-button";
 import { absoluteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -105,7 +106,10 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
             </div>
           </div>
-          <DeleteBusinessButton businessId={business.id} businessName={business.name} />
+          <div className="flex items-center gap-2">
+            <ImpersonateButton businessId={business.id} />
+            <DeleteBusinessButton businessId={business.id} businessName={business.name} />
+          </div>
         </div>
       </div>
 
