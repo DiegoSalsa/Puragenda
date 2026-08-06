@@ -62,7 +62,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   const locations = await prisma.businessLocation.findMany({ where: { businessId: business.id, isActive: true }, orderBy: [{ position: "asc" }, { name: "asc" }], include: { hours: { orderBy: { dayOfWeek: "asc" } } } });
   const selectedLocation = locations.find((location) => location.slug === params.location) ?? locations.find((location) => location.isPrimary) ?? locations[0] ?? null;
-  const locationFilter = selectedLocation ? { locationId: selectedLocation.id } : {};
+  const locationFilter = selectedLocation
+    ? selectedLocation.isPrimary || locations.length === 1
+      ? { OR: [{ locationId: selectedLocation.id }, { locationId: null }] }
+      : { locationId: selectedLocation.id }
+    : {};
   const canToggleOwnAgenda = agendaScope.canSeeAllAgendas && !!agendaScope.ownStaffId;
   const showingOwnAgenda = canToggleOwnAgenda && params.agenda === "mine";
   const scopedStaffFilter = agendaScope.canSeeAllAgendas
