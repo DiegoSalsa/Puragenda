@@ -32,33 +32,35 @@ import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
 type NavItem =
   | { href: string; label: string; icon: React.ElementType; children?: never }
   | { href?: never; label: string; icon: React.ElementType; children: { href: string; label: string; icon: React.ElementType }[] };
 
 const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Citas", icon: LayoutDashboard },
-  { href: "/dashboard/google-calendar", label: "Google Calendar", icon: CalendarDays },
-  { href: "/dashboard/orders", label: "Encargos", icon: Package },
-  { href: "/dashboard/analytics", label: "Analítica", icon: BarChart3 },
-  { href: "/dashboard/staff", label: "Profesionales", icon: Users },
-  { href: "/dashboard/services", label: "Servicios", icon: Wrench },
-  { href: "/dashboard/clients", label: "Clientes", icon: UsersRound },
-  { href: "/dashboard/recurring", label: "Suscripciones", icon: RefreshCw },
-  { href: "/dashboard/loyalty", label: "Fidelización", icon: Stamp },
-  { href: "/dashboard/marketing", label: "Marketing", icon: Mail },
+  { href: "/dashboard", label: "appointments", icon: LayoutDashboard },
+  { href: "/dashboard/google-calendar", label: "calendar", icon: CalendarDays },
+  { href: "/dashboard/orders", label: "orders", icon: Package },
+  { href: "/dashboard/analytics", label: "analytics", icon: BarChart3 },
+  { href: "/dashboard/staff", label: "staff", icon: Users },
+  { href: "/dashboard/services", label: "services", icon: Wrench },
+  { href: "/dashboard/clients", label: "clients", icon: UsersRound },
+  { href: "/dashboard/recurring", label: "subscriptions", icon: RefreshCw },
+  { href: "/dashboard/loyalty", label: "loyalty", icon: Stamp },
+  { href: "/dashboard/marketing", label: "marketing", icon: Mail },
   {
-    label: "Apariencia",
+    label: "appearance",
     icon: Palette,
     children: [
-      { href: "/dashboard/appearance/personalizado", label: "Personalizar", icon: Paintbrush },
-      { href: "/dashboard/appearance/temas", label: "Temas", icon: Layers },
+      { href: "/dashboard/appearance/personalizado", label: "customize", icon: Paintbrush },
+      { href: "/dashboard/appearance/temas", label: "themes", icon: Layers },
     ],
   },
-  { href: "/dashboard/referrals", label: "Referidos", icon: Gift },
-  { href: "/dashboard/rewards", label: "Recompensas", icon: Trophy },
-  { href: "/dashboard/settings", label: "Configuración", icon: Settings },
+  { href: "/dashboard/referrals", label: "referrals", icon: Gift },
+  { href: "/dashboard/rewards", label: "rewards", icon: Trophy },
+  { href: "/dashboard/settings", label: "settings", icon: Settings },
 ];
 
 const SIDEBAR_STATE_KEY = "puragenda:dashboard-sidebar:v2";
@@ -132,6 +134,7 @@ function SidebarContent({
   onClose?: () => void;
   onToggleCollapsed?: () => void;
 }) {
+  const t = useTranslations("navigation");
   const pathname = usePathname();
   const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
   const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
@@ -189,15 +192,15 @@ function SidebarContent({
           />
         </Link>
         {onClose ? (
-          <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Cerrar menú">
+          <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("closeMenu")}>
             <X className="h-5 w-5" />
           </button>
         ) : !collapsed && onToggleCollapsed ? (
           <button
             onClick={onToggleCollapsed}
             className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="Contraer panel (Ctrl+B)"
-            aria-label="Contraer panel lateral"
+            title={`${t("collapseSidebar")} (Ctrl+B)`}
+            aria-label={t("collapseSidebar")}
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -209,8 +212,8 @@ function SidebarContent({
           <button
             onClick={onToggleCollapsed}
             className={itemClass(false)}
-            title="Expandir panel (Ctrl+B)"
-            aria-label="Expandir panel lateral"
+            title={`${t("expandSidebar")} (Ctrl+B)`}
+            aria-label={t("expandSidebar")}
           >
             <PanelLeftOpen className="h-5 w-5" />
           </button>
@@ -225,12 +228,12 @@ function SidebarContent({
                 <button
                   onClick={() => setAppearanceOpen((open) => !open)}
                   className={itemClass(isGroupActive)}
-                  title={collapsed ? item.label : undefined}
+                  title={collapsed ? t(item.label) : undefined}
                   aria-expanded={isOpen}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   <NavLabel collapsed={collapsed}>
-                    <span className="flex-1 text-left">{item.label}</span>
+                    <span className="flex-1 text-left">{t(item.label)}</span>
                     <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                   </NavLabel>
                 </button>
@@ -244,10 +247,10 @@ function SidebarContent({
                           href={child.href}
                           onClick={onClose}
                           className={itemClass(active)}
-                          title={collapsed ? child.label : undefined}
+                          title={collapsed ? t(child.label) : undefined}
                         >
                           <child.icon className="h-3.5 w-3.5 shrink-0" />
-                          <NavLabel collapsed={collapsed}>{child.label}</NavLabel>
+                          <NavLabel collapsed={collapsed}>{t(child.label)}</NavLabel>
                         </Link>
                       );
                     })}
@@ -264,10 +267,10 @@ function SidebarContent({
               href={item.href}
               onClick={onClose}
               className={itemClass(active)}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? t(item.label) : undefined}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <NavLabel collapsed={collapsed}>{item.label}</NavLabel>
+              <NavLabel collapsed={collapsed}>{t(item.label)}</NavLabel>
             </Link>
           );
         })}
@@ -278,17 +281,18 @@ function SidebarContent({
           id="tutorial-widget"
           href={widgetHref}
           target="_blank"
-          title="Ver widget"
+          title={t("viewWidget")}
           className={itemClass(false)}
         >
           <ExternalLink className="h-4 w-4 shrink-0" />
-          <NavLabel collapsed={collapsed}>Ver widget</NavLabel>
+          <NavLabel collapsed={collapsed}>{t("viewWidget")}</NavLabel>
         </Link>
         {!collapsed && (
           <>
             <div className="mt-3 px-3"><ThemeToggle /></div>
+            <div className="mt-3 px-3"><LanguageSwitcher className="w-full justify-center" /></div>
             <div className="mt-3 rounded-xl border border-border bg-muted/50 px-3 py-2">
-              <p className="text-xs text-muted-foreground">Sesión iniciada</p>
+              <p className="text-xs text-muted-foreground">{t("signedIn")}</p>
               <p className="mt-0.5 truncate text-sm font-medium text-foreground">{userName}</p>
             </div>
             <div className="mt-3"><InstallPWAButton variant="sidebar" /></div>
@@ -313,6 +317,7 @@ export function DashboardSidebar({
   productionOrdersEnabled?: boolean;
   permissions?: string[];
 }) {
+  const t = useTranslations("navigation");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dragWidth, setDragWidth] = useState<number | null>(null);
   const sidebarSnapshot = useSyncExternalStore(
@@ -386,7 +391,7 @@ export function DashboardSidebar({
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground" aria-label="Abrir menú">
+        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground" aria-label={t("openMenu")}>
           <Menu className="h-5 w-5" />
         </button>
         <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda" className="h-8 w-auto" />
@@ -430,8 +435,8 @@ export function DashboardSidebar({
             type="button"
             onPointerDown={beginResize}
             className="group absolute inset-y-0 -right-2 z-20 flex w-4 cursor-col-resize items-center justify-center"
-            aria-label="Ajustar ancho del panel lateral"
-            title="Arrastra para ajustar el ancho"
+            aria-label={t("resizeSidebar")}
+            title={t("resizeSidebar")}
           >
             <span className="flex h-12 w-3 items-center justify-center rounded-full border border-border bg-card opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
               <GripVertical className="h-3 w-3 text-muted-foreground" />

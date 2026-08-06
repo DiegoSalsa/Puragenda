@@ -6,9 +6,12 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { RegisterForm } from "./register-form";
 import { getCountryOptions, isSupportedCountryCode } from "@/core/countries";
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { getLocale } from "next-intl/server";
 
 export default async function RegisterPage() {
   const user = await getCurrentSessionUser();
+  const locale = await getLocale();
   const requestHeaders = await headers();
   const detectedCountry = requestHeaders.get("x-vercel-ip-country")?.toUpperCase() ?? "";
   const initialCountryCode = isSupportedCountryCode(detectedCountry) ? detectedCountry : "";
@@ -24,13 +27,16 @@ export default async function RegisterPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
           <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>
 
         <Suspense>
           <RegisterForm
-            countryOptions={getCountryOptions("es")}
+            countryOptions={getCountryOptions(locale)}
             paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
             initialCountryCode={initialCountryCode}
           />

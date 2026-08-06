@@ -4,8 +4,11 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Loader2, Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { forgotPasswordAction } from "@/server/actions/auth.actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("passwordRecovery");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -36,6 +39,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end"><LanguageSwitcher /></div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
           <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>
@@ -47,34 +51,33 @@ export default function ForgotPasswordPage() {
                 <CheckCircle2 className="h-7 w-7 text-emerald-400" />
               </div>
               <div className="space-y-1.5">
-                <h2 className="text-2xl font-bold">Revisa tu email</h2>
+                <h2 className="text-2xl font-bold">{t("checkEmail")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Si existe una cuenta asociada a <strong className="text-foreground">{email}</strong>,
-                  recibirás un enlace para restablecer tu contraseña.
+                  {t.rich("checkEmailDescription", { email: () => <strong className="text-foreground">{email}</strong> })}
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
-                ¿No lo ves? Revisa tu carpeta de spam o correo no deseado.
+                {t("checkSpam")}
               </p>
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 text-sm text-[#7C3AED] hover:underline"
               >
-                <ArrowLeft className="h-3.5 w-3.5" /> Volver al login
+                <ArrowLeft className="h-3.5 w-3.5" /> {t("backLogin")}
               </Link>
             </div>
           ) : (
             <>
               <div className="mb-6 space-y-1.5">
-                <h2 className="text-2xl font-bold">¿Olvidaste tu contraseña?</h2>
+                <h2 className="text-2xl font-bold">{t("forgotTitle")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Ingresa tu email y te enviaremos un enlace para restablecerla.
+                  {t("forgotDescription")}
                 </p>
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-1.5">
-                  <label htmlFor="forgot-email" className="text-sm text-muted-foreground">Email</label>
+                  <label htmlFor="forgot-email" className="text-sm text-muted-foreground">{t("email")}</label>
                   <input
                     id="forgot-email"
                     type="email"
@@ -99,16 +102,16 @@ export default function ForgotPasswordPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
                 >
                   {loading ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("sending")}</>
                   ) : (
-                    <><Mail className="h-4 w-4" /> Enviar enlace</>
+                    <><Mail className="h-4 w-4" /> {t("sendLink")}</>
                   )}
                 </button>
               </form>
 
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 <Link href="/login" className="inline-flex items-center gap-1 text-[#7C3AED] hover:underline">
-                  <ArrowLeft className="h-3.5 w-3.5" /> Volver al login
+                  <ArrowLeft className="h-3.5 w-3.5" /> {t("backLogin")}
                 </Link>
               </p>
             </>

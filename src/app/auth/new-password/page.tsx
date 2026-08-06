@@ -5,8 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
 import { resetPasswordAction } from "@/server/actions/auth.actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
 function NewPasswordForm() {
+  const t = useTranslations("passwordRecovery");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -23,16 +26,16 @@ function NewPasswordForm() {
           <AlertTriangle className="h-7 w-7 text-red-400" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-2xl font-bold">Enlace inválido</h2>
+          <h2 className="text-2xl font-bold">{t("invalidLink")}</h2>
           <p className="text-sm text-muted-foreground">
-            Este enlace de restablecimiento no es válido. Solicita uno nuevo.
+            {t("invalidLinkDescription")}
           </p>
         </div>
         <Link
           href="/auth/forgot-password"
           className="inline-flex items-center gap-2 text-sm text-[#7C3AED] hover:underline"
         >
-          Solicitar nuevo enlace
+          {t("requestNewLink")}
         </Link>
       </div>
     );
@@ -43,12 +46,12 @@ function NewPasswordForm() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError(t("passwordMismatch"));
       return;
     }
 
     if (password.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres");
+      setError(t("passwordLength"));
       return;
     }
 
@@ -74,16 +77,16 @@ function NewPasswordForm() {
           <CheckCircle2 className="h-7 w-7 text-emerald-400" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-2xl font-bold">Contraseña actualizada</h2>
+          <h2 className="text-2xl font-bold">{t("updatedTitle")}</h2>
           <p className="text-sm text-muted-foreground">
-            Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión.
+            {t("updatedDescription")}
           </p>
         </div>
         <Link
           href="/login"
           className="inline-flex items-center gap-2 rounded-xl bg-[#7C3AED] px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6]"
         >
-          Iniciar sesión
+          {t("signIn")}
         </Link>
       </div>
     );
@@ -92,21 +95,21 @@ function NewPasswordForm() {
   return (
     <>
       <div className="mb-6 space-y-1.5">
-        <h2 className="text-2xl font-bold">Nueva contraseña</h2>
+        <h2 className="text-2xl font-bold">{t("newPasswordTitle")}</h2>
         <p className="text-sm text-muted-foreground">
-          Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta.
+          {t("newPasswordDescription")}
         </p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label htmlFor="new-password" className="text-sm text-muted-foreground">
-            Nueva contraseña
+            {t("newPassword")}
           </label>
           <input
             id="new-password"
             type="password"
-            placeholder="Mínimo 8 caracteres"
+            placeholder={t("passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
@@ -118,12 +121,12 @@ function NewPasswordForm() {
 
         <div className="space-y-1.5">
           <label htmlFor="confirm-new-password" className="text-sm text-muted-foreground">
-            Confirmar contraseña
+            {t("confirmPassword")}
           </label>
           <input
             id="confirm-new-password"
             type="password"
-            placeholder="Repite tu contraseña"
+            placeholder={t("confirmPasswordPlaceholder")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -144,16 +147,16 @@ function NewPasswordForm() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50"
         >
           {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Actualizando...</>
+            <><Loader2 className="h-4 w-4 animate-spin" /> {t("updating")}</>
           ) : (
-            <><Lock className="h-4 w-4" /> Restablecer contraseña</>
+            <><Lock className="h-4 w-4" /> {t("resetPassword")}</>
           )}
         </button>
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         <Link href="/login" className="inline-flex items-center gap-1 text-[#7C3AED] hover:underline">
-          <ArrowLeft className="h-3.5 w-3.5" /> Volver al login
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("backLogin")}
         </Link>
       </p>
     </>
@@ -168,6 +171,7 @@ export default function NewPasswordPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end"><LanguageSwitcher /></div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
           <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>

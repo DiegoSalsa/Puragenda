@@ -7,6 +7,7 @@ import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-rea
 import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 import { getCountryConfig } from "@/core/countries";
 import { startBillingCheckout } from "@/components/paddle/checkout";
+import { useLocale, useTranslations } from "next-intl";
 
 export function RegisterForm({
   countryOptions,
@@ -17,6 +18,8 @@ export function RegisterForm({
   paymentSimulatorEnabled: boolean;
   initialCountryCode?: string;
 }) {
+  const t = useTranslations("register");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
   const wantsTrial = searchParams.get("trial") === "1";
@@ -24,7 +27,7 @@ export function RegisterForm({
     ? Math.max(0, Math.min(20, Number(searchParams.get("extraStaff") || 0) || 0))
     : 0;
   const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
-  const planLabel = wantsPlan === "EQUIPO" ? "Equipo" : wantsPlan === "INDIVIDUAL" ? "Individual" : wantsPlan === "TEST" ? "Test" : null;
+  const planLabel = wantsPlan === "EQUIPO" ? t("plans.team") : wantsPlan === "INDIVIDUAL" ? t("plans.individual") : wantsPlan === "TEST" ? t("plans.test") : null;
   const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
   const totalEquipoStaff = STAFF_LIMITS.EQUIPO + extraStaffCount;
 
@@ -56,12 +59,12 @@ export function RegisterForm({
     setError(null);
 
         if (!termsAccepted) {
-      setError("Debes aceptar los Términos de Servicio y Políticas de Privacidad");
+      setError(t("errors.acceptTerms"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError(t("errors.passwordMismatch"));
       return;
     }
 
@@ -90,7 +93,7 @@ export function RegisterForm({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        const message = data.error || "No se pudo crear la cuenta";
+        const message = data.error || t("errors.createAccount");
         const details = data.details?.length ? `: ${data.details.join(", ")}` : "";
         setError(`${message}${details}`);
         return;
@@ -113,7 +116,7 @@ export function RegisterForm({
         }
 
         console.error("[register] Billing error:", billingData.error);
-        setError(billingData.error || "La cuenta fue creada, pero no se pudo iniciar el pago. Intenta desde Configuracion.");
+        setError(billingData.error || t("errors.paymentStart"));
         return;
       }
 
@@ -128,59 +131,59 @@ export function RegisterForm({
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
-        <h2 className="text-2xl font-bold">Crear cuenta</h2>
+        <h2 className="text-2xl font-bold">{t("title")}</h2>
         {isDirectSubscription ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Registra tu negocio y activa el Plan {planLabel}.
+              {t("activatePlan", { plan: planLabel ?? "" })}
             </p>
             <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
               <Crown className="h-4 w-4 text-[#7C3AED]" />
               <span className="text-sm font-medium text-[#A78BFA]">
                 {countryCode && countryCode !== "CL"
                   ? paymentSimulatorEnabled
-                    ? `Plan ${planLabel} — prueba local en ${currencyCode}`
-                    : `Plan ${planLabel} — USD ${wantsPlan === "EQUIPO" ? (32.99 + extraStaffCount * 3.49).toFixed(2) : wantsPlan === "INDIVIDUAL" ? "13.99" : "0.00"}/mes base`
-                  : `Plan ${planLabel} — $${planPrice.toLocaleString("es-CL")} CLP/mes`}
+                    ? t("localPlanPrice", { plan: planLabel ?? "", currency: currencyCode })
+                    : t("usdPlanPrice", { plan: planLabel ?? "", price: wantsPlan === "EQUIPO" ? (32.99 + extraStaffCount * 3.49).toFixed(2) : wantsPlan === "INDIVIDUAL" ? "13.99" : "0.00" })
+                  : t("clpPlanPrice", { plan: planLabel ?? "", price: new Intl.NumberFormat(locale).format(planPrice) })}
               </span>
             </div>
             {wantsPlan === "EQUIPO" && (
               <p className="text-xs text-muted-foreground">
-                Incluye {STAFF_LIMITS.EQUIPO} profesionales. Total seleccionado: {totalEquipoStaff} profesional(es).
+                {t("staffTotal", { included: STAFF_LIMITS.EQUIPO, total: totalEquipoStaff })}
               </p>
             )}
           </div>
         ) : wantsTrial ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Registra tu negocio y empieza tu prueba gratis.
+              {t("startTrial")}
             </p>
             <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
               <Sparkles className="h-4 w-4 text-emerald-400" />
               <span className="text-sm font-medium text-emerald-400">
-                {TRIAL_DURATION_DAYS} días gratis · Plan {planLabel || "Equipo"}
+                {t("trialBadge", { days: TRIAL_DURATION_DAYS, plan: planLabel || t("plans.team") })}
               </span>
             </div>
             {(wantsPlan === "EQUIPO" || !wantsPlan) && (
               <p className="text-xs text-muted-foreground">
-                Plan Equipo incluye {STAFF_LIMITS.EQUIPO} profesionales{extraStaffCount > 0 ? ` + ${extraStaffCount} extra(s)` : ""}.
+                {t("teamIncludes", { count: STAFF_LIMITS.EQUIPO, extras: extraStaffCount })}
               </p>
             )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Registra tu negocio y empieza a recibir reservas hoy.
+            {t("subtitle")}
           </p>
         )}
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
-          <label htmlFor="name" className="text-sm text-muted-foreground">Nombre</label>
+          <label htmlFor="name" className="text-sm text-muted-foreground">{t("name")}</label>
           <input
             id="name"
             type="text"
-            placeholder="Tu nombre"
+            placeholder={t("namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -189,11 +192,11 @@ export function RegisterForm({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="businessName" className="text-sm text-muted-foreground">Nombre del Negocio</label>
+          <label htmlFor="businessName" className="text-sm text-muted-foreground">{t("businessName")}</label>
           <input
             id="businessName"
             type="text"
-            placeholder="Ej: Barbería El Corte"
+            placeholder={t("businessPlaceholder")}
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             required
@@ -202,7 +205,7 @@ export function RegisterForm({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="countryCode" className="text-sm text-muted-foreground">País del negocio</label>
+          <label htmlFor="countryCode" className="text-sm text-muted-foreground">{t("country")}</label>
           <select
             id="countryCode"
             value={countryCode}
@@ -211,31 +214,31 @@ export function RegisterForm({
             required
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
           >
-            <option value="" disabled>Selecciona tu país</option>
+            <option value="" disabled>{t("selectCountry")}</option>
             {countryOptions.map((country) => (
               <option key={country.code} value={country.code}>{country.name}</option>
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Configura la zona horaria y la moneda de tus reservas. Podrás cambiarlo después.
+            {t("countryHelp")}
           </p>
         </div>
 
         {countryCode && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="timezone" className="text-sm text-muted-foreground">Zona horaria</label>
+              <label htmlFor="timezone" className="text-sm text-muted-foreground">{t("timezone")}</label>
               <input
                 id="timezone"
                 value={timezone}
                 onChange={(event) => setTimezone(event.target.value)}
-                placeholder="Ej: America/Argentina/Buenos_Aires"
+                placeholder={t("timezonePlaceholder")}
                 required
                 className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="currencyCode" className="text-sm text-muted-foreground">Moneda de reservas</label>
+              <label htmlFor="currencyCode" className="text-sm text-muted-foreground">{t("currency")}</label>
               <input
                 id="currencyCode"
                 value={currencyCode}
@@ -250,7 +253,7 @@ export function RegisterForm({
         )}
 
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm text-muted-foreground">Email</label>
+          <label htmlFor="email" className="text-sm text-muted-foreground">{t("email")}</label>
           <input
             id="email"
             type="email"
@@ -263,11 +266,11 @@ export function RegisterForm({
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-muted-foreground">Contraseña</label>
+          <label htmlFor="password" className="text-sm text-muted-foreground">{t("password")}</label>
           <input
             id="password"
             type="password"
-            placeholder="Mínimo 8 caracteres"
+            placeholder={t("passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
@@ -278,12 +281,12 @@ export function RegisterForm({
 
         <div className="space-y-1.5">
           <label htmlFor="confirmPassword" className="text-sm text-muted-foreground">
-            Confirmar contraseña
+            {t("confirmPassword")}
           </label>
           <input
             id="confirmPassword"
             type="password"
-            placeholder="Repite tu contraseña"
+            placeholder={t("confirmPasswordPlaceholder")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={8}
@@ -296,7 +299,7 @@ export function RegisterForm({
         <div className="space-y-1.5">
           <label htmlFor="referralCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-            Código de Referido <span className="text-muted-foreground/50">(opcional)</span>
+            {t("referralCode")} <span className="text-muted-foreground/50">({t("optional")})</span>
           </label>
           <input
             id="referralCode"
@@ -313,7 +316,7 @@ export function RegisterForm({
           <div className="space-y-1.5">
             <label htmlFor="discountCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-              Codigo de descuento <span className="text-muted-foreground/50">(opcional)</span>
+              {t("discountCode")} <span className="text-muted-foreground/50">({t("optional")})</span>
             </label>
             <input
               id="discountCode"
@@ -337,7 +340,10 @@ export function RegisterForm({
             className="mt-1 h-4 w-4 rounded border-border bg-muted text-[#7C3AED] focus:ring-[#7C3AED]"
           />
           <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug">
-            He leído y acepto los <a href="#" className="text-[#7C3AED] hover:underline">Términos de Servicio</a> y las <a href="#" className="text-[#7C3AED] hover:underline">Políticas de Privacidad</a>.
+            {t.rich("termsConsent", {
+              terms: (chunks) => <Link href="/terminos-y-condiciones" className="text-[#7C3AED] hover:underline">{chunks}</Link>,
+              privacy: (chunks) => <Link href="/politica-de-privacidad" className="text-[#7C3AED] hover:underline">{chunks}</Link>,
+            })}
           </label>
         </div>
 
@@ -359,15 +365,15 @@ export function RegisterForm({
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {loadingStep === "register" ? "Creando cuenta..." : "Redirigiendo al pago..."}
+              {loadingStep === "register" ? t("creating") : t("redirectingPayment")}
             </>
           ) : isDirectSubscription ? (
             <>
-              <CreditCard className="h-4 w-4" /> Crear cuenta y pagar
+              <CreditCard className="h-4 w-4" /> {t("createAndPay")}
             </>
           ) : (
             <>
-              <UserPlus className="h-4 w-4" /> Crear cuenta
+              <UserPlus className="h-4 w-4" /> {t("create")}
             </>
           )}
         </button>
@@ -376,17 +382,17 @@ export function RegisterForm({
           <p className="text-center text-xs text-muted-foreground">
             {countryCode !== "CL"
               ? paymentSimulatorEnabled
-                ? "Seras redirigido al simulador local. No se cobra dinero real."
-                : "Paddle mostrará el importe en tu moneda cuando esté disponible. El precio base está en USD y los impuestos locales se calculan en Checkout."
-              : "Seras redirigido a Mercado Pago para completar el pago."}
+                ? t("simulatorNotice")
+                : t("paddleNotice")
+              : t("mercadoPagoNotice")}
           </p>
         )}
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        ¿Ya tienes cuenta?{" "}
+        {t("alreadyAccount")} {" "}
         <Link href="/login" className="text-[#7C3AED] hover:underline">
-          Iniciar sesión
+          {t("signIn")}
         </Link>
       </p>
     </div>

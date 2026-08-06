@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { LoginForm } from "./login-form";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default async function LoginPage() {
   const user = await getCurrentSessionUser();
@@ -17,6 +18,9 @@ export default async function LoginPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <Link href="/" className="mx-auto flex w-fit items-center gap-3">
           <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>

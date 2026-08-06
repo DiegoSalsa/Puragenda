@@ -11,9 +11,10 @@ const defaultPhrases = [
 
 interface WordCarouselProps {
   words?: string[];
+  className?: string;
 }
 
-export function WordCarousel({ words = defaultPhrases }: WordCarouselProps) {
+export function WordCarousel({ words = defaultPhrases, className = "" }: WordCarouselProps) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export function WordCarousel({ words = defaultPhrases }: WordCarouselProps) {
   }, [words.length]);
 
   return (
-    <span className="inline-grid">
+    <span className={`inline-grid ${className}`}>
       {words.map((phrase, i) => (
         <span
           key={i}

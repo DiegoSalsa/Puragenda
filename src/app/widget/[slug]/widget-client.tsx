@@ -2,12 +2,14 @@
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
-import { es } from "date-fns/locale";
+import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { useLocale, useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 interface RecurringPlan {
   mode: "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM";
@@ -303,6 +305,9 @@ function getContrastColor(hex: string): string {
 }
 
 export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug }: Props) {
+  const t = useTranslations("widget");
+  const locale = useLocale();
+  const dateLocale = ({ es, en: enUS, it, pt: ptBR, fr, de, "zh-CN": zhCN } as const)[locale as "es" | "en" | "it" | "pt" | "fr" | "de" | "zh-CN"] ?? es;
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
   const textColor = business.textColor || "#FFFFFF";
@@ -762,13 +767,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
     if (!selectedService || !selectedSlot || !isFormValid) return;
     if (loadingSlots) {
-      setApiError("Estamos revisando la disponibilidad de ese horario. Intenta nuevamente en unos segundos.");
+      setApiError(t("slotChecking"));
       return;
     }
     if (isSlotUnavailable(selectedSlot)) {
       setSelectedSlot(null);
       setStep("datetime");
-      setApiError("Ese horario ya no esta disponible. Selecciona otra hora.");
+      setApiError(t("slotUnavailable"));
       return;
     }
     setSubmitting(true); setApiError("");
@@ -1154,11 +1159,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             <div className="flex items-center gap-3" style={{ textAlign: headerAlign as "left" | "center" | "right" }}>
               {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>Reserva online</p>
+                <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>{t("onlineBooking")}</p>
                 <h1 className="text-lg font-bold tracking-tight" style={{ color: textColor }}>{business.name}</h1>
               </div>
             </div>
-            {headerAlign === "left" && <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}20`, color: pc }}>Paso a paso</span>}
+            <div className="flex shrink-0 items-center gap-2">
+              {headerAlign === "left" && <span className="hidden rounded-lg px-2.5 py-1 text-xs font-medium sm:inline-flex" style={{ background: `${pc}20`, color: pc }}>{t("stepByStep")}</span>}
+              <LanguageSwitcher compact className="min-h-9 border-black/15 bg-white/90 px-2 py-1.5 text-black" />
+            </div>
           </div>
           {step !== "success" && (
             <div className={`mt-4 grid gap-2 text-[10px] sm:text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
@@ -1186,7 +1194,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {/* Step 1: Service */}
           {step === "service" && (
             <div className="animate-fade-up space-y-4">
-              <div><h2 className="text-xl font-bold">1. {isMultiService ? "Selecciona servicios" : "Selecciona un servicio"}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? `Elige hasta ${maxServicesPerBooking} servicios para tu reserva.` : "Elige el servicio que quieras reservar."}</p></div>
+              <div><h2 className="text-xl font-bold">1. {isMultiService ? t("selectServices") : t("selectService")}</h2><p className="text-sm" style={{ color: textSecondary }}>{isMultiService ? t("selectUpTo", { count: maxServicesPerBooking }) : t("chooseService")}</p></div>
               {renderPromoBlocks("BETWEEN_SERVICES")}
               {!shouldGroupServices && (
               <div className="grid gap-3">
@@ -1284,7 +1292,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                   <button type="button" onClick={handleMultiServiceContinue}
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98]" style={{ background: pc, color: getContrastColor(pc) }}>
-                    Continuar <ChevronRight className="h-4 w-4" />
+                    {t("continue")} <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               )}
@@ -1295,10 +1303,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "options" && activeServices.length > 0 && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={handleOptionsBack} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={handleOptionsBack} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />{t("back")}</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Personaliza</span>
               </div>
-              <div><h2 className="text-xl font-bold">Elige las opciones</h2><p className="text-sm" style={{ color: textSecondary }}>{selectedService?.bookingMode === "PRODUCTION" ? "Personaliza tu encargo antes de elegir un cupo." : "Ajustaremos el precio y la duracion antes de mostrar horarios."}</p></div>
+              <div><h2 className="text-xl font-bold">{t("chooseOptions")}</h2><p className="text-sm" style={{ color: textSecondary }}>{selectedService?.bookingMode === "PRODUCTION" ? t("customizeOrder") : t("adjustOptions")}</p></div>
 
               <div className="space-y-4">
                 {activeServices.map((service) => (
@@ -1312,7 +1320,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                           <div className="flex items-center justify-between gap-3">
                             <p className="font-medium">{category.name}</p>
                             <span className="rounded-lg border px-2 py-0.5 text-[10px] uppercase tracking-wide" style={{ borderColor: "var(--wborder)", color: textSecondary }}>
-                              {category.isRequired ? "Obligatoria" : "Opcional"} · {category.maxSelections === 1 ? "Elige 1" : `Hasta ${category.maxSelections} (${selectedOptionByCategory[category.id]?.length ?? 0}/${category.maxSelections})`}
+                              {category.isRequired ? t("required") : t("optional")} · {category.maxSelections === 1 ? "1" : `${selectedOptionByCategory[category.id]?.length ?? 0}/${category.maxSelections}`}
                             </span>
                           </div>
                           <div className="grid gap-2">
@@ -1357,7 +1365,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
               <button type="button" disabled={!optionsComplete} onClick={handleOptionsContinue}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                {selectedService?.bookingMode === "PRODUCTION" ? "Elegir cupo" : "Ver horarios"} <ChevronRight className="h-4 w-4" />
+                {selectedService?.bookingMode === "PRODUCTION" ? t("chooseSlot") : t("viewTimes")} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -1382,7 +1390,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "mode-select" && selectedService?.recurringPlan && (
             <div className="animate-fade-up space-y-5">
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />{t("back")}</button>
               </div>
               <div><h2 className="text-xl font-bold">Tipo de reserva</h2><p className="text-sm" style={{ color: textSecondary }}>{selectedService.name}</p></div>
               <div className="grid gap-3">
@@ -1562,9 +1570,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         <button key={dStr} type="button" onClick={() => setRecurringStartDate(dStr)}
                           className={`rounded-2xl border px-2 py-3 text-center transition-all duration-200 ${sel ? "shadow-md scale-105" : "hover:-translate-y-1 hover:shadow-md"}`}
                           style={sel ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
-                          <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: sel ? pc : textSecondary }}>{format(d, "EEE", { locale: es })}</p>
+                          <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: sel ? pc : textSecondary }}>{format(d, "EEE", { locale: dateLocale })}</p>
                           <p className="text-lg font-bold leading-none" style={{ color: textColor }}>{format(d, "d")}</p>
-                          <p className="text-xs mt-1" style={{ color: textSecondary }}>{capitalize(format(d, "MMM", { locale: es }))}</p>
+                          <p className="text-xs mt-1" style={{ color: textSecondary }}>{capitalize(format(d, "MMM", { locale: dateLocale }))}</p>
                         </button>
                       );
                     })}
@@ -1755,8 +1763,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>Equipo</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold">2. Elige profesionales</h2>
-                <p className="text-sm" style={{ color: textSecondary }}>Asigna un profesional para cada servicio seleccionado.</p>
+                <h2 className="text-xl font-bold">2. {t("chooseProfessionals")}</h2>
+                <p className="text-sm" style={{ color: textSecondary }}>{t("assignEach")}</p>
               </div>
               {commonStaffForSelectedServices.length > 0 && (
                 <button
@@ -1771,7 +1779,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
                 >
                   <div>
-                    <p className="font-semibold">Usar una profesional para todo</p>
+                    <p className="font-semibold">{t("oneForAll")}</p>
                     <p className="text-sm" style={{ color: textSecondary }}>Volver a elegir entre quienes pueden realizar todos los servicios.</p>
                   </div>
                   <ChevronRight className="h-5 w-5 opacity-40" style={{ color: textColor }} />
@@ -1816,7 +1824,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                           );
                         })}
                         {staffForService.length === 0 && (
-                          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">No hay profesionales asignados a este servicio.</p>
+                          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">{t("noProfessionals")}</p>
                         )}
                       </div>
                     </div>
@@ -1825,7 +1833,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               <button type="button" disabled={!splitStaffSelectionComplete} onClick={() => { setSelectedDate(null); setSelectedSlot(null); setStep("datetime"); }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                Ver horarios <ChevronRight className="h-4 w-4" />
+                {t("viewTimes")} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -1833,10 +1841,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           {step === "staff" && selectedService && filteredStaff.length > 0 && !splitStaffMode && (
             <div className="animate-fade-up space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
+                <button type="button" onClick={() => setStep("service")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />{t("back")}</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs font-medium" style={{ background: `${pc}15`, color: pc }}>{selectedService.name}</span>
               </div>
-              <div><h2 className="text-xl font-bold">2. Elige un profesional</h2><p className="text-sm" style={{ color: textSecondary }}>Selecciona quién te atenderá.</p></div>
+              <div><h2 className="text-xl font-bold">2. {t("chooseProfessional")}</h2><p className="text-sm" style={{ color: textSecondary }}>{t("selectProvider")}</p></div>
               {canChooseStaffPerService && activeServices.length > 1 && (
                 <button
                   type="button"
@@ -1850,8 +1858,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   style={{ borderColor: `${pc}40`, background: `${pc}08` }}
                 >
                   <div>
-                    <p className="font-semibold" style={{ color: pc }}>Asignar por servicio</p>
-                    <p className="text-sm" style={{ color: textSecondary }}>Elige una profesional distinta para cada servicio.</p>
+                    <p className="font-semibold" style={{ color: pc }}>{t("assignByService")}</p>
+                    <p className="text-sm" style={{ color: textSecondary }}>{t("chooseDifferent")}</p>
                   </div>
                   <ChevronRight className="h-5 w-5" style={{ color: pc }} />
                 </button>
@@ -1888,12 +1896,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
               </div>
               <div>
-                <h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. Elige fecha y hora</h2>
-                <p className="text-sm" style={{ color: textSecondary }}>Selecciona un día y luego una hora disponible.</p>
+                <h2 className="text-xl font-bold">{needsStaffStep ? "3" : "2"}. {t("chooseDateTime")}</h2>
+                <p className="text-sm" style={{ color: textSecondary }}>{t("selectDayTime")}</p>
                 <p className="mt-1 text-xs" style={{ color: textSecondary }}>Horarios en {business.timezone}.</p>
               </div>
               <div className="space-y-3">
-                <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Días disponibles</p>
+                <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>{t("availableDays")}</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                   {days.map((day) => {
                     const sel = selectedDate?.toDateString() === day.toDateString();
@@ -1908,9 +1916,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}
                         className={`rounded-2xl border px-2 py-3 text-center transition-all duration-200 ${!staffWorking ? "opacity-30 cursor-not-allowed" : "hover:-translate-y-1 hover:shadow-md"}`}
                         style={sel ? { borderColor: `${pc}60`, background: `${pc}15` } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
-                        <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: es }))}</p>
+                        <p className="text-[11px] font-medium uppercase tracking-wider mb-1" style={{ color: textSecondary }}>{capitalize(format(day, "EEE", { locale: dateLocale }))}</p>
                         <p className="text-lg font-bold leading-none">{format(day, "d")}</p>
-                        <p className="text-xs" style={{ color: textSecondary }}>{capitalize(format(day, "MMMM", { locale: es }))}</p>
+                        <p className="text-xs" style={{ color: textSecondary }}>{capitalize(format(day, "MMMM", { locale: dateLocale }))}</p>
                       </button>
                     );
                   })}
@@ -1918,7 +1926,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               {selectedDate && (
                 <div className="space-y-3">
-                  <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>Horas — {capitalize(format(selectedDate, "EEEE d 'de' MMMM", { locale: es }))}</p>
+                  <p className="text-sm font-medium opacity-70" style={{ color: textColor }}>{capitalize(format(selectedDate, "PPPP", { locale: dateLocale }))}</p>
                   {loadingSlots ? (
                     <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin opacity-40" style={{ color: textColor }} /></div>
                   ) : slots.length === 0 || slots.every(isSlotUnavailable) ? (
@@ -1927,8 +1935,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}
                     >
                       <Clock3 className="mx-auto h-5 w-5 opacity-40" style={{ color: textColor }} />
-                      <p className="mt-2 text-sm font-semibold" style={{ color: textColor }}>Sin horas disponibles</p>
-                      <p className="mt-1 text-xs" style={{ color: textSecondary }}>Prueba seleccionando otra fecha.</p>
+                      <p className="mt-2 text-sm font-semibold" style={{ color: textColor }}>{t("noTimes")}</p>
+                      <p className="mt-1 text-xs" style={{ color: textSecondary }}>{t("tryAnotherDate")}</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -1949,7 +1957,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               )}
               <button type="button" disabled={!selectedSlot} onClick={() => setStep("details")}
                 className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none mt-6" style={{ background: pc, color: getContrastColor(pc) }}>
-                Continuar con mis datos <ChevronRight className="h-4 w-4" />
+                {t("continueDetails")} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -1961,14 +1969,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <button type="button" onClick={() => setStep("datetime")} className="flex items-center gap-1 text-sm opacity-50 hover:opacity-80" style={{ color: textColor }}><ChevronLeft className="h-4 w-4" />Volver</button>
                 <span className="rounded-lg px-2.5 py-1 text-xs" style={{ background: `${pc}15`, color: pc }}>Paso final</span>
               </div>
-              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. Completa tus datos</h2><p className="text-sm" style={{ color: textSecondary }}>Te enviaremos la confirmación.</p></div>
+              <div><h2 className="text-xl font-bold">{hasMultipleFilteredStaff ? "4" : "3"}. {t("completeDetails")}</h2><p className="text-sm" style={{ color: textSecondary }}>{t("confirmationSent")}</p></div>
               <div className="rounded-2xl border p-5 text-sm space-y-3 shadow-sm" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                 <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: "var(--wborder)" }}>
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: `${pc}15`, color: pc }}>
                     <CalendarDays className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-semibold">{capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p>
+                    <p className="font-semibold">{capitalize(format(selectedSlot.start, "PPPP", { locale: dateLocale }))}</p>
                     <p style={{ color: textSecondary }}>{format(selectedSlot.start, "HH:mm")} - {format(selectedSlot.end, "HH:mm")}</p>
                     <p className="text-xs" style={{ color: textSecondary }}>{business.timezone}</p>
                   </div>
@@ -2000,7 +2008,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
               </div>
               <form onSubmit={handleConfirm} className="space-y-4">
-                {([["name", "Nombre y apellido", "Ej: Catalina Fuentes", UserRound, "text"] as const, ["email", "Correo electrónico", "ejemplo@correo.com", Mail, "email"] as const, ["phone", "Teléfono", "+56 9 1234 5678", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
+                {([["name", t("fullName"), "Alex Morgan", UserRound, "text"] as const, ["email", t("email"), "name@example.com", Mail, "email"] as const, ["phone", t("phone"), "+1 555 123 4567", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
                   <div key={field} className="space-y-1.5">
                     <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
                     <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} required
@@ -2053,7 +2061,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <p className="text-xs text-red-400">{rewardError}</p>
                   )}
                   {!form.email && rewardCode.trim() && (
-                    <p className="text-xs text-amber-400/70">Ingresa tu correo electrónico primero para validar el código.</p>
+                    <p className="text-xs text-amber-400/70">{t("emailFirst")}</p>
                   )}
                   {promotionResult?.quote && activePromotion && (
                     <p className="flex items-center gap-1 text-xs text-green-400">
@@ -2066,12 +2074,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 {showDeposit && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
                     <p className="font-medium" style={{ color: pc }}>💳 Este negocio requiere un abono de {formatPrice(effectiveDepositAmount, business.currencyCode)}</p>
-                    <p className="text-xs mt-1" style={{ color: textSecondary }}>Serás redirigido a Mercado Pago para pagar el abono. Tu cita se confirmará automáticamente al completar el pago.</p>
+                    <p className="text-xs mt-1" style={{ color: textSecondary }}>{t("depositRedirect")}</p>
                   </div>
                 )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
                 <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? 'Redirigiendo al pago...' : 'Confirmando...'}</> : <>{showDeposit ? 'Pagar abono y confirmar' : 'Confirmar reserva'} <ChevronRight className="h-5 w-5" /></>}
+                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
             </div>
@@ -2106,19 +2114,19 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </>
               ) : (
                 <>
-                  <div><h2 className="text-2xl font-bold tracking-tight">Reserva confirmada</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>Tu cita ha sido agendada con exito.</p></div>
+                  <div><h2 className="text-2xl font-bold tracking-tight">{t("bookingConfirmed")}</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>{t("bookingSuccess")}</p></div>
                   <div className="mx-auto max-w-md rounded-2xl p-5 text-left text-sm shadow-sm" style={{ background: "var(--wsubtle)", borderColor: "var(--wborder)", borderWidth: "1px" }}>
-                    <p className="mb-3 flex items-center gap-1.5 font-semibold text-base" style={{ color: pc }}><Sparkles className="h-4 w-4" />Resumen de tu cita</p>
+                    <p className="mb-3 flex items-center gap-1.5 font-semibold text-base" style={{ color: pc }}><Sparkles className="h-4 w-4" />{t("summary")}</p>
                     <div className="space-y-1 opacity-80" style={{ color: textColor }}>
                       <p><span style={{ color: textSecondary }}>Servicio:</span> {selectedService?.name}</p>
                       {selectedStaff && <p><span style={{ color: textSecondary }}>Profesional:</span> {selectedStaff.name}</p>}
-                      {selectedSlot && <><p><span style={{ color: textSecondary }}>Fecha:</span> {capitalize(format(selectedSlot.start, "EEEE, d 'de' MMMM", { locale: es }))}</p><p><span style={{ color: textSecondary }}>Hora:</span> {format(selectedSlot.start, "HH:mm")}</p><p><span style={{ color: textSecondary }}>Zona horaria:</span> {business.timezone}</p></>}
+                      {selectedSlot && <><p>{capitalize(format(selectedSlot.start, "PPPP", { locale: dateLocale }))}</p><p>{format(selectedSlot.start, "p", { locale: dateLocale })}</p><p><span style={{ color: textSecondary }}>{business.timezone}</span></p></>}
                       <p><span style={{ color: textSecondary }}>Cliente:</span> {form.name}</p>
                     </div>
                   </div>
                 </>
               )}
-              <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>Agendar otra cita</button>
+              <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>{t("bookAnother")}</button>
             </div>
           )}
         </div>
