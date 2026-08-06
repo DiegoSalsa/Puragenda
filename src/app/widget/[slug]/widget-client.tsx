@@ -11,7 +11,7 @@ import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { useLocale, useTranslations } from "next-intl";
-import { LanguageSwitcher } from "@/components/language-switcher";
+
 
 interface RecurringPlan {
   mode: "FIXED_DAYS" | "DAYS_WITH_REST" | "FREE_MINIMUM";
@@ -1168,7 +1168,6 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {headerAlign === "left" && <span className="hidden rounded-lg px-2.5 py-1 text-xs font-medium sm:inline-flex" style={{ background: `${pc}20`, color: pc }}>{t("stepByStep")}</span>}
-              <LanguageSwitcher compact className="min-h-9 border-black/15 bg-white/90 px-2 py-1.5 text-black" />
             </div>
           </div>
           {step !== "success" && (
