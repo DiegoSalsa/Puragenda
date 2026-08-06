@@ -28,3 +28,11 @@ export function resolveLocale(value: string | null | undefined): AppLocale {
   if (language === "zh") return "zh-CN";
   return SUPPORTED_LOCALES.find((locale) => locale === language) ?? DEFAULT_LOCALE;
 }
+
+/**
+ * Puragenda always opens in Spanish. A different locale is used only after
+ * the visitor deliberately selects and saves it in the language switcher.
+ */
+export function resolveInitialLocale(savedLocale: string | null | undefined): AppLocale {
+  return savedLocale ? resolveLocale(savedLocale) : DEFAULT_LOCALE;
+}

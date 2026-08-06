@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
+  resolveInitialLocale,
   resolveLocale,
 } from "../../src/i18n/config";
 
@@ -41,5 +42,11 @@ describe("internationalization catalogs", () => {
     expect(resolveLocale("pt-BR")).toBe("pt");
     expect(resolveLocale("zh-TW")).toBe("zh-CN");
     expect(resolveLocale("unknown")).toBe(DEFAULT_LOCALE);
+  });
+
+  it("opens in Spanish unless the visitor explicitly saved another language", () => {
+    expect(resolveInitialLocale(undefined)).toBe("es");
+    expect(resolveInitialLocale(null)).toBe("es");
+    expect(resolveInitialLocale("en")).toBe("en");
   });
 });
