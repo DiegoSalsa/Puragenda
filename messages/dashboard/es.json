@@ -86,5 +86,6 @@
     "saving": "Guardando…",
     "saveChanges": "Guardar cambios",
     "create": "Crear cita"
-  }
+  },
+  "stories": {"noAccess":"No tienes acceso a historias de disponibilidad.","eyebrow":"Promocionar","title":"Historias de disponibilidad","subtitle":"Convierte los cupos reales de tu agenda en una historia lista para Instagram.","configure":"Configura tu historia","configureHint":"Los horarios se calculan nuevamente cada vez que generas la imagen.","location":"Sucursal","service":"Servicio","staff":"Profesional","wholeTeam":"Todo el equipo","mySchedule":"Mi agenda","ownScheduleHint":"Solo se incluirán cupos de tu propia agenda.","period":"Período","today":"Hoy","tomorrow":"Mañana","next7":"7 días","headline":"Mensaje principal","defaultHeadline":"¡Tenemos horas disponibles!","template":"Plantilla","brandTemplate":"Marca","minimalTemplate":"Minimalista","calculating":"Calculando cupos…","create":"Crear historia","preview":"Vista previa","format":"Formato Instagram Story · 1080 × 1920","ready":"Lista","emptyTitle":"Tu historia aparecerá aquí","emptyHint":"Selecciona los datos y genera una vista previa con disponibilidad real.","download":"Descargar PNG","copyLink":"Copiar enlace para sticker","copied":"Enlace copiado","generateError":"No se pudo generar la historia"}
 }

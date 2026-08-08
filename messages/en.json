@@ -33,7 +33,7 @@
     "visualTheme": "Visual theme",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "appointments": "Appointments", "calendar": "Google Calendar", "orders": "Orders", "analytics": "Analytics", "staff": "Team", "services": "Services", "clients": "Clients", "subscriptions": "Subscriptions", "loyalty": "Loyalty", "marketing": "Marketing", "appearance": "Appearance", "customize": "Customize", "themes": "Themes", "referrals": "Referrals", "rewards": "Rewards", "settings": "Settings", "viewWidget": "View booking widget", "signedIn": "Signed in", "collapseSidebar": "Collapse sidebar", "expandSidebar": "Expand sidebar", "resizeSidebar": "Resize sidebar", "preferences": "Appearance and language preferences"
+    "appointments": "Appointments", "calendar": "Google Calendar", "orders": "Orders", "analytics": "Analytics", "staff": "Team", "services": "Services", "clients": "Clients", "subscriptions": "Subscriptions", "loyalty": "Loyalty", "marketing": "Marketing", "stories": "Stories", "appearance": "Appearance", "customize": "Customize", "themes": "Themes", "referrals": "Referrals", "rewards": "Rewards", "settings": "Settings", "viewWidget": "View booking widget", "signedIn": "Signed in", "collapseSidebar": "Collapse sidebar", "expandSidebar": "Expand sidebar", "resizeSidebar": "Resize sidebar", "preferences": "Appearance and language preferences"
   },
   "landing": {
     "noCommissions": "No commissions",

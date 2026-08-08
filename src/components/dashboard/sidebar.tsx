@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Gift,
   GripVertical,
+  ImagePlus,
   Layers,
   LayoutDashboard,
   Mail,
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/recurring", label: "subscriptions", icon: RefreshCw },
   { href: "/dashboard/loyalty", label: "loyalty", icon: Stamp },
   { href: "/dashboard/marketing", label: "marketing", icon: Mail },
+  { href: "/dashboard/stories", label: "stories", icon: ImagePlus },
   {
     label: "appearance",
     icon: Palette,
@@ -156,6 +158,7 @@ function SidebarContent({
         "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
         "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
         "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
+        "/dashboard/stories": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL],
         "/dashboard/appearance/personalizado": [DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE],
         "/dashboard/referrals": [DASHBOARD_PERMISSIONS.REFERRALS_VIEW],
         "/dashboard/rewards": [DASHBOARD_PERMISSIONS.REWARDS_VIEW],

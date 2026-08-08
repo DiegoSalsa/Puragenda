@@ -33,7 +33,7 @@
     "visualTheme": "Thème visuel",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
-    "appointments": "Rendez-vous", "calendar": "Google Calendar", "orders": "Commandes", "analytics": "Analyses", "staff": "Professionnels", "services": "Services", "clients": "Clients", "subscriptions": "Abonnements", "loyalty": "Fidélisation", "marketing": "Marketing", "appearance": "Apparence", "customize": "Personnaliser", "themes": "Thèmes", "referrals": "Parrainages", "rewards": "Récompenses", "settings": "Paramètres", "viewWidget": "Voir le widget", "signedIn": "Connecté", "collapseSidebar": "Réduire le panneau", "expandSidebar": "Développer le panneau", "resizeSidebar": "Redimensionner le panneau", "preferences": "Préférences d'apparence et de langue"
+    "appointments": "Rendez-vous", "calendar": "Google Calendar", "orders": "Commandes", "analytics": "Analyses", "staff": "Professionnels", "services": "Services", "clients": "Clients", "subscriptions": "Abonnements", "loyalty": "Fidélisation", "marketing": "Marketing", "stories": "Stories", "appearance": "Apparence", "customize": "Personnaliser", "themes": "Thèmes", "referrals": "Parrainages", "rewards": "Récompenses", "settings": "Paramètres", "viewWidget": "Voir le widget", "signedIn": "Connecté", "collapseSidebar": "Réduire le panneau", "expandSidebar": "Développer le panneau", "resizeSidebar": "Redimensionner le panneau", "preferences": "Préférences d'apparence et de langue"
   },
   "landing": {
     "noCommissions": "Sans commission",

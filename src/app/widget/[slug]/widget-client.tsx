@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { addDays, addMinutes, addMonths, format, setHours, setMinutes, startOfMinute } from "date-fns";
+import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
@@ -11,6 +11,9 @@ import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { useLocale, useTranslations } from "next-intl";
+import { buildSlots } from "@/core/availability";
+
+export { buildSlots } from "@/core/availability";
 
 
 interface RecurringPlan {
@@ -152,107 +155,6 @@ function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDa
     checked++;
   }
   return days;
-}
-
-export function buildSlots(date: Date, duration: number, businessHours?: BusinessHour[], staffSchedule?: StaffScheduleEntry[], slotInterval: number = 30, scheduleOverrides?: ScheduleOverride[], additionalStartTimes: Date[] = []) {
-  const dow = date.getDay();
-  let startH = 9, startM = 0, endH = 19, endM = 0;
-  const breakRanges: { start: number; end: number }[] = [];
-
-  // Check for a schedule override for this specific date
-  const dateKey = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-  const override = scheduleOverrides?.find((o) => o.date === dateKey);
-
-  if (override) {
-    // Override replaces weekly business hours entirely
-    if (!override.isOpen) return [];
-    if (override.startTime && override.endTime) {
-      const [sh, sm] = override.startTime.split(":").map(Number);
-      const [eh, em] = override.endTime.split(":").map(Number);
-      startH = sh; startM = sm; endH = eh; endM = em;
-      if (override.breakStart && override.breakEnd) {
-        breakRanges.push({ start: scheduleTimeToMinutes(override.breakStart), end: scheduleTimeToMinutes(override.breakEnd) });
-      }
-    }
-  } else if (businessHours && businessHours.length > 0) {
-    const bh = businessHours.find((h) => h.dayOfWeek === dow);
-    if (bh && bh.isOpen) {
-      const [sh, sm] = bh.startTime.split(":").map(Number);
-      const [eh, em] = bh.endTime.split(":").map(Number);
-      startH = sh; startM = sm; endH = eh; endM = em;
-      if (bh.breakStart && bh.breakEnd) {
-        breakRanges.push({ start: scheduleTimeToMinutes(bh.breakStart), end: scheduleTimeToMinutes(bh.breakEnd) });
-      }
-    }
-  }
-
-  // Narrow to staff schedule if available
-  if (staffSchedule && staffSchedule.length > 0) {
-    const ss = staffSchedule.find((s) => s.dayOfWeek === dow);
-    if (ss && ss.isWorking) {
-      const [ssh, ssm] = ss.startTime.split(":").map(Number);
-      const [seh, sem] = ss.endTime.split(":").map(Number);
-      if (ssh * 60 + ssm > startH * 60 + startM) { startH = ssh; startM = ssm; }
-      if (seh * 60 + sem < endH * 60 + endM) { endH = seh; endM = sem; }
-      if (ss.breakStart && ss.breakEnd) {
-        breakRanges.push({ start: scheduleTimeToMinutes(ss.breakStart), end: scheduleTimeToMinutes(ss.breakEnd) });
-      }
-    }
-  }
-
-  const slots: { start: Date; end: Date }[] = [];
-  const slotStarts = new Set<number>();
-  // `date` comes from buildDays(), which retains the current seconds and
-  // milliseconds. Normalize the wall-clock boundaries so a displayed 11:00
-  // is also exactly 11:00 internally and can be deduplicated reliably.
-  let current = startOfMinute(setMinutes(setHours(date, startH), startM));
-  const end = startOfMinute(setMinutes(setHours(date, endH), endM));
-  while (addMinutes(current, duration) <= end) {
-    const slotEnd = addMinutes(current, duration);
-    const currentMinutes = timeToMinutes(current);
-    const endMinutes = timeToMinutes(slotEnd);
-    const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && endMinutes > range.start);
-    if (!overlapsBreak) {
-      slots.push({ start: current, end: slotEnd });
-      slotStarts.add(current.getTime());
-    }
-    current = addMinutes(current, slotInterval);
-  }
-
-  // A broad display interval (for example, every 60 minutes) must not waste
-  // the time that becomes available when an appointment ends off-grid. Add an
-  // eligible start at each appointment end so a 13:00–14:10 booking can make
-  // 14:10 available, while preserving the business's usual interval.
-  for (const rawStart of additionalStartTimes) {
-    const minuteStart = startOfMinute(rawStart);
-    // Old appointments may contain inherited seconds from the previous slot
-    // generator. Never offer a new appointment before those seconds elapse.
-    const start = minuteStart.getTime() === rawStart.getTime()
-      ? minuteStart
-      : addMinutes(minuteStart, 1);
-    if (
-      start.getFullYear() !== date.getFullYear() ||
-      start.getMonth() !== date.getMonth() ||
-      start.getDate() !== date.getDate() ||
-      slotStarts.has(start.getTime())
-    ) continue;
-
-    const slotEnd = addMinutes(start, duration);
-    const currentMinutes = timeToMinutes(start);
-    const endMinutes = timeToMinutes(slotEnd);
-    const withinWorkingHours = currentMinutes >= startH * 60 + startM && endMinutes <= endH * 60 + endM;
-    const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && endMinutes > range.start);
-    if (withinWorkingHours && !overlapsBreak) {
-      slots.push({ start, end: slotEnd });
-      slotStarts.add(start.getTime());
-    }
-  }
-
-  return slots.sort((a, b) => a.start.getTime() - b.start.getTime());
 }
 
 function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], timezone: string) {

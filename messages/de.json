@@ -33,7 +33,7 @@
     "visualTheme": "Design",
     "openMenu": "Menü öffnen",
     "closeMenu": "Menü schließen",
-    "appointments": "Termine", "calendar": "Google Calendar", "orders": "Aufträge", "analytics": "Analysen", "staff": "Team", "services": "Leistungen", "clients": "Kunden", "subscriptions": "Abonnements", "loyalty": "Kundenbindung", "marketing": "Marketing", "appearance": "Darstellung", "customize": "Anpassen", "themes": "Designs", "referrals": "Empfehlungen", "rewards": "Prämien", "settings": "Einstellungen", "viewWidget": "Widget ansehen", "signedIn": "Angemeldet", "collapseSidebar": "Seitenleiste einklappen", "expandSidebar": "Seitenleiste ausklappen", "resizeSidebar": "Seitenleiste anpassen", "preferences": "Darstellungs- und Spracheinstellungen"
+    "appointments": "Termine", "calendar": "Google Calendar", "orders": "Aufträge", "analytics": "Analysen", "staff": "Team", "services": "Leistungen", "clients": "Kunden", "subscriptions": "Abonnements", "loyalty": "Kundenbindung", "marketing": "Marketing", "stories": "Storys", "appearance": "Darstellung", "customize": "Anpassen", "themes": "Designs", "referrals": "Empfehlungen", "rewards": "Prämien", "settings": "Einstellungen", "viewWidget": "Widget ansehen", "signedIn": "Angemeldet", "collapseSidebar": "Seitenleiste einklappen", "expandSidebar": "Seitenleiste ausklappen", "resizeSidebar": "Seitenleiste anpassen", "preferences": "Darstellungs- und Spracheinstellungen"
   },
   "landing": {
     "noCommissions": "Keine Provisionen",

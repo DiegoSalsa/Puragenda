@@ -164,6 +164,13 @@ export const billingLimiter = rateLimit({
   message: "Demasiados intentos de pago. Espera 15 minutos.",
 });
 
+/** Availability story rendering: 30 previews/downloads per 10 minutes */
+export const availabilityStoryLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  message: "Generaste muchas historias en poco tiempo. Espera unos minutos.",
+});
+
 /** Marketing: 3 sends per 60 minutes */
 export const marketingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

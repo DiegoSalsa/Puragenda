@@ -232,6 +232,7 @@ export async function getBlockedSlots(
     ? await prisma.scheduleBlock.findMany({
         where: {
           staffId,
+          ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
           startTime: { lt: dateEnd },
           endTime: { gt: dateStart },
           ...getPublicBlockingScheduleBlockWhere(),
