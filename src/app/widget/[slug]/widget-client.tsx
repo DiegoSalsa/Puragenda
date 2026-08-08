@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { addDays, addMinutes, addMonths, format, setHours, setMinutes } from "date-fns";
+import { addDays, addMinutes, addMonths, format, setHours, setMinutes, startOfMinute } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
@@ -206,8 +206,11 @@ export function buildSlots(date: Date, duration: number, businessHours?: Busines
 
   const slots: { start: Date; end: Date }[] = [];
   const slotStarts = new Set<number>();
-  let current = setMinutes(setHours(date, startH), startM);
-  const end = setMinutes(setHours(date, endH), endM);
+  // `date` comes from buildDays(), which retains the current seconds and
+  // milliseconds. Normalize the wall-clock boundaries so a displayed 11:00
+  // is also exactly 11:00 internally and can be deduplicated reliably.
+  let current = startOfMinute(setMinutes(setHours(date, startH), startM));
+  const end = startOfMinute(setMinutes(setHours(date, endH), endM));
   while (addMinutes(current, duration) <= end) {
     const slotEnd = addMinutes(current, duration);
     const currentMinutes = timeToMinutes(current);
@@ -224,7 +227,13 @@ export function buildSlots(date: Date, duration: number, businessHours?: Busines
   // the time that becomes available when an appointment ends off-grid. Add an
   // eligible start at each appointment end so a 13:00–14:10 booking can make
   // 14:10 available, while preserving the business's usual interval.
-  for (const start of additionalStartTimes) {
+  for (const rawStart of additionalStartTimes) {
+    const minuteStart = startOfMinute(rawStart);
+    // Old appointments may contain inherited seconds from the previous slot
+    // generator. Never offer a new appointment before those seconds elapse.
+    const start = minuteStart.getTime() === rawStart.getTime()
+      ? minuteStart
+      : addMinutes(minuteStart, 1);
     if (
       start.getFullYear() !== date.getFullYear() ||
       start.getMonth() !== date.getMonth() ||
