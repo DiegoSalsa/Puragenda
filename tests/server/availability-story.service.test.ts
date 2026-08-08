@@ -59,12 +59,20 @@ describe("availability story staff scope", () => {
     });
 
     await expect(buildAvailabilityStory(worker, business.id, {
-      serviceId: "service-1",
+      serviceIds: ["service-1"],
+      allServices: false,
       locationId: "location-1",
       staffId: "staff-2",
       range: "TOMORROW",
-      template: "GRADIENT",
+      template: "AURORA",
       headline: "Horas disponibles",
+      backgroundMode: "ART",
+      accentColor: "#7C3AED",
+      secondaryColor: "#5B21B6",
+      canvasColor: "#F8FAFC",
+      storyTextColor: "#171717",
+      showLogo: true,
+      showServices: true,
     })).rejects.toThrow("STORY_STAFF_SCOPE_FORBIDDEN");
   });
 

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Configuración de historia inválida" }, { status: 400 });
 
   try {
-    const data = await buildAvailabilityStory(user, business.id, parsed.data);
+    const data = await buildAvailabilityStory(user, business.id, parsed.data, request.nextUrl.origin);
     const filename = `disponibilidad-${data.days[0]?.date ?? "puragenda"}.png`;
     return new ImageResponse(createElement(AvailabilityStoryImage, { data }), {
       width: 1080,

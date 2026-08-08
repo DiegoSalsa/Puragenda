@@ -29,7 +29,15 @@ export default async function AvailabilityStoriesPage() {
           {t("subtitle")}
         </p>
       </div>
-      <StoryGenerator businessSlug={business.slug} options={options} />
+      <StoryGenerator
+        businessSlug={business.slug}
+        options={options}
+        brand={{
+          primaryColor: business.primaryColor,
+          secondaryColor: business.secondaryColor,
+          backgroundColor: business.backgroundColor,
+        }}
+      />
     </div>
   );
 }

@@ -22,33 +22,37 @@ export interface AvailabilityStoryDay {
 export interface AvailabilityStoryData {
   businessName: string;
   logoUrl: string | null;
+  showLogo: boolean;
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
   textColor: string;
   serviceName: string;
+  serviceNames: string[];
   locationName: string;
   staffName: string;
   headline: string;
-  template: "GRADIENT" | "MINIMAL";
+  template: "AURORA" | "EDITORIAL" | "BOLD";
+  backgroundMode: "ART" | "SOLID";
   days: AvailabilityStoryDay[];
   bookingUrl: string;
   generatedAt: string;
   timezone: string;
+  templateBackgroundUrl: string;
   callToAction: string;
   disclaimer: string;
   poweredBy: string;
   noAvailability: string;
 }
 
-const STORY_COPY: Record<AppLocale, { wholeTeam: string; professional: string; callToAction: string; disclaimer: string; poweredBy: string; noAvailability: string }> = {
-  es: { wholeTeam: "Todo el equipo", professional: "Profesional", callToAction: "Reserva desde el enlace de nuestra bio", disclaimer: "Cupos sujetos a disponibilidad en tiempo real", poweredBy: "Agenda online con Puragenda", noAvailability: "Sin cupos disponibles" },
-  en: { wholeTeam: "Entire team", professional: "Professional", callToAction: "Book from the link in our bio", disclaimer: "Openings subject to real-time availability", poweredBy: "Online booking with Puragenda", noAvailability: "No openings available" },
-  it: { wholeTeam: "Tutto il team", professional: "Professionista", callToAction: "Prenota dal link nella nostra bio", disclaimer: "Orari soggetti alla disponibilità in tempo reale", poweredBy: "Prenotazioni online con Puragenda", noAvailability: "Nessun orario disponibile" },
-  pt: { wholeTeam: "Toda a equipe", professional: "Profissional", callToAction: "Reserve pelo link da nossa bio", disclaimer: "Horários sujeitos à disponibilidade em tempo real", poweredBy: "Agenda online com Puragenda", noAvailability: "Sem horários disponíveis" },
-  fr: { wholeTeam: "Toute l’équipe", professional: "Professionnel", callToAction: "Réservez depuis le lien de notre bio", disclaimer: "Créneaux soumis aux disponibilités en temps réel", poweredBy: "Réservation en ligne avec Puragenda", noAvailability: "Aucun créneau disponible" },
-  de: { wholeTeam: "Gesamtes Team", professional: "Teammitglied", callToAction: "Buche über den Link in unserer Bio", disclaimer: "Termine vorbehaltlich aktueller Verfügbarkeit", poweredBy: "Online-Termine mit Puragenda", noAvailability: "Keine freien Termine" },
-  "zh-CN": { wholeTeam: "全部员工", professional: "员工", callToAction: "通过主页简介中的链接预约", disclaimer: "时段以实时可预约情况为准", poweredBy: "由 Puragenda 提供在线预约", noAvailability: "暂无可预约时段" },
+const STORY_COPY: Record<AppLocale, { wholeTeam: string; professional: string; allServices: string; callToAction: string; disclaimer: string; groupedDisclaimer: string; poweredBy: string; noAvailability: string }> = {
+  es: { wholeTeam: "Todo el equipo", professional: "Profesional", allServices: "Todos los servicios", callToAction: "Reserva desde el enlace de nuestra bio", disclaimer: "Cupos sujetos a disponibilidad en tiempo real", groupedDisclaimer: "La hora disponible puede variar según servicio y profesional", poweredBy: "Agenda online con Puragenda", noAvailability: "Sin cupos disponibles" },
+  en: { wholeTeam: "Entire team", professional: "Professional", allServices: "All services", callToAction: "Book from the link in our bio", disclaimer: "Openings subject to real-time availability", groupedDisclaimer: "Availability may vary by service and professional", poweredBy: "Online booking with Puragenda", noAvailability: "No openings available" },
+  it: { wholeTeam: "Tutto il team", professional: "Professionista", allServices: "Tutti i servizi", callToAction: "Prenota dal link nella nostra bio", disclaimer: "Orari soggetti alla disponibilità in tempo reale", groupedDisclaimer: "La disponibilità può variare in base al servizio e al professionista", poweredBy: "Prenotazioni online con Puragenda", noAvailability: "Nessun orario disponibile" },
+  pt: { wholeTeam: "Toda a equipe", professional: "Profissional", allServices: "Todos os serviços", callToAction: "Reserve pelo link da nossa bio", disclaimer: "Horários sujeitos à disponibilidade em tempo real", groupedDisclaimer: "A disponibilidade pode variar conforme o serviço e o profissional", poweredBy: "Agenda online com Puragenda", noAvailability: "Sem horários disponíveis" },
+  fr: { wholeTeam: "Toute l’équipe", professional: "Professionnel", allServices: "Tous les services", callToAction: "Réservez depuis le lien de notre bio", disclaimer: "Créneaux soumis aux disponibilités en temps réel", groupedDisclaimer: "Les disponibilités peuvent varier selon le service et le professionnel", poweredBy: "Réservation en ligne avec Puragenda", noAvailability: "Aucun créneau disponible" },
+  de: { wholeTeam: "Gesamtes Team", professional: "Teammitglied", allServices: "Alle Leistungen", callToAction: "Buche über den Link in unserer Bio", disclaimer: "Termine vorbehaltlich aktueller Verfügbarkeit", groupedDisclaimer: "Die Verfügbarkeit kann je nach Leistung und Teammitglied variieren", poweredBy: "Online-Termine mit Puragenda", noAvailability: "Keine freien Termine" },
+  "zh-CN": { wholeTeam: "全部员工", professional: "员工", allServices: "全部服务", callToAction: "通过主页简介中的链接预约", disclaimer: "时段以实时可预约情况为准", groupedDisclaimer: "可预约时间可能因服务和员工而异", poweredBy: "由 Puragenda 提供在线预约", noAvailability: "暂无可预约时段" },
 };
 
 export async function getAvailabilityStoryAccess(user: StoryUser, business: StoryBusiness) {
@@ -96,7 +100,13 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
           : {}),
       },
       orderBy: [{ position: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, duration: true, locations: { select: { locationId: true } } },
+      select: {
+        id: true,
+        name: true,
+        duration: true,
+        locations: { select: { locationId: true } },
+        staff: { select: { id: true } },
+      },
     }),
     prisma.staff.findMany({
       where: staffWhere,
@@ -114,6 +124,7 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
       name: service.name,
       duration: service.duration,
       locationIds: service.locations.map((assignment) => assignment.locationId),
+      staffIds: service.staff.map((member) => member.id),
     })),
     staff: staff.map((member) => ({
       id: member.id,
@@ -153,6 +164,7 @@ export async function buildAvailabilityStory(
   user: StoryUser,
   businessId: string,
   request: AvailabilityStoryRequest,
+  assetBaseUrl?: string,
 ): Promise<AvailabilityStoryData> {
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -185,16 +197,24 @@ export async function buildAvailabilityStory(
   });
   if (!location) throw new Error("STORY_LOCATION_FORBIDDEN");
 
-  const service = await prisma.service.findFirst({
+  const requestedStaffId = access.canChooseStaff ? request.staffId ?? null : access.ownStaffId;
+  const services = await prisma.service.findMany({
     where: {
-      id: request.serviceId,
       businessId: business.id,
       bookingMode: "APPOINTMENT",
       locations: { some: { locationId: location.id } },
+      ...(!request.allServices ? { id: { in: request.serviceIds } } : {}),
+      ...(requestedStaffId
+        ? { OR: [{ staff: { none: {} } }, { staff: { some: { id: requestedStaffId } } }] }
+        : {}),
     },
-    select: { id: true, name: true, duration: true },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, duration: true, staff: { select: { id: true } } },
   });
-  if (!service) throw new Error("STORY_SERVICE_FORBIDDEN");
+  if (!services.length) throw new Error("STORY_SERVICE_FORBIDDEN");
+  if (!request.allServices && services.length !== new Set(request.serviceIds).size) {
+    throw new Error("STORY_SERVICE_FORBIDDEN");
+  }
 
   const now = new Date();
   const localNow = toZonedTime(now, location.timezone);
@@ -208,14 +228,12 @@ export async function buildAvailabilityStory(
   const overrideDateStart = new Date(`${firstDateKey}T00:00:00.000Z`);
   const overrideDateEnd = new Date(`${lastDateKey}T00:00:00.000Z`);
 
-  const requestedStaffId = access.canChooseStaff ? request.staffId ?? null : access.ownStaffId;
   const staffMembers = await prisma.staff.findMany({
     where: {
       businessId: business.id,
       isActive: true,
       ...(requestedStaffId ? { id: requestedStaffId } : {}),
       locations: { some: { locationId: location.id, isActive: true } },
-      OR: [{ services: { none: {} } }, { services: { some: { id: service.id } } }],
     },
     orderBy: { name: "asc" },
     include: {
@@ -262,28 +280,34 @@ export async function buildAvailabilityStory(
         breakStart: entry.breakStart,
         breakEnd: entry.breakEnd,
       }));
-      const slots = buildSlots(
-        date,
-        service.duration,
-        businessHours,
-        staffSchedule,
-        business.slotInterval,
-        businessOverrides,
-        localBlockedEnds,
-        staffOverrides,
-      );
+      for (const service of services) {
+        const restrictedStaffIds = service.staff.map((member) => member.id);
+        const canPerformService = restrictedStaffIds.length === 0 || restrictedStaffIds.includes(staff.id);
+        if (!canPerformService) continue;
 
-      for (const slot of slots) {
-        const utcSlot = {
-          start: fromZonedTime(slot.start, location.timezone),
-          end: fromZonedTime(slot.end, location.timezone),
-        };
-        const isToday = localDateKey(date) === localDateKey(localNow);
-        if (isToday && (!business.allowSameDayBookings || utcSlot.start <= cutoff)) continue;
-        if (blocked.some((range) => rangesOverlap(utcSlot, range))) continue;
-        const entries = candidatesByTime.get(slot.start.getTime()) ?? [];
-        entries.push({ staffId: staff.id, start: slot.start, end: slot.end });
-        candidatesByTime.set(slot.start.getTime(), entries);
+        const slots = buildSlots(
+          date,
+          service.duration,
+          businessHours,
+          staffSchedule,
+          business.slotInterval,
+          businessOverrides,
+          localBlockedEnds,
+          staffOverrides,
+        );
+
+        for (const slot of slots) {
+          const utcSlot = {
+            start: fromZonedTime(slot.start, location.timezone),
+            end: fromZonedTime(slot.end, location.timezone),
+          };
+          const isToday = localDateKey(date) === localDateKey(localNow);
+          if (isToday && (!business.allowSameDayBookings || utcSlot.start <= cutoff)) continue;
+          if (blocked.some((range) => rangesOverlap(utcSlot, range))) continue;
+          const entries = candidatesByTime.get(slot.start.getTime()) ?? [];
+          entries.push({ staffId: staff.id, start: slot.start, end: slot.end });
+          candidatesByTime.set(slot.start.getTime(), entries);
+        }
       }
     }
 
@@ -314,6 +338,11 @@ export async function buildAvailabilityStory(
   });
 
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
+  const templateFile = {
+    AURORA: "editorial-paper.webp",
+    EDITORIAL: "organic-paper.webp",
+    BOLD: "graphic-paper.webp",
+  }[request.template];
   const bookingUrl = new URL(`/widget/${business.slug}`, appUrl);
   bookingUrl.searchParams.set("location", location.slug);
   bookingUrl.searchParams.set("utm_source", "instagram");
@@ -322,22 +351,26 @@ export async function buildAvailabilityStory(
 
   return {
     businessName: business.name,
-    logoUrl: business.logoUrl,
-    primaryColor: business.primaryColor,
-    secondaryColor: business.secondaryColor,
-    backgroundColor: business.backgroundColor,
-    textColor: business.textColor,
-    serviceName: service.name,
+    logoUrl: request.showLogo ? business.logoUrl : null,
+    showLogo: request.showLogo,
+    primaryColor: request.accentColor,
+    secondaryColor: request.secondaryColor,
+    backgroundColor: request.canvasColor,
+    textColor: request.storyTextColor,
+    serviceName: request.allServices ? copy.allServices : services.map((service) => service.name).join(" · "),
+    serviceNames: request.showServices ? services.map((service) => service.name) : [],
     locationName: location.name,
     staffName: requestedStaffId ? staffMembers[0]?.name ?? copy.professional : copy.wholeTeam,
     headline: request.headline,
     template: request.template,
+    backgroundMode: request.backgroundMode,
     days,
     bookingUrl: bookingUrl.toString(),
     generatedAt: now.toISOString(),
     timezone: location.timezone,
-    callToAction: copy.callToAction,
-    disclaimer: copy.disclaimer,
+    templateBackgroundUrl: `${assetBaseUrl ?? appUrl}/story-templates/${templateFile}`,
+    callToAction: request.callToAction ?? copy.callToAction,
+    disclaimer: services.length > 1 ? copy.groupedDisclaimer : copy.disclaimer,
     poweredBy: copy.poweredBy,
     noAvailability: copy.noAvailability,
   };
