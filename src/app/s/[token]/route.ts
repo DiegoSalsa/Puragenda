@@ -14,14 +14,16 @@ export async function GET(
 
   const campaign = await prisma.storyCampaign.findUnique({
     where: { token },
-    select: { id: true, destinationUrl: true },
+    select: { id: true, destinationUrl: true, status: true },
   });
   if (!campaign) return NextResponse.json({ error: "Historia no encontrada" }, { status: 404 });
 
-  await prisma.storyCampaign.update({
-    where: { id: campaign.id },
-    data: { linkVisits: { increment: 1 }, lastVisitedAt: new Date() },
-  });
+  if (campaign.status === "PUBLISHED") {
+    await prisma.storyCampaign.update({
+      where: { id: campaign.id },
+      data: { linkVisits: { increment: 1 }, lastVisitedAt: new Date() },
+    });
+  }
 
   const destination = new URL(campaign.destinationUrl);
   const allowedOrigin = new URL(request.nextUrl.origin);
@@ -31,6 +33,10 @@ export async function GET(
   }
   if (!destination.pathname.startsWith("/widget/")) {
     return NextResponse.json({ error: "Destino no válido" }, { status: 400 });
+  }
+  if (campaign.status !== "PUBLISHED") {
+    destination.searchParams.delete("story");
+    destination.searchParams.set("utm_campaign", "story-archived");
   }
   const response = NextResponse.redirect(destination, 307);
   response.headers.set("Cache-Control", "no-store, max-age=0");

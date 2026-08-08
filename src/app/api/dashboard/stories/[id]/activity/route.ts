@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { recordAvailabilityStoryActivity } from "@/server/services/availability-story.service";
-
-const activitySchema = z.object({ activity: z.enum(["download", "share"]) });
+import { storyActivitySchema } from "@/server/validations/availability-story";
 
 export async function PATCH(
   request: NextRequest,
@@ -14,7 +12,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const business = await getBusinessForUser(user.id);
   if (!business) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
-  const parsed = activitySchema.safeParse(await request.json().catch(() => null));
+  const parsed = storyActivitySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Actividad inválida" }, { status: 400 });
 
   try {

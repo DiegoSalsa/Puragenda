@@ -1,25 +1,65 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
+import { useMemo, useRef, useState } from "react";
+import { toBlob } from "html-to-image";
 import {
+  Archive,
   ArrowRight,
-  Banknote,
-  CalendarSearch,
+  BarChart3,
   Check,
-  Clock3,
-  Copy,
+  ChevronDown,
   Download,
   ImagePlus,
+  LayoutTemplate,
+  Link2,
   Loader2,
-  MapPin,
-  MousePointerClick,
-  Palette,
+  Plus,
+  Save,
   Share2,
   Sparkles,
-  UsersRound,
+  Trash2,
+  WandSparkles,
+  X,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { getStoryVisibilityDefaults } from "@/core/story-visibility";
+import { AvailabilityStoryImage } from "@/server/stories/availability-story-image";
+import type { AvailabilityStoryData } from "@/server/services/availability-story.service";
+import type {
+  AvailabilityStoryRequest,
+  StoryObjective,
+  StoryTemplate,
+} from "@/server/validations/availability-story";
+
+interface StoryOpportunity {
+  id: string;
+  locationId: string;
+  locationName: string;
+  serviceId: string;
+  serviceName: string;
+  staffId: string;
+  staffName: string;
+  date: string;
+  dateLabel: string;
+  times: string[];
+  slotCount: number;
+  potentialRevenue: number;
+  source: "EXPLICIT" | "RECURRING";
+  daysAway: number;
+  urgency: "HIGH" | "MEDIUM" | "LOW";
+  score: number;
+  reason: string;
+  headline: string;
+}
+
+interface StoryPreset {
+  id: string;
+  name: string;
+  configuration: AvailabilityStoryRequest;
+  isDefault: boolean;
+  updatedAt: string;
+}
 
 interface StoryOptions {
   canChooseStaff: boolean;
@@ -27,29 +67,35 @@ interface StoryOptions {
   isIndividualPlan: boolean;
   hasMultipleLocations: boolean;
   businessAddress: string | null;
-  locations: Array<{ id: string; name: string; slug: string; address: string | null }>;
-  services: Array<{ id: string; name: string; duration: number; locationIds: string[]; staffIds: string[] }>;
-  staff: Array<{ id: string; name: string; locationIds: string[] }>;
-  opportunities: Array<{
+  locations: Array<{
     id: string;
-    locationId: string;
-    locationName: string;
-    serviceId: string;
-    serviceName: string;
-    staffId: string;
-    staffName: string;
-    date: string;
-    dateLabel: string;
-    times: string[];
-    slotCount: number;
-    potentialRevenue: number;
-    source: "EXPLICIT" | "RECURRING";
-    headline: string;
+    name: string;
+    slug: string;
+    address: string | null;
   }>;
+  services: Array<{
+    id: string;
+    name: string;
+    duration: number;
+    locationIds: string[];
+    staffIds: string[];
+  }>;
+  staff: Array<{ id: string; name: string; locationIds: string[] }>;
+  opportunities: StoryOpportunity[];
+  presets: StoryPreset[];
 }
 
 interface StoryInsights {
-  totals: { generated: number; visits: number; bookings: number; revenue: number };
+  totals: {
+    generated: number;
+    visits: number;
+    bookings: number;
+    revenue: number;
+    downloads: number;
+    shares: number;
+    copies: number;
+    conversionRate: number;
+  };
   recent: Array<{
     id: string;
     headline: string;
@@ -61,11 +107,15 @@ interface StoryInsights {
     revenue: number;
     downloads: number;
     shares: number;
+    copies: number;
+    status: "PUBLISHED" | "ARCHIVED";
+    objective: StoryObjective;
     locationId: string | null;
     staffId: string | null;
     serviceIds: string[];
     targetDate: string | null;
-    template: "AURORA" | "EDITORIAL" | "BOLD";
+    template: StoryTemplate;
+    configuration: AvailabilityStoryRequest | null;
   }>;
 }
 
@@ -77,118 +127,586 @@ interface StoryBrand {
   backgroundColor: string;
 }
 
-export function StoryGenerator({ businessSlug, options, brand, insights, currencyCode }: { businessSlug: string; options: StoryOptions; brand: StoryBrand; insights: StoryInsights | null; currencyCode: string }) {
+type MobilePanel = "CONTENT" | "DESIGN" | "PREVIEW";
+type StudioMode = "QUICK" | "ADVANCED";
+type AnalyticsRange = "7" | "30" | "90" | "ALL";
+
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (hex: string) => {
+    const channels = [1, 3, 5]
+      .map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255)
+      .map((value) =>
+        value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
+      );
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const a = luminance(foreground);
+  const b = luminance(background);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+function StoryTemplateThumbnail({
+  template,
+  data,
+  accentColor,
+  canvasColor,
+  productLogoUrl,
+}: {
+  template: StoryTemplate;
+  data: AvailabilityStoryData | null;
+  accentColor: string;
+  canvasColor: string;
+  productLogoUrl: string;
+}) {
+  if (data) {
+    return (
+      <span
+        className="relative block h-[134px] w-[76px] shrink-0 overflow-hidden rounded-[0.8rem] border-2 border-foreground bg-black shadow-[2px_3px_0_#171717]"
+        aria-hidden="true"
+      >
+        <span className="absolute left-0 top-0 block h-[1920px] w-[1080px] origin-top-left scale-[.07]">
+          <AvailabilityStoryImage
+            data={{ ...data, template }}
+            productLogoUrl={productLogoUrl}
+          />
+        </span>
+      </span>
+    );
+  }
+
+  const bold = template === "BOLD";
+  const editorial = template === "EDITORIAL";
+  const minimal = template === "MINIMAL";
+  const framed = template === "FRAME";
+  const foreground = bold ? "#171717" : accentColor;
+  const background = bold ? accentColor : canvasColor;
+
+  return (
+    <span
+      className="relative block h-[134px] w-[76px] shrink-0 overflow-hidden rounded-[0.8rem] border-2 border-foreground shadow-[2px_3px_0_#171717]"
+      style={{ background }}
+      aria-hidden="true"
+    >
+      {template === "AURORA" && (
+        <>
+          <span
+            className="absolute -right-4 -top-3 h-12 w-12 rounded-full opacity-70"
+            style={{ backgroundColor: accentColor }}
+          />
+          <span
+            className="absolute -bottom-4 -left-4 h-14 w-14 rounded-full opacity-35"
+            style={{ backgroundColor: accentColor }}
+          />
+        </>
+      )}
+      {framed && (
+        <span
+          className="absolute inset-2 rounded-lg border-[3px]"
+          style={{ borderColor: accentColor }}
+        />
+      )}
+      <span
+        className={`absolute left-3 right-3 top-3 flex items-center gap-1 ${editorial || minimal ? "justify-center" : ""}`}
+      >
+        <span
+          className="h-2.5 w-2.5 rounded-full"
+          style={{ backgroundColor: foreground }}
+        />
+        <span
+          className="h-1.5 w-7 rounded-full opacity-70"
+          style={{ backgroundColor: foreground }}
+        />
+      </span>
+      <span
+        className={`absolute left-3 right-3 top-10 space-y-1 ${editorial || minimal ? "text-center" : ""}`}
+      >
+        <span
+          className={`block rounded-sm ${bold ? "h-3.5" : "h-2.5"} ${minimal ? "mx-auto w-9" : "w-full"}`}
+          style={{ backgroundColor: foreground }}
+        />
+        <span
+          className={`block rounded-sm ${bold ? "h-3.5 w-4/5" : "h-2 w-3/4"} ${editorial || minimal ? "mx-auto" : ""}`}
+          style={{ backgroundColor: foreground, opacity: minimal ? 0.55 : 1 }}
+        />
+      </span>
+      <span className="absolute bottom-5 left-3 right-3 space-y-1.5">
+        {[0, 1, 2].map((row) => (
+          <span
+            key={row}
+            className={`flex h-3 items-center rounded ${bold ? "border border-black/40 bg-white/70" : "bg-white/80"} px-1`}
+          >
+            <span
+              className="h-1 rounded-full"
+              style={{
+                width: `${72 - row * 10}%`,
+                backgroundColor: foreground,
+                opacity: 0.6,
+              }}
+            />
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+export function StoryGenerator({
+  options,
+  brand,
+  insights,
+  currencyCode,
+}: {
+  businessSlug: string;
+  options: StoryOptions;
+  brand: StoryBrand;
+  insights: StoryInsights | null;
+  currencyCode: string;
+}) {
   const t = useTranslations("dashboard.stories");
   const designT = useTranslations("dashboard.storyDesign");
   const locale = useLocale();
-  const [locationId, setLocationId] = useState(options.locations[0]?.id ?? "");
-  const [staffId, setStaffId] = useState<string | null>(options.canChooseStaff ? null : options.ownStaffId);
-  const availableServices = useMemo(() => options.services.filter((service) => (
-    service.locationIds.includes(locationId)
-    && (!staffId || service.staffIds.length === 0 || service.staffIds.includes(staffId))
-  )), [locationId, options.services, staffId]);
-  const availableStaff = useMemo(
-    () => options.staff.filter((staff) => staff.locationIds.includes(locationId)),
-    [locationId, options.staff],
-  );
-  const [allServices, setAllServices] = useState(true);
-  const [serviceIds, setServiceIds] = useState<string[]>([]);
-  const [range, setRange] = useState<"TODAY" | "TOMORROW" | "NEXT_7" | "NEXT_AVAILABLE">("NEXT_AVAILABLE");
-  const [targetDate, setTargetDate] = useState<string | null>(null);
-  const [template, setTemplate] = useState<"AURORA" | "EDITORIAL" | "BOLD">("AURORA");
-  const [headline, setHeadline] = useState(() => t("defaultHeadline"));
-  const [backgroundMode, setBackgroundMode] = useState<"ART" | "SOLID">("ART");
-  const [accentColor, setAccentColor] = useState(brand.primaryColor);
-  const [secondaryColor, setSecondaryColor] = useState(brand.secondaryColor);
-  const [canvasColor, setCanvasColor] = useState(brand.backgroundColor);
-  const [storyTextColor, setStoryTextColor] = useState("#171717");
-  const [showLogo, setShowLogo] = useState(true);
-  const [showServices, setShowServices] = useState(true);
-  const [showSchedule, setShowSchedule] = useState(true);
   const visibilityDefaults = getStoryVisibilityDefaults(options);
-  const [showProfessional, setShowProfessional] = useState(visibilityDefaults.showProfessional);
-  const [showLocationName, setShowLocationName] = useState(visibilityDefaults.showLocationName);
-  const [showAddress, setShowAddress] = useState(visibilityDefaults.showAddress);
-  const [ctaMode, setCtaMode] = useState<"LINK_STICKER" | "BIO">("LINK_STICKER");
-  const [callToAction, setCallToAction] = useState(() => designT("stickerDefaultCta"));
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const defaultPreset = options.presets.find(
+    (preset) => preset.isDefault,
+  )?.configuration;
+
+  const [studioMode, setStudioMode] = useState<StudioMode>("QUICK");
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("CONTENT");
+  const [locationId, setLocationId] = useState(
+    defaultPreset?.locationId ?? options.locations[0]?.id ?? "",
+  );
+  const [staffId, setStaffId] = useState<string | null>(
+    defaultPreset?.staffId ??
+      (options.canChooseStaff ? null : options.ownStaffId),
+  );
+  const [allServices, setAllServices] = useState(
+    defaultPreset?.allServices ?? true,
+  );
+  const [serviceIds, setServiceIds] = useState<string[]>(
+    defaultPreset?.serviceIds ?? [],
+  );
+  const [range, setRange] = useState<AvailabilityStoryRequest["range"]>(
+    defaultPreset?.range ?? "NEXT_AVAILABLE",
+  );
+  const [targetDate, setTargetDate] = useState(defaultPreset?.targetDate ?? "");
+  const [endDate, setEndDate] = useState(defaultPreset?.endDate ?? "");
+  const [excludedDates, setExcludedDates] = useState<string[]>(
+    defaultPreset?.excludedDates ?? [],
+  );
+  const [excludeDateInput, setExcludeDateInput] = useState("");
+  const [selectedSlots, setSelectedSlots] = useState<
+    AvailabilityStoryRequest["selectedSlots"]
+  >(defaultPreset?.selectedSlots ?? []);
+  const [objective, setObjective] = useState<StoryObjective>(
+    defaultPreset?.objective ?? "FILL_SLOTS",
+  );
+  const [template, setTemplate] = useState<StoryTemplate>(
+    defaultPreset?.template ?? "AURORA",
+  );
+  const [headline, setHeadline] = useState(
+    defaultPreset?.headline ?? t("defaultHeadline"),
+  );
+  const [backgroundMode, setBackgroundMode] = useState<
+    AvailabilityStoryRequest["backgroundMode"]
+  >(defaultPreset?.backgroundMode ?? "ART");
+  const [accentColor, setAccentColor] = useState(
+    defaultPreset?.accentColor ?? brand.primaryColor,
+  );
+  const [secondaryColor, setSecondaryColor] = useState(
+    defaultPreset?.secondaryColor ?? brand.secondaryColor,
+  );
+  const [canvasColor, setCanvasColor] = useState(
+    defaultPreset?.canvasColor ?? brand.backgroundColor,
+  );
+  const [storyTextColor, setStoryTextColor] = useState(
+    defaultPreset?.storyTextColor ?? "#171717",
+  );
+  const [artIntensity, setArtIntensity] = useState(
+    defaultPreset?.artIntensity ?? 0.38,
+  );
+  const [fontStyle, setFontStyle] = useState<
+    AvailabilityStoryRequest["fontStyle"]
+  >(defaultPreset?.fontStyle ?? "MODERN");
+  const [logoFit, setLogoFit] = useState<AvailabilityStoryRequest["logoFit"]>(
+    defaultPreset?.logoFit ?? "CONTAIN",
+  );
+  const [showLogo, setShowLogo] = useState(defaultPreset?.showLogo ?? true);
+  const [showServices, setShowServices] = useState(
+    defaultPreset?.showServices ?? true,
+  );
+  const [showSchedule, setShowSchedule] = useState(
+    defaultPreset?.showSchedule ?? true,
+  );
+  const [showProfessional, setShowProfessional] = useState(
+    defaultPreset?.showProfessional ?? visibilityDefaults.showProfessional,
+  );
+  const [showLocationName, setShowLocationName] = useState(
+    defaultPreset?.showLocationName ?? visibilityDefaults.showLocationName,
+  );
+  const [showAddress, setShowAddress] = useState(
+    defaultPreset?.showAddress ?? visibilityDefaults.showAddress,
+  );
+  const [ctaMode, setCtaMode] = useState<AvailabilityStoryRequest["ctaMode"]>(
+    defaultPreset?.ctaMode ?? "LINK_STICKER",
+  );
+  const [callToAction, setCallToAction] = useState(
+    defaultPreset?.callToAction ?? designT("stickerDefaultCta"),
+  );
+  const [backgroundPhoto, setBackgroundPhoto] = useState<string | null>(null);
+  const [showSafeAreas, setShowSafeAreas] = useState(true);
+  const [showVariants, setShowVariants] = useState(false);
+  const [previewData, setPreviewData] = useState<AvailabilityStoryData | null>(
+    null,
+  );
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [campaignFingerprint, setCampaignFingerprint] = useState("");
   const [bookingLink, setBookingLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [presets, setPresets] = useState<StoryPreset[]>(options.presets);
+  const [presetName, setPresetName] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [productLogoDataUrl, setProductLogoDataUrl] = useState<string | null>(
+    null,
+  );
+  const [analyticsRange, setAnalyticsRange] = useState<AnalyticsRange>("30");
+  const [analyticsNow] = useState(() => Date.now());
+  const [showMetrics, setShowMetrics] = useState(false);
+  const storyNodeRef = useRef<HTMLDivElement>(null);
+  const productLogoPromiseRef = useRef<Promise<string> | null>(null);
 
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+  const selectedLocation = options.locations.find(
+    (location) => location.id === locationId,
+  );
+  const availableStaff = useMemo(
+    () =>
+      options.staff.filter((staff) => staff.locationIds.includes(locationId)),
+    [locationId, options.staff],
+  );
+  const availableServices = useMemo(
+    () =>
+      options.services.filter(
+        (service) =>
+          service.locationIds.includes(locationId) &&
+          (!staffId ||
+            service.staffIds.length === 0 ||
+            service.staffIds.includes(staffId)),
+      ),
+    [locationId, options.services, staffId],
+  );
 
-  const selectedLocation = options.locations.find((location) => location.id === locationId);
-  const fallbackBookingPath = selectedLocation
-    ? `/widget/${businessSlug}?location=${encodeURIComponent(selectedLocation.slug)}&utm_source=instagram&utm_medium=story&utm_campaign=availability`
-    : "";
+  const configuration = useMemo<AvailabilityStoryRequest>(
+    () => ({
+      locationId,
+      staffId,
+      serviceIds,
+      allServices,
+      range,
+      ...(targetDate ? { targetDate } : {}),
+      ...(endDate ? { endDate } : {}),
+      excludedDates,
+      selectedSlots,
+      objective,
+      template,
+      headline,
+      backgroundMode,
+      accentColor,
+      secondaryColor,
+      canvasColor,
+      storyTextColor,
+      artIntensity,
+      fontStyle,
+      logoFit,
+      showLogo,
+      showServices,
+      showSchedule,
+      showProfessional,
+      showLocationName,
+      showAddress,
+      ctaMode,
+      callToAction,
+    }),
+    [
+      accentColor,
+      allServices,
+      artIntensity,
+      backgroundMode,
+      callToAction,
+      canvasColor,
+      ctaMode,
+      endDate,
+      excludedDates,
+      fontStyle,
+      headline,
+      locationId,
+      logoFit,
+      objective,
+      range,
+      secondaryColor,
+      selectedSlots,
+      serviceIds,
+      showAddress,
+      showLocationName,
+      showLogo,
+      showProfessional,
+      showSchedule,
+      showServices,
+      staffId,
+      storyTextColor,
+      targetDate,
+      template,
+    ],
+  );
 
-  function invalidatePreview() {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-    setPreviewBlob(null);
-    setCampaignId(null);
-    setBookingLink(null);
+  const fingerprint = JSON.stringify(configuration);
+  const currency = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: currencyCode,
+        maximumFractionDigits: 0,
+      }),
+    [currencyCode, locale],
+  );
+
+  const renderData = useMemo(() => {
+    if (!previewData) return null;
+    const chosen = new Map(
+      selectedSlots.map((slot) => [`${slot.date}:${slot.time}`, true]),
+    );
+    return {
+      ...previewData,
+      headline,
+      template,
+      objective,
+      backgroundMode,
+      primaryColor: accentColor,
+      secondaryColor,
+      backgroundColor: canvasColor,
+      textColor: storyTextColor,
+      artIntensity,
+      fontStyle,
+      logoFit,
+      showLogo,
+      showServices,
+      showSchedule,
+      showProfessional,
+      showLocationName,
+      showAddress,
+      ctaMode,
+      callToAction,
+      serviceNames: showServices ? previewData.serviceNames : [],
+      days:
+        selectedSlots.length > 0
+          ? previewData.days
+              .map((day) => ({
+                ...day,
+                times: day.times.filter((time) =>
+                  chosen.has(`${day.date}:${time}`),
+                ),
+              }))
+              .filter((day) => day.times.length > 0)
+          : previewData.days,
+    } satisfies AvailabilityStoryData;
+  }, [
+    accentColor,
+    artIntensity,
+    backgroundMode,
+    callToAction,
+    canvasColor,
+    ctaMode,
+    fontStyle,
+    headline,
+    logoFit,
+    objective,
+    previewData,
+    secondaryColor,
+    selectedSlots,
+    showAddress,
+    showLocationName,
+    showLogo,
+    showProfessional,
+    showSchedule,
+    showServices,
+    storyTextColor,
+    template,
+  ]);
+
+  const variantTemplates = useMemo(() => {
+    const templates: StoryTemplate[] = [
+      "AURORA",
+      "EDITORIAL",
+      "BOLD",
+      "MINIMAL",
+      "FRAME",
+    ];
+    const start = templates.indexOf(template);
+    return [
+      templates[start],
+      templates[(start + 1) % templates.length],
+      templates[(start + 2) % templates.length],
+    ];
+  }, [template]);
+
+  const contrast = contrastRatio(storyTextColor, canvasColor);
+  const selectedServiceNames = allServices
+    ? t("allServices")
+    : options.services
+        .filter((service) => serviceIds.includes(service.id))
+        .map((service) => service.name)
+        .join(", ");
+
+  const headlineSuggestions = useMemo<Record<StoryObjective, string[]>>(
+    () => ({
+      FILL_SLOTS: [t("headlineFill1"), t("headlineFill2")],
+      LAST_MINUTE: [t("headlineLastMinute1"), t("headlineLastMinute2")],
+      PROMOTE_SERVICE: [t("headlineService1"), t("headlineService2")],
+      CANCELLATION: [t("headlineCancellation1"), t("headlineCancellation2")],
+    }),
+    [t],
+  );
+
+  const filteredCampaigns = useMemo(() => {
+    if (!insights) return [];
+    const cutoff =
+      analyticsRange === "ALL"
+        ? null
+        : analyticsNow - Number(analyticsRange) * 86_400_000;
+    return insights.recent.filter(
+      (campaign) => !cutoff || new Date(campaign.createdAt).getTime() >= cutoff,
+    );
+  }, [analyticsNow, analyticsRange, insights]);
+
+  const filteredTotals = useMemo(() => {
+    if (!insights)
+      return {
+        generated: 0,
+        visits: 0,
+        bookings: 0,
+        revenue: 0,
+        downloads: 0,
+        shares: 0,
+        copies: 0,
+        conversionRate: 0,
+      };
+    if (analyticsRange === "ALL") return insights.totals;
+    const published = filteredCampaigns.filter(
+      (campaign) => campaign.status === "PUBLISHED",
+    );
+    const totals = published.reduce(
+      (result, campaign) => ({
+        generated: result.generated + 1,
+        visits: result.visits + campaign.visits,
+        bookings: result.bookings + campaign.bookings,
+        revenue: result.revenue + campaign.revenue,
+        downloads: result.downloads + campaign.downloads,
+        shares: result.shares + campaign.shares,
+        copies: result.copies + campaign.copies,
+        conversionRate: 0,
+      }),
+      {
+        generated: 0,
+        visits: 0,
+        bookings: 0,
+        revenue: 0,
+        downloads: 0,
+        shares: 0,
+        copies: 0,
+        conversionRate: 0,
+      },
+    );
+    totals.conversionRate =
+      totals.visits > 0 ? totals.bookings / totals.visits : 0;
+    return totals;
+  }, [analyticsRange, filteredCampaigns, insights]);
+
+  const servicePerformance = useMemo(() => {
+    const byService = new Map<
+      string,
+      {
+        name: string;
+        visits: number;
+        bookings: number;
+        revenue: number;
+        campaigns: number;
+      }
+    >();
+    for (const campaign of filteredCampaigns.filter(
+      (entry) => entry.status === "PUBLISHED",
+    )) {
+      for (const serviceId of campaign.serviceIds) {
+        const service = options.services.find(
+          (entry) => entry.id === serviceId,
+        );
+        if (!service) continue;
+        const current = byService.get(serviceId) ?? {
+          name: service.name,
+          visits: 0,
+          bookings: 0,
+          revenue: 0,
+          campaigns: 0,
+        };
+        current.visits += campaign.visits;
+        current.bookings += campaign.bookings;
+        current.revenue += campaign.revenue;
+        current.campaigns += 1;
+        byService.set(serviceId, current);
+      }
+    }
+    return [...byService.values()]
+      .map((entry) => ({
+        ...entry,
+        conversion: entry.visits > 0 ? entry.bookings / entry.visits : 0,
+      }))
+      .sort(
+        (left, right) =>
+          right.conversion - left.conversion || right.revenue - left.revenue,
+      )
+      .slice(0, 3);
+  }, [filteredCampaigns, options.services]);
+
+  const formValid = Boolean(
+    locationId &&
+    headline.trim() &&
+    (allServices || serviceIds.length > 0) &&
+    (range !== "CUSTOM" || (targetDate && endDate)),
+  );
+
+  async function requestStory(publish: boolean, input = configuration) {
+    const response = await fetch(
+      `/api/dashboard/stories${publish ? "?publish=1" : ""}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    );
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      data?: AvailabilityStoryData;
+      campaignId?: string | null;
+      bookingUrl?: string;
+    };
+    if (!response.ok || !body.data)
+      throw new Error(body.error || t("generateError"));
+    return body as {
+      data: AvailabilityStoryData;
+      campaignId: string | null;
+      bookingUrl: string;
+    };
   }
 
-  async function generateStory(overrides?: {
-    locationId: string;
-    serviceIds: string[];
-    staffId: string | null;
-    targetDate: string | null;
-    headline: string;
-    range?: "TODAY" | "TOMORROW" | "NEXT_7" | "NEXT_AVAILABLE";
-  }) {
-    const generationLocationId = overrides?.locationId ?? locationId;
-    const generationServiceIds = overrides?.serviceIds ?? serviceIds;
-    const generationStaffId = overrides?.staffId ?? staffId;
-    const generationAllServices = overrides ? false : allServices;
-    if (!generationLocationId || (!generationAllServices && generationServiceIds.length === 0) || !generationStaffId && !options.canChooseStaff) return;
+  async function generatePreview(input = configuration) {
+    if (!formValid && input === configuration) return;
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/dashboard/stories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locationId: generationLocationId,
-          serviceIds: generationServiceIds,
-          allServices: generationAllServices,
-          staffId: generationStaffId,
-          range: overrides?.range ?? range,
-          targetDate: overrides ? overrides.targetDate ?? undefined : targetDate ?? undefined,
-          template,
-          headline: overrides?.headline ?? headline,
-          backgroundMode,
-          accentColor,
-          secondaryColor,
-          canvasColor,
-          storyTextColor,
-          showLogo,
-          showServices,
-          showSchedule,
-          showProfessional,
-          showLocationName,
-          showAddress,
-          ctaMode,
-          callToAction,
-        }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(body.error || t("generateError"));
-      }
-      const blob = await response.blob();
-      setCampaignId(response.headers.get("X-Story-Campaign-Id"));
-      setBookingLink(response.headers.get("X-Story-Booking-Url"));
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewBlob(blob);
-      setPreviewUrl(URL.createObjectURL(blob));
+      const result = await requestStory(false, input);
+      setPreviewData(result.data);
+      setSelectedSlots(input.selectedSlots ?? []);
+      setMobilePanel("PREVIEW");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t("generateError"));
     } finally {
@@ -196,571 +714,1558 @@ export function StoryGenerator({ businessSlug, options, brand, insights, currenc
     }
   }
 
-  function applyOpportunity(opportunity: StoryOptions["opportunities"][number]) {
-    invalidatePreview();
-    setLocationId(opportunity.locationId);
-    setStaffId(opportunity.staffId);
-    setAllServices(false);
-    setServiceIds([opportunity.serviceId]);
-    setRange("NEXT_AVAILABLE");
-    setTargetDate(opportunity.date);
-    setHeadline(opportunity.headline);
-    void generateStory({
-      locationId: opportunity.locationId,
-      serviceIds: [opportunity.serviceId],
-      staffId: opportunity.staffId,
-      targetDate: opportunity.date,
-      headline: opportunity.headline,
-      range: "NEXT_AVAILABLE",
-    });
-  }
-
-  function reuseCampaign(campaign: StoryInsights["recent"][number]) {
-    if (!campaign.locationId || campaign.serviceIds.length === 0) return;
-    invalidatePreview();
-    const today = new Date().toISOString().slice(0, 10);
-    const reusableDate = campaign.targetDate && campaign.targetDate >= today ? campaign.targetDate : null;
-    setLocationId(campaign.locationId);
-    setStaffId(campaign.staffId);
-    setAllServices(false);
-    setServiceIds(campaign.serviceIds);
-    setRange("NEXT_AVAILABLE");
-    setTargetDate(reusableDate);
-    setHeadline(campaign.headline);
-    setTemplate(campaign.template);
-    void generateStory({
-      locationId: campaign.locationId,
-      serviceIds: campaign.serviceIds,
-      staffId: campaign.staffId,
-      targetDate: reusableDate,
-      headline: campaign.headline,
-      range: "NEXT_AVAILABLE",
-    });
-  }
-
-  function changeLocation(nextLocationId: string) {
-    invalidatePreview();
-    setLocationId(nextLocationId);
-    const nextLocation = options.locations.find((location) => location.id === nextLocationId);
-    if (!nextLocation?.address && !options.businessAddress) setShowAddress(false);
-    const nextServices = options.services.filter((service) => service.locationIds.includes(nextLocationId));
-    setServiceIds((current) => current.filter((id) => nextServices.some((service) => service.id === id)));
-    if (options.canChooseStaff && staffId) {
-      const remainsAssigned = options.staff.some(
-        (staff) => staff.id === staffId && staff.locationIds.includes(nextLocationId),
-      );
-      if (!remainsAssigned) setStaffId(null);
+  async function ensurePublished() {
+    if (
+      campaignId &&
+      bookingLink &&
+      campaignFingerprint === fingerprint &&
+      renderData
+    ) {
+      return { campaignId, bookingLink, data: renderData };
     }
+    setPublishing(true);
+    const result = await requestStory(true);
+    flushSync(() => {
+      setPreviewData(result.data);
+      setCampaignId(result.campaignId);
+      setCampaignFingerprint(fingerprint);
+      setBookingLink(result.bookingUrl);
+    });
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    setPublishing(false);
+    return {
+      campaignId: result.campaignId,
+      bookingLink: result.bookingUrl,
+      data: result.data,
+    };
   }
 
-  function changeStaff(nextStaffId: string | null) {
-    invalidatePreview();
-    setStaffId(nextStaffId);
-    if (!nextStaffId) return;
-    setServiceIds((current) => current.filter((id) => {
-      const service = options.services.find((entry) => entry.id === id);
-      return !!service && (service.staffIds.length === 0 || service.staffIds.includes(nextStaffId));
-    }));
+  async function ensureProductLogoEmbedded() {
+    if (productLogoDataUrl) return;
+    if (!productLogoPromiseRef.current) {
+      productLogoPromiseRef.current = fetch("/icon-512x512.png")
+        .then((response) => {
+          if (!response.ok) throw new Error(t("generateError"));
+          return response.blob();
+        })
+        .then(
+          (blob) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error(t("generateError")));
+              reader.onload = () => resolve(String(reader.result));
+              reader.readAsDataURL(blob);
+            }),
+        );
+    }
+    const dataUrl = await productLogoPromiseRef.current;
+    flushSync(() => setProductLogoDataUrl(dataUrl));
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
   }
 
-  function toggleService(serviceId: string) {
-    invalidatePreview();
-    setServiceIds((current) => current.includes(serviceId)
-      ? current.filter((id) => id !== serviceId)
-      : [...current, serviceId]);
+  async function captureStory() {
+    await ensureProductLogoEmbedded();
+    const node = storyNodeRef.current;
+    if (!node) throw new Error(t("generateError"));
+    await document.fonts.ready;
+    const images = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+      images.map((image) =>
+        image.complete
+          ? Promise.resolve()
+          : image.decode().catch(() => undefined),
+      ),
+    );
+    const blob = await toBlob(node, {
+      width: 1080,
+      height: 1920,
+      pixelRatio: 1,
+      cacheBust: true,
+    });
+    if (!blob) throw new Error(t("generateError"));
+    return blob;
   }
 
-  function downloadStory() {
-    if (!previewBlob) return;
-    const url = URL.createObjectURL(previewBlob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `historia-disponibilidad-${new Date().toISOString().slice(0, 10)}.png`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-    void recordActivity("download");
-  }
-
-  async function recordActivity(activity: "download" | "share") {
-    if (!campaignId) return;
-    await fetch(`/api/dashboard/stories/${campaignId}/activity`, {
+  async function recordActivity(
+    id: string | null,
+    activity: "download" | "share" | "copy" | "archive",
+  ) {
+    if (!id) return;
+    await fetch(`/api/dashboard/stories/${id}/activity`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activity }),
     }).catch(() => undefined);
   }
 
-  async function shareStory() {
-    if (!previewBlob) return;
-    const file = new File(
-      [previewBlob],
-      `historia-disponibilidad-${new Date().toISOString().slice(0, 10)}.png`,
-      { type: "image/png" },
-    );
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      try {
-        await navigator.share({ files: [file], title: headline, url: bookingLink ?? undefined });
-        await recordActivity("share");
-        return;
-      } catch (reason) {
-        if (reason instanceof DOMException && reason.name === "AbortError") return;
-      }
+  async function downloadStory() {
+    setError("");
+    try {
+      const published = await ensurePublished();
+      const blob = await captureStory();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `historia-${new Date().toISOString().slice(0, 10)}.png`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      await recordActivity(published.campaignId, "download");
+    } catch (reason) {
+      setPublishing(false);
+      setError(reason instanceof Error ? reason.message : t("generateError"));
     }
-    downloadStory();
+  }
+
+  async function shareStory() {
+    setError("");
+    try {
+      const published = await ensurePublished();
+      const blob = await captureStory();
+      const file = new File(
+        [blob],
+        `historia-${new Date().toISOString().slice(0, 10)}.png`,
+        { type: "image/png" },
+      );
+      if (
+        navigator.share &&
+        (!navigator.canShare || navigator.canShare({ files: [file] }))
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: headline,
+            url: published.bookingLink,
+          });
+          await recordActivity(published.campaignId, "share");
+          return;
+        } catch (reason) {
+          if (reason instanceof DOMException && reason.name === "AbortError")
+            return;
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `historia-${new Date().toISOString().slice(0, 10)}.png`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      await recordActivity(published.campaignId, "download");
+    } catch (reason) {
+      setPublishing(false);
+      setError(reason instanceof Error ? reason.message : t("generateError"));
+    }
   }
 
   async function copyBookingLink() {
-    const link = bookingLink ?? (fallbackBookingPath ? new URL(fallbackBookingPath, window.location.origin).toString() : "");
-    if (!link) return;
-    const fallbackCopy = () => {
-      const textarea = document.createElement("textarea");
-      textarea.value = link;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      const copiedWithFallback = document.execCommand("copy");
-      textarea.remove();
-      return copiedWithFallback;
-    };
+    setError("");
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(link).catch(() => {
-          if (!fallbackCopy()) throw new Error("COPY_FAILED");
-        });
-      } else if (!fallbackCopy()) {
-        throw new Error("COPY_FAILED");
-      }
+      const published = await ensurePublished();
+      await navigator.clipboard.writeText(published.bookingLink);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setError(t("copyError"));
+      await recordActivity(published.campaignId, "copy");
+    } catch (reason) {
+      setPublishing(false);
+      setError(reason instanceof Error ? reason.message : t("copyError"));
     }
   }
 
-  const inputClass = "mt-2 w-full rounded-xl border-2 border-foreground/15 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10";
-  const currency = new Intl.NumberFormat(locale, { style: "currency", currency: currencyCode, maximumFractionDigits: 0 });
-  const featuredOpportunity = options.opportunities[0];
-  const otherOpportunities = options.opportunities.slice(1, 6);
-  const selectedServiceNames = allServices
-    ? t("allServices")
-    : options.services.filter((service) => serviceIds.includes(service.id)).map((service) => service.name).join(", ");
-  const selectedStaffName = options.staff.find((staff) => staff.id === staffId)?.name ?? t("wholeTeam");
-  const selectedAddress = selectedLocation?.address ?? options.businessAddress;
-  const selectedPlaceLabel = [
-    showLocationName ? selectedLocation?.name : null,
-    showAddress ? selectedAddress : null,
-  ].filter(Boolean).join(" · ");
-  const brandInitial = brand.name.trim().charAt(0).toUpperCase() || "P";
-
-  function scrollToStudio() {
-    document.getElementById("story-studio")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function applyConfiguration(input: AvailabilityStoryRequest) {
+    setLocationId(input.locationId);
+    setStaffId(input.staffId ?? null);
+    setServiceIds(input.serviceIds);
+    setAllServices(input.allServices);
+    setRange(input.range);
+    setTargetDate(input.targetDate ?? "");
+    setEndDate(input.endDate ?? "");
+    setExcludedDates(input.excludedDates ?? []);
+    setSelectedSlots(input.selectedSlots ?? []);
+    setObjective(input.objective);
+    setTemplate(input.template);
+    setHeadline(input.headline);
+    setBackgroundMode(input.backgroundMode);
+    setAccentColor(input.accentColor);
+    setSecondaryColor(input.secondaryColor);
+    setCanvasColor(input.canvasColor);
+    setStoryTextColor(input.storyTextColor);
+    setArtIntensity(input.artIntensity);
+    setFontStyle(input.fontStyle);
+    setLogoFit(input.logoFit);
+    setShowLogo(input.showLogo);
+    setShowServices(input.showServices);
+    setShowSchedule(input.showSchedule);
+    setShowProfessional(input.showProfessional);
+    setShowLocationName(input.showLocationName);
+    setShowAddress(input.showAddress);
+    setCtaMode(input.ctaMode);
+    setCallToAction(input.callToAction ?? designT("stickerDefaultCta"));
+    setCampaignId(null);
+    setBookingLink(null);
+    setPreviewData(null);
   }
 
-  function changeCtaMode(nextMode: "LINK_STICKER" | "BIO") {
-    invalidatePreview();
-    setCtaMode(nextMode);
-    setCallToAction(nextMode === "LINK_STICKER" ? designT("stickerDefaultCta") : designT("defaultCta"));
+  async function applyOpportunity(opportunity: StoryOpportunity) {
+    const next: AvailabilityStoryRequest = {
+      ...configuration,
+      locationId: opportunity.locationId,
+      staffId: opportunity.staffId,
+      serviceIds: [opportunity.serviceId],
+      allServices: false,
+      range: "CUSTOM",
+      targetDate: opportunity.date,
+      endDate: opportunity.date,
+      excludedDates: [],
+      selectedSlots: [],
+      headline: opportunity.headline,
+      objective: opportunity.daysAway <= 2 ? "LAST_MINUTE" : "FILL_SLOTS",
+    };
+    applyConfiguration(next);
+    setStudioMode("QUICK");
+    await generatePreview(next);
   }
+
+  async function savePreset() {
+    if (presetName.trim().length < 2) return;
+    setSavingPreset(true);
+    setError("");
+    try {
+      const response = await fetch("/api/dashboard/stories/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: presetName.trim(),
+          configuration,
+          isDefault: presets.length === 0,
+        }),
+      });
+      const body = (await response.json()) as {
+        error?: string;
+        preset?: StoryPreset;
+      };
+      if (!response.ok || !body.preset)
+        throw new Error(body.error || t("presetError"));
+      const preset = {
+        ...body.preset,
+        updatedAt: new Date(body.preset.updatedAt).toISOString(),
+      };
+      setPresets((current) => [
+        preset,
+        ...current.filter((entry) => entry.id !== preset.id),
+      ]);
+      setPresetName("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : t("presetError"));
+    } finally {
+      setSavingPreset(false);
+    }
+  }
+
+  async function deletePreset(id: string) {
+    const response = await fetch(`/api/dashboard/stories/presets/${id}`, {
+      method: "DELETE",
+    });
+    if (response.ok)
+      setPresets((current) => current.filter((preset) => preset.id !== id));
+  }
+
+  function changeLocation(nextLocationId: string) {
+    setLocationId(nextLocationId);
+    const nextServices = options.services.filter((service) =>
+      service.locationIds.includes(nextLocationId),
+    );
+    setServiceIds((current) =>
+      current.filter((id) => nextServices.some((service) => service.id === id)),
+    );
+    if (
+      staffId &&
+      !options.staff.some(
+        (staff) =>
+          staff.id === staffId && staff.locationIds.includes(nextLocationId),
+      )
+    )
+      setStaffId(null);
+    setPreviewData(null);
+  }
+
+  function toggleSlot(date: string, time: string) {
+    setSelectedSlots((current) => {
+      const exists = current.some(
+        (slot) => slot.date === date && slot.time === time,
+      );
+      return exists
+        ? current.filter((slot) => slot.date !== date || slot.time !== time)
+        : [...current, { date, time }];
+    });
+  }
+
+  const inputClass =
+    "mt-2 w-full rounded-xl border-2 border-foreground/15 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10";
+  const panelClass =
+    "rounded-[1.65rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#E9D8FF] sm:p-6";
 
   return (
-    <div className="space-y-12 pb-10">
-      <section className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] px-5 py-7 shadow-[7px_7px_0_#171717] sm:px-8 sm:py-9 lg:px-10">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full border-[34px] border-[#FF5C8A]/80" />
-        <div className="pointer-events-none absolute bottom-0 left-[42%] h-28 w-28 translate-y-1/2 rotate-12 bg-[#FFD84D]" />
-        <div className="relative grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,.85fr)]">
-          <div className="max-w-2xl">
+    <div className="mx-auto max-w-[1440px] space-y-8 pb-28 lg:space-y-10">
+      <section className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] p-6 shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full border-[34px] border-[#FF5C8A]/70" />
+        <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
             <p className="inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">
               <Sparkles className="h-3.5 w-3.5" />
               {t("eyebrow")}
             </p>
-            <h1 className="mt-5 max-w-xl text-[2.6rem] font-black leading-[0.94] tracking-[-0.055em] text-[#171717] sm:text-5xl lg:text-[3.5rem]">
+            <h1 className="mt-5 max-w-2xl text-[2.55rem] font-black leading-[0.92] tracking-[-0.06em] sm:text-6xl">
               {t("title")}
             </h1>
-            <p className="mt-5 max-w-xl text-sm font-medium leading-6 text-[#171717]/70 sm:text-base">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-foreground/65">
               {t("subtitle")}
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <button type="button" onClick={scrollToStudio} className="group inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#171717] px-5 py-3 text-sm font-black text-white shadow-[3px_3px_0_#7C3AED] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#7C3AED]">
-                {t("create")}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-              <div className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground/20 bg-white/55 px-5 py-3 text-sm font-bold text-[#171717] backdrop-blur-sm">
-                <CalendarSearch className="h-4 w-4 text-[#7C3AED]" />{options.opportunities.length} · {t("opportunityEyebrow")}
-              </div>
-            </div>
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("story-studio")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#171717] px-6 py-4 text-sm font-black text-white shadow-[4px_4px_0_#7C3AED] transition hover:-translate-y-0.5"
+          >
+            {t("create")}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </section>
 
-          {insights && (
-            <div className="relative rounded-[1.75rem] border-2 border-foreground bg-[#171717] p-5 text-white shadow-[6px_6px_0_#FF5C8A] sm:p-6">
-              <div className="mb-5 flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C4A2FF]">{t("metricsTitle")}</p>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"><Sparkles className="h-4 w-4 text-[#FFD84D]" /></span>
-              </div>
-              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/15">
-                {([
-                  [t("generatedMetric"), insights.totals.generated, Sparkles, "#C4A2FF"],
-                  [t("visitsMetric"), insights.totals.visits, MousePointerClick, "#FFD84D"],
-                  [t("bookingsMetric"), insights.totals.bookings, CalendarSearch, "#FF83A6"],
-                  [t("revenueMetric"), currency.format(insights.totals.revenue), Banknote, "#7EE2B8"],
-                ] as const).map(([label, value, Icon, color]) => (
-                  <div key={label} className="bg-[#171717] p-4 sm:p-5">
-                    <Icon className="h-4 w-4" style={{ color }} />
-                    <p className="mt-4 text-xl font-black tracking-tight sm:text-2xl">{value}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/50">{label}</p>
-                  </div>
-                ))}
-              </div>
+      <section className="rounded-[1.5rem] border-2 border-foreground/10 bg-white p-4 sm:p-5">
+        <button
+          type="button"
+          onClick={() => setShowMetrics((current) => !current)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <span className="flex items-center gap-2 font-black">
+            <BarChart3 className="h-4 w-4 text-[#7C3AED]" />
+            {t("metricsTitle")}
+          </span>
+          <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+            {(filteredTotals.conversionRate * 100).toFixed(1)}%{" "}
+            {t("conversionShort")}
+            <ChevronDown
+              className={`h-4 w-4 transition ${showMetrics ? "rotate-180" : ""}`}
+            />
+          </span>
+        </button>
+        <div
+          className={`${showMetrics ? "grid" : "hidden"} mt-4 gap-3 sm:grid-cols-4 lg:grid`}
+        >
+          {[
+            [t("generatedMetric"), filteredTotals.generated],
+            [t("visitsMetric"), filteredTotals.visits],
+            [t("bookingsMetric"), filteredTotals.bookings],
+            [t("revenueMetric"), currency.format(filteredTotals.revenue)],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-2xl bg-[#F8F5ED] p-4">
+              <p className="text-2xl font-black">{value}</p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {label}
+              </p>
             </div>
-          )}
+          ))}
         </div>
       </section>
 
       <section>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#7C3AED]">{t("opportunityEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] sm:text-3xl">{t("opportunityTitle")}</h2>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#7C3AED]">
+              01 · {t("opportunityEyebrow")}
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+              {t("opportunityTitle")}
+            </h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("opportunityHint")}</p>
+          <p className="max-w-lg text-sm leading-6 text-muted-foreground">
+            {t("opportunityHint")}
+          </p>
         </div>
-
-        {featuredOpportunity ? (
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)]">
-            <article className="group relative overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#FFD6E5] p-5 shadow-[5px_5px_0_#171717] sm:p-7">
-              <div className="pointer-events-none absolute -bottom-12 -right-8 h-36 w-36 rounded-full bg-[#FF5C8A]/35 transition-transform duration-500 group-hover:scale-125" />
-              <div className="relative flex h-full flex-col">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <span className={`rounded-full border-2 border-foreground px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${featuredOpportunity.source === "EXPLICIT" ? "bg-[#FFD84D] text-[#171717]" : "bg-white text-[#7C3AED]"}`}>
-                    {featuredOpportunity.source === "EXPLICIT" ? t("manualOpening") : t("recurringOpening")}
+        {options.opportunities.length ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {options.opportunities.map((opportunity, index) => (
+              <article
+                key={opportunity.id}
+                className={`group rounded-[1.5rem] border-2 border-foreground p-5 transition hover:-translate-y-1 ${index === 0 ? "bg-[#FFD8E6] shadow-[5px_5px_0_#171717]" : "bg-white"}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${opportunity.urgency === "HIGH" ? "bg-[#FF5C8A] text-white" : opportunity.source === "EXPLICIT" ? "bg-[#FFD84D]" : "bg-[#E9D8FF] text-[#5B21B6]"}`}
+                  >
+                    {opportunity.source === "EXPLICIT"
+                      ? t("manualOpening")
+                      : opportunity.urgency === "HIGH"
+                        ? t("urgent")
+                        : t("recurringOpening")}
                   </span>
-                  <span className="rounded-full bg-[#171717] px-3 py-1.5 text-xs font-black text-white">{currency.format(featuredOpportunity.potentialRevenue)}</span>
+                  <span className="text-sm font-black text-emerald-700">
+                    {currency.format(opportunity.potentialRevenue)}
+                  </span>
                 </div>
-                <div className="mt-8 grid gap-6 sm:grid-cols-[120px_1fr] sm:items-end">
-                  <div>
-                    <p className="text-5xl font-black leading-none tracking-[-0.08em] text-[#7C3AED]">{new Date(`${featuredOpportunity.date}T12:00:00`).toLocaleDateString(locale, { day: "2-digit" })}</p>
-                    <p className="mt-2 text-xs font-black uppercase tracking-[0.16em]">{new Date(`${featuredOpportunity.date}T12:00:00`).toLocaleDateString(locale, { month: "short", weekday: "short" })}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black tracking-[-0.035em] sm:text-3xl">{featuredOpportunity.serviceName}</h3>
-                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold text-[#171717]/65">
-                      <span className="inline-flex items-center gap-1.5"><UsersRound className="h-3.5 w-3.5" />{featuredOpportunity.staffName}</span>
-                      <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{featuredOpportunity.locationName}</span>
-                    </div>
-                  </div>
+                <p className="mt-5 text-xs font-black capitalize text-[#7C3AED]">
+                  {opportunity.dateLabel}
+                </p>
+                <h3 className="mt-1 text-xl font-black">
+                  {opportunity.serviceName}
+                </h3>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  {opportunity.reason}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {opportunity.times.slice(0, 5).map((time) => (
+                    <span
+                      key={time}
+                      className="rounded-lg border border-foreground/10 bg-white px-2 py-1 text-xs font-bold"
+                    >
+                      {time}
+                    </span>
+                  ))}
                 </div>
-                <div className="mt-7 flex flex-wrap items-center gap-2">
-                  {featuredOpportunity.times.map((time) => <span key={time} className="rounded-full border border-foreground/20 bg-white/60 px-3 py-1.5 text-xs font-black">{time}</span>)}
-                  <span className="rounded-full border border-foreground/20 px-3 py-1.5 text-xs font-bold text-[#171717]/60">{t("slotsCount", { count: featuredOpportunity.slotCount })}</span>
-                </div>
-                <button type="button" disabled={loading} onClick={() => applyOpportunity(featuredOpportunity)} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#171717] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#7C3AED] disabled:opacity-50 sm:w-fit">
-                  <Sparkles className="h-4 w-4" />{t("createFromOpportunity")}
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => void applyOpportunity(opportunity)}
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#171717] px-4 py-3 text-sm font-black text-white transition group-hover:bg-[#7C3AED]"
+                >
+                  <WandSparkles className="h-4 w-4" />
+                  {t("createFromOpportunity")}
                 </button>
-              </div>
-            </article>
-
-            <div className="overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-white">
-              {otherOpportunities.length > 0 ? otherOpportunities.map((opportunity, index) => (
-                <button key={opportunity.id} type="button" disabled={loading} onClick={() => applyOpportunity(opportunity)} className={`group flex w-full items-center gap-3 p-4 text-left transition hover:bg-[#F2E8FF] disabled:opacity-50 sm:p-5 ${index > 0 ? "border-t-2 border-foreground/10" : ""}`}>
-                  <span className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-foreground text-center ${opportunity.source === "EXPLICIT" ? "bg-[#FFD84D]" : "bg-[#E9D8FF]"}`}>
-                    <span className="text-lg font-black leading-none">{new Date(`${opportunity.date}T12:00:00`).toLocaleDateString(locale, { day: "2-digit" })}</span>
-                    <span className="mt-0.5 text-[8px] font-black uppercase">{new Date(`${opportunity.date}T12:00:00`).toLocaleDateString(locale, { month: "short" })}</span>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-black">{opportunity.serviceName}</span>
-                    <span className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground"><Clock3 className="h-3 w-3 shrink-0" />{opportunity.times.join(" · ")} · {opportunity.staffName}</span>
-                  </span>
-                  <span className="hidden text-xs font-black text-emerald-700 sm:block">{currency.format(opportunity.potentialRevenue)}</span>
-                  <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
-                </button>
-              )) : <div className="flex h-full min-h-48 items-center justify-center p-6 text-sm text-muted-foreground">{t("noOpportunities")}</div>}
-            </div>
+              </article>
+            ))}
           </div>
         ) : (
-          <div className="mt-6 rounded-[1.75rem] border-2 border-dashed border-foreground/20 bg-white/60 px-5 py-10 text-center text-sm text-muted-foreground">{t("noOpportunities")}</div>
+          <div className="rounded-2xl border-2 border-dashed border-foreground/20 p-8 text-center text-sm text-muted-foreground">
+            {t("noOpportunities")}
+          </div>
         )}
       </section>
 
       <section id="story-studio" className="scroll-mt-20">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-5 space-y-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#FF4F87]">02 · Studio</p>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] sm:text-3xl">{t("configure")}</h2>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#FF4F87]">
+              02 · Studio
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+              {t("configure")}
+            </h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t("configureHint")}</p>
-        </div>
-
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,460px)_minmax(360px,1fr)]">
-      <section className="space-y-6 rounded-[1.75rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#E9D8FF] sm:p-6">
-        <div className="flex items-center gap-3 border-b-2 border-foreground/10 pb-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-sm font-black text-white">01</span>
-          <div>
-            <h3 className="font-black">{t("configure")}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">{selectedLocation?.name} · {selectedStaffName}</p>
-          </div>
-        </div>
-
-        <label className="block text-sm font-medium">{t("location")}
-          <select value={locationId} onChange={(event) => changeLocation(event.target.value)} className={inputClass}>
-            {options.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-          </select>
-        </label>
-
-        <div>
-          <span className="text-sm font-medium">{t("service")}</span>
-          <button type="button" onClick={() => { invalidatePreview(); setAllServices((current) => !current); }} className={`mt-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left text-sm font-bold transition ${allServices ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15 hover:border-foreground/30"}`}>
-            <span>{t("allServices")}</span>
-            <span className={`flex h-5 w-5 items-center justify-center rounded-md border ${allServices ? "border-[#7C3AED] bg-[#7C3AED] text-white" : "border-border"}`}>{allServices && <Check className="h-3.5 w-3.5" />}</span>
-          </button>
-          {!allServices && (
-            <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto rounded-xl border-2 border-foreground/15 p-2">
-              {availableServices.map((service) => {
-                const selected = serviceIds.includes(service.id);
-                return (
-                  <button key={service.id} type="button" onClick={() => toggleService(service.id)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${selected ? "bg-[#E9D8FF] text-[#5B21B6]" : "hover:bg-[#FFF6D8]"}`}>
-                    <span><span className="font-medium">{service.name}</span><span className="ml-2 text-xs opacity-65">{service.duration} min</span></span>
-                    <span className={`flex h-5 w-5 items-center justify-center rounded-md border ${selected ? "border-[#7C3AED] bg-[#7C3AED] text-white" : "border-border"}`}>{selected && <Check className="h-3.5 w-3.5" />}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <span className="mt-1.5 block text-xs text-muted-foreground">{allServices ? t("allServicesHint") : t("selectedServices", { count: serviceIds.length })}</span>
-        </div>
-
-        <label className="block text-sm font-medium">{t("staff")}
-          {options.canChooseStaff ? (
-            <select value={staffId ?? ""} onChange={(event) => changeStaff(event.target.value || null)} className={inputClass}>
-              <option value="">{t("wholeTeam")}</option>
-              {availableStaff.map((staff) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
-            </select>
-          ) : (
-            <div className={`${inputClass} flex items-center gap-2 bg-[#F8F5ED]`}><UsersRound className="h-4 w-4 text-[#7C3AED]" />{availableStaff[0]?.name ?? t("mySchedule")}</div>
-          )}
-          {!options.canChooseStaff && <span className="mt-1.5 block text-xs text-muted-foreground">{t("ownScheduleHint")}</span>}
-        </label>
-
-        <div>
-          <span className="text-sm font-medium">{designT("availabilityContent")}</span>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { invalidatePreview(); setShowSchedule(true); }} className={`rounded-xl border-2 px-3 py-3 text-left transition ${showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}>
-              <span className="block text-sm font-black">{designT("withSchedule")}</span>
-              <span className="mt-1 block text-[10px] leading-4 opacity-65">{designT("withScheduleHint")}</span>
-            </button>
-            <button type="button" onClick={() => { invalidatePreview(); setShowSchedule(false); }} className={`rounded-xl border-2 px-3 py-3 text-left transition ${!showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}>
-              <span className="block text-sm font-black">{designT("withoutSchedule")}</span>
-              <span className="mt-1 block text-[10px] leading-4 opacity-65">{designT("withoutScheduleHint")}</span>
-            </button>
-          </div>
-        </div>
-
-        {showSchedule && <div>
-          <span className="text-sm font-medium">{t("period")}</span>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {([['TODAY', t('today')], ['TOMORROW', t('tomorrow')], ['NEXT_7', t('next7')], ['NEXT_AVAILABLE', t('nextAvailable')]] as const).map(([value, label]) => (
-              <button key={value} type="button" onClick={() => { invalidatePreview(); setRange(value); setTargetDate(null); }} className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition ${range === value && !targetDate ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15 hover:border-foreground/30"}`}>{label}</button>
-            ))}
-          </div>
-          {targetDate && <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700">{t("selectedDate", { date: targetDate })}</p>}
-        </div>}
-
-        <label className="block text-sm font-medium">{t("headline")}
-          <input maxLength={80} value={headline} onChange={(event) => { invalidatePreview(); setHeadline(event.target.value); }} className={inputClass} />
-        </label>
-
-        <div>
-          <span className="text-sm font-medium">{t("template")}</span>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            <button type="button" onClick={() => { invalidatePreview(); setTemplate("AURORA"); }} style={{ backgroundColor: canvasColor }} className={`relative h-28 overflow-hidden rounded-xl border-2 p-2 text-left text-xs font-black transition hover:-translate-y-1 ${template === "AURORA" ? "border-foreground ring-4 ring-[#7C3AED]/20" : "border-foreground/15"}`}>
-              <span className="absolute -right-5 -top-5 h-16 w-16 rounded-full" style={{ backgroundColor: secondaryColor }} />
-              <span className="absolute bottom-3 right-2 h-10 w-10 rotate-12 border-[6px]" style={{ borderColor: accentColor }} />
-              <span className="relative rounded-full bg-white/90 px-2 py-1">{t("auroraTemplate")}</span>
-            </button>
-            <button type="button" onClick={() => { invalidatePreview(); setTemplate("EDITORIAL"); }} style={{ backgroundColor: canvasColor }} className={`relative flex h-28 items-end justify-center overflow-hidden rounded-xl border-2 p-2 text-center text-xs font-black transition hover:-translate-y-1 ${template === "EDITORIAL" ? "border-foreground ring-4 ring-[#7C3AED]/20" : "border-foreground/15"}`}>
-              <span className="absolute -top-5 h-20 w-20 rounded-full opacity-80" style={{ backgroundColor: accentColor }} />
-              <span className="relative rounded-full bg-white/90 px-2 py-1">{t("editorialTemplate")}</span>
-            </button>
-            <button type="button" onClick={() => { invalidatePreview(); setTemplate("BOLD"); }} style={{ backgroundColor: accentColor, boxShadow: `inset -42px 0 0 ${secondaryColor}` }} className={`relative h-28 overflow-hidden rounded-md border-2 p-2 text-left text-xs font-black transition hover:-translate-y-1 ${template === "BOLD" ? "border-foreground ring-4 ring-[#7C3AED]/20" : "border-foreground/15"}`}>
-              <span className="relative inline-block border-2 border-foreground bg-white px-2 py-1">{t("boldTemplate")}</span>
-            </button>
-          </div>
-        </div>
-
-        <details open className="rounded-2xl border-2 border-foreground/15 bg-[#F8F5ED] p-4">
-          <summary className="cursor-pointer list-none text-sm font-black"><span className="inline-flex items-center gap-2"><Palette className="h-4 w-4 text-[#7C3AED]" />{designT("customize")}</span></summary>
-          <div className="mt-4 space-y-4">
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">{designT("background")}</span>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { invalidatePreview(); setBackgroundMode("ART"); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${backgroundMode === "ART" ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border"}`}>{designT("artBackground")}</button>
-                <button type="button" onClick={() => { invalidatePreview(); setBackgroundMode("SOLID"); }} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${backgroundMode === "SOLID" ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border"}`}>{designT("solidBackground")}</button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                [designT("accentColor"), accentColor, setAccentColor],
-                [designT("secondaryColor"), secondaryColor, setSecondaryColor],
-                [designT("canvasColor"), canvasColor, setCanvasColor],
-                [designT("textColor"), storyTextColor, setStoryTextColor],
-              ] as const).map(([label, value, setter]) => (
-                <label key={label} className="flex items-center gap-2 rounded-lg border border-border bg-background p-2 text-xs font-medium">
-                  <input type="color" value={value} onChange={(event) => { invalidatePreview(); setter(event.target.value); }} className="h-8 w-8 cursor-pointer rounded border-0 bg-transparent p-0" />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => { invalidatePreview(); setShowLogo((current) => !current); }} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold ${showLogo ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border"}`}><span>{designT("showLogo")}</span>{showLogo && <Check className="h-3.5 w-3.5" />}</button>
-              <button type="button" onClick={() => { invalidatePreview(); setShowServices((current) => !current); }} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold ${showServices ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border"}`}><span>{designT("showServices")}</span>{showServices && <Check className="h-3.5 w-3.5" />}</button>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">{designT("visibleInfo")}</span>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {([
-                  [designT("showProfessional"), showProfessional, () => setShowProfessional((current) => !current), false],
-                  [designT("showLocationName"), showLocationName, () => setShowLocationName((current) => !current), false],
-                  [designT("showAddress"), showAddress, () => setShowAddress((current) => !current), !selectedAddress],
-                ] as const).map(([label, active, toggle, disabled]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => { invalidatePreview(); toggle(); }}
-                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-left text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35 ${active ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border"}`}
-                  >
-                    <span>{label}</span>
-                    {active && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                ))}
-              </div>
-              {options.isIndividualPlan && <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{designT("individualDefaultHint")}</p>}
-            </div>
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">{designT("ctaMode")}</span>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => changeCtaMode("LINK_STICKER")} className={`rounded-xl border-2 px-3 py-3 text-left text-xs font-black transition ${ctaMode === "LINK_STICKER" ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15 bg-white"}`}>
-                  {designT("linkSticker")}
-                </button>
-                <button type="button" onClick={() => changeCtaMode("BIO")} className={`rounded-xl border-2 px-3 py-3 text-left text-xs font-black transition ${ctaMode === "BIO" ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15 bg-white"}`}>
-                  {designT("bioLink")}
-                </button>
-              </div>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">{ctaMode === "LINK_STICKER" ? designT("linkStickerHint") : designT("bioLinkHint")}</p>
-            </div>
-            <label className="block text-xs font-medium">{designT("cta")}
-              <input maxLength={90} value={callToAction} onChange={(event) => { invalidatePreview(); setCallToAction(event.target.value); }} className={inputClass} />
-            </label>
-          </div>
-        </details>
-
-        {error && <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-600">{error}</p>}
-        <button type="button" disabled={loading || !locationId || (!allServices && serviceIds.length === 0) || !headline.trim()} onClick={() => void generateStory()} className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#7C3AED] px-4 py-3.5 text-sm font-black text-white shadow-[4px_4px_0_#171717] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_#171717] disabled:translate-y-0 disabled:opacity-50">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-          {loading ? t("calculating") : t("create")}
-        </button>
-      </section>
-
-      <section className="overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#171717] text-white shadow-[6px_6px_0_#FF5C8A] xl:sticky xl:top-6">
-        <div className="flex items-center justify-between gap-3 border-b border-white/15 px-5 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"><ImagePlus className="h-4 w-4 text-[#C4A2FF]" /></span>
-            <div><h3 className="font-black">{t("preview")}</h3><p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{t("format")}</p></div>
-          </div>
-          {previewUrl ? <span className="rounded-full bg-[#7EE2B8] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#171717]">{t("ready")}</span> : <span className="h-2.5 w-2.5 rounded-full bg-[#FFD84D] shadow-[0_0_0_5px_rgba(255,216,77,.12)]" />}
-        </div>
-
-        <div className="relative flex min-h-[640px] items-center justify-center overflow-hidden bg-[#242128] p-5 [background-image:radial-gradient(rgba(255,255,255,.09)_1px,transparent_1px)] [background-size:18px_18px] sm:p-8">
-          <div className="pointer-events-none absolute left-5 top-7 rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/45">{brand.name}</div>
-          {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Vista previa de la historia" className="relative max-h-[680px] w-auto rounded-[1.4rem] border-[6px] border-black shadow-[0_30px_80px_rgba(0,0,0,.55)]" />
-          ) : (
-            <div
-              className={`relative aspect-[9/16] w-full max-w-[330px] overflow-hidden border-[6px] border-black p-6 shadow-[0_30px_80px_rgba(0,0,0,.55)] ${template === "BOLD" ? "rounded-md" : template === "EDITORIAL" ? "rounded-[2rem]" : "rounded-[1.4rem]"}`}
-              style={{
-                backgroundColor: canvasColor,
-                color: storyTextColor,
-                backgroundImage: backgroundMode === "ART"
-                  ? template === "BOLD"
-                    ? "linear-gradient(115deg, " + accentColor + " 0 16%, transparent 16% 72%, " + secondaryColor + " 72%)"
-                    : template === "EDITORIAL"
-                      ? "radial-gradient(ellipse at 50% -5%, " + accentColor + " 0 22%, transparent 23%), radial-gradient(circle at 15% 85%, " + secondaryColor + " 0 18%, transparent 19%)"
-                      : "radial-gradient(circle at 90% 10%, " + secondaryColor + " 0 17%, transparent 18%), radial-gradient(circle at 8% 78%, " + accentColor + " 0 21%, transparent 22%)"
-                  : "none",
-              }}
+          <div className="grid max-w-3xl gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setStudioMode("QUICK")}
+              aria-pressed={studioMode === "QUICK"}
+              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "QUICK" ? "border-foreground bg-[#171717] text-white shadow-[4px_4px_0_#7C3AED]" : "border-foreground/15 bg-white hover:border-foreground"}`}
             >
-              <div className="absolute -right-10 top-[28%] h-28 w-28 rotate-12 border-[16px] opacity-75" style={{ borderColor: accentColor }} />
-              <div className="relative flex h-full flex-col">
-                <div className="flex items-center justify-between">
-                  {showLogo ? (
-                    <div className="flex items-center gap-2">
-                      {brand.logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={brand.logoUrl} alt="" className="h-9 w-9 rounded-full border border-black/10 bg-white object-contain p-0.5 shadow-lg" />
-                      ) : (
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-black text-white shadow-lg" style={{ backgroundColor: accentColor }}>{brandInitial}</span>
-                      )}
-                      <span className="max-w-[130px] truncate text-[10px] font-black uppercase tracking-[0.14em]">{brand.name}</span>
-                    </div>
-                  ) : <span />}
-                  <span className="rounded-full border border-current/20 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.14em]">{t("nextAvailable")}</span>
+              <span className="flex items-start gap-3">
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "QUICK" ? "bg-[#FFD84D] text-[#171717]" : "bg-[#F8F5ED] text-[#7C3AED]"}`}
+                >
+                  <Sparkles className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-base font-black">
+                    {t("quickMode")}
+                    {studioMode === "QUICK" && (
+                      <Check className="h-4 w-4 text-[#7EE2B8]" />
+                    )}
+                  </span>
+                  <span
+                    className={`mt-1 block text-xs leading-5 ${studioMode === "QUICK" ? "text-white/65" : "text-muted-foreground"}`}
+                  >
+                    {t("configureHint")}
+                  </span>
+                  <span className="mt-3 flex flex-wrap gap-1.5">
+                    {[t("contentTab"), t("period"), t("preview")].map(
+                      (item) => (
+                        <span
+                          key={item}
+                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "QUICK" ? "bg-white/10" : "bg-[#F8F5ED]"}`}
+                        >
+                          {item}
+                        </span>
+                      ),
+                    )}
+                  </span>
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStudioMode("ADVANCED")}
+              aria-pressed={studioMode === "ADVANCED"}
+              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "ADVANCED" ? "border-foreground bg-[#7C3AED] text-white shadow-[4px_4px_0_#171717]" : "border-foreground/15 bg-white hover:border-foreground"}`}
+            >
+              <span className="flex items-start gap-3">
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "ADVANCED" ? "bg-[#FFD8E6] text-[#9D174D]" : "bg-[#F8F5ED] text-[#FF4F87]"}`}
+                >
+                  <LayoutTemplate className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-base font-black">
+                    {t("advancedMode")}
+                    {studioMode === "ADVANCED" && (
+                      <Check className="h-4 w-4 text-[#7EE2B8]" />
+                    )}
+                  </span>
+                  <span
+                    className={`mt-1 block text-xs leading-5 ${studioMode === "ADVANCED" ? "text-white/70" : "text-muted-foreground"}`}
+                  >
+                    {t("designHint")}
+                  </span>
+                  <span className="mt-3 flex flex-wrap gap-1.5">
+                    {[t("template"), designT("background"), t("fontStyle")].map(
+                      (item) => (
+                        <span
+                          key={item}
+                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "ADVANCED" ? "bg-white/15" : "bg-[#F8F5ED]"}`}
+                        >
+                          {item}
+                        </span>
+                      ),
+                    )}
+                  </span>
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="sticky top-2 z-30 mb-4 grid grid-cols-3 rounded-full border-2 border-foreground bg-white p-1 shadow-lg xl:hidden">
+          {(["CONTENT", "DESIGN", "PREVIEW"] as MobilePanel[]).map((panel) => (
+            <button
+              key={panel}
+              type="button"
+              onClick={() => {
+                setMobilePanel(panel);
+                if (panel === "DESIGN") setStudioMode("ADVANCED");
+              }}
+              className={`rounded-full px-2 py-2.5 text-xs font-black ${mobilePanel === panel ? "bg-[#7C3AED] text-white" : ""}`}
+            >
+              {panel === "CONTENT"
+                ? t("contentTab")
+                : panel === "DESIGN"
+                  ? t("designTab")
+                  : t("preview")}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,480px)_minmax(430px,1fr)]">
+          <div
+            className={`${mobilePanel === "CONTENT" || mobilePanel === "DESIGN" ? "block" : "hidden"} space-y-5 xl:block`}
+          >
+            <section
+              className={`${panelClass} ${mobilePanel === "DESIGN" ? "hidden xl:block" : ""}`}
+            >
+              <div className="flex items-center gap-3 border-b-2 border-foreground/10 pb-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-sm font-black text-white">
+                  01
+                </span>
+                <div>
+                  <h3 className="font-black">{t("contentTab")}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedLocation?.name} · {selectedServiceNames}
+                  </p>
                 </div>
-                <div className={`my-auto ${template === "EDITORIAL" ? "text-center" : ""}`}>
-                  {showProfessional && <span className="inline-block rotate-[-2deg] rounded px-2 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white" style={{ backgroundColor: accentColor }}>{selectedStaffName}</span>}
-                  <p className={`max-w-[260px] font-black leading-[0.9] tracking-[-0.065em] ${showProfessional ? "mt-5" : ""} ${showSchedule ? "text-[2rem]" : "text-[2.4rem]"} ${template === "EDITORIAL" ? "mx-auto" : ""}`}>{headline || t("defaultHeadline")}</p>
-                  {showServices && <p className={`mt-5 max-w-[230px] text-xs font-bold leading-5 opacity-65 ${template === "EDITORIAL" ? "mx-auto" : ""}`}>{selectedServiceNames}</p>}
-                  {showSchedule && featuredOpportunity && (
-                    <div className="mt-5 rounded-xl border border-current/15 bg-white/55 p-2.5 text-left">
-                      <p className="text-[8px] font-black capitalize">{featuredOpportunity.dateLabel}</p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {featuredOpportunity.times.slice(0, 4).map((time) => <span key={time} className="rounded-md px-1.5 py-1 text-[8px] font-black text-white" style={{ backgroundColor: accentColor }}>{time}</span>)}
-                      </div>
+              </div>
+
+              {options.hasMultipleLocations && (
+                <label className="mt-5 block text-sm font-medium">
+                  {t("location")}
+                  <select
+                    value={locationId}
+                    onChange={(event) => changeLocation(event.target.value)}
+                    className={inputClass}
+                  >
+                    {options.locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              <div className="mt-5">
+                <span className="text-sm font-medium">{t("service")}</span>
+                <button
+                  type="button"
+                  onClick={() => setAllServices((current) => !current)}
+                  className={`mt-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-sm font-bold ${allServices ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
+                >
+                  <span>{t("allServices")}</span>
+                  {allServices && <Check className="h-4 w-4" />}
+                </button>
+                {!allServices && (
+                  <div className="mt-2 max-h-48 space-y-1 overflow-y-auto rounded-xl border-2 border-foreground/10 p-2">
+                    {availableServices.map((service) => {
+                      const active = serviceIds.includes(service.id);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() =>
+                            setServiceIds((current) =>
+                              active
+                                ? current.filter((id) => id !== service.id)
+                                : [...current, service.id],
+                            )
+                          }
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${active ? "bg-[#E9D8FF] text-[#5B21B6]" : "hover:bg-[#F8F5ED]"}`}
+                        >
+                          <span>
+                            {service.name}
+                            <small className="ml-2 opacity-60">
+                              {service.duration} min
+                            </small>
+                          </span>
+                          {active && <Check className="h-4 w-4" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {options.canChooseStaff &&
+                !options.isIndividualPlan &&
+                availableStaff.length > 1 && (
+                  <label className="mt-5 block text-sm font-medium">
+                    {t("staff")}
+                    <select
+                      value={staffId ?? ""}
+                      onChange={(event) =>
+                        setStaffId(event.target.value || null)
+                      }
+                      className={inputClass}
+                    >
+                      <option value="">{t("wholeTeam")}</option>
+                      {availableStaff.map((staff) => (
+                        <option key={staff.id} value={staff.id}>
+                          {staff.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+              <div className="mt-5">
+                <span className="text-sm font-medium">
+                  {designT("availabilityContent")}
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSchedule(true)}
+                    className={`rounded-xl border-2 p-3 text-left ${showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
+                  >
+                    <span className="block text-sm font-black">
+                      {designT("withSchedule")}
+                    </span>
+                    <span className="mt-1 block text-[10px] opacity-65">
+                      {designT("withScheduleHint")}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSchedule(false)}
+                    className={`rounded-xl border-2 p-3 text-left ${!showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
+                  >
+                    <span className="block text-sm font-black">
+                      {designT("withoutSchedule")}
+                    </span>
+                    <span className="mt-1 block text-[10px] opacity-65">
+                      {designT("withoutScheduleHint")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {showSchedule && (
+                <div className="mt-5">
+                  <span className="text-sm font-medium">{t("period")}</span>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        ["TODAY", t("today")],
+                        ["TOMORROW", t("tomorrow")],
+                        ["NEXT_3_AVAILABLE", t("next3Available")],
+                        ["NEXT_AVAILABLE", t("nextAvailable")],
+                        ["NEXT_7", t("next7")],
+                        ["CUSTOM", t("customRange")],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setRange(value)}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold ${range === value ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {range === "CUSTOM" && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <label className="text-xs font-medium">
+                        {t("startDate")}
+                        <input
+                          type="date"
+                          value={targetDate}
+                          onChange={(event) =>
+                            setTargetDate(event.target.value)
+                          }
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="text-xs font-medium">
+                        {t("endDate")}
+                        <input
+                          type="date"
+                          value={endDate}
+                          min={targetDate}
+                          onChange={(event) => setEndDate(event.target.value)}
+                          className={inputClass}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="date"
+                      value={excludeDateInput}
+                      onChange={(event) =>
+                        setExcludeDateInput(event.target.value)
+                      }
+                      className="min-w-0 flex-1 rounded-xl border-2 border-foreground/15 px-3 py-2 text-xs"
+                    />
+                    <button
+                      type="button"
+                      disabled={!excludeDateInput}
+                      onClick={() => {
+                        setExcludedDates((current) =>
+                          current.includes(excludeDateInput)
+                            ? current
+                            : [...current, excludeDateInput],
+                        );
+                        setExcludeDateInput("");
+                      }}
+                      className="rounded-xl border-2 border-foreground px-3 text-xs font-black"
+                    >
+                      {t("excludeDate")}
+                    </button>
+                  </div>
+                  {excludedDates.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {excludedDates.map((date) => (
+                        <button
+                          key={date}
+                          type="button"
+                          onClick={() =>
+                            setExcludedDates((current) =>
+                              current.filter((entry) => entry !== date),
+                            )
+                          }
+                          className="inline-flex items-center gap-1 rounded-full bg-[#F8F5ED] px-2 py-1 text-[10px] font-bold"
+                        >
+                          {date}
+                          <X className="h-3 w-3" />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
-                <div>
-                  <div className="h-px w-full bg-current opacity-20" />
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <span className="max-w-[130px] text-[8px] font-black uppercase tracking-[0.12em] opacity-55">{selectedPlaceLabel}</span>
-                    {ctaMode === "LINK_STICKER" ? (
-                      <span className="flex flex-col items-end gap-1.5">
-                        <span className="text-[9px] font-black">{callToAction}</span>
-                        <span className="flex h-10 w-28 items-center justify-center rounded-full border border-dashed border-current/40 bg-white/35 text-[7px] font-black uppercase tracking-wider">{designT("stickerArea")}</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[9px] font-black text-white" style={{ backgroundColor: accentColor }}>{callToAction}<ArrowRight className="h-3 w-3" /></span>
-                    )}
-                  </div>
+              )}
+
+              <div className="mt-5">
+                <span className="text-sm font-medium">{t("objective")}</span>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      "FILL_SLOTS",
+                      "LAST_MINUTE",
+                      "PROMOTE_SERVICE",
+                      "CANCELLATION",
+                    ] as StoryObjective[]
+                  ).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setObjective(value);
+                        setHeadline(headlineSuggestions[value][0]);
+                      }}
+                      className={`rounded-xl border-2 p-2.5 text-left text-xs font-black ${objective === value ? "border-[#FF4F87] bg-[#FFD8E6]" : "border-foreground/15"}`}
+                    >
+                      {t(`objective${value}`)}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        <div className="grid gap-2 border-t border-white/15 bg-[#171717] p-4 sm:grid-cols-3">
-          <button type="button" disabled={!previewBlob} onClick={downloadStory} className="flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-[#171717] transition hover:-translate-y-0.5 disabled:opacity-25"><Download className="h-4 w-4" />{t("download")}</button>
-          <button type="button" disabled={!previewBlob} onClick={() => void shareStory()} className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black transition hover:bg-white/10 disabled:opacity-25"><Share2 className="h-4 w-4" />{t("share")}</button>
-          <button type="button" disabled={!bookingLink && !fallbackBookingPath} onClick={copyBookingLink} className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black transition hover:bg-white/10 disabled:opacity-25">{copied ? <Check className="h-4 w-4 text-[#7EE2B8]" /> : <Copy className="h-4 w-4" />}{copied ? t("copied") : t("copyLink")}</button>
-        </div>
-      </section>
+              <label className="mt-5 block text-sm font-medium">
+                {t("headline")}
+                <input
+                  maxLength={80}
+                  value={headline}
+                  onChange={(event) => setHeadline(event.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {headlineSuggestions[objective].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setHeadline(suggestion)}
+                    className="rounded-full border border-foreground/15 bg-[#F8F5ED] px-3 py-1.5 text-[10px] font-bold"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+
+              {previewData?.days.length ? (
+                <div className="mt-5 rounded-2xl bg-[#F8F5ED] p-4">
+                  <p className="text-xs font-black">{t("chooseSlots")}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {t("chooseSlotsHint")}
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {previewData.days.map((day) => (
+                      <div key={day.date}>
+                        <p className="text-[10px] font-black capitalize">
+                          {day.label}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {day.times.map((time) => {
+                            const active =
+                              selectedSlots.length === 0 ||
+                              selectedSlots.some(
+                                (slot) =>
+                                  slot.date === day.date && slot.time === time,
+                              );
+                            return (
+                              <button
+                                key={time}
+                                type="button"
+                                onClick={() => {
+                                  if (selectedSlots.length === 0)
+                                    setSelectedSlots(
+                                      previewData.days
+                                        .flatMap((entry) =>
+                                          entry.times.map((entryTime) => ({
+                                            date: entry.date,
+                                            time: entryTime,
+                                          })),
+                                        )
+                                        .filter(
+                                          (slot) =>
+                                            slot.date !== day.date ||
+                                            slot.time !== time,
+                                        ),
+                                    );
+                                  else toggleSlot(day.date, time);
+                                }}
+                                className={`rounded-lg px-2 py-1 text-xs font-bold ${active ? "bg-[#7C3AED] text-white" : "bg-white text-muted-foreground"}`}
+                              >
+                                {time}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                disabled={loading || !formValid}
+                onClick={() => void generatePreview()}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border-2 border-foreground bg-[#7C3AED] px-4 py-3.5 text-sm font-black text-white shadow-[4px_4px_0_#171717] disabled:opacity-45"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+                {loading ? t("calculating") : t("refreshPreview")}
+              </button>
+            </section>
+
+            <section
+              style={{ display: studioMode === "QUICK" ? "none" : undefined }}
+              className={`${panelClass} ${mobilePanel === "CONTENT" ? "hidden xl:block" : ""}`}
+            >
+              <div className="flex items-center gap-3 border-b-2 border-foreground/10 pb-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF4F87] text-sm font-black text-white">
+                  02
+                </span>
+                <div>
+                  <h3 className="font-black">{t("designTab")}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {t("designHint")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="flex items-end justify-between gap-3">
+                  <span className="text-sm font-medium">{t("template")}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    1080 × 1920
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {(
+                    [
+                      "AURORA",
+                      "EDITORIAL",
+                      "BOLD",
+                      "MINIMAL",
+                      "FRAME",
+                    ] as StoryTemplate[]
+                  ).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setTemplate(value)}
+                      aria-pressed={template === value}
+                      className={`relative flex items-center gap-3 rounded-[1.15rem] border-2 bg-white p-3 text-left transition ${template === value ? "border-[#7C3AED] bg-[#F7F0FF] shadow-[3px_3px_0_#7C3AED]" : "border-foreground/10 hover:border-foreground/35"}`}
+                    >
+                      <StoryTemplateThumbnail
+                        template={value}
+                        data={renderData}
+                        accentColor={accentColor}
+                        canvasColor={canvasColor}
+                        productLogoUrl={
+                          productLogoDataUrl ?? "/icon-512x512.png"
+                        }
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-black">
+                            {t(`template${value}`)}
+                          </span>
+                          {template === value && (
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7C3AED] text-white">
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
+                          <span
+                            className="block h-full rounded-full"
+                            style={{
+                              width:
+                                value === "MINIMAL"
+                                  ? "35%"
+                                  : value === "EDITORIAL"
+                                    ? "55%"
+                                    : value === "BOLD"
+                                      ? "100%"
+                                      : value === "FRAME"
+                                        ? "75%"
+                                        : "65%",
+                              backgroundColor: accentColor,
+                            }}
+                          />
+                        </span>
+                        <span className="mt-2 block text-[10px] font-medium text-muted-foreground">
+                          {value === "MINIMAL" || value === "EDITORIAL"
+                            ? t("fontElegant")
+                            : value === "BOLD"
+                              ? t("fontBold")
+                              : t("fontModern")}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <span className="text-sm font-medium">
+                  {designT("background")}
+                </span>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(["ART", "SOLID", "PHOTO"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setBackgroundMode(mode)}
+                      className={`rounded-xl border-2 p-2 text-xs font-black ${backgroundMode === mode ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
+                    >
+                      {mode === "ART"
+                        ? designT("artBackground")
+                        : mode === "SOLID"
+                          ? designT("solidBackground")
+                          : t("photoBackground")}
+                    </button>
+                  ))}
+                </div>
+                {backgroundMode === "PHOTO" && (
+                  <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-foreground/20 p-4 text-xs font-bold">
+                    <ImagePlus className="h-4 w-4" />
+                    {t("uploadPhoto")}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file || file.size > 8_000_000) return;
+                        const reader = new FileReader();
+                        reader.onload = () =>
+                          setBackgroundPhoto(String(reader.result));
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                )}
+                <label className="mt-3 block text-xs font-medium">
+                  {t("intensity")}
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={artIntensity}
+                    onChange={(event) =>
+                      setArtIntensity(Number(event.target.value))
+                    }
+                    className="mt-2 w-full accent-[#7C3AED]"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                {[
+                  [designT("accentColor"), accentColor, setAccentColor],
+                  [
+                    designT("secondaryColor"),
+                    secondaryColor,
+                    setSecondaryColor,
+                  ],
+                  [designT("canvasColor"), canvasColor, setCanvasColor],
+                  [designT("textColor"), storyTextColor, setStoryTextColor],
+                ].map(([label, value, setter]) => (
+                  <label
+                    key={String(label)}
+                    className="flex items-center gap-2 rounded-xl border border-foreground/10 p-2 text-xs font-medium"
+                  >
+                    <input
+                      type="color"
+                      value={String(value)}
+                      onChange={(event) =>
+                        (setter as (value: string) => void)(event.target.value)
+                      }
+                      className="h-9 w-9 rounded border-0 bg-transparent"
+                    />
+                    {String(label)}
+                  </label>
+                ))}
+              </div>
+
+              {contrast < 4.5 && (
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-amber-100 p-3 text-xs font-semibold text-amber-900">
+                  <span>{t("contrastWarning")}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStoryTextColor(
+                        contrastRatio("#171717", canvasColor) >=
+                          contrastRatio("#ffffff", canvasColor)
+                          ? "#171717"
+                          : "#ffffff",
+                      )
+                    }
+                    className="rounded-full bg-amber-900 px-3 py-1 text-white"
+                  >
+                    {t("fixContrast")}
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <label className="text-xs font-medium">
+                  {t("fontStyle")}
+                  <select
+                    value={fontStyle}
+                    onChange={(event) =>
+                      setFontStyle(
+                        event.target
+                          .value as AvailabilityStoryRequest["fontStyle"],
+                      )
+                    }
+                    className={inputClass}
+                  >
+                    <option value="MODERN">{t("fontModern")}</option>
+                    <option value="ELEGANT">{t("fontElegant")}</option>
+                    <option value="BOLD">{t("fontBold")}</option>
+                  </select>
+                </label>
+                <label className="text-xs font-medium">
+                  {t("logoFit")}
+                  <select
+                    value={logoFit}
+                    onChange={(event) =>
+                      setLogoFit(
+                        event.target
+                          .value as AvailabilityStoryRequest["logoFit"],
+                      )
+                    }
+                    className={inputClass}
+                  >
+                    <option value="CONTAIN">{t("logoContain")}</option>
+                    <option value="COVER">{t("logoCover")}</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {designT("visibleInfo")}
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {[
+                    [designT("showLogo"), showLogo, setShowLogo, false],
+                    [
+                      designT("showServices"),
+                      showServices,
+                      setShowServices,
+                      false,
+                    ],
+                    [
+                      designT("showProfessional"),
+                      showProfessional,
+                      setShowProfessional,
+                      options.isIndividualPlan,
+                    ],
+                    [
+                      designT("showLocationName"),
+                      showLocationName,
+                      setShowLocationName,
+                      !options.hasMultipleLocations,
+                    ],
+                    [
+                      designT("showAddress"),
+                      showAddress,
+                      setShowAddress,
+                      !selectedLocation?.address && !options.businessAddress,
+                    ],
+                  ].map(([label, active, setter, disabled]) => (
+                    <button
+                      key={String(label)}
+                      type="button"
+                      disabled={Boolean(disabled)}
+                      onClick={() =>
+                        (setter as (value: boolean) => void)(!active)
+                      }
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs font-semibold disabled:opacity-30 ${active ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-foreground/15"}`}
+                    >
+                      <span>{String(label)}</span>
+                      {Boolean(active) && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {designT("ctaMode")}
+                </span>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCtaMode("LINK_STICKER")}
+                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "LINK_STICKER" ? "border-[#7C3AED] bg-[#E9D8FF]" : "border-foreground/15"}`}
+                  >
+                    {designT("linkSticker")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCtaMode("BIO")}
+                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "BIO" ? "border-[#7C3AED] bg-[#E9D8FF]" : "border-foreground/15"}`}
+                  >
+                    {designT("bioLink")}
+                  </button>
+                </div>
+                <label className="mt-3 block text-xs font-medium">
+                  {designT("cta")}
+                  <input
+                    maxLength={90}
+                    value={callToAction}
+                    onChange={(event) => setCallToAction(event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+              </div>
+
+              {studioMode === "ADVANCED" && (
+                <div className="mt-6 rounded-2xl bg-[#F8F5ED] p-4">
+                  <div className="flex items-center gap-2 font-black">
+                    <Save className="h-4 w-4 text-[#7C3AED]" />
+                    {t("presets")}
+                  </div>
+                  {presets.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {presets.map((preset) => (
+                        <div
+                          key={preset.id}
+                          className="flex items-center gap-2 rounded-xl bg-white p-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              applyConfiguration(preset.configuration)
+                            }
+                            className="min-w-0 flex-1 truncate text-left text-xs font-bold"
+                          >
+                            {preset.name}
+                            {preset.isDefault ? ` · ${t("defaultPreset")}` : ""}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deletePreset(preset.id)}
+                            aria-label={t("deletePreset")}
+                            className="rounded-lg p-2 text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={presetName}
+                      onChange={(event) => setPresetName(event.target.value)}
+                      placeholder={t("presetName")}
+                      className="min-w-0 flex-1 rounded-xl border border-foreground/15 px-3 py-2 text-xs"
+                    />
+                    <button
+                      type="button"
+                      aria-label={t("presetName")}
+                      disabled={savingPreset || presetName.trim().length < 2}
+                      onClick={() => void savePreset()}
+                      className="rounded-xl bg-[#171717] px-3 text-xs font-black text-white disabled:opacity-40"
+                    >
+                      {savingPreset ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+
+          <section
+            className={`${mobilePanel === "PREVIEW" ? "block" : "hidden"} overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#171717] text-white shadow-[6px_6px_0_#FF5C8A] xl:sticky xl:top-6 xl:block`}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <LayoutTemplate className="h-5 w-5 text-[#C4A2FF]" />
+                <div>
+                  <h3 className="font-black">{t("preview")}</h3>
+                  <p className="text-[10px] uppercase tracking-wider text-white/45">
+                    {t("format")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={!renderData}
+                  onClick={() => setShowVariants((current) => !current)}
+                  className={`rounded-full px-3 py-1 text-[10px] font-black disabled:opacity-30 ${showVariants ? "bg-[#C4A2FF] text-[#171717]" : "bg-white/10"}`}
+                >
+                  {t("compareVariants")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSafeAreas((current) => !current)}
+                  className={`rounded-full px-3 py-1 text-[10px] font-black ${showSafeAreas ? "bg-[#FFD84D] text-[#171717]" : "bg-white/10"}`}
+                >
+                  {t("safeAreas")}
+                </button>
+              </div>
+            </div>
+            <div className="flex min-h-[620px] items-center justify-center overflow-hidden bg-[#242128] p-4 sm:p-7">
+              {renderData ? (
+                <div className="relative h-[547px] w-[308px] overflow-hidden rounded-[1.4rem] border-[5px] border-black bg-black shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:h-[653px] sm:w-[367px]">
+                  <div className="h-[1920px] w-[1080px] origin-top-left scale-[.285] sm:scale-[.34]">
+                    <div ref={storyNodeRef} className="h-[1920px] w-[1080px]">
+                      <AvailabilityStoryImage
+                        data={renderData}
+                        backgroundImageUrl={backgroundPhoto}
+                        productLogoUrl={
+                          productLogoDataUrl ?? "/icon-512x512.png"
+                        }
+                      />
+                    </div>
+                  </div>
+                  {showSafeAreas && (
+                    <div className="pointer-events-none absolute inset-x-3 bottom-[7%] top-[5%] rounded-xl border border-dashed border-white/60">
+                      <span className="absolute left-2 top-2 rounded bg-black/55 px-2 py-1 text-[8px] font-bold uppercase">
+                        {t("safeAreaLabel")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="max-w-sm text-center">
+                  <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10">
+                    <ImagePlus className="h-7 w-7 text-[#C4A2FF]" />
+                  </span>
+                  <h3 className="mt-4 text-lg font-black">{t("emptyTitle")}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/50">
+                    {t("emptyHint")}
+                  </p>
+                </div>
+              )}
+            </div>
+            {renderData && showVariants && (
+              <div className="grid grid-cols-3 gap-3 border-t border-white/10 bg-[#201D24] p-4">
+                {variantTemplates.map((variant) => (
+                  <button
+                    key={variant}
+                    type="button"
+                    onClick={() => {
+                      setTemplate(variant);
+                      setShowVariants(false);
+                    }}
+                    className={`flex flex-col items-center gap-2 rounded-2xl border p-2 ${template === variant ? "border-[#C4A2FF] bg-white/10" : "border-white/10"}`}
+                  >
+                    <span className="relative h-[154px] w-[87px] overflow-hidden rounded-lg border-2 border-black bg-black">
+                      <span className="absolute left-0 top-0 block h-[1920px] w-[1080px] origin-top-left scale-[.08]">
+                        <AvailabilityStoryImage
+                          data={{ ...renderData, template: variant }}
+                          backgroundImageUrl={backgroundPhoto}
+                          productLogoUrl={
+                            productLogoDataUrl ?? "/icon-512x512.png"
+                          }
+                        />
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-black">
+                      {t(`template${variant}`)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {error && (
+              <p className="mx-4 mt-4 rounded-xl bg-red-500/15 px-3 py-2 text-sm text-red-200">
+                {error}
+              </p>
+            )}
+            <div className="grid gap-2 border-t border-white/15 p-4 sm:grid-cols-3">
+              <button
+                type="button"
+                disabled={!renderData || publishing}
+                onClick={() => void downloadStory()}
+                className="flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-[#171717] disabled:opacity-30"
+              >
+                {publishing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {t("download")}
+              </button>
+              <button
+                type="button"
+                disabled={!renderData || publishing}
+                onClick={() => void shareStory()}
+                className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black disabled:opacity-30"
+              >
+                <Share2 className="h-4 w-4" />
+                {t("share")}
+              </button>
+              <button
+                type="button"
+                disabled={!renderData || publishing}
+                onClick={() => void copyBookingLink()}
+                className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black disabled:opacity-30"
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-[#7EE2B8]" />
+                ) : (
+                  <Link2 className="h-4 w-4" />
+                )}
+                {copied ? t("copied") : t("copyLink")}
+              </button>
+            </div>
+          </section>
         </div>
       </section>
 
       {insights && insights.recent.length > 0 && (
         <section className="rounded-[1.75rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#FFD84D] sm:p-6">
-          <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFD84D] text-sm font-black">03</span><h2 className="text-xl font-black tracking-tight">{t("historyTitle")}</h2></div>
-          <div className="mt-5 space-y-2">
-            {insights.recent.map((campaign) => (
-              <div key={campaign.id} className="grid gap-3 rounded-2xl border-2 border-foreground/10 bg-[#F8F5ED] p-4 text-sm transition hover:border-foreground/25 sm:grid-cols-[minmax(0,1fr)_repeat(4,auto)] sm:items-center sm:gap-4">
-                <div><p className="font-black">{campaign.headline}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(campaign.createdAt).toLocaleDateString(locale)}{campaign.locationName ? ` · ${campaign.locationName}` : ""}{campaign.staffName ? ` · ${campaign.staffName}` : ""}</p></div>
-                <span className="w-fit rounded-full bg-white px-3 py-1.5 text-xs font-bold text-muted-foreground">{t("visitsValue", { count: campaign.visits })}</span>
-                <span className="w-fit rounded-full bg-[#E9D8FF] px-3 py-1.5 text-xs font-bold text-[#5B21B6]">{t("bookingsValue", { count: campaign.bookings })}</span>
-                <span className="text-sm font-black text-emerald-700">{currency.format(campaign.revenue)}</span>
-                <button type="button" disabled={loading || !campaign.locationId || campaign.serviceIds.length === 0} onClick={() => reuseCampaign(campaign)} className="rounded-full border-2 border-foreground px-3 py-2 text-xs font-black transition hover:bg-[#171717] hover:text-white disabled:opacity-40">{t("reuse")}</button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFD84D] text-sm font-black">
+                03
+              </span>
+              <div>
+                <h2 className="text-xl font-black">{t("historyTitle")}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {t("historyHint")}
+                </p>
               </div>
+            </div>
+            <div className="flex gap-1 rounded-full bg-[#F8F5ED] p-1">
+              {(["7", "30", "90", "ALL"] as AnalyticsRange[]).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAnalyticsRange(value)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-black ${analyticsRange === value ? "bg-[#171717] text-white" : ""}`}
+                >
+                  {value === "ALL" ? t("allTime") : `${value}d`}
+                </button>
+              ))}
+            </div>
+          </div>
+          {servicePerformance.length > 0 && (
+            <div className="mt-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
+                {t("topServices")}
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {servicePerformance.map((service, index) => (
+                  <div
+                    key={service.name}
+                    className="rounded-2xl border border-foreground/10 bg-white p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-black">
+                        {index + 1}. {service.name}
+                      </span>
+                      <span className="text-xs font-black text-emerald-700">
+                        {(service.conversion * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {service.bookings} {t("bookingsShort")} ·{" "}
+                      {currency.format(service.revenue)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="mt-5 grid gap-2">
+            {filteredCampaigns.map((campaign) => (
+              <article
+                key={campaign.id}
+                className="grid gap-3 rounded-2xl border-2 border-foreground/10 bg-[#F8F5ED] p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-black">{campaign.headline}</p>
+                    {campaign.status === "ARCHIVED" && (
+                      <span className="rounded-full bg-foreground/10 px-2 py-1 text-[9px] font-black uppercase">
+                        {t("archived")}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(campaign.createdAt).toLocaleDateString(locale)}
+                    {campaign.locationName ? ` · ${campaign.locationName}` : ""}
+                    {campaign.staffName ? ` · ${campaign.staffName}` : ""}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold">
+                    <span className="rounded-full bg-white px-2 py-1">
+                      {campaign.visits} {t("visitsShort")}
+                    </span>
+                    <span className="rounded-full bg-[#E9D8FF] px-2 py-1 text-[#5B21B6]">
+                      {campaign.bookings} {t("bookingsShort")}
+                    </span>
+                    <span className="rounded-full bg-white px-2 py-1">
+                      {campaign.downloads + campaign.shares}{" "}
+                      {t("publishedShort")}
+                    </span>
+                    <span className="rounded-full bg-white px-2 py-1">
+                      {campaign.copies} {t("copiesShort")}
+                    </span>
+                  </div>
+                </div>
+                <p className="font-black text-emerald-700">
+                  {currency.format(campaign.revenue)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!campaign.configuration}
+                    onClick={() =>
+                      campaign.configuration &&
+                      applyConfiguration(campaign.configuration)
+                    }
+                    className="rounded-full border-2 border-foreground px-3 py-2 text-xs font-black disabled:opacity-30"
+                  >
+                    {t("reuse")}
+                  </button>
+                  {campaign.status !== "ARCHIVED" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void recordActivity(campaign.id, "archive");
+                      }}
+                      aria-label={t("archive")}
+                      className="rounded-full border-2 border-foreground/15 p-2"
+                    >
+                      <Archive className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </article>
             ))}
           </div>
         </section>
       )}
+
+      <div className="fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-full border-2 border-foreground bg-white p-2 shadow-[5px_5px_0_#171717] xl:hidden">
+        <button
+          type="button"
+          disabled={loading || !formValid}
+          onClick={() => void generatePreview()}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#7C3AED] px-4 py-3 text-sm font-black text-white disabled:opacity-40"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          {t("refreshPreview")}
+        </button>
+        {renderData && (
+          <button
+            type="button"
+            onClick={() => setMobilePanel("PREVIEW")}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#171717] text-white"
+          >
+            <LayoutTemplate className="h-5 w-5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

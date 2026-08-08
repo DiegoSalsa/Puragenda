@@ -47,6 +47,7 @@
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.4.2",
     "driver.js": "^1.4.0",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.8.0",
     "mercadopago": "^3.2.1",
     "next": "^16.2.12",

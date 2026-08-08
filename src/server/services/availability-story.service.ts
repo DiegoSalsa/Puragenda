@@ -6,11 +6,15 @@ import { prisma } from "@/server/db/prisma";
 import { getStaffAgendaScope } from "@/server/services/business.service";
 import { getBlockedSlots } from "@/server/services/appointment.service";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
-import type { AvailabilityStoryRequest } from "@/server/validations/availability-story";
+import type {
+  AvailabilityStoryRequest,
+  StoryObjective,
+  StoryTemplate,
+} from "@/server/validations/availability-story";
 import { getDateLocale } from "@/i18n/date-locale";
 import { resolveLocale, type AppLocale } from "@/i18n/config";
 import { randomBytes } from "node:crypto";
-import type { AppointmentStatus } from "@prisma/client";
+import type { AppointmentStatus, Prisma } from "@prisma/client";
 
 type StoryUser = { id: string; role: string };
 type StoryBusiness = { id: string; ownerId: string | null; address?: string | null };
@@ -35,9 +39,14 @@ export interface AvailabilityStoryData {
   locationAddress: string | null;
   staffName: string;
   headline: string;
-  template: "AURORA" | "EDITORIAL" | "BOLD";
-  backgroundMode: "ART" | "SOLID";
+  template: StoryTemplate;
+  objective: StoryObjective;
+  backgroundMode: "ART" | "SOLID" | "PHOTO";
+  artIntensity: number;
+  fontStyle: "MODERN" | "ELEGANT" | "BOLD";
+  logoFit: "CONTAIN" | "COVER";
   showSchedule: boolean;
+  showServices: boolean;
   showProfessional: boolean;
   showLocationName: boolean;
   showAddress: boolean;
@@ -70,6 +79,10 @@ export interface AvailabilityStoryOpportunity {
   slotCount: number;
   potentialRevenue: number;
   source: "EXPLICIT" | "RECURRING";
+  daysAway: number;
+  urgency: "HIGH" | "MEDIUM" | "LOW";
+  score: number;
+  reason: string;
   headline: string;
 }
 
@@ -79,6 +92,10 @@ export interface AvailabilityStoryInsights {
     visits: number;
     bookings: number;
     revenue: number;
+    downloads: number;
+    shares: number;
+    copies: number;
+    conversionRate: number;
   };
   recent: Array<{
     id: string;
@@ -91,11 +108,15 @@ export interface AvailabilityStoryInsights {
     revenue: number;
     downloads: number;
     shares: number;
+    copies: number;
+    status: "PUBLISHED" | "ARCHIVED";
+    objective: StoryObjective;
     locationId: string | null;
     staffId: string | null;
     serviceIds: string[];
     targetDate: string | null;
-    template: "AURORA" | "EDITORIAL" | "BOLD";
+    template: StoryTemplate;
+    configuration: AvailabilityStoryRequest | null;
   }>;
 }
 
@@ -149,7 +170,7 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
     ? { businessId: business.id, isActive: true }
     : { businessId: business.id, isActive: true, id: access.ownStaffId ?? "__missing_staff__" };
 
-  const [locations, services, staff, opportunities, subscription] = await Promise.all([
+  const [locations, services, staff, opportunities, subscription, presets] = await Promise.all([
     prisma.businessLocation.findMany({
       where: {
         businessId: business.id,
@@ -188,6 +209,7 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
       where: { businessId: business.id },
       select: { plan: true },
     }),
+    getAvailabilityStoryPresets(user, business),
   ]);
 
   return {
@@ -210,6 +232,7 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
       locationIds: member.locations.map((assignment) => assignment.locationId),
     })),
     opportunities,
+    presets,
   };
 }
 
@@ -251,6 +274,76 @@ async function hasStoryCampaignStorage() {
   return Boolean(result[0]?.tableName);
 }
 
+async function hasStoryPresetStorage() {
+  const result = await prisma.$queryRaw<Array<{ tableName: string | null }>>`
+    SELECT to_regclass('public."StoryPreset"')::text AS "tableName"
+  `;
+  return Boolean(result[0]?.tableName);
+}
+
+export async function getAvailabilityStoryPresets(user: StoryUser, business: StoryBusiness) {
+  const access = await getAvailabilityStoryAccess(user, business);
+  if (!access.allowed || !(await hasStoryPresetStorage())) return [];
+  return prisma.storyPreset.findMany({
+    where: { businessId: business.id },
+    orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
+    select: { id: true, name: true, configuration: true, isDefault: true, updatedAt: true },
+  }).then((entries) => entries.flatMap((entry) => {
+    const configuration = entry.configuration as unknown as AvailabilityStoryRequest;
+    return configuration && typeof configuration === "object"
+      ? [{ ...entry, updatedAt: entry.updatedAt.toISOString(), configuration }]
+      : [];
+  })).catch((error) => {
+    if (isStoryCampaignStorageMissing(error)) return [];
+    throw error;
+  });
+}
+
+export async function saveAvailabilityStoryPreset(
+  user: StoryUser,
+  business: StoryBusiness,
+  input: { name: string; configuration: AvailabilityStoryRequest; isDefault: boolean },
+) {
+  const access = await getAvailabilityStoryAccess(user, business);
+  if (!access.allowed) throw new Error("STORY_FORBIDDEN");
+  if (!(await hasStoryPresetStorage())) throw new Error("STORY_PRESET_STORAGE_MISSING");
+
+  return prisma.$transaction(async (tx) => {
+    if (input.isDefault) {
+      await tx.storyPreset.updateMany({
+        where: { businessId: business.id, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+    return tx.storyPreset.upsert({
+      where: { businessId_name: { businessId: business.id, name: input.name } },
+      update: {
+        configuration: input.configuration as unknown as Prisma.InputJsonValue,
+        isDefault: input.isDefault,
+      },
+      create: {
+        businessId: business.id,
+        createdByUserId: user.id,
+        name: input.name,
+        configuration: input.configuration as unknown as Prisma.InputJsonValue,
+        isDefault: input.isDefault,
+      },
+      select: { id: true, name: true, configuration: true, isDefault: true, updatedAt: true },
+    });
+  });
+}
+
+export async function deleteAvailabilityStoryPreset(
+  user: StoryUser,
+  business: StoryBusiness,
+  presetId: string,
+) {
+  const access = await getAvailabilityStoryAccess(user, business);
+  if (!access.allowed) throw new Error("STORY_FORBIDDEN");
+  const result = await prisma.storyPreset.deleteMany({ where: { id: presetId, businessId: business.id } });
+  if (result.count !== 1) throw new Error("STORY_PRESET_NOT_FOUND");
+}
+
 function opportunityHeadline(locale: AppLocale, serviceName: string) {
   const copy: Record<AppLocale, string> = {
     es: `¡Reserva tu hora de ${serviceName}!`,
@@ -262,6 +355,28 @@ function opportunityHeadline(locale: AppLocale, serviceName: string) {
     "zh-CN": `预约 ${serviceName}`,
   };
   return copy[locale];
+}
+
+function opportunityReason(locale: AppLocale, source: "EXPLICIT" | "RECURRING", slotCount: number, daysAway: number) {
+  const explicit: Record<AppLocale, string> = {
+    es: `Abriste esta fecha manualmente y aún quedan ${slotCount} cupos.`,
+    en: `You opened this date manually and ${slotCount} openings remain.`,
+    it: `Hai aperto questa data manualmente e restano ${slotCount} orari.`,
+    pt: `Você abriu esta data manualmente e ainda há ${slotCount} horários.`,
+    fr: `Vous avez ouvert cette date manuellement et il reste ${slotCount} créneaux.`,
+    de: `Du hast dieses Datum manuell geöffnet; ${slotCount} Termine sind noch frei.`,
+    "zh-CN": `这是手动开放的日期，仍有 ${slotCount} 个可预约时段。`,
+  };
+  const recurring: Record<AppLocale, string> = {
+    es: `${slotCount} cupos disponibles dentro de ${daysAway === 0 ? "hoy" : `${daysAway} días`}.`,
+    en: `${slotCount} openings available ${daysAway === 0 ? "today" : `within ${daysAway} days`}.`,
+    it: `${slotCount} orari disponibili ${daysAway === 0 ? "oggi" : `entro ${daysAway} giorni`}.`,
+    pt: `${slotCount} horários disponíveis ${daysAway === 0 ? "hoje" : `em até ${daysAway} dias`}.`,
+    fr: `${slotCount} créneaux disponibles ${daysAway === 0 ? "aujourd’hui" : `dans ${daysAway} jours`}.`,
+    de: `${slotCount} freie Termine ${daysAway === 0 ? "heute" : `in ${daysAway} Tagen`}.`,
+    "zh-CN": `${daysAway === 0 ? "今天" : `${daysAway} 天内`}有 ${slotCount} 个可预约时段。`,
+  };
+  return source === "EXPLICIT" ? explicit[locale] : recurring[locale];
 }
 
 export async function getAvailabilityStoryOpportunities(
@@ -409,6 +524,12 @@ export async function getAvailabilityStoryOpportunities(
           const hasStaffOverride = staff.scheduleOverrides.some(
             (entry) => entry.date.toISOString().slice(0, 10) === dateKey,
           );
+          const source = hasBusinessOverride || hasStaffOverride ? "EXPLICIT" : "RECURRING";
+          const daysAway = Math.max(0, Math.round((date.getTime() - localNow.getTime()) / 86_400_000));
+          const score = (source === "EXPLICIT" ? 10_000 : 0)
+            + Math.max(0, 90 - daysAway) * 100
+            + slots.length * 25
+            + Math.min(service.price * slots.length, 10_000_000) / 10_000;
           const label = format(date, locale === "es" ? "EEEE d 'de' MMMM" : "PPPP", { locale: dateLocale });
           opportunities.push({
             id: [location.id, service.id, staff.id, dateKey].join(":"),
@@ -423,7 +544,11 @@ export async function getAvailabilityStoryOpportunities(
             times: slots.slice(0, 6).map((slot) => format(slot.start, "HH:mm")),
             slotCount: slots.length,
             potentialRevenue: slots.length * service.price,
-            source: hasBusinessOverride || hasStaffOverride ? "EXPLICIT" : "RECURRING",
+            source,
+            daysAway,
+            urgency: daysAway <= 2 ? "HIGH" : daysAway <= 7 ? "MEDIUM" : "LOW",
+            score,
+            reason: opportunityReason(locale, source, slots.length, daysAway),
             headline: opportunityHeadline(locale, service.name),
           });
         }
@@ -434,8 +559,8 @@ export async function getAvailabilityStoryOpportunities(
   return opportunities
     .sort((left, right) => {
       if (left.source !== right.source) return left.source === "EXPLICIT" ? -1 : 1;
-      return left.date.localeCompare(right.date)
-        || right.slotCount - left.slotCount
+      return right.score - left.score
+        || left.date.localeCompare(right.date)
         || right.potentialRevenue - left.potentialRevenue;
     })
     .slice(0, limit);
@@ -499,27 +624,41 @@ export async function buildAvailabilityStory(
 
   const now = new Date();
   const localNow = toZonedTime(now, location.timezone);
-  const requestedTargetDate = request.targetDate
-    ? (() => {
-        const [year, month, day] = request.targetDate.split("-").map(Number);
-        return new Date(year, month - 1, day, 12, 0, 0, 0);
-      })()
-    : null;
-  if (requestedTargetDate) {
-    const targetKey = localDateKey(requestedTargetDate);
-    const todayKey = localDateKey(localNow);
-    const horizonKey = localDateKey(addDays(localNow, 90));
-    if (targetKey < todayKey || targetKey > horizonKey) throw new Error("STORY_DATE_FORBIDDEN");
+  const parseRequestedDate = (value?: string) => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day, 12, 0, 0, 0);
+  };
+  const requestedTargetDate = parseRequestedDate(request.targetDate);
+  const requestedEndDate = parseRequestedDate(request.endDate);
+  const todayKey = localDateKey(localNow);
+  const horizonKey = localDateKey(addDays(localNow, 90));
+  for (const requestedDate of [requestedTargetDate, requestedEndDate].filter(Boolean) as Date[]) {
+    const requestedKey = localDateKey(requestedDate);
+    if (requestedKey < todayKey || requestedKey > horizonKey) throw new Error("STORY_DATE_FORBIDDEN");
   }
   const startOffset = request.range === "TOMORROW"
     ? 1
-    : (request.range === "NEXT_7" || request.range === "NEXT_AVAILABLE") && !business.allowSameDayBookings
+    : (["NEXT_7", "NEXT_AVAILABLE", "NEXT_3_AVAILABLE"].includes(request.range)) && !business.allowSameDayBookings
       ? 1
       : 0;
-  const dayCount = !request.showSchedule ? 1 : request.range === "NEXT_7" ? 7 : request.range === "NEXT_AVAILABLE" ? 90 : 1;
-  const dates = requestedTargetDate
-    ? [requestedTargetDate]
-    : Array.from({ length: dayCount }, (_, index) => addDays(localNow, startOffset + index));
+  const customDayCount = requestedTargetDate && requestedEndDate
+    ? Math.round((requestedEndDate.getTime() - requestedTargetDate.getTime()) / 86_400_000) + 1
+    : 1;
+  if (customDayCount > 90) throw new Error("STORY_DATE_FORBIDDEN");
+  const dayCount = !request.showSchedule
+    ? 1
+    : request.range === "NEXT_7"
+      ? 7
+      : ["NEXT_AVAILABLE", "NEXT_3_AVAILABLE"].includes(request.range)
+        ? 90
+        : request.range === "CUSTOM"
+          ? customDayCount
+          : 1;
+  const baseDate = request.range === "CUSTOM" && requestedTargetDate ? requestedTargetDate : localNow;
+  const dates = Array.from({ length: dayCount }, (_, index) => addDays(baseDate, request.range === "CUSTOM" ? index : startOffset + index))
+    .filter((date) => !request.excludedDates.includes(localDateKey(date)));
+  if (dates.length === 0) throw new Error("STORY_DATES_EMPTY");
   const firstDateKey = localDateKey(dates[0]);
   const lastDateKey = localDateKey(addDays(dates[dates.length - 1], 1));
   const rangeStart = fromZonedTime(`${firstDateKey}T00:00:00`, location.timezone);
@@ -628,21 +767,28 @@ export async function buildAvailabilityStory(
       if (selected.length >= maxDisplayedTimes) break;
     }
 
+    const formattedTimes = selected.map((slot) => format(slot.start, "HH:mm"));
+    const selectedTimesForDate = request.selectedSlots
+      .filter((slot) => slot.date === localDateKey(date))
+      .map((slot) => slot.time);
     return {
       date: localDateKey(date),
       label: (() => {
         const value = format(date, locale === "es" ? "EEEE d 'de' MMMM" : "PPPP", { locale: dateLocale });
         return value.charAt(0).toUpperCase() + value.slice(1);
       })(),
-      times: selected.map((slot) => format(slot.start, "HH:mm")),
+      times: request.selectedSlots.length > 0
+        ? formattedTimes.filter((time) => selectedTimesForDate.includes(time))
+        : formattedTimes,
     };
   }) : [];
 
   const days = !request.showSchedule
     ? []
-    : request.range === "NEXT_AVAILABLE" && !requestedTargetDate
+    : ["NEXT_AVAILABLE", "NEXT_3_AVAILABLE"].includes(request.range) && !requestedTargetDate
     ? (() => {
-        const available = computedDays.filter((day) => day.times.length > 0).slice(0, 5);
+        const limit = request.range === "NEXT_3_AVAILABLE" ? 3 : 5;
+        const available = computedDays.filter((day) => day.times.length > 0).slice(0, limit);
         return available.length > 0 ? available : computedDays.slice(0, 1);
       })()
     : computedDays;
@@ -651,6 +797,8 @@ export async function buildAvailabilityStory(
     AURORA: "editorial-paper.webp",
     EDITORIAL: "organic-paper.webp",
     BOLD: "graphic-paper.webp",
+    MINIMAL: "editorial-paper.webp",
+    FRAME: "graphic-paper.webp",
   }[request.template];
   const bookingUrl = new URL(`/widget/${business.slug}`, appUrl);
   bookingUrl.searchParams.set("location", location.slug);
@@ -682,8 +830,13 @@ export async function buildAvailabilityStory(
     staffName: requestedStaffId ? staffMembers[0]?.name ?? copy.professional : copy.wholeTeam,
     headline: request.headline,
     template: request.template,
+    objective: request.objective,
     backgroundMode: request.backgroundMode,
+    artIntensity: request.artIntensity,
+    fontStyle: request.fontStyle,
+    logoFit: request.logoFit,
     showSchedule: request.showSchedule,
+    showServices: request.showServices,
     showProfessional: request.showProfessional,
     showLocationName: request.showLocationName,
     showAddress: request.showAddress,
@@ -727,10 +880,14 @@ export async function recordAvailabilityStoryCampaign(
       locationId: request.locationId,
       staffId: request.staffId ?? null,
       serviceIds: data.serviceIds,
-      range: request.targetDate ? "TARGET_DATE" : request.range,
+      range: request.range === "CUSTOM" ? "CUSTOM" : request.targetDate ? "TARGET_DATE" : request.range,
       targetDate: targetDate ? new Date(`${targetDate}T00:00:00.000Z`) : null,
       headline: data.headline,
       template: data.template,
+      objective: request.objective,
+      configuration: request as unknown as Prisma.InputJsonValue,
+      status: "PUBLISHED",
+      publishedAt: new Date(),
       destinationUrl: destination.toString(),
       slotCount: data.slotCount,
       potentialRevenue: data.potentialRevenue,
@@ -749,15 +906,20 @@ export async function recordAvailabilityStoryActivity(
   user: StoryUser,
   business: StoryBusiness,
   campaignId: string,
-  activity: "download" | "share",
+  activity: "download" | "share" | "copy" | "archive",
 ) {
   const access = await getAvailabilityStoryAccess(user, business);
   if (!access.allowed) throw new Error("STORY_FORBIDDEN");
+  const data = activity === "download"
+    ? { downloadCount: { increment: 1 } }
+    : activity === "share"
+      ? { shareCount: { increment: 1 } }
+      : activity === "copy"
+        ? { copiedCount: { increment: 1 } }
+        : { status: "ARCHIVED", archivedAt: new Date() };
   const result = await prisma.storyCampaign.updateMany({
     where: { id: campaignId, businessId: business.id },
-    data: activity === "download"
-      ? { downloadCount: { increment: 1 } }
-      : { shareCount: { increment: 1 } },
+    data,
   });
   if (result.count !== 1) throw new Error("STORY_CAMPAIGN_NOT_FOUND");
 }
@@ -769,19 +931,19 @@ export async function getAvailabilityStoryInsights(
   const access = await getAvailabilityStoryAccess(user, business);
   if (!access.allowed) return null;
   if (!(await hasStoryCampaignStorage())) {
-    return { totals: { generated: 0, visits: 0, bookings: 0, revenue: 0 }, recent: [] };
+    return { totals: { generated: 0, visits: 0, bookings: 0, revenue: 0, downloads: 0, shares: 0, copies: 0, conversionRate: 0 }, recent: [] };
   }
 
   const excludedStatuses: AppointmentStatus[] = ["CANCELLED", "NO_SHOW"];
   const activeAppointmentWhere = {
-    storyCampaign: { businessId: business.id },
+    storyCampaign: { businessId: business.id, status: "PUBLISHED" },
     status: { notIn: excludedStatuses },
   };
   const result = await Promise.all([
     prisma.storyCampaign.aggregate({
-      where: { businessId: business.id },
+      where: { businessId: business.id, status: "PUBLISHED" },
       _count: { _all: true },
-      _sum: { linkVisits: true },
+      _sum: { linkVisits: true, downloadCount: true, shareCount: true, copiedCount: true },
     }),
     prisma.appointment.aggregate({
       where: activeAppointmentWhere,
@@ -791,7 +953,7 @@ export async function getAvailabilityStoryInsights(
     prisma.storyCampaign.findMany({
       where: { businessId: business.id },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 40,
       include: {
         location: { select: { name: true } },
         staff: { select: { name: true } },
@@ -806,7 +968,7 @@ export async function getAvailabilityStoryInsights(
     throw error;
   });
   if (!result) {
-    return { totals: { generated: 0, visits: 0, bookings: 0, revenue: 0 }, recent: [] };
+    return { totals: { generated: 0, visits: 0, bookings: 0, revenue: 0, downloads: 0, shares: 0, copies: 0, conversionRate: 0 }, recent: [] };
   }
   const [campaignTotals, appointmentTotals, recent] = result;
 
@@ -816,6 +978,12 @@ export async function getAvailabilityStoryInsights(
       visits: campaignTotals._sum.linkVisits ?? 0,
       bookings: appointmentTotals._count._all,
       revenue: appointmentTotals._sum.totalPrice ?? 0,
+      downloads: campaignTotals._sum.downloadCount ?? 0,
+      shares: campaignTotals._sum.shareCount ?? 0,
+      copies: campaignTotals._sum.copiedCount ?? 0,
+      conversionRate: (campaignTotals._sum.linkVisits ?? 0) > 0
+        ? appointmentTotals._count._all / (campaignTotals._sum.linkVisits ?? 1)
+        : 0,
     },
     recent: recent.map((campaign) => ({
       id: campaign.id,
@@ -828,11 +996,15 @@ export async function getAvailabilityStoryInsights(
       revenue: campaign.appointments.reduce((total, appointment) => total + (appointment.totalPrice ?? 0), 0),
       downloads: campaign.downloadCount,
       shares: campaign.shareCount,
+      copies: campaign.copiedCount,
+      status: campaign.status as "PUBLISHED" | "ARCHIVED",
+      objective: campaign.objective as StoryObjective,
       locationId: campaign.locationId,
       staffId: campaign.staffId,
       serviceIds: campaign.serviceIds,
       targetDate: campaign.targetDate?.toISOString().slice(0, 10) ?? null,
-      template: campaign.template as "AURORA" | "EDITORIAL" | "BOLD",
+      template: campaign.template as StoryTemplate,
+      configuration: campaign.configuration as unknown as AvailabilityStoryRequest | null,
     })),
   };
 }

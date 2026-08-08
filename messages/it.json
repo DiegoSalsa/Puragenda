@@ -33,7 +33,7 @@
     "visualTheme": "Tema visivo",
     "openMenu": "Apri menu",
     "closeMenu": "Chiudi menu",
-    "appointments": "Appuntamenti", "calendar": "Google Calendar", "orders": "Ordini", "analytics": "Analisi", "staff": "Professionisti", "services": "Servizi", "clients": "Clienti", "subscriptions": "Abbonamenti", "loyalty": "Fidelizzazione", "marketing": "Marketing", "stories": "Storie", "appearance": "Aspetto", "customize": "Personalizza", "themes": "Temi", "referrals": "Referenze", "rewards": "Premi", "settings": "Impostazioni", "viewWidget": "Vedi widget", "signedIn": "Accesso effettuato", "collapseSidebar": "Comprimi pannello", "expandSidebar": "Espandi pannello", "resizeSidebar": "Ridimensiona pannello", "preferences": "Preferenze di aspetto e lingua"
+    "appointments": "Appuntamenti", "calendar": "Google Calendar", "orders": "Ordini", "analytics": "Analisi", "staff": "Professionisti", "services": "Servizi", "clients": "Clienti", "subscriptions": "Abbonamenti", "loyalty": "Fidelizzazione", "marketing": "Marketing", "stories": "Storie", "appearance": "Aspetto", "customize": "Personalizza", "themes": "Temi", "referrals": "Referenze", "rewards": "Premi", "settings": "Impostazioni", "viewWidget": "Vedi widget", "signedIn": "Accesso effettuato", "collapseSidebar": "Comprimi pannello", "expandSidebar": "Espandi pannello", "resizeSidebar": "Ridimensiona pannello", "preferences": "Preferenze di aspetto e lingua", "sectionAgenda": "Agenda", "sectionManagement": "Gestione", "sectionGrowth": "Crescita", "sectionConfiguration": "Configurazione"
   },
   "landing": {
     "noCommissions": "Nessuna commissione",

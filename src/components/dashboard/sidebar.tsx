@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   BarChart3,
   CalendarDays,
@@ -38,7 +44,12 @@ import { useTranslations } from "next-intl";
 
 type NavItem =
   | { href: string; label: string; icon: React.ElementType; children?: never }
-  | { href?: never; label: string; icon: React.ElementType; children: { href: string; label: string; icon: React.ElementType }[] };
+  | {
+      href?: never;
+      label: string;
+      icon: React.ElementType;
+      children: { href: string; label: string; icon: React.ElementType }[];
+    };
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "appointments", icon: LayoutDashboard },
@@ -56,7 +67,11 @@ const navItems: NavItem[] = [
     label: "appearance",
     icon: Palette,
     children: [
-      { href: "/dashboard/appearance/personalizado", label: "customize", icon: Paintbrush },
+      {
+        href: "/dashboard/appearance/personalizado",
+        label: "customize",
+        icon: Paintbrush,
+      },
       { href: "/dashboard/appearance/temas", label: "themes", icon: Layers },
     ],
   },
@@ -64,6 +79,36 @@ const navItems: NavItem[] = [
   { href: "/dashboard/rewards", label: "rewards", icon: Trophy },
   { href: "/dashboard/settings", label: "settings", icon: Settings },
 ];
+
+const navSectionDefinitions = [
+  {
+    id: "agenda",
+    label: "sectionAgenda",
+    itemLabels: ["appointments", "calendar", "orders"],
+  },
+  {
+    id: "management",
+    label: "sectionManagement",
+    itemLabels: ["analytics", "staff", "services", "clients"],
+  },
+  {
+    id: "growth",
+    label: "sectionGrowth",
+    itemLabels: [
+      "subscriptions",
+      "loyalty",
+      "marketing",
+      "stories",
+      "referrals",
+      "rewards",
+    ],
+  },
+  {
+    id: "configuration",
+    label: "sectionConfiguration",
+    itemLabels: ["appearance", "settings"],
+  },
+] as const;
 
 const SIDEBAR_STATE_KEY = "puragenda:dashboard-sidebar:v2";
 const MIN_WIDTH = 208;
@@ -73,12 +118,18 @@ const COLLAPSED_WIDTH = 76;
 const SIDEBAR_STATE_EVENT = "puragenda:dashboard-sidebar-change";
 
 type StoredSidebarState = { width: number; collapsed: boolean };
-const DEFAULT_SIDEBAR_STATE: StoredSidebarState = { width: DEFAULT_WIDTH, collapsed: false };
+const DEFAULT_SIDEBAR_STATE: StoredSidebarState = {
+  width: DEFAULT_WIDTH,
+  collapsed: false,
+};
 const DEFAULT_SIDEBAR_STATE_JSON = JSON.stringify(DEFAULT_SIDEBAR_STATE);
 
 function readSidebarSnapshot() {
   try {
-    return window.localStorage.getItem(SIDEBAR_STATE_KEY) || DEFAULT_SIDEBAR_STATE_JSON;
+    return (
+      window.localStorage.getItem(SIDEBAR_STATE_KEY) ||
+      DEFAULT_SIDEBAR_STATE_JSON
+    );
   } catch {
     return DEFAULT_SIDEBAR_STATE_JSON;
   }
@@ -100,7 +151,10 @@ function normalizeSidebarState(raw: string): StoredSidebarState {
   try {
     const stored = JSON.parse(raw) as Partial<StoredSidebarState>;
     return {
-      width: Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Number(stored.width) || DEFAULT_WIDTH)),
+      width: Math.min(
+        MAX_WIDTH,
+        Math.max(MIN_WIDTH, Number(stored.width) || DEFAULT_WIDTH),
+      ),
       collapsed: Boolean(stored.collapsed),
     };
   } catch {
@@ -113,8 +167,18 @@ function writeSidebarState(next: StoredSidebarState) {
   window.dispatchEvent(new Event(SIDEBAR_STATE_EVENT));
 }
 
-function NavLabel({ children, collapsed }: { children: React.ReactNode; collapsed: boolean }) {
-  return collapsed ? <span className="sr-only">{children}</span> : <>{children}</>;
+function NavLabel({
+  children,
+  collapsed,
+}: {
+  children: React.ReactNode;
+  collapsed: boolean;
+}) {
+  return collapsed ? (
+    <span className="sr-only">{children}</span>
+  ) : (
+    <>{children}</>
+  );
 }
 
 function SidebarContent({
@@ -138,64 +202,214 @@ function SidebarContent({
 }) {
   const t = useTranslations("navigation");
   const pathname = usePathname();
-  const baseUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-  const widgetHref = widgetSlug ? new URL(`/widget/${widgetSlug}`, baseUrl).toString() : "/dashboard/settings";
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://www.puragenda.cl"
+      : "http://localhost:3000";
+  const widgetHref = widgetSlug
+    ? new URL(`/widget/${widgetSlug}`, baseUrl).toString()
+    : "/dashboard/settings";
   const isOnAppearance = pathname.startsWith("/dashboard/appearance");
   const [appearanceOpen, setAppearanceOpen] = useState(isOnAppearance);
 
-  const visibleItems = useMemo(() => navItems.filter((item) => {
-    const href = "href" in item && item.href ? item.href : item.children?.[0]?.href ?? "";
-    if (href === "/dashboard/orders" && !productionOrdersEnabled) return false;
-    if (permissions) {
-      const required: Record<string, string[]> = {
-        "/dashboard": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL],
-        "/dashboard/google-calendar": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE],
-        "/dashboard/orders": [DASHBOARD_PERMISSIONS.SERVICES_MANAGE],
-        "/dashboard/analytics": [DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS],
-        "/dashboard/staff": [DASHBOARD_PERMISSIONS.STAFF_MANAGE],
-        "/dashboard/services": [DASHBOARD_PERMISSIONS.SERVICES_MANAGE],
-        "/dashboard/clients": [DASHBOARD_PERMISSIONS.CLIENTS_MANAGE],
-        "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
-        "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
-        "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
-        "/dashboard/stories": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL],
-        "/dashboard/appearance/personalizado": [DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE],
-        "/dashboard/referrals": [DASHBOARD_PERMISSIONS.REFERRALS_VIEW],
-        "/dashboard/rewards": [DASHBOARD_PERMISSIONS.REWARDS_VIEW],
-        "/dashboard/settings": [DASHBOARD_PERMISSIONS.SETTINGS_MANAGE],
-      };
-      return (required[href] || []).some((permission) => permissions.includes(permission));
-    }
-    if (userRole === "STAFF" && href !== "/dashboard" && href !== "/dashboard/analytics") return false;
-    if (userRole === "RECEPTIONIST" && (href === "/dashboard/settings" || href === "/dashboard/referrals" || href === "/dashboard/rewards")) return false;
-    return true;
-  }), [permissions, productionOrdersEnabled, userRole]);
+  const visibleItems = useMemo(
+    () =>
+      navItems.filter((item) => {
+        const href =
+          "href" in item && item.href
+            ? item.href
+            : (item.children?.[0]?.href ?? "");
+        if (href === "/dashboard/orders" && !productionOrdersEnabled)
+          return false;
+        if (permissions) {
+          const required: Record<string, string[]> = {
+            "/dashboard": [
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
+            ],
+            "/dashboard/google-calendar": [
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
+              DASHBOARD_PERMISSIONS.SETTINGS_MANAGE,
+            ],
+            "/dashboard/orders": [DASHBOARD_PERMISSIONS.SERVICES_MANAGE],
+            "/dashboard/analytics": [
+              DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN,
+              DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS,
+            ],
+            "/dashboard/staff": [DASHBOARD_PERMISSIONS.STAFF_MANAGE],
+            "/dashboard/services": [DASHBOARD_PERMISSIONS.SERVICES_MANAGE],
+            "/dashboard/clients": [DASHBOARD_PERMISSIONS.CLIENTS_MANAGE],
+            "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
+            "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
+            "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
+            "/dashboard/stories": [
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
+            ],
+            "/dashboard/appearance/personalizado": [
+              DASHBOARD_PERMISSIONS.APPEARANCE_MANAGE,
+            ],
+            "/dashboard/referrals": [DASHBOARD_PERMISSIONS.REFERRALS_VIEW],
+            "/dashboard/rewards": [DASHBOARD_PERMISSIONS.REWARDS_VIEW],
+            "/dashboard/settings": [DASHBOARD_PERMISSIONS.SETTINGS_MANAGE],
+          };
+          return (required[href] || []).some((permission) =>
+            permissions.includes(permission),
+          );
+        }
+        if (
+          userRole === "STAFF" &&
+          href !== "/dashboard" &&
+          href !== "/dashboard/analytics"
+        )
+          return false;
+        if (
+          userRole === "RECEPTIONIST" &&
+          (href === "/dashboard/settings" ||
+            href === "/dashboard/referrals" ||
+            href === "/dashboard/rewards")
+        )
+          return false;
+        return true;
+      }),
+    [permissions, productionOrdersEnabled, userRole],
+  );
+
+  const visibleSections = useMemo(
+    () =>
+      navSectionDefinitions
+        .map((section) => ({
+          ...section,
+          items: visibleItems.filter((item) =>
+            (section.itemLabels as readonly string[]).includes(item.label),
+          ),
+        }))
+        .filter((section) => section.items.length > 0),
+    [visibleItems],
+  );
+
+  const activeSectionId = useMemo(
+    () =>
+      visibleSections.find((section) =>
+        section.items.some((item) =>
+          item.children
+            ? item.children.some((child) => pathname.startsWith(child.href))
+            : pathname === item.href ||
+              (item.href !== "/dashboard" && pathname.startsWith(item.href)),
+        ),
+      )?.id,
+    [pathname, visibleSections],
+  );
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const itemClass = (active: boolean) =>
     `group relative flex w-full items-center rounded-xl border text-sm font-medium transition-all duration-200 ${
-      collapsed ? "h-11 justify-center px-2" : "gap-3 px-3 py-2.5"
+      collapsed ? "h-11 justify-center px-2" : "gap-3 px-3 py-2"
     } ${
       active
         ? "border-[#7C3AED]/25 bg-[#7C3AED]/10 text-[#7C3AED]"
         : "border-transparent text-muted-foreground hover:bg-accent/10 hover:text-foreground"
     }`;
 
+  const renderNavItem = (item: NavItem) => {
+    if (item.children) {
+      const isGroupActive = item.children.some((child) =>
+        pathname.startsWith(child.href),
+      );
+      const isOpen = appearanceOpen || isGroupActive;
+      return (
+        <div key={item.label}>
+          <button
+            onClick={() => setAppearanceOpen((open) => !open)}
+            className={itemClass(isGroupActive)}
+            title={collapsed ? t(item.label) : undefined}
+            aria-expanded={isOpen}
+          >
+            <item.icon className="h-4 w-4 shrink-0" />
+            <NavLabel collapsed={collapsed}>
+              <span className="flex-1 text-left">{t(item.label)}</span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              />
+            </NavLabel>
+          </button>
+          {isOpen && (
+            <div
+              className={
+                collapsed
+                  ? "mt-1 space-y-1"
+                  : "ml-4 mt-1 space-y-0.5 border-l border-border pl-3"
+              }
+            >
+              {item.children.map((child) => {
+                const active = pathname.startsWith(child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    onClick={onClose}
+                    className={itemClass(active)}
+                    title={collapsed ? t(child.label) : undefined}
+                  >
+                    <child.icon className="h-3.5 w-3.5 shrink-0" />
+                    <NavLabel collapsed={collapsed}>{t(child.label)}</NavLabel>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const active =
+      pathname === item.href ||
+      (item.href !== "/dashboard" && pathname.startsWith(item.href));
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onClose}
+        className={itemClass(active)}
+        title={collapsed ? t(item.label) : undefined}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        <NavLabel collapsed={collapsed}>{t(item.label)}</NavLabel>
+      </Link>
+    );
+  };
+
   return (
     <>
-      <div className={`flex h-[74px] shrink-0 items-center border-b border-border ${collapsed ? "justify-center px-3" : "justify-between px-5"}`}>
+      <div
+        className={`flex h-[68px] shrink-0 items-center border-b border-border ${collapsed ? "justify-center px-3" : "justify-between px-4"}`}
+      >
         <Link
           href="/dashboard"
           className={`flex min-w-0 items-center ${collapsed ? "justify-center" : ""}`}
           title={collapsed ? "PuroCode · Puragenda" : "Puragenda"}
         >
           <img
-            src={collapsed ? "/icon-512x512.png" : "/logos/logoPuragendaSVG.svg"}
+            src={
+              collapsed ? "/icon-512x512.png" : "/logos/logoPuragendaSVG.svg"
+            }
             alt="Puragenda"
-            className={collapsed ? "h-9 w-9 rounded-xl shadow-sm" : "h-12 w-auto max-w-[145px]"}
+            className={
+              collapsed
+                ? "h-9 w-9 rounded-xl shadow-sm"
+                : "h-12 w-auto max-w-[145px]"
+            }
           />
         </Link>
         {onClose ? (
-          <button onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("closeMenu")}>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={t("closeMenu")}
+          >
             <X className="h-5 w-5" />
           </button>
         ) : !collapsed && onToggleCollapsed ? (
@@ -210,7 +424,10 @@ function SidebarContent({
         ) : null}
       </div>
 
-      <nav id="tutorial-nav" className={`min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "p-2" : "p-4"}`}>
+      <nav
+        id="tutorial-nav"
+        className={`min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "p-2" : "p-3"}`}
+      >
         {collapsed && onToggleCollapsed && (
           <button
             onClick={onToggleCollapsed}
@@ -222,64 +439,50 @@ function SidebarContent({
           </button>
         )}
 
-        {visibleItems.map((item) => {
-          if (item.children) {
-            const isGroupActive = item.children.some((child) => pathname.startsWith(child.href));
-            const isOpen = appearanceOpen || isGroupActive;
-            return (
-              <div key={item.label}>
-                <button
-                  onClick={() => setAppearanceOpen((open) => !open)}
-                  className={itemClass(isGroupActive)}
-                  title={collapsed ? t(item.label) : undefined}
-                  aria-expanded={isOpen}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <NavLabel collapsed={collapsed}>
-                    <span className="flex-1 text-left">{t(item.label)}</span>
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                  </NavLabel>
-                </button>
-                {isOpen && (
-                  <div className={collapsed ? "mt-1 space-y-1" : "ml-4 mt-1 space-y-0.5 border-l border-border pl-3"}>
-                    {item.children.map((child) => {
-                      const active = pathname.startsWith(child.href);
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={onClose}
-                          className={itemClass(active)}
-                          title={collapsed ? t(child.label) : undefined}
-                        >
-                          <child.icon className="h-3.5 w-3.5 shrink-0" />
-                          <NavLabel collapsed={collapsed}>{t(child.label)}</NavLabel>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={itemClass(active)}
-              title={collapsed ? t(item.label) : undefined}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              <NavLabel collapsed={collapsed}>{t(item.label)}</NavLabel>
-            </Link>
-          );
-        })}
+        {collapsed
+          ? visibleItems.map(renderNavItem)
+          : visibleSections.map((section) => {
+              const isOpen =
+                openSections.has(section.id) || section.id === activeSectionId;
+              const isActive = section.id === activeSectionId;
+              return (
+                <div key={section.id} className="pb-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenSections((current) => {
+                        const next = new Set(current);
+                        if (next.has(section.id)) next.delete(section.id);
+                        else next.add(section.id);
+                        return next;
+                      })
+                    }
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${isActive ? "text-[#7C3AED]" : "text-muted-foreground/75 hover:text-foreground"}`}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="flex items-center gap-2">
+                      {t(section.label)}
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] tracking-normal text-muted-foreground">
+                        {section.items.length}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="mt-0.5 space-y-0.5">
+                      {section.items.map(renderNavItem)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
       </nav>
 
-      <div className={`shrink-0 border-t border-border ${collapsed ? "space-y-2 p-2" : "p-4"}`}>
+      <div
+        className={`shrink-0 border-t border-border ${collapsed ? "space-y-2 p-2" : "p-3"}`}
+      >
         <Link
           id="tutorial-widget"
           href={widgetHref}
@@ -292,14 +495,25 @@ function SidebarContent({
         </Link>
         {!collapsed && (
           <>
-            <div className="mt-3 px-3"><ThemeToggle /></div>
-            <div className="mt-3 px-3"><LanguageSwitcher className="w-full justify-center" /></div>
-            <div className="mt-3 rounded-xl border border-border bg-muted/50 px-3 py-2">
-              <p className="text-xs text-muted-foreground">{t("signedIn")}</p>
-              <p className="mt-0.5 truncate text-sm font-medium text-foreground">{userName}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <ThemeToggle />
+              <LanguageSwitcher
+                compact
+                className="min-w-0 flex-1 justify-end"
+              />
             </div>
-            <div className="mt-3"><InstallPWAButton variant="sidebar" /></div>
-            <div className="mt-3"><LogoutButton /></div>
+            <div className="mt-2 rounded-xl border border-border bg-muted/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">{t("signedIn")}</p>
+              <p className="mt-0.5 truncate text-sm font-medium text-foreground">
+                {userName}
+              </p>
+            </div>
+            <div className="mt-2">
+              <InstallPWAButton variant="sidebar" />
+            </div>
+            <div className="mt-2">
+              <LogoutButton />
+            </div>
           </>
         )}
       </div>
@@ -326,18 +540,18 @@ export function DashboardSidebar({
   const sidebarSnapshot = useSyncExternalStore(
     subscribeSidebarSnapshot,
     readSidebarSnapshot,
-    () => DEFAULT_SIDEBAR_STATE_JSON
+    () => DEFAULT_SIDEBAR_STATE_JSON,
   );
   const persistedSidebarState = useMemo(
     () => normalizeSidebarState(sidebarSnapshot),
-    [sidebarSnapshot]
+    [sidebarSnapshot],
   );
   const sidebarState = useMemo(
     () => ({
       ...persistedSidebarState,
       width: dragWidth ?? persistedSidebarState.width,
     }),
-    [dragWidth, persistedSidebarState]
+    [dragWidth, persistedSidebarState],
   );
 
   const persist = useCallback((next: StoredSidebarState) => {
@@ -369,16 +583,25 @@ export function DashboardSidebar({
     document.body.style.userSelect = "none";
 
     const onMove = (moveEvent: PointerEvent) => {
-      const width = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + moveEvent.clientX - startX));
+      const width = Math.min(
+        MAX_WIDTH,
+        Math.max(MIN_WIDTH, startWidth + moveEvent.clientX - startX),
+      );
       setDragWidth(width);
       // Keep the latest width durable even if the pointer is released outside the window.
       window.localStorage.setItem(
         SIDEBAR_STATE_KEY,
-        JSON.stringify({ width, collapsed: false } satisfies StoredSidebarState)
+        JSON.stringify({
+          width,
+          collapsed: false,
+        } satisfies StoredSidebarState),
       );
     };
     const onUp = (upEvent: PointerEvent) => {
-      const width = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + upEvent.clientX - startX));
+      const width = Math.min(
+        MAX_WIDTH,
+        Math.max(MIN_WIDTH, startWidth + upEvent.clientX - startX),
+      );
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
       window.removeEventListener("pointermove", onMove);
@@ -389,21 +612,34 @@ export function DashboardSidebar({
     window.addEventListener("pointerup", onUp);
   }
 
-  const desktopWidth = sidebarState.collapsed ? COLLAPSED_WIDTH : sidebarState.width;
+  const desktopWidth = sidebarState.collapsed
+    ? COLLAPSED_WIDTH
+    : sidebarState.width;
 
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground" aria-label={t("openMenu")}>
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground"
+          aria-label={t("openMenu")}
+        >
           <Menu className="h-5 w-5" />
         </button>
-        <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda" className="h-8 w-auto" />
+        <img
+          src="/logos/logoPuragendaSVG.svg"
+          alt="Puragenda"
+          className="h-8 w-auto"
+        />
       </div>
       <div className="h-[52px] shrink-0 md:hidden" />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
           <aside className="relative flex h-full w-72 max-w-[86vw] flex-col bg-sidebar shadow-2xl animate-drawer-left">
             <SidebarContent
               userName={userName}

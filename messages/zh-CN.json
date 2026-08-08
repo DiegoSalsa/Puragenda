@@ -33,7 +33,7 @@
     "visualTheme": "显示主题",
     "openMenu": "打开菜单",
     "closeMenu": "关闭菜单",
-    "appointments": "预约", "calendar": "谷歌日历", "orders": "订单", "analytics": "数据分析", "staff": "员工", "services": "服务", "clients": "客户", "subscriptions": "订阅", "loyalty": "客户忠诚度", "marketing": "营销", "stories": "限时动态", "appearance": "外观", "customize": "自定义", "themes": "主题", "referrals": "推荐", "rewards": "奖励", "settings": "设置", "viewWidget": "查看预约组件", "signedIn": "已登录", "collapseSidebar": "收起侧栏", "expandSidebar": "展开侧栏", "resizeSidebar": "调整侧栏宽度", "preferences": "外观和语言偏好"
+    "appointments": "预约", "calendar": "谷歌日历", "orders": "订单", "analytics": "数据分析", "staff": "员工", "services": "服务", "clients": "客户", "subscriptions": "订阅", "loyalty": "客户忠诚度", "marketing": "营销", "stories": "限时动态", "appearance": "外观", "customize": "自定义", "themes": "主题", "referrals": "推荐", "rewards": "奖励", "settings": "设置", "viewWidget": "查看预约组件", "signedIn": "已登录", "collapseSidebar": "收起侧栏", "expandSidebar": "展开侧栏", "resizeSidebar": "调整侧栏宽度", "preferences": "外观和语言偏好", "sectionAgenda": "日程", "sectionManagement": "管理", "sectionGrowth": "增长", "sectionConfiguration": "配置"
   },
   "landing": {
     "noCommissions": "无佣金",

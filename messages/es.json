@@ -33,7 +33,7 @@
     "visualTheme": "Tema visual",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
-    "appointments": "Citas", "calendar": "Google Calendar", "orders": "Encargos", "analytics": "Analítica", "staff": "Profesionales", "services": "Servicios", "clients": "Clientes", "subscriptions": "Suscripciones", "loyalty": "Fidelización", "marketing": "Marketing", "stories": "Historias", "appearance": "Apariencia", "customize": "Personalizar", "themes": "Temas", "referrals": "Referidos", "rewards": "Recompensas", "settings": "Configuración", "viewWidget": "Ver widget", "signedIn": "Sesión iniciada", "collapseSidebar": "Contraer panel", "expandSidebar": "Expandir panel", "resizeSidebar": "Ajustar ancho del panel lateral", "preferences": "Preferencias de apariencia e idioma"
+    "appointments": "Citas", "calendar": "Google Calendar", "orders": "Encargos", "analytics": "Analítica", "staff": "Profesionales", "services": "Servicios", "clients": "Clientes", "subscriptions": "Suscripciones", "loyalty": "Fidelización", "marketing": "Marketing", "stories": "Historias", "appearance": "Apariencia", "customize": "Personalizar", "themes": "Temas", "referrals": "Referidos", "rewards": "Recompensas", "settings": "Configuración", "viewWidget": "Ver widget", "signedIn": "Sesión iniciada", "collapseSidebar": "Contraer panel", "expandSidebar": "Expandir panel", "resizeSidebar": "Ajustar ancho del panel lateral", "preferences": "Preferencias de apariencia e idioma", "sectionAgenda": "Agenda", "sectionManagement": "Gestión", "sectionGrowth": "Crecimiento", "sectionConfiguration": "Configuración"
   },
   "landing": {
     "noCommissions": "Sin comisiones",

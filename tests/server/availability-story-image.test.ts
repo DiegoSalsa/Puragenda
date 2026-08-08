@@ -6,6 +6,8 @@ import { AvailabilityStoryImage } from "@/server/stories/availability-story-imag
 describe("availability story PNG", () => {
   it("renders a 1080x1920 image response", async () => {
     const element = createElement(AvailabilityStoryImage, {
+      productLogoUrl:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lz5nWQAAAABJRU5ErkJggg==",
       data: {
         businessName: "Salón Demo",
         logoUrl: null,
@@ -21,16 +23,28 @@ describe("availability story PNG", () => {
         staffName: "Camila",
         headline: "¡Tenemos horas disponibles!",
         template: "AURORA" as const,
+        objective: "FILL_SLOTS" as const,
         backgroundMode: "ART" as const,
+        artIntensity: 0.38,
+        fontStyle: "MODERN" as const,
+        logoFit: "CONTAIN" as const,
         showSchedule: true,
+        showServices: true,
         showProfessional: true,
         showLocationName: true,
         showAddress: false,
-        days: [{ date: "2026-08-10", label: "lunes 10 de agosto", times: ["10:00", "11:00", "15:00"] }],
+        days: [
+          {
+            date: "2026-08-10",
+            label: "lunes 10 de agosto",
+            times: ["10:00", "11:00", "15:00"],
+          },
+        ],
         bookingUrl: "https://www.puragenda.cl/widget/demo?utm_source=instagram",
         generatedAt: "2026-08-08T12:00:00.000Z",
         timezone: "America/Santiago",
-        templateBackgroundUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lz5nWQAAAABJRU5ErkJggg==",
+        templateBackgroundUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lz5nWQAAAABJRU5ErkJggg==",
         ctaMode: "LINK_STICKER" as const,
         callToAction: "Reserva desde el enlace de nuestra bio",
         disclaimer: "Cupos sujetos a disponibilidad en tiempo real",
