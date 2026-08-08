@@ -87,7 +87,7 @@ export default async function GoogleCalendarPage({
 
   return (
     <div className="space-y-7">
-      <header>
+      <header data-tour="page-header">
         <div className="flex items-center gap-2">
           <CalendarCheck2 className="h-6 w-6 text-[#4285F4]" />
           <h1 className="text-3xl font-bold tracking-tight">Google Calendar</h1>
@@ -97,7 +97,10 @@ export default async function GoogleCalendarPage({
         </p>
       </header>
 
-      <aside className="flex items-start gap-3 rounded-2xl border border-[#4285F4]/30 bg-[#4285F4]/10 p-4">
+      <aside
+        data-tour="google-calendar-privacy"
+        className="flex items-start gap-3 rounded-2xl border border-[#4285F4]/30 bg-[#4285F4]/10 p-4"
+      >
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#4285F4]" />
         <div className="text-sm">
           <p className="font-semibold"><LocalizedText id="I-gOfroDtA89" /></p>
@@ -131,27 +134,29 @@ export default async function GoogleCalendarPage({
         </p>
       )}
 
-      {canManageBusiness && (
-        <GoogleCalendarCard
-          title="Calendario principal del negocio"
-          description="Respaldo para todas las citas. Invita al profesional asignado y al cliente sin duplicar eventos."
-          scope="business"
-          configured={configured}
-          oauthAvailable={oauthAvailable}
-          connection={businessConnection ? connectionSummary(businessConnection) : null}
-        />
-      )}
+      <div className="space-y-7" data-tour="google-calendar-connections">
+        {canManageBusiness && (
+          <GoogleCalendarCard
+            title="Calendario principal del negocio"
+            description="Respaldo para todas las citas. Invita al profesional asignado y al cliente sin duplicar eventos."
+            scope="business"
+            configured={configured}
+            oauthAvailable={oauthAvailable}
+            connection={businessConnection ? connectionSummary(businessConnection) : null}
+          />
+        )}
 
-      {ownStaff && (
-        <GoogleCalendarCard
-          title={`Mi calendario · ${ownStaff.name}`}
-          description="Tiene prioridad para tus propias citas y sus eventos externos bloquean horas en tu agenda pública."
-          scope="staff"
-          configured={configured}
-          oauthAvailable={oauthAvailable}
-          connection={ownConnection ? connectionSummary(ownConnection) : null}
-        />
-      )}
+        {ownStaff && (
+          <GoogleCalendarCard
+            title={`Mi calendario · ${ownStaff.name}`}
+            description="Tiene prioridad para tus propias citas y sus eventos externos bloquean horas en tu agenda pública."
+            scope="staff"
+            configured={configured}
+            oauthAvailable={oauthAvailable}
+            connection={ownConnection ? connectionSummary(ownConnection) : null}
+          />
+        )}
+      </div>
 
       {canManageBusiness && (
         <section className="rounded-2xl border border-border bg-card p-6">

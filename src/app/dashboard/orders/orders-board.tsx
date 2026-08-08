@@ -90,13 +90,13 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
 
   return (
     <div className="space-y-7">
-      <div>
+      <div data-tour="page-header">
         <p className="text-sm font-medium text-[#7C3AED]">{t("production")}</p>
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle", { business: businessName })}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-tour="orders-summary">
         {([
           [t("active"), stats.active, Package],
           [t("awaitingDeposit"), stats.awaitingDeposit, Banknote],
@@ -117,7 +117,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
           <p className="mt-1 text-sm text-muted-foreground">{t("emptyDescription")}</p>
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-5">
+        <div className="grid gap-4 xl:grid-cols-5" data-tour="orders-board">
           {boardColumns.map((column) => {
             const columnOrders = orders.filter((order) => column.statuses.includes(order.status));
             return (

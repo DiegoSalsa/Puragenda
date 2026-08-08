@@ -20,12 +20,33 @@ type TourDefinition = {
   steps: TourStepSpec[];
 };
 
+export const PRIMARY_HELP_ROUTES = [
+  "/dashboard",
+  "/dashboard/google-calendar",
+  "/dashboard/orders",
+  "/dashboard/analytics",
+  "/dashboard/staff",
+  "/dashboard/services",
+  "/dashboard/clients",
+  "/dashboard/recurring",
+  "/dashboard/loyalty",
+  "/dashboard/marketing",
+  "/dashboard/stories",
+  "/dashboard/appearance/personalizado",
+  "/dashboard/appearance/temas",
+  "/dashboard/referrals",
+  "/dashboard/rewards",
+  "/dashboard/settings",
+] as const;
+
+type PrimaryHelpRoute = (typeof PRIMARY_HELP_ROUTES)[number];
+
 const pageHeading = (title: string, description: string): TourStepSpec => ({
   selectors: ["[data-tour='page-header']", "#tutorial-main h1", "#tutorial-main"],
   popover: { title, description, side: "bottom", align: "start" },
 });
 
-const TOURS: Record<string, TourDefinition> = {
+const TOURS: Record<string, TourDefinition> & Record<PrimaryHelpRoute, TourDefinition> = {
   "/dashboard": {
     title: "Ayuda de Citas",
     steps: [
@@ -55,6 +76,68 @@ const TOURS: Record<string, TourDefinition> = {
           description:
             "Desde este menú accedes a profesionales, servicios, clientes, marketing, apariencia y configuración según tus permisos.",
           side: "right",
+          align: "start",
+        },
+      },
+    ],
+  },
+  "/dashboard/google-calendar": {
+    title: "Ayuda de Google Calendar",
+    steps: [
+      pageHeading(
+        "Sincronización con Google Calendar",
+        "Conecta los calendarios del negocio y del equipo para crear eventos automáticamente y bloquear horas ocupadas en el widget."
+      ),
+      {
+        selectors: ["[data-tour='google-calendar-privacy']", "#tutorial-main aside"],
+        popover: {
+          title: "Privacidad y permisos",
+          description:
+            "Puragenda utiliza el acceso autorizado exclusivamente para sincronizar citas y consultar horas ocupadas. Desde aquí también puedes revisar o revocar la conexión.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
+        selectors: [
+          "[data-tour='google-calendar-connections']",
+          "#tutorial-main section",
+          "#tutorial-main",
+        ],
+        popover: {
+          title: "Calendarios conectados",
+          description:
+            "Conecta el calendario principal o uno por profesional. Los eventos externos bloquean disponibilidad y las nuevas citas se sincronizan sin duplicarlas.",
+          side: "top",
+          align: "start",
+        },
+      },
+    ],
+  },
+  "/dashboard/orders": {
+    title: "Ayuda de Encargos",
+    steps: [
+      pageHeading(
+        "Producción y encargos",
+        "Organiza cada encargo desde la solicitud inicial hasta la entrega, junto con sus pagos, fechas y referencias."
+      ),
+      {
+        selectors: ["[data-tour='orders-summary']", "#tutorial-main [class*='grid']"],
+        popover: {
+          title: "Resumen de producción",
+          description:
+            "Revisa cuántos encargos están activos, cuáles esperan abono, cuáles vencen pronto y el saldo total pendiente.",
+          side: "bottom",
+          align: "start",
+        },
+      },
+      {
+        selectors: ["[data-tour='orders-board']", "#tutorial-main section", "#tutorial-main"],
+        popover: {
+          title: "Flujo por estados",
+          description:
+            "Las columnas muestran el avance del trabajo. Abre una tarjeta para revisar fotos, datos de entrega, pagos, notas internas y cambiar su estado.",
+          side: "top",
           align: "start",
         },
       },
@@ -310,6 +393,45 @@ const TOURS: Record<string, TourDefinition> = {
           description:
             "Consulta campañas y estados para saber qué acciones se ejecutaron y evitar envíos repetidos.",
           side: "top",
+          align: "start",
+        },
+      },
+    ],
+  },
+  "/dashboard/stories": {
+    title: "Ayuda de Historias",
+    steps: [
+      pageHeading(
+        "Historias de disponibilidad",
+        "Convierte oportunidades reales de tu agenda en historias listas para publicar y medir en Instagram."
+      ),
+      {
+        selectors: ["[data-tour='story-opportunities']", "#tutorial-main article", "#tutorial-main"],
+        popover: {
+          title: "Oportunidades recomendadas",
+          description:
+            "Puraragenda prioriza aperturas manuales, cancelaciones y horas disponibles con potencial de venta. Puedes comenzar una historia desde cualquiera de estas tarjetas.",
+          side: "top",
+          align: "start",
+        },
+      },
+      {
+        selectors: ["[data-tour='story-studio']", "#story-studio", "#tutorial-main"],
+        popover: {
+          title: "Configurar la historia",
+          description:
+            "El modo rápido resuelve lo esencial. En avanzado puedes ajustar contenido, diseño, horarios, enlace, información visible y guardar presets reutilizables.",
+          side: "top",
+          align: "start",
+        },
+      },
+      {
+        selectors: ["[data-tour='story-preview']", "#story-studio section", "#tutorial-main"],
+        popover: {
+          title: "Vista previa y descarga",
+          description:
+            "Comprueba las zonas seguras de Instagram, compara variantes y descarga el PNG final. La imagen se genera en tu navegador y no queda almacenada en el servidor.",
+          side: "left",
           align: "start",
         },
       },

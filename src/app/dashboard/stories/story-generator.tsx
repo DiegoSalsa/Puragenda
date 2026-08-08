@@ -1009,7 +1009,10 @@ export function StoryGenerator({
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-8 pb-28 lg:space-y-10">
-      <section className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] p-6 shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10">
+      <section
+        data-tour="page-header"
+        className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] p-6 shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10"
+      >
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full border-[34px] border-[#FF5C8A]/70" />
         <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
@@ -1076,7 +1079,7 @@ export function StoryGenerator({
         </div>
       </section>
 
-      <section>
+      <section data-tour="story-opportunities">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#7C3AED]">
@@ -1149,7 +1152,7 @@ export function StoryGenerator({
         )}
       </section>
 
-      <section id="story-studio" className="scroll-mt-20">
+      <section id="story-studio" data-tour="story-studio" className="scroll-mt-20">
         <div className="mb-5 space-y-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#FF4F87]">
@@ -1977,6 +1980,7 @@ export function StoryGenerator({
           </div>
 
           <section
+            data-tour="story-preview"
             className={`${mobilePanel === "PREVIEW" ? "block" : "hidden"} overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#171717] text-white shadow-[6px_6px_0_#FF5C8A] xl:sticky xl:top-6 xl:block`}
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
