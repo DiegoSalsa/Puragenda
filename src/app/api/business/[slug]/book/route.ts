@@ -86,7 +86,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId, locationId } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId, locationId, storyCampaignToken } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -101,6 +101,12 @@ export async function POST(
         { status: 401 }
       );
     }
+    const storyCampaign = storyCampaignToken
+      ? await prisma.storyCampaign.findFirst({
+          where: { token: storyCampaignToken, businessId: business.id },
+          select: { id: true },
+        })
+      : null;
 
     const location = await getLocationForBusiness(business.id, locationId);
     if (!location) return Response.json({ error: "La sucursal seleccionada no está disponible" }, { status: 400 });
@@ -732,6 +738,7 @@ export async function POST(
           clientId: client.id,
           depositRequired,
           depositAmount: groupDeposit,
+          storyCampaignId: storyCampaign?.id,
         });
 
         if (!result.success) {
@@ -873,6 +880,7 @@ export async function POST(
       clientId: client.id,
       depositRequired,
       depositAmount: totalDepositAmount,
+      storyCampaignId: storyCampaign?.id,
     });
 
     if (!result.success) {

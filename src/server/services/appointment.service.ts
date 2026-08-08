@@ -106,6 +106,7 @@ export async function createAppointment(data: {
   status?: AppointmentStatus;
   internalNotes?: string;
   allowPrioritySlots?: boolean;
+  storyCampaignId?: string;
 }) {
   // Check collision for the specific staff member (or business-wide if no staff)
   const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
@@ -172,6 +173,7 @@ export async function createAppointment(data: {
       depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",
       internalNotes: data.internalNotes?.trim() || null,
+      storyCampaignId: data.storyCampaignId,
     },
     include: { service: true },
   });

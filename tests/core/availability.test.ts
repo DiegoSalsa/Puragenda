@@ -35,4 +35,19 @@ describe("shared availability engine", () => {
       .toEqual(["13:00", "14:00", "15:00"]);
     expect(slots.every((slot) => slot.start.getSeconds() === 0 && slot.start.getMilliseconds() === 0)).toBe(true);
   });
+
+  it("opens a manually configured date even when the recurring week is closed", () => {
+    const slots = buildSlots(
+      monday,
+      60,
+      [{ dayOfWeek: monday.getDay(), startTime: "09:00", endTime: "18:00", isOpen: false }],
+      [{ dayOfWeek: monday.getDay(), startTime: "09:00", endTime: "18:00", isWorking: false }],
+      60,
+      [{ date: "2026-08-10", isOpen: true, startTime: "11:00", endTime: "15:00" }],
+      [],
+      [{ date: "2026-08-10", isOpen: true, startTime: "12:00", endTime: "15:00" }],
+    );
+
+    expect(slots.map((slot) => slot.start.getHours())).toEqual([12, 13, 14]);
+  });
 });

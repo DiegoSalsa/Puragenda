@@ -324,6 +324,7 @@ export async function rescheduleAppointmentAction(
         discountAmount: appointment.discountAmount,
         promotionId: appointment.promotionId,
         promotionTitle: appointment.promotionTitle,
+        storyCampaignId: appointment.storyCampaignId,
         additionalServiceIds: appointment.additionalServiceIds,
         selectedOptions: appointment.selectedOptions ?? undefined,
         depositAmount: appointment.depositAmount,

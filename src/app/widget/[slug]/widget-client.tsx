@@ -55,7 +55,7 @@ interface Service {
 }
 interface BusinessHour { dayOfWeek: number; startTime: string; endTime: string; isOpen: boolean; breakStart?: string | null; breakEnd?: string | null; }
 interface StaffScheduleEntry { dayOfWeek: number; startTime: string; endTime: string; isWorking: boolean; breakStart?: string | null; breakEnd?: string | null; }
-interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; serviceIds: string[]; locationIds?: string[]; locationSchedules?: { locationId: string; schedule: StaffScheduleEntry[] }[]; }
+interface StaffMember { id: string; name: string; imageUrl: string | null; schedule: StaffScheduleEntry[]; scheduleOverrides?: ScheduleOverride[]; serviceIds: string[]; locationIds?: string[]; locationSchedules?: { locationId: string; schedule: StaffScheduleEntry[] }[]; }
 interface Location { id: string; name: string; slug: string; address: string | null; mapsUrl: string | null; timezone: string; hours: BusinessHour[]; scheduleOverrides: ScheduleOverride[]; }
 interface PromoBlock {
   id: string;
@@ -102,6 +102,10 @@ interface Props {
   promoBlocks?: PromoBlock[];
   locations?: Location[];
   initialLocationSlug?: string;
+  initialServiceId?: string;
+  initialStaffId?: string;
+  initialDate?: string;
+  storyCampaignToken?: string;
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -167,9 +171,12 @@ function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], tim
   return false;
 }
 
-function isStaffWorkingOnDay(staff: StaffMember, dow: number, schedule = staff.schedule): boolean {
+function isStaffWorkingOnDay(staff: StaffMember, date: Date, schedule = staff.schedule): boolean {
+  const dateKey = format(date, "yyyy-MM-dd");
+  const override = staff.scheduleOverrides?.find((entry) => entry.date === dateKey);
+  if (override) return override.isOpen;
   if (schedule.length === 0) return true; // No schedule = always available
-  const entry = schedule.find((s) => s.dayOfWeek === dow);
+  const entry = schedule.find((s) => s.dayOfWeek === date.getDay());
   return entry ? entry.isWorking : false;
 }
 
@@ -196,6 +203,13 @@ function canStaffPerformAllServices(staff: StaffMember, serviceIds: string[]) {
 }
 
 function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: Date }) {
+  const override = staff.scheduleOverrides?.find((entry) => entry.date === format(slot.start, "yyyy-MM-dd"));
+  if (override) {
+    if (!override.isOpen) return false;
+    if (!override.startTime || !override.endTime) return true;
+    return timeToMinutes(slot.start) >= scheduleTimeToMinutes(override.startTime)
+      && timeToMinutes(slot.end) <= scheduleTimeToMinutes(override.endTime);
+  }
   if (staff.schedule.length === 0) return true;
   const entry = staff.schedule.find((s) => s.dayOfWeek === slot.start.getDay());
   if (!entry?.isWorking) return false;
@@ -217,7 +231,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken }: Props) {
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
   const locale = useLocale();
@@ -232,16 +246,50 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const headerAlign = business.headerAlign || "left";
   const isMultiService = maxServicesPerBooking > 1;
   const initialLocation = locations.find((location) => location.slug === initialLocationSlug) ?? (locations.length === 1 ? locations[0] : null);
+  const deepLinkedService = services.find((service) =>
+    service.id === initialServiceId
+    && service.bookingMode === "APPOINTMENT"
+    && (!initialLocation || service.locationIds?.includes(initialLocation.id)),
+  ) ?? null;
+  const deepLinkedStaff = staffMembers?.find((staff) =>
+    staff.id === initialStaffId
+    && (!initialLocation || staff.locationIds?.includes(initialLocation.id))
+    && (!deepLinkedService || canStaffPerformService(staff, deepLinkedService.id)),
+  ) ?? null;
+  const deepLinkedDate = initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)
+    ? (() => {
+        const [year, month, day] = initialDate.split("-").map(Number);
+        const value = new Date(year, month - 1, day, 12, 0, 0, 0);
+        return Number.isNaN(value.getTime()) ? null : value;
+      })()
+    : null;
+  const eligibleDeepLinkStaff = deepLinkedService
+    ? (staffMembers ?? []).filter((staff) =>
+        (!initialLocation || staff.locationIds?.includes(initialLocation.id))
+        && canStaffPerformService(staff, deepLinkedService.id),
+      )
+    : [];
+  const initialStep: Step = !initialLocation && locations.length > 1
+    ? "location"
+    : !deepLinkedService
+      ? "service"
+      : deepLinkedService.recurringPlan
+        ? "mode-select"
+        : deepLinkedService.optionCategories.length > 0
+          ? "options"
+          : !deepLinkedStaff && eligibleDeepLinkStaff.length > 1
+            ? "staff"
+            : "datetime";
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(initialLocation);
-  const [step, setStep] = useState<Step>(initialLocation || locations.length <= 1 ? "service" : "location");
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [step, setStep] = useState<Step>(initialStep);
+  const [selectedService, setSelectedService] = useState<Service | null>(deepLinkedService);
+  const [selectedServices, setSelectedServices] = useState<Service[]>(deepLinkedService && isMultiService ? [deepLinkedService] : []);
   const [expandedServiceCategories, setExpandedServiceCategories] = useState<string[]>([]);
   const [selectedOptionByCategory, setSelectedOptionByCategory] = useState<Record<string, string[]>>({});
-  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(deepLinkedStaff ?? (eligibleDeepLinkStaff.length === 1 ? eligibleDeepLinkStaff[0] : null));
   const [selectedStaffByServiceId, setSelectedStaffByServiceId] = useState<Record<string, string>>({});
   const [staffSelectionMode, setStaffSelectionMode] = useState<"single" | "split">("single");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(initialStep === "datetime" ? deepLinkedDate : null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", address: "" });
   const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false, address: false });
@@ -411,10 +459,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
-  const days = useMemo(
-    () => buildDays(effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides),
-    [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides],
-  );
+  const days = useMemo(() => {
+    const availableDays = buildDays(effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides);
+    if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) return availableDays;
+    const [year, month, day] = initialDate.split("-").map(Number);
+    const linkedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
+    if (Number.isNaN(linkedDate.getTime())) return availableDays;
+    const alreadyIncluded = availableDays.some((date) => format(date, "yyyy-MM-dd") === initialDate);
+    return alreadyIncluded
+      ? availableDays
+      : [...availableDays, linkedDate].sort((left, right) => left.getTime() - right.getTime());
+  }, [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides, initialDate]);
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
@@ -432,6 +487,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       slotInterval,
       effectiveOverrides,
       appointmentEndStarts,
+      selectedStaff?.scheduleOverrides,
     );
 
     // Same-day filtering logic
@@ -448,7 +504,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
 
     return generated;
-  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone]);
+  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -710,6 +766,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
+          storyCampaignToken,
         }),
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
@@ -1406,7 +1463,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
                     // Calculate typical slots for this day based on standard hours
                     const dummyDate = new Date(2024, 0, d.value === 0 ? 7 : d.value);
-                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, effectiveHours, selectedStaffSchedule, slotInterval, effectiveOverrides).map(s => format(s.start, "HH:mm"));
+                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, effectiveHours, selectedStaffSchedule, slotInterval, effectiveOverrides, [], selectedStaff?.scheduleOverrides).map(s => format(s.start, "HH:mm"));
 
                     return (
                       <div key={d.value} className="rounded-2xl border transition-all duration-300 overflow-hidden" 
@@ -1821,9 +1878,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     const staffWorking = splitStaffMode
                       ? activeServices.every((service) => {
                           const staff = staffMembers?.find((item) => item.id === selectedStaffByServiceId[service.id]);
-                          return staff ? isStaffWorkingOnDay(staff, day.getDay(), getStaffScheduleForLocation(staff, selectedLocation?.id)) : false;
+                          return staff ? isStaffWorkingOnDay(staff, day, getStaffScheduleForLocation(staff, selectedLocation?.id)) : false;
                         })
-                      : selectedStaff ? isStaffWorkingOnDay(selectedStaff, day.getDay(), selectedStaffSchedule) : true;
+                      : selectedStaff ? isStaffWorkingOnDay(selectedStaff, day, selectedStaffSchedule) : true;
                     return (
                       <button key={day.toISOString()} type="button" disabled={!staffWorking}
                         onClick={() => { setSelectedDate(day); setSelectedSlot(null); }}

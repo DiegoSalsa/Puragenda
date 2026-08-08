@@ -76,6 +76,7 @@ export default async function WidgetPage({
     color?: string; primary?: string; secondary?: string;
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
     radius?: string; shadow?: string; headerAlign?: string; location?: string;
+    service?: string; staff?: string; date?: string; story?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -101,6 +102,7 @@ export default async function WidgetPage({
         where: { isActive: true },
         include: {
           schedule: { orderBy: { dayOfWeek: "asc" } },
+          scheduleOverrides: { orderBy: { date: "asc" } },
           services: { select: { id: true } },
           locations: { where: { isActive: true }, select: { locationId: true, schedule: { orderBy: { dayOfWeek: "asc" } } } },
         },
@@ -272,6 +274,14 @@ export default async function WidgetPage({
           dayOfWeek: sc.dayOfWeek, startTime: sc.startTime, endTime: sc.endTime, isWorking: sc.isWorking,
           breakStart: sc.breakStart, breakEnd: sc.breakEnd,
         })),
+        scheduleOverrides: s.scheduleOverrides.map((override) => ({
+          date: override.date.toISOString().split("T")[0],
+          isOpen: override.isWorking,
+          startTime: override.startTime,
+          endTime: override.endTime,
+          breakStart: override.breakStart,
+          breakEnd: override.breakEnd,
+        })),
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
       groupServicesByCategory={business.groupServicesByCategory}
@@ -305,6 +315,10 @@ export default async function WidgetPage({
         scheduleOverrides: location.scheduleOverrides.map((override) => ({ date: override.date.toISOString().split("T")[0], isOpen: override.isOpen, startTime: override.startTime, endTime: override.endTime, breakStart: override.breakStart, breakEnd: override.breakEnd })),
       }))}
       initialLocationSlug={sp.location}
+      initialServiceId={sp.service}
+      initialStaffId={sp.staff}
+      initialDate={sp.date}
+      storyCampaignToken={sp.story}
     />
     </>
   );

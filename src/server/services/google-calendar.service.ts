@@ -772,11 +772,6 @@ export async function getGoogleCalendarBusySlots(
       );
   } catch (error) {
     await recordConnectionError(connection.id, error);
-    console.error("[google-calendar] FreeBusy lookup failed", {
-      staffId,
-      connectionId: connection.id,
-      message: error instanceof Error ? error.message : String(error),
-    });
     return [];
   }
 }

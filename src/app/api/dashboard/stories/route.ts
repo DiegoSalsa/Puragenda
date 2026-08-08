@@ -3,7 +3,10 @@ import { ImageResponse } from "next/og";
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { buildAvailabilityStory } from "@/server/services/availability-story.service";
+import {
+  buildAvailabilityStory,
+  recordAvailabilityStoryCampaign,
+} from "@/server/services/availability-story.service";
 import { AvailabilityStoryImage } from "@/server/stories/availability-story-image";
 import { availabilityStoryRequestSchema } from "@/server/validations/availability-story";
 import { availabilityStoryLimiter } from "@/server/lib/rate-limit";
@@ -35,13 +38,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await buildAvailabilityStory(user, business.id, parsed.data, request.nextUrl.origin);
+    const campaign = await recordAvailabilityStoryCampaign(
+      user,
+      business.id,
+      parsed.data,
+      data,
+      request.nextUrl.origin,
+    );
+    data.bookingUrl = campaign.bookingUrl;
     const filename = `disponibilidad-${data.days[0]?.date ?? "puragenda"}.png`;
+    const trackingHeaders: Record<string, string> = {
+      "X-Story-Booking-Url": campaign.bookingUrl,
+    };
+    if (campaign.campaignId) trackingHeaders["X-Story-Campaign-Id"] = campaign.campaignId;
     return new ImageResponse(createElement(AvailabilityStoryImage, { data }), {
       width: 1080,
       height: 1920,
       headers: {
         "Cache-Control": "no-store, max-age=0",
         "Content-Disposition": `attachment; filename="${filename}"`,
+        ...trackingHeaders,
       },
     });
   } catch (error) {

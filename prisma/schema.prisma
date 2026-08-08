@@ -45,6 +45,7 @@ model User {
   platformDiscountCodes     PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
   adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
   googleCalendarConnections GoogleCalendarConnection[]
+  storyCampaigns            StoryCampaign[]
 }
 
 // ==========================================
@@ -271,6 +272,7 @@ model Business {
   googleCalendarConnections   GoogleCalendarConnection[]
   scheduleOverrides           BusinessScheduleOverride[]
   locations                   BusinessLocation[]
+  storyCampaigns              StoryCampaign[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -302,6 +304,7 @@ model BusinessLocation {
   recurringBookings RecurringBooking[]
   productionOrders  ProductionOrder[]
   scheduleBlocks    ScheduleBlock[]
+  storyCampaigns    StoryCampaign[]
 
   @@unique([businessId, slug])
   @@index([businessId, isActive, position])
@@ -626,6 +629,7 @@ model Staff {
   googleCalendarConnections GoogleCalendarConnection[]
   scheduleOverrides         StaffScheduleOverride[]
   locations                 StaffLocation[]
+  storyCampaigns            StoryCampaign[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -1015,6 +1019,7 @@ model Appointment {
   mpPreferenceId               String? // MercadoPago preference ID
   // ── Recurring ──
   recurringBookingId           String? // FK a RecurringBooking si es parte de un plan
+  storyCampaignId              String?
   createdAt                    DateTime          @default(now())
   updatedAt                    DateTime          @updatedAt
 
@@ -1025,6 +1030,7 @@ model Appointment {
   client              Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
   recurringBooking    RecurringBooking?    @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
   promotion           WidgetPromoBlock?    @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  storyCampaign       StoryCampaign?       @relation(fields: [storyCampaignId], references: [id], onDelete: SetNull)
   googleCalendarEvent GoogleCalendarEvent?
 
   @@index([businessId])
@@ -1034,7 +1040,40 @@ model Appointment {
   @@index([clientId])
   @@index([recurringBookingId])
   @@index([promotionId])
+  @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
+}
+
+model StoryCampaign {
+  id               String    @id @default(cuid())
+  token            String    @unique
+  businessId       String
+  createdByUserId  String?
+  locationId       String?
+  staffId          String?
+  serviceIds       String[]  @default([])
+  range            String
+  targetDate       DateTime? @db.Date
+  headline         String
+  template         String
+  destinationUrl   String    @db.Text
+  slotCount        Int       @default(0)
+  potentialRevenue Float     @default(0)
+  linkVisits       Int       @default(0)
+  downloadCount    Int       @default(0)
+  shareCount       Int       @default(0)
+  lastVisitedAt    DateTime?
+  createdAt        DateTime  @default(now())
+
+  business      Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdByUser User?             @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  location      BusinessLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  staff         Staff?            @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  appointments  Appointment[]
+
+  @@index([businessId, createdAt])
+  @@index([locationId])
+  @@index([staffId])
 }
 
 model GoogleCalendarConnection {
