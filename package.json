@@ -25,8 +25,8 @@
     "@hono/node-server": "2.0.12",
     "esbuild": "0.28.1",
     "eslint-config-next": {
-      "brace-expansion": "5.0.8",
-      "minimatch": "10.2.4"
+      "brace-expansion": "5.0.9",
+      "minimatch": "10.2.6"
     },
     "find-my-way": "9.7.0",
     "postcss": "8.5.23",

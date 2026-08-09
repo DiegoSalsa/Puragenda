@@ -119,7 +119,9 @@ describe("Google Calendar integration", () => {
     const encrypted = encryptGoogleToken("refresh-secret");
     expect(encrypted).not.toContain("refresh-secret");
     expect(decryptGoogleToken(encrypted)).toBe("refresh-secret");
-    expect(() => decryptGoogleToken(`${encrypted.slice(0, -1)}x`)).toThrow();
+    const [version, iv, tag, ciphertext] = encrypted.split(".");
+    const tamperedTag = `${tag[0] === "A" ? "B" : "A"}${tag.slice(1)}`;
+    expect(() => decryptGoogleToken([version, iv, tamperedTag, ciphertext].join("."))).toThrow();
   });
 
   it("signs expiring OAuth state and rejects a modified state", () => {

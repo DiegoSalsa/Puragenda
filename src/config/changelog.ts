@@ -10,6 +10,31 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.8.0",
+    date: "2026-08-08",
+    title: "Historias que Convierten y un Panel más Ordenado",
+    description:
+      "Puragenda transforma la disponibilidad real del negocio en historias listas para Instagram y reorganiza el panel para que cada herramienta sea más fácil de encontrar y aprender.",
+    notice:
+      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
+    features: [
+      "Nuevo estudio de Historias con modos rápido y avanzado, plantillas visuales, zonas seguras de Instagram y descarga directa en PNG.",
+      "Las historias pueden mostrar cupos reales, fechas elegidas manualmente o contenido sin horario, según lo que cada negocio quiera promocionar.",
+      "Enlaces reservables para el sticker de Instagram, con servicio, profesional, sucursal y fecha preseleccionados cuando corresponde.",
+      "Métricas de visitas, reservas e ingresos atribuidos para medir qué historias generan resultados reales.",
+      "Presets reutilizables, historial de campañas y recomendaciones automáticas basadas en horas disponibles o cancelaciones.",
+      "Diseños adaptados al plan Individual: se ocultan profesional y sucursal cuando no aportan valor, y cada negocio decide si muestra la dirección.",
+      "El menú del panel ahora agrupa Agenda, Gestión, Crecimiento y Configuración en secciones desplegables más claras.",
+      "Google Calendar, Encargos e Historias incorporan tutoriales completos; todas las secciones principales mantienen ayuda contextual.",
+    ],
+    fixes: [
+      "Los horarios abiertos manualmente por fecha ahora se respetan tanto en el widget como en las historias, incluso cuando reemplazan el horario semanal habitual.",
+      "Los bloqueos asociados a una sucursal ya no cierran por error la agenda del profesional en otros locales.",
+      "La generación del PNG ocurre en el navegador y no almacena copias innecesarias de las historias en el servidor.",
+      "Se reforzaron la validación, los permisos, la protección de presets y la atribución segura de reservas a cada campaña.",
+    ],
+  },
+  {
     version: "v1.7.0",
     date: "2026-08-05",
     title: "Sucursales, Horarios por Local y Operación Internacional",
