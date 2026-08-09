@@ -1,0 +1,55 @@
+name: Security checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  codex-security:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      CODEX_SECURITY_API_KEY: ${{ secrets.CODEX_SECURITY_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Explain optional scan
+        if: env.CODEX_SECURITY_API_KEY == ''
+        run: echo "Codex Security omitido; configura CODEX_SECURITY_API_KEY para habilitarlo."
+      - name: Install Codex Security
+        if: env.CODEX_SECURITY_API_KEY != ''
+        run: |
+          npm install --global @openai/codex
+          codex plugin add codex-security@openai-curated
+      - name: Review pull request changes
+        if: env.CODEX_SECURITY_API_KEY != ''
+        env:
+          CODEX_API_KEY: ${{ secrets.CODEX_SECURITY_API_KEY }}
+        run: >-
+          codex exec --sandbox workspace-write
+          "Use \$codex-security:security-diff-scan to review changes from
+          origin/${{ github.base_ref }} to HEAD for security regressions.
+          Do not modify the checkout."

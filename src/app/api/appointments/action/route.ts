@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import {
   sendAppointmentActionNotification,
   sendAppointmentActionStaffNotification,
 } from "@/server/email/send";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import { appointmentActionLimiter } from "@/server/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const limited = appointmentActionLimiter.check(req as NextRequest);
+  if (limited) return limited;
+
   try {
     const { token, action, confirmation } = await req.json();
 
@@ -58,10 +62,13 @@ export async function POST(req: Request) {
 
     if (action === "confirm") {
       // Confirm attendance → update to CONFIRMED
-      await prisma.appointment.update({
-        where: { id: appointment.id },
-        data: { status: "CONFIRMED" },
+      const updated = await prisma.appointment.updateMany({
+        where: { id: appointment.id, actionToken: token, status: { not: "CONFIRMED" } },
+        data: { status: "CONFIRMED", actionToken: null },
       });
+      if (updated.count !== 1) {
+        return NextResponse.json({ error: "Esta cita ya fue procesada", alreadyProcessed: true }, { status: 409 });
+      }
       await syncAppointmentToGoogle(appointment.id);
 
       // Notify business owner
@@ -102,10 +109,13 @@ export async function POST(req: Request) {
 
     if (action === "cancel") {
       // Cancel appointment
-      await prisma.appointment.update({
-        where: { id: appointment.id },
+      const updated = await prisma.appointment.updateMany({
+        where: { id: appointment.id, actionToken: token, status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] } },
         data: { status: "CANCELLED", actionToken: null },
       });
+      if (updated.count !== 1) {
+        return NextResponse.json({ error: "Esta cita ya fue procesada", alreadyProcessed: true }, { status: 409 });
+      }
       await syncAppointmentToGoogle(appointment.id);
 
       // Notify business owner

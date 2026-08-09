@@ -45,7 +45,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const token = typeof body.token === "string" ? body.token : "";
-    if (body.action !== "cancel" || body.confirmation !== "CANCELAR") {
+    const action = body.action === "confirm" || body.action === "cancel" ? body.action : null;
+    if (!action) {
+      return Response.json({ error: "Acción inválida" }, { status: 400 });
+    }
+    if (action === "cancel" && body.confirmation !== "CANCELAR") {
       return Response.json({ error: "Debes escribir CANCELAR para confirmar" }, { status: 400 });
     }
 
@@ -60,6 +64,9 @@ export async function POST(request: NextRequest) {
     if (["CANCELLED", "COMPLETED", "NO_SHOW"].includes(appointment.status)) {
       return Response.json({ error: "Esta cita ya fue procesada", alreadyProcessed: true }, { status: 409 });
     }
+    if (action === "confirm" && appointment.status === "CONFIRMED") {
+      return Response.json({ error: "Esta cita ya fue confirmada", alreadyProcessed: true }, { status: 409 });
+    }
 
     const consumedAt = new Date();
     const result = await prisma.appointment.updateMany({
@@ -70,7 +77,7 @@ export async function POST(request: NextRequest) {
         status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
       },
       data: {
-        status: "CANCELLED",
+        status: action === "cancel" ? "CANCELLED" : "CONFIRMED",
         customerActionTokenHash: null,
         customerActionTokenExpiresAt: null,
         customerActionTokenUsedAt: consumedAt,
@@ -82,12 +89,12 @@ export async function POST(request: NextRequest) {
 
     await syncAppointmentToGoogle(appointment.id);
 
-    const notifications: Promise<unknown>[] = [
-      sendCancellationEmail(appointment),
-    ];
+    const notificationAction = action === "cancel" ? "cancelled" : "confirmed";
+    const notifications: Promise<unknown>[] = [];
+    if (action === "cancel") notifications.push(sendCancellationEmail(appointment));
     if (appointment.business.owner?.email) {
       notifications.push(sendAppointmentActionNotification({
-        action: "cancelled",
+        action: notificationAction,
         customerName: appointment.customerName,
         serviceName: appointment.service.name,
         staffName: appointment.staff?.name ?? "Sin asignar",
@@ -100,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
     if (appointment.staff?.email) {
       notifications.push(sendAppointmentActionStaffNotification({
-        action: "cancelled",
+        action: notificationAction,
         customerName: appointment.customerName,
         serviceName: appointment.service.name,
         staffName: appointment.staff.name,
@@ -113,9 +120,9 @@ export async function POST(request: NextRequest) {
     }
     await Promise.allSettled(notifications);
 
-    return Response.json({ ok: true, action: "cancelled" });
+    return Response.json({ ok: true, action: notificationAction });
   } catch (error) {
-    console.error("[appointment manage cancel]", error);
-    return Response.json({ error: "No se pudo cancelar la cita" }, { status: 500 });
+    console.error("[appointment manage action]", error);
+    return Response.json({ error: "No se pudo procesar la cita" }, { status: 500 });
   }
 }

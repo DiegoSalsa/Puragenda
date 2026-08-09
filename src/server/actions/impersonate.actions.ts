@@ -27,6 +27,7 @@ export async function impersonateBusinessAction(businessId: string) {
     name: business.owner.name,
     role: business.owner.role,
     isSuperAdmin: business.owner.isSuperAdmin,
+    tokenVersion: business.owner.tokenVersion,
     adminAccess: false,
   });
 

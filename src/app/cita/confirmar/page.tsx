@@ -10,7 +10,9 @@ import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 function ConfirmContent() {
   const legacy = useTranslations("legacy");
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const manageToken = searchParams.get("manageToken");
+  const legacyToken = searchParams.get("token");
+  const token = manageToken ?? legacyToken;
   const [status, setStatus] = useState<"loading" | "success" | "error" | "already">(
     token ? "loading" : "error",
   );
@@ -21,7 +23,7 @@ function ConfirmContent() {
   useEffect(() => {
     if (!token) return;
 
-    fetch("/api/appointments/action", {
+    fetch(manageToken ? "/api/appointments/manage" : "/api/appointments/action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, action: "confirm" }),
@@ -43,7 +45,7 @@ function ConfirmContent() {
         setStatus("error");
         setMessage(legacy("84dE-PNzLly_"));
       });
-  }, [token, legacy]);
+  }, [token, manageToken, legacy]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] px-4">

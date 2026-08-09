@@ -67,6 +67,7 @@ const manager = {
   name: "Manager",
   role: "RECEPTIONIST" as const,
   isSuperAdmin: false,
+  tokenVersion: 1,
   adminAccess: false,
 };
 

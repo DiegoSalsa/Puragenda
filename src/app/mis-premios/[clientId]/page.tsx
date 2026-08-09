@@ -1,40 +1,26 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "lucide-react";
 import { StampProgress } from "./stamp-progress";
 import { RewardCard } from "./reward-card";
 import type { Metadata, Viewport } from "next";
+import { getClientPortalEmail } from "@/server/services/client-portal.service";
 
 interface PageProps {
   params: Promise<{ clientId: string }>;
 }
 
-export async function generateViewport({ params }: PageProps): Promise<Viewport> {
-  const { clientId } = await params;
-  const client = await prisma.client.findUnique({
-    where: { id: clientId },
-    include: { business: { select: { backgroundColor: true } } },
-  });
-
-  return {
-    themeColor: client?.business?.backgroundColor || "#0A0A0A",
-  };
+export function generateViewport(): Viewport {
+  return { themeColor: "#0A0A0A" };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { clientId } = await params;
-  const client = await prisma.client.findUnique({
-    where: { id: clientId },
-    include: { business: { select: { name: true } } },
-  });
-
-  if (!client) return { title: "Premios | Puragenda" };
-
+export function generateMetadata(): Metadata {
   return {
-    title: `Mis Premios — ${client.business.name}`,
-    description: `Portal de fidelización de ${client.name} en ${client.business.name}`,
+    title: "Mis Premios | Puragenda",
+    description: "Consulta tus premios en el portal privado de Puragenda.",
+    robots: { index: false, follow: false },
   };
 }
 
@@ -60,9 +46,14 @@ function hexToRgb(hex: string) {
 
 export default async function MisPremiosPage({ params }: PageProps) {
   const { clientId } = await params;
+  const portalEmail = await getClientPortalEmail();
+  if (!portalEmail) redirect("/mi-agenda");
 
-  const client = await prisma.client.findUnique({
-    where: { id: clientId },
+  const client = await prisma.client.findFirst({
+    where: {
+      id: clientId,
+      email: { equals: portalEmail, mode: "insensitive" },
+    },
     include: {
       business: {
         select: {

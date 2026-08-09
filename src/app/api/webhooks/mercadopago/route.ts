@@ -19,10 +19,8 @@ function verifyWebhookSignature(
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
   if (!secret) {
-    console.warn(
-      "[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET not set — skipping signature verification"
-    );
-    return true;
+    console.error("[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET is not configured");
+    return false;
   }
 
   if (!xSignature || !xRequestId) return false;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/server/email/send";
 import { runBillingReconciliation } from "@/server/services/subscription-dunning.service";
+import { authorizeCronRequest } from "@/server/auth/cron";
 
 // ── Vercel Cron: runs daily at 13:00 UTC (09:00 AM Chile) ──
 // Handles two tasks:
@@ -13,12 +14,8 @@ export const maxDuration = 60;
 
 export async function GET(req: Request) {
   // ── Auth: verify the request comes from Vercel Cron ──
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = authorizeCronRequest(req);
+  if (unauthorized) return unauthorized;
 
   try {
     const now = new Date();

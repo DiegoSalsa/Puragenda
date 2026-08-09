@@ -83,6 +83,7 @@ describe("createWidgetPromoBlockAction", () => {
       name: "Owner",
       role: "ADMIN",
       isSuperAdmin: false,
+      tokenVersion: 1,
       adminAccess: false,
     });
     vi.mocked(getBusinessForUser).mockResolvedValue({
@@ -136,6 +137,7 @@ describe("updateWidgetPromoBlockAction", () => {
       name: "Owner",
       role: "ADMIN",
       isSuperAdmin: false,
+      tokenVersion: 1,
       adminAccess: false,
     });
     vi.mocked(getBusinessForUser).mockResolvedValue({

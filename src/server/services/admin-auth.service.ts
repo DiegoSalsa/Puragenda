@@ -93,6 +93,7 @@ export async function verifyAdminLoginCode(email: string, code: string, ipAddres
       name: true,
       role: true,
       isSuperAdmin: true,
+      tokenVersion: true,
       deletedAt: true,
     },
   });
@@ -157,6 +158,7 @@ export async function verifyAdminLoginCode(email: string, code: string, ipAddres
       name: user.name,
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
+      tokenVersion: user.tokenVersion,
     },
   } as const;
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "@/core/constants";
 import { loginLimiter } from "@/server/lib/rate-limit";
+import { findPasswordResetToken } from "@/server/auth/password-reset";
 
 /**
  * POST /api/auth/reset-password
@@ -39,9 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the token
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-    });
+    const resetToken = await findPasswordResetToken(token);
 
     if (!resetToken) {
       return NextResponse.json(
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { password: hashedPassword },
+        data: { password: hashedPassword, tokenVersion: { increment: 1 } },
       }),
       // Delete all tokens for this email (cleanup)
       prisma.passwordResetToken.deleteMany({

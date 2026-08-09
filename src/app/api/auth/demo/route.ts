@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   try {
     const user = await prisma.user.findUnique({
       where: { email: "vale@esteticabella.cl" },
-      select: { id: true, email: true, name: true, role: true, isSuperAdmin: true }
+      select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true }
     });
 
     if (!user) {
@@ -19,6 +19,7 @@ export async function GET(request: Request) {
       name: user.name,
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
+      tokenVersion: user.tokenVersion,
     });
 
     const requestUrl = new URL(request.url);

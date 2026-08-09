@@ -99,7 +99,7 @@ export async function registerUser(data: {
         trialUsedAt: trialBlocked ? null : now,
         termsAcceptedAt: now,
       },
-      select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true, createdAt: true },
     });
 
     const businessName = data.businessName;
@@ -211,6 +211,7 @@ export async function verifyCredentials(email: string, password: string) {
 
   return {
     id: user.id, email: user.email, name: user.name, role: user.role,
-    isSuperAdmin: user.isSuperAdmin, createdAt: user.createdAt, updatedAt: user.updatedAt,
+    isSuperAdmin: user.isSuperAdmin, tokenVersion: user.tokenVersion,
+    createdAt: user.createdAt, updatedAt: user.updatedAt,
   };
 }

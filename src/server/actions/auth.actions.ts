@@ -3,8 +3,11 @@
 import { prisma } from "@/server/db/prisma";
 import { sendForgotPasswordEmail } from "@/server/email/send";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 import { SALT_ROUNDS } from "@/core/constants";
+import {
+  findPasswordResetToken,
+  issuePasswordResetToken,
+} from "@/server/auth/password-reset";
 
 const TOKEN_EXPIRY_HOURS = 1;
 
@@ -24,21 +27,10 @@ export async function forgotPasswordAction(email: string) {
     const user = await prisma.user.findUnique({ where: { email: trimmedEmail } });
 
     if (user) {
-      // Delete any existing tokens for this email
-      await prisma.passwordResetToken.deleteMany({ where: { email: trimmedEmail } });
-
-      // Generate secure token
-      const token = crypto.randomUUID();
-      const expires = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
-
-      // Save token to DB
-      await prisma.passwordResetToken.create({
-        data: {
-          email: trimmedEmail,
-          token,
-          expires,
-        },
-      });
+      const token = await issuePasswordResetToken(
+        trimmedEmail,
+        TOKEN_EXPIRY_HOURS * 60 * 60 * 1000,
+      );
 
       // Send email (fire and forget)
       await sendForgotPasswordEmail(trimmedEmail, token);
@@ -70,7 +62,7 @@ export async function resetPasswordAction(token: string, newPassword: string) {
 
   try {
     // Find the token
-    const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+    const resetToken = await findPasswordResetToken(token);
 
     if (!resetToken) {
       return { error: "El enlace es inválido o ya fue utilizado" };

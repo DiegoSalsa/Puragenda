@@ -20,13 +20,14 @@ export async function getCurrentSessionUser(): Promise<SessionUser | null> {
     select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true, deletedAt: true },
   });
 
-  if (!user || user.deletedAt) return null;
+  if (!user || user.deletedAt || user.tokenVersion !== sessionUser.tokenVersion) return null;
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
     isSuperAdmin: user.isSuperAdmin,
+    tokenVersion: user.tokenVersion,
     adminAccess: sessionUser.adminAccess ?? false,
   };
 }
@@ -48,13 +49,14 @@ export async function getApiSessionUser(
     select: { id: true, email: true, name: true, role: true, isSuperAdmin: true, tokenVersion: true, deletedAt: true },
   });
 
-  if (!user || user.deletedAt) return null;
+  if (!user || user.deletedAt || user.tokenVersion !== sessionUser.tokenVersion) return null;
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
     isSuperAdmin: user.isSuperAdmin,
+    tokenVersion: user.tokenVersion,
     adminAccess: sessionUser.adminAccess ?? false,
   };
 }

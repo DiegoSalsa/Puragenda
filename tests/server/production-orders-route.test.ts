@@ -49,6 +49,7 @@ describe("PATCH /api/dashboard/production-orders/:id", () => {
       name: "Staff",
       role: "STAFF",
       isSuperAdmin: false,
+      tokenVersion: 1,
       adminAccess: false,
     });
     getBusiness.mockResolvedValue({ id: "business-1", ownerId: "owner-1" } as never);

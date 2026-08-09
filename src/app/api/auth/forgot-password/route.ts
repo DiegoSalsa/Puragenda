@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { sendForgotPasswordEmail } from "@/server/email/send";
-import crypto from "crypto";
 import { loginLimiter } from "@/server/lib/rate-limit";
+import { issuePasswordResetToken } from "@/server/auth/password-reset";
 
 /**
  * POST /api/auth/forgot-password
@@ -29,17 +29,7 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (user) {
-      // Delete any existing tokens for this email
-      await prisma.passwordResetToken.deleteMany({ where: { email } });
-
-      // Generate secure token
-      const token = crypto.randomBytes(32).toString("hex");
-      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-      // Save token
-      await prisma.passwordResetToken.create({
-        data: { email, token, expires },
-      });
+      const token = await issuePasswordResetToken(email);
 
       // Send email (fire and forget)
       sendForgotPasswordEmail(email, token).catch(() => {});

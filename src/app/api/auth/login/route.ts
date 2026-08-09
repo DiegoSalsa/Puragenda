@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       name: user.name,
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
+      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json(

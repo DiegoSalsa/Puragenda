@@ -44,6 +44,7 @@ const sessionUser = {
   name: "Staff",
   role: "STAFF" as const,
   isSuperAdmin: false,
+  tokenVersion: 1,
   adminAccess: false,
 };
 const business = { id: "business-1", ownerId: "owner-1" };

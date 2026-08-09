@@ -6,6 +6,8 @@ import { addClientPortalLinkToEmail } from "@/server/email/send";
 import { localizeEmailTemplate } from "@/server/email/localization";
 import { resolveLocale } from "@/i18n/config";
 import { isTomorrowInTimezone } from "@/lib/date";
+import { authorizeCronRequest } from "@/server/auth/cron";
+import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
 
 // ── Vercel Cron: runs daily at 14:00 UTC (10:00 AM Chile) ──
 // Protected via CRON_SECRET to prevent unauthorized access.
@@ -15,12 +17,8 @@ export const maxDuration = 60; // Allow up to 60s for large batches
 
 export async function GET(req: Request) {
   // ── Auth: verify the request comes from Vercel Cron ──
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const unauthorized = authorizeCronRequest(req);
+  if (unauthorized) return unauthorized;
 
   try {
     // Query a safe UTC window, then decide "tomorrow" in each business timezone.
@@ -61,8 +59,11 @@ export async function GET(req: Request) {
 
     for (const apt of appointments) {
       try {
-        // Generate unique action token for confirm/cancel links
-        const actionToken = `${apt.id}-${crypto.randomUUID()}`;
+        const actionToken = await issueCustomerAppointmentToken(apt.id, apt.startTime);
+        if (!actionToken) {
+          errors.push(`${apt.id}: no se pudo emitir un token de acción válido`);
+          continue;
+        }
 
         const baseEmail = await addClientPortalLinkToEmail(
           apt.customerEmail,
@@ -75,8 +76,8 @@ export async function GET(req: Request) {
             businessName: apt.business.name,
             timezone: apt.business.timezone,
             locale: resolveLocale(apt.business.locale),
-            confirmUrl: `${appUrl}/cita/confirmar?token=${actionToken}`,
-            cancelUrl: `${appUrl}/cita/cancelar?token=${actionToken}`,
+            confirmUrl: `${appUrl}/cita/confirmar?manageToken=${actionToken}`,
+            cancelUrl: `${appUrl}/cita/cancelar?manageToken=${actionToken}`,
           }),
         );
         const email = localizeEmailTemplate(baseEmail, resolveLocale(apt.business.locale));
@@ -93,10 +94,10 @@ export async function GET(req: Request) {
           continue;
         }
 
-        // Mark as sent and store action token
+        // The token is stored only as a hash by issueCustomerAppointmentToken.
         await prisma.appointment.update({
           where: { id: apt.id },
-          data: { reminderSent: true, actionToken },
+          data: { reminderSent: true, actionToken: null },
         });
 
         sent++;

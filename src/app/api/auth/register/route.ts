@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       name: result.user.name,
       role: result.user.role,
       isSuperAdmin: result.user.isSuperAdmin,
+      tokenVersion: result.user.tokenVersion,
     });
 
     const response = NextResponse.json(

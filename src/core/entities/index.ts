@@ -60,6 +60,7 @@ export interface Subscription {
 
 export interface SessionUser {
   id: string; email: string; name: string; role: UserRole; isSuperAdmin: boolean;
+  tokenVersion: number;
   adminAccess?: boolean;
 }
 
