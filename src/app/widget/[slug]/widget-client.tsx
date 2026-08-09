@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
@@ -2096,6 +2096,27 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                 </>
               )}
+              <div
+                className="mx-auto max-w-md rounded-2xl border p-5"
+                style={{ background: `${pc}08`, borderColor: `${pc}25` }}
+              >
+                <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full" style={{ background: `${pc}15` }}>
+                  <Star className="h-4 w-4" style={{ color: pc }} aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-semibold" style={{ color: textColor }}><LocalizedText id="cGBjzON6in3n" /></h3>
+                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed" style={{ color: textSecondary }}><LocalizedText id="Y16ha1zOKL9V" /></p>
+                <a
+                  href="https://g.page/r/CZcC65S2yDolEAI/review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md active:scale-95"
+                  style={{ background: pc, color: getContrastColor(pc) }}
+                >
+                  <Star className="h-4 w-4" aria-hidden="true" />
+                  <LocalizedText id="JgR2l6kp04YJ" />
+                </a>
+                <p className="mt-2 text-xs" style={{ color: textSecondary }}><LocalizedText id="qF4YalV5_OjH" /></p>
+              </div>
               <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>{t("bookAnother")}</button>
             </div>
           )}
