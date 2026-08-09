@@ -39,12 +39,28 @@ export function AvailabilityStoryImage({
   const accentText = readableTextColor(data.primaryColor);
   const shortUrl = new URL(data.bookingUrl).pathname.replace(/^\//, "");
   const serviceLabels = data.serviceNames.slice(0, 4);
+  const compactSchedule = data.showSchedule && data.days.length > 7;
+  const denseSchedule = data.days.length > 42;
+  const compactCardHeight = denseSchedule
+    ? 58
+    : data.days.length > 28
+      ? 112
+      : data.days.length > 14
+        ? 126
+        : 148;
+  const compactTimeLimit = denseSchedule ? 1 : 4;
   const headlineSize = data.showSchedule
-    ? data.headline.length > 56
-      ? 72
-      : data.headline.length > 38
-        ? 82
-        : 96
+    ? compactSchedule
+      ? data.headline.length > 56
+        ? 56
+        : data.headline.length > 38
+          ? 62
+          : 70
+      : data.headline.length > 56
+        ? 72
+        : data.headline.length > 38
+          ? 82
+          : 96
     : data.headline.length > 56
       ? 86
       : data.headline.length > 38
@@ -260,7 +276,7 @@ export function AvailabilityStoryImage({
           display: "flex",
           flexDirection: "column",
           alignItems: editorial || minimal ? "center" : "flex-start",
-          marginTop: data.showSchedule ? 72 : 175,
+          marginTop: data.showSchedule ? (compactSchedule ? 38 : 72) : 175,
           textAlign: editorial || minimal ? "center" : "left",
         }}
       >
@@ -300,7 +316,7 @@ export function AvailabilityStoryImage({
               flexWrap: "wrap",
               justifyContent: editorial ? "center" : "flex-start",
               gap: 10,
-              marginTop: 26,
+              marginTop: compactSchedule ? 16 : 26,
             }}
           >
             {serviceLabels.map((service) => (
@@ -343,76 +359,156 @@ export function AvailabilityStoryImage({
         style={{
           position: "relative",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: data.days.length > 3 ? 12 : 16,
-          marginTop: data.showSchedule ? 46 : 0,
+          flexDirection: compactSchedule ? "row" : "column",
+          flexWrap: compactSchedule ? "wrap" : "nowrap",
+          alignContent: compactSchedule ? "center" : "stretch",
+          justifyContent: compactSchedule ? "flex-start" : "center",
+          ...(compactSchedule
+            ? { columnGap: 8, rowGap: denseSchedule ? 6 : 10 }
+            : { gap: data.days.length > 3 ? 12 : 16 }),
+          marginTop: data.showSchedule ? (compactSchedule ? 24 : 46) : 0,
           flex: 1,
         }}
       >
         {data.showSchedule &&
-          data.days.map((day) => (
+          data.days.map((day) => {
+            const [, month, dayOfMonth] = day.date.split("-");
+            const weekday = day.label
+              .split(/\s+/)[0]
+              ?.replace(/[.,]/g, "")
+              .slice(0, 3)
+              .toUpperCase();
+            const visibleTimes = day.times.slice(0, compactTimeLimit);
+            const remainingTimes = day.times.length - visibleTimes.length;
+
+            return (
             <div
               key={day.date}
               style={{
+                width: compactSchedule ? "13.35%" : "100%",
                 minHeight:
-                  data.days.length === 1
+                  compactSchedule
+                    ? compactCardHeight
+                    : data.days.length === 1
                     ? 250
                     : data.days.length > 3
                       ? 112
                       : 138,
                 display: "flex",
-                flexDirection: data.days.length === 1 ? "column" : "row",
-                alignItems: data.days.length === 1 ? "flex-start" : "center",
+                flexDirection:
+                  compactSchedule || data.days.length === 1 ? "column" : "row",
+                alignItems:
+                  compactSchedule || data.days.length === 1
+                    ? "flex-start"
+                    : "center",
                 justifyContent: "space-between",
-                gap: 20,
-                padding: data.days.length === 1 ? "32px 34px" : "20px 26px",
-                borderRadius: cardRadius,
+                gap: compactSchedule ? 5 : 20,
+                padding: compactSchedule
+                  ? denseSchedule
+                    ? "6px 7px"
+                    : "11px 12px"
+                  : data.days.length === 1
+                    ? "32px 34px"
+                    : "20px 26px",
+                borderRadius: compactSchedule ? Math.min(cardRadius, 18) : cardRadius,
                 color: foreground,
                 background: bold ? solidSurface : surface,
                 border: bold
                   ? `3px solid ${foreground}`
                   : "2px solid rgba(23,23,23,.12)",
-                boxShadow: bold
+                boxShadow: compactSchedule
+                  ? "0 6px 16px rgba(23,23,23,.07)"
+                  : bold
                   ? `8px 8px 0 ${data.primaryColor}`
                   : "0 14px 36px rgba(23,23,23,.09)",
               }}
             >
-              <span
-                style={{
-                  maxWidth: data.days.length === 1 ? 850 : 330,
-                  fontSize: data.days.length === 1 ? 32 : 23,
-                  lineHeight: 1.1,
-                  fontWeight: 900,
-                  letterSpacing: -0.5,
-                }}
-              >
-                {day.label}
-              </span>
+              {compactSchedule ? (
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: denseSchedule ? 10 : 12,
+                      fontWeight: 900,
+                      letterSpacing: 0.8,
+                      color: muted,
+                    }}
+                  >
+                    {weekday}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: denseSchedule ? 16 : 21,
+                      lineHeight: 1,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {Number(dayOfMonth)}/{Number(month)}
+                  </span>
+                </div>
+              ) : (
+                <span
+                  style={{
+                    maxWidth: data.days.length === 1 ? 850 : 330,
+                    fontSize: data.days.length === 1 ? 32 : 23,
+                    lineHeight: 1.1,
+                    fontWeight: 900,
+                    letterSpacing: -0.5,
+                  }}
+                >
+                  {day.label}
+                </span>
+              )}
               <div
                 style={{
+                  ...(compactSchedule ? { width: "100%" } : {}),
                   display: "flex",
                   flexWrap: "wrap",
                   justifyContent:
-                    data.days.length === 1 ? "flex-start" : "flex-end",
-                  gap: 10,
-                  marginTop: data.days.length === 1 ? 22 : 0,
+                    compactSchedule || data.days.length === 1
+                      ? "flex-start"
+                      : "flex-end",
+                  gap: compactSchedule ? 4 : 10,
+                  marginTop:
+                    compactSchedule ? 0 : data.days.length === 1 ? 22 : 0,
                 }}
               >
                 {day.times.length ? (
-                  day.times.map((time) => (
+                  (compactSchedule ? visibleTimes : day.times).map((time) => (
                     <span
                       key={time}
                       style={{
                         display: "flex",
-                        minWidth: data.days.length === 1 ? 122 : 88,
+                        minWidth: compactSchedule
+                          ? 0
+                          : data.days.length === 1
+                            ? 122
+                            : 88,
                         justifyContent: "center",
                         padding:
-                          data.days.length === 1 ? "14px 18px" : "10px 13px",
-                        borderRadius: editorial ? 999 : 10,
+                          compactSchedule
+                            ? denseSchedule
+                              ? "2px 4px"
+                              : "5px 5px"
+                            : data.days.length === 1
+                              ? "14px 18px"
+                              : "10px 13px",
+                        borderRadius: editorial ? 999 : compactSchedule ? 7 : 10,
                         color: accentText,
                         background: data.primaryColor,
-                        fontSize: data.days.length === 1 ? 30 : 21,
+                        fontSize: compactSchedule
+                          ? denseSchedule
+                            ? 9
+                            : 12
+                          : data.days.length === 1
+                            ? 30
+                            : 21,
                         fontWeight: 900,
                       }}
                     >
@@ -420,13 +516,32 @@ export function AvailabilityStoryImage({
                     </span>
                   ))
                 ) : (
-                  <span style={{ fontSize: 22, color: muted }}>
-                    {data.noAvailability}
+                  <span
+                    style={{
+                      fontSize: compactSchedule ? (denseSchedule ? 10 : 12) : 22,
+                      color: muted,
+                    }}
+                  >
+                    {compactSchedule ? "—" : data.noAvailability}
+                  </span>
+                )}
+                {compactSchedule && remainingTimes > 0 && (
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      fontSize: denseSchedule ? 9 : 12,
+                      fontWeight: 900,
+                      color: muted,
+                    }}
+                  >
+                    +{remainingTimes}
                   </span>
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
       </div>
 
       <div
@@ -436,8 +551,8 @@ export function AvailabilityStoryImage({
           alignItems: "flex-end",
           justifyContent: "space-between",
           gap: 30,
-          marginTop: 38,
-          paddingTop: 28,
+          marginTop: compactSchedule ? 22 : 38,
+          paddingTop: compactSchedule ? 18 : 28,
           borderTop: `4px solid ${data.primaryColor}`,
         }}
       >
