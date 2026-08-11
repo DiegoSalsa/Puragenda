@@ -172,7 +172,7 @@ export function Theme70s({ user, business }: LandingIdentityProps) {
                   </div>
                   
                   <div className="border-t-[4px] border-black/10 dark:border-[#FFFDD0]/20 pt-4 text-center text-[10px] font-black uppercase tracking-widest text-black/50 dark:text-[#FFFDD0]/50">
-                    PurAgenda Powered by PuroCode
+                    Puragenda Powered by PuroCode
                   </div>
                 </div>
               </div>

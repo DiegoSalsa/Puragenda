@@ -221,7 +221,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                 </div>
                 
                 <div className="border-t-2 border-black/10 dark:border-white/20 pt-3 text-center text-[9px] font-bold text-black/50 dark:text-white/50">
-                  PurAgenda Powered by PuroCode
+                  Puragenda Powered by PuroCode
                 </div>
               </div>
             </div>
