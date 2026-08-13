@@ -19,20 +19,20 @@ describe("buildSlots", () => {
     expect(slots.every((slot) => slot.start.getSeconds() === 0 && slot.start.getMilliseconds() === 0)).toBe(true);
   });
 
-  it("offers the first off-grid minute freed by an appointment", () => {
+  it("keeps hourly starts aligned when a 40-minute appointment ends off-grid", () => {
     const date = new Date(2026, 7, 4);
     const slots = buildSlots(
       date,
-      45,
-      [{ dayOfWeek: date.getDay(), startTime: "13:00", endTime: "17:00", isOpen: true }],
+      40,
+      [{ dayOfWeek: date.getDay(), startTime: "09:00", endTime: "13:00", isOpen: true }],
       undefined,
       60,
       undefined,
-      [new Date(2026, 7, 4, 14, 10)],
+      [new Date(2026, 7, 4, 10, 40)],
     );
 
     expect(slots.map((slot) => `${slot.start.getHours()}:${String(slot.start.getMinutes()).padStart(2, "0")}`))
-      .toEqual(["13:00", "14:00", "14:10", "15:00", "16:00"]);
+      .toEqual(["9:00", "10:00", "11:00", "12:00"]);
   });
 
   it("does not offer an appointment end when the selected service would exceed closing time", () => {

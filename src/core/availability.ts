@@ -124,6 +124,11 @@ export function buildSlots(
 
     const slotEnd = addMinutes(start, duration);
     const currentMinutes = dateTimeToMinutes(start);
+    // Appointment endings must never create off-grid booking starts. For
+    // example, a 40-minute service ending at 10:40 must not bypass a
+    // configured 60-minute cadence of 10:00, 11:00, 12:00, etc.
+    const isAlignedWithSchedule = (currentMinutes - startMinutes) % slotInterval === 0;
+    if (!isAlignedWithSchedule) continue;
     const slotEndMinutes = dateTimeToMinutes(slotEnd);
     const withinWorkingHours = currentMinutes >= startMinutes && slotEndMinutes <= endMinutes;
     const overlapsBreak = breakRanges.some((range) => currentMinutes < range.end && slotEndMinutes > range.start);
