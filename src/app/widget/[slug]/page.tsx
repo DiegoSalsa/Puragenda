@@ -203,7 +203,7 @@ export default async function WidgetPage({
         taxIdPlaceholder: region.taxIdPlaceholder,
       }}
       services={business.services
-        .filter((service) => (service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled) && (!previewMode || service.bookingMode === "APPOINTMENT"))
+        .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
         .map((s) => ({
         id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
         bookingMode: s.bookingMode,
