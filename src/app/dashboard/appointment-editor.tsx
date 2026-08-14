@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { CalendarPlus, CheckCircle2, Loader2, Mail, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -56,6 +57,9 @@ export function AppointmentEditor({
   appointment,
   initialStart,
   initialStaffId,
+  initialServiceId,
+  initialSelectedOptionIds = [],
+  timeZone,
   services,
   staff,
   clients,
@@ -65,6 +69,9 @@ export function AppointmentEditor({
   appointment?: EditableAppointment;
   initialStart?: Date;
   initialStaffId?: string;
+  initialServiceId?: string;
+  initialSelectedOptionIds?: string[];
+  timeZone?: string;
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
@@ -73,17 +80,19 @@ export function AppointmentEditor({
 }) {
   const t = useTranslations("dashboard.editor");
   const router = useRouter();
-  const initialDate = appointment ? new Date(appointment.startTime) : initialStart ?? new Date(0);
+  const initialInstant = appointment ? new Date(appointment.startTime) : initialStart ?? new Date(0);
+  const initialDate = timeZone ? toZonedTime(initialInstant, timeZone) : initialInstant;
   const [clientId, setClientId] = useState(appointment?.clientId ?? "");
   const [customerName, setCustomerName] = useState(appointment?.customerName ?? "");
   const [customerEmail, setCustomerEmail] = useState(appointment?.customerEmail ?? "");
   const [customerPhone, setCustomerPhone] = useState(appointment?.customerPhone ?? "");
-  const [serviceId, setServiceId] = useState(appointment?.serviceId ?? services[0]?.id ?? "");
+  const [serviceId, setServiceId] = useState(appointment?.serviceId ?? initialServiceId ?? services[0]?.id ?? "");
   const [staffId, setStaffId] = useState(appointment?.staffId ?? initialStaffId ?? staff[0]?.id ?? "");
   const [date, setDate] = useState(format(initialDate, "yyyy-MM-dd"));
   const [time, setTime] = useState(format(initialDate, "HH:mm"));
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
-    appointment?.selectedOptions.flatMap((option) => option.alternativeId ? [option.alternativeId] : []) ?? [],
+    appointment?.selectedOptions.flatMap((option) => option.alternativeId ? [option.alternativeId] : [])
+      ?? initialSelectedOptionIds,
   );
   const [internalNotes, setInternalNotes] = useState(appointment?.internalNotes ?? "");
   const [sendConfirmation, setSendConfirmation] = useState(true);
@@ -138,7 +147,9 @@ export function AppointmentEditor({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    const startTime = new Date(`${date}T${time}:00`);
+    const startTime = timeZone
+      ? fromZonedTime(`${date}T${time}:00`, timeZone)
+      : new Date(`${date}T${time}:00`);
     if (Number.isNaN(startTime.getTime())) {
       setError(t("invalidDate"));
       return;
