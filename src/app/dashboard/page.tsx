@@ -8,6 +8,7 @@ import { Building2, UserRound } from "lucide-react";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";
+import { DashboardAvailabilityPanel } from "./dashboard-availability-panel";
 import { PendingRecurringPanel } from "./pending-recurring-panel";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
@@ -129,32 +130,38 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         staff: { select: { id: true, name: true } },
       },
     }),
-    canManageAppointments
-      ? prisma.service.findMany({
-          where: { businessId: business.id, bookingMode: "APPOINTMENT", ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id } } } : {}) },
-          orderBy: { name: "asc" },
-          include: {
-            staff: { where: { isActive: true }, select: { id: true } },
-            optionCategories: {
-              orderBy: { position: "asc" },
-              include: { alternatives: { orderBy: { position: "asc" } } },
-            },
-          },
-        })
-      : Promise.resolve([]),
-    canManageAppointments
-      ? prisma.staff.findMany({
-          where: {
-            businessId: business.id,
-            isActive: true,
-            ...(!canManageAllAppointments && agendaScope.ownStaffId
-              ? { id: agendaScope.ownStaffId }
-              : {}),
-          },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true },
-        })
-      : Promise.resolve([]),
+    prisma.service.findMany({
+      where: {
+        businessId: business.id,
+        bookingMode: "APPOINTMENT",
+        ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id } } } : {}),
+        ...(!agendaScope.canSeeAllAgendas
+          ? agendaScope.ownStaffId
+            ? { OR: [{ staff: { none: {} } }, { staff: { some: { id: agendaScope.ownStaffId } } }] }
+            : { id: "__no_service_access__" }
+          : {}),
+      },
+      orderBy: { name: "asc" },
+      include: {
+        staff: { where: { isActive: true }, select: { id: true } },
+        optionCategories: {
+          orderBy: { position: "asc" },
+          include: { alternatives: { orderBy: { position: "asc" } } },
+        },
+      },
+    }),
+    prisma.staff.findMany({
+      where: {
+        businessId: business.id,
+        isActive: true,
+        ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id, isActive: true } } } : {}),
+        ...(!agendaScope.canSeeAllAgendas
+          ? { id: agendaScope.ownStaffId ?? "__no_staff_access__" }
+          : {}),
+      },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
     canManageAppointments
       ? prisma.client.findMany({
           where: { businessId: business.id },
@@ -208,6 +215,25 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     reason: block.reason,
     releaseAt: block.releaseAt?.toISOString() ?? null,
   }));
+  const editorServices = appointmentServices.map((service) => ({
+    id: service.id,
+    name: service.name,
+    duration: service.duration,
+    price: service.price,
+    staffIds: service.staff.map((member) => member.id),
+    optionCategories: service.optionCategories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      isRequired: category.isRequired,
+      maxSelections: category.maxSelections,
+      alternatives: category.alternatives.map((alternative) => ({
+        id: alternative.id,
+        name: alternative.name,
+        priceDelta: alternative.priceDelta,
+        durationDelta: alternative.durationDelta,
+      })),
+    })),
+  }));
 
   return (
     <div className="space-y-8">
@@ -217,7 +243,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <p className="mt-1 text-muted-foreground">{t("subtitle", { business: business.name })}</p>
         </div>
         <div className="flex flex-col items-stretch gap-3 sm:items-end">
-          <CopyWidgetLink slug={business.slug} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {selectedLocation && (
+              <DashboardAvailabilityPanel
+                key={selectedLocation.id}
+                location={{
+                  id: selectedLocation.id,
+                  name: selectedLocation.name,
+                  slug: selectedLocation.slug,
+                  timezone: selectedLocation.timezone,
+                }}
+                services={editorServices}
+                staff={appointmentStaff}
+                clients={appointmentClients}
+                currencyCode={business.currencyCode}
+                maxServicesPerBooking={business.maxServicesPerBooking}
+                widgetSlug={business.slug}
+                canManageAppointments={canManageAppointments}
+                canManageAllAppointments={canManageAllAppointments}
+                manageableStaffId={agendaScope.ownStaffId}
+              />
+            )}
+            <CopyWidgetLink slug={business.slug} />
+          </div>
           {canToggleOwnAgenda && (
             <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
               <Link
@@ -273,28 +321,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           isOpen: hour.isOpen,
         }))}
         canManageAppointments={canManageAppointments}
-        services={appointmentServices.map((service) => ({
-          id: service.id,
-          name: service.name,
-          duration: service.duration,
-          price: service.price,
-          staffIds: service.staff.map((member) => member.id),
-          optionCategories: service.optionCategories.map((category) => ({
-            id: category.id,
-            name: category.name,
-            isRequired: category.isRequired,
-            maxSelections: category.maxSelections,
-            alternatives: category.alternatives.map((alternative) => ({
-              id: alternative.id,
-              name: alternative.name,
-              priceDelta: alternative.priceDelta,
-              durationDelta: alternative.durationDelta,
-            })),
-          })),
-        }))}
+        services={editorServices}
         staff={appointmentStaff}
         clients={appointmentClients}
         currencyCode={business.currencyCode}
+        timeZone={selectedLocation?.timezone ?? business.timezone}
       />
 
       <PageTutorial

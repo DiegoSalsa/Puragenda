@@ -112,6 +112,7 @@ export function WeeklyCalendar({
   staff = [],
   clients = [],
   currencyCode,
+  timeZone,
   canManageAppointments = false,
 }: {
   appointments: CalendarAppointment[];
@@ -123,6 +124,7 @@ export function WeeklyCalendar({
   staff?: AppointmentEditorStaff[];
   clients?: AppointmentEditorClient[];
   currencyCode: string;
+  timeZone?: string;
   canManageAppointments?: boolean;
 }) {
   const t = useTranslations("dashboard.calendar");
@@ -659,6 +661,7 @@ export function WeeklyCalendar({
           appointment={editor.appointment}
           initialStart={editor.initialStart}
           initialStaffId={editor.initialStaffId}
+          timeZone={timeZone}
           services={services}
           staff={staff}
           clients={clients}
