@@ -106,6 +106,7 @@ interface Props {
   initialStaffId?: string;
   initialDate?: string;
   storyCampaignToken?: string;
+  previewMode?: boolean;
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -231,10 +232,19 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false }: Props) {
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
   const locale = useLocale();
+  const previewText = ({
+    es: { badge: "Modo simulación", notice: "Recorre el mismo flujo que verá tu cliente. No se creará ninguna reserva ni se iniciará un pago.", finish: "Finalizar simulación", completed: "Simulación completada", completedHint: "El flujo funciona correctamente y no se creó ninguna reserva.", restart: "Reiniciar simulación" },
+    en: { badge: "Simulation mode", notice: "Follow the same flow your customer will see. No booking or payment will be created.", finish: "Finish simulation", completed: "Simulation completed", completedHint: "The flow works correctly and no booking was created.", restart: "Restart simulation" },
+    it: { badge: "Modalità simulazione", notice: "Segui lo stesso flusso che vedrà il cliente. Non verranno create prenotazioni o pagamenti.", finish: "Termina simulazione", completed: "Simulazione completata", completedHint: "Il flusso funziona correttamente e non è stata creata alcuna prenotazione.", restart: "Riavvia simulazione" },
+    pt: { badge: "Modo de simulação", notice: "Siga o mesmo fluxo que o cliente verá. Nenhuma reserva ou pagamento será criado.", finish: "Finalizar simulação", completed: "Simulação concluída", completedHint: "O fluxo funciona corretamente e nenhuma reserva foi criada.", restart: "Reiniciar simulação" },
+    fr: { badge: "Mode simulation", notice: "Suivez le même parcours que votre client. Aucune réservation ni aucun paiement ne sera créé.", finish: "Terminer la simulation", completed: "Simulation terminée", completedHint: "Le parcours fonctionne correctement et aucune réservation n’a été créée.", restart: "Recommencer la simulation" },
+    de: { badge: "Simulationsmodus", notice: "Durchlaufe denselben Ablauf wie deine Kundschaft. Es wird keine Buchung oder Zahlung erstellt.", finish: "Simulation abschließen", completed: "Simulation abgeschlossen", completedHint: "Der Ablauf funktioniert und es wurde keine Buchung erstellt.", restart: "Simulation neu starten" },
+    "zh-CN": { badge: "模拟模式", notice: "体验客户看到的相同流程。不会创建预约或发起付款。", finish: "完成模拟", completed: "模拟已完成", completedHint: "流程运行正常，未创建任何预约。", restart: "重新模拟" },
+  } as const)[locale as "es" | "en" | "it" | "pt" | "fr" | "de" | "zh-CN"];
   const dateLocale = ({ es, en: enUS, it, pt: ptBR, fr, de, "zh-CN": zhCN } as const)[locale as "es" | "en" | "it" | "pt" | "fr" | "de" | "zh-CN"] ?? es;
   const pc = `#${primaryColor}`;
   const bgColor = business.backgroundColor || "#0A0A0A";
@@ -746,6 +756,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       setApiError(t("slotUnavailable"));
       return;
     }
+    if (previewMode) {
+      setApiError("");
+      setStep("success");
+      return;
+    }
     setSubmitting(true); setApiError("");
     try {
       const serviceIds = isMultiService && selectedServices.length > 0
@@ -861,6 +876,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     if (!isFormValid) {
       setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
       setRecurringError(legacy("xDRTNKKqtkJT"));
+      return;
+    }
+    if (previewMode) {
+      setRecurringError("");
+      setRecurringSuccess({
+        requiresApproval: false,
+        serviceName: selectedService!.name,
+      });
+      setStep("success");
       return;
     }
     setRecurringSubmitting(true);
@@ -1145,6 +1169,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {label}
                 </div>
               ))}
+            </div>
+          )}
+          {previewMode && (
+            <div className="mt-3 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: `${pc}35`, background: `${pc}10`, color: textColor }}>
+              <span className="font-bold" style={{ color: pc }}>{previewText.badge}:</span> {previewText.notice}
             </div>
           )}
         </div>
@@ -2041,7 +2070,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   )}
                 </div>
                 {/* Deposit notice */}
-                {showDeposit && (
+                {showDeposit && !previewMode && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
                     <p className="font-medium" style={{ color: pc }}><LocalizedText id="8OlEyuapzFy5" /> {formatPrice(effectiveDepositAmount, business.currencyCode)}</p>
                     <p className="text-xs mt-1" style={{ color: textSecondary }}>{t("depositRedirect")}</p>
@@ -2049,7 +2078,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
                 <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
-                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
+                  {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{previewMode ? previewText.finish : showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
             </div>
@@ -2064,9 +2093,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               {recurringSuccess ? (
                 <>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{recurringSuccess.requiresApproval ? "Solicitud enviada" : "Suscripcion confirmada"}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">{previewMode ? previewText.completed : recurringSuccess.requiresApproval ? "Solicitud enviada" : "Suscripcion confirmada"}</h2>
                     <p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>
-                      {recurringSuccess.requiresApproval
+                      {previewMode
+                        ? previewText.completedHint
+                        : recurringSuccess.requiresApproval
                         ? `Tu solicitud de suscripcion a "${recurringSuccess.serviceName}" fue enviada. Te avisaremos por email cuando sea aprobada.`
                         : `Tu suscripcion a "${recurringSuccess.serviceName}" fue confirmada exitosamente. Te enviamos los detalles por email.`}
                     </p>
@@ -2084,7 +2115,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </>
               ) : (
                 <>
-                  <div><h2 className="text-2xl font-bold tracking-tight">{t("bookingConfirmed")}</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>{t("bookingSuccess")}</p></div>
+                  <div><h2 className="text-2xl font-bold tracking-tight">{previewMode ? previewText.completed : t("bookingConfirmed")}</h2><p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>{previewMode ? previewText.completedHint : t("bookingSuccess")}</p></div>
                   <div className="mx-auto max-w-md rounded-2xl p-5 text-left text-sm shadow-sm" style={{ background: "var(--wsubtle)", borderColor: "var(--wborder)", borderWidth: "1px" }}>
                     <p className="mb-3 flex items-center gap-1.5 font-semibold text-base" style={{ color: pc }}><Sparkles className="h-4 w-4" />{t("summary")}</p>
                     <div className="space-y-1 opacity-80" style={{ color: textColor }}>
@@ -2096,7 +2127,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                 </>
               )}
-              <div
+              {!previewMode && <div
                 className="mx-auto max-w-md rounded-2xl border p-5"
                 style={{ background: `${pc}08`, borderColor: `${pc}25` }}
               >
@@ -2116,8 +2147,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <LocalizedText id="JgR2l6kp04YJ" />
                 </a>
                 <p className="mt-2 text-xs" style={{ color: textSecondary }}><LocalizedText id="qF4YalV5_OjH" /></p>
-              </div>
-              <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>{t("bookAnother")}</button>
+              </div>}
+              <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>{previewMode ? previewText.restart : t("bookAnother")}</button>
             </div>
           )}
         </div>

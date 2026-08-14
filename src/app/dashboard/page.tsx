@@ -253,15 +253,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   slug: selectedLocation.slug,
                   timezone: selectedLocation.timezone,
                 }}
-                services={editorServices}
-                staff={appointmentStaff}
-                clients={appointmentClients}
-                currencyCode={business.currencyCode}
-                maxServicesPerBooking={business.maxServicesPerBooking}
                 widgetSlug={business.slug}
-                canManageAppointments={canManageAppointments}
-                canManageAllAppointments={canManageAllAppointments}
-                manageableStaffId={agendaScope.ownStaffId}
               />
             )}
             <CopyWidgetLink slug={business.slug} />

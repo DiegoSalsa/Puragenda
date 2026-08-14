@@ -77,10 +77,12 @@ export default async function WidgetPage({
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
     radius?: string; shadow?: string; headerAlign?: string; location?: string;
     service?: string; staff?: string; date?: string; story?: string;
+    preview?: string;
   }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
+  const previewMode = sp.preview === "1";
 
   const business = await prisma.business.findUnique({
     where: { slug },
@@ -201,7 +203,7 @@ export default async function WidgetPage({
         taxIdPlaceholder: region.taxIdPlaceholder,
       }}
       services={business.services
-        .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
+        .filter((service) => (service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled) && (!previewMode || service.bookingMode === "APPOINTMENT"))
         .map((s) => ({
         id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
         bookingMode: s.bookingMode,
@@ -319,6 +321,7 @@ export default async function WidgetPage({
       initialStaffId={sp.staff}
       initialDate={sp.date}
       storyCampaignToken={sp.story}
+      previewMode={previewMode}
     />
     </>
   );
