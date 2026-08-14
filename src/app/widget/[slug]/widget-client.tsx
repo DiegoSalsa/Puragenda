@@ -1378,6 +1378,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               primaryColor={pc}
               textColor={textColor}
               textSecondary={textSecondary}
+              previewMode={previewMode}
               onBack={() => {
                 setSelectedOptionByCategory({});
                 setSelectedService(null);

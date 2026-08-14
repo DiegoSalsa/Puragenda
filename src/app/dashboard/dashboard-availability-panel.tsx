@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import {
@@ -22,8 +22,6 @@ interface AvailabilityResult {
   }[];
 }
 
-type ActivePanel = "availability" | "simulation" | null;
-
 export function DashboardAvailabilityPanel({
   location,
   widgetSlug,
@@ -34,21 +32,17 @@ export function DashboardAvailabilityPanel({
   const t = useTranslations("dashboard.availability");
   const locale = useLocale();
   const today = format(toZonedTime(new Date(), location.timezone), "yyyy-MM-dd");
-  const [activePanel, setActivePanel] = useState<ActivePanel>(null);
+  const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AvailabilityResult | null>(null);
   const [copied, setCopied] = useState<"times" | "link" | null>(null);
-  const [simulationSession, setSimulationSession] = useState(0);
 
   const availableDays = result?.days.filter((day) => day.slots.length > 0) ?? [];
-  const simulationUrl = useMemo(
-    () => `/widget/${widgetSlug}?location=${encodeURIComponent(location.slug)}&preview=1`,
-    [location.slug, widgetSlug],
-  );
+  const simulationUrl = `/widget/${widgetSlug}?location=${encodeURIComponent(location.slug)}&preview=1`;
 
   async function openAvailability() {
-    setActivePanel("availability");
+    setAvailabilityOpen(true);
     setLoading(true);
     setError(null);
     setResult(null);
@@ -71,11 +65,6 @@ export function DashboardAvailabilityPanel({
     } finally {
       setLoading(false);
     }
-  }
-
-  function openSimulation() {
-    setSimulationSession((current) => current + 1);
-    setActivePanel("simulation");
   }
 
   function dayLabel(date: string) {
@@ -124,18 +113,19 @@ export function DashboardAvailabilityPanel({
           <CalendarClock className="h-4 w-4" />
           {t("open")}
         </button>
-        <button
-          type="button"
-          onClick={openSimulation}
+        <a
+          href={simulationUrl}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-semibold text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/10"
         >
           <PlayCircle className="h-4 w-4" />
           {t("simulationMode")}
-        </button>
+        </a>
       </div>
 
-      {activePanel === "availability" && (
-        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/65 p-3 backdrop-blur-sm" onClick={() => setActivePanel(null)}>
+      {availabilityOpen && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/65 p-3 backdrop-blur-sm" onClick={() => setAvailabilityOpen(false)}>
           <div className="flex min-h-full items-center justify-center py-4">
             <div
               role="dialog"
@@ -152,7 +142,7 @@ export function DashboardAvailabilityPanel({
                     <p className="text-xs text-muted-foreground">{t("location", { location: location.name })} · {t("sevenDays")}</p>
                   </div>
                 </div>
-                <button type="button" onClick={() => setActivePanel(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label={t("close")}>
+                <button type="button" onClick={() => setAvailabilityOpen(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label={t("close")}>
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -206,30 +196,6 @@ export function DashboardAvailabilityPanel({
         </div>
       )}
 
-      {activePanel === "simulation" && (
-        <div className="fixed inset-0 z-[70] bg-black/70 p-2 backdrop-blur-sm sm:p-4" onClick={() => setActivePanel(null)}>
-          <div className="mx-auto flex h-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-[#7C3AED]"><PlayCircle className="h-5 w-5" /></div>
-                <div>
-                  <h2 className="font-semibold">{t("simulationMode")}</h2>
-                  <p className="text-xs text-muted-foreground">{t("location", { location: location.name })}</p>
-                </div>
-              </div>
-              <button type="button" onClick={() => setActivePanel(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label={t("close")}>
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <iframe
-              key={simulationSession}
-              src={simulationUrl}
-              title={t("simulationMode")}
-              className="min-h-0 flex-1 bg-background"
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 }

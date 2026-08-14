@@ -35,6 +35,7 @@ interface Props {
   textColor: string;
   textSecondary: string;
   onBack: () => void;
+  previewMode?: boolean;
 }
 
 type OrderResult = {
@@ -54,6 +55,7 @@ export function ProductionOrderFlow({
   textColor,
   textSecondary,
   onBack,
+  previewMode = false,
 }: Props) {
   const legacy = useTranslations("legacy");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +104,18 @@ export function ProductionOrderFlow({
     setUploading(true);
     setError("");
     try {
+      if (previewMode) {
+        const localImages: string[] = [];
+        for (const file of selected) {
+          if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            throw new Error("Usa imagenes JPG, PNG o WebP");
+          }
+          if (file.size > 5 * 1024 * 1024) throw new Error("Cada imagen puede pesar hasta 5MB");
+          localImages.push(URL.createObjectURL(file));
+        }
+        setImages((current) => [...current, ...localImages]);
+        return;
+      }
       const uploaded: string[] = [];
       for (const file of selected) {
         if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -134,6 +148,15 @@ export function ProductionOrderFlow({
     const selectedWindow = windows.find((window) => window.key === selectedWindowKey);
     if (!selectedWindow) return setError(legacy("4s5v5rjL67xc"));
     if (service.requiresReferenceImages && images.length === 0) return setError(legacy("ekdmj92ximYB"));
+    if (previewMode) {
+      setResult({
+        orderNumber: "SIMULACION",
+        depositAmount,
+        balanceAmount: Math.max(0, totalPrice - depositAmount),
+        paymentMode: "SIMULATION",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const response = await fetch(`/api/business/${business.slug}/production-orders`, {
