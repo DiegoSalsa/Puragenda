@@ -13,10 +13,13 @@ import {
   type AppointmentEditorStaff,
   type EditableAppointment,
 } from "./appointment-editor";
+import { PosPaymentDialog } from "./pos-payment-dialog";
 
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
+  paymentStatus: string; depositAmount: number | null;
+  totalPrice: number; posPaidAmount: number;
   serviceId: string; serviceName: string; staffId: string | null; staffName: string;
   clientId: string | null; customerPhone: string | null;
   selectedOptions?: { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
@@ -114,6 +117,7 @@ export function WeeklyCalendar({
   currencyCode,
   timeZone,
   canManageAppointments = false,
+  posEnabled = false,
 }: {
   appointments: CalendarAppointment[];
   priorityBlocks?: CalendarPriorityBlock[];
@@ -126,6 +130,7 @@ export function WeeklyCalendar({
   currencyCode: string;
   timeZone?: string;
   canManageAppointments?: boolean;
+  posEnabled?: boolean;
 }) {
   const t = useTranslations("dashboard.calendar");
   const locale = useLocale();
@@ -575,6 +580,19 @@ export function WeeklyCalendar({
                   </div>
                 )}
               </div>
+
+              {posEnabled &&
+                canManageAppointments &&
+                selected.paymentStatus === "APPROVED" &&
+                ["CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(selected.status) &&
+                selected.totalPrice - (selected.depositAmount ?? 0) - selected.posPaidAmount > 0 && (
+                  <PosPaymentDialog
+                    appointmentId={selected.id}
+                    balance={selected.totalPrice - (selected.depositAmount ?? 0) - selected.posPaidAmount}
+                    currencyCode={currencyCode}
+                    onPaid={() => router.refresh()}
+                  />
+                )}
 
               {/* Client private notes (CRM Light) */}
               {selected.clientNotes && (

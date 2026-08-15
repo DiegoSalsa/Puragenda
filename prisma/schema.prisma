@@ -47,6 +47,7 @@ model User {
   googleCalendarConnections GoogleCalendarConnection[]
   storyCampaigns            StoryCampaign[]
   storyPresets              StoryPreset[]
+  posPaymentsCreated        PosPayment[]               @relation("PosPaymentCreatedBy")
 }
 
 // ==========================================
@@ -275,6 +276,7 @@ model Business {
   locations                   BusinessLocation[]
   storyCampaigns              StoryCampaign[]
   storyPresets                StoryPreset[]
+  posPayments                 PosPayment[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -986,6 +988,22 @@ enum PaymentStatus {
   REJECTED
 }
 
+enum PosPaymentChannel {
+  QR
+  POINT
+}
+
+enum PosPaymentStatus {
+  CREATING
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  REFUNDED
+  FAILED
+}
+
 model Appointment {
   id                           String            @id @default(cuid())
   customerName                 String
@@ -1034,6 +1052,7 @@ model Appointment {
   promotion           WidgetPromoBlock?    @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   storyCampaign       StoryCampaign?       @relation(fields: [storyCampaignId], references: [id], onDelete: SetNull)
   googleCalendarEvent GoogleCalendarEvent?
+  posPayments         PosPayment[]
 
   @@index([businessId])
   @@index([serviceId])
@@ -1044,6 +1063,38 @@ model Appointment {
   @@index([promotionId])
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
+}
+
+model PosPayment {
+  id                String            @id @default(cuid())
+  businessId        String
+  appointmentId     String
+  createdByUserId   String?
+  channel           PosPaymentChannel @default(QR)
+  status            PosPaymentStatus  @default(CREATING)
+  amount            Int
+  currency          String
+  externalReference String            @unique
+  idempotencyKey    String            @unique
+  providerOrderId   String?           @unique
+  providerPaymentId String?
+  providerUserId    String?
+  qrData            String?           @db.Text
+  statusDetail      String?
+  expiresAt         DateTime?
+  paidAt            DateTime?
+  lastSyncedAt      DateTime?
+  failureReason     String?           @db.Text
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdByUser User?       @relation("PosPaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, status, createdAt])
+  @@index([appointmentId, status, createdAt])
+  @@index([createdByUserId])
 }
 
 model StoryCampaign {

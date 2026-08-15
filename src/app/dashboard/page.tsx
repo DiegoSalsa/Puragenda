@@ -107,6 +107,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         service: true,
         staff: true,
         client: { select: { privateNotes: true } },
+        posPayments: { where: { status: "APPROVED" }, select: { amount: true } },
       },
       orderBy: { startTime: "asc" },
     }),
@@ -181,6 +182,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     startTime: appointment.startTime.toISOString(),
     endTime: appointment.endTime.toISOString(),
     status: appointment.status,
+    paymentStatus: appointment.paymentStatus,
+    depositAmount: appointment.depositAmount,
+    totalPrice: appointment.totalPrice ?? appointment.service.price,
+    posPaidAmount: appointment.posPayments.reduce((total, payment) => total + payment.amount, 0),
     serviceId: appointment.serviceId,
     serviceName: appointment.service.name,
     staffId: appointment.staffId,
@@ -313,6 +318,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           isOpen: hour.isOpen,
         }))}
         canManageAppointments={canManageAppointments}
+        posEnabled={business.depositRequired && Boolean(business.mpAccessToken && business.mpUserId)}
         services={editorServices}
         staff={appointmentStaff}
         clients={appointmentClients}
