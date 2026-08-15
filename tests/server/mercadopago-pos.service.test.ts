@@ -84,6 +84,23 @@ describe("Mercado Pago POS service", () => {
     });
   });
 
+  it("turns provider authorization failures into a reconnect instruction", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ message: "At least one policy returned UNAUTHORIZED." }),
+      { status: 401, headers: { "content-type": "application/json" } },
+    )));
+
+    await expect(createMercadoPagoQrOrder({
+      accessToken: "invalid-token",
+      amount: 15000,
+      externalReference: "pos_test",
+      idempotencyKey: "idem-test",
+    })).rejects.toMatchObject({
+      message: "La conexión con Mercado Pago no está autorizada. Vuelve a conectar la cuenta del negocio.",
+      code: "MERCADOPAGO_ORDER_FAILED",
+    });
+  });
+
   it("rejects an order whose seller, amount or reference does not match", () => {
     expect(() => validateMercadoPagoOrder({
       order: {

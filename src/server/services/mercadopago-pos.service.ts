@@ -68,7 +68,10 @@ export function mapMercadoPagoOrderStatus(order: MercadoPagoOrder): PosPaymentSt
   }
 }
 
-function providerErrorMessage(payload: unknown) {
+function providerErrorMessage(payload: unknown, status: number) {
+  if (status === 401 || status === 403) {
+    return "La conexión con Mercado Pago no está autorizada. Vuelve a conectar la cuenta del negocio.";
+  }
   if (!payload || typeof payload !== "object") return "Mercado Pago rechazó la solicitud";
   const value = payload as { message?: unknown; error?: unknown };
   if (typeof value.message === "string") return value.message.slice(0, 300);
@@ -104,7 +107,7 @@ export async function createMercadoPagoQrOrder(input: {
   const payload = await response.json().catch(() => null) as MercadoPagoOrder | null;
   if (!response.ok || !payload?.id || !payload.type_response?.qr_data) {
     throw new PosPaymentError(
-      providerErrorMessage(payload),
+      providerErrorMessage(payload, response.status),
       response.status >= 400 && response.status < 500 ? 409 : 502,
       "MERCADOPAGO_ORDER_FAILED",
     );
@@ -120,7 +123,7 @@ export async function getMercadoPagoOrder(accessToken: string, providerOrderId: 
   const payload = await response.json().catch(() => null) as MercadoPagoOrder | null;
   if (!response.ok || !payload?.id) {
     throw new PosPaymentError(
-      providerErrorMessage(payload),
+      providerErrorMessage(payload, response.status),
       response.status === 404 ? 404 : 502,
       "MERCADOPAGO_ORDER_LOOKUP_FAILED",
     );
