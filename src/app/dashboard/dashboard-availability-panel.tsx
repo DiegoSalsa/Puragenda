@@ -25,9 +25,11 @@ interface AvailabilityResult {
 export function DashboardAvailabilityPanel({
   location,
   widgetSlug,
+  staffId,
 }: {
   location: { id: string; name: string; slug: string; timezone: string };
   widgetSlug: string;
+  staffId?: string;
 }) {
   const t = useTranslations("dashboard.availability");
   const locale = useLocale();
@@ -53,6 +55,7 @@ export function DashboardAvailabilityPanel({
         body: JSON.stringify({
           mode: "overview",
           locationId: location.id,
+          ...(staffId ? { staffId } : {}),
           fromDate: today,
           days: 7,
         }),

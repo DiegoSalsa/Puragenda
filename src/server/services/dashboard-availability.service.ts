@@ -420,8 +420,18 @@ export async function getDashboardAvailability(
   const durationByServiceId = input.mode === "overview"
     ? new Map<string, number>()
     : calculateServiceDurations(services, input.selectedOptionAlternativeIds);
+  const overviewStaff = input.mode === "overview" && input.staffId
+    ? staffMembers.filter((member) => member.id === input.staffId)
+    : staffMembers;
+  if (input.mode === "overview" && input.staffId && overviewStaff.length === 0) {
+    throw new DashboardAvailabilityError(
+      "STAFF_FORBIDDEN",
+      "No tienes acceso al profesional seleccionado",
+      403,
+    );
+  }
   const candidates: AvailabilityCandidate[] = input.mode === "overview"
-    ? staffMembers.map((member) => ({
+    ? overviewStaff.map((member) => ({
         duration: business.slotInterval,
         groups: [{ staff: member, duration: business.slotInterval, serviceIds: [] }],
         assignments: [],
