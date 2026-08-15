@@ -8,7 +8,9 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import {
   calculateAppointmentBalance,
+  createMercadoPagoCheckoutPreference,
   createMercadoPagoQrOrder,
+  mercadoPagoPosExternalId,
   newPosProviderIdentifiers,
   PosPaymentError,
   posQrExpiresAt,
@@ -148,28 +150,59 @@ export async function POST(request: NextRequest) {
     try {
       const accessToken = await getValidMercadoPagoAccessToken(business.id);
       if (!accessToken) throw new PosPaymentError("No se pudo renovar la conexión con Mercado Pago", 409);
-      const order = await createMercadoPagoQrOrder({
-        accessToken,
-        amount,
-        externalReference: identifiers.externalReference,
-        idempotencyKey: identifiers.idempotencyKey,
-      });
-      validateMercadoPagoOrder({
-        order,
-        providerUserId: business.mpUserId,
-        externalReference: identifiers.externalReference,
-        amount,
-        currency: business.currencyCode,
-      });
+      let providerOrderId: string;
+      let providerPaymentId: string | null;
+      let providerUserId: string;
+      let qrData: string;
+      let statusDetail: string;
+
+      try {
+        const order = await createMercadoPagoQrOrder({
+          accessToken,
+          amount,
+          externalReference: identifiers.externalReference,
+          idempotencyKey: identifiers.idempotencyKey,
+          externalPosId: mercadoPagoPosExternalId(business.mpUserId),
+        });
+        validateMercadoPagoOrder({
+          order,
+          providerUserId: business.mpUserId,
+          externalReference: identifiers.externalReference,
+          amount,
+          currency: business.currencyCode,
+        });
+        providerOrderId = order.id!;
+        providerPaymentId = order.transactions?.payments?.[0]?.id ?? null;
+        providerUserId = String(order.user_id);
+        qrData = order.type_response!.qr_data!;
+        statusDetail = order.status_detail ?? "created";
+      } catch (orderError) {
+        if (!(orderError instanceof PosPaymentError) || ![401, 403].includes(orderError.providerStatus ?? 0)) {
+          throw orderError;
+        }
+        const preference = await createMercadoPagoCheckoutPreference({
+          accessToken,
+          amount,
+          currency: business.currencyCode,
+          externalReference: identifiers.externalReference,
+          idempotencyKey: identifiers.idempotencyKey,
+          expiresAt,
+        });
+        providerOrderId = preference.id!;
+        providerPaymentId = null;
+        providerUserId = String(preference.collector_id ?? business.mpUserId);
+        qrData = preference.init_point!;
+        statusDetail = "checkout_preference";
+      }
       const payment = await prisma.posPayment.update({
         where: { id: localPayment.id },
         data: {
           status: "PENDING",
-          providerOrderId: order.id,
-          providerPaymentId: order.transactions?.payments?.[0]?.id ?? null,
-          providerUserId: String(order.user_id),
-          qrData: order.type_response?.qr_data,
-          statusDetail: order.status_detail ?? "created",
+          providerOrderId,
+          providerPaymentId,
+          providerUserId,
+          qrData,
+          statusDetail,
           lastSyncedAt: new Date(),
         },
       });

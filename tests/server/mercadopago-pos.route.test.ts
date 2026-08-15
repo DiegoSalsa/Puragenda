@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   permissions: vi.fn(),
   getAccessToken: vi.fn(),
   createOrder: vi.fn(),
+  createCheckoutPreference: vi.fn(),
   validateOrder: vi.fn(),
   appointmentFindFirst: vi.fn(),
   paymentUpdateMany: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock("@/server/services/mercadopago-pos.service", async () => {
   return {
     ...actual,
     createMercadoPagoQrOrder: mocks.createOrder,
+    createMercadoPagoCheckoutPreference: mocks.createCheckoutPreference,
     validateMercadoPagoOrder: mocks.validateOrder,
     newPosProviderIdentifiers: () => ({ externalReference: "pos_test", idempotencyKey: "idem-test" }),
     posQrExpiresAt: () => new Date("2026-08-15T16:15:00.000Z"),
@@ -144,7 +146,39 @@ describe("dashboard POS QR route", () => {
       amount: 15000,
       externalReference: "pos_test",
       idempotencyKey: "idem-test",
+      externalPosId: "PURAGENDAseller1POS1",
     });
     expect(mocks.validateOrder).toHaveBeenCalled();
+  });
+
+  it("falls back to a Mercado Pago Checkout QR when native QR orders are not authorized", async () => {
+    const { PosPaymentError } = await import("@/server/services/mercadopago-pos.service");
+    mocks.createOrder.mockRejectedValueOnce(new PosPaymentError(
+      "QR no autorizado",
+      409,
+      "MERCADOPAGO_ORDER_FAILED",
+      403,
+    ));
+    mocks.createCheckoutPreference.mockResolvedValueOnce({
+      id: "seller-1-preference-1",
+      init_point: "https://www.mercadopago.cl/checkout/v1/redirect?pref_id=test",
+      collector_id: "seller-1",
+    });
+
+    const response = await POST(request());
+    expect(response.status).toBe(201);
+    expect(mocks.createCheckoutPreference).toHaveBeenCalledWith(expect.objectContaining({
+      amount: 15000,
+      currency: "CLP",
+      externalReference: "pos_test",
+    }));
+    expect(mocks.paymentUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        status: "PENDING",
+        providerOrderId: "seller-1-preference-1",
+        qrData: expect.stringContaining("mercadopago.cl"),
+        statusDetail: "checkout_preference",
+      }),
+    }));
   });
 });

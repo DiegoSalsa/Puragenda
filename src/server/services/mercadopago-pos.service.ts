@@ -25,11 +25,29 @@ export interface MercadoPagoOrder {
   };
 }
 
+export interface MercadoPagoCheckoutPreference {
+  id?: string;
+  init_point?: string;
+  collector_id?: string | number;
+  external_reference?: string;
+}
+
+export interface MercadoPagoCheckoutPayment {
+  id?: string | number;
+  collector_id?: string | number;
+  external_reference?: string;
+  transaction_amount?: number;
+  currency_id?: string;
+  status?: string;
+  status_detail?: string;
+}
+
 export class PosPaymentError extends Error {
   constructor(
     message: string,
     readonly status = 400,
     readonly code = "POS_PAYMENT_ERROR",
+    readonly providerStatus?: number,
   ) {
     super(message);
     this.name = "PosPaymentError";
@@ -84,6 +102,7 @@ export async function createMercadoPagoQrOrder(input: {
   amount: number;
   externalReference: string;
   idempotencyKey: string;
+  externalPosId: string;
 }) {
   const response = await fetch(MERCADO_PAGO_ORDERS_URL, {
     method: "POST",
@@ -98,7 +117,7 @@ export async function createMercadoPagoQrOrder(input: {
       description: "Saldo de reserva Puragenda",
       external_reference: input.externalReference,
       expiration_time: `PT${QR_EXPIRATION_MINUTES}M`,
-      config: { qr: { mode: "dynamic" } },
+      config: { qr: { external_pos_id: input.externalPosId, mode: "dynamic" } },
       transactions: { payments: [{ amount: String(input.amount) }] },
     }),
     cache: "no-store",
@@ -110,9 +129,159 @@ export async function createMercadoPagoQrOrder(input: {
       providerErrorMessage(payload, response.status),
       response.status >= 400 && response.status < 500 ? 409 : 502,
       "MERCADOPAGO_ORDER_FAILED",
+      response.status,
     );
   }
   return payload;
+}
+
+export function mercadoPagoPosExternalId(providerUserId: string) {
+  const normalized = providerUserId.replace(/[^a-zA-Z0-9]/g, "");
+  if (!normalized) {
+    throw new PosPaymentError("La cuenta de Mercado Pago no tiene un identificador valido", 409);
+  }
+  return `PURAGENDA${normalized}POS1`.slice(0, 40);
+}
+
+export function isMercadoPagoCheckoutPreferenceId(providerOrderId: string) {
+  return !providerOrderId.startsWith("ORD");
+}
+
+export async function createMercadoPagoCheckoutPreference(input: {
+  accessToken: string;
+  amount: number;
+  currency: string;
+  externalReference: string;
+  idempotencyKey: string;
+  expiresAt: Date;
+}) {
+  const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      "Content-Type": "application/json",
+      "X-Idempotency-Key": input.idempotencyKey,
+    },
+    body: JSON.stringify({
+      items: [{
+        id: input.externalReference,
+        title: "Saldo de reserva PuraAgenda",
+        description: "Pago presencial de saldo pendiente",
+        quantity: 1,
+        unit_price: input.amount,
+        currency_id: input.currency,
+      }],
+      external_reference: input.externalReference,
+      statement_descriptor: "PURAGENDA",
+      expires: true,
+      expiration_date_to: input.expiresAt.toISOString(),
+    }),
+    cache: "no-store",
+  });
+
+  const payload = await response.json().catch(() => null) as MercadoPagoCheckoutPreference | null;
+  if (!response.ok || !payload?.id || !payload.init_point) {
+    throw new PosPaymentError(
+      providerErrorMessage(payload, response.status),
+      response.status >= 400 && response.status < 500 ? 409 : 502,
+      "MERCADOPAGO_CHECKOUT_FAILED",
+      response.status,
+    );
+  }
+  return payload;
+}
+
+export async function findMercadoPagoCheckoutPayment(
+  accessToken: string,
+  externalReference: string,
+) {
+  const query = new URLSearchParams({
+    external_reference: externalReference,
+    sort: "date_created",
+    criteria: "desc",
+    limit: "10",
+  });
+  const response = await fetch(`https://api.mercadopago.com/v1/payments/search?${query}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null) as {
+    results?: MercadoPagoCheckoutPayment[];
+  } | null;
+  if (!response.ok) {
+    throw new PosPaymentError(
+      providerErrorMessage(payload, response.status),
+      response.status >= 400 && response.status < 500 ? 409 : 502,
+      "MERCADOPAGO_CHECKOUT_LOOKUP_FAILED",
+      response.status,
+    );
+  }
+  return payload?.results?.[0] ?? null;
+}
+
+function mapCheckoutPaymentStatus(status?: string): PosPaymentStatus {
+  switch (status) {
+    case "approved":
+      return "APPROVED";
+    case "rejected":
+      return "REJECTED";
+    case "cancelled":
+    case "cancelled_by_user":
+      return "CANCELLED";
+    case "refunded":
+      return "REFUNDED";
+    default:
+      return "PENDING";
+  }
+}
+
+export async function syncPosPaymentFromCheckout(
+  paymentId: string,
+  providerPayment: MercadoPagoCheckoutPayment | null,
+) {
+  const payment = await prisma.posPayment.findUnique({
+    where: { id: paymentId },
+    include: { business: { select: { mpUserId: true } } },
+  });
+  if (!payment) throw new PosPaymentError("Cobro no encontrado", 404, "POS_PAYMENT_NOT_FOUND");
+
+  if (!providerPayment) {
+    if (payment.expiresAt && payment.expiresAt.getTime() <= Date.now()) {
+      return prisma.posPayment.update({
+        where: { id: payment.id },
+        data: { status: "EXPIRED", statusDetail: "checkout_expired", lastSyncedAt: new Date() },
+      });
+    }
+    return payment;
+  }
+
+  const matches =
+    providerPayment.external_reference === payment.externalReference &&
+    Number(providerPayment.transaction_amount) === payment.amount &&
+    providerPayment.currency_id === payment.currency &&
+    (!payment.business.mpUserId || String(providerPayment.collector_id) === payment.business.mpUserId);
+  if (!matches) {
+    throw new PosPaymentError(
+      "El pago recibido no coincide con el cobro registrado",
+      409,
+      "MERCADOPAGO_CHECKOUT_MISMATCH",
+    );
+  }
+
+  const status = mapCheckoutPaymentStatus(providerPayment.status);
+  return prisma.posPayment.update({
+    where: { id: payment.id },
+    data: {
+      status,
+      statusDetail: providerPayment.status_detail ?? providerPayment.status ?? "checkout_pending",
+      providerPaymentId: providerPayment.id == null ? payment.providerPaymentId : String(providerPayment.id),
+      providerUserId: providerPayment.collector_id == null
+        ? payment.providerUserId
+        : String(providerPayment.collector_id),
+      paidAt: status === "APPROVED" ? payment.paidAt ?? new Date() : payment.paidAt,
+      lastSyncedAt: new Date(),
+    },
+  });
 }
 
 export async function getMercadoPagoOrder(accessToken: string, providerOrderId: string) {

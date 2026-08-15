@@ -128,7 +128,7 @@ export function PosPaymentDialog({
                   </div>
                 )}
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">La clienta escanea con la app de Mercado Pago</p>
+                  <p className="text-sm text-muted-foreground">La clienta escanea con su tel&eacute;fono y paga en Mercado Pago</p>
                   <p className="mt-1 text-3xl font-black">{formatPrice(payment.amount, payment.currency)}</p>
                   <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
                     <Loader2 className="h-3 w-3 animate-spin" /> Esperando pago

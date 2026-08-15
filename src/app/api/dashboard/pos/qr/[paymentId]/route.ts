@@ -5,8 +5,11 @@ import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import {
+  findMercadoPagoCheckoutPayment,
   getMercadoPagoOrder,
+  isMercadoPagoCheckoutPreferenceId,
   PosPaymentError,
+  syncPosPaymentFromCheckout,
   syncPosPaymentFromOrder,
 } from "@/server/services/mercadopago-pos.service";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
@@ -50,8 +53,15 @@ export async function POST(
 
     const accessToken = await getValidMercadoPagoAccessToken(business.id);
     if (!accessToken) throw new PosPaymentError("No se pudo renovar la conexión con Mercado Pago", 409);
-    const order = await getMercadoPagoOrder(accessToken, payment.providerOrderId);
-    const updated = await syncPosPaymentFromOrder(payment.id, order);
+    const updated = isMercadoPagoCheckoutPreferenceId(payment.providerOrderId)
+      ? await syncPosPaymentFromCheckout(
+          payment.id,
+          await findMercadoPagoCheckoutPayment(accessToken, payment.externalReference),
+        )
+      : await syncPosPaymentFromOrder(
+          payment.id,
+          await getMercadoPagoOrder(accessToken, payment.providerOrderId),
+        );
     return Response.json({
       id: updated.id,
       status: updated.status,
