@@ -543,7 +543,7 @@ export function RouletteMinigame({ onSpin, disabled, tokenBalance }: RouletteMin
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
                 <LocalizedText id="Joio5p7bKlZI" />
               </p>
-              <p className="text-lg font-black text-[#7C3AED]">{wonPrize.name}</p>
+              <p className="text-lg font-black text-brand-foreground">{wonPrize.name}</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {wonPrize.type === "PERCENTAGE"
                   ? `${wonPrize.percentage}% de descuento`

@@ -43,7 +43,7 @@ export function ThemeToggle() {
             aria-label={translate(t.label)}
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
               isActive
-                ? "bg-[#7C3AED]/15 text-[#7C3AED] shadow-sm"
+                ? "bg-[#7C3AED]/20 text-brand-foreground shadow-sm ring-1 ring-[#7C3AED]/30"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

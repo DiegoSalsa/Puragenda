@@ -515,7 +515,7 @@ export function ScheduleOverridesEditor({ locations }: { locations: { id: string
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7C3AED]/10">
-                <CalendarPlus className="h-5 w-5 text-[#7C3AED]" />
+                <CalendarPlus className="h-5 w-5 text-brand-foreground" />
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">

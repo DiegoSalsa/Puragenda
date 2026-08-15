@@ -195,7 +195,7 @@ export function AppointmentEditor({
         >
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-[#7C3AED]"><CalendarPlus className="h-5 w-5" /></div>
+              <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-brand-foreground"><CalendarPlus className="h-5 w-5" /></div>
               <div>
                 <h2 className="font-semibold">{appointment ? t("editTitle") : t("newTitle")}</h2>
                 <p className="text-xs text-muted-foreground">{t("validationHint")}</p>
@@ -248,7 +248,7 @@ export function AppointmentEditor({
                           type="button"
                           onClick={() => toggleOption(category.id, alternative.id, category.maxSelections)}
                           className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
-                            checked ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border bg-background"
+                            checked ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground" : "border-border bg-background"
                           }`}
                         >
                           {alternative.name}
@@ -279,7 +279,7 @@ export function AppointmentEditor({
               <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
               <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 p-3 text-sm">
                 <input type="checkbox" checked={sendConfirmation} onChange={(event) => setSendConfirmation(event.target.checked)} className="h-4 w-4 accent-[#7C3AED]" />
-                <Mail className="h-4 w-4 text-[#7C3AED]" />
+                <Mail className="h-4 w-4 text-brand-foreground" />
                 {t("sendConfirmation")}
               </label>
             </section>

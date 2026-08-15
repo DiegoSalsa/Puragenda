@@ -249,7 +249,7 @@ export async function BusinessInsights({
 
         <div className="rounded-xl border border-border bg-background/60 p-4">
           <div className="mb-4 flex items-center gap-2">
-            <Scissors className="h-4 w-4 text-[#7C3AED]" />
+            <Scissors className="h-4 w-4 text-brand-foreground" />
             <h3 className="font-semibold">{t("topService")}</h3>
           </div>
           {metrics.topService ? (

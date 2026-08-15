@@ -96,10 +96,10 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
   // ── Styles per variant ──
   const cls =
     variant === "sidebar"
-      ? "flex w-full items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10"
+      ? "flex w-full items-center gap-2 rounded-xl border border-[#7C3AED]/35 bg-[#7C3AED]/10 px-3 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:bg-[#7C3AED]/20"
       : variant === "nav"
-        ? "flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10"
-        : "flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-medium text-[#7C3AED] transition-all hover:bg-[#7C3AED]/10";
+        ? "flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/35 bg-[#7C3AED]/10 px-3 py-2 text-sm font-semibold text-brand-foreground transition-all hover:bg-[#7C3AED]/20"
+        : "flex items-center gap-2 rounded-xl border border-[#7C3AED]/35 bg-[#7C3AED]/10 px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:bg-[#7C3AED]/20";
 
   return (
     <>
@@ -123,7 +123,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-                  <Download className="h-4 w-4 text-[#7C3AED]" />
+                  <Download className="h-4 w-4 text-brand-foreground" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground">{t("title")}</h3>
               </div>
@@ -140,7 +140,7 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">1</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("shareTitle")}</p>
                         <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5">
@@ -152,14 +152,14 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">2</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("findOption")}</p>
                         <p className="text-muted-foreground mt-0.5"><LocalizedText id="SXVYIwAnGSDR" />{t("addHomeScreen")}<LocalizedText id="SXVYIwAnGSDR" /></p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">3</div>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">3</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("confirmAdd")}</p>
                         <p className="text-muted-foreground mt-0.5">{t("iosDone")}</p>
@@ -174,14 +174,14 @@ export function InstallPWAButton({ variant = "default" }: { variant?: "default" 
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">1</div>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">1</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("openChrome")}</p>
                         <p className="text-muted-foreground mt-0.5">{t("chromeRequired")}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">2</div>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">2</div>
                       <div className="text-sm">
                         <p className="text-foreground font-medium">{t("pressInstall")}</p>
                         <p className="text-muted-foreground mt-0.5">{t("automaticInstall")}</p>

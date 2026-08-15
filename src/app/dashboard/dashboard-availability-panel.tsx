@@ -117,7 +117,7 @@ export function DashboardAvailabilityPanel({
           href={simulationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-semibold text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/10"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-colors hover:bg-[#7C3AED]/10"
         >
           <PlayCircle className="h-4 w-4" />
           {t("simulationMode")}
@@ -136,7 +136,7 @@ export function DashboardAvailabilityPanel({
             >
               <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-[#7C3AED]"><CalendarClock className="h-5 w-5" /></div>
+                  <div className="rounded-xl bg-[#7C3AED]/10 p-2 text-brand-foreground"><CalendarClock className="h-5 w-5" /></div>
                   <div>
                     <h2 className="font-semibold">{t("quickMode")}</h2>
                     <p className="text-xs text-muted-foreground">{t("location", { location: location.name })} · {t("sevenDays")}</p>
@@ -149,7 +149,7 @@ export function DashboardAvailabilityPanel({
 
               <div className="max-h-[76vh] space-y-4 overflow-y-auto p-5">
                 {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
-                {loading && <div className="flex min-h-72 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" /></div>}
+                {loading && <div className="flex min-h-72 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-foreground" /></div>}
                 {!loading && result && availableDays.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-border p-8 text-center">
                     <CalendarClock className="mx-auto h-8 w-8 text-muted-foreground" />
@@ -167,7 +167,7 @@ export function DashboardAvailabilityPanel({
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {day.slots.map((slot) => (
-                              <span key={slot.time} className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2 text-sm font-semibold text-[#7C3AED]">
+                              <span key={slot.time} className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2 text-sm font-semibold text-brand-foreground">
                                 {slot.time}
                               </span>
                             ))}

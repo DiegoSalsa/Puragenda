@@ -98,7 +98,7 @@ export function MercadoPagoConnect({
           <a
             href={isOAuthConfigured && isCurrencyCompatible ? "/api/mercadopago/authorize" : undefined}
             aria-disabled={!isOAuthConfigured || !isCurrencyCompatible}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#009EE3] px-5 py-3 text-sm font-bold text-white transition-all hover:bg-[#008CCB] hover:shadow-lg hover:shadow-[#009EE3]/20 active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#00AEEF] px-5 py-3 text-sm font-bold text-[#08212B] transition-all hover:bg-[#18B8F0] hover:shadow-lg hover:shadow-[#009EE3]/20 active:scale-[0.98] aria-disabled:pointer-events-none aria-disabled:opacity-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-6h2v6zm-2-8h-2V7h2v2z" />

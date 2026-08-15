@@ -144,7 +144,7 @@ export function RewardsClient({
               <Coins className="h-5 w-5" style={{ color: tokenBalance > 0 ? "#7C3AED" : "#6B7280" }} />
             </div>
             <div>
-              <p className="text-3xl font-black" style={{ color: tokenBalance > 0 ? "#7C3AED" : undefined }}>
+              <p className="text-3xl font-black" style={{ color: tokenBalance > 0 ? "var(--brand-foreground)" : undefined }}>
                 {tokenBalance}
               </p>
               <p className="text-xs text-muted-foreground"><LocalizedText id="UU_47MkYsLmU" /></p>
@@ -247,7 +247,7 @@ export function RewardsClient({
               {/* Prize Table */}
               <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 flex-1">
                 <div className="flex items-center gap-2 mb-4">
-                  <Trophy className="h-5 w-5 text-[#7C3AED]" />
+                  <Trophy className="h-5 w-5 text-brand-foreground" />
                   <h2 className="text-lg font-bold"><LocalizedText id="jS0_Dwzb4y0F" /></h2>
                 </div>
                 <div className="space-y-1">
@@ -282,7 +282,7 @@ export function RewardsClient({
               {/* Fixed discount exchange */}
               <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4 shrink-0">
                 <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-[#7C3AED]" />
+                  <Coins className="h-5 w-5 text-brand-foreground" />
                   <h2 className="text-lg font-bold"><LocalizedText id="JjOG5aC72AOy" /></h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -291,7 +291,7 @@ export function RewardsClient({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium"><LocalizedText id="HUqe6yFdIiHX" /></p>
-                    <span className="text-sm font-mono font-bold" style={{ color: "#7C3AED" }}>
+                    <span className="text-sm font-mono font-bold" style={{ color: "var(--brand-foreground)" }}>
                       {fixedProgress}/3
                     </span>
                   </div>
@@ -461,7 +461,7 @@ export function RewardsClient({
               {(prizeSearch || tierFilter !== "Todos" || statusFilter !== "Todos") && (
                 <button
                   onClick={() => { setPrizeSearch(""); setTierFilter("Todos"); setStatusFilter("Todos"); setPrizePage(1); }}
-                  className="flex items-center gap-1 text-[11px] text-[#7C3AED] hover:underline"
+                  className="flex items-center gap-1 text-[11px] text-brand-foreground hover:underline"
                 >
                   <X className="h-3 w-3" /> <LocalizedText id="v8LRYjWGjnzE" />
                 </button>
@@ -553,7 +553,7 @@ export function RewardsClient({
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-12 px-6 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C3AED]/10 mb-4">
-                <Trophy className="h-7 w-7 text-[#7C3AED]" />
+                <Trophy className="h-7 w-7 text-brand-foreground" />
               </div>
               {prizes.length === 0 ? (
                 <>

@@ -122,7 +122,7 @@ export function MarketingDashboard({
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-              <CalendarCheck className="h-5 w-5 text-[#7C3AED]" />
+              <CalendarCheck className="h-5 w-5 text-brand-foreground" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -159,7 +159,7 @@ export function MarketingDashboard({
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-              <Users className="h-5 w-5 text-[#7C3AED]" />
+              <Users className="h-5 w-5 text-brand-foreground" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -174,7 +174,7 @@ export function MarketingDashboard({
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-            <Sparkles className="h-3.5 w-3.5 text-[#7C3AED]" />
+            <Sparkles className="h-3.5 w-3.5 text-brand-foreground" />
             <p className="text-xs text-muted-foreground">
               <LocalizedText id="-o7Qvavda8sc" />{" "}
               <span className="font-semibold text-foreground">
@@ -191,8 +191,8 @@ export function MarketingDashboard({
             <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#7C3AED]/10 blur-2xl" />
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
-                <Zap className="h-5 w-5 text-[#7C3AED]" />
-                <p className="text-sm font-bold text-[#7C3AED]"><LocalizedText id="tZPxciA1J9Lf" /></p>
+                <Zap className="h-5 w-5 text-brand-foreground" />
+                <p className="text-sm font-bold text-brand-foreground"><LocalizedText id="tZPxciA1J9Lf" /></p>
               </div>
               <p className="text-sm text-foreground font-medium mb-1">
                 <LocalizedText id="Svh1yjA2EoHN" />
@@ -243,7 +243,7 @@ export function MarketingDashboard({
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-            <Mail className="h-5 w-5 text-[#7C3AED]" />
+            <Mail className="h-5 w-5 text-brand-foreground" />
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight">
@@ -326,7 +326,7 @@ export function MarketingDashboard({
 
           {/* Strategic text */}
           <p className="text-xs text-muted-foreground leading-relaxed pt-1">
-            <Sparkles className="inline h-3 w-3 text-[#7C3AED] mr-1" />
+            <Sparkles className="inline h-3 w-3 text-brand-foreground mr-1" />
             <LocalizedText id="BEJP7d-AmnCE" />
           </p>
         </form>
@@ -337,7 +337,7 @@ export function MarketingDashboard({
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-              <Clock className="h-5 w-5 text-[#7C3AED]" />
+              <Clock className="h-5 w-5 text-brand-foreground" />
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight">
@@ -376,7 +376,7 @@ export function MarketingDashboard({
                       </div>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-[#7C3AED]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-medium text-brand-foreground">
                         <Users className="h-3 w-3" />
                         {campaign.audienceSize}
                       </span>

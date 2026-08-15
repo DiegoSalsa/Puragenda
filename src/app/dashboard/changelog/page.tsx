@@ -21,7 +21,7 @@ export default function ChangelogPage() {
 
             {/* Timeline dot */}
             <div className="absolute left-0 sm:left-[96px] top-2 flex h-6 w-6 items-center justify-center rounded-full border bg-background shadow-sm">
-              <Sparkles className="h-3 w-3 text-[#7C3AED]" />
+              <Sparkles className="h-3 w-3 text-brand-foreground" />
             </div>
 
             {/* Date (Desktop) */}
@@ -38,7 +38,7 @@ export default function ChangelogPage() {
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold tracking-tight">{entry.title}</h2>
-                  <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-semibold text-[#7C3AED]">
+                  <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-semibold text-brand-foreground">
                     {entry.version}
                   </span>
                 </div>
@@ -75,7 +75,7 @@ export default function ChangelogPage() {
                     <ul className="space-y-2.5">
                       {entry.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-2.5">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-foreground" />
                           <span className="text-sm text-muted-foreground">{feature}</span>
                         </li>
                       ))}

@@ -70,7 +70,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
           aria-label={isEnabled ? "Desactivar" : "Activar"}
         >
           {isEnabled ? (
-            <ToggleRight className="h-10 w-10 text-[#7C3AED]" />
+            <ToggleRight className="h-10 w-10 text-brand-foreground" />
           ) : (
             <ToggleLeft className="h-10 w-10 text-muted-foreground" />
           )}
@@ -84,7 +84,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         {/* Stamps Required */}
         <div className="space-y-1.5">
           <label htmlFor="stampsRequired" className="flex items-center gap-2 text-sm font-medium">
-            <Hash className="h-4 w-4 text-[#7C3AED]" />
+            <Hash className="h-4 w-4 text-brand-foreground" />
             <LocalizedText id="-ArpPW2eBDfG" />
           </label>
           <input
@@ -102,7 +102,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         {/* Reward Name */}
         <div className="space-y-1.5">
           <label htmlFor="rewardName" className="flex items-center gap-2 text-sm font-medium">
-            <Gift className="h-4 w-4 text-[#7C3AED]" />
+            <Gift className="h-4 w-4 text-brand-foreground" />
             <LocalizedText id="nBMscV3Ms_bs" />
           </label>
           <input
@@ -117,7 +117,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
 
         <div className="space-y-1.5">
           <label htmlFor="loyaltyCodePrefix" className="flex items-center gap-2 text-sm font-medium">
-            <Hash className="h-4 w-4 text-[#7C3AED]" />
+            <Hash className="h-4 w-4 text-brand-foreground" />
             <LocalizedText id="3YuhjeQbqnP2" />
           </label>
           <input
@@ -145,7 +145,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
               onClick={() => setDiscountType("PERCENTAGE")}
               className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                 discountType === "PERCENTAGE"
-                  ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
+                  ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground"
                   : "border-border bg-muted text-muted-foreground hover:border-[#7C3AED]/30"
               }`}
             >
@@ -157,7 +157,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
               onClick={() => setDiscountType("FIXED")}
               className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
                 discountType === "FIXED"
-                  ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
+                  ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground"
                   : "border-border bg-muted text-muted-foreground hover:border-[#7C3AED]/30"
               }`}
             >
@@ -197,7 +197,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
       {/* Preview */}
       {isEnabled && (
         <div className="rounded-xl border border-dashed border-[#7C3AED]/30 bg-[#7C3AED]/5 p-4 animate-fade-up">
-          <p className="text-xs font-medium text-[#7C3AED] mb-2"><LocalizedText id="yeYAoB9GrrMB" /></p>
+          <p className="text-xs font-medium text-brand-foreground mb-2"><LocalizedText id="yeYAoB9GrrMB" /></p>
           <p className="text-sm text-foreground">
             <LocalizedText id="mytP-rADnT4T" /> <strong>{stampsRequired}</strong> <LocalizedText id="ME9d-yHEObYK" />{" "}
             <strong>{rewardName || "Premio"}</strong> —{" "}

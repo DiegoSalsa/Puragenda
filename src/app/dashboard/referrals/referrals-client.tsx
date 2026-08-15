@@ -50,7 +50,7 @@ export function ReferralsClient({
           </div>
           <div className="flex items-center gap-2">
             <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-5 py-3">
-              <span className="font-mono text-lg font-bold tracking-widest text-[#7C3AED]">{referralCode}</span>
+              <span className="font-mono text-lg font-bold tracking-widest text-brand-foreground">{referralCode}</span>
             </div>
             <button
               onClick={handleCopy}
@@ -100,7 +100,7 @@ export function ReferralsClient({
               />
             </div>
             <div>
-              <p className="text-2xl font-bold" style={{ color: tokenBalance > 0 ? "#7C3AED" : undefined }}>
+              <p className="text-2xl font-bold" style={{ color: tokenBalance > 0 ? "var(--brand-foreground)" : undefined }}>
                 {tokenBalance}
               </p>
               <p className="text-xs text-muted-foreground"><LocalizedText id="UU_47MkYsLmU" /></p>
@@ -117,36 +117,36 @@ export function ReferralsClient({
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/15">
-              <Coins className="h-5 w-5 text-[#7C3AED]" />
+              <Coins className="h-5 w-5 text-brand-foreground" />
             </div>
             <div>
               <p className="text-sm font-bold"><LocalizedText id="3iafX3O3yS4P" /> {tokenBalance} <LocalizedText id="pxcBqhialM1-" />{tokenBalance !== 1 ? "s" : ""} <LocalizedText id="vvJBFQROwSlZ" />{tokenBalance !== 1 ? "s" : ""}</p>
               <p className="text-xs text-muted-foreground"><LocalizedText id="rXw_lTQpVrdK" /></p>
             </div>
           </div>
-          <ArrowRight className="h-5 w-5 text-[#7C3AED] transition-transform group-hover:translate-x-1" />
+          <ArrowRight className="h-5 w-5 text-brand-foreground transition-transform group-hover:translate-x-1" />
         </Link>
       )}
 
       {/* ── How it works ── */}
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
         <p className="text-sm font-medium flex items-center gap-2">
-          <Gift className="h-4 w-4 text-[#7C3AED]" />
+          <Gift className="h-4 w-4 text-brand-foreground" />
           <LocalizedText id="Th8TqSkxybtS" />
         </p>
         <div className="grid gap-3 sm:grid-cols-3 text-xs text-muted-foreground">
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">1</div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground font-bold text-xs">1</div>
             <p className="font-medium text-foreground"><LocalizedText id="luTMuxyvSMj2" /></p>
             <p><LocalizedText id="Me5_HhIe0DqH" /></p>
           </div>
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">2</div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground font-bold text-xs">2</div>
             <p className="font-medium text-foreground"><LocalizedText id="ZevqNEvcB_Ov" /></p>
             <p><LocalizedText id="6IzMTzDaZbOJ" /></p>
           </div>
           <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED] font-bold text-xs">3</div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground font-bold text-xs">3</div>
             <p className="font-medium text-foreground"><LocalizedText id="rrqQTb8hhLqa" /></p>
             <p><LocalizedText id="nRABQpmVYDbE" /></p>
           </div>
@@ -182,7 +182,7 @@ export function ReferralsClient({
               <Users className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground"><LocalizedText id="P5ndu7RP0KMw" /></p>
-            <p className="text-xs text-muted-foreground/60 mt-1"><LocalizedText id="lCcyQr6oL6Aa" /></p>
+            <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="lCcyQr6oL6Aa" /></p>
           </div>
         )}
       </div>

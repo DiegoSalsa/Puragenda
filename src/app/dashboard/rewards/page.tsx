@@ -33,7 +33,7 @@ export default async function RewardsPage() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-          <Trophy className="h-5 w-5 text-[#7C3AED]" />
+          <Trophy className="h-5 w-5 text-brand-foreground" />
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="vO8s3A-JNUsV" /></h1>

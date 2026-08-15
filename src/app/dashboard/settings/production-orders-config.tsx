@@ -47,7 +47,7 @@ export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boo
           }`}
         >
           <span
-            className={`absolute top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#7C3AED] shadow transition-transform ${
+            className={`absolute top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-brand-foreground shadow transition-transform ${
               enabled ? "translate-x-6" : "translate-x-1"
             }`}
           >
@@ -56,7 +56,7 @@ export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boo
         </button>
       </div>
       <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs ${
-        enabled ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"
+        enabled ? "bg-[#7C3AED]/10 text-brand-foreground" : "bg-muted text-muted-foreground"
       }`}>
         <Package className="h-4 w-4" />
         {enabled ? legacy("ZiOX93MdX8xq") : legacy("r3FLqdwngsPY")}

@@ -1003,27 +1003,27 @@ export function StoryGenerator({
   }
 
   const inputClass =
-    "mt-2 w-full rounded-xl border-2 border-foreground/15 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10";
+    "mt-2 w-full rounded-xl border-2 border-[#171717]/20 bg-white px-3.5 py-3 text-sm text-[#171717] outline-none transition placeholder:text-[#5B5563] focus:border-[#7C3AED] focus:ring-4 focus:ring-[#7C3AED]/10 dark:border-border dark:bg-muted dark:text-foreground dark:placeholder:text-muted-foreground";
   const panelClass =
-    "rounded-[1.65rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#E9D8FF] sm:p-6";
+    "rounded-[1.65rem] border-2 border-[#171717] bg-white p-5 text-[#171717] shadow-[5px_5px_0_#E9D8FF] dark:border-border dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#312E46] sm:p-6";
 
   return (
     <div className="mx-auto max-w-[1440px] space-y-8 pb-28 lg:space-y-10">
       <section
         data-tour="page-header"
-        className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] p-6 shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10"
+        className="relative overflow-hidden rounded-[2rem] border-2 border-[#171717] bg-[#E9D8FF] p-6 text-[#171717] shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10"
       >
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full border-[34px] border-[#FF5C8A]/70" />
         <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">
+            <p className="inline-flex items-center gap-2 rounded-full border-2 border-[#171717] bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">
               <Sparkles className="h-3.5 w-3.5" />
               {t("eyebrow")}
             </p>
             <h1 className="mt-5 max-w-2xl text-[2.55rem] font-black leading-[0.92] tracking-[-0.06em] sm:text-6xl">
               {t("title")}
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-foreground/65">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#393442]">
               {t("subtitle")}
             </p>
           </div>
@@ -1042,14 +1042,14 @@ export function StoryGenerator({
         </div>
       </section>
 
-      <section className="rounded-[1.5rem] border-2 border-foreground/10 bg-white p-4 sm:p-5">
+      <section className="rounded-[1.5rem] border-2 border-[#171717]/10 bg-white p-4 text-[#171717] dark:border-border dark:bg-card dark:text-foreground sm:p-5">
         <button
           type="button"
           onClick={() => setShowMetrics((current) => !current)}
           className="flex w-full items-center justify-between text-left"
         >
           <span className="flex items-center gap-2 font-black">
-            <BarChart3 className="h-4 w-4 text-[#7C3AED]" />
+            <BarChart3 className="h-4 w-4 text-[#5B21B6] dark:text-brand-foreground" />
             {t("metricsTitle")}
           </span>
           <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
@@ -1069,7 +1069,7 @@ export function StoryGenerator({
             [t("bookingsMetric"), filteredTotals.bookings],
             [t("revenueMetric"), currency.format(filteredTotals.revenue)],
           ].map(([label, value]) => (
-            <div key={String(label)} className="rounded-2xl bg-[#F8F5ED] p-4">
+            <div key={String(label)} className="rounded-2xl bg-[#F8F5ED] p-4 dark:bg-muted">
               <p className="text-2xl font-black">{value}</p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 {label}
@@ -1082,7 +1082,7 @@ export function StoryGenerator({
       <section data-tour="story-opportunities">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#7C3AED]">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-foreground">
               01 · {t("opportunityEyebrow")}
             </p>
             <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
@@ -1098,11 +1098,11 @@ export function StoryGenerator({
             {options.opportunities.map((opportunity, index) => (
               <article
                 key={opportunity.id}
-                className={`group rounded-[1.5rem] border-2 border-foreground p-5 transition hover:-translate-y-1 ${index === 0 ? "bg-[#FFD8E6] shadow-[5px_5px_0_#171717]" : "bg-white"}`}
+                className={`group rounded-[1.5rem] border-2 p-5 transition hover:-translate-y-1 ${index === 0 ? "border-[#171717] bg-[#FFD8E6] text-[#171717] shadow-[5px_5px_0_#171717] dark:border-border dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#312E46]" : "border-[#171717] bg-white text-[#171717] dark:border-border dark:bg-card dark:text-foreground"}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <span
-                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${opportunity.urgency === "HIGH" ? "bg-[#FF5C8A] text-white" : opportunity.source === "EXPLICIT" ? "bg-[#FFD84D]" : "bg-[#E9D8FF] text-[#5B21B6]"}`}
+                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${opportunity.urgency === "HIGH" ? "bg-[#FF5C8A] text-[#171717]" : opportunity.source === "EXPLICIT" ? "bg-[#FFD84D] text-[#171717]" : "bg-[#E9D8FF] text-[#5B21B6]"}`}
                   >
                     {opportunity.source === "EXPLICIT"
                       ? t("manualOpening")
@@ -1110,11 +1110,11 @@ export function StoryGenerator({
                         ? t("urgent")
                         : t("recurringOpening")}
                   </span>
-                  <span className="text-sm font-black text-emerald-700">
+                  <span className="text-sm font-black text-emerald-700 dark:text-emerald-300">
                     {currency.format(opportunity.potentialRevenue)}
                   </span>
                 </div>
-                <p className="mt-5 text-xs font-black capitalize text-[#7C3AED]">
+                <p className="mt-5 text-xs font-black capitalize text-brand-foreground">
                   {opportunity.dateLabel}
                 </p>
                 <h3 className="mt-1 text-xl font-black">
@@ -1127,7 +1127,7 @@ export function StoryGenerator({
                   {opportunity.times.slice(0, 5).map((time) => (
                     <span
                       key={time}
-                      className="rounded-lg border border-foreground/10 bg-white px-2 py-1 text-xs font-bold"
+                      className="rounded-lg border border-[#171717]/10 bg-white px-2 py-1 text-xs font-bold text-[#171717] dark:border-border dark:bg-muted dark:text-foreground"
                     >
                       {time}
                     </span>
@@ -1167,11 +1167,11 @@ export function StoryGenerator({
               type="button"
               onClick={() => setStudioMode("QUICK")}
               aria-pressed={studioMode === "QUICK"}
-              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "QUICK" ? "border-foreground bg-[#171717] text-white shadow-[4px_4px_0_#7C3AED]" : "border-foreground/15 bg-white hover:border-foreground"}`}
+              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "QUICK" ? "border-[#171717] bg-[#171717] text-white shadow-[4px_4px_0_#7C3AED] dark:border-border" : "border-[#171717]/15 bg-white text-[#171717] hover:border-[#171717] dark:border-border dark:bg-card dark:text-foreground"}`}
             >
               <span className="flex items-start gap-3">
                 <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "QUICK" ? "bg-[#FFD84D] text-[#171717]" : "bg-[#F8F5ED] text-[#7C3AED]"}`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "QUICK" ? "bg-[#FFD84D] text-[#171717]" : "bg-[#F8F5ED] text-brand-foreground dark:bg-muted"}`}
                 >
                   <Sparkles className="h-5 w-5" />
                 </span>
@@ -1192,7 +1192,7 @@ export function StoryGenerator({
                       (item) => (
                         <span
                           key={item}
-                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "QUICK" ? "bg-white/10" : "bg-[#F8F5ED]"}`}
+                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "QUICK" ? "bg-white/10" : "bg-[#F8F5ED] dark:bg-muted"}`}
                         >
                           {item}
                         </span>
@@ -1206,11 +1206,11 @@ export function StoryGenerator({
               type="button"
               onClick={() => setStudioMode("ADVANCED")}
               aria-pressed={studioMode === "ADVANCED"}
-              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "ADVANCED" ? "border-foreground bg-[#7C3AED] text-white shadow-[4px_4px_0_#171717]" : "border-foreground/15 bg-white hover:border-foreground"}`}
+              className={`group relative rounded-[1.35rem] border-2 p-4 text-left transition ${studioMode === "ADVANCED" ? "border-[#171717] bg-[#7C3AED] text-white shadow-[4px_4px_0_#171717] dark:border-border" : "border-[#171717]/15 bg-white text-[#171717] hover:border-[#171717] dark:border-border dark:bg-card dark:text-foreground"}`}
             >
               <span className="flex items-start gap-3">
                 <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "ADVANCED" ? "bg-[#FFD8E6] text-[#9D174D]" : "bg-[#F8F5ED] text-[#FF4F87]"}`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${studioMode === "ADVANCED" ? "bg-[#FFD8E6] text-[#9D174D]" : "bg-[#F8F5ED] text-[#FF4F87] dark:bg-muted"}`}
                 >
                   <LayoutTemplate className="h-5 w-5" />
                 </span>
@@ -1231,7 +1231,7 @@ export function StoryGenerator({
                       (item) => (
                         <span
                           key={item}
-                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "ADVANCED" ? "bg-white/15" : "bg-[#F8F5ED]"}`}
+                          className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wide ${studioMode === "ADVANCED" ? "bg-white/15" : "bg-[#F8F5ED] dark:bg-muted"}`}
                         >
                           {item}
                         </span>
@@ -1244,7 +1244,7 @@ export function StoryGenerator({
           </div>
         </div>
 
-        <div className="sticky top-2 z-30 mb-4 grid grid-cols-3 rounded-full border-2 border-foreground bg-white p-1 shadow-lg xl:hidden">
+        <div className="sticky top-2 z-30 mb-4 grid grid-cols-3 rounded-full border-2 border-[#171717] bg-white p-1 text-[#171717] shadow-lg dark:border-border dark:bg-card dark:text-foreground xl:hidden">
           {(["CONTENT", "DESIGN", "PREVIEW"] as MobilePanel[]).map((panel) => (
             <button
               key={panel}
@@ -1325,7 +1325,7 @@ export function StoryGenerator({
                                 : [...current, service.id],
                             )
                           }
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${active ? "bg-[#E9D8FF] text-[#5B21B6]" : "hover:bg-[#F8F5ED]"}`}
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${active ? "bg-[#E9D8FF] text-[#5B21B6]" : "hover:bg-[#F8F5ED] dark:hover:bg-muted"}`}
                         >
                           <span>
                             {service.name}
@@ -1480,7 +1480,7 @@ export function StoryGenerator({
                               current.filter((entry) => entry !== date),
                             )
                           }
-                          className="inline-flex items-center gap-1 rounded-full bg-[#F8F5ED] px-2 py-1 text-[10px] font-bold"
+                          className="inline-flex items-center gap-1 rounded-full bg-[#F8F5ED] px-2 py-1 text-[10px] font-bold dark:bg-muted"
                         >
                           {date}
                           <X className="h-3 w-3" />
@@ -1509,7 +1509,7 @@ export function StoryGenerator({
                         setObjective(value);
                         setHeadline(headlineSuggestions[value][0]);
                       }}
-                      className={`rounded-xl border-2 p-2.5 text-left text-xs font-black ${objective === value ? "border-[#FF4F87] bg-[#FFD8E6]" : "border-foreground/15"}`}
+                      className={`rounded-xl border-2 p-2.5 text-left text-xs font-black ${objective === value ? "border-[#FF4F87] bg-[#FFD8E6] text-[#171717]" : "border-foreground/15"}`}
                     >
                       {t(`objective${value}`)}
                     </button>
@@ -1532,7 +1532,7 @@ export function StoryGenerator({
                     key={suggestion}
                     type="button"
                     onClick={() => setHeadline(suggestion)}
-                    className="rounded-full border border-foreground/15 bg-[#F8F5ED] px-3 py-1.5 text-[10px] font-bold"
+                    className="rounded-full border border-foreground/15 bg-[#F8F5ED] px-3 py-1.5 text-[10px] font-bold dark:bg-muted"
                   >
                     {suggestion}
                   </button>
@@ -1540,7 +1540,7 @@ export function StoryGenerator({
               </div>
 
               {previewData?.days.length ? (
-                <div className="mt-5 rounded-2xl bg-[#F8F5ED] p-4">
+                <div className="mt-5 rounded-2xl bg-[#F8F5ED] p-4 dark:bg-muted">
                   <p className="text-xs font-black">{t("chooseSlots")}</p>
                   <p className="mt-1 text-[10px] text-muted-foreground">
                     {t("chooseSlotsHint")}
@@ -1581,7 +1581,7 @@ export function StoryGenerator({
                                     );
                                   else toggleSlot(day.date, time);
                                 }}
-                                className={`rounded-lg px-2 py-1 text-xs font-bold ${active ? "bg-[#7C3AED] text-white" : "bg-white text-muted-foreground"}`}
+                                className={`rounded-lg px-2 py-1 text-xs font-bold ${active ? "bg-[#7C3AED] text-white" : "bg-white text-[#5B5563] dark:bg-muted dark:text-muted-foreground"}`}
                               >
                                 {time}
                               </button>
@@ -1647,7 +1647,7 @@ export function StoryGenerator({
                       type="button"
                       onClick={() => setTemplate(value)}
                       aria-pressed={template === value}
-                      className={`relative flex items-center gap-3 rounded-[1.15rem] border-2 bg-white p-3 text-left transition ${template === value ? "border-[#7C3AED] bg-[#F7F0FF] shadow-[3px_3px_0_#7C3AED]" : "border-foreground/10 hover:border-foreground/35"}`}
+                      className={`relative flex items-center gap-3 rounded-[1.15rem] border-2 bg-white p-3 text-left text-[#171717] transition dark:bg-muted dark:text-foreground ${template === value ? "border-[#7C3AED] bg-[#F7F0FF] shadow-[3px_3px_0_#7C3AED] dark:bg-[#7C3AED]/15" : "border-[#171717]/10 hover:border-[#171717]/35 dark:border-border"}`}
                     >
                       <StoryTemplateThumbnail
                         template={value}
@@ -1878,7 +1878,7 @@ export function StoryGenerator({
                       onClick={() =>
                         (setter as (value: boolean) => void)(!active)
                       }
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs font-semibold disabled:opacity-30 ${active ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-foreground/15"}`}
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs font-semibold disabled:opacity-30 ${active ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground" : "border-foreground/15"}`}
                     >
                       <span>{String(label)}</span>
                       {Boolean(active) && <Check className="h-3.5 w-3.5" />}
@@ -1895,14 +1895,14 @@ export function StoryGenerator({
                   <button
                     type="button"
                     onClick={() => setCtaMode("LINK_STICKER")}
-                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "LINK_STICKER" ? "border-[#7C3AED] bg-[#E9D8FF]" : "border-foreground/15"}`}
+                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "LINK_STICKER" ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                   >
                     {designT("linkSticker")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setCtaMode("BIO")}
-                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "BIO" ? "border-[#7C3AED] bg-[#E9D8FF]" : "border-foreground/15"}`}
+                    className={`rounded-xl border-2 p-3 text-xs font-black ${ctaMode === "BIO" ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                   >
                     {designT("bioLink")}
                   </button>
@@ -1919,9 +1919,9 @@ export function StoryGenerator({
               </div>
 
               {studioMode === "ADVANCED" && (
-                <div className="mt-6 rounded-2xl bg-[#F8F5ED] p-4">
+                <div className="mt-6 rounded-2xl bg-[#F8F5ED] p-4 dark:bg-muted">
                   <div className="flex items-center gap-2 font-black">
-                    <Save className="h-4 w-4 text-[#7C3AED]" />
+                    <Save className="h-4 w-4 text-brand-foreground" />
                     {t("presets")}
                   </div>
                   {presets.length > 0 && (
@@ -1929,7 +1929,7 @@ export function StoryGenerator({
                       {presets.map((preset) => (
                         <div
                           key={preset.id}
-                          className="flex items-center gap-2 rounded-xl bg-white p-2"
+                          className="flex items-center gap-2 rounded-xl bg-white p-2 dark:bg-card"
                         >
                           <button
                             type="button"
@@ -2122,10 +2122,10 @@ export function StoryGenerator({
       </section>
 
       {insights && insights.recent.length > 0 && (
-        <section className="rounded-[1.75rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#FFD84D] sm:p-6">
+        <section className="rounded-[1.75rem] border-2 border-[#171717] bg-white p-5 text-[#171717] shadow-[5px_5px_0_#FFD84D] dark:border-border dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#4A421C] sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFD84D] text-sm font-black">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFD84D] text-sm font-black text-[#171717]">
                 03
               </span>
               <div>
@@ -2135,7 +2135,7 @@ export function StoryGenerator({
                 </p>
               </div>
             </div>
-            <div className="flex gap-1 rounded-full bg-[#F8F5ED] p-1">
+            <div className="flex gap-1 rounded-full bg-[#F8F5ED] p-1 dark:bg-muted">
               {(["7", "30", "90", "ALL"] as AnalyticsRange[]).map((value) => (
                 <button
                   key={value}
@@ -2150,20 +2150,20 @@ export function StoryGenerator({
           </div>
           {servicePerformance.length > 0 && (
             <div className="mt-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-brand-foreground">
                 {t("topServices")}
               </p>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {servicePerformance.map((service, index) => (
                   <div
                     key={service.name}
-                    className="rounded-2xl border border-foreground/10 bg-white p-3"
+                    className="rounded-2xl border border-[#171717]/10 bg-white p-3 dark:border-border dark:bg-muted"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-black">
                         {index + 1}. {service.name}
                       </span>
-                      <span className="text-xs font-black text-emerald-700">
+                      <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
                         {(service.conversion * 100).toFixed(1)}%
                       </span>
                     </div>
@@ -2180,7 +2180,7 @@ export function StoryGenerator({
             {filteredCampaigns.map((campaign) => (
               <article
                 key={campaign.id}
-                className="grid gap-3 rounded-2xl border-2 border-foreground/10 bg-[#F8F5ED] p-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                className="grid gap-3 rounded-2xl border-2 border-foreground/10 bg-[#F8F5ED] p-4 dark:border-border dark:bg-muted sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -2197,22 +2197,22 @@ export function StoryGenerator({
                     {campaign.staffName ? ` · ${campaign.staffName}` : ""}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold">
-                    <span className="rounded-full bg-white px-2 py-1">
+                    <span className="rounded-full bg-white px-2 py-1 text-[#171717] dark:bg-background dark:text-foreground">
                       {campaign.visits} {t("visitsShort")}
                     </span>
-                    <span className="rounded-full bg-[#E9D8FF] px-2 py-1 text-[#5B21B6]">
+                    <span className="rounded-full bg-[#E9D8FF] px-2 py-1 text-[#5B21B6] dark:bg-[#7C3AED]/20 dark:text-brand-foreground">
                       {campaign.bookings} {t("bookingsShort")}
                     </span>
-                    <span className="rounded-full bg-white px-2 py-1">
+                    <span className="rounded-full bg-white px-2 py-1 text-[#171717] dark:bg-background dark:text-foreground">
                       {campaign.downloads + campaign.shares}{" "}
                       {t("publishedShort")}
                     </span>
-                    <span className="rounded-full bg-white px-2 py-1">
+                    <span className="rounded-full bg-white px-2 py-1 text-[#171717] dark:bg-background dark:text-foreground">
                       {campaign.copies} {t("copiesShort")}
                     </span>
                   </div>
                 </div>
-                <p className="font-black text-emerald-700">
+                <p className="font-black text-emerald-700 dark:text-emerald-300">
                   {currency.format(campaign.revenue)}
                 </p>
                 <div className="flex gap-2">
@@ -2246,7 +2246,7 @@ export function StoryGenerator({
         </section>
       )}
 
-      <div className="fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-full border-2 border-foreground bg-white p-2 shadow-[5px_5px_0_#171717] xl:hidden">
+      <div className="fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-full border-2 border-[#171717] bg-white p-2 text-[#171717] shadow-[5px_5px_0_#171717] dark:border-border dark:bg-card dark:text-foreground xl:hidden">
         <button
           type="button"
           disabled={loading || !formValid}

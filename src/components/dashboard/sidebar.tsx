@@ -310,7 +310,7 @@ function SidebarContent({
       collapsed ? "h-11 justify-center px-2" : "gap-3 px-3 py-2"
     } ${
       active
-        ? "border-[#7C3AED]/25 bg-[#7C3AED]/10 text-[#7C3AED]"
+        ? "border-[#7C3AED]/40 bg-[#7C3AED]/15 text-brand-foreground"
         : "border-transparent text-muted-foreground hover:bg-accent/10 hover:text-foreground"
     }`;
 
@@ -457,7 +457,7 @@ function SidebarContent({
                         return next;
                       })
                     }
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${isActive ? "text-[#7C3AED]" : "text-muted-foreground/75 hover:text-foreground"}`}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${isActive ? "text-brand-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     aria-expanded={isOpen}
                   >
                     <span className="flex items-center gap-2">

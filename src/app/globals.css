@@ -7,6 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-foreground: var(--brand-foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -56,6 +57,7 @@
   --brand: #7C3AED;
   --brand-light: #A78BFA;
   --brand-dark: #5B21B6;
+  --brand-foreground: #6D28D9;
 
   /* Light theme - Neo Brutalism */
   --background: #FFFAEB;
@@ -93,37 +95,45 @@
 }
 
 .dark {
-  --background: #111111;
-  --foreground: #FFFFFF;
-  --card: #000000;
-  --card-foreground: #FFFFFF;
-  --popover: #000000;
-  --popover-foreground: #FFFFFF;
+  --brand-foreground: #C4B5FD;
+  --background: #111318;
+  --foreground: #F8F7FC;
+  --card: #191C23;
+  --card-foreground: #F8F7FC;
+  --popover: #1D2028;
+  --popover-foreground: #F8F7FC;
   --primary: #7C3AED;
   --primary-foreground: #FFFFFF;
-  --secondary: #222222;
-  --secondary-foreground: #FFFFFF;
-  --muted: #222222;
-  --muted-foreground: #A0A0A0;
+  --secondary: #262A34;
+  --secondary-foreground: #F8F7FC;
+  --muted: #252933;
+  --muted-foreground: #C3C5CE;
   --accent: #FFB5E8;
   --accent-foreground: #000000;
-  --destructive: #DC2626;
-  --border: #FFFFFF;
-  --input: #FFFFFF;
-  --ring: #7C3AED;
+  --destructive: #F87171;
+  --border: #454B59;
+  --input: #596170;
+  --ring: #A78BFA;
   --chart-1: #7C3AED;
   --chart-2: #FFB5E8;
   --chart-3: #85E3FF;
   --chart-4: #BFFCC6;
   --chart-5: #FFF5BA;
-  --sidebar: #111111;
-  --sidebar-foreground: #FFFFFF;
+  --sidebar: #15171D;
+  --sidebar-foreground: #F8F7FC;
   --sidebar-primary: #7C3AED;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #222222;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #FFFFFF;
-  --sidebar-ring: #7C3AED;
+  --sidebar-accent: #252933;
+  --sidebar-accent-foreground: #F8F7FC;
+  --sidebar-border: #454B59;
+  --sidebar-ring: #A78BFA;
+}
+
+/* Purple is a strong button fill, but it needs a lighter companion when it is
+   used as text on dark surfaces. Keep both roles visually related and legible. */
+.dark .text-\[\#7C3AED\],
+.dark .text-primary {
+  color: var(--brand-foreground);
 }
 
 @layer base {

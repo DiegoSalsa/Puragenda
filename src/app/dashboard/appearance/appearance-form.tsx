@@ -453,7 +453,7 @@ export function AppearanceForm({
         <section className="space-y-3 xl:sticky xl:top-6" data-tour="appearance-preview">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Eye className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="g7lEnc8xsC-m" />
+              <Eye className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="g7lEnc8xsC-m" />
             </div>
             <button
               onClick={() => {
@@ -511,7 +511,7 @@ export function AppearanceForm({
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="sKD9pt34z5cG" /></h2>
+                <h2 className="flex items-center gap-2 text-base font-bold"><Palette className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="sKD9pt34z5cG" /></h2>
                 <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="1tn9UOSP-_8N" /></p>
               </div>
               <div className="flex gap-1">
@@ -528,7 +528,7 @@ export function AppearanceForm({
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-base font-bold"><Type className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="P2Rhc0Xq3jqs" /></h2>
+            <h2 className="flex items-center gap-2 text-base font-bold"><Type className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="P2Rhc0Xq3jqs" /></h2>
             <div className="mt-5 grid gap-6 sm:grid-cols-2">
               <label className="space-y-2">
                 <span className="flex justify-between text-sm font-medium"><LocalizedText id="k9QrzlRUbN5E" /> <b className="font-mono">{data.fontSize}<LocalizedText id="buLMEFpndDFA" /></b></span>
@@ -554,7 +554,7 @@ export function AppearanceForm({
                     ["center", AlignCenter, "Centro"],
                     ["right", AlignRight, "Derecha"],
                   ] as const).map(([value, Icon, label]) => (
-                    <button key={value} onClick={() => update("headerAlign", value)} title={label} className={`flex h-10 items-center justify-center rounded-xl border ${data.headerAlign === value ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>
+                    <button key={value} onClick={() => update("headerAlign", value)} title={label} className={`flex h-10 items-center justify-center rounded-xl border ${data.headerAlign === value ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground" : "border-border text-muted-foreground"}`}>
                       <Icon className="h-4 w-4" />
                     </button>
                   ))}
@@ -566,7 +566,7 @@ export function AppearanceForm({
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-bold"><Layers3 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="c2kJDqQXbSb6" /></h2>
+                <h2 className="flex items-center gap-2 text-base font-bold"><Layers3 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="c2kJDqQXbSb6" /></h2>
                 <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="LMtsVQMjMt_f" /></p>
               </div>
               <button
@@ -614,7 +614,7 @@ export function AppearanceForm({
                       className="mt-0.5 h-4 w-4 accent-[#7C3AED]"
                     />
                     <span>
-                      <span className="flex items-center gap-1.5 text-sm font-semibold"><BadgePercent className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="Z8VTk3ll8Dc8" /></span>
+                      <span className="flex items-center gap-1.5 text-sm font-semibold"><BadgePercent className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="Z8VTk3ll8Dc8" /></span>
                       <span className="mt-1 block text-[11px] text-muted-foreground"><LocalizedText id="QDyDZqHqE6Gh" /></span>
                     </span>
                   </label>
@@ -669,7 +669,7 @@ export function AppearanceForm({
                         <p className="truncate text-sm font-bold">{block.title}</p>
                         <p className="text-[11px] text-muted-foreground">{PLACEMENT_LABELS[block.placement]}</p>
                         {block.discountType && block.discountValue ? (
-                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
                             <BadgePercent className="h-3 w-3" />
                             {block.discountType === "PERCENTAGE" ? `${block.discountValue}%` : `$${block.discountValue.toLocaleString("es-CL")}`} <LocalizedText id="EIWULeUtZHQf" />
                           </span>
@@ -679,8 +679,8 @@ export function AppearanceForm({
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title={legacy("4BiojLTPA9Ft")} aria-label={`Subir ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowUp className="h-3.5 w-3.5" /></button>
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title={legacy("QEto2IHPOec4")} aria-label={`Bajar ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowDown className="h-3.5 w-3.5" /></button>
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { isVisible: !block.isVisible })} title={block.isVisible ? "Ocultar" : "Mostrar"} aria-label={`${block.isVisible ? "Ocultar" : "Mostrar"} ${block.title}`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50">{block.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => setEditingPromoId((current) => current === block.id ? null : block.id)} title={legacy("rVB2TMpXD7v-")} aria-label={`Configurar descuento de ${block.title}`} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50"><BadgePercent className="h-3.5 w-3.5" /></button>
-                        <button type="button" disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title={legacy("WJHnyOkmLaQ6")} aria-label={`Eliminar ${block.title}`} className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => setEditingPromoId((current) => current === block.id ? null : block.id)} title={legacy("rVB2TMpXD7v-")} aria-label={`Configurar descuento de ${block.title}`} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"><BadgePercent className="h-3.5 w-3.5" /></button>
+                        <button type="button" disabled={promoBusyId === block.id} onClick={() => removePromo(block.id)} title={legacy("WJHnyOkmLaQ6")} aria-label={`Eliminar ${block.title}`} className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-red-600 hover:bg-red-500/20 disabled:opacity-50 dark:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
                     {block.subtitle && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{block.subtitle}</p>}
@@ -720,7 +720,7 @@ export function AppearanceForm({
           </div>
 
           <div className="sticky bottom-4 z-20 grid gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-xl backdrop-blur sm:grid-cols-2">
-            <button onClick={() => { setThemeError(""); setThemeModalOpen(true); }} data-tour="save-theme" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 text-sm font-bold text-[#7C3AED] hover:bg-[#7C3AED]/15">
+            <button onClick={() => { setThemeError(""); setThemeModalOpen(true); }} data-tour="save-theme" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 text-sm font-bold text-brand-foreground hover:bg-[#7C3AED]/15">
               <Sparkles className="h-4 w-4" /> <LocalizedText id="U_uEslczx-g5" />
             </button>
             <button onClick={handleSave} disabled={saving} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-sm font-bold text-white hover:bg-[#6D28D9] disabled:opacity-50">

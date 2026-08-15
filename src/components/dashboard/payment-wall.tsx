@@ -134,7 +134,7 @@ export function PaymentWall({
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-[#7C3AED]" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand-foreground" />
           <p className="text-sm font-medium text-muted-foreground">
             <LocalizedText id="r6UUaKySs_6p" />
           </p>
@@ -166,7 +166,7 @@ export function PaymentWall({
               {isPastDue ? (
                 <AlertTriangle className="h-8 w-8 text-amber-500" />
               ) : (
-                <Shield className="h-8 w-8 text-[#7C3AED]" />
+                <Shield className="h-8 w-8 text-brand-foreground" />
               )}
             </div>
             <h1 className="text-2xl font-bold">
@@ -197,7 +197,7 @@ export function PaymentWall({
 
           <div className="mb-6 flex items-center justify-between rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
             <span className="text-sm font-medium"><LocalizedText id="-o7Qvavda8sc" /> {planName}</span>
-            <span className="text-lg font-bold text-[#7C3AED]">
+            <span className="text-lg font-bold text-brand-foreground">
               {isInternational
                 ? paymentSimulatorEnabled
                   ? legacy("BnuGonaob6WJ")

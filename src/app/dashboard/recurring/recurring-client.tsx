@@ -174,7 +174,7 @@ export function RecurringClient({
                 onClick={() => setFilter(s)}
                 className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
-                    ? "border-[#7C3AED]/40 bg-[#7C3AED]/10 text-[#7C3AED]"
+                    ? "border-[#7C3AED]/40 bg-[#7C3AED]/10 text-brand-foreground"
                     : "border-border text-muted-foreground hover:border-[#7C3AED]/20 hover:text-foreground"
                 }`}
               >
@@ -221,7 +221,7 @@ export function RecurringClient({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">
                       {b.customerName.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -240,7 +240,7 @@ export function RecurringClient({
                   {nextApt && (
                     <>
                       <span>·</span>
-                      <span className="text-[#7C3AED]">
+                      <span className="text-brand-foreground">
                         <LocalizedText id="qnPO135fJqiV" /> {new Date(nextApt.startTime).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: timezone })}
                       </span>
                     </>
@@ -357,7 +357,7 @@ export function RecurringClient({
                     <div key={o.id} className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{new Date(o.originalDate).toLocaleDateString(locale, { timeZone: timezone })}</span>
-                        {o.newTime && <span className="text-[#7C3AED]"><LocalizedText id="93xQpK2XC2yY" /> {o.newTime}</span>}
+                        {o.newTime && <span className="text-brand-foreground"><LocalizedText id="93xQpK2XC2yY" /> {o.newTime}</span>}
                         {!o.newTime && <span className="text-red-500"><LocalizedText id="ZkayZHgaY7aC" /></span>}
                       </div>
                       {o.reason && <p className="text-muted-foreground">{o.reason}</p>}
@@ -374,7 +374,7 @@ export function RecurringClient({
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="dM2vqmftDgku" /></p>
                 <button
                   onClick={() => { setShowNoteEditor((v) => !v); setNoteText(selected.internalNotes ?? ""); }}
-                  className="text-xs text-[#7C3AED] hover:underline"
+                  className="text-xs text-brand-foreground hover:underline"
                 >
                   {showNoteEditor ? "Cancelar" : selected.internalNotes ? "Editar" : legacy("H-PzUezh1Xbn")}
                 </button>
@@ -419,7 +419,7 @@ export function RecurringClient({
                   navigator.clipboard.writeText(url).catch(() => {});
                   alert(legacy("n2S2ZbPnRCgQ"));
                 }}
-                className="flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 bg-[#7C3AED]/5 px-3 py-2 text-xs text-[#7C3AED] hover:bg-[#7C3AED]/10 transition-colors"
+                className="flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 bg-[#7C3AED]/5 px-3 py-2 text-xs text-brand-foreground hover:bg-[#7C3AED]/10 transition-colors"
               >
                 <Link2 className="h-3.5 w-3.5" />
                 <LocalizedText id="j0oPzpncwq5C" />
