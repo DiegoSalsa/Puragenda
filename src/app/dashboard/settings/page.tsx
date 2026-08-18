@@ -133,13 +133,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                <Sparkles className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="0fnZmBU27M9U" />
+                <Sparkles className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="0fnZmBU27M9U" />
               </div>
               <p className="text-sm text-muted-foreground">
                 <LocalizedText id="bYoyKusUmkuq" /> {LATEST_CHANGELOG_VERSION}<LocalizedText id="9VBN8M4YQ1ci" />
               </p>
             </div>
-            <span className="inline-flex w-fit items-center rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1 text-sm font-semibold text-[#7C3AED]">
+            <span className="inline-flex w-fit items-center rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1 text-sm font-semibold text-brand-foreground">
               {LATEST_CHANGELOG_VERSION}
             </span>
           </div>
@@ -148,7 +148,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {/* ── Plan / Suscripción ── */}
         <div id="plan" className="rounded-2xl border border-[#7C3AED]/20 bg-gradient-to-br from-[#7C3AED]/5 via-card to-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Crown className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="OlZo-uLCatLm" />
+            <Crown className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="OlZo-uLCatLm" />
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
@@ -211,7 +211,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {/* ── Deposit / Abono Config ── */}
         <div id="abonos" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Banknote className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="HraE--oj_ANc" />
+            <Banknote className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="HraE--oj_ANc" />
           </div>
           <DepositConfig
             initialDepositRequired={business.depositRequired}
@@ -222,21 +222,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="encargos" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-5 flex items-center gap-2 text-sm font-medium">
-            <Package className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="FPmh86BAXjU5" />
+            <Package className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="FPmh86BAXjU5" />
           </div>
           <ProductionOrdersConfig initialEnabled={business.productionOrdersEnabled} />
         </div>
 
         <div id="business-name" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Store className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="FW2JHoThaqiE" />
+            <Store className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="FW2JHoThaqiE" />
           </div>
           <BusinessNameEditor initialName={business.name} />
         </div>
 
         <div id="business-country" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Globe2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="AzILVqHZj-3Z" />
+            <Globe2 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="AzILVqHZj-3Z" />
           </div>
           <BusinessCountryEditor
             initialCountryCode={business.countryCode}
@@ -248,21 +248,21 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-logo" className="min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="TBHo5ixeBXEe" />
+            <ImageIcon className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="TBHo5ixeBXEe" />
           </div>
           <LogoUploader currentLogoUrl={business.logoUrl} />
         </div>
 
         <div id="business-location" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <MapPin className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="BU7iT1K1Hdbc" />
+            <MapPin className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="BU7iT1K1Hdbc" />
           </div>
           <BusinessLocationEditor initialAddress={business.address} initialMapsUrl={business.mapsUrl} />
         </div>
 
         <div id="business-locations" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <MapPin className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="n0PHfrlQk39K" />
+            <MapPin className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="n0PHfrlQk39K" />
           </div>
           <LocationsManager
             locations={locations.map((location) => ({ ...location, serviceIds: location.services.map((service) => service.serviceId) }))}
@@ -274,7 +274,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-hours" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Clock className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="0oqN3_JG9XpQ" />
+            <Clock className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="0oqN3_JG9XpQ" />
           </div>
           <BusinessHoursEditor
             initialHours={hours.map((h) => ({ dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart, breakEnd: h.breakEnd }))}
@@ -288,14 +288,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <CalendarRange className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="1cGLUQ-u54FK" />
+            <CalendarRange className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="1cGLUQ-u54FK" />
           </div>
           <ScheduleOverridesEditor locations={locations.filter((location) => location.isActive).map((location) => ({ id: location.id, name: location.name }))} />
         </div>
 
         <div id="business-slug" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Link2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="eucIRMJoFPm0" />
+            <Link2 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="eucIRMJoFPm0" />
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex-1 rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm">{business.slug}</div>
@@ -305,15 +305,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div id="business-api" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Key className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="IxidVfaXPyzl" />
-            <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-[#7C3AED]"><LocalizedText id="muJBmzNYAb4r" /></span>
+            <Key className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="IxidVfaXPyzl" />
+            <span className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs text-brand-foreground"><LocalizedText id="muJBmzNYAb4r" /></span>
           </div>
           <SecretField value={business.apiKey} label="API Key" />
         </div>
 
         <div id="business-embed" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Code2 className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="r6FidjgC5-92" />
+            <Code2 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="r6FidjgC5-92" />
           </div>
           <div className="flex items-start gap-3">
             <div className="flex-1 break-all rounded-xl border border-border bg-muted px-4 py-3 font-mono text-xs leading-relaxed">{iframeCode}</div>
@@ -326,7 +326,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <RefreshCw className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="VUmrpDXFPPHt" />
+            <RefreshCw className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="VUmrpDXFPPHt" />
           </div>
           <BusinessPoliciesEditor
             initialAllowRescheduling={business.allowRescheduling}

@@ -83,7 +83,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
         <div className="rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-              <Users className="h-4 w-4 text-[#7C3AED]" />
+              <Users className="h-4 w-4 text-brand-foreground" />
             </div>
             <div>
               <p className="text-2xl font-bold">{totalClients}</p>
@@ -166,7 +166,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                           <div className={`flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                             isBlocked
                               ? "bg-red-500/10 text-red-500"
-                              : "bg-[#7C3AED]/10 text-[#7C3AED]"
+                              : "bg-[#7C3AED]/10 text-brand-foreground"
                           }`}>
                             {client.name.charAt(0).toUpperCase()}
                           </div>
@@ -215,7 +215,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                         {client.noShowCount > 0 ? (
                           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                             isBlocked
-                              ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                              ? "bg-red-500/10 text-red-600 dark:text-red-300 border border-red-500/25"
                               : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                           }`}>
                             <AlertTriangle className="h-3 w-3" />
@@ -302,7 +302,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                                 {editingNotes !== client.id && (
                                   <button
                                     onClick={() => { setEditingNotes(client.id); setNotesValue(client.privateNotes ?? ""); }}
-                                    className="text-xs text-[#7C3AED] hover:underline"
+                                    className="text-xs text-brand-foreground hover:underline"
                                   >
                                     {client.privateNotes ? t("edit") : t("addNote")}
                                   </button>

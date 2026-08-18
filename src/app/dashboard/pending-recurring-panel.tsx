@@ -87,7 +87,7 @@ export function PendingRecurringPanel({ bookings, locale }: { bookings: PendingB
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-[#7C3AED] text-xs font-bold">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10 text-brand-foreground text-xs font-bold">
                     {b.customerName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">

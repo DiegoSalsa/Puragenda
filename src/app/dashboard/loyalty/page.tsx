@@ -24,7 +24,7 @@ export default async function LoyaltyPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <Stamp className="h-8 w-8 text-[#7C3AED]" />
+          <Stamp className="h-8 w-8 text-brand-foreground" />
           <LocalizedText id="KfCnckvorAoy" />
         </h1>
         <p className="mt-1 text-muted-foreground">
@@ -47,7 +47,7 @@ export default async function LoyaltyPage() {
 
       {/* Info card */}
       <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-6">
-        <h3 className="text-sm font-semibold text-[#7C3AED] mb-2"><LocalizedText id="Th8TqSkxybtS" /></h3>
+        <h3 className="text-sm font-semibold text-brand-foreground mb-2"><LocalizedText id="Th8TqSkxybtS" /></h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />

@@ -133,7 +133,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
               </button>
             )}
           </div>
-          <p className="break-words text-[11px] text-muted-foreground/60">
+          <p className="break-words text-[11px] text-muted-foreground">
             <LocalizedText id="C9xH_AWyDoAL" />
           </p>
         </div>

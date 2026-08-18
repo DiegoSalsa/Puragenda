@@ -239,4 +239,48 @@ describe("dashboard availability service", () => {
     expect(result.durationMinutes).toBe(60);
     expect(result.days[0].slots.map((slot) => slot.time)).toEqual(["09:00", "10:00", "11:00"]);
   });
+  it("uses only the requested professional schedule in the overview", async () => {
+    const unavailableOnMonday = staffMember("staff-1", ["service-1"]);
+    unavailableOnMonday.schedule = unavailableOnMonday.schedule.map((entry) =>
+      entry.dayOfWeek === 1 ? { ...entry, isWorking: false } : entry,
+    );
+    mocks.staffFindMany.mockResolvedValue([
+      unavailableOnMonday,
+      staffMember("staff-2", ["service-1"]),
+    ]);
+
+    const result = await getDashboardAvailability(user, businessContext, {
+      mode: "overview",
+      locationId: "location-1",
+      serviceIds: [],
+      staffId: "staff-1",
+      selectedOptionAlternativeIds: [],
+      fromDate: "2026-08-17",
+      days: 1,
+    });
+
+    expect(result.days[0].slots).toEqual([]);
+  });
+
+  it("does not let an own-agenda user request another professional overview", async () => {
+    mocks.permissions.mockResolvedValue([DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN]);
+    mocks.agendaScope.mockResolvedValue({ canSeeAllAgendas: false, staffId: "staff-1", ownStaffId: "staff-1" });
+
+    await expect(getDashboardAvailability(
+      { id: "worker-1", role: "STAFF" },
+      businessContext,
+      {
+        mode: "overview",
+        locationId: "location-1",
+        serviceIds: [],
+        staffId: "staff-2",
+        selectedOptionAlternativeIds: [],
+        fromDate: "2026-08-17",
+        days: 1,
+      },
+    )).rejects.toMatchObject({
+      code: "STAFF_FORBIDDEN",
+      status: 403,
+    });
+  });
 });

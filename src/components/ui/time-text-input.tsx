@@ -40,7 +40,7 @@ export function TimeTextInput({
     <div className={`relative min-w-0 ${className}`}>
       <Clock3
         aria-hidden="true"
-        className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#7C3AED] ${
+        className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-foreground ${
           compact ? "h-3.5 w-3.5" : "h-4 w-4"
         }`}
       />

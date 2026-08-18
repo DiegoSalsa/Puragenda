@@ -111,7 +111,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" data-tour="page-header">
         <div>
           <Link href="/dashboard/staff" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> <LocalizedText id="fV-b-49rx1Zb" /></Link>
-          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight"><ShieldCheck className="h-7 w-7 text-[#7C3AED]" /> <LocalizedText id="ZbvRWWfJzdSu" /></h1>
+          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight"><ShieldCheck className="h-7 w-7 text-brand-foreground" /> <LocalizedText id="ZbvRWWfJzdSu" /></h1>
           <p className="mt-1 text-sm text-muted-foreground"><LocalizedText id="kxPs0H5trOHo" /></p>
         </div>
         <button onClick={() => openNew()} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 text-sm font-bold text-white hover:bg-[#6D28D9]"><Plus className="h-4 w-4" /> <LocalizedText id="f4NNCnsZjLN8" /></button>
@@ -124,7 +124,7 @@ export function AccessProfilesManager({ profiles }: { profiles: Profile[] }) {
             <button key={template.name} onClick={() => openNew(template)} className="rounded-2xl border border-border p-4 text-left transition-all hover:border-[#7C3AED]/50 hover:bg-[#7C3AED]/5">
               <p className="font-bold">{template.name}</p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{template.description}</p>
-              <span className="mt-3 inline-flex rounded-full bg-[#7C3AED]/10 px-2.5 py-1 text-[11px] font-bold text-[#7C3AED]">{template.permissions.length} <LocalizedText id="wGkQB_6TEiGy" /></span>
+              <span className="mt-3 inline-flex rounded-full bg-[#7C3AED]/10 px-2.5 py-1 text-[11px] font-bold text-brand-foreground">{template.permissions.length} <LocalizedText id="wGkQB_6TEiGy" /></span>
             </button>
           ))}
         </div>

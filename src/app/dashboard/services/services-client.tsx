@@ -779,7 +779,7 @@ export function ServicesClient({
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-            <Settings2 className="h-4 w-4 text-[#7C3AED]" />
+            <Settings2 className="h-4 w-4 text-brand-foreground" />
           </div>
           <div className="flex-1 space-y-3">
             <div>
@@ -810,7 +810,7 @@ export function ServicesClient({
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-                <ChevronDown className="h-4 w-4 text-[#7C3AED]" />
+                <ChevronDown className="h-4 w-4 text-brand-foreground" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium"><LocalizedText id="4becVXhXiUlv" /></p>
@@ -822,7 +822,7 @@ export function ServicesClient({
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <span
                 className={`min-w-[5.5rem] text-right text-xs font-medium ${
-                  groupingEnabled ? "text-[#7C3AED]" : "text-muted-foreground"
+                  groupingEnabled ? "text-brand-foreground" : "text-muted-foreground"
                 }`}
               >
                 {savingGrouping ? servicesT("saving") : groupingEnabled ? servicesT("enabled") : servicesT("disabled")}
@@ -899,7 +899,7 @@ export function ServicesClient({
                           type="button"
                           onClick={() => handleRenameCategory(category.id)}
                           disabled={savingCategoryId === category.id || !editingCategoryName.trim()}
-                          className="rounded-lg px-2 py-1 text-xs font-medium text-[#7C3AED] disabled:opacity-40"
+                          className="rounded-lg px-2 py-1 text-xs font-medium text-brand-foreground disabled:opacity-40"
                         >
                           <LocalizedText id="E-UaIQ9F7RsJ" />
                         </button>
@@ -1096,7 +1096,7 @@ export function ServicesClient({
                       onClick={() => setForm((current) => ({ ...current, bookingMode: "APPOINTMENT" }))}
                       className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "APPOINTMENT" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="SaO6UqxqBow9" /></span>
+                      <span className="flex items-center gap-2 text-sm font-medium"><Clock3 className="h-4 w-4 text-brand-foreground" /><LocalizedText id="SaO6UqxqBow9" /></span>
                       <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="HAZDGkrnnGHM" /></span>
                     </button>
                     {productionOrdersEnabled && (
@@ -1108,7 +1108,7 @@ export function ServicesClient({
                       }}
                       className={`rounded-xl border p-3 text-left transition-colors ${form.bookingMode === "PRODUCTION" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
                     >
-                      <span className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="GDhCuWrf-Qul" /></span>
+                      <span className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-brand-foreground" /><LocalizedText id="GDhCuWrf-Qul" /></span>
                       <span className="mt-1 block text-xs text-muted-foreground"><LocalizedText id="P8wh8A0PWMMP" /></span>
                     </button>
                     )}
@@ -1150,7 +1150,7 @@ export function ServicesClient({
                 {form.bookingMode === "PRODUCTION" && productionOrdersEnabled && (
                   <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4 space-y-4">
                     <div>
-                      <p className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-[#7C3AED]" /><LocalizedText id="1VeOtcmEPjbp" /></p>
+                      <p className="flex items-center gap-2 text-sm font-medium"><CalendarRange className="h-4 w-4 text-brand-foreground" /><LocalizedText id="1VeOtcmEPjbp" /></p>
                       <p className="mt-1 text-xs text-muted-foreground"><LocalizedText id="4HBBlkL8aVfQ" /></p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1272,7 +1272,7 @@ export function ServicesClient({
                               },
                             ],
                           }))}
-                          className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 px-3 py-2 text-xs font-medium text-[#7C3AED]">
+                          className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#7C3AED]/40 px-3 py-2 text-xs font-medium text-brand-foreground">
                           <Plus className="h-4 w-4" /><LocalizedText id="XTE_zIidauTv" />
                         </button>
                       </div>
@@ -1299,7 +1299,7 @@ export function ServicesClient({
                 {depositEnabled && form.bookingMode === "APPOINTMENT" && (
                   <div className="space-y-3">
                     <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
+                      <Banknote className="h-3.5 w-3.5 text-brand-foreground" />
                       <LocalizedText id="VvjICQfMU1lM" />{currencyCode})
                     </label>
                     <input
@@ -1342,7 +1342,7 @@ export function ServicesClient({
                     <button
                       type="button"
                       onClick={addOptionCategory}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1.5 text-xs font-medium text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/20"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-3 py-1.5 text-xs font-medium text-brand-foreground transition-colors hover:bg-[#7C3AED]/20"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       <LocalizedText id="VCdqoDB_g8sH" />
@@ -1449,7 +1449,7 @@ export function ServicesClient({
                             <button
                               type="button"
                               onClick={() => addOptionAlternative(categoryIndex)}
-                              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#7C3AED] hover:bg-[#7C3AED]/10"
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-brand-foreground hover:bg-[#7C3AED]/10"
                             >
                               <Plus className="h-3.5 w-3.5" />
                               <LocalizedText id="_Q332iLdhLAO" />
@@ -1467,9 +1467,9 @@ export function ServicesClient({
                     <button
                       type="button"
                       onClick={() => setRecurringOpen((o) => !o)}
-                      className="flex flex-1 items-center gap-2 text-sm font-medium transition-colors hover:text-[#7C3AED]"
+                      className="flex flex-1 items-center gap-2 text-sm font-medium transition-colors hover:text-brand-foreground"
                     >
-                      <RefreshCw className="h-4 w-4 text-[#7C3AED]" />
+                      <RefreshCw className="h-4 w-4 text-brand-foreground" />
                       <span><LocalizedText id="uOE9qFXDDD_P" /></span>
                       {recurringEnabled && (
                         <span className="rounded-full bg-[#7C3AED] px-2 py-0.5 text-[10px] font-semibold text-white">
@@ -1533,7 +1533,7 @@ export function ServicesClient({
                                 onClick={() => setRecurringForm((p) => ({ ...p, mode: m }))}
                                 className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors text-center ${
                                   recurringForm.mode === m
-                                    ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]"
+                                    ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground"
                                     : "border-border text-muted-foreground hover:border-[#7C3AED]/40"
                                 }`}
                               >
@@ -1711,7 +1711,7 @@ export function ServicesClient({
                             <button
                               type="button"
                               onClick={addQuestion}
-                              className="rounded-xl bg-[#7C3AED]/10 px-3 py-2 text-[#7C3AED] hover:bg-[#7C3AED]/20"
+                              className="rounded-xl bg-[#7C3AED]/10 px-3 py-2 text-brand-foreground hover:bg-[#7C3AED]/20"
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </button>
@@ -1845,7 +1845,7 @@ export function ServicesClient({
                       </td>
                       <td className="py-3.5 pr-4">
                         {service.category ? (
-                          <span className="inline-flex rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
+                          <span className="inline-flex rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-brand-foreground">
                             {service.category.name}
                           </span>
                         ) : (
@@ -1856,7 +1856,7 @@ export function ServicesClient({
                         {service.description || "—"}
                       </td>
                       <td className="py-3.5 pr-4">
-                        <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
+                        <span className="inline-flex items-center rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-brand-foreground">
                           {service.bookingMode === "PRODUCTION"
                             ? service.productionScheduleMode === "CUSTOM"
                               ? servicesT("periods", { count: getCustomProductionWindows(service.customProductionWindows).filter((window) => window.isActive).length })
@@ -1895,7 +1895,7 @@ export function ServicesClient({
                       </td>
                       <td className="py-3.5 pr-4">
                         {service.recurringPlan ? (
-                          <span className="inline-flex items-center gap-1 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-[#7C3AED]">
+                          <span className="inline-flex items-center gap-1 rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2 py-0.5 text-xs font-medium text-brand-foreground">
                             <RefreshCw className="h-3 w-3" />
                             {servicesT("activeCount", { count: service._count?.recurringBookings ?? 0 })}
                           </span>

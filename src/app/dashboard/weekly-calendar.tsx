@@ -103,7 +103,7 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; 
   PENDING:          { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
   AWAITING_PAYMENT: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-300", dot: "bg-orange-400" },
   CONFIRMED:        { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
-  CANCELLED:        { bg: "bg-red-500/8", border: "border-red-500/15", text: "text-red-400/60", dot: "bg-red-400" },
+  CANCELLED:        { bg: "bg-red-500/8", border: "border-red-500/20", text: "text-red-500 dark:text-red-300", dot: "bg-red-400" },
   CHECKED_IN:       { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
   NO_SHOW:          { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
 };
@@ -432,7 +432,7 @@ export function WeeklyCalendar({
                   return (
                     <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: dateLocale })}</p>
-                      <p className={`text-xl font-bold ${isToday ? "text-[#7C3AED]" : ""}`}>{format(day, "d")}</p>
+                      <p className={`text-xl font-bold ${isToday ? "text-brand-foreground" : ""}`}>{format(day, "d")}</p>
                     </div>
                   );
                 })}
@@ -494,7 +494,7 @@ export function WeeklyCalendar({
                               <div className="flex items-center gap-1.5">
                                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                                 <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
-                                {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-[#7C3AED] opacity-70" />}
+                                {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-brand-foreground opacity-70" />}
                                 {apt.depositReceiptStatus === "PENDING" && <FileText className="ml-auto h-3 w-3 shrink-0 text-sky-400" />}
                               </div>
                               <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
@@ -569,7 +569,7 @@ export function WeeklyCalendar({
                         <div className="flex items-center gap-2">
                           <div className={`h-2 w-2 shrink-0 rounded-full ${sc.dot}`} />
                           <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
-                          {apt.recurringBookingId && <RefreshCw className="h-3 w-3 shrink-0 text-[#7C3AED] opacity-70" />}
+                          {apt.recurringBookingId && <RefreshCw className="h-3 w-3 shrink-0 text-brand-foreground opacity-70" />}
                           {apt.depositReceiptStatus === "PENDING" && <FileText className="h-3 w-3 shrink-0 text-sky-400" />}
                           <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
                         </div>

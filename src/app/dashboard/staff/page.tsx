@@ -91,7 +91,7 @@ export default async function StaffPage() {
       <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center" data-tour="page-header">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7C3AED]/10">
-            <Users className="h-5 w-5 text-[#7C3AED]" />
+            <Users className="h-5 w-5 text-brand-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl"><LocalizedText id="WvNULhqPYqbr" /></h1>
@@ -103,7 +103,7 @@ export default async function StaffPage() {
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15"><ShieldCheck className="h-4 w-4" /></span>
             <span>
               <span className="block text-sm font-black"><LocalizedText id="ZbvRWWfJzdSu" /></span>
-              <span className="block text-[11px] font-medium text-white/75"><LocalizedText id="2UY6bKLAF44s" /></span>
+              <span className="block text-[11px] font-medium text-white"><LocalizedText id="2UY6bKLAF44s" /></span>
             </span>
           </Link>
         )}

@@ -239,7 +239,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
               {entry.isOpen && hasBreak && (
                 <div className="grid gap-3 border-t border-[#7C3AED]/15 bg-[#7C3AED]/5 px-4 py-3 sm:grid-cols-[minmax(180px,1fr)_auto] sm:items-center">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-[#7C3AED]">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7C3AED]/10 text-brand-foreground">
                       <Coffee className="h-4 w-4" />
                     </span>
                     <div>

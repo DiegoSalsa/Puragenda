@@ -491,7 +491,7 @@ export function StaffList({
               {/* ── Card Header ── */}
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-muted text-muted-foreground"}`}>
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold ${s.isActive ? "bg-[#7C3AED]/10 text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
                     {s.imageUrl ? (
                       <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" />
                     ) : (
@@ -507,7 +507,7 @@ export function StaffList({
                   <span className="max-w-[190px] truncate rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground">
                     {s.accessProfileName || (s.role ? ROLE_LABELS[s.role] : legacy("tMEL0sL8WBp-"))}
                   </span>
-                  <button aria-label={`Configurar ${s.name}`} onClick={() => { setExpandedId(s.id); setDrawerTab("general"); setMenuId(null); }} className="flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-3 py-2 text-xs font-bold text-[#7C3AED] transition-colors hover:bg-[#7C3AED]/10">
+                  <button aria-label={`Configurar ${s.name}`} onClick={() => { setExpandedId(s.id); setDrawerTab("general"); setMenuId(null); }} className="flex items-center gap-1.5 rounded-lg border border-[#7C3AED]/30 bg-[#7C3AED]/5 px-3 py-2 text-xs font-bold text-brand-foreground transition-colors hover:bg-[#7C3AED]/10">
                     <Settings2 className="h-3.5 w-3.5" /> <LocalizedText id="1oXdubv62vlH" />
                   </button>
                   <button aria-label={`Más acciones para ${s.name}`} onClick={() => setMenuId(menuId === s.id ? null : s.id)} className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
@@ -530,7 +530,7 @@ export function StaffList({
               {assignedServiceNames.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 px-4 pb-3 sm:px-5 sm:pb-4 -mt-1">
                   {assignedServiceNames.slice(0, 2).map((name) => (
-                    <span key={name} className="inline-flex items-center gap-1 rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-2.5 py-0.5 text-[11px] font-medium text-[#7C3AED]">
+                    <span key={name} className="inline-flex items-center gap-1 rounded-full border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-2.5 py-0.5 text-[11px] font-medium text-brand-foreground">
                       <Wrench className="h-2.5 w-2.5" /> {name}
                     </span>
                   ))}
@@ -552,7 +552,7 @@ export function StaffList({
                 <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl">
                   <div className="border-b border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#7C3AED]/10 font-bold text-[#7C3AED]">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#7C3AED]/10 font-bold text-brand-foreground">
                         {s.imageUrl ? <img src={s.imageUrl} alt={s.name} className="h-full w-full object-cover" /> : s.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1"><p className="truncate font-bold">{s.name}</p><p className="truncate text-xs text-muted-foreground">{s.email}</p></div>
@@ -565,7 +565,7 @@ export function StaffList({
                         ["schedule", "Horario"],
                         ["blocks", "Bloqueos"],
                       ] as [StaffDrawerTab, string][]).map(([tab, label]) => (
-                        <button key={tab} type="button" onClick={() => setDrawerTab(tab)} className={`min-w-max flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${drawerTab === tab ? "bg-background text-[#7C3AED] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{label}</button>
+                        <button key={tab} type="button" onClick={() => setDrawerTab(tab)} className={`min-w-max flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${drawerTab === tab ? "bg-background text-brand-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{label}</button>
                       ))}
                     </div>
                   </div>
@@ -574,7 +574,7 @@ export function StaffList({
                   <div className="space-y-6">
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <ImageIcon className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="9JTgJRuLA1zA" />
+                      <ImageIcon className="h-3.5 w-3.5 text-brand-foreground" /> <LocalizedText id="9JTgJRuLA1zA" />
                     </p>
                     <div className="flex items-start gap-4 rounded-xl border border-border bg-muted/30 p-4">
                       <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
@@ -622,7 +622,7 @@ export function StaffList({
                   </div>
                   <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <ShieldAlert className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="4X_UEp5jpc1R" />
+                      <ShieldAlert className="h-3.5 w-3.5 text-brand-foreground" /> <LocalizedText id="4X_UEp5jpc1R" />
                     </p>
                     <div className="rounded-xl border border-border bg-muted/30 p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -659,7 +659,7 @@ export function StaffList({
                               <option value="">Usar rol clásico (compatibilidad)</option>
                               {accessProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
                             </select>
-                            {savingProfileId === s.id && <Loader2 className="h-4 w-4 animate-spin text-[#7C3AED]" />}
+                            {savingProfileId === s.id && <Loader2 className="h-4 w-4 animate-spin text-brand-foreground" />}
                           </div>
                           <p className="mt-1.5 text-[11px] text-muted-foreground"><LocalizedText id="KV-v-UdQob4Q" /></p>
                         </div>
@@ -684,7 +684,7 @@ export function StaffList({
                   {drawerTab === "services" && allServices.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                        <Wrench className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="Mm2FcceAWe1N" />
+                        <Wrench className="h-3.5 w-3.5 text-brand-foreground" /> <LocalizedText id="Mm2FcceAWe1N" />
                       </p>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {allServices.map((svc) => {
@@ -734,7 +734,7 @@ export function StaffList({
                     </div>}
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                        <Clock className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="9PPZ6eSGqpBe" />
+                        <Clock className="h-3.5 w-3.5 text-brand-foreground" /> <LocalizedText id="9PPZ6eSGqpBe" />
                       </p>
                       {s.locations.length > 0 && <select value={selectedLocationId} onChange={(event) => setScheduleLocationIds((current) => ({ ...current, [s.id]: event.target.value }))} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-semibold">
                         {s.locations.map((location) => <option key={location.locationId} value={location.locationId}>{location.name}</option>)}
@@ -757,7 +757,7 @@ export function StaffList({
                             }))
                           }));
                         }}
-                        className="text-[10px] font-bold uppercase underline decoration-2 underline-offset-2 hover:text-[#7C3AED]"
+                        className="text-[10px] font-bold uppercase underline decoration-2 underline-offset-2 hover:text-brand-foreground"
                       >
                         <LocalizedText id="HbZd7eXeC-XN" />
                       </button>
@@ -859,7 +859,7 @@ export function StaffList({
 
                           {entry.isWorking && hasBreak && (
                             <div className="flex flex-wrap items-center gap-2 border-t border-[#7C3AED]/15 bg-[#7C3AED]/5 px-3 py-2.5">
-                              <Coffee className="h-3.5 w-3.5 text-[#7C3AED]" />
+                              <Coffee className="h-3.5 w-3.5 text-brand-foreground" />
                               <span className="mr-1 text-[11px] font-bold text-foreground"><LocalizedText id="m9TR4ErVHfOj" /></span>
                               <TimeTextInput
                                 ariaLabel={`Inicio pausa ${dayLabel} de ${s.name}`}
@@ -895,7 +895,7 @@ export function StaffList({
                   {/* ── Section: Schedule Blocks ── */}
                   {drawerTab === "blocks" && <div className="space-y-3">
                     <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                      <Ban className="h-3.5 w-3.5 text-[#7C3AED]" /> <LocalizedText id="Rb1Ige_aW69O" />
+                      <Ban className="h-3.5 w-3.5 text-brand-foreground" /> <LocalizedText id="Rb1Ige_aW69O" />
                     </p>
                     <p className="text-xs text-muted-foreground">
                       <LocalizedText id="320zjvXVwVej" />

@@ -263,6 +263,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   timezone: selectedLocation.timezone,
                 }}
                 widgetSlug={business.slug}
+                staffId={showingOwnAgenda || !agendaScope.canSeeAllAgendas
+                  ? agendaScope.ownStaffId ?? undefined
+                  : undefined}
               />
             )}
             <CopyWidgetLink slug={business.slug} />

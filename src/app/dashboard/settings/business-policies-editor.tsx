@@ -213,7 +213,7 @@ export function BusinessPoliciesEditor({
         </div>
         <div className="flex flex-wrap gap-2">
           {SLOT_INTERVAL_OPTIONS.map((opt) => (
-            <button type="button" key={opt.value} onClick={() => setSlotInterval(opt.value)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${slotInterval === opt.value ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>{opt.label}</button>
+            <button type="button" key={opt.value} onClick={() => setSlotInterval(opt.value)} className={`rounded-xl border px-3 py-2 text-xs font-semibold ${slotInterval === opt.value ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground" : "border-border text-muted-foreground"}`}>{opt.label}</button>
           ))}
         </div>
         <label className="flex items-center gap-2 text-sm">

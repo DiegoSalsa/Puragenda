@@ -407,7 +407,7 @@ export function TemasGallery({
     <div className="space-y-5">
       {/* Search + Filters */}
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4" data-tour="theme-filters">
-        <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="e25ZDmqlUpM7" /></div>
+        <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="e25ZDmqlUpM7" /></div>
         {/* Search + sort row */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -453,7 +453,7 @@ export function TemasGallery({
             >
               {cat}
               <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                category === cat ? "bg-white/20 text-white" : "bg-muted-foreground/20 text-muted-foreground"
+                category === cat ? "bg-black/20 text-black" : "bg-muted-foreground/20 text-muted-foreground"
               }`}>
                 {categoryCounts[cat]}
               </span>
@@ -471,7 +471,7 @@ export function TemasGallery({
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-xs font-medium text-muted-foreground"><LocalizedText id="a3MZGgpLZ0IO" /></span>
           {["Todos", "Violeta", "Azul", "Verde", "Rojo", "Naranja", "Neutro"].map((family) => (
-            <button key={family} onClick={() => { setColorFamily(family); setPage(1); }} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${colorFamily === family ? "border-[#7C3AED] bg-[#7C3AED]/10 text-[#7C3AED]" : "border-border text-muted-foreground"}`}>
+            <button key={family} onClick={() => { setColorFamily(family); setPage(1); }} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${colorFamily === family ? "border-[#7C3AED] bg-[#7C3AED]/10 text-brand-foreground" : "border-border text-muted-foreground"}`}>
               {family !== "Todos" && <span className={`h-2.5 w-2.5 rounded-full ${family === "Violeta" ? "bg-violet-500" : family === "Azul" ? "bg-sky-500" : family === "Verde" ? "bg-emerald-500" : family === "Rojo" ? "bg-red-500" : family === "Naranja" ? "bg-orange-500" : "bg-zinc-500"}`} />}
               {family}
             </button>
@@ -487,7 +487,7 @@ export function TemasGallery({
           {(search || category !== "Todos" || origin !== "todos" || colorFamily !== "Todos") && (
             <button
               onClick={() => { setSearch(""); setCategory("Todos"); setOrigin("todos"); setColorFamily("Todos"); setSortBy("defecto"); setPage(1); }}
-              className="flex items-center gap-1 text-xs text-[#7C3AED] hover:underline"
+              className="flex items-center gap-1 text-xs text-brand-foreground hover:underline"
             >
               <X className="h-3 w-3" /> <LocalizedText id="v8LRYjWGjnzE" />
             </button>
@@ -534,7 +534,7 @@ export function TemasGallery({
                     <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                       <span className="min-w-0 break-words font-semibold">{preset.name}</span>
                       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                        {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]"><LocalizedText id="ZUHHL4fw4nHf" /></span>}
+                        {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-brand-foreground"><LocalizedText id="ZUHHL4fw4nHf" /></span>}
                         <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{preset.category}</span>
                       </div>
                     </div>
@@ -544,7 +544,7 @@ export function TemasGallery({
                   {preset.customId && (
                     <div className="grid grid-cols-2 gap-2">
                       <button disabled={mutating === preset.customId} onClick={() => handleDuplicate(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground"><Copy className="h-3.5 w-3.5" /> <LocalizedText id="iPdyh8vbqCdl" /></button>
-                      <button disabled={mutating === preset.customId} onClick={() => handleDelete(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-medium text-red-500 hover:bg-red-500/20"><Trash2 className="h-3.5 w-3.5" /> <LocalizedText id="yYlM8AL5C9C-" /></button>
+                      <button disabled={mutating === preset.customId} onClick={() => handleDelete(preset.customId!)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2 text-xs font-medium text-red-600 hover:bg-red-500/20 dark:text-red-300"><Trash2 className="h-3.5 w-3.5" /> <LocalizedText id="yYlM8AL5C9C-" /></button>
                     </div>
                   )}
 

@@ -91,7 +91,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
   return (
     <div className="space-y-7">
       <div data-tour="page-header">
-        <p className="text-sm font-medium text-[#7C3AED]">{t("production")}</p>
+        <p className="text-sm font-medium text-brand-foreground">{t("production")}</p>
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle", { business: businessName })}</p>
       </div>
@@ -104,7 +104,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
           [t("outstanding"), formatPrice(stats.outstanding, currencyCode), Banknote],
         ] as [string, string | number, LucideIcon][]).map(([label, value, Icon]) => (
           <div key={String(label)} className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between"><p className="text-xs text-muted-foreground">{String(label)}</p><Icon className="h-4 w-4 text-[#7C3AED]" /></div>
+            <div className="flex items-center justify-between"><p className="text-xs text-muted-foreground">{String(label)}</p><Icon className="h-4 w-4 text-brand-foreground" /></div>
             <p className="mt-2 text-2xl font-bold">{String(value)}</p>
           </div>
         ))}
@@ -130,7 +130,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
                   {columnOrders.map((order) => (
                     <button key={order.id} onClick={() => setSelected(order)} className="w-full rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#7C3AED]/40">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#7C3AED]">{order.orderNumber}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-foreground">{order.orderNumber}</span>
                         <span className="max-w-[110px] truncate text-[10px] text-muted-foreground">
                           {order.productionWindowLabel || format(parseISO(order.productionWeek), "d MMM", { locale: dateLocale })}
                         </span>
@@ -155,7 +155,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
           <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between border-b border-border p-5">
               <div>
-                <p className="text-xs font-semibold text-[#7C3AED]">{selected.orderNumber}</p>
+                <p className="text-xs font-semibold text-brand-foreground">{selected.orderNumber}</p>
                 <h2 className="mt-1 text-xl font-bold">{selected.petName} · {selected.serviceName}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{statusLabels[selected.status]}</p>
               </div>
@@ -178,13 +178,13 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
                 {selected.selectedOptions.length > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold">{t("options")}</h3>
-                    <div className="mt-2 flex flex-wrap gap-2">{selected.selectedOptions.map((option) => <span key={`${option.categoryName}-${option.alternativeName}`} className="rounded-lg bg-[#7C3AED]/10 px-2.5 py-1 text-xs text-[#7C3AED]">{option.categoryName}: {option.alternativeName}</span>)}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">{selected.selectedOptions.map((option) => <span key={`${option.categoryName}-${option.alternativeName}`} className="rounded-lg bg-[#7C3AED]/10 px-2.5 py-1 text-xs text-brand-foreground">{option.categoryName}: {option.alternativeName}</span>)}</div>
                   </div>
                 )}
               </div>
               <aside className="space-y-4">
                 <div className="rounded-xl border border-border p-4 text-sm">
-                  <p className="flex items-center gap-2 font-semibold"><CalendarRange className="h-4 w-4 text-[#7C3AED]" />{t("promisedDelivery")}</p>
+                  <p className="flex items-center gap-2 font-semibold"><CalendarRange className="h-4 w-4 text-brand-foreground" />{t("promisedDelivery")}</p>
                   {selected.productionWindowLabel && <p className="mt-2 font-medium">{selected.productionWindowLabel}</p>}
                   <p className="mt-1 text-muted-foreground">
                     {format(parseISO(selected.productionWeek), "d MMM", { locale: dateLocale })}
@@ -192,7 +192,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
                   </p>
                 </div>
                 <div className="rounded-xl border border-border p-4 text-sm">
-                  <p className="flex items-center gap-2 font-semibold"><UserRound className="h-4 w-4 text-[#7C3AED]" />{t("customer")}</p>
+                  <p className="flex items-center gap-2 font-semibold"><UserRound className="h-4 w-4 text-brand-foreground" />{t("customer")}</p>
                   <p className="mt-2">{selected.customerName}</p>
                   <p className="text-xs text-muted-foreground">{selected.customerEmail}</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />{selected.customerPhone}</p>
