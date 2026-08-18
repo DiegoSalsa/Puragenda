@@ -10,20 +10,22 @@ import { saveDepositConfigAction } from "@/server/actions/dashboard.actions";
 
 interface Props {
   initialDepositRequired: boolean;
+  initialDepositPaymentMode: "MERCADOPAGO" | "MANUAL_LINK";
   isMpConnected: boolean;
 }
 
-export function DepositConfig({ initialDepositRequired, isMpConnected }: Props) {
+export function DepositConfig({ initialDepositRequired, initialDepositPaymentMode, isMpConnected }: Props) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
   const [depositRequired, setDepositRequired] = useState(initialDepositRequired);
+  const [depositPaymentMode, setDepositPaymentMode] = useState(initialDepositPaymentMode);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   async function handleSave() {
     setSaving(true);
     setMessage("");
-    const result = await saveDepositConfigAction({ depositRequired });
+    const result = await saveDepositConfigAction({ depositRequired, depositPaymentMode });
     if (result.error) {
       setMessage(result.error);
     } else {
@@ -51,18 +53,54 @@ export function DepositConfig({ initialDepositRequired, isMpConnected }: Props) 
 
       {depositRequired && (
         <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold">Cómo cobrar el abono</legend>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3">
+              <input
+                type="radio"
+                name="deposit-payment-mode"
+                value="MERCADOPAGO"
+                checked={depositPaymentMode === "MERCADOPAGO"}
+                onChange={() => setDepositPaymentMode("MERCADOPAGO")}
+                className="mt-1 accent-[#7C3AED]"
+              />
+              <span>
+                <span className="block text-sm font-medium">Mercado Pago automático</span>
+                <span className="block text-xs text-muted-foreground">El pago confirma la reserva automáticamente.</span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3">
+              <input
+                type="radio"
+                name="deposit-payment-mode"
+                value="MANUAL_LINK"
+                checked={depositPaymentMode === "MANUAL_LINK"}
+                onChange={() => setDepositPaymentMode("MANUAL_LINK")}
+                className="mt-1 accent-[#7C3AED]"
+              />
+              <span>
+                <span className="block text-sm font-medium">Link de pago por servicio</span>
+                <span className="block text-xs text-muted-foreground">La clienta paga en un link externo y tú confirmas el abono desde la agenda.</span>
+              </span>
+            </label>
+          </fieldset>
           <p className="text-sm text-muted-foreground">
             <LocalizedText id="GxzMHvqCgWhI" /> <strong><LocalizedText id="UnRPpCLeNiGc" /></strong>.
           </p>
-          {!isMpConnected && (
+          {depositPaymentMode === "MERCADOPAGO" && !isMpConnected && (
             <p className="text-xs text-amber-400">
               <LocalizedText id="OX6jrt269pRv" />
+            </p>
+          )}
+          {depositPaymentMode === "MANUAL_LINK" && (
+            <p className="min-w-0 break-words text-xs text-amber-500">
+              Después de guardar, agrega el link correspondiente en cada servicio. Verifica el comprobante antes de marcar el abono como recibido.
             </p>
           )}
         </div>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={handleSave}
           disabled={saving}
@@ -72,7 +110,7 @@ export function DepositConfig({ initialDepositRequired, isMpConnected }: Props) 
           <LocalizedText id="E-UaIQ9F7RsJ" />
         </button>
         {message && (
-          <p className={`text-sm ${message.startsWith("✓") ? "text-emerald-400" : "text-red-400"}`}>
+          <p className={`min-w-0 break-words text-sm ${message.startsWith("✓") ? "text-emerald-400" : "text-red-400"}`}>
             {message}
           </p>
         )}

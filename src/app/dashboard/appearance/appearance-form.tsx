@@ -449,8 +449,8 @@ export function AppearanceForm({
 
   return (
     <>
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(420px,0.95fr)_minmax(460px,1.05fr)]">
-        <section className="space-y-3 xl:sticky xl:top-6" data-tour="appearance-preview">
+      <div className="grid min-w-0 max-w-full items-start gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <section className="min-w-0 max-w-full space-y-3 xl:sticky xl:top-6" data-tour="appearance-preview">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <Eye className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="g7lEnc8xsC-m" />
@@ -467,7 +467,7 @@ export function AppearanceForm({
             </button>
           </div>
           <div
-            className="relative min-h-[760px] overflow-hidden rounded-2xl border border-border shadow-xl"
+            className="relative min-h-[760px] min-w-0 max-w-full overflow-hidden rounded-2xl border border-border shadow-xl"
             style={{ background: data.backgroundColor }}
           >
             {previewLoading && (
@@ -500,14 +500,14 @@ export function AppearanceForm({
                 width="100%"
                 height="760"
                 onLoad={() => setPreviewLoading(false)}
-                className={`border-0 transition-opacity duration-300 ${previewLoading ? "opacity-0" : "opacity-100"}`}
+                className={`block max-w-full border-0 transition-opacity duration-300 ${previewLoading ? "opacity-0" : "opacity-100"}`}
               />
             )}
           </div>
           <p className="text-center text-[11px] text-muted-foreground"><LocalizedText id="EX7WEFjFstUK" /></p>
         </section>
 
-        <section className="space-y-6" data-tour="appearance-controls">
+        <section className="min-w-0 max-w-full space-y-6" data-tour="appearance-controls">
           <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
@@ -661,10 +661,10 @@ export function AppearanceForm({
               {displayedPromoBlocks.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"><LocalizedText id="RJkipA-P3kob" /></div>
               ) : displayedPromoBlocks.map((block) => (
-                <div key={block.id} className="flex gap-3 rounded-2xl border border-border bg-muted/30 p-3">
-                  <img src={block.imageUrl} alt={block.title} className="h-20 w-28 shrink-0 rounded-xl object-cover" />
+                <div key={block.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/30 p-3 sm:flex-row">
+                  <img src={block.imageUrl} alt={block.title} className="h-32 w-full shrink-0 rounded-xl object-cover sm:h-20 sm:w-28" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold">{block.title}</p>
                         <p className="text-[11px] text-muted-foreground">{PLACEMENT_LABELS[block.placement]}</p>
@@ -675,7 +675,7 @@ export function AppearanceForm({
                           </span>
                         ) : null}
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex max-w-full flex-wrap gap-1">
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "up" })} title={legacy("4BiojLTPA9Ft")} aria-label={`Subir ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowUp className="h-3.5 w-3.5" /></button>
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { direction: "down" })} title={legacy("QEto2IHPOec4")} aria-label={`Bajar ${block.title} en el widget`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"><ArrowDown className="h-3.5 w-3.5" /></button>
                         <button type="button" disabled={promoBusyId === block.id} onClick={() => mutatePromo(block.id, { isVisible: !block.isVisible })} title={block.isVisible ? "Ocultar" : "Mostrar"} aria-label={`${block.isVisible ? "Ocultar" : "Mostrar"} ${block.title}`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground disabled:opacity-50">{block.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}</button>

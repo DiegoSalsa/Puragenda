@@ -64,7 +64,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
-      <div className="flex fixed inset-0 overflow-hidden bg-background">
+      <div className="fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full overflow-hidden bg-background">
         <DashboardSidebar
           userName={user.name}
           widgetSlug={business?.slug}
@@ -77,7 +77,7 @@ export default async function DashboardLayout({
             <ContextualHelpButton />
           </header>
           <main id="tutorial-main" className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-            <div className="min-w-0 max-w-full px-4 pb-6 pt-[72px] sm:p-6 md:pt-6 xl:p-8">{children}</div>
+            <div className="w-full min-w-0 max-w-full px-4 pb-6 pt-[72px] sm:p-6 md:pt-6 xl:p-8">{children}</div>
           </main>
         </div>
         <div className="md:hidden">

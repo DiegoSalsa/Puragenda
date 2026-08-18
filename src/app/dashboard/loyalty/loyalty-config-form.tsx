@@ -56,8 +56,8 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Toggle */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-medium"><LocalizedText id="3Fsd3_4p-Tbb" /></p>
           <p className="text-xs text-muted-foreground">
             {isEnabled ? legacy("dsOLd6Gjm_X_") : legacy("eMrosfqSnkAk")}
@@ -209,7 +209,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
       )}
 
       {/* Submit */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
           disabled={loading}
@@ -220,7 +220,7 @@ export function LoyaltyConfigForm({ initialData }: LoyaltyConfigFormProps) {
         </button>
 
         {message && (
-          <p className={`text-sm font-medium animate-fade-in ${message.type === "success" ? "text-emerald-500" : "text-red-500"}`}>
+          <p className={`min-w-0 break-words text-sm font-medium animate-fade-in ${message.type === "success" ? "text-emerald-500" : "text-red-500"}`}>
             {message.text}
           </p>
         )}

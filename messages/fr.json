@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — Réservation en ligne pour les entreprises", "siteDescription": "Logiciel de réservation pour gérer rendez-vous, clients et professionnels au même endroit.", "homeTitle": "Puragenda — Votre agenda en ligne", "homeDescription": "Recevez des réservations, encaissez des acomptes et gérez votre activité avec un agenda disponible 24 h/24."
   },
   "navigation": {
+    "discounts": "Codes de réduction",
     "solutions": "Solutions",
     "features": "Fonctionnalités",
     "pricing": "Tarifs",

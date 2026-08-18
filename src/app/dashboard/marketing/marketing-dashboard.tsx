@@ -115,9 +115,9 @@ export function MarketingDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6">
       {/* ── Status Cards + Upsell ── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
         {/* Card: Campañas este mes */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-center gap-3 mb-4">
@@ -334,7 +334,7 @@ export function MarketingDashboard({
 
       {/* ── Campaign History ── */}
       {history.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="min-w-0 max-w-full rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
               <Clock className="h-5 w-5 text-[#7C3AED]" />

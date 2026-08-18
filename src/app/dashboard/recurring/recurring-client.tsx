@@ -159,7 +159,7 @@ export function RecurringClient({
     : "";
 
   return (
-    <div className="flex gap-4 min-h-[70vh]">
+    <div className="flex min-w-0 max-w-full gap-4 min-h-[70vh]">
       {/* ── LEFT: list ── */}
       <div className={`flex flex-col gap-3 ${selected ? "hidden lg:flex lg:w-80 shrink-0" : "w-full"}`}>
         {/* Filters */}
@@ -256,7 +256,7 @@ export function RecurringClient({
       {selected && (
         <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
           {/* Panel header */}
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div className="flex items-center gap-2 min-w-0">
               <button
                 onClick={closeDetail}
@@ -290,15 +290,15 @@ export function RecurringClient({
             <div className="grid sm:grid-cols-2 gap-3 text-sm">
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="wV364-RNk213" /></p>
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span>{selected.customerEmail}</span></div>
-                {selected.customerPhone && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs">T</span><span className="text-foreground">{selected.customerPhone}</span></div>}
-                {selected.customerRut && <div className="flex items-center gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 text-center text-xs"><LocalizedText id="OEOXHc_e5Qg-" /></span><span className="text-foreground">{taxIdLabel}: {selected.customerRut}</span></div>}
+                <div className="flex min-w-0 items-start gap-2"><User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="min-w-0 break-all">{selected.customerEmail}</span></div>
+                {selected.customerPhone && <div className="flex min-w-0 items-start gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 shrink-0 text-center text-xs">T</span><span className="min-w-0 break-all text-foreground">{selected.customerPhone}</span></div>}
+                {selected.customerRut && <div className="flex min-w-0 items-start gap-2 text-muted-foreground"><span className="h-3.5 w-3.5 shrink-0 text-center text-xs"><LocalizedText id="OEOXHc_e5Qg-" /></span><span className="min-w-0 break-words text-foreground">{taxIdLabel}: {selected.customerRut}</span></div>}
               </div>
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"><LocalizedText id="-o7Qvavda8sc" /></p>
-                <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /><span>{new Date(selected.startDate).toLocaleDateString(locale, { timeZone: "UTC" })} - {new Date(selected.endDate).toLocaleDateString(locale, { timeZone: "UTC" })}</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{selected.selectedDays.map((d) => `${WEEK_NAMES[d]} ${selected.selectedTimes[String(d)]}`).join(" / ")}</span>
+                <div className="flex min-w-0 items-start gap-2"><Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="min-w-0 break-words">{new Date(selected.startDate).toLocaleDateString(locale, { timeZone: "UTC" })} - {new Date(selected.endDate).toLocaleDateString(locale, { timeZone: "UTC" })}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 break-words">{selected.selectedDays.map((d) => `${WEEK_NAMES[d]} ${selected.selectedTimes[String(d)]}`).join(" / ")}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {selected.completedAppointments} / {selected.totalAppointments} <LocalizedText id="Kzy0uzeiNOS_" />

@@ -27,6 +27,7 @@ import { BusinessCountryEditor } from "./business-country-editor";
 import { LocationsManager } from "./locations-manager";
 import {
   getCountryConfig,
+  getCountryOptions,
   getMercadoPagoCurrency,
   isMercadoPagoCountryCode,
   isMercadoPagoCurrencyCompatible,
@@ -88,7 +89,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     : false;
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 max-w-full overflow-x-hidden space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="u1BxN-NjE3kV" /></h1>
         <p className="mt-1 text-muted-foreground"><LocalizedText id="M-ZrZLBNmuDs" /></p>
@@ -124,7 +125,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid min-w-0 max-w-full gap-6 [&>*]:min-w-0 [&>*]:max-w-full [&>*]:overflow-hidden">
         <Link
           href="/dashboard/changelog"
           className="rounded-2xl border border-[#7C3AED]/20 bg-card p-6 transition-colors hover:bg-muted/40"
@@ -214,6 +215,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
           <DepositConfig
             initialDepositRequired={business.depositRequired}
+            initialDepositPaymentMode={business.depositPaymentMode}
             isMpConnected={isMpConnected && isMercadoPagoCurrencyValid}
           />
         </div>
@@ -240,10 +242,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             initialCountryCode={business.countryCode}
             initialTimezone={business.timezone}
             initialCurrencyCode={business.currencyCode}
+            countryOptions={getCountryOptions("es")}
           />
         </div>
 
-        <div id="business-logo" className="rounded-2xl border border-border bg-card p-6">
+        <div id="business-logo" className="min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <ImageIcon className="h-4 w-4 text-[#7C3AED]" /> <LocalizedText id="TBHo5ixeBXEe" />
           </div>

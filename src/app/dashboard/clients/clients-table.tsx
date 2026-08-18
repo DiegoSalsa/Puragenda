@@ -77,7 +77,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
   const flaggedClients = clients.filter((c) => c.noShowCount >= 2).length;
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4">
       {/* Stats */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-4">
@@ -128,7 +128,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-card">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />
@@ -242,14 +242,14 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                           <div className="space-y-4 text-sm">
                             {/* Contact details */}
                             <div className="flex flex-wrap gap-4">
-                              <div className="flex items-center gap-2 text-muted-foreground">
+                              <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
                                 <Mail className="h-3.5 w-3.5 shrink-0" />
-                                <span className="font-medium text-foreground">{client.email}</span>
+                                <span className="min-w-0 break-all font-medium text-foreground">{client.email}</span>
                               </div>
                               {client.phone && (
-                                <div className="flex items-center gap-2 text-muted-foreground">
+                                <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
                                   <Phone className="h-3.5 w-3.5 shrink-0" />
-                                  <span className="font-medium text-foreground">{client.phone}</span>
+                                  <span className="min-w-0 break-all font-medium text-foreground">{client.phone}</span>
                                 </div>
                               )}
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -345,9 +345,9 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                                 </div>
                                 <div className="space-y-1">
                                   {client.recurringBookings.map((r) => (
-                                    <div key={r.id} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs">
-                                      <span className="font-medium">{r.serviceName || t("fallbackService")} · {t("duration", { count: r.durationMonths })}</span>
-                                      <span className={`rounded-lg px-2 py-0.5 font-medium ${
+                                    <div key={r.id} className="flex min-w-0 items-start justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs">
+                                      <span className="min-w-0 break-words font-medium">{r.serviceName || t("fallbackService")} · {t("duration", { count: r.durationMonths })}</span>
+                                      <span className={`shrink-0 rounded-lg px-2 py-0.5 font-medium ${
                                         r.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600" :
                                         r.status === "PENDING_APPROVAL" ? "bg-amber-500/10 text-amber-600" :
                                         "bg-blue-500/10 text-blue-600"

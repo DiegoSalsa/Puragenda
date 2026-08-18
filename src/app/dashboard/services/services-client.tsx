@@ -89,6 +89,7 @@ interface Service {
   duration: number;
   price: number;
   depositAmount: number;
+  depositPaymentUrl: string | null;
   bookingMode: "APPOINTMENT" | "PRODUCTION";
   productionScheduleMode: "WEEKLY" | "CUSTOM";
   weeklyProductionCapacity: number;
@@ -177,6 +178,7 @@ export function ServicesClient({
   groupServicesByCategory = false,
   maxServicesPerBooking = 1,
   depositEnabled = false,
+  depositPaymentMode = "MERCADOPAGO",
   productionOrdersEnabled = false,
   currencyCode = "CLP",
   taxIdLabel = "RUT",
@@ -187,6 +189,7 @@ export function ServicesClient({
   groupServicesByCategory?: boolean;
   maxServicesPerBooking?: number;
   depositEnabled?: boolean;
+  depositPaymentMode?: "MERCADOPAGO" | "MANUAL_LINK";
   productionOrdersEnabled?: boolean;
   currencyCode?: string;
   taxIdLabel?: string;
@@ -223,6 +226,7 @@ export function ServicesClient({
     duration: string;
     price: string;
     depositAmount: string;
+    depositPaymentUrl: string;
     bookingMode: "APPOINTMENT" | "PRODUCTION";
     productionScheduleMode: "WEEKLY" | "CUSTOM";
     weeklyProductionCapacity: string;
@@ -239,6 +243,7 @@ export function ServicesClient({
     duration: "",
     price: "",
     depositAmount: "",
+    depositPaymentUrl: "",
     bookingMode: "APPOINTMENT" as "APPOINTMENT" | "PRODUCTION",
     productionScheduleMode: "WEEKLY",
     weeklyProductionCapacity: "5",
@@ -426,6 +431,7 @@ export function ServicesClient({
       duration: "60",
       price: "",
       depositAmount: "",
+      depositPaymentUrl: "",
       bookingMode: "APPOINTMENT",
       productionScheduleMode: "WEEKLY",
       weeklyProductionCapacity: "5",
@@ -454,6 +460,7 @@ export function ServicesClient({
       duration: String(service.duration),
       price: String(service.price),
       depositAmount: String(service.depositAmount || 0),
+      depositPaymentUrl: service.depositPaymentUrl || "",
       bookingMode: service.bookingMode,
       productionScheduleMode: service.productionScheduleMode,
       weeklyProductionCapacity: String(service.weeklyProductionCapacity),
@@ -750,7 +757,7 @@ export function ServicesClient({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 max-w-full space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="UnRPpCLeNiGc" /></h1>
@@ -800,19 +807,19 @@ export function ServicesClient({
       {/* Optional widget categories */}
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
         <div className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED]/10">
                 <ChevronDown className="h-4 w-4 text-[#7C3AED]" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium"><LocalizedText id="4becVXhXiUlv" /></p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   <LocalizedText id="DEsIhrtwfWhc" />
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               <span
                 className={`min-w-[5.5rem] text-right text-xs font-medium ${
                   groupingEnabled ? "text-[#7C3AED]" : "text-muted-foreground"
@@ -1290,7 +1297,7 @@ export function ServicesClient({
                 )}
 
                 {depositEnabled && form.bookingMode === "APPOINTMENT" && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-3">
                     <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Banknote className="h-3.5 w-3.5 text-[#7C3AED]" />
                       <LocalizedText id="VvjICQfMU1lM" />{currencyCode})
@@ -1307,6 +1314,21 @@ export function ServicesClient({
                     <p className="text-[11px] text-muted-foreground/70">
                       <LocalizedText id="lf7yWjCtiUsq" />
                     </p>
+                    {depositPaymentMode === "MANUAL_LINK" && (
+                      <label className="block space-y-1.5">
+                        <span className="text-sm text-muted-foreground">Link de pago para este abono</span>
+                        <input
+                          type="url"
+                          value={form.depositPaymentUrl}
+                          onChange={(e) => setForm({ ...form, depositPaymentUrl: e.target.value })}
+                          placeholder="https://link.mercadopago.com.ar/..."
+                          className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+                        />
+                        <span className="block text-[11px] text-muted-foreground/70">
+                          Crea el link en la cuenta del negocio por el mismo monto indicado arriba. Debe comenzar con https://.
+                        </span>
+                      </label>
+                    )}
                   </div>
                 )}
 

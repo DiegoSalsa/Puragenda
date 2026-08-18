@@ -62,12 +62,14 @@ function dummyAppointment(countryCode: string, currencyCode: string) {
     customerName: "Cliente Dummy",
     depositAmount: 2500,
     paymentStatus: "PENDING",
+    depositPaymentUrl: null,
     business: {
       id: `business-${countryCode.toLowerCase()}`,
       name: `Negocio ${countryCode}`,
       countryCode,
       currencyCode,
       depositRequired: true,
+      depositPaymentMode: "MERCADOPAGO",
     },
     service: { name: "Servicio Dummy" },
   };
@@ -125,6 +127,49 @@ describe("Mercado Pago local dummy deposit flow", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "El negocio no tiene Mercado Pago conectado" });
+    expect(mpMocks.createPreference).not.toHaveBeenCalled();
+  });
+
+  it("returns the service payment link without calling Mercado Pago in manual mode", async () => {
+    findAppointment.mockResolvedValue({
+      ...dummyAppointment("AR", "ARS"),
+      depositPaymentUrl: "https://link.mercadopago.com.ar/lottyskin-abono",
+      business: {
+        ...dummyAppointment("AR", "ARS").business,
+        depositPaymentMode: "MANUAL_LINK",
+      },
+    } as never);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      preferenceId: null,
+      initPoint: "https://link.mercadopago.com.ar/lottyskin-abono",
+      sandboxInitPoint: null,
+      manual: true,
+    });
+    expect(getAccessToken).not.toHaveBeenCalled();
+    expect(mpMocks.createPreference).not.toHaveBeenCalled();
+    expect(updateAppointment).not.toHaveBeenCalled();
+  });
+
+  it("rejects a manual deposit appointment without a stored payment link", async () => {
+    findAppointment.mockResolvedValue({
+      ...dummyAppointment("AR", "ARS"),
+      business: {
+        ...dummyAppointment("AR", "ARS").business,
+        depositPaymentMode: "MANUAL_LINK",
+      },
+    } as never);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "Esta cita no tiene un link de pago configurado",
+    });
+    expect(getAccessToken).not.toHaveBeenCalled();
     expect(mpMocks.createPreference).not.toHaveBeenCalled();
   });
 

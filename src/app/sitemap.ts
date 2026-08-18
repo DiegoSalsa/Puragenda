@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/alternativa-agendapro", "monthly", 0.8],
     ["/terminos-y-condiciones", "yearly", 0.2],
     ["/politica-de-privacidad", "yearly", 0.2],
+    ["/politica-de-reembolsos", "yearly", 0.2],
     ["/guias", "weekly", 0.9],
   ].map(([path, changeFrequency, priority]) => ({
     url: absoluteUrl(path as string),

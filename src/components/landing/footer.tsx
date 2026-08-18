@@ -92,6 +92,7 @@ export function Footer() {
             <nav className="flex flex-col gap-2">
               <Link href="/terminos-y-condiciones" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("terms")}</Link>
               <Link href="/politica-de-privacidad" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("privacy")}</Link>
+              <Link href="/politica-de-reembolsos" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Política de Reembolsos</Link>
             </nav>
           </div>
         </div>

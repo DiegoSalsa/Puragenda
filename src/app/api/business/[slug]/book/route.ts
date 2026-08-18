@@ -9,10 +9,12 @@ import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
 import { resolveWidgetPromotion } from "@/server/services/widget-promotion.service";
+import { resolveBookingDiscount } from "@/server/services/booking-discount.service";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
 import { getLocationForBusiness } from "@/server/services/location.service";
+import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -64,6 +66,20 @@ function validateScheduleRange(
   return null;
 }
 
+async function createManualDepositPageUrl(appointmentIds: string[]) {
+  const primaryAppointmentId = appointmentIds[0];
+  const { token, tokenHash } = issueDepositReceiptToken();
+  await prisma.appointment.updateMany({
+    where: { id: { in: appointmentIds } },
+    data: { depositReceiptTokenHash: tokenHash },
+  });
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const paymentPageUrl = new URL(`/cita/${primaryAppointmentId}`, baseUrl);
+  paymentPageUrl.searchParams.set("receiptToken", token);
+  return paymentPageUrl.toString();
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -86,7 +102,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, promotionId, locationId, storyCampaignToken } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -254,25 +270,35 @@ export async function POST(
       return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
 
-    if (promotionId && rewardCode) {
+    if ([promotionId, rewardCode, discountCode].filter(Boolean).length > 1) {
       return Response.json(
-        { error: "Las promociones y los códigos de premio no se pueden combinar" },
+        { error: "No se pueden combinar promociones, premios ni códigos de descuento" },
         { status: 400 }
       );
     }
 
     const originalTotalPrice = totalPrice;
-    const promotionResolution = await resolveWidgetPromotion({
-      promotionId,
-      businessId: business.id,
-      subtotal: originalTotalPrice,
-    });
+    const bookingDiscountResolution = discountCode
+      ? await resolveBookingDiscount({ code: discountCode, businessId: business.id, subtotal: originalTotalPrice })
+      : { discount: null, quote: null };
+    if ("error" in bookingDiscountResolution) {
+      return Response.json({ error: bookingDiscountResolution.error }, { status: 400 });
+    }
+    const promotionResolution = discountCode
+      ? { promotion: null, quote: null }
+      : await resolveWidgetPromotion({
+          promotionId,
+          businessId: business.id,
+          subtotal: originalTotalPrice,
+      });
     if ("error" in promotionResolution) {
       return Response.json({ error: promotionResolution.error }, { status: 400 });
     }
     const appliedPromotion = promotionResolution.promotion;
-    const promotionDiscountAmount = promotionResolution.quote?.discountAmount ?? 0;
-    totalPrice = promotionResolution.quote?.discountedTotal ?? originalTotalPrice;
+    const appliedBookingDiscount = bookingDiscountResolution.discount;
+    const discountQuote = bookingDiscountResolution.quote ?? promotionResolution.quote;
+    const promotionDiscountAmount = discountQuote?.discountAmount ?? 0;
+    totalPrice = discountQuote?.discountedTotal ?? originalTotalPrice;
 
     const requestedStart = new Date(startTime);
     const requestedEnd = new Date(endTime);
@@ -522,18 +548,30 @@ export async function POST(
     });
 
     // ── Check deposit requirements (per-service) ──
-    let totalDepositAmount = service.depositAmount || 0;
-    if (additionalIds.length > 0) {
-      const additionalServicesForDeposit = await prisma.service.findMany({
-        where: { id: { in: additionalIds }, businessId: business.id },
-        select: { depositAmount: true },
-      });
-      for (const s of additionalServicesForDeposit) {
-        totalDepositAmount += s.depositAmount || 0;
+    let totalDepositAmount = allSelectedServices.reduce(
+      (sum, selected) => sum + (selected.depositAmount || 0),
+      0,
+    );
+    totalDepositAmount = Math.min(totalDepositAmount, totalPrice);
+    const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
+    const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
+
+    if (business.depositRequired && totalDepositAmount > 0 && usesManualPaymentLink) {
+      if (allServiceIds.length > 1) {
+        return Response.json(
+          { error: "El pago por link solo admite un servicio por reserva. Selecciona un único servicio." },
+          { status: 409 },
+        );
+      }
+      if (!manualPaymentUrl) {
+        return Response.json(
+          { error: "Este servicio todavía no tiene configurado su link de pago. Contacta al negocio." },
+          { status: 409 },
+        );
       }
     }
-    totalDepositAmount = Math.min(totalDepositAmount, totalPrice);
-    const businessMpAccessToken = business.depositRequired && totalDepositAmount > 0
+
+    const businessMpAccessToken = business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink
       ? await getValidMercadoPagoAccessToken(business.id)
       : null;
     if (
@@ -550,7 +588,9 @@ export async function POST(
         { status: 409 },
       );
     }
-    const depositRequired = business.depositRequired && totalDepositAmount > 0 && !!businessMpAccessToken;
+    const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
+      usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
+    );
 
     if (hasStaffAssignments) {
       const assignmentServiceIds = new Set(staffAssignments.map((assignment) => assignment.serviceId));
@@ -732,12 +772,15 @@ export async function POST(
           totalPrice: groupDiscountedPrice,
           originalTotalPrice: groupPrice,
           discountAmount: groupPrice - groupDiscountedPrice,
+          bookingDiscountCodeId: appliedBookingDiscount?.id,
+          bookingDiscountCodeValue: appliedBookingDiscount?.code,
           promotionId: appliedPromotion?.id,
           promotionTitle: appliedPromotion?.title,
           selectedOptions: selectedOptionsSnapshot.filter((option) => assignments.some((assignment) => assignment.serviceId === option.serviceId)),
           clientId: client.id,
           depositRequired,
           depositAmount: groupDeposit,
+          depositPaymentUrl: manualPaymentUrl,
           storyCampaignId: storyCampaign?.id,
         });
 
@@ -748,7 +791,9 @@ export async function POST(
         createdAppointments.push(result.appointment);
       }
 
-      let paymentUrl: string | null = null;
+      let paymentUrl: string | null = depositRequired && usesManualPaymentLink
+        ? await createManualDepositPageUrl(createdAppointments.map((appointment) => appointment.id))
+        : null;
 
       if (depositRequired && businessMpAccessToken) {
         try {
@@ -874,12 +919,15 @@ export async function POST(
       totalPrice,
       originalTotalPrice,
       discountAmount: promotionDiscountAmount,
+      bookingDiscountCodeId: appliedBookingDiscount?.id,
+      bookingDiscountCodeValue: appliedBookingDiscount?.code,
       promotionId: appliedPromotion?.id,
       promotionTitle: appliedPromotion?.title,
       selectedOptions: selectedOptionsSnapshot,
       clientId: client.id,
       depositRequired,
       depositAmount: totalDepositAmount,
+      depositPaymentUrl: manualPaymentUrl,
       storyCampaignId: storyCampaign?.id,
     });
 
@@ -888,7 +936,9 @@ export async function POST(
     }
 
     // ── If deposit required, create MP payment preference ──
-    let paymentUrl: string | null = null;
+    let paymentUrl: string | null = depositRequired && usesManualPaymentLink
+      ? await createManualDepositPageUrl([result.appointment.id])
+      : null;
 
     if (depositRequired && businessMpAccessToken) {
       try {

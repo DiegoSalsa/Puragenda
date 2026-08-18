@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — Online booking for service businesses", "siteDescription": "Online booking software to manage appointments, clients, and professionals in one place.", "homeTitle": "Puragenda — Your online booking system", "homeDescription": "Take bookings, collect deposits, and run your service business with an online schedule available 24/7."
   },
   "navigation": {
+    "discounts": "Discount codes",
     "solutions": "Solutions",
     "features": "Features",
     "pricing": "Pricing",

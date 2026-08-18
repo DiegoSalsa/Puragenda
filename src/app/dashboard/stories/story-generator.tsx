@@ -1008,7 +1008,7 @@ export function StoryGenerator({
     "rounded-[1.65rem] border-2 border-foreground bg-white p-5 shadow-[5px_5px_0_#E9D8FF] sm:p-6";
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-8 pb-28 lg:space-y-10">
+    <div className="mx-auto min-w-0 max-w-full max-w-[1440px] space-y-8 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:space-y-10">
       <section
         data-tour="page-header"
         className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-[#E9D8FF] p-6 shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10"
@@ -1264,12 +1264,12 @@ export function StoryGenerator({
           ))}
         </div>
 
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,480px)_minmax(430px,1fr)]">
+        <div className="grid min-w-0 max-w-full items-start gap-6 xl:grid-cols-[minmax(0,480px)_minmax(430px,1fr)]">
           <div
             className={`${mobilePanel === "CONTENT" || mobilePanel === "DESIGN" ? "block" : "hidden"} space-y-5 xl:block`}
           >
             <section
-              className={`${panelClass} ${mobilePanel === "DESIGN" ? "hidden xl:block" : ""}`}
+              className={`${panelClass} min-w-0 max-w-full ${mobilePanel === "DESIGN" ? "hidden xl:block" : ""}`}
             >
               <div className="flex items-center gap-3 border-b-2 border-foreground/10 pb-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-sm font-black text-white">
@@ -1981,19 +1981,19 @@ export function StoryGenerator({
 
           <section
             data-tour="story-preview"
-            className={`${mobilePanel === "PREVIEW" ? "block" : "hidden"} overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#171717] text-white shadow-[6px_6px_0_#FF5C8A] xl:sticky xl:top-6 xl:block`}
+            className={`${mobilePanel === "PREVIEW" ? "block" : "hidden"} min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border-2 border-foreground bg-[#171717] text-white shadow-[6px_6px_0_#FF5C8A] xl:sticky xl:top-6 xl:block`}
           >
-            <div className="flex items-center justify-between gap-3 border-b border-white/15 px-5 py-4">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 border-b border-white/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
                 <LayoutTemplate className="h-5 w-5 text-[#C4A2FF]" />
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-black">{t("preview")}</h3>
                   <p className="text-[10px] uppercase tracking-wider text-white/45">
                     {t("format")}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap justify-end gap-1">
                 <button
                   type="button"
                   disabled={!renderData}
@@ -2011,10 +2011,10 @@ export function StoryGenerator({
                 </button>
               </div>
             </div>
-            <div className="flex min-h-[620px] items-center justify-center overflow-hidden bg-[#242128] p-4 sm:p-7">
+            <div className="flex min-h-[620px] min-w-0 items-center justify-center overflow-hidden bg-[#242128] p-4 sm:p-7">
               {renderData ? (
-                <div className="relative h-[547px] w-[308px] overflow-hidden rounded-[1.4rem] border-[5px] border-black bg-black shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:h-[653px] sm:w-[367px]">
-                  <div className="h-[1920px] w-[1080px] origin-top-left scale-[.285] sm:scale-[.34]">
+                <div className="relative h-[454px] w-[256px] max-w-full overflow-hidden rounded-[1.4rem] border-[5px] border-black bg-black shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:h-[653px] sm:w-[367px]">
+                  <div className="h-[1920px] w-[1080px] origin-top-left scale-[.237] sm:scale-[.34]">
                     <div ref={storyNodeRef} className="h-[1920px] w-[1080px]">
                       <AvailabilityStoryImage
                         data={renderData}
@@ -2046,7 +2046,7 @@ export function StoryGenerator({
               )}
             </div>
             {renderData && showVariants && (
-              <div className="grid grid-cols-3 gap-3 border-t border-white/10 bg-[#201D24] p-4">
+              <div className="grid grid-cols-2 gap-3 border-t border-white/10 bg-[#201D24] p-4 sm:grid-cols-3">
                 {variantTemplates.map((variant) => (
                   <button
                     key={variant}
@@ -2246,7 +2246,7 @@ export function StoryGenerator({
         </section>
       )}
 
-      <div className="fixed inset-x-3 bottom-3 z-40 flex gap-2 rounded-full border-2 border-foreground bg-white p-2 shadow-[5px_5px_0_#171717] xl:hidden">
+      <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 flex gap-2 rounded-full border-2 border-foreground bg-white p-2 shadow-[5px_5px_0_#171717] xl:hidden">
         <button
           type="button"
           disabled={loading || !formValid}

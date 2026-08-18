@@ -6,18 +6,17 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getCountryConfig, getCountryOptions, getCurrencyOptions, getTimezoneOptions } from "@/core/countries";
+import { getCountryConfig, getCurrencyOptions, getTimezoneOptions } from "@/core/countries";
 import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";
-
-const countryOptions = getCountryOptions("es");
 
 interface Props {
   initialCountryCode: string;
   initialTimezone: string;
   initialCurrencyCode: string;
+  countryOptions: Array<{ code: string; name: string }>;
 }
 
-export function BusinessCountryEditor({ initialCountryCode, initialTimezone, initialCurrencyCode }: Props) {
+export function BusinessCountryEditor({ initialCountryCode, initialTimezone, initialCurrencyCode, countryOptions }: Props) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
   const [countryCode, setCountryCode] = useState(initialCountryCode);

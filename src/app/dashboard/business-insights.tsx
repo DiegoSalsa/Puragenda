@@ -106,7 +106,7 @@ function BarList({
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div key={item.label} className="space-y-1.5">
+        <div key={item.label} className="min-w-0 space-y-1.5">
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate font-medium">{item.label}</span>
             <span className="shrink-0 text-muted-foreground">
@@ -150,7 +150,7 @@ export async function BusinessInsights({
   ].filter((item) => item.value > 0);
 
   return (
-    <section className="space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section className="min-w-0 max-w-full space-y-5 overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#7C3AED]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#A78BFA]">
@@ -215,13 +215,13 @@ export async function BusinessInsights({
             icon: Clock3,
           },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-border bg-background/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+          <div key={stat.label} className="min-w-0 rounded-xl border border-border bg-background/60 p-4">
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <p className="min-w-0 break-words text-sm font-medium text-muted-foreground">{stat.label}</p>
               <stat.icon className="h-4 w-4 text-muted-foreground/60" />
             </div>
             <p className="mt-3 text-2xl font-bold tracking-tight">{stat.value}</p>
-            <div className="mt-2 flex min-h-6 items-center justify-between gap-2">
+            <div className="mt-2 flex min-h-6 flex-wrap items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">{stat.helper}</span>
               {"trend" in stat && <TrendPill value={stat.trend ?? null} noComparisonLabel={t("noComparison")} comparisonLabel={t("versusPrevious")} />}
             </div>

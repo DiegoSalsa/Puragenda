@@ -78,7 +78,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-3 sm:gap-5">
+      <div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:gap-5">
         {/* Logo preview */}
         <div className="relative shrink-0">
           <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted">
@@ -100,11 +100,11 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-2.5">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex min-w-0 w-full flex-col gap-2.5">
+          <p className="break-words text-sm text-muted-foreground">
             <LocalizedText id="crHzXhObvPQ1" />
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -133,7 +133,7 @@ export function LogoUploader({ currentLogoUrl }: { currentLogoUrl: string | null
               </button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground/60">
+          <p className="break-words text-[11px] text-muted-foreground/60">
             <LocalizedText id="C9xH_AWyDoAL" />
           </p>
         </div>

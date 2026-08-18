@@ -254,10 +254,10 @@ export function DunningActions({ compact = false }: { compact?: boolean }) {
       )}
 
       {modalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex overflow-y-auto bg-black/70 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:justify-center">
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="flex items-center gap-2 text-lg font-bold">
                   <ShieldCheck className="h-5 w-5 text-emerald-500" />
                   <LocalizedText id="Nv5HtqlVM6BT" />

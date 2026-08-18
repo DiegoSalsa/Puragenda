@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — Online-Terminplanung für Unternehmen", "siteDescription": "Buchungssoftware zur zentralen Verwaltung von Terminen, Kunden und Fachkräften.", "homeTitle": "Puragenda — Ihre Online-Terminplanung", "homeDescription": "Nehmen Sie Buchungen und Anzahlungen an und verwalten Sie Ihr Unternehmen rund um die Uhr."
   },
   "navigation": {
+    "discounts": "Rabattcodes",
     "solutions": "Lösungen",
     "features": "Funktionen",
     "pricing": "Preise",

@@ -67,6 +67,7 @@ export async function createService(data: {
   duration: number;
   price: number;
   depositAmount?: number;
+  depositPaymentUrl?: string | null;
   bookingMode?: "APPOINTMENT" | "PRODUCTION";
   productionScheduleMode?: "WEEKLY" | "CUSTOM";
   weeklyProductionCapacity?: number;
@@ -114,6 +115,7 @@ export async function updateService(
     duration?: number;
     price?: number;
     depositAmount?: number;
+    depositPaymentUrl?: string | null;
     bookingMode?: "APPOINTMENT" | "PRODUCTION";
     productionScheduleMode?: "WEEKLY" | "CUSTOM";
     weeklyProductionCapacity?: number;

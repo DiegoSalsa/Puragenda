@@ -85,10 +85,10 @@ export function PosPaymentDialog({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex overflow-y-auto bg-black/75 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:justify-center" onClick={() => setOpen(false)}>
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A78BFA]">POS Puragenda</p>
                 <h3 className="mt-1 text-xl font-bold">Cobro con Mercado Pago</h3>
               </div>
@@ -123,8 +123,8 @@ export function PosPaymentDialog({
             {!loading && payment && payment.status !== "APPROVED" && (
               <div className="space-y-4">
                 {payment.qrImageDataUrl && (
-                  <div className="mx-auto w-fit rounded-3xl bg-white p-3">
-                    <Image src={payment.qrImageDataUrl} alt="QR de cobro Mercado Pago" width={280} height={280} unoptimized priority />
+                  <div className="mx-auto max-w-full w-fit rounded-3xl bg-white p-3">
+                    <Image className="h-auto max-w-full" src={payment.qrImageDataUrl} alt="QR de cobro Mercado Pago" width={280} height={280} unoptimized priority />
                   </div>
                 )}
                 <div className="text-center">

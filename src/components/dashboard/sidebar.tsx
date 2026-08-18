@@ -26,6 +26,7 @@ import {
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  Percent,
   RefreshCw,
   Settings,
   Stamp,
@@ -62,6 +63,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/recurring", label: "subscriptions", icon: RefreshCw },
   { href: "/dashboard/loyalty", label: "loyalty", icon: Stamp },
   { href: "/dashboard/marketing", label: "marketing", icon: Mail },
+  { href: "/dashboard/discounts", label: "discounts", icon: Percent },
   { href: "/dashboard/stories", label: "stories", icon: ImagePlus },
   {
     label: "appearance",
@@ -98,6 +100,7 @@ const navSectionDefinitions = [
       "subscriptions",
       "loyalty",
       "marketing",
+      "discounts",
       "stories",
       "referrals",
       "rewards",
@@ -243,6 +246,7 @@ function SidebarContent({
             "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
             "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
             "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
+            "/dashboard/discounts": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
             "/dashboard/stories": [
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
@@ -618,7 +622,7 @@ export function DashboardSidebar({
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] md:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-b border-border bg-sidebar pb-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[4.75rem] pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground"
@@ -632,7 +636,7 @@ export function DashboardSidebar({
           className="h-8 w-auto"
         />
       </div>
-      <div className="h-[52px] shrink-0 md:hidden" />
+      <div className="h-[calc(52px+env(safe-area-inset-top))] shrink-0 md:hidden" />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">

@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — Reservas online y agenda para negocios", "siteDescription": "Sistema de reservas online para gestionar citas, clientes y profesionales desde un solo lugar.", "homeTitle": "Puragenda — Tu agenda online", "homeDescription": "Recibe reservas, cobra abonos y gestiona tu negocio con una agenda online disponible 24/7."
   },
   "navigation": {
+    "discounts": "Códigos de descuento",
     "solutions": "Soluciones",
     "features": "Características",
     "pricing": "Precios",

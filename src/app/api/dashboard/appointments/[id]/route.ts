@@ -13,7 +13,11 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { managedAppointmentSchema } from "@/server/validations/appointment-management";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
-import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import {
+  removeAppointmentFromGoogle,
+  syncAppointmentToGoogle,
+} from "@/server/services/google-calendar.service";
+import { cloudinary } from "@/server/lib/cloudinary";
 
 function canManageTarget(
   permissions: string[],
@@ -26,6 +30,33 @@ function canManageTarget(
     permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN) &&
     ownStaffId === targetStaffId
   );
+}
+
+async function sendConfirmedAppointmentNotifications(appointmentId: string) {
+  const fullAppointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: {
+      service: true,
+      staff: true,
+      business: { include: { owner: { select: { email: true, name: true } } } },
+    },
+  });
+
+  if (!fullAppointment) return;
+  await sendConfirmationEmail(fullAppointment);
+  if (fullAppointment.staff?.email) {
+    await sendAppointmentActionStaffNotification({
+      action: "confirmed",
+      customerName: fullAppointment.customerName,
+      serviceName: fullAppointment.service.name,
+      staffName: fullAppointment.staff.name,
+      staffEmail: fullAppointment.staff.email,
+      startTime: fullAppointment.startTime,
+      endTime: fullAppointment.endTime,
+      businessName: fullAppointment.business.name,
+      timezone: fullAppointment.business.timezone,
+    });
+  }
 }
 
 export async function PATCH(
@@ -54,6 +85,58 @@ export async function PATCH(
 
     const body = await request.json();
     const { status } = body;
+
+    if (body.markDepositPaid === true) {
+      if (!existing.depositAmount || existing.depositAmount <= 0) {
+        return Response.json({ error: "Esta cita no tiene un abono pendiente" }, { status: 409 });
+      }
+      if (existing.paymentStatus === "APPROVED") return Response.json(existing);
+      if (existing.status !== "AWAITING_PAYMENT" || existing.paymentStatus !== "PENDING") {
+        return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
+      }
+
+      const paidTransition = await prisma.appointment.updateMany({
+        where: { id, status: "AWAITING_PAYMENT", paymentStatus: "PENDING" },
+        data: {
+          status: "CONFIRMED",
+          paymentStatus: "APPROVED",
+          ...(existing.depositReceiptStatus === "PENDING" && {
+            depositReceiptStatus: "APPROVED",
+            depositReceiptReviewedAt: new Date(),
+            depositReceiptReviewedById: user.id,
+          }),
+        },
+      });
+      if (paidTransition.count === 0) {
+        return Response.json({ error: "El estado del abono cambió; actualiza la agenda" }, { status: 409 });
+      }
+
+      await syncAppointmentToGoogle(id);
+      await sendConfirmedAppointmentNotifications(id);
+      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+    }
+
+    if (body.rejectDepositReceipt === true) {
+      if (existing.status !== "AWAITING_PAYMENT" || existing.paymentStatus !== "PENDING") {
+        return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
+      }
+      if (existing.depositReceiptStatus !== "PENDING") {
+        return Response.json({ error: "No hay un comprobante pendiente de revisión" }, { status: 409 });
+      }
+
+      const rejected = await prisma.appointment.updateMany({
+        where: { id, status: "AWAITING_PAYMENT", paymentStatus: "PENDING", depositReceiptStatus: "PENDING" },
+        data: {
+          depositReceiptStatus: "REJECTED",
+          depositReceiptReviewedAt: new Date(),
+          depositReceiptReviewedById: user.id,
+        },
+      });
+      if (rejected.count === 0) {
+        return Response.json({ error: "El comprobante cambió de estado; actualiza la agenda" }, { status: 409 });
+      }
+      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+    }
 
     if (!status || !["PENDING", "CONFIRMED", "CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"].includes(status)) {
       return Response.json(
@@ -114,31 +197,7 @@ export async function PATCH(
 
     // Send confirmation email when status changes to CONFIRMED
     if (status === "CONFIRMED") {
-      const fullAppointment = await prisma.appointment.findUnique({
-        where: { id },
-        include: {
-          service: true,
-          staff: true,
-          business: { include: { owner: { select: { email: true, name: true } } } },
-        },
-      });
-
-      if (fullAppointment) {
-        await sendConfirmationEmail(fullAppointment);
-        if (fullAppointment.staff?.email) {
-          await sendAppointmentActionStaffNotification({
-            action: "confirmed",
-            customerName: fullAppointment.customerName,
-            serviceName: fullAppointment.service.name,
-            staffName: fullAppointment.staff.name,
-            staffEmail: fullAppointment.staff.email,
-            startTime: fullAppointment.startTime,
-            endTime: fullAppointment.endTime,
-            businessName: fullAppointment.business.name,
-            timezone: fullAppointment.business.timezone,
-          });
-        }
-      }
+      await sendConfirmedAppointmentNotifications(id);
     }
 
     // Send cancellation email when status changes to CANCELLED
@@ -177,6 +236,127 @@ export async function PATCH(
       { error: "Error al actualizar la cita" },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Receipt files are detached from the appointment row after a successful
+ * delete. Cloudinary is intentionally best-effort here: the appointment has
+ * already been released and a transient provider error must not turn a
+ * successful user action into a retry that could delete another row.
+ */
+async function cleanupDepositReceipt(
+  appointmentId: string,
+  publicId: string | null,
+  resourceType: string | null,
+) {
+  if (!publicId) return;
+
+  try {
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: (resourceType || "image") as "image" | "raw" | "video",
+    });
+  } catch (error) {
+    console.error("[dashboard appointments DELETE] Receipt cleanup failed", {
+      appointmentId,
+      resourceType: resourceType || "image",
+      error,
+    });
+  }
+}
+
+/**
+ * Deletes only appointments whose deposit is still awaiting payment.
+ *
+ * The status and payment checks are repeated in the delete predicate so a
+ * payment/status transition racing this request cannot result in deleting a
+ * paid or otherwise managed appointment.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  try {
+    const user = await getApiSessionUser(request);
+    if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
+
+    const business = await getBusinessForUser(user.id);
+    if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+
+    const existing = await getAppointmentByIdAndBusiness(id, business.id);
+    if (!existing) return Response.json({ error: "Cita no encontrada" }, { status: 404 });
+
+    const [agendaScope, permissions] = await Promise.all([
+      getStaffAgendaScope(user, business),
+      getEffectiveBusinessPermissions(user, business),
+    ]);
+    if (!canManageTarget(permissions, agendaScope.ownStaffId, existing.staffId)) {
+      return Response.json({ error: "No tienes permisos para eliminar esta cita" }, { status: 403 });
+    }
+
+    if (existing.status !== "AWAITING_PAYMENT" || existing.paymentStatus !== "PENDING") {
+      return Response.json(
+        { error: "Solo se pueden eliminar citas esperando pago" },
+        { status: 409 },
+      );
+    }
+
+    // Remove the remote event before deleting the local mapping (which is
+    // cascaded by Prisma). A provider failure aborts the delete so a retry
+    // cannot leave an orphan event behind.
+    const googleCleanup = await removeAppointmentFromGoogle(id);
+    if (!googleCleanup.removed && googleCleanup.reason !== "mapping_not_found") {
+      return Response.json(
+        { error: "No se pudo liberar la cita del calendario externo. Intenta nuevamente." },
+        { status: 502 },
+      );
+    }
+
+    const deleted = await prisma.appointment.deleteMany({
+      where: {
+        id,
+        businessId: business.id,
+        status: "AWAITING_PAYMENT",
+        paymentStatus: "PENDING",
+        recurringBookingId: null,
+      },
+    });
+
+    if (deleted.count === 0) {
+      // Google cleanup happened before the conditional delete. If a payment
+      // confirmation won that race, restore the event before returning so a
+      // confirmed appointment is never left without its calendar event.
+      if (googleCleanup.removed) {
+        const restored = await syncAppointmentToGoogle(id);
+        if (!restored.synced) {
+          console.error("[dashboard appointments DELETE] Google event restore failed", {
+            appointmentId: id,
+            reason: restored.reason,
+          });
+        }
+      }
+
+      const current = await getAppointmentByIdAndBusiness(id, business.id);
+      return Response.json(
+        current
+          ? { error: "El estado del abono cambió; actualiza la agenda" }
+          : { error: "Cita no encontrada" },
+        { status: current ? 409 : 404 },
+      );
+    }
+
+    await cleanupDepositReceipt(
+      id,
+      existing.depositReceiptPublicId,
+      existing.depositReceiptResourceType,
+    );
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("[dashboard appointments DELETE]", error);
+    return Response.json({ error: "No se pudo eliminar la cita" }, { status: 500 });
   }
 }
 

@@ -531,9 +531,9 @@ export function TemasGallery({
                 {/* Info + actions */}
                 <div className="p-4 space-y-3">
                   <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">{preset.name}</span>
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                      <span className="min-w-0 break-words font-semibold">{preset.name}</span>
+                      <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                         {preset.customId && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]"><LocalizedText id="ZUHHL4fw4nHf" /></span>}
                         <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{preset.category}</span>
                       </div>
@@ -608,19 +608,19 @@ export function TemasGallery({
 
       {/* Preview modal */}
       {previewing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPreviewing(null)}>
+        <div className="fixed inset-0 z-50 flex overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:items-center sm:justify-center" onClick={() => setPreviewing(null)}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
-            className="relative z-10 flex w-full max-w-4xl flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
+            className="relative z-10 my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <div>
+            <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <h3 className="font-semibold">{previewing.name}</h3>
                 <p className="text-xs text-muted-foreground">{previewing.description}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                 <button
                   onClick={() => handleApply(previewing)}
                   disabled={!!applying || isActive(currentColors, previewing)}
@@ -640,7 +640,7 @@ export function TemasGallery({
             {/* Iframe preview */}
             <iframe
               src={previewUrl(previewing)}
-              className="h-[600px] w-full border-none"
+              className="block h-[min(600px,65vh)] min-h-[320px] max-w-full w-full border-none"
             />
           </div>
         </div>

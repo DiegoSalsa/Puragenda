@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — Prenotazioni online per attività", "siteDescription": "Software di prenotazione per gestire appuntamenti, clienti e professionisti in un unico posto.", "homeTitle": "Puragenda — La tua agenda online", "homeDescription": "Ricevi prenotazioni, incassa acconti e gestisci la tua attività con un'agenda disponibile 24/7."
   },
   "navigation": {
+    "discounts": "Codici sconto",
     "solutions": "Soluzioni",
     "features": "Funzionalità",
     "pricing": "Prezzi",

@@ -48,7 +48,8 @@ export default async function ServicesPage() {
         initialCategories={serviceCategories}
         groupServicesByCategory={business.groupServicesByCategory}
         maxServicesPerBooking={business.maxServicesPerBooking}
-        depositEnabled={business.depositRequired && !!business.mpAccessToken}
+        depositEnabled={business.depositRequired}
+        depositPaymentMode={business.depositPaymentMode}
         productionOrdersEnabled={business.productionOrdersEnabled}
         currencyCode={business.currencyCode}
         taxIdLabel={getCountryConfig(business.countryCode).taxIdLabel}

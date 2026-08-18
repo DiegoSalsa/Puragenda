@@ -1109,6 +1109,7 @@ export async function setLocationServiceAvailabilityAction(locationId: string, s
 
 export async function saveDepositConfigAction(data: {
   depositRequired: boolean;
+  depositPaymentMode: "MERCADOPAGO" | "MANUAL_LINK";
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -1118,11 +1119,19 @@ export async function saveDepositConfigAction(data: {
     return { error: "No tienes permisos para configurar los abonos" };
   }
 
-  // If enabling deposits, check that MP is connected
-  if (data.depositRequired && !business.mpAccessToken) {
+  if (!(["MERCADOPAGO", "MANUAL_LINK"] as const).includes(data.depositPaymentMode)) {
+    return { error: "El modo de cobro no es válido" };
+  }
+
+  // Automatic deposits require an OAuth-connected Mercado Pago seller.
+  if (data.depositRequired && data.depositPaymentMode === "MERCADOPAGO" && !business.mpAccessToken) {
     return { error: "Debes conectar tu cuenta de Mercado Pago antes de activar abonos." };
   }
-  if (data.depositRequired && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)) {
+  if (
+    data.depositRequired &&
+    data.depositPaymentMode === "MERCADOPAGO" &&
+    !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
+  ) {
     const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
     return {
       error: expectedCurrency
@@ -1135,10 +1144,13 @@ export async function saveDepositConfigAction(data: {
     where: { id: business.id },
     data: {
       depositRequired: data.depositRequired,
+      depositPaymentMode: data.depositPaymentMode,
     },
   });
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/services");
+  revalidatePath(`/widget/${business.slug}`);
   return { success: true };
 }
 

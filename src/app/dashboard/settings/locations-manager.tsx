@@ -105,15 +105,15 @@ export function LocationsManager({ locations, defaultTimezone, countryCode, serv
       {locations.map((location) => <div key={location.id} className="rounded-xl border border-border bg-muted/30 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#7C3AED]" /><p className="font-semibold">{location.name}</p>{location.isPrimary && <span className="rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]"><LocalizedText id="Qh2uO8AkshAG" /></span>}</div>
-            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />{location.address || legacy("3-1kEVUxJ_jM")} · {location.timezone}</p>
+            <div className="flex min-w-0 flex-wrap items-center gap-2"><Building2 className="h-4 w-4 shrink-0 text-[#7C3AED]" /><p className="min-w-0 break-words font-semibold">{location.name}</p>{location.isPrimary && <span className="shrink-0 rounded-full bg-[#7C3AED]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C3AED]"><LocalizedText id="Qh2uO8AkshAG" /></span>}</div>
+            <p className="mt-1 flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3 shrink-0" /><span className="min-w-0 break-words">{location.address || legacy("3-1kEVUxJ_jM")} · {location.timezone}</span></p>
             {services.length > 0 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs">
               {services.map((service) => {
                 const available = location.serviceIds.includes(service.id);
                 const key = `${location.id}:${service.id}`;
-                return <label key={service.id} className="flex cursor-pointer items-center gap-1.5 text-muted-foreground">
+                return <label key={service.id} className="flex min-w-0 cursor-pointer items-start gap-1.5 text-muted-foreground">
                   <input type="checkbox" checked={available} disabled={busy === key} onChange={(event) => toggleService(location.id, service.id, event.target.checked)} />
-                  {service.name}
+                  <span className="min-w-0 break-words">{service.name}</span>
                 </label>;
               })}
             </div>}

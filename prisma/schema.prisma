@@ -142,6 +142,16 @@ enum RecurringStatus {
   COMPLETED // Termino el periodo natural
 }
 
+enum DepositPaymentMode {
+  MERCADOPAGO
+  MANUAL_LINK
+}
+
+enum BookingDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 model Subscription {
   id                           String             @id @default(cuid())
   plan                         SubscriptionPlan   @default(INDIVIDUAL)
@@ -198,32 +208,33 @@ model Subscription {
 // ==========================================
 
 model Business {
-  id                                           String    @id @default(cuid())
+  id                                           String             @id @default(cuid())
   name                                         String
-  slug                                         String    @unique
-  apiKey                                       String    @unique
+  slug                                         String             @unique
+  apiKey                                       String             @unique
   logoUrl                                      String?
   address                                      String?
   mapsUrl                                      String?
-  primaryColor                                 String    @default("#7C3AED")
-  secondaryColor                               String    @default("#5B21B6")
-  backgroundColor                              String    @default("#0A0A0A")
-  textColor                                    String    @default("#FFFFFF")
-  textMutedColor                               String    @default("#FFFFFF66")
-  widgetFontSize                               Int       @default(14)
+  primaryColor                                 String             @default("#7C3AED")
+  secondaryColor                               String             @default("#5B21B6")
+  backgroundColor                              String             @default("#0A0A0A")
+  textColor                                    String             @default("#FFFFFF")
+  textMutedColor                               String             @default("#FFFFFF66")
+  widgetFontSize                               Int                @default(14)
   brandColor                                   String?
-  maxServicesPerBooking                        Int       @default(1)
-  groupServicesByCategory                      Boolean   @default(false)
-  widgetCornerRadius                           Int       @default(16)
-  widgetShadowStyle                            String    @default("soft")
-  widgetHeaderAlign                            String    @default("left")
+  maxServicesPerBooking                        Int                @default(1)
+  groupServicesByCategory                      Boolean            @default(false)
+  widgetCornerRadius                           Int                @default(16)
+  widgetShadowStyle                            String             @default("soft")
+  widgetHeaderAlign                            String             @default("left")
   // ── Abono (Deposit) Config ──
-  depositRequired                              Boolean   @default(false)
-  allowedOrigins                               String[]  @default([])
-  countryCode                                  String    @default("CL")
-  currencyCode                                 String    @default("CLP")
-  timezone                                     String    @default("America/Santiago")
-  locale                                       String    @default("es")
+  depositRequired                              Boolean            @default(false)
+  depositPaymentMode                           DepositPaymentMode @default(MERCADOPAGO)
+  allowedOrigins                               String[]           @default([])
+  countryCode                                  String             @default("CL")
+  currencyCode                                 String             @default("CLP")
+  timezone                                     String             @default("America/Santiago")
+  locale                                       String             @default("es")
   ownerId                                      String?
   referredByAffiliateId                        String?
   // ── Mercado Pago OAuth (Marketplace) ──
@@ -232,24 +243,24 @@ model Business {
   mpUserId                                     String?
   mpTokenExpiresAt                             DateTime?
   // ── Loyalty / Fidelización ──
-  isLoyaltyEnabled                             Boolean   @default(false)
-  stampsRequired                               Int       @default(5)
+  isLoyaltyEnabled                             Boolean            @default(false)
+  stampsRequired                               Int                @default(5)
   rewardName                                   String?
   discountType                                 String? // 'PERCENTAGE' | 'FIXED'
   discountValue                                Int?
-  loyaltyCodePrefix                            String    @default("PREMIO")
+  loyaltyCodePrefix                            String             @default("PREMIO")
   // ── Politicas del negocio ──
-  requiresClientRut                            Boolean   @default(false) // Pedir RUT en el widget
-  allowRescheduling                            Boolean   @default(false) // Permitir que clientes reagenden
-  rescheduleHoursLimit                         Int       @default(24) // Horas minimas de anticipacion para reagendar
-  includeAppointmentActionsInConfirmationEmail Boolean   @default(false)
+  requiresClientRut                            Boolean            @default(false) // Pedir RUT en el widget
+  allowRescheduling                            Boolean            @default(false) // Permitir que clientes reagenden
+  rescheduleHoursLimit                         Int                @default(24) // Horas minimas de anticipacion para reagendar
+  includeAppointmentActionsInConfirmationEmail Boolean            @default(false)
   // ── Configuración de agenda ──
-  allowSameDayBookings                         Boolean   @default(false) // Permite agendar para hoy
-  slotInterval                                 Int       @default(60) // Minutos entre cada bloque de hora disponible
-  minAdvanceBookingMinutes                     Int       @default(120) // Minutos de anticipación (solo si allowSameDayBookings=true)
-  productionOrdersEnabled                      Boolean   @default(false)
-  createdAt                                    DateTime  @default(now())
-  updatedAt                                    DateTime  @updatedAt
+  allowSameDayBookings                         Boolean            @default(false) // Permite agendar para hoy
+  slotInterval                                 Int                @default(60) // Minutos entre cada bloque de hora disponible
+  minAdvanceBookingMinutes                     Int                @default(120) // Minutos de anticipación (solo si allowSameDayBookings=true)
+  productionOrdersEnabled                      Boolean            @default(false)
+  createdAt                                    DateTime           @default(now())
+  updatedAt                                    DateTime           @updatedAt
   deletedAt                                    DateTime?
 
   owner                       User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
@@ -270,6 +281,7 @@ model Business {
   platformDiscountRedemptions PlatformDiscountRedemption[]
   widgetThemes                WidgetTheme[]
   widgetPromoBlocks           WidgetPromoBlock[]
+  bookingDiscountCodes        BookingDiscountCode[]
   accessProfiles              AccessProfile[]
   googleCalendarConnections   GoogleCalendarConnection[]
   scheduleOverrides           BusinessScheduleOverride[]
@@ -440,6 +452,30 @@ model WidgetPromoBlock {
 
   @@index([businessId, placement, position])
   @@index([businessId, isVisible, discountStartsAt, discountEndsAt], map: "WidgetPromoBlock_discount_active_idx")
+}
+
+// ==========================================
+// BUSINESS BOOKING DISCOUNT CODES
+// ==========================================
+
+model BookingDiscountCode {
+  id             String              @id @default(cuid())
+  businessId     String
+  code           String
+  discountType   BookingDiscountType
+  discountValue  Int
+  minSubtotal    Int                 @default(0)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  business       Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+
+  @@unique([businessId, code])
+  @@index([businessId, isActive, startsAt, expiresAt])
 }
 
 model AccessProfile {
@@ -707,6 +743,7 @@ model Service {
   duration                 Int
   price                    Float
   depositAmount            Int                    @default(0) // Amount in the business currency
+  depositPaymentUrl        String?
   bookingMode              ServiceBookingMode     @default(APPOINTMENT)
   productionScheduleMode   ProductionScheduleMode @default(WEEKLY)
   weeklyProductionCapacity Int                    @default(5)
@@ -988,6 +1025,13 @@ enum PaymentStatus {
   REJECTED
 }
 
+enum DepositReceiptStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum PosPaymentChannel {
   QR
   POINT
@@ -1005,43 +1049,55 @@ enum PosPaymentStatus {
 }
 
 model Appointment {
-  id                           String            @id @default(cuid())
+  id                           String               @id @default(cuid())
   customerName                 String
   customerEmail                String
   customerPhone                String?
   customerAddress              String?
   startTime                    DateTime
   endTime                      DateTime
-  status                       AppointmentStatus @default(PENDING)
-  additionalServiceIds         String[]          @default([])
+  status                       AppointmentStatus    @default(PENDING)
+  additionalServiceIds         String[]             @default([])
   totalDuration                Int?
   totalPrice                   Float?
   originalTotalPrice           Float?
   discountAmount               Float?
   promotionId                  String?
   promotionTitle               String?
+  bookingDiscountCodeId        String?
+  bookingDiscountCodeValue     String?
   selectedOptions              Json?
   businessId                   String
   locationId                   String?
   serviceId                    String
   staffId                      String?
   clientId                     String?
-  reminderSent                 Boolean           @default(false)
-  actionToken                  String?           @unique
-  customerActionTokenHash      String?           @unique
+  reminderSent                 Boolean              @default(false)
+  actionToken                  String?              @unique
+  customerActionTokenHash      String?              @unique
   customerActionTokenExpiresAt DateTime?
   customerActionTokenUsedAt    DateTime?
   internalNotes                String?
   // ── Deposit Payment ──
   depositAmount                Int? // Amount charged in the business currency
-  paymentStatus                PaymentStatus     @default(NONE)
+  depositPaymentUrl            String? // Snapshot of an external manual payment link
+  paymentStatus                PaymentStatus        @default(NONE)
   mpPaymentId                  String? // MercadoPago payment ID
   mpPreferenceId               String? // MercadoPago preference ID
+  depositReceiptStatus         DepositReceiptStatus @default(NONE)
+  depositReceiptPublicId       String?
+  depositReceiptResourceType   String?
+  depositReceiptFormat         String?
+  depositReceiptOriginalName   String?
+  depositReceiptUploadedAt     DateTime?
+  depositReceiptReviewedAt     DateTime?
+  depositReceiptReviewedById   String?
+  depositReceiptTokenHash      String?
   // ── Recurring ──
   recurringBookingId           String? // FK a RecurringBooking si es parte de un plan
   storyCampaignId              String?
-  createdAt                    DateTime          @default(now())
-  updatedAt                    DateTime          @updatedAt
+  createdAt                    DateTime             @default(now())
+  updatedAt                    DateTime             @updatedAt
 
   business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   location            BusinessLocation?    @relation(fields: [locationId], references: [id], onDelete: Restrict)
@@ -1050,6 +1106,7 @@ model Appointment {
   client              Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
   recurringBooking    RecurringBooking?    @relation(fields: [recurringBookingId], references: [id], onDelete: SetNull)
   promotion           WidgetPromoBlock?    @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  bookingDiscountCode BookingDiscountCode? @relation(fields: [bookingDiscountCodeId], references: [id], onDelete: SetNull)
   storyCampaign       StoryCampaign?       @relation(fields: [storyCampaignId], references: [id], onDelete: SetNull)
   googleCalendarEvent GoogleCalendarEvent?
   posPayments         PosPayment[]
@@ -1061,6 +1118,7 @@ model Appointment {
   @@index([clientId])
   @@index([recurringBookingId])
   @@index([promotionId])
+  @@index([bookingDiscountCodeId])
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
 }

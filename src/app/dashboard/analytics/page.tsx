@@ -214,7 +214,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     : `${format(analysisStart, "d MMM", { locale: dateLocale })} - ${format(analysisEnd, "d MMM yyyy", { locale: dateLocale })}`;
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 max-w-full space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
@@ -222,7 +222,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </div>
 
         {canToggleOwnAgenda && (
-          <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+          <div className="inline-flex max-w-full flex-wrap rounded-xl border border-border bg-muted/40 p-1">
             <Link
               href={analyticsHref(undefined)}
               className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${

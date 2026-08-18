@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
@@ -314,6 +314,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [rewardStatus, setRewardStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [rewardError, setRewardError] = useState("");
   const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number } | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountCodeStatus, setDiscountCodeStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
+  const [discountCodeError, setDiscountCodeError] = useState("");
+  const [bookingDiscount, setBookingDiscount] = useState<{ type: string; value: number } | null>(null);
   const [activePromotionId, setActivePromotionId] = useState<string | null>(null);
 
   // ── Recurring booking state ──
@@ -436,6 +440,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   // Reward codes and widget promotions intentionally do not stack.
   const totalPrice = useMemo(() => {
+    if (bookingDiscount) {
+      if (bookingDiscount.type === "PERCENTAGE") {
+        return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * bookingDiscount.value / 100));
+      }
+      return Math.max(0, rawTotalPrice - bookingDiscount.value);
+    }
     if (rewardDiscount) {
       if (rewardDiscount.type === "PERCENTAGE") {
         return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * rewardDiscount.value / 100));
@@ -443,7 +453,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       return Math.max(0, rawTotalPrice - rewardDiscount.value);
     }
     return promotionResult?.quote?.discountedTotal ?? rawTotalPrice;
-  }, [promotionResult, rawTotalPrice, rewardDiscount]);
+  }, [bookingDiscount, promotionResult, rawTotalPrice, rewardDiscount]);
 
   // Compute deposit amount dynamically from selected service(s)
   const depositAmount = useMemo(() => {
@@ -714,9 +724,51 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     continueToScheduling(selectedServices);
   }
 
+  async function handleValidateDiscountCode() {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    if (rewardDiscount || promotionResult?.quote) {
+      setDiscountCodeStatus("invalid");
+      setDiscountCodeError("Los códigos de reserva no se pueden combinar con banners ni premios.");
+      return;
+    }
+    setDiscountCodeStatus("loading");
+    setDiscountCodeError("");
+    try {
+      const res = await fetch(`/api/business/${business.slug}/validate-discount`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
+        body: JSON.stringify({ code, subtotal: rawTotalPrice }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDiscountCodeStatus("invalid");
+        setDiscountCodeError(data.error || "El código no se puede aplicar.");
+        setBookingDiscount(null);
+        return;
+      }
+      setDiscountCodeStatus("valid");
+      setBookingDiscount({ type: data.discountType, value: data.discountValue });
+      setRewardCode("");
+      setRewardStatus("idle");
+      setRewardError("");
+      setRewardDiscount(null);
+      setActivePromotionId(null);
+    } catch {
+      setDiscountCodeStatus("invalid");
+      setDiscountCodeError("No se pudo validar el código.");
+      setBookingDiscount(null);
+    }
+  }
+
   async function handleValidateReward() {
     const code = rewardCode.trim().toUpperCase();
     if (!code || !form.email) return;
+    if (bookingDiscount) {
+      setRewardStatus("invalid");
+      setRewardError("Los premios no se pueden combinar con un código de reserva.");
+      return;
+    }
     setRewardStatus("loading");
     setRewardError("");
     try {
@@ -733,6 +785,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       } else {
         setRewardStatus("valid");
         setRewardDiscount({ type: data.discountType, value: data.discountValue });
+        setDiscountCode("");
+        setDiscountCodeStatus("idle");
+        setDiscountCodeError("");
+        setBookingDiscount(null);
         setActivePromotionId(null);
       }
     } catch {
@@ -780,6 +836,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           staffId: splitStaffMode ? undefined : selectedStaff?.id,
           staffAssignments: splitStaffMode ? splitStaffAssignments : undefined,
           rewardCode: rewardStatus === "valid" ? rewardCode.trim().toUpperCase() : undefined,
+          discountCode: discountCodeStatus === "valid" ? discountCode.trim().toUpperCase() : undefined,
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
           storyCampaignToken,
         }),
@@ -800,6 +857,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setSelectedOptionByCategory({});
     setForm({ name: "", email: "", phone: "", address: "" }); setTouched({ name: false, email: false, phone: false, address: false }); setApiError(""); setBlockedSlots([]);
     setRewardCode(""); setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null);
+    setDiscountCode(""); setDiscountCodeStatus("idle"); setDiscountCodeError(""); setBookingDiscount(null);
     setActivePromotionId(null);
     // Reset recurring state
     setRecurringMode("single"); setRecurringSelectedDays([]); setRecurringStartDate(""); setRecurringDurationMonths(1);
@@ -1109,7 +1167,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   className="w-full text-left"
                   aria-pressed={isActive}
                   onClick={() => {
+                    if (!isActive && bookingDiscount) return;
                     setActivePromotionId(isActive ? null : block.id);
+                    setDiscountCode("");
+                    setDiscountCodeStatus("idle");
+                    setDiscountCodeError("");
+                    setBookingDiscount(null);
                     setRewardCode("");
                     setRewardStatus("idle");
                     setRewardError("");
@@ -1163,9 +1226,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
             </div>
           </div>
           {step !== "success" && (
-            <div className={`mt-4 grid gap-2 text-[10px] sm:text-xs`} style={{ gridTemplateColumns: `repeat(${stepLabels.length}, 1fr)` }}>
+            <div className="mt-4 grid gap-1.5 text-[9px] sm:gap-2 sm:text-xs" style={{ gridTemplateColumns: `repeat(${stepLabels.length}, minmax(0, 1fr))` }}>
               {stepLabels.map((label, i) => (
-                <div key={label} className="rounded-full px-2 py-1.5 text-center transition-all duration-300" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
+                <div key={label} className="flex min-w-0 items-center justify-center break-words rounded-full px-1 py-1.5 text-center leading-tight transition-all duration-300 sm:px-2" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
                   {label}
                 </div>
               ))}
@@ -1998,7 +2061,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <div className="flex justify-between items-center">
                   <span style={{ color: textSecondary }}><LocalizedText id="ybPDgkf3ROF9" /></span>
                   <span className="font-medium">
-                    {rewardDiscount || promotionResult?.quote ? (
+                    {bookingDiscount || rewardDiscount || promotionResult?.quote ? (
                       <span className="flex items-center gap-2">
                         <span className="line-through opacity-40">{formatPrice(rawTotalPrice, business.currencyCode)}</span>
                         <span style={{ color: pc }}>{totalPrice === 0 ? "GRATIS" : formatPrice(totalPrice, business.currencyCode)}</span>
@@ -2032,20 +2095,20 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" /><LocalizedText id="0VFjaPoqf1-e" />
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
                     <input
                       type="text"
                       value={rewardCode}
                       onChange={(e) => { setRewardCode(e.target.value.toUpperCase()); if (rewardStatus !== "idle") { setRewardStatus("idle"); setRewardError(""); setRewardDiscount(null); } }}
                       placeholder={legacy("UQ0gvtgwgmVg")}
-                      className="flex-1 rounded-xl border px-4 py-2.5 text-sm font-mono tracking-wider uppercase outline-none transition-colors"
+                      className="min-w-0 flex-1 rounded-xl border px-4 py-2.5 text-sm font-mono tracking-wider uppercase outline-none transition-colors"
                       style={rewardStatus === "valid" ? { borderColor: "#22c55e60", background: "#22c55e0A" } : rewardStatus === "invalid" ? { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
                     />
                     <button
                       type="button"
                       disabled={!rewardCode.trim() || !form.email || rewardStatus === "loading" || rewardStatus === "valid"}
                       onClick={handleValidateReward}
-                      className="shrink-0 rounded-xl px-5 py-2.5 min-h-[44px] text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
+                      className="min-h-[44px] shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
                       style={{ background: `${pc}20`, color: pc }}
                     >
                       {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}
@@ -2069,6 +2132,32 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       <LocalizedText id="ujfMVwJSOaUT" />{activePromotion.title}<LocalizedText id="MCRJozhXkvfB" /> {formatPrice(promotionResult.quote.discountAmount, business.currencyCode)}.
                     </p>
                   )}
+                </div>
+                <div className="space-y-2 rounded-2xl border p-4 transition-all" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
+                  <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
+                    <Percent className="h-3.5 w-3.5" /> Código de descuento
+                  </label>
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => { setDiscountCode(e.target.value.toUpperCase()); if (discountCodeStatus !== "idle") { setDiscountCodeStatus("idle"); setDiscountCodeError(""); setBookingDiscount(null); } }}
+                      placeholder="VERANO10"
+                      className="min-w-0 flex-1 rounded-xl border px-4 py-2.5 text-sm font-mono tracking-wider uppercase outline-none"
+                      style={discountCodeStatus === "valid" ? { borderColor: "#22c55e60", background: "#22c55e0A" } : discountCodeStatus === "invalid" ? { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" } : { borderColor: "var(--wborder)", background: "var(--wbg)" }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!discountCode.trim() || discountCodeStatus === "loading" || discountCodeStatus === "valid"}
+                      onClick={handleValidateDiscountCode}
+                      className="min-h-[44px] shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
+                      style={{ background: `${pc}20`, color: pc }}
+                    >
+                      {discountCodeStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : discountCodeStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}
+                    </button>
+                  </div>
+                  {discountCodeStatus === "valid" && bookingDiscount && <p className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="h-3 w-3" /> Código aplicado: {bookingDiscount.type === "PERCENTAGE" ? `${bookingDiscount.value}%` : formatPrice(bookingDiscount.value, business.currencyCode)}</p>}
+                  {discountCodeStatus === "invalid" && discountCodeError && <p className="text-xs text-red-400">{discountCodeError}</p>}
                 </div>
                 {/* Deposit notice */}
                 {showDeposit && !previewMode && (

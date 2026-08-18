@@ -5,6 +5,7 @@ import { es } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
 import { CheckCircle2, XCircle, Clock, Calendar, User, Briefcase } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { DepositReceiptForm } from "./deposit-receipt-form";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,10 @@ export default async function CitaPage({
   searchParams,
 }: {
   params: Promise<{ appointmentId: string }>;
-  searchParams: Promise<{ payment?: string }>;
+  searchParams: Promise<{ payment?: string; receiptToken?: string }>;
 }) {
   const { appointmentId } = await params;
-  const { payment } = await searchParams;
+  const { payment, receiptToken } = await searchParams;
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
@@ -154,6 +155,16 @@ export default async function CitaPage({
                appointment.status}
             </span>
           </div>
+
+          {appointment.status === "AWAITING_PAYMENT" && appointment.depositPaymentUrl && (
+            <DepositReceiptForm
+              appointmentId={appointment.id}
+              paymentUrl={appointment.depositPaymentUrl}
+              receiptToken={receiptToken}
+              initialStatus={appointment.depositReceiptStatus}
+              primaryColor={pc}
+            />
+          )}
         </div>
 
         <div className="text-center">

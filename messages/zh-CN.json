@@ -19,6 +19,7 @@
     "siteTitle": "Puragenda — 服务行业在线预约系统", "siteDescription": "在一个平台管理预约、客户和服务人员。", "homeTitle": "Puragenda — 您的在线预约系统", "homeDescription": "全天候接收预约、收取订金并管理您的服务业务。"
   },
   "navigation": {
+    "discounts": "折扣码",
     "solutions": "解决方案",
     "features": "功能",
     "pricing": "价格",

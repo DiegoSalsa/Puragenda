@@ -74,6 +74,7 @@ export const bookingSchema = z
       .optional(),
 
     rewardCode: z.string().optional(),
+    discountCode: z.string().trim().max(50).optional(),
     promotionId: z.string().min(1, "La promoción seleccionada no es válida").optional(),
     storyCampaignToken: z.string().trim().min(8).max(64).optional(),
 
@@ -191,6 +192,18 @@ export const serviceSchema = z.object({
     .min(0, "El monto de abono no puede ser negativo")
     .optional()
     .default(0),
+
+  depositPaymentUrl: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+    z
+      .string()
+      .trim()
+      .url("El link de pago no es válido")
+      .max(2048, "El link de pago es demasiado largo")
+      .refine((value) => new URL(value).protocol === "https:", "El link de pago debe usar HTTPS")
+      .nullable()
+      .optional(),
+  ),
 
   bookingMode: z.enum(["APPOINTMENT", "PRODUCTION"]).optional().default("APPOINTMENT"),
 

@@ -56,6 +56,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (appointment.business.depositPaymentMode === "MANUAL_LINK") {
+      if (!appointment.depositPaymentUrl) {
+        return Response.json(
+          { error: "Esta cita no tiene un link de pago configurado" },
+          { status: 409 },
+        );
+      }
+      return Response.json({
+        preferenceId: null,
+        initPoint: appointment.depositPaymentUrl,
+        sandboxInitPoint: null,
+        manual: true,
+      });
+    }
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
     if (isLocalPaymentSimulatorEnabled()) {
       const preferenceId = localProviderId("deposit");

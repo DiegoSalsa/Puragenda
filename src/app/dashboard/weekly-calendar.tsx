@@ -3,9 +3,10 @@
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown } from "lucide-react";
+import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown, Banknote, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { getDateLocale } from "@/i18n/date-locale";
+import { formatPrice } from "@/lib/utils";
 import {
   AppointmentEditor,
   type AppointmentEditorClient,
@@ -18,8 +19,10 @@ import { PosPaymentDialog } from "./pos-payment-dialog";
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
-  paymentStatus: string; depositAmount: number | null;
+  paymentStatus: string; depositAmount: number | null; depositPaymentUrl: string | null;
   totalPrice: number; posPaidAmount: number;
+  depositReceiptStatus: "NONE" | "PENDING" | "APPROVED" | "REJECTED";
+  depositReceiptOriginalName: string | null; depositReceiptUploadedAt: string | null;
   serviceId: string; serviceName: string; staffId: string | null; staffName: string;
   clientId: string | null; customerPhone: string | null;
   selectedOptions?: { alternativeId?: string; categoryName: string; alternativeName: string; priceDelta: number; durationDelta: number }[];
@@ -213,6 +216,65 @@ export function WeeklyCalendar({
     finally { setLoading(null); }
   }
 
+  async function handleDeleteAwaitingPayment() {
+    if (!selected || selected.status !== "AWAITING_PAYMENT" || selected.paymentStatus !== "PENDING") return;
+    if (!window.confirm("¿Eliminar esta reserva que está esperando pago? La hora quedará libre y el enlace dejará de estar asociado. Si el enlace ya fue enviado, podría seguir aceptando un pago externo: avisa a la clienta y verifica el proveedor. Esta acción no se puede deshacer.")) return;
+    setLoading("DELETE");
+    try {
+      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, { method: "DELETE" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudo eliminar la reserva.");
+      setSelected(null);
+      router.refresh();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "No se pudo eliminar la reserva.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleMarkDepositPaid() {
+    if (!selected) return;
+    if (!window.confirm("Confirma solo después de verificar que el abono fue recibido en la cuenta del negocio.")) return;
+    setLoading("DEPOSIT_PAID");
+    try {
+      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markDepositPaid: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudo confirmar el abono.");
+      setSelected(null);
+      router.refresh();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "No se pudo confirmar el abono.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleRejectDepositReceipt() {
+    if (!selected) return;
+    if (!window.confirm("¿Rechazar este comprobante? La clienta podrá subir uno nuevo desde su reserva.")) return;
+    setLoading("RECEIPT_REJECTED");
+    try {
+      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rejectDepositReceipt: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No se pudo rechazar el comprobante.");
+      setSelected(null);
+      router.refresh();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "No se pudo rechazar el comprobante.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   async function handleCancelRecurringSession(mode: "single" | "future") {
     if (!selected) return;
     setCancellingSession(true);
@@ -293,8 +355,8 @@ export function WeeklyCalendar({
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {/* Header */}
         <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <h2 className="text-base sm:text-lg font-semibold">{t("title")}</h2>
               {!isCurrentWeek && (
                 <button onClick={goToday} className="rounded-lg border border-[#7C3AED]/20 bg-[#7C3AED]/10 px-2.5 py-1 text-xs font-medium text-[#A78BFA] transition-all hover:bg-[#7C3AED]/20">
@@ -302,17 +364,17 @@ export function WeeklyCalendar({
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               {canManageAppointments && (
                 <button
                   type="button"
                   onClick={() => openNewAppointment()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9]"
+                  className="inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#7C3AED] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#6D28D9] sm:flex-none"
                 >
                   <Plus className="h-3.5 w-3.5" /> {t("newAppointment")}
                 </button>
               )}
-              <div className="flex items-center rounded-xl border border-border bg-muted p-0.5">
+              <div className="flex shrink-0 items-center rounded-xl border border-border bg-muted p-0.5">
                 <button
                   onClick={() => setViewMode("day")}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${viewMode === "day" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
@@ -433,6 +495,7 @@ export function WeeklyCalendar({
                                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${sc.dot}`} />
                                 <p className={`text-[11px] font-medium truncate ${sc.text}`}>{apt.customerName}</p>
                                 {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-[#7C3AED] opacity-70" />}
+                                {apt.depositReceiptStatus === "PENDING" && <FileText className="ml-auto h-3 w-3 shrink-0 text-sky-400" />}
                               </div>
                               <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
                               {apt.customerPhone && (
@@ -507,6 +570,7 @@ export function WeeklyCalendar({
                           <div className={`h-2 w-2 shrink-0 rounded-full ${sc.dot}`} />
                           <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
                           {apt.recurringBookingId && <RefreshCw className="h-3 w-3 shrink-0 text-[#7C3AED] opacity-70" />}
+                          {apt.depositReceiptStatus === "PENDING" && <FileText className="h-3 w-3 shrink-0 text-sky-400" />}
                           <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
                         </div>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{apt.serviceName} · {apt.staffName}</p>
@@ -528,13 +592,13 @@ export function WeeklyCalendar({
 
       {/* Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)}>
-          <div className="mx-4 w-full max-w-md animate-scale-in rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h3 className="text-lg font-semibold">{t("appointmentDetails")}</h3>
+        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:justify-center" onClick={() => setSelected(null)}>
+          <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md animate-scale-in overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
+              <h3 className="min-w-0 text-lg font-semibold">{t("appointmentDetails")}</h3>
               <button onClick={() => setSelected(null)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
-            <div className="space-y-4 p-6">
+            <div className="space-y-4 p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${(STATUS_COLORS[selected.status] || STATUS_COLORS.PENDING).dot}`} />
                 <span className="text-sm font-medium">{{
@@ -552,34 +616,128 @@ export function WeeklyCalendar({
                 )}
               </div>
               <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("customer")}</span><span className="font-medium">{selected.customerName}</span></div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("email")}</span><span>{selected.customerEmail}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("customer")}</span><span className="min-w-0 break-words font-medium">{selected.customerName}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("email")}</span><span className="min-w-0 break-all">{selected.customerEmail}</span></div>
                 {selected.customerPhone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-muted-foreground">{t("phone")}</span>
+                  <div className="flex min-w-0 items-start gap-2">
+                    <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="shrink-0 text-muted-foreground">{t("phone")}</span>
                     <a
                       href={`tel:${selected.customerPhone.replace(/[^\d+]/g, "")}`}
-                      className="font-medium text-[#A78BFA] hover:underline"
+                      className="min-w-0 break-all font-medium text-[#A78BFA] hover:underline"
                     >
                       {selected.customerPhone}
                     </a>
                   </div>
                 )}
-                <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("time")}</span><span>{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
-                <div className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("service")}</span><span>{selected.serviceName}</span></div>
-                <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className="text-muted-foreground">{t("professional")}</span><span>{selected.staffName}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("time")}</span><span className="min-w-0 break-words">{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("service")}</span><span className="min-w-0 break-words">{selected.serviceName}</span></div>
+                <div className="flex min-w-0 items-start gap-2"><User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("professional")}</span><span className="min-w-0 break-words">{selected.staffName}</span></div>
                 {(selected.selectedOptions?.length ?? 0) > 0 && (
                   <div className="space-y-1 border-t border-border pt-3">
                     {selected.selectedOptions!.map((option) => (
-                      <div key={`${option.categoryName}-${option.alternativeName}`} className="flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">{option.categoryName}:</span>
-                        <span className="font-medium text-right">{option.alternativeName}</span>
+                      <div key={`${option.categoryName}-${option.alternativeName}`} className="flex min-w-0 items-start justify-between gap-3">
+                        <span className="min-w-0 break-words text-muted-foreground">{option.categoryName}:</span>
+                        <span className="min-w-0 break-words text-right font-medium">{option.alternativeName}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+
+              {selected.status === "AWAITING_PAYMENT" && selected.depositAmount && selected.depositAmount > 0 && (
+                <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Banknote className="h-4 w-4 text-amber-400" /> Abono pendiente
+                    </span>
+                    <span className="font-bold text-amber-400">{formatPrice(selected.depositAmount, currencyCode)}</span>
+                  </div>
+                  {selected.depositPaymentUrl && (
+                    <a
+                      href={selected.depositPaymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-center rounded-lg border border-border bg-background py-2 text-xs font-medium"
+                    >
+                      Abrir link enviado a la clienta
+                    </a>
+                  )}
+                  {selected.depositReceiptStatus === "PENDING" && (
+                    <div className="space-y-2 rounded-lg border border-sky-500/20 bg-sky-500/10 p-3">
+                      <div className="flex items-start gap-2">
+                        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-sky-300">Comprobante por revisar</p>
+                          <p className="truncate text-[11px] text-muted-foreground">
+                            {selected.depositReceiptOriginalName || "Archivo adjunto"}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={`/api/dashboard/appointments/${selected.id}/deposit-receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex w-full items-center justify-center rounded-lg border border-sky-500/20 bg-background py-2 text-xs font-semibold text-sky-300"
+                      >
+                        Ver comprobante
+                      </a>
+                    </div>
+                  )}
+                  {selected.depositReceiptStatus === "REJECTED" && (
+                    <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
+                      Comprobante rechazado. La clienta puede subir uno nuevo desde su reserva.
+                    </p>
+                  )}
+                  {selected.depositReceiptStatus === "PENDING" && (
+                    <button
+                      type="button"
+                      onClick={handleRejectDepositReceipt}
+                      disabled={loading !== null}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
+                    >
+                      {loading === "RECEIPT_REJECTED" ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                      Rechazar comprobante
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleMarkDepositPaid}
+                    disabled={loading !== null}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    {loading === "DEPOSIT_PAID" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {selected.depositReceiptStatus === "PENDING" ? "Confirmar comprobante y abono" : "Marcar abono recibido"}
+                  </button>
+                  <p className="text-[11px] text-muted-foreground">Esta acción confirma la cita y envía el correo de confirmación.</p>
+                  {canManageAppointments && selected.paymentStatus === "PENDING" && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteAwaitingPayment}
+                      disabled={loading !== null}
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
+                    >
+                      {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      Eliminar reserva y liberar hora
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {canManageAppointments &&
+                selected.status === "AWAITING_PAYMENT" &&
+                selected.paymentStatus === "PENDING" &&
+                (!selected.depositAmount || selected.depositAmount <= 0) && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAwaitingPayment}
+                    disabled={loading !== null}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
+                  >
+                    {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Eliminar reserva y liberar hora
+                  </button>
+                )}
 
               {posEnabled &&
                 canManageAppointments &&

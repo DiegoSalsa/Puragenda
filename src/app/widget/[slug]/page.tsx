@@ -287,7 +287,7 @@ export default async function WidgetPage({
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
       groupServicesByCategory={business.groupServicesByCategory}
-      depositRequired={business.depositRequired && !!business.mpAccessToken}
+      depositRequired={business.depositRequired && (business.depositPaymentMode === "MANUAL_LINK" || !!business.mpAccessToken)}
       allowSameDayBookings={business.allowSameDayBookings}
       slotInterval={business.slotInterval}
       minAdvanceBookingMinutes={business.minAdvanceBookingMinutes}
