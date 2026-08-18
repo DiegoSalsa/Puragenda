@@ -28,7 +28,9 @@ import { LocationsManager } from "./locations-manager";
 import {
   getCountryConfig,
   getCountryOptions,
+  getCurrencyOptions,
   getMercadoPagoCurrency,
+  getTimezoneOptions,
   isMercadoPagoCountryCode,
   isMercadoPagoCurrencyCompatible,
 } from "@/core/countries";
@@ -243,6 +245,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             initialTimezone={business.timezone}
             initialCurrencyCode={business.currencyCode}
             countryOptions={getCountryOptions("es")}
+            initialTimezoneOptions={getTimezoneOptions(business.countryCode)}
+            currencyOptions={getCurrencyOptions("es")}
           />
         </div>
 

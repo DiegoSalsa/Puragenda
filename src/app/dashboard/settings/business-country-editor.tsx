@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getCountryConfig, getCurrencyOptions, getTimezoneOptions } from "@/core/countries";
+import { getCountryConfig, getTimezoneOptions } from "@/core/countries";
 import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";
 
 interface Props {
@@ -14,23 +14,32 @@ interface Props {
   initialTimezone: string;
   initialCurrencyCode: string;
   countryOptions: Array<{ code: string; name: string }>;
+  initialTimezoneOptions: Array<{ value: string; label: string; preferred: boolean }>;
+  currencyOptions: Array<{ value: string; label: string }>;
 }
 
-export function BusinessCountryEditor({ initialCountryCode, initialTimezone, initialCurrencyCode, countryOptions }: Props) {
+export function BusinessCountryEditor({
+  initialCountryCode,
+  initialTimezone,
+  initialCurrencyCode,
+  countryOptions,
+  initialTimezoneOptions,
+  currencyOptions,
+}: Props) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
   const [countryCode, setCountryCode] = useState(initialCountryCode);
   const [timezone, setTimezone] = useState(initialTimezone);
+  const [timezoneOptions, setTimezoneOptions] = useState(initialTimezoneOptions);
   const [currencyCode, setCurrencyCode] = useState(initialCurrencyCode);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const unchanged = countryCode === initialCountryCode && timezone === initialTimezone && currencyCode === initialCurrencyCode;
-  const timezoneOptions = getTimezoneOptions(countryCode);
-  const currencyOptions = getCurrencyOptions("es");
 
   function applyCountry(next: string) {
     const defaults = getCountryConfig(next);
     setCountryCode(next);
+    setTimezoneOptions(getTimezoneOptions(next));
     setTimezone(defaults.timezone);
     setCurrencyCode(defaults.currency);
   }
