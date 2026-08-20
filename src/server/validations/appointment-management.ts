@@ -14,3 +14,13 @@ export const managedAppointmentSchema = z.object({
 });
 
 export type ManagedAppointmentInput = z.infer<typeof managedAppointmentSchema>;
+
+export const appointmentSettlementSchema = z.object({
+  baseAmount: z.coerce.number().min(0, "El importe base no puede ser negativo").max(100_000_000),
+  tipAmount: z.coerce.number().min(0, "La propina no puede ser negativa").max(100_000_000).default(0),
+  paymentMethod: z.enum(["CASH", "CARD", "TRANSFER", "OTHER"]).nullable().optional(),
+  items: z.array(z.object({
+    description: z.string().trim().min(1, "Describe el servicio o extra").max(100),
+    amount: z.coerce.number().min(0, "El importe no puede ser negativo").max(100_000_000),
+  })).max(20, "Puedes añadir hasta 20 extras").default([]),
+});

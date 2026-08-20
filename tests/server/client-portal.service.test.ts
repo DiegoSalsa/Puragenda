@@ -61,6 +61,7 @@ describe("acceso sin contraseña al portal del cliente", () => {
       email: "client@example.com",
       consumedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
+      purpose: "MAGIC_ACCESS",
     });
     prismaMock.clientPortalToken.updateMany.mockResolvedValue({ count: 1 });
 

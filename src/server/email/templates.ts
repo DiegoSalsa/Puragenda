@@ -477,6 +477,39 @@ export function clientPortalAccessEmail(data: ClientPortalAccessEmailData): { su
   };
 }
 
+export function clientPortalVerificationEmail(data: { verificationUrl: string; name: string }) {
+  const safeUrl = escapeHtml(data.verificationUrl);
+  const safeName = escapeHtml(data.name);
+  return {
+    subject: "Confirma tu cuenta de cliente — Puragenda",
+    html: layout("Activa Mi agenda", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Hola, ${safeName}</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Confirma tu correo una sola vez para guardar tus datos y reutilizarlos en futuras reservas.
+      </p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${safeUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">Activar mi cuenta →</a>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">El enlace vence en 60 minutos. Si no creaste esta cuenta, ignora este mensaje.</p>
+    `),
+  };
+}
+
+export function clientPortalPasswordResetEmail(data: { resetUrl: string }) {
+  const safeUrl = escapeHtml(data.resetUrl);
+  return {
+    subject: "Restablece tu contraseña — Puragenda",
+    html: layout("Recupera Mi agenda", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Restablece tu contraseña</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">Usa este enlace para elegir una contraseña nueva.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${safeUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:14px 36px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">Crear contraseña nueva →</a>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;text-align:center;">El enlace vence en 60 minutos y funciona una sola vez.</p>
+    `),
+  };
+}
+
 interface AdminLoginCodeEmailData {
   name: string;
   code: string;

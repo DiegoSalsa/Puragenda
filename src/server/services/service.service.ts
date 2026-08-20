@@ -78,9 +78,27 @@ export async function createService(data: {
   requiresReferenceImages?: boolean;
   businessId: string;
   categoryId?: string | null;
+  availabilityType?: "NORMAL" | "SPECIAL";
+  specialWeekDays?: number[];
+  specialStartDate?: string | null;
+  specialEndDate?: string | null;
+  specialStartTime?: string | null;
+  specialEndTime?: string | null;
   optionCategories?: ServiceInput["optionCategories"];
 }) {
   const { optionCategories = [], ...serviceData } = data;
+  const availabilityData = {
+    availabilityType: serviceData.availabilityType ?? "NORMAL",
+    specialWeekDays: serviceData.availabilityType === "SPECIAL" ? serviceData.specialWeekDays ?? [] : [],
+    specialStartDate: serviceData.availabilityType === "SPECIAL" && serviceData.specialStartDate
+      ? new Date(`${serviceData.specialStartDate}T00:00:00.000Z`)
+      : null,
+    specialEndDate: serviceData.availabilityType === "SPECIAL" && serviceData.specialEndDate
+      ? new Date(`${serviceData.specialEndDate}T00:00:00.000Z`)
+      : null,
+    specialStartTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialStartTime : null,
+    specialEndTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialEndTime : null,
+  };
   const aggregate = await prisma.service.aggregate({
     where: { businessId: serviceData.businessId },
     _max: { position: true },
@@ -94,6 +112,7 @@ export async function createService(data: {
   return prisma.service.create({
     data: {
       ...serviceData,
+      ...availabilityData,
       position: (aggregate._max.position ?? -1) + 1,
       depositAmount: serviceData.depositAmount ?? 0,
       optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
@@ -125,15 +144,35 @@ export async function updateService(
     productionDepositPercent?: number;
     requiresReferenceImages?: boolean;
     categoryId?: string | null;
+    availabilityType?: "NORMAL" | "SPECIAL";
+    specialWeekDays?: number[];
+    specialStartDate?: string | null;
+    specialEndDate?: string | null;
+    specialStartTime?: string | null;
+    specialEndTime?: string | null;
     optionCategories?: ServiceInput["optionCategories"];
   }
 ) {
   const { optionCategories, ...serviceData } = data;
+  const availabilityData = serviceData.availabilityType
+    ? {
+        availabilityType: serviceData.availabilityType,
+        specialWeekDays: serviceData.availabilityType === "SPECIAL" ? serviceData.specialWeekDays ?? [] : [],
+        specialStartDate: serviceData.availabilityType === "SPECIAL" && serviceData.specialStartDate
+          ? new Date(`${serviceData.specialStartDate}T00:00:00.000Z`)
+          : null,
+        specialEndDate: serviceData.availabilityType === "SPECIAL" && serviceData.specialEndDate
+          ? new Date(`${serviceData.specialEndDate}T00:00:00.000Z`)
+          : null,
+        specialStartTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialStartTime : null,
+        specialEndTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialEndTime : null,
+      }
+    : {};
 
   if (optionCategories === undefined) {
     return prisma.service.update({
       where: { id: serviceId },
-      data: serviceData,
+      data: { ...serviceData, ...availabilityData },
       include: serviceOptionsInclude,
     });
   }
@@ -145,6 +184,7 @@ export async function updateService(
       where: { id: serviceId },
       data: {
         ...serviceData,
+        ...availabilityData,
         optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
       },
       include: serviceOptionsInclude,

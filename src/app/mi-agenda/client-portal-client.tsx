@@ -6,14 +6,19 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarClock, Check, Loader2, LogOut, RefreshCw, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, KeyRound, Loader2, LogOut, RefreshCw, UserPlus, X } from "lucide-react";
 
 export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: boolean }) {
   const legacy = useTranslations("legacy");
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
-    invalidLink ? "Ese enlace ya fue utilizado o venció. Pide uno nuevo." : null,
+    invalidLink ? "Ese enlace ya fue utilizado o venció." : null,
   );
   const [loading, setLoading] = useState(false);
 
@@ -24,13 +29,23 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
     setMessage(null);
 
     try {
-      const response = await fetch("/api/client-portal/request-link", {
+      const endpoint = mode === "login"
+        ? "/api/client-portal/login"
+        : mode === "register"
+          ? "/api/client-portal/register"
+          : "/api/client-portal/forgot-password";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password, name, phone }),
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No pudimos enviar el enlace");
+      if (!response.ok) throw new Error(payload.error || "No pudimos completar la solicitud");
+      if (mode === "login") {
+        router.replace("/mi-agenda");
+        router.refresh();
+        return;
+      }
       setMessage(payload.message);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : legacy("_7Dgboa2a61e"));
@@ -51,10 +66,16 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
         <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border-3 border-black bg-[#c4b5fd] shadow-[4px_4px_0_#000]">
           <CalendarClock className="h-7 w-7" strokeWidth={2.5} />
         </div>
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-[#6d28d9]"><LocalizedText id="Sc8irODpRcS2" /></p>
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl"><LocalizedText id="t5QNRkOadW5k" /></h1>
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-[#6d28d9]">Portal del cliente</p>
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+          {mode === "login" ? "Entra a Mi agenda" : mode === "register" ? "Activa tu cuenta" : "Recupera tu contraseña"}
+        </h1>
         <p className="mt-3 text-sm font-medium leading-6 text-black/60">
-          <LocalizedText id="yWKkkqcHknnu" />
+          {mode === "login"
+            ? "Consulta tus reservas y reutiliza tus datos sin completar el formulario cada vez."
+            : mode === "register"
+              ? "Usa el mismo correo de tu reserva. Te enviaremos una sola verificación para activar la cuenta."
+              : "Te enviaremos un enlace únicamente para crear una contraseña nueva."}
         </p>
 
         {message ? (
@@ -73,7 +94,7 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
         ) : (
           <form onSubmit={submit} className="mt-7 space-y-4">
             <div>
-              <label htmlFor="portal-email" className="mb-2 block text-sm font-black"><LocalizedText id="7GTcMKSDzc-v" /></label>
+              <label htmlFor="portal-email" className="mb-2 block text-sm font-black">Correo</label>
               <input
                 id="portal-email"
                 type="email"
@@ -85,6 +106,25 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
                 className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none transition-shadow focus:shadow-[4px_4px_0_#7c3aed]"
               />
             </div>
+            {mode === "register" && (
+              <>
+                <div>
+                  <label htmlFor="portal-name" className="mb-2 block text-sm font-black">Nombre</label>
+                  <input id="portal-name" value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                </div>
+                <div>
+                  <label htmlFor="portal-phone" className="mb-2 block text-sm font-black">Teléfono (opcional)</label>
+                  <input id="portal-phone" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                </div>
+              </>
+            )}
+            {mode !== "forgot" && (
+              <div>
+                <label htmlFor="portal-password" className="mb-2 block text-sm font-black">Contraseña</label>
+                <input id="portal-password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} required minLength={mode === "register" ? 10 : 1} className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                {mode === "register" && <p className="mt-1.5 text-xs font-medium text-black/45">Mínimo 10 caracteres, con una letra y un número.</p>}
+              </div>
+            )}
             {error && (
               <div className="flex gap-2 rounded-xl border-2 border-red-700 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-800">
                 <X className="mt-0.5 h-4 w-4 shrink-0" />
@@ -96,15 +136,63 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
               disabled={loading}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border-3 border-black bg-[#7c3aed] px-5 font-black text-white shadow-[4px_4px_0_#000] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><LocalizedText id="Q5_J1QMnWQUD" /> <ArrowRight className="h-5 w-5" /></>}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{mode === "login" ? "Entrar" : mode === "register" ? "Enviar verificación" : "Recuperar contraseña"} <ArrowRight className="h-5 w-5" /></>}
             </button>
           </form>
         )}
 
-        <p className="mt-6 text-xs font-medium leading-5 text-black/45">
-          <LocalizedText id="KYkp8gpIEYuo" />
-        </p>
+        {!message && (
+          <div className="mt-6 flex flex-col gap-2 border-t-2 border-black/10 pt-5 text-sm font-bold">
+            {mode !== "register" && <button type="button" onClick={() => { setMode("register"); setError(null); }} className="inline-flex items-center gap-2 text-left text-[#6d28d9]"><UserPlus className="h-4 w-4" /> Activar mi cuenta</button>}
+            {mode !== "forgot" && <button type="button" onClick={() => { setMode("forgot"); setError(null); }} className="inline-flex items-center gap-2 text-left text-black/55"><KeyRound className="h-4 w-4" /> Olvidé mi contraseña</button>}
+            {mode !== "login" && <button type="button" onClick={() => { setMode("login"); setError(null); setMessage(null); }} className="text-left text-black/55">Volver a iniciar sesión</button>}
+          </div>
+        )}
       </div>
+    </main>
+  );
+}
+
+export function ClientPortalPasswordResetForm({ token }: { token: string }) {
+  const router = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (password !== confirmation) return setError("Las contraseñas no coinciden");
+    setLoading(true);
+    setError(null);
+    const response = await fetch("/api/client-portal/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error || "No pudimos cambiar la contraseña");
+      setLoading(false);
+      return;
+    }
+    router.replace("/mi-agenda");
+    router.refresh();
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#fffaf0] px-5 py-12 text-black">
+      <form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-[2rem] border-4 border-black bg-white p-7 shadow-[10px_10px_0_#000]">
+        <KeyRound className="h-10 w-10 text-[#6d28d9]" />
+        <h1 className="text-3xl font-black">Nueva contraseña</h1>
+        <p className="text-sm font-medium text-black/60">Usa al menos 10 caracteres, una letra y un número.</p>
+        <input type="password" autoComplete="new-password" minLength={10} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nueva contraseña" className="h-13 w-full rounded-xl border-3 border-black px-4 font-semibold" />
+        <input type="password" autoComplete="new-password" minLength={10} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la contraseña" className="h-13 w-full rounded-xl border-3 border-black px-4 font-semibold" />
+        {error && <p className="rounded-xl border-2 border-red-700 bg-red-50 p-3 text-sm font-semibold text-red-800">{error}</p>}
+        <button disabled={loading} className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border-3 border-black bg-[#7c3aed] font-black text-white shadow-[4px_4px_0_#000] disabled:opacity-60">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Guardar y entrar"}
+        </button>
+      </form>
     </main>
   );
 }
@@ -177,12 +265,14 @@ export function ClientPortalAppointmentActions({
 }
 
 export function ClientPortalLogout() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function logout() {
     setLoading(true);
     await fetch("/api/client-portal/logout", { method: "POST" });
-    window.location.assign("/mi-agenda");
+    router.replace("/mi-agenda");
+    router.refresh();
   }
 
   return (

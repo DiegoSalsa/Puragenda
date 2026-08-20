@@ -11,7 +11,7 @@ import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
-import { managedAppointmentSchema } from "@/server/validations/appointment-management";
+import { appointmentSettlementSchema, managedAppointmentSchema } from "@/server/validations/appointment-management";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
 import {
   removeAppointmentFromGoogle,
@@ -85,6 +85,47 @@ export async function PATCH(
 
     const body = await request.json();
     const { status } = body;
+
+    if (body.settlement) {
+      if (!canManageTarget(permissions, agendaScope.ownStaffId, existing.staffId)) {
+        return Response.json({ error: "No tienes permisos para cerrar esta sesión" }, { status: 403 });
+      }
+      if (!["CHECKED_IN", "COMPLETED"].includes(existing.status)) {
+        return Response.json({ error: "La sesión debe estar marcada como atendida antes de cerrarla" }, { status: 409 });
+      }
+      const parsedSettlement = appointmentSettlementSchema.safeParse(body.settlement);
+      if (!parsedSettlement.success) {
+        return Response.json({ error: parsedSettlement.error.issues[0]?.message ?? "Datos inválidos" }, { status: 400 });
+      }
+
+      const extrasTotal = parsedSettlement.data.items.reduce((sum, item) => sum + item.amount, 0);
+      const finalTotal = Math.round((parsedSettlement.data.baseAmount + extrasTotal + parsedSettlement.data.tipAmount) * 100) / 100;
+      const previousRecognizedAmount = existing.status === "CHECKED_IN" || existing.settledAt
+        ? Number(existing.totalPrice ?? existing.service.price)
+        : 0;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.appointment.update({
+          where: { id },
+          data: {
+            status: "COMPLETED",
+            sessionBaseAmount: parsedSettlement.data.baseAmount,
+            tipAmount: parsedSettlement.data.tipAmount,
+            postSessionItems: parsedSettlement.data.items,
+            paymentMethod: parsedSettlement.data.paymentMethod ?? null,
+            totalPrice: finalTotal,
+            settledAt: new Date(),
+            settledByUserId: user.id,
+          },
+        });
+        const revenueDelta = finalTotal - previousRecognizedAmount;
+        if (existing.clientId && revenueDelta !== 0) {
+          await tx.client.update({ where: { id: existing.clientId }, data: { totalSpent: { increment: revenueDelta } } });
+        }
+      });
+
+      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+    }
 
     if (body.markDepositPaid === true) {
       if (!existing.depositAmount || existing.depositAmount <= 0) {

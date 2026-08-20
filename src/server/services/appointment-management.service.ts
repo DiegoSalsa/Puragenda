@@ -3,6 +3,7 @@ import { toZonedTime } from "date-fns-tz";
 import { prisma } from "@/server/db/prisma";
 import { checkAppointmentCollision } from "@/server/services/appointment.service";
 import type { ManagedAppointmentInput } from "@/server/validations/appointment-management";
+import { isServiceAvailableAtTime } from "@/core/service-availability";
 
 type ResolvedManagedAppointment = {
   startTime: Date;
@@ -110,6 +111,17 @@ export async function resolveManagedAppointment(
   const localStart = toZonedTime(requestedStart, business.timezone);
   const localEnd = toZonedTime(endTime, business.timezone);
   const dayOfWeek = localStart.getDay();
+
+  if (!isServiceAvailableAtTime({
+    availabilityType: service.availabilityType,
+    specialWeekDays: service.specialWeekDays,
+    specialStartDate: service.specialStartDate?.toISOString().slice(0, 10) ?? null,
+    specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) ?? null,
+    specialStartTime: service.specialStartTime,
+    specialEndTime: service.specialEndTime,
+  }, localStart, localEnd)) {
+    return { error: `${service.name} no está disponible en el día u horario seleccionado` };
+  }
 
   // Build a date-only key for override lookups
   const dateKey = [

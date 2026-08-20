@@ -88,6 +88,9 @@ export async function createRecurringPlanAction(
     where: { id: serviceId, businessId: business.id },
   });
   if (!service) return { error: "Servicio no encontrado" };
+  if (service.availabilityType === "SPECIAL") {
+    return { error: "Los servicios especiales no pueden configurarse como planes recurrentes" };
+  }
 
   await prisma.recurringPlan.upsert({
     where: { serviceId },

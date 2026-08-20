@@ -198,6 +198,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     recurringBookingId: appointment.recurringBookingId ?? null,
     clientNotes: appointment.client?.privateNotes ?? null,
     internalNotes: appointment.internalNotes,
+    sessionBaseAmount: appointment.sessionBaseAmount,
+    tipAmount: appointment.tipAmount,
+    postSessionItems: (appointment.postSessionItems as { description: string; amount: number }[] | null) ?? [],
+    paymentMethod: appointment.paymentMethod,
+    settledAt: appointment.settledAt?.toISOString() ?? null,
   }));
 
   const pendingSerialized = pendingRecurring.map((booking) => ({

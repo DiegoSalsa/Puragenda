@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Mi agenda",
-  description: "Consulta tus próximas citas, historial y premios sin contraseña.",
+  description: "Consulta tus próximas citas, historial y premios.",
   robots: { index: false, follow: false },
 };
 
@@ -44,10 +44,10 @@ function appointmentTime(start: Date, end: Date, timezone: string) {
 export default async function ClientPortalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; cuenta?: string }>;
 }) {
   const [email, query] = await Promise.all([getClientPortalEmail(), searchParams]);
-  if (!email) return <ClientPortalAccessForm invalidLink={query.error === "enlace-invalido"} />;
+  if (!email) return <ClientPortalAccessForm invalidLink={query.error === "enlace-invalido" || query.error === "activacion-invalida"} />;
 
   const data = await getClientPortalData(email);
   const firstName = data.displayName.split(/\s+/)[0];

@@ -10,6 +10,8 @@ import {
   cancellationClientEmail,
   forgotPasswordEmail,
   clientPortalAccessEmail,
+  clientPortalVerificationEmail,
+  clientPortalPasswordResetEmail,
   adminLoginCodeEmail,
   newRegistrationAdminEmail,
   loyaltyStampEarnedEmail,
@@ -502,8 +504,43 @@ export async function sendClientPortalAccessEmail(
   });
 }
 
+export async function sendClientPortalVerificationEmail(
+  email: string,
+  name: string,
+  verificationUrl: string,
+) {
+  const { subject, html } = await localized(
+    clientPortalVerificationEmail({ verificationUrl, name }),
+    { customerEmail: email },
+  );
+  return deliverEmail("client portal account verification", {
+    from: EMAIL_FROM,
+    to: email,
+    subject,
+    html,
+  });
+}
+
+export async function sendClientPortalPasswordResetEmail(email: string, resetUrl: string) {
+  const { subject, html } = await localized(
+    clientPortalPasswordResetEmail({ resetUrl }),
+    { customerEmail: email },
+  );
+  return deliverEmail("client portal password reset", {
+    from: EMAIL_FROM,
+    to: email,
+    subject,
+    html,
+  });
+}
+
 export async function createClientPortalEmailUrl(customerEmail: string): Promise<string | null> {
   try {
+    const account = await prisma.clientPortalAccount.findUnique({
+      where: { email: customerEmail.trim().toLowerCase() },
+      select: { emailVerifiedAt: true },
+    });
+    if (account?.emailVerifiedAt) return `${getClientPortalAppUrl()}/mi-agenda`;
     const { token } = await issueClientPortalEmailToken(customerEmail);
     return `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`;
   } catch (error) {

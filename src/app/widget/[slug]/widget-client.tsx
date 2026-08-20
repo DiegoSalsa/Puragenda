@@ -12,6 +12,7 @@ import { ProductionOrderFlow } from "./production-order-flow";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { useLocale, useTranslations } from "next-intl";
 import { buildSlots } from "@/core/availability";
+import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
 
 export { buildSlots } from "@/core/availability";
 
@@ -48,6 +49,12 @@ interface Service {
   productionLeadTimeWeeks: number;
   productionDepositPercent: number;
   requiresReferenceImages: boolean;
+  availabilityType: "NORMAL" | "SPECIAL";
+  specialWeekDays: number[];
+  specialStartDate: string | null;
+  specialEndDate: string | null;
+  specialStartTime: string | null;
+  specialEndTime: string | null;
   category: { id: string; name: string; position: number } | null;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
@@ -120,7 +127,13 @@ const WEEK_DAYS = [
 ];
 const WEEK_NAMES: Record<number, string> = { 0: "Domingo", 1: "Lunes", 2: "Martes", 3: "Miercoles", 4: "Jueves", 5: "Viernes", 6: "Sabado" };
 
-function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDayBookings?: boolean, scheduleOverrides?: ScheduleOverride[]) {
+function buildDays(
+  timezone: string,
+  businessHours?: BusinessHour[],
+  allowSameDayBookings?: boolean,
+  scheduleOverrides?: ScheduleOverride[],
+  acceptsDate: (date: Date) => boolean = () => true,
+) {
   const days: Date[] = [];
   let d = toZonedTime(new Date(), timezone);
   // If same-day bookings are allowed, start from today; otherwise from tomorrow
@@ -145,7 +158,7 @@ function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDa
 
     if (override) {
       // Override takes priority: if isOpen, include the day; if not, skip
-      if (override.isOpen) {
+      if (override.isOpen && acceptsDate(d)) {
         days.push(new Date(d));
       }
     } else {
@@ -154,7 +167,7 @@ function buildDays(timezone: string, businessHours?: BusinessHour[], allowSameDa
         const bh = businessHours.find((h) => h.dayOfWeek === dow);
         if (bh && !bh.isOpen) { d = addDays(d, 1); checked++; continue; }
       }
-      days.push(new Date(d));
+      if (acceptsDate(d)) days.push(new Date(d));
     }
     d = addDays(d, 1);
     checked++;
@@ -302,6 +315,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialStep === "datetime" ? deepLinkedDate : null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", address: "" });
+  const [portalAccountActive, setPortalAccountActive] = useState(false);
+  const [activationPassword, setActivationPassword] = useState("");
+  const [activationPasswordConfirmation, setActivationPasswordConfirmation] = useState("");
+  const [activationLoading, setActivationLoading] = useState(false);
+  const [activationMessage, setActivationMessage] = useState("");
+  const [activationError, setActivationError] = useState("");
   const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false, address: false });
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -333,6 +352,24 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringSubmitting, setRecurringSubmitting] = useState(false);
   const [recurringError, setRecurringError] = useState("");
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/client-portal/profile", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((profile) => {
+        if (!active || !profile) return;
+        setPortalAccountActive(true);
+        setForm((current) => ({
+          name: current.name || profile.name || "",
+          email: current.email || profile.email || "",
+          phone: current.phone || profile.phone || "",
+          address: current.address || profile.address || "",
+        }));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const availableServices = useMemo(() => selectedLocation ? services.filter((service) => service.locationIds?.includes(selectedLocation.id)) : services, [services, selectedLocation]);
   const effectiveHours = selectedLocation?.hours?.length ? selectedLocation.hours : businessHours;
@@ -480,16 +517,23 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const hasMultipleFilteredStaff = filteredStaff.length > 1;
 
   const days = useMemo(() => {
-    const availableDays = buildDays(effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides);
+    const availableDays = buildDays(
+      effectiveTimezone,
+      effectiveHours,
+      allowSameDayBookings,
+      effectiveOverrides,
+      (date) => activeServices.every((service) => isServiceAvailableOnDate(service, date)),
+    );
     if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)) return availableDays;
     const [year, month, day] = initialDate.split("-").map(Number);
     const linkedDate = new Date(year, month - 1, day, 12, 0, 0, 0);
     if (Number.isNaN(linkedDate.getTime())) return availableDays;
+    if (!activeServices.every((service) => isServiceAvailableOnDate(service, linkedDate))) return availableDays;
     const alreadyIncluded = availableDays.some((date) => format(date, "yyyy-MM-dd") === initialDate);
     return alreadyIncluded
       ? availableDays
       : [...availableDays, linkedDate].sort((left, right) => left.getTime() - right.getTime());
-  }, [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides, initialDate]);
+  }, [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides, initialDate, activeServices]);
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
@@ -523,8 +567,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       generated = generated.filter((slot) => slot.start > cutoff);
     }
 
+    generated = generated.filter((slot) =>
+      activeServices.every((service) => isServiceAvailableAtTime(service, slot.start, slot.end)),
+    );
+
     return generated;
-  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone]);
+  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone, activeServices]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -850,6 +898,38 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       }
       setStep("success");
     } catch (err) { setApiError(err instanceof Error ? err.message : legacy("6ihSDtQvEFAi")); } finally { setSubmitting(false); }
+  }
+
+  async function activateClientAccount(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActivationError("");
+    if (activationPassword !== activationPasswordConfirmation) {
+      setActivationError("Las contraseñas no coinciden");
+      return;
+    }
+    setActivationLoading(true);
+    try {
+      const response = await fetch("/api/client-portal/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: activationPassword,
+          name: form.name,
+          phone: form.phone,
+          defaultAddress: form.address,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No pudimos activar la cuenta");
+      setActivationMessage(payload.message);
+      setActivationPassword("");
+      setActivationPasswordConfirmation("");
+    } catch (error) {
+      setActivationError(error instanceof Error ? error.message : "No pudimos activar la cuenta");
+    } finally {
+      setActivationLoading(false);
+    }
   }
 
   function restart() {
@@ -2070,6 +2150,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </span>
                 </div>
               </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textSecondary }}>
+                <span>{portalAccountActive ? "Tus datos se completaron desde Mi agenda." : "¿Ya tienes cuenta? Evita volver a escribir tus datos."}</span>
+                {!portalAccountActive && <a href="/mi-agenda" className="font-semibold underline underline-offset-4" style={{ color: pc }}>Iniciar sesión</a>}
+              </div>
               <form onSubmit={handleConfirm} className="space-y-4">
                 {([["name", t("fullName"), "Alex Morgan", UserRound, "text"] as const, ["email", t("email"), "name@example.com", Mail, "email"] as const, ["phone", t("phone"), "+1 555 123 4567", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
                   <div key={field} className="space-y-1.5">
@@ -2216,6 +2300,25 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     </div>
                   </div>
                 </>
+              )}
+              {!previewMode && !portalAccountActive && (
+                <div className="mx-auto max-w-md rounded-2xl border p-5 text-left" style={{ background: `${pc}08`, borderColor: `${pc}35` }}>
+                  <h3 className="text-base font-semibold" style={{ color: textColor }}>No vuelvas a completar tus datos</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed" style={{ color: textSecondary }}>Crea una contraseña para activar Mi agenda. Solo recibirás un correo para confirmar tu cuenta.</p>
+                  {activationMessage ? (
+                    <p className="mt-4 flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm font-medium text-green-500"><CheckCircle2 className="h-4 w-4" />{activationMessage}</p>
+                  ) : (
+                    <form onSubmit={activateClientAccount} className="mt-4 space-y-3">
+                      <input type="password" minLength={10} required autoComplete="new-password" value={activationPassword} onChange={(event) => setActivationPassword(event.target.value)} placeholder="Crea una contraseña" className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wbg)", color: textColor }} />
+                      <input type="password" minLength={10} required autoComplete="new-password" value={activationPasswordConfirmation} onChange={(event) => setActivationPasswordConfirmation(event.target.value)} placeholder="Repite la contraseña" className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wbg)", color: textColor }} />
+                      <p className="text-xs" style={{ color: textSecondary }}>Mínimo 10 caracteres, una letra y un número.</p>
+                      {activationError && <p className="text-xs font-medium text-red-500">{activationError}</p>}
+                      <button type="submit" disabled={activationLoading} className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{ background: pc, color: getContrastColor(pc) }}>
+                        {activationLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Activar Mi agenda"}
+                      </button>
+                    </form>
+                  )}
+                </div>
               )}
               {!previewMode && <div
                 className="mx-auto max-w-md rounded-2xl border p-5"

@@ -153,6 +153,16 @@ export const customProductionWindowSchema = z.object({
   path: ["endDate"],
 });
 
+const optionalDateOnly = z.preprocess(
+  (value) => (value === "" || value === undefined ? null : value),
+  z.string().date("La fecha no es válida").nullable(),
+);
+
+const optionalClock = z.preprocess(
+  (value) => (value === "" || value === undefined ? null : value),
+  z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "La hora no es válida").nullable(),
+);
+
 export const serviceSchema = z.object({
   name: z
     .string({ message: "El nombre es obligatorio" })
@@ -207,6 +217,13 @@ export const serviceSchema = z.object({
 
   bookingMode: z.enum(["APPOINTMENT", "PRODUCTION"]).optional().default("APPOINTMENT"),
 
+  availabilityType: z.enum(["NORMAL", "SPECIAL"]).optional().default("NORMAL"),
+  specialWeekDays: z.array(z.coerce.number().int().min(0).max(6)).max(7).optional().default([]),
+  specialStartDate: optionalDateOnly.optional().default(null),
+  specialEndDate: optionalDateOnly.optional().default(null),
+  specialStartTime: optionalClock.optional().default(null),
+  specialEndTime: optionalClock.optional().default(null),
+
   productionScheduleMode: z.enum(["WEEKLY", "CUSTOM"]).optional().default("WEEKLY"),
 
   weeklyProductionCapacity: z.coerce
@@ -255,6 +272,31 @@ export const serviceSchema = z.object({
     .optional()
     .default([]),
 }).superRefine((service, ctx) => {
+  if (new Set(service.specialWeekDays).size !== service.specialWeekDays.length) {
+    ctx.addIssue({ code: "custom", message: "Los días especiales no pueden repetirse", path: ["specialWeekDays"] });
+  }
+
+  if (service.availabilityType === "SPECIAL") {
+    if (service.bookingMode !== "APPOINTMENT") {
+      ctx.addIssue({ code: "custom", message: "La disponibilidad especial solo aplica a servicios con cita", path: ["availabilityType"] });
+    }
+    if (service.specialWeekDays.length === 0) {
+      ctx.addIssue({ code: "custom", message: "Selecciona al menos un día para el servicio especial", path: ["specialWeekDays"] });
+    }
+    if (!!service.specialStartDate !== !!service.specialEndDate) {
+      ctx.addIssue({ code: "custom", message: "Completa ambas fechas de vigencia", path: ["specialEndDate"] });
+    }
+    if (service.specialStartDate && service.specialEndDate && service.specialEndDate < service.specialStartDate) {
+      ctx.addIssue({ code: "custom", message: "La fecha final debe ser igual o posterior a la inicial", path: ["specialEndDate"] });
+    }
+    if (!!service.specialStartTime !== !!service.specialEndTime) {
+      ctx.addIssue({ code: "custom", message: "Completa ambas horas especiales", path: ["specialEndTime"] });
+    }
+    if (service.specialStartTime && service.specialEndTime && service.specialEndTime <= service.specialStartTime) {
+      ctx.addIssue({ code: "custom", message: "La hora final debe ser posterior a la inicial", path: ["specialEndTime"] });
+    }
+  }
+
   if (service.bookingMode !== "PRODUCTION" || service.productionScheduleMode !== "CUSTOM") return;
 
   const activeWindows = service.customProductionWindows.filter((window) => window.isActive);

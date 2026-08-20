@@ -2,11 +2,15 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/server/db/prisma";
+import bcrypt from "bcrypt";
+import { SALT_ROUNDS } from "@/core/constants";
+import type { ClientPortalTokenPurpose } from "@prisma/client";
 
 export const CLIENT_PORTAL_COOKIE_NAME = "puragenda_client_portal";
 export const CLIENT_PORTAL_SESSION_SECONDS = 30 * 24 * 60 * 60;
 export const CLIENT_PORTAL_LINK_MINUTES = 15;
 export const CLIENT_PORTAL_EMAIL_LINK_DAYS = 30;
+export const CLIENT_PORTAL_ACCOUNT_TOKEN_MINUTES = 60;
 
 const MAGIC_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 
@@ -58,7 +62,11 @@ export function hashClientPortalToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-async function createClientPortalMagicToken(email: string, lifetimeMinutes: number) {
+async function createClientPortalMagicToken(
+  email: string,
+  lifetimeMinutes: number,
+  purpose: ClientPortalTokenPurpose = "MAGIC_ACCESS",
+) {
   const normalizedEmail = normalizeClientPortalEmail(email);
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + lifetimeMinutes * 60 * 1000);
@@ -68,7 +76,7 @@ async function createClientPortalMagicToken(email: string, lifetimeMinutes: numb
       where: { expiresAt: { lte: new Date() } },
     }),
     prisma.clientPortalToken.create({
-      data: { email: normalizedEmail, tokenHash: hashClientPortalToken(token), expiresAt },
+      data: { email: normalizedEmail, tokenHash: hashClientPortalToken(token), expiresAt, purpose },
     }),
   ]);
 
@@ -76,7 +84,15 @@ async function createClientPortalMagicToken(email: string, lifetimeMinutes: numb
 }
 
 export async function issueClientPortalMagicToken(email: string) {
-  return createClientPortalMagicToken(email, CLIENT_PORTAL_LINK_MINUTES);
+  return createClientPortalMagicToken(email, CLIENT_PORTAL_LINK_MINUTES, "MAGIC_ACCESS");
+}
+
+export async function issueClientPortalVerificationToken(email: string) {
+  return createClientPortalMagicToken(email, CLIENT_PORTAL_ACCOUNT_TOKEN_MINUTES, "VERIFY_ACCOUNT");
+}
+
+export async function issueClientPortalPasswordResetToken(email: string) {
+  return createClientPortalMagicToken(email, CLIENT_PORTAL_ACCOUNT_TOKEN_MINUTES, "RESET_PASSWORD");
 }
 
 export async function issueClientPortalEmailToken(email: string) {
@@ -101,11 +117,14 @@ export async function issueClientPortalEmailTokens(emails: string[]): Promise<Ma
   return new Map(tokens.map(({ email, token }) => [email, token]));
 }
 
-export async function consumeClientPortalMagicToken(token: string): Promise<string | null> {
+export async function consumeClientPortalToken(
+  token: string,
+  purpose?: ClientPortalTokenPurpose,
+): Promise<string | null> {
   if (!MAGIC_TOKEN_PATTERN.test(token)) return null;
   const tokenHash = hashClientPortalToken(token);
   const record = await prisma.clientPortalToken.findUnique({ where: { tokenHash } });
-  if (!record || record.consumedAt || record.expiresAt <= new Date()) return null;
+  if (!record || record.consumedAt || record.expiresAt <= new Date() || (purpose && record.purpose !== purpose)) return null;
 
   const result = await prisma.clientPortalToken.updateMany({
     where: { id: record.id, consumedAt: null, expiresAt: { gt: new Date() } },
@@ -113,6 +132,110 @@ export async function consumeClientPortalMagicToken(token: string): Promise<stri
   });
 
   return result.count === 1 ? record.email : null;
+}
+
+export function consumeClientPortalMagicToken(token: string) {
+  return consumeClientPortalToken(token, "MAGIC_ACCESS");
+}
+
+export async function registerClientPortalAccount(input: {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string | null;
+  defaultAddress?: string | null;
+}) {
+  const email = normalizeClientPortalEmail(input.email);
+  if (!(await hasClientPortalRecords(email))) {
+    return { ok: false as const, error: "Primero realiza una reserva con este correo para activar tu cuenta." };
+  }
+
+  const existing = await prisma.clientPortalAccount.findUnique({ where: { email } });
+  if (existing?.emailVerifiedAt) {
+    return { ok: false as const, error: "Esta cuenta ya está activa. Inicia sesión." };
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+  await prisma.clientPortalAccount.upsert({
+    where: { email },
+    create: {
+      email,
+      passwordHash,
+      name: input.name.trim(),
+      phone: input.phone?.trim() || null,
+      defaultAddress: input.defaultAddress?.trim() || null,
+    },
+    update: {
+      passwordHash,
+      name: input.name.trim(),
+      phone: input.phone?.trim() || null,
+      defaultAddress: input.defaultAddress?.trim() || null,
+    },
+  });
+
+  return { ok: true as const, ...(await issueClientPortalVerificationToken(email)) };
+}
+
+export async function verifyClientPortalAccount(token: string) {
+  const email = await consumeClientPortalToken(token, "VERIFY_ACCOUNT");
+  if (!email) return null;
+  const updated = await prisma.clientPortalAccount.updateMany({
+    where: { email, emailVerifiedAt: null },
+    data: { emailVerifiedAt: new Date() },
+  });
+  return updated.count === 1 ? email : null;
+}
+
+export async function verifyClientPortalCredentials(emailInput: string, password: string) {
+  const email = normalizeClientPortalEmail(emailInput);
+  const account = await prisma.clientPortalAccount.findUnique({ where: { email } });
+  if (!account?.emailVerifiedAt) return null;
+  return (await bcrypt.compare(password, account.passwordHash)) ? account : null;
+}
+
+export async function resetClientPortalPassword(token: string, password: string) {
+  const email = await consumeClientPortalToken(token, "RESET_PASSWORD");
+  if (!email) return null;
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const updated = await prisma.clientPortalAccount.updateMany({
+    where: { email, emailVerifiedAt: { not: null } },
+    data: { passwordHash },
+  });
+  return updated.count === 1 ? email : null;
+}
+
+export async function getClientPortalProfile(emailInput: string) {
+  const email = normalizeClientPortalEmail(emailInput);
+  const account = await prisma.clientPortalAccount.findUnique({
+    where: { email },
+    select: { name: true, email: true, phone: true, defaultAddress: true, emailVerifiedAt: true },
+  });
+  if (!account?.emailVerifiedAt) return null;
+  return {
+    name: account.name,
+    email: account.email,
+    phone: account.phone ?? "",
+    address: account.defaultAddress ?? "",
+  };
+}
+
+export async function updateClientPortalProfileFromBooking(input: {
+  sessionEmail: string | null;
+  customerEmail: string;
+  name: string;
+  phone: string;
+  address?: string | null;
+}) {
+  const email = normalizeClientPortalEmail(input.customerEmail);
+  if (!input.sessionEmail || normalizeClientPortalEmail(input.sessionEmail) !== email) return;
+  await prisma.clientPortalAccount.updateMany({
+    where: { email, emailVerifiedAt: { not: null } },
+    data: {
+      name: input.name.trim(),
+      phone: input.phone.trim() || null,
+      ...(input.address?.trim() ? { defaultAddress: input.address.trim() } : {}),
+    },
+  });
 }
 
 export function createClientPortalSessionToken(

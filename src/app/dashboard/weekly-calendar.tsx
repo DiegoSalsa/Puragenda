@@ -15,6 +15,7 @@ import {
   type EditableAppointment,
 } from "./appointment-editor";
 import { PosPaymentDialog } from "./pos-payment-dialog";
+import { AppointmentSettlementDialog } from "./appointment-settlement-dialog";
 
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
@@ -29,6 +30,11 @@ interface CalendarAppointment {
   recurringBookingId?: string | null;
   clientNotes?: string | null;
   internalNotes?: string | null;
+  sessionBaseAmount: number | null;
+  tipAmount: number;
+  postSessionItems: { description: string; amount: number }[];
+  paymentMethod: string | null;
+  settledAt: string | null;
 }
 
 interface CalendarBusinessHour {
@@ -149,6 +155,7 @@ export function WeeklyCalendar({
     initialStart?: Date;
     initialStaffId?: string;
   } | null>(null);
+  const [settlementAppointment, setSettlementAppointment] = useState<CalendarAppointment | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   const weekStart = useMemo(() => {
@@ -828,6 +835,11 @@ export function WeeklyCalendar({
                   <Pencil className="h-4 w-4" /> {t("editOrReschedule")}
                 </button>
               )}
+              {canManageAppointments && ["CHECKED_IN", "COMPLETED"].includes(selected.status) && (
+                <button type="button" onClick={() => setSettlementAppointment(selected)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 text-sm font-medium text-emerald-400">
+                  <Banknote className="h-4 w-4" /> {selected.settledAt ? "Editar cierre de sesión" : "Cerrar sesión y registrar cobro"}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -843,6 +855,14 @@ export function WeeklyCalendar({
           clients={clients}
           currencyCode={currencyCode}
           onClose={() => setEditor(null)}
+        />
+      )}
+      {settlementAppointment && (
+        <AppointmentSettlementDialog
+          appointment={settlementAppointment}
+          currencyCode={currencyCode}
+          onClose={() => setSettlementAppointment(null)}
+          onSaved={() => { setSettlementAppointment(null); setSelected(null); router.refresh(); }}
         />
       )}
     </>

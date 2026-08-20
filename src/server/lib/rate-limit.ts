@@ -157,6 +157,20 @@ export const clientPortalLinkLimiter = rateLimit({
   message: "Demasiadas solicitudes de acceso. Espera 15 minutos.",
 });
 
+/** Client portal password login: 8 attempts per 15 minutes per IP. */
+export const clientPortalLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: "Demasiados intentos de acceso. Espera 15 minutos.",
+});
+
+/** Client account activation/reset emails: 4 requests per hour per IP. */
+export const clientPortalAccountEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 4,
+  message: "Demasiadas solicitudes de correo. Espera una hora.",
+});
+
 /** Billing: 5 attempts per 15 minutes */
 export const billingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

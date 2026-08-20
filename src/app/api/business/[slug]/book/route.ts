@@ -15,6 +15,8 @@ import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oa
 import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
 import { getLocationForBusiness } from "@/server/services/location.service";
 import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.service";
+import { isServiceAvailableAtTime } from "@/core/service-availability";
+import { getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -340,6 +342,21 @@ export async function POST(
       );
     }
 
+    const unavailableSpecialService = allSelectedServices.find((selected) => !isServiceAvailableAtTime({
+      availabilityType: selected.availabilityType,
+      specialWeekDays: selected.specialWeekDays,
+      specialStartDate: selected.specialStartDate?.toISOString().slice(0, 10) ?? null,
+      specialEndDate: selected.specialEndDate?.toISOString().slice(0, 10) ?? null,
+      specialStartTime: selected.specialStartTime,
+      specialEndTime: selected.specialEndTime,
+    }, localStart, localEnd));
+    if (unavailableSpecialService) {
+      return Response.json(
+        { error: `${unavailableSpecialService.name} no está disponible en el día u horario seleccionado` },
+        { status: 400 },
+      );
+    }
+
     if (bookingDateKey === todayKey) {
       if (!business.allowSameDayBookings) {
         return Response.json(
@@ -545,6 +562,13 @@ export async function POST(
         phone: customerPhone,
         businessId: business.id,
       },
+    });
+    await updateClientPortalProfileFromBooking({
+      sessionEmail: getClientPortalEmailFromRequest(request),
+      customerEmail,
+      name: customerName,
+      phone: customerPhone,
+      address: requiresHomeAddress ? customerAddress : null,
     });
 
     // ── Check deposit requirements (per-service) ──

@@ -10,6 +10,7 @@ vi.mock("@/server/email/resend", () => ({
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
     business: { findUnique: vi.fn(), findFirst: vi.fn(async () => ({ locale: "es" })) },
+    clientPortalAccount: { findUnique: vi.fn(async () => null) },
   },
 }));
 

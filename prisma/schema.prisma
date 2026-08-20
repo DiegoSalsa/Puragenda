@@ -17,6 +17,17 @@ enum UserRole {
   SUPERADMIN
 }
 
+enum ClientPortalTokenPurpose {
+  MAGIC_ACCESS
+  VERIFY_ACCOUNT
+  RESET_PASSWORD
+}
+
+enum ServiceAvailabilityType {
+  NORMAL
+  SPECIAL
+}
+
 enum WidgetPromoPlacement {
   HEADER
   BETWEEN_SERVICES
@@ -48,6 +59,7 @@ model User {
   storyCampaigns            StoryCampaign[]
   storyPresets              StoryPreset[]
   posPaymentsCreated        PosPayment[]               @relation("PosPaymentCreatedBy")
+  settledAppointments       Appointment[]              @relation("AppointmentSettledBy")
 }
 
 // ==========================================
@@ -65,15 +77,30 @@ model PasswordResetToken {
 }
 
 model ClientPortalToken {
-  id         String    @id @default(cuid())
+  id         String                   @id @default(cuid())
   email      String
-  tokenHash  String    @unique
+  tokenHash  String                   @unique
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime  @default(now())
+  purpose    ClientPortalTokenPurpose @default(MAGIC_ACCESS)
+  createdAt  DateTime                 @default(now())
 
   @@index([email, createdAt])
   @@index([expiresAt])
+}
+
+model ClientPortalAccount {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  defaultAddress  String?
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([emailVerifiedAt])
 }
 
 model AdminLoginCode {
@@ -459,20 +486,20 @@ model WidgetPromoBlock {
 // ==========================================
 
 model BookingDiscountCode {
-  id             String              @id @default(cuid())
-  businessId     String
-  code           String
-  discountType   BookingDiscountType
-  discountValue  Int
-  minSubtotal    Int                 @default(0)
-  startsAt       DateTime?
-  expiresAt      DateTime?
-  isActive       Boolean             @default(true)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id            String              @id @default(cuid())
+  businessId    String
+  code          String
+  discountType  BookingDiscountType
+  discountValue Int
+  minSubtotal   Int                 @default(0)
+  startsAt      DateTime?
+  expiresAt     DateTime?
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
-  business       Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  appointments   Appointment[]
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   @@unique([businessId, code])
   @@index([businessId, isActive, startsAt, expiresAt])
@@ -735,25 +762,31 @@ model ScheduleBlock {
 }
 
 model Service {
-  id                       String                 @id @default(cuid())
+  id                       String                  @id @default(cuid())
   name                     String
-  position                 Int                    @default(0)
+  position                 Int                     @default(0)
   description              String?
   imageUrl                 String?
   duration                 Int
   price                    Float
-  depositAmount            Int                    @default(0) // Amount in the business currency
+  depositAmount            Int                     @default(0) // Amount in the business currency
   depositPaymentUrl        String?
-  bookingMode              ServiceBookingMode     @default(APPOINTMENT)
-  productionScheduleMode   ProductionScheduleMode @default(WEEKLY)
-  weeklyProductionCapacity Int                    @default(5)
-  productionWeeksAhead     Int                    @default(24)
-  productionLeadTimeWeeks  Int                    @default(1)
+  bookingMode              ServiceBookingMode      @default(APPOINTMENT)
+  productionScheduleMode   ProductionScheduleMode  @default(WEEKLY)
+  weeklyProductionCapacity Int                     @default(5)
+  productionWeeksAhead     Int                     @default(24)
+  productionLeadTimeWeeks  Int                     @default(1)
   customProductionWindows  Json?
-  productionDepositPercent Int                    @default(50)
-  requiresReferenceImages  Boolean                @default(false)
+  productionDepositPercent Int                     @default(50)
+  requiresReferenceImages  Boolean                 @default(false)
   businessId               String
   categoryId               String?
+  availabilityType         ServiceAvailabilityType @default(NORMAL)
+  specialWeekDays          Int[]                   @default([])
+  specialStartDate         DateTime?               @db.Date
+  specialEndDate           DateTime?               @db.Date
+  specialStartTime         String?
+  specialEndTime           String?
 
   business          Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
   category          ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -1078,6 +1111,12 @@ model Appointment {
   customerActionTokenExpiresAt DateTime?
   customerActionTokenUsedAt    DateTime?
   internalNotes                String?
+  sessionBaseAmount            Float?
+  tipAmount                    Float                @default(0)
+  postSessionItems             Json?
+  paymentMethod                String?
+  settledAt                    DateTime?
+  settledByUserId              String?
   // ── Deposit Payment ──
   depositAmount                Int? // Amount charged in the business currency
   depositPaymentUrl            String? // Snapshot of an external manual payment link
@@ -1110,6 +1149,7 @@ model Appointment {
   storyCampaign       StoryCampaign?       @relation(fields: [storyCampaignId], references: [id], onDelete: SetNull)
   googleCalendarEvent GoogleCalendarEvent?
   posPayments         PosPayment[]
+  settledByUser       User?                @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
   @@index([serviceId])
@@ -1121,6 +1161,7 @@ model Appointment {
   @@index([bookingDiscountCodeId])
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
+  @@index([settledByUserId])
 }
 
 model PosPayment {

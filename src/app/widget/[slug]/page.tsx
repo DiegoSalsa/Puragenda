@@ -213,6 +213,12 @@ export default async function WidgetPage({
         productionLeadTimeWeeks: s.productionLeadTimeWeeks,
         productionDepositPercent: s.productionDepositPercent,
         requiresReferenceImages: s.requiresReferenceImages,
+        availabilityType: s.availabilityType,
+        specialWeekDays: s.specialWeekDays,
+        specialStartDate: s.specialStartDate?.toISOString().slice(0, 10) ?? null,
+        specialEndDate: s.specialEndDate?.toISOString().slice(0, 10) ?? null,
+        specialStartTime: s.specialStartTime,
+        specialEndTime: s.specialEndTime,
         locationIds: s.locations.map((assignment) => assignment.locationId),
         category: s.category
           ? {

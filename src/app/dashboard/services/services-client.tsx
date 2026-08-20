@@ -100,6 +100,12 @@ interface Service {
   requiresReferenceImages: boolean;
   categoryId: string | null;
   category: { id: string; name: string; position: number } | null;
+  availabilityType: "NORMAL" | "SPECIAL";
+  specialWeekDays: number[];
+  specialStartDate: string | Date | null;
+  specialEndDate: string | Date | null;
+  specialStartTime: string | null;
+  specialEndTime: string | null;
   optionCategories: ServiceOptionCategory[];
   recurringPlan: RecurringPlan | null;
   _count: { recurringBookings: number };
@@ -168,6 +174,12 @@ function getCustomProductionWindows(value: unknown): CustomProductionWindow[] {
   ));
 }
 
+function dateInputValue(value: string | Date | null) {
+  if (!value) return "";
+  const date = typeof value === "string" ? value : value.toISOString();
+  return date.slice(0, 10);
+}
+
 // ─────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────
@@ -228,6 +240,12 @@ export function ServicesClient({
     depositAmount: string;
     depositPaymentUrl: string;
     bookingMode: "APPOINTMENT" | "PRODUCTION";
+    availabilityType: "NORMAL" | "SPECIAL";
+    specialWeekDays: number[];
+    specialStartDate: string;
+    specialEndDate: string;
+    specialStartTime: string;
+    specialEndTime: string;
     productionScheduleMode: "WEEKLY" | "CUSTOM";
     weeklyProductionCapacity: string;
     productionWeeksAhead: string;
@@ -245,6 +263,12 @@ export function ServicesClient({
     depositAmount: "",
     depositPaymentUrl: "",
     bookingMode: "APPOINTMENT" as "APPOINTMENT" | "PRODUCTION",
+    availabilityType: "NORMAL",
+    specialWeekDays: [],
+    specialStartDate: "",
+    specialEndDate: "",
+    specialStartTime: "",
+    specialEndTime: "",
     productionScheduleMode: "WEEKLY",
     weeklyProductionCapacity: "5",
     productionWeeksAhead: "24",
@@ -433,6 +457,12 @@ export function ServicesClient({
       depositAmount: "",
       depositPaymentUrl: "",
       bookingMode: "APPOINTMENT",
+      availabilityType: "NORMAL",
+      specialWeekDays: [],
+      specialStartDate: "",
+      specialEndDate: "",
+      specialStartTime: "",
+      specialEndTime: "",
       productionScheduleMode: "WEEKLY",
       weeklyProductionCapacity: "5",
       productionWeeksAhead: "24",
@@ -462,6 +492,12 @@ export function ServicesClient({
       depositAmount: String(service.depositAmount || 0),
       depositPaymentUrl: service.depositPaymentUrl || "",
       bookingMode: service.bookingMode,
+      availabilityType: service.availabilityType,
+      specialWeekDays: service.specialWeekDays,
+      specialStartDate: dateInputValue(service.specialStartDate),
+      specialEndDate: dateInputValue(service.specialEndDate),
+      specialStartTime: service.specialStartTime || "",
+      specialEndTime: service.specialEndTime || "",
       productionScheduleMode: service.productionScheduleMode,
       weeklyProductionCapacity: String(service.weeklyProductionCapacity),
       productionWeeksAhead: String(service.productionWeeksAhead),
@@ -1120,6 +1156,87 @@ export function ServicesClient({
                   )}
                 </div>
 
+                {form.bookingMode === "APPOINTMENT" && (
+                  <div className="rounded-xl border border-border p-4 space-y-4">
+                    <div>
+                      <p className="flex items-center gap-2 text-sm font-medium">
+                        <CalendarRange className="h-4 w-4 text-brand-foreground" /> Tipo de disponibilidad
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Los servicios normales siguen el horario del negocio. Usa uno especial solo para promociones o eventos en días determinados.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((current) => ({ ...current, availabilityType: "NORMAL" }))}
+                        className={`rounded-xl border p-3 text-left ${form.availabilityType === "NORMAL" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
+                      >
+                        <span className="text-sm font-medium">Servicio normal</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">Disponible según la agenda habitual.</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((current) => ({ ...current, availabilityType: "SPECIAL" }));
+                          setRecurringEnabled(false);
+                          setRecurringOpen(false);
+                        }}
+                        className={`rounded-xl border p-3 text-left ${form.availabilityType === "SPECIAL" ? "border-[#7C3AED] bg-[#7C3AED]/10" : "border-border bg-muted/30"}`}
+                      >
+                        <span className="text-sm font-medium">Servicio especial</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">Solo aparece los días y horas configurados.</span>
+                      </button>
+                    </div>
+
+                    {form.availabilityType === "SPECIAL" && (
+                      <div className="space-y-4 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">Días disponibles</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {WEEK_DAYS.map((day) => {
+                              const selected = form.specialWeekDays.includes(day.value);
+                              return (
+                                <button
+                                  key={day.value}
+                                  type="button"
+                                  onClick={() => setForm((current) => ({
+                                    ...current,
+                                    specialWeekDays: selected
+                                      ? current.specialWeekDays.filter((value) => value !== day.value)
+                                      : [...current.specialWeekDays, day.value],
+                                  }))}
+                                  className={`h-10 min-w-10 rounded-lg border px-3 text-xs font-semibold ${selected ? "border-[#7C3AED] bg-[#7C3AED] text-white" : "border-border bg-background"}`}
+                                >
+                                  {day.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-xs text-muted-foreground">Disponible desde (opcional)</span>
+                            <input type="date" value={form.specialStartDate} onChange={(event) => setForm({ ...form, specialStartDate: event.target.value })} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                          </label>
+                          <label className="space-y-1.5">
+                            <span className="text-xs text-muted-foreground">Disponible hasta (opcional)</span>
+                            <input type="date" value={form.specialEndDate} onChange={(event) => setForm({ ...form, specialEndDate: event.target.value })} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                          </label>
+                          <label className="space-y-1.5">
+                            <span className="text-xs text-muted-foreground">Hora inicial (opcional)</span>
+                            <input type="time" value={form.specialStartTime} onChange={(event) => setForm({ ...form, specialStartTime: event.target.value })} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                          </label>
+                          <label className="space-y-1.5">
+                            <span className="text-xs text-muted-foreground">Hora final (opcional)</span>
+                            <input type="time" value={form.specialEndTime} onChange={(event) => setForm({ ...form, specialEndTime: event.target.value })} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`space-y-1.5 ${form.bookingMode === "PRODUCTION" ? "hidden" : ""}`}>
                     <label className="text-sm text-muted-foreground"><LocalizedText id="JuE5r_W3IL-U" /></label>
@@ -1461,7 +1578,7 @@ export function ServicesClient({
                   )}
                 </div>
 
-                {form.bookingMode === "APPOINTMENT" && <div className="rounded-xl border border-border overflow-hidden">
+                {form.bookingMode === "APPOINTMENT" && form.availabilityType === "NORMAL" && <div className="rounded-xl border border-border overflow-hidden">
                   {/* Header — click to expand/collapse, toggle to activate/deactivate */}
                   <div className="flex w-full items-center justify-between px-4 py-3">
                     <button
@@ -1839,6 +1956,11 @@ export function ServicesClient({
                           {service.bookingMode === "PRODUCTION" && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-600 dark:text-fuchsia-400">
                               <CalendarRange className="h-3 w-3" /><LocalizedText id="1-L2HAv9XQki" />
+                            </span>
+                          )}
+                          {service.availabilityType === "SPECIAL" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                              <CalendarRange className="h-3 w-3" /> Servicio especial · {service.specialWeekDays.map((value) => WEEK_DAYS.find((day) => day.value === value)?.label).filter(Boolean).join(", ")}
                             </span>
                           )}
                         </div>
