@@ -15,7 +15,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ appointmentId: string }> },
 ) {
-  const email = getClientPortalEmailFromRequest(request);
+  const email = await getClientPortalEmailFromRequest(request);
   if (!email) return Response.json({ error: "Acceso vencido" }, { status: 401 });
 
   const { appointmentId } = await params;

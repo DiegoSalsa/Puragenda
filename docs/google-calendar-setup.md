@@ -16,7 +16,7 @@ La integracion mantiene un solo evento organizador por cita para evitar duplicad
 
 1. Crear o seleccionar un proyecto en Google Cloud Console.
 2. Habilitar **Google Calendar API**.
-3. Configurar la pantalla de consentimiento OAuth y sus usuarios de prueba mientras la aplicacion siga en modo de prueba.
+3. Configurar la pantalla de consentimiento OAuth publicada y verificada.
 4. Crear un OAuth Client ID de tipo **Web application**.
 5. Registrar estos redirect URI exactos:
    - Local: `http://localhost:3000/api/google-calendar/callback`
@@ -28,8 +28,6 @@ GOOGLE_CLIENT_ID="...apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="..."
 GOOGLE_CALENDAR_REDIRECT_URI="https://TU_DOMINIO/api/google-calendar/callback"
 GOOGLE_TOKEN_ENCRYPTION_KEY="una-clave-aleatoria-de-al-menos-32-caracteres"
-GOOGLE_CALENDAR_OAUTH_PUBLIC="false"
-GOOGLE_CALENDAR_VERIFICATION_USERS="cuenta-demo@ejemplo.com"
 CRON_SECRET="..."
 ```
 
@@ -52,7 +50,7 @@ En local, `GOOGLE_CALENDAR_REDIRECT_URI` puede omitirse cuando `NEXT_PUBLIC_APP_
 - La integracion solicita acceso offline, lectura de la lista de calendarios, administracion de eventos y lectura exclusiva de intervalos libre/ocupado.
 - `calendar.events` es necesario porque el usuario puede elegir calendarios compartidos en los que tiene permiso de escritura; `calendar.events.owned` no permite operar ese caso.
 - `calendar.events.freebusy` se usa para bloquear horas externas sin leer titulos, descripciones ni asistentes.
-- Mientras los permisos sigan sin verificar, produccion debe mantener `GOOGLE_CALENDAR_OAUTH_PUBLIC=false` y limitar nuevas conexiones a los correos de `GOOGLE_CALENDAR_VERIFICATION_USERS`. Tras la aprobacion, cambiar la primera variable a `true`.
+- La aplicacion OAuth de produccion esta verificada; cualquier usuario de Puragenda con los permisos internos correspondientes puede iniciar la conexion.
 
 ## Diagnostico
 

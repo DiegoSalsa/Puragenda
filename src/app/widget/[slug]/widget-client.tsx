@@ -2,19 +2,24 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, ExternalLink, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { buildSlots } from "@/core/availability";
 import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
 
 export { buildSlots } from "@/core/availability";
+
+const subscribeToEmbeddingContext = () => () => {};
+const readEmbeddingContext = () => window.self !== window.top;
+const readServerEmbeddingContext = () => false;
 
 
 interface RecurringPlan {
@@ -246,6 +251,7 @@ function getContrastColor(hex: string): string {
 }
 
 export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false }: Props) {
+  const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
   const locale = useLocale();
@@ -316,6 +322,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", address: "" });
   const [portalAccountActive, setPortalAccountActive] = useState(false);
+  const [portalProfileComplete, setPortalProfileComplete] = useState(false);
+  const isEmbedded = useSyncExternalStore(subscribeToEmbeddingContext, readEmbeddingContext, readServerEmbeddingContext);
   const [activationPassword, setActivationPassword] = useState("");
   const [activationPasswordConfirmation, setActivationPasswordConfirmation] = useState("");
   const [activationLoading, setActivationLoading] = useState(false);
@@ -360,16 +368,35 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       .then((profile) => {
         if (!active || !profile) return;
         setPortalAccountActive(true);
+        setPortalProfileComplete(Boolean(profile.profileComplete));
         setForm((current) => ({
           name: current.name || profile.name || "",
           email: current.email || profile.email || "",
           phone: current.phone || profile.phone || "",
           address: current.address || profile.address || "",
         }));
+        setRut((current) => current || profile.rut || "");
       })
       .catch(() => {});
     return () => { active = false; };
   }, []);
+
+  function continueWithSavedProfile() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("preview");
+    if (selectedLocation) params.set("location", selectedLocation.slug);
+    if (selectedService) params.set("service", selectedService.id);
+    if (selectedStaff) params.set("staff", selectedStaff.id);
+    if (selectedDate) params.set("date", format(selectedDate, "yyyy-MM-dd"));
+    const query = params.toString();
+    const returnTo = `/widget/${business.slug}${query ? `?${query}` : ""}`;
+    const portalUrl = `/mi-agenda?returnTo=${encodeURIComponent(returnTo)}`;
+    if (isEmbedded) {
+      window.open(portalUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    router.push(portalUrl);
+  }
 
   const availableServices = useMemo(() => selectedLocation ? services.filter((service) => service.locationIds?.includes(selectedLocation.id)) : services, [services, selectedLocation]);
   const effectiveHours = selectedLocation?.hours?.length ? selectedLocation.hours : businessHours;
@@ -577,6 +604,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
   const isFormValid = validation.name && validation.email && validation.phone && validation.address;
+  const accountReadyForCurrentFlow = portalAccountActive
+    && portalProfileComplete
+    && validation.name
+    && validation.email
+    && validation.phone
+    && validation.address
+    && (!selectedService?.recurringPlan?.requiresRut || Boolean(rut.trim()));
 
   const assignedStaffIds = useMemo(() => {
     if (splitStaffMode) {
@@ -917,6 +951,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           password: activationPassword,
           name: form.name,
           phone: form.phone,
+          rut,
           defaultAddress: form.address,
         }),
       });
@@ -1321,6 +1356,20 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
         {renderPromoBlocks("HEADER")}
+
+        {isEmbedded && !portalAccountActive && !previewMode && step !== "success" && (
+          <div className="border-b px-5 py-4 sm:px-6" style={{ borderColor: "var(--wborder)", background: `${pc}0F` }}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold" style={{ color: textColor }}>¿Ya tienes una cuenta?</p>
+                <p className="mt-1 text-xs" style={{ color: textSecondary }}>Continúa en una pestaña segura para cargar tus datos guardados automáticamente.</p>
+              </div>
+              <button type="button" onClick={continueWithSavedProfile} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition hover:opacity-90" style={{ background: pc, color: getContrastColor(pc) }}>
+                Usar mis datos <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="p-5 sm:p-6">
           {step === "location" && (
@@ -1852,37 +1901,54 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               {/* Client data mini-form */}
               <div className="space-y-3">
                 <p className="text-sm font-medium opacity-70" style={{ color: textColor }}><LocalizedText id="IAkiAUdTqKb9" /></p>
-                {([["name", "Nombre y apellido", UserRound, "text"] as const, ["email", legacy("yuPdaXQLQg3R"), Mail, "email"] as const, ["phone", "Telefono", Phone, "tel"] as const]).map(([field, label, Icon, type]) => (
-                  <div key={field} className="space-y-1">
-                    <label className="flex items-center gap-1.5 text-xs opacity-70" style={{ color: textColor }}><Icon className="h-3 w-3" />{label}</label>
-                    <input type={type} value={form[field as keyof FormState]}
-                      onChange={(e) => {
-                        setForm((p) => ({ ...p, [field]: e.target.value }));
-                        if (field === "email" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) {
-                          prefillClientData(e.target.value);
-                        }
-                      }}
-                      placeholder={label}
-                      required
-                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                      style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }}
-                    />
+                {accountReadyForCurrentFlow ? (
+                  <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: `${pc}55`, background: `${pc}0D` }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold" style={{ color: textColor }}>{form.name}</p>
+                        <p className="mt-1" style={{ color: textSecondary }}>{form.email} · {form.phone}</p>
+                        {requiresHomeAddress && <p className="mt-1" style={{ color: textSecondary }}>{form.address}</p>}
+                        {selectedService.recurringPlan.requiresRut && <p className="mt-1" style={{ color: textSecondary }}>{business.taxIdLabel}: {rut}</p>}
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: pc }} />
+                    </div>
+                    <a href="/mi-agenda#perfil" className="mt-3 inline-flex text-xs font-semibold underline underline-offset-4" style={{ color: pc }}>Editar mis datos</a>
                   </div>
-                ))}
-                {requiresHomeAddress && (
-                  <div className="space-y-1 rounded-xl border p-3" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
-                    <label className="flex items-center gap-1.5 text-xs font-medium" style={{ color: textColor }}><MapPin className="h-3.5 w-3.5" /><LocalizedText id="nOiX8ucGiUHj" /></label>
-                    <textarea value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder={legacy("KMhg2VKv-lxV")} required maxLength={300} rows={3}
-                      className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
-                  </div>
-                )}
-                {selectedService.recurringPlan.requiresRut && (
-                  <div className="space-y-1">
-                    <label className="text-xs opacity-70" style={{ color: textColor }}>{business.taxIdLabel}</label>
-                    <input type="text" value={rut} onChange={(e) => setRut(e.target.value)} placeholder={business.taxIdPlaceholder} maxLength={20}
-                      className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
-                      style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
-                  </div>
+                ) : (
+                  <>
+                    {([["name", "Nombre y apellido", UserRound, "text"] as const, ["email", legacy("yuPdaXQLQg3R"), Mail, "email"] as const, ["phone", "Telefono", Phone, "tel"] as const]).map(([field, label, Icon, type]) => (
+                      <div key={field} className="space-y-1">
+                        <label className="flex items-center gap-1.5 text-xs opacity-70" style={{ color: textColor }}><Icon className="h-3 w-3" />{label}</label>
+                        <input type={type} value={form[field as keyof FormState]}
+                          onChange={(e) => {
+                            setForm((p) => ({ ...p, [field]: e.target.value }));
+                            if (field === "email" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) {
+                              prefillClientData(e.target.value);
+                            }
+                          }}
+                          placeholder={label}
+                          required
+                          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                          style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }}
+                        />
+                      </div>
+                    ))}
+                    {requiresHomeAddress && (
+                      <div className="space-y-1 rounded-xl border p-3" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
+                        <label className="flex items-center gap-1.5 text-xs font-medium" style={{ color: textColor }}><MapPin className="h-3.5 w-3.5" /><LocalizedText id="nOiX8ucGiUHj" /></label>
+                        <textarea value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder={legacy("KMhg2VKv-lxV")} required maxLength={300} rows={3}
+                          className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
+                      </div>
+                    )}
+                    {selectedService.recurringPlan.requiresRut && (
+                      <div className="space-y-1">
+                        <label className="text-xs opacity-70" style={{ color: textColor }}>{business.taxIdLabel}</label>
+                        <input type="text" value={rut} onChange={(e) => setRut(e.target.value)} placeholder={business.taxIdPlaceholder} maxLength={20}
+                          className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none"
+                          style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -2152,29 +2218,45 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textSecondary }}>
                 <span>{portalAccountActive ? "Tus datos se completaron desde Mi agenda." : "¿Ya tienes cuenta? Evita volver a escribir tus datos."}</span>
-                {!portalAccountActive && <a href="/mi-agenda" className="font-semibold underline underline-offset-4" style={{ color: pc }}>Iniciar sesión</a>}
+                {!portalAccountActive && <button type="button" onClick={continueWithSavedProfile} className="font-semibold underline underline-offset-4" style={{ color: pc }}>{isEmbedded ? "Abrir reserva segura" : "Iniciar sesión"}</button>}
               </div>
               <form onSubmit={handleConfirm} className="space-y-4">
-                {([["name", t("fullName"), "Alex Morgan", UserRound, "text"] as const, ["email", t("email"), "name@example.com", Mail, "email"] as const, ["phone", t("phone"), "+1 555 123 4567", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
-                  <div key={field} className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
-                    <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} required
-                      className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
-                      style={!touched[field] ? { borderColor: "var(--wborder)", background: "var(--wsubtle)" } : validation[field] ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
-                    {touched[field] && !validation[field] && <p className="text-xs text-red-400"><LocalizedText id="eXjDwrn0NytH" /></p>}
+                {accountReadyForCurrentFlow ? (
+                  <div className="rounded-2xl border p-4 text-sm" style={{ borderColor: `${pc}55`, background: `${pc}0D` }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold" style={{ color: textColor }}>{form.name}</p>
+                        <p className="mt-1" style={{ color: textSecondary }}>{form.email} · {form.phone}</p>
+                        {requiresHomeAddress && <p className="mt-1" style={{ color: textSecondary }}>{form.address}</p>}
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: pc }} />
+                    </div>
+                    <a href="/mi-agenda#perfil" className="mt-3 inline-flex text-xs font-semibold underline underline-offset-4" style={{ color: pc }}>Editar mis datos</a>
                   </div>
-                ))}
-                {/* ── Reward Code Input ── */}
-                {requiresHomeAddress && (
-                  <div className="space-y-1.5 rounded-2xl border p-4" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
-                    <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}><MapPin className="h-4 w-4" style={{ color: pc }} /><LocalizedText id="nOiX8ucGiUHj" /></label>
-                    <p className="text-xs" style={{ color: textSecondary }}><LocalizedText id="vtqhcq6qyAQe" /></p>
-                    <textarea value={form.address} onBlur={() => setTouched((p) => ({ ...p, address: true }))} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder={legacy("tKtYNVxfx1pJ")} required maxLength={300} rows={3}
-                      className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
-                      style={!touched.address ? { borderColor: "var(--wborder)", background: "var(--wbg)" } : validation.address ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
-                    {touched.address && !validation.address && <p className="text-xs text-red-400"><LocalizedText id="M7B_XWM583rX" /></p>}
-                  </div>
+                ) : (
+                  <>
+                    {([["name", t("fullName"), "Alex Morgan", UserRound, "text"] as const, ["email", t("email"), "name@example.com", Mail, "email"] as const, ["phone", t("phone"), "+1 555 123 4567", Phone, "tel"] as const]).map(([field, label, placeholder, Icon, type]) => (
+                      <div key={field} className="space-y-1.5">
+                        <label className="flex items-center gap-1.5 text-sm opacity-70" style={{ color: textColor }}><Icon className="h-3.5 w-3.5" />{label}</label>
+                        <input type={type} value={form[field]} onBlur={() => setTouched((p) => ({ ...p, [field]: true }))} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} required
+                          className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
+                          style={!touched[field] ? { borderColor: "var(--wborder)", background: "var(--wsubtle)" } : validation[field] ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
+                        {touched[field] && !validation[field] && <p className="text-xs text-red-400"><LocalizedText id="eXjDwrn0NytH" /></p>}
+                      </div>
+                    ))}
+                    {requiresHomeAddress && (
+                      <div className="space-y-1.5 rounded-2xl border p-4" style={{ borderColor: `${pc}45`, background: `${pc}08` }}>
+                        <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}><MapPin className="h-4 w-4" style={{ color: pc }} /><LocalizedText id="nOiX8ucGiUHj" /></label>
+                        <p className="text-xs" style={{ color: textSecondary }}><LocalizedText id="vtqhcq6qyAQe" /></p>
+                        <textarea value={form.address} onBlur={() => setTouched((p) => ({ ...p, address: true }))} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} placeholder={legacy("tKtYNVxfx1pJ")} required maxLength={300} rows={3}
+                          className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-all duration-200 focus:shadow-md"
+                          style={!touched.address ? { borderColor: "var(--wborder)", background: "var(--wbg)" } : validation.address ? { borderColor: `${pc}50`, background: `${pc}08` } : { borderColor: "rgba(220,38,38,0.5)", background: "rgba(220,38,38,0.05)" }} />
+                        {touched.address && !validation.address && <p className="text-xs text-red-400"><LocalizedText id="M7B_XWM583rX" /></p>}
+                      </div>
+                    )}
+                  </>
                 )}
+                {/* ── Reward Code Input ── */}
                 <div className="space-y-2 rounded-2xl border p-4 transition-all" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                   <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" /><LocalizedText id="0VFjaPoqf1-e" />

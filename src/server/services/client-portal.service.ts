@@ -7,12 +7,15 @@ import { SALT_ROUNDS } from "@/core/constants";
 import type { ClientPortalTokenPurpose } from "@prisma/client";
 
 export const CLIENT_PORTAL_COOKIE_NAME = "puragenda_client_portal";
-export const CLIENT_PORTAL_SESSION_SECONDS = 30 * 24 * 60 * 60;
+export const CLIENT_PORTAL_SESSION_SECONDS = 400 * 24 * 60 * 60;
+export const CLIENT_PORTAL_LEGACY_SESSION_SECONDS = 30 * 24 * 60 * 60;
 export const CLIENT_PORTAL_LINK_MINUTES = 15;
 export const CLIENT_PORTAL_EMAIL_LINK_DAYS = 30;
 export const CLIENT_PORTAL_ACCOUNT_TOKEN_MINUTES = 60;
 
 const MAGIC_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
+const ACCOUNT_SESSION_PREFIX = "cps_";
+const ACCOUNT_SESSION_PATTERN = /^cps_[A-Za-z0-9_-]{43}$/;
 
 interface ClientPortalPayload {
   email: string;
@@ -142,7 +145,8 @@ export async function registerClientPortalAccount(input: {
   email: string;
   password: string;
   name: string;
-  phone?: string | null;
+  phone: string;
+  rut?: string | null;
   defaultAddress?: string | null;
 }) {
   const email = normalizeClientPortalEmail(input.email);
@@ -162,13 +166,15 @@ export async function registerClientPortalAccount(input: {
       email,
       passwordHash,
       name: input.name.trim(),
-      phone: input.phone?.trim() || null,
+      phone: input.phone.trim(),
+      rut: input.rut?.trim() || null,
       defaultAddress: input.defaultAddress?.trim() || null,
     },
     update: {
       passwordHash,
       name: input.name.trim(),
-      phone: input.phone?.trim() || null,
+      phone: input.phone.trim(),
+      rut: input.rut?.trim() || null,
       defaultAddress: input.defaultAddress?.trim() || null,
     },
   });
@@ -197,10 +203,13 @@ export async function resetClientPortalPassword(token: string, password: string)
   const email = await consumeClientPortalToken(token, "RESET_PASSWORD");
   if (!email) return null;
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-  const updated = await prisma.clientPortalAccount.updateMany({
-    where: { email, emailVerifiedAt: { not: null } },
-    data: { passwordHash },
-  });
+  const [updated] = await prisma.$transaction([
+    prisma.clientPortalAccount.updateMany({
+      where: { email, emailVerifiedAt: { not: null } },
+      data: { passwordHash },
+    }),
+    prisma.clientPortalSession.deleteMany({ where: { account: { email } } }),
+  ]);
   return updated.count === 1 ? email : null;
 }
 
@@ -208,15 +217,48 @@ export async function getClientPortalProfile(emailInput: string) {
   const email = normalizeClientPortalEmail(emailInput);
   const account = await prisma.clientPortalAccount.findUnique({
     where: { email },
-    select: { name: true, email: true, phone: true, defaultAddress: true, emailVerifiedAt: true },
+    select: { name: true, email: true, phone: true, rut: true, defaultAddress: true, emailVerifiedAt: true },
   });
   if (!account?.emailVerifiedAt) return null;
   return {
     name: account.name,
     email: account.email,
     phone: account.phone ?? "",
+    rut: account.rut ?? "",
     address: account.defaultAddress ?? "",
+    profileComplete: Boolean(account.name.trim() && account.phone?.trim()),
   };
+}
+
+export async function updateClientPortalProfile(emailInput: string, input: {
+  name: string;
+  phone: string;
+  rut?: string | null;
+  defaultAddress?: string | null;
+}) {
+  const email = normalizeClientPortalEmail(emailInput);
+  const updated = await prisma.clientPortalAccount.updateMany({
+    where: { email, emailVerifiedAt: { not: null } },
+    data: {
+      name: input.name.trim(),
+      phone: input.phone.trim(),
+      rut: input.rut?.trim() || null,
+      defaultAddress: input.defaultAddress?.trim() || null,
+    },
+  });
+  return updated.count === 1 ? getClientPortalProfile(email) : null;
+}
+
+export async function changeClientPortalPassword(emailInput: string, currentPassword: string, newPassword: string) {
+  const email = normalizeClientPortalEmail(emailInput);
+  const account = await prisma.clientPortalAccount.findUnique({ where: { email } });
+  if (!account?.emailVerifiedAt || !(await bcrypt.compare(currentPassword, account.passwordHash))) return false;
+  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await prisma.$transaction([
+    prisma.clientPortalAccount.update({ where: { id: account.id }, data: { passwordHash } }),
+    prisma.clientPortalSession.deleteMany({ where: { accountId: account.id } }),
+  ]);
+  return true;
 }
 
 export async function updateClientPortalProfileFromBooking(input: {
@@ -224,6 +266,7 @@ export async function updateClientPortalProfileFromBooking(input: {
   customerEmail: string;
   name: string;
   phone: string;
+  rut?: string | null;
   address?: string | null;
 }) {
   const email = normalizeClientPortalEmail(input.customerEmail);
@@ -232,7 +275,8 @@ export async function updateClientPortalProfileFromBooking(input: {
     where: { email, emailVerifiedAt: { not: null } },
     data: {
       name: input.name.trim(),
-      phone: input.phone.trim() || null,
+      phone: input.phone.trim(),
+      ...(input.rut?.trim() ? { rut: input.rut.trim() } : {}),
       ...(input.address?.trim() ? { defaultAddress: input.address.trim() } : {}),
     },
   });
@@ -240,7 +284,7 @@ export async function updateClientPortalProfileFromBooking(input: {
 
 export function createClientPortalSessionToken(
   email: string,
-  maxAgeSeconds = CLIENT_PORTAL_SESSION_SECONDS,
+  maxAgeSeconds = CLIENT_PORTAL_LEGACY_SESSION_SECONDS,
 ): string {
   const payload: ClientPortalPayload = {
     email: normalizeClientPortalEmail(email),
@@ -277,6 +321,68 @@ export function verifyClientPortalSessionToken(token: string): string | null {
   }
 }
 
+export async function createClientPortalAccountSession(
+  emailInput: string,
+  maxAgeSeconds = CLIENT_PORTAL_SESSION_SECONDS,
+): Promise<string> {
+  const email = normalizeClientPortalEmail(emailInput);
+  const account = await prisma.clientPortalAccount.findUnique({
+    where: { email },
+    select: { id: true, emailVerifiedAt: true },
+  });
+
+  // Keep old magic-link access working for customers who have not activated an account yet.
+  if (!account?.emailVerifiedAt) return createClientPortalSessionToken(email);
+
+  const token = `${ACCOUNT_SESSION_PREFIX}${crypto.randomBytes(32).toString("base64url")}`;
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + maxAgeSeconds * 1000);
+  await prisma.$transaction([
+    prisma.clientPortalSession.deleteMany({ where: { expiresAt: { lte: now } } }),
+    prisma.clientPortalSession.create({
+      data: { accountId: account.id, tokenHash: hashClientPortalToken(token), expiresAt, lastUsedAt: now },
+    }),
+  ]);
+  return token;
+}
+
+export async function resolveClientPortalSessionToken(token: string): Promise<string | null> {
+  if (!ACCOUNT_SESSION_PATTERN.test(token)) return verifyClientPortalSessionToken(token);
+  const now = new Date();
+  const session = await prisma.clientPortalSession.findUnique({
+    where: { tokenHash: hashClientPortalToken(token) },
+    select: {
+      id: true,
+      expiresAt: true,
+      account: { select: { email: true, emailVerifiedAt: true } },
+    },
+  });
+  if (!session?.account.emailVerifiedAt || session.expiresAt <= now) return null;
+  await prisma.clientPortalSession.updateMany({
+    where: { id: session.id, expiresAt: { gt: now } },
+    data: { lastUsedAt: now },
+  });
+  return normalizeClientPortalEmail(session.account.email);
+}
+
+export async function renewClientPortalSessionToken(token: string): Promise<boolean> {
+  if (!ACCOUNT_SESSION_PATTERN.test(token)) return false;
+  const now = new Date();
+  const result = await prisma.clientPortalSession.updateMany({
+    where: { tokenHash: hashClientPortalToken(token), expiresAt: { gt: now } },
+    data: {
+      lastUsedAt: now,
+      expiresAt: new Date(now.getTime() + CLIENT_PORTAL_SESSION_SECONDS * 1000),
+    },
+  });
+  return result.count === 1;
+}
+
+export async function revokeClientPortalSessionToken(token: string | undefined): Promise<void> {
+  if (!token || !ACCOUNT_SESSION_PATTERN.test(token)) return;
+  await prisma.clientPortalSession.deleteMany({ where: { tokenHash: hashClientPortalToken(token) } });
+}
+
 export function getClientPortalCookieOptions(maxAge = CLIENT_PORTAL_SESSION_SECONDS) {
   return {
     httpOnly: true,
@@ -290,12 +396,12 @@ export function getClientPortalCookieOptions(maxAge = CLIENT_PORTAL_SESSION_SECO
 export async function getClientPortalEmail(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
-  return token ? verifyClientPortalSessionToken(token) : null;
+  return token ? resolveClientPortalSessionToken(token) : null;
 }
 
-export function getClientPortalEmailFromRequest(request: NextRequest): string | null {
+export async function getClientPortalEmailFromRequest(request: NextRequest): Promise<string | null> {
   const token = request.cookies.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
-  return token ? verifyClientPortalSessionToken(token) : null;
+  return token ? resolveClientPortalSessionToken(token) : null;
 }
 
 function portalEmailWhere(email: string) {

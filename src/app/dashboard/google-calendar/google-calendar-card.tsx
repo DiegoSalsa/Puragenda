@@ -30,7 +30,6 @@ export function GoogleCalendarCard({
   scope,
   staffId,
   configured,
-  oauthAvailable,
   connection,
 }: {
   title: string;
@@ -38,7 +37,6 @@ export function GoogleCalendarCard({
   scope: "business" | "staff";
   staffId?: string;
   configured: boolean;
-  oauthAvailable: boolean;
   connection: ConnectionSummary | null;
 }) {
   const legacy = useTranslations("legacy");
@@ -152,18 +150,12 @@ export function GoogleCalendarCard({
               </div>
             </div>
           </div>
-          {oauthAvailable ? (
-            <a
-              href={`/api/google-calendar/authorize?scope=${scope}${staffId ? `&staffId=${encodeURIComponent(staffId)}` : ""}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#4285F4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#3367D6]"
-            >
-              <CalendarDays className="h-4 w-4" /> <LocalizedText id="7QPl1UQpaUxa" />
-            </a>
-          ) : (
-            <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400">
-              <LocalizedText id="Kkbz9uSkLwh-" />
-            </p>
-          )}
+          <a
+            href={`/api/google-calendar/authorize?scope=${scope}${staffId ? `&staffId=${encodeURIComponent(staffId)}` : ""}`}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#4285F4] px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#3367D6]"
+          >
+            <CalendarDays className="h-4 w-4" /> <LocalizedText id="7QPl1UQpaUxa" />
+          </a>
         </div>
       ) : (
         <div className="mt-5 space-y-4">

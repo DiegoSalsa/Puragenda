@@ -10,13 +10,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v1.9.0",
+    date: "2026-08-20",
+    title: "Reservas más Rápidas y Servicios Especiales",
+    description:
+      "Los clientes ahora pueden conservar sus datos para reservar en cualquier negocio de Puragenda, mientras cada negocio obtiene más control sobre promociones, servicios especiales y el cierre real de sus sesiones.",
+    features: [
+      "Nueva cuenta de cliente con confirmación inicial por correo, contraseña segura y sesiones persistentes para evitar iniciar sesión en cada reserva.",
+      "El perfil de Mi Agenda permite editar nombre, teléfono, RUT, dirección y contraseña; el teléfono es obligatorio al crear la cuenta.",
+      "Los widgets completan automáticamente los datos del cliente autenticado, incluso al reservar en distintos negocios de Puragenda.",
+      "Los widgets embebidos continúan la autenticación en una pestaña segura y regresan conservando sucursal, servicio, profesional y fecha.",
+      "Nueva categoría de servicios especiales para limitar promociones u otras prestaciones a días específicos sin complicar los servicios normales.",
+      "La agenda permite cerrar una sesión registrando propinas y servicios extra para reflejar con mayor precisión los ingresos reales.",
+      "Google Calendar ya está disponible para todos los usuarios autorizados después de completar la verificación oficial de la aplicación.",
+    ],
+    fixes: [
+      "Los accesos antiguos a Mi Agenda ahora ofrecen activar una cuenta completa sin perder el historial existente.",
+      "Las sesiones de cliente usan tokens opacos almacenados de forma segura, se renuevan al usarse y se invalidan al cambiar la contraseña.",
+      "El retorno desde Mi Agenda acepta únicamente widgets internos de Puragenda para impedir redirecciones externas.",
+    ],
+  },
+  {
     version: "v1.8.0",
     date: "2026-08-08",
     title: "Historias que Convierten y un Panel más Ordenado",
     description:
       "Puragenda transforma la disponibilidad real del negocio en historias listas para Instagram y reorganiza el panel para que cada herramienta sea más fácil de encontrar y aprender.",
-    notice:
-      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
     features: [
       "Nuevo estudio de Historias con modos rápido y avanzado, plantillas visuales, zonas seguras de Instagram y descarga directa en PNG.",
       "Las historias pueden mostrar cupos reales, fechas elegidas manualmente o contenido sin horario, según lo que cada negocio quiera promocionar.",
@@ -40,8 +59,6 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     title: "Sucursales, Horarios por Local y Operación Internacional",
     description:
       "Puragenda ahora permite operar varias sucursales bajo una misma cuenta, con disponibilidad, horarios y reservas organizadas por local sin cambiar de plan.",
-    notice:
-      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
     features: [
       "Todas las cuentas pueden crear y administrar varias sucursales, cada una con dirección, enlace de mapas, zona horaria y servicios disponibles propios.",
       "El widget pide primero la sucursal cuando hay más de una y muestra únicamente los servicios, profesionales y horarios de ese local.",
@@ -64,8 +81,6 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     title: "Google Calendar y Operación más Clara",
     description:
       "Esta actualización conecta la agenda de Puragenda con Google Calendar y reúne mejoras solicitadas por negocios para atender, ordenar y fidelizar clientes con menos trabajo manual.",
-    notice:
-      "Aviso temporal de Google: mientras finaliza la verificación oficial puede aparecer el mensaje \"Google no verificó esta app\". Es esperado y la conexión de Puragenda es segura: solo solicita los permisos necesarios para sincronizar calendarios y protege las credenciales de acceso. Puedes continuar desde Opciones avanzadas. El aviso desaparecerá cuando Google apruebe la revisión.",
     features: [
       "Integración con Google Calendar para el calendario principal del negocio y para la agenda individual de cada trabajador.",
       "Las citas se crean, actualizan y cancelan automáticamente en Google; los compromisos externos del profesional bloquean esas horas en el widget público.",

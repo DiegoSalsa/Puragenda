@@ -2,17 +2,22 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
 import { CalendarDays, Check, Clock, Gift, History, MapPin, Sparkles, Store } from "lucide-react";
 import {
   getClientPortalData,
   getClientPortalEmail,
+  getClientPortalProfile,
 } from "@/server/services/client-portal.service";
+import { safeClientPortalReturnTo } from "@/server/validations/client-portal";
 import {
   ClientPortalAccessForm,
+  ClientPortalActivationCard,
   ClientPortalAppointmentActions,
   ClientPortalLogout,
+  ClientPortalProfileEditor,
 } from "./client-portal-client";
 
 export const dynamic = "force-dynamic";
@@ -44,12 +49,17 @@ function appointmentTime(start: Date, end: Date, timezone: string) {
 export default async function ClientPortalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; cuenta?: string }>;
+  searchParams: Promise<{ error?: string; cuenta?: string; returnTo?: string }>;
 }) {
   const [email, query] = await Promise.all([getClientPortalEmail(), searchParams]);
-  if (!email) return <ClientPortalAccessForm invalidLink={query.error === "enlace-invalido" || query.error === "activacion-invalida"} />;
+  const returnTo = safeClientPortalReturnTo(query.returnTo);
+  if (!email) return <ClientPortalAccessForm invalidLink={query.error === "enlace-invalido" || query.error === "activacion-invalida"} returnTo={returnTo} />;
 
-  const data = await getClientPortalData(email);
+  const [data, profile] = await Promise.all([
+    getClientPortalData(email),
+    getClientPortalProfile(email),
+  ]);
+  if (returnTo && profile) redirect(returnTo);
   const firstName = data.displayName.split(/\s+/)[0];
 
   return (
@@ -154,7 +164,11 @@ export default async function ClientPortalPage({
             </section>
           </div>
 
-          <aside>
+          <aside className="space-y-8">
+            {profile
+              ? <ClientPortalProfileEditor profile={profile} />
+              : <ClientPortalActivationCard email={email} initialName={data.displayName === "Cliente" ? "" : data.displayName} />}
+            <section>
             <div className="mb-4 flex items-center gap-3">
               <Gift className="h-6 w-6" strokeWidth={2.8} />
               <h2 className="text-xl font-black sm:text-2xl"><LocalizedText id="mMz0bV7E_UM0" /></h2>
@@ -193,6 +207,7 @@ export default async function ClientPortalPage({
                 );
               })}
             </div>
+            </section>
           </aside>
         </div>
 

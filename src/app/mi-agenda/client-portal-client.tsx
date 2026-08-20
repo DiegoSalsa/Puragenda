@@ -3,12 +3,12 @@ import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarClock, Check, KeyRound, Loader2, LogOut, RefreshCw, UserPlus, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, IdCard, KeyRound, Loader2, LogOut, MapPin, Phone, RefreshCw, Save, UserPlus, UserRound, X } from "lucide-react";
 
-export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: boolean }) {
+export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }: { invalidLink?: boolean; returnTo?: string | null }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -16,6 +16,8 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [rut, setRut] = useState("");
+  const [defaultAddress, setDefaultAddress] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
     invalidLink ? "Ese enlace ya fue utilizado o venció." : null,
@@ -37,12 +39,12 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, phone }),
+        body: JSON.stringify({ email, password, name, phone, rut, defaultAddress }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "No pudimos completar la solicitud");
       if (mode === "login") {
-        router.replace("/mi-agenda");
+        router.replace(returnTo || "/mi-agenda");
         router.refresh();
         return;
       }
@@ -113,8 +115,16 @@ export function ClientPortalAccessForm({ invalidLink = false }: { invalidLink?: 
                   <input id="portal-name" value={name} onChange={(event) => setName(event.target.value)} required autoComplete="name" className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
                 </div>
                 <div>
-                  <label htmlFor="portal-phone" className="mb-2 block text-sm font-black">Teléfono (opcional)</label>
-                  <input id="portal-phone" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                  <label htmlFor="portal-phone" className="mb-2 block text-sm font-black">Teléfono</label>
+                  <input id="portal-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required autoComplete="tel" placeholder="+56 9 1234 5678" className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                </div>
+                <div>
+                  <label htmlFor="portal-rut" className="mb-2 block text-sm font-black">RUT (opcional)</label>
+                  <input id="portal-rut" value={rut} onChange={(event) => setRut(event.target.value)} autoComplete="off" placeholder="12.345.678-9" maxLength={20} className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
+                </div>
+                <div>
+                  <label htmlFor="portal-address" className="mb-2 block text-sm font-black">Dirección (opcional)</label>
+                  <input id="portal-address" value={defaultAddress} onChange={(event) => setDefaultAddress(event.target.value)} autoComplete="street-address" maxLength={300} className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
                 </div>
               </>
             )}
@@ -194,6 +204,198 @@ export function ClientPortalPasswordResetForm({ token }: { token: string }) {
         </button>
       </form>
     </main>
+  );
+}
+
+export function ClientPortalActivationCard({ email, initialName }: { email: string; initialName: string }) {
+  const [name, setName] = useState(initialName);
+  const [phone, setPhone] = useState("");
+  const [rut, setRut] = useState("");
+  const [defaultAddress, setDefaultAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function activate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    if (password !== confirmation) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch("/api/client-portal/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, phone, rut, defaultAddress, password }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No pudimos activar tu cuenta");
+      setMessage(payload.message);
+      setPassword("");
+      setConfirmation("");
+    } catch (activationError) {
+      setError(activationError instanceof Error ? activationError.message : "No pudimos activar tu cuenta");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const inputClass = "h-11 w-full rounded-xl border-2 border-black bg-white px-3 text-sm font-semibold outline-none focus:shadow-[3px_3px_0_#7c3aed]";
+
+  return (
+    <section id="activar-cuenta" className="rounded-2xl border-3 border-black bg-[#fff5ba] p-5 shadow-[5px_5px_0_#000]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-[#c4b5fd]"><UserPlus className="h-5 w-5" /></div>
+        <div>
+          <h2 className="font-black">Guarda tus datos</h2>
+          <p className="mt-1 text-xs font-semibold leading-5 text-black/60">Tu acceso actual permite ver reservas, pero todavía no es una cuenta. Actívala una vez para reservar más rápido en cualquier negocio.</p>
+        </div>
+      </div>
+
+      {message ? (
+        <div className="mt-5 rounded-xl border-2 border-black bg-[#bffcc6] p-4 text-sm">
+          <p className="font-black">Revisa tu correo</p>
+          <p className="mt-1 font-semibold text-black/65">{message}</p>
+        </div>
+      ) : (
+        <form onSubmit={activate} className="mt-5 space-y-3">
+          <input readOnly value={email} aria-label="Correo" className={`${inputClass} cursor-not-allowed bg-black/5 text-black/50`} />
+          <input required minLength={2} maxLength={100} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nombre completo" aria-label="Nombre completo" className={inputClass} />
+          <input required type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Teléfono" aria-label="Teléfono" className={inputClass} />
+          <input maxLength={20} value={rut} onChange={(event) => setRut(event.target.value)} placeholder="RUT (opcional)" aria-label="RUT" className={inputClass} />
+          <textarea maxLength={300} rows={2} autoComplete="street-address" value={defaultAddress} onChange={(event) => setDefaultAddress(event.target.value)} placeholder="Dirección (opcional)" aria-label="Dirección" className="w-full resize-none rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-semibold outline-none focus:shadow-[3px_3px_0_#7c3aed]" />
+          <input required minLength={10} type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Crea una contraseña" aria-label="Contraseña" className={inputClass} />
+          <input required minLength={10} type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Repite la contraseña" aria-label="Repite la contraseña" className={inputClass} />
+          <p className="text-[11px] font-semibold text-black/50">Mínimo 10 caracteres, una letra y un número.</p>
+          {error && <p className="rounded-lg border-2 border-red-700 bg-red-50 p-2 text-xs font-bold text-red-800">{error}</p>}
+          <button disabled={loading} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#7c3aed] px-4 text-sm font-black text-white shadow-[3px_3px_0_#000] disabled:opacity-60">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Activar mi cuenta
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+export function ClientPortalProfileEditor({ profile }: {
+  profile: { name: string; email: string; phone: string; rut: string; address: string };
+}) {
+  const router = useRouter();
+  const [form, setForm] = useState(profile);
+  const [saving, setSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/client-portal/profile", { cache: "no-store" }).catch(() => {});
+  }, []);
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setProfileMessage("");
+    setProfileError("");
+    try {
+      const response = await fetch("/api/client-portal/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          rut: form.rut,
+          defaultAddress: form.address,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No pudimos guardar tus datos");
+      setForm(payload.profile);
+      setProfileMessage("Tus datos quedaron guardados para tus próximas reservas.");
+      router.refresh();
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : "No pudimos guardar tus datos");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordMessage("");
+    setPasswordError("");
+    if (newPassword !== passwordConfirmation) {
+      setPasswordError("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const response = await fetch("/api/client-portal/profile/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "No pudimos cambiar la contraseña");
+      setCurrentPassword("");
+      setNewPassword("");
+      setPasswordConfirmation("");
+      setPasswordMessage("Contraseña actualizada. Las demás sesiones fueron cerradas.");
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "No pudimos cambiar la contraseña");
+    } finally {
+      setPasswordLoading(false);
+    }
+  }
+
+  const inputClass = "h-11 w-full rounded-xl border-2 border-black bg-white px-3 text-sm font-semibold outline-none focus:shadow-[3px_3px_0_#7c3aed]";
+
+  return (
+    <section id="perfil" className="rounded-2xl border-3 border-black bg-white p-5 shadow-[5px_5px_0_#000]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-[#85e3ff]"><UserRound className="h-5 w-5" /></div>
+        <div>
+          <h2 className="font-black">Mis datos</h2>
+          <p className="text-xs font-semibold text-black/50">Se completan automáticamente al reservar.</p>
+        </div>
+      </div>
+
+      <form onSubmit={saveProfile} className="mt-5 space-y-3">
+        <label className="block text-xs font-black"><span className="mb-1 flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" />Nombre completo</span><input required minLength={2} maxLength={100} autoComplete="name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className={inputClass} /></label>
+        <label className="block text-xs font-black"><span className="mb-1 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />Teléfono</span><input required type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} className={inputClass} /></label>
+        <label className="block text-xs font-black"><span className="mb-1 flex items-center gap-1.5"><IdCard className="h-3.5 w-3.5" />RUT</span><input maxLength={20} value={form.rut} onChange={(event) => setForm((current) => ({ ...current, rut: event.target.value }))} placeholder="12.345.678-9" className={inputClass} /></label>
+        <label className="block text-xs font-black"><span className="mb-1 flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Dirección</span><textarea maxLength={300} rows={3} autoComplete="street-address" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} className="w-full resize-none rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-semibold outline-none focus:shadow-[3px_3px_0_#7c3aed]" /></label>
+        <label className="block text-xs font-black"><span className="mb-1 block">Correo de la cuenta</span><input readOnly value={form.email} className={`${inputClass} cursor-not-allowed bg-black/5 text-black/50`} /></label>
+        {profileError && <p className="rounded-lg border-2 border-red-700 bg-red-50 p-2 text-xs font-bold text-red-800">{profileError}</p>}
+        {profileMessage && <p className="rounded-lg border-2 border-green-700 bg-green-50 p-2 text-xs font-bold text-green-800">{profileMessage}</p>}
+        <button disabled={saving} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#7c3aed] px-4 text-sm font-black text-white shadow-[3px_3px_0_#000] disabled:opacity-60">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar mis datos
+        </button>
+      </form>
+
+      <details className="mt-5 border-t-2 border-black/10 pt-4">
+        <summary className="cursor-pointer text-sm font-black">Cambiar contraseña</summary>
+        <form onSubmit={changePassword} className="mt-3 space-y-3">
+          <input required type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Contraseña actual" className={inputClass} />
+          <input required minLength={10} type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Nueva contraseña" className={inputClass} />
+          <input required minLength={10} type="password" autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} placeholder="Repite la nueva contraseña" className={inputClass} />
+          {passwordError && <p className="text-xs font-bold text-red-700">{passwordError}</p>}
+          {passwordMessage && <p className="text-xs font-bold text-green-700">{passwordMessage}</p>}
+          <button disabled={passwordLoading} className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border-2 border-black bg-[#fff5ba] px-4 text-xs font-black shadow-[3px_3px_0_#000] disabled:opacity-60">
+            {passwordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Actualizar contraseña
+          </button>
+        </form>
+      </details>
+    </section>
   );
 }
 

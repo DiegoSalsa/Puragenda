@@ -564,7 +564,7 @@ export async function POST(
       },
     });
     await updateClientPortalProfileFromBooking({
-      sessionEmail: getClientPortalEmailFromRequest(request),
+      sessionEmail: await getClientPortalEmailFromRequest(request),
       customerEmail,
       name: customerName,
       phone: customerPhone,

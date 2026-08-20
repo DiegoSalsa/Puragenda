@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   CLIENT_PORTAL_COOKIE_NAME,
   consumeClientPortalMagicToken,
-  createClientPortalSessionToken,
+  createClientPortalAccountSession,
   getClientPortalCookieOptions,
   getClientPortalAppUrl,
 } from "@/server/services/client-portal.service";
@@ -25,7 +25,7 @@ export async function GET(
   const response = NextResponse.redirect(destination, { status: 303 });
   response.cookies.set(
     CLIENT_PORTAL_COOKIE_NAME,
-    createClientPortalSessionToken(email),
+    await createClientPortalAccountSession(email),
     getClientPortalCookieOptions(),
   );
   response.headers.set("Cache-Control", "no-store");

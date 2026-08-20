@@ -1,13 +1,16 @@
-# Google OAuth: paquete de reenvio para verificacion
+# Google OAuth: registro de la verificacion completada
 
-## Estado auditado (6 de agosto de 2026)
+## Estado actual (20 de agosto de 2026)
 
 - Proyecto: `Puragenda Production` (`puragenda-production`).
 - Branding: verificado.
-- Data access: en revision.
-- Scope observado como no verificado: `https://www.googleapis.com/auth/calendar.events`.
+- Data access: verificado.
+- La restriccion interna a usuarios de prueba fue retirada tras la aprobacion.
+- Los scopes de Google Calendar estan disponibles para todos los usuarios de Puragenda que tengan permisos internos para conectar calendarios.
 - Video actualmente registrado: `https://youtu.be/qbtgDjFloLo`.
-- La aplicacion tambien necesita declarar `https://www.googleapis.com/auth/calendar.events.freebusy`; el endpoint `freeBusy.query` no esta autorizado por `calendar.events`.
+- La aplicacion declara `https://www.googleapis.com/auth/calendar.events.freebusy`; el endpoint `freeBusy.query` no esta autorizado por `calendar.events`.
+
+El resto de este documento se conserva como registro historico del proceso de revision.
 
 ## Scopes minimos y justificacion
 
@@ -27,14 +30,12 @@ Puragenda consulta exclusivamente intervalos libre/ocupado del calendario selecc
 
 Se usan para identificar y mostrar la cuenta de Google conectada. No se usa el perfil para publicidad ni analitica.
 
-## Preparacion de las cuentas de demostracion
+## Preparacion historica de las cuentas de demostracion
 
-1. Mantener `GOOGLE_CALENDAR_OAUTH_PUBLIC=false` en produccion.
-2. Agregar solo el correo de la cuenta de demostracion a `GOOGLE_CALENDAR_VERIFICATION_USERS`.
-3. Desde una segunda cuenta de Google, crear `Puragenda Review - Shared Business Calendar` y compartirlo con la cuenta de demostracion con permiso para modificar eventos.
-4. Crear en ese calendario compartido un evento externo llamado `PRIVATE BUSY BLOCK - CONTENT MUST NOT BE READ`, de 15:00 a 16:00 en un dia habilitado para reservas.
-5. Preparar una cita de prueba sin datos personales reales: `Google Review Client`, `review-client@example.com`, servicio `Google OAuth Verification Test`.
-6. Configurar Google y el navegador en ingles. Grabar la barra de direcciones completa y usar zoom legible.
+1. Desde una segunda cuenta de Google, crear `Puragenda Review - Shared Business Calendar` y compartirlo con la cuenta de demostracion con permiso para modificar eventos.
+2. Crear en ese calendario compartido un evento externo llamado `PRIVATE BUSY BLOCK - CONTENT MUST NOT BE READ`, de 15:00 a 16:00 en un dia habilitado para reservas.
+3. Preparar una cita de prueba sin datos personales reales: `Google Review Client`, `review-client@example.com`, servicio `Google OAuth Verification Test`.
+4. Configurar Google y el navegador en ingles. Grabar la barra de direcciones completa y usar zoom legible.
 
 ## Guion de video (una sola toma, 6-8 minutos)
 

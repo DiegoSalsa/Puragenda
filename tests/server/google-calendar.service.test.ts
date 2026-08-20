@@ -28,7 +28,6 @@ import {
   encryptGoogleToken,
   getGoogleCalendarBusySlots,
   googleCalendarAppUrl,
-  googleCalendarOAuthIsAvailableFor,
   listGoogleCalendars,
   syncAppointmentToGoogle,
   verifyGoogleOAuthState,
@@ -150,18 +149,6 @@ describe("Google Calendar integration", () => {
     expect(url.searchParams.get("scope")).toContain("calendar.events");
     expect(url.searchParams.get("scope")).toContain("calendar.events.freebusy");
     expect(url.searchParams.get("scope")).toContain("calendar.calendarlist.readonly");
-  });
-
-  it("limits production OAuth to allowlisted reviewers until the scope is verified", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC = "false";
-    process.env.GOOGLE_CALENDAR_VERIFICATION_USERS = "reviewer@example.com, Owner@Example.com";
-
-    expect(googleCalendarOAuthIsAvailableFor("owner@example.com")).toBe(true);
-    expect(googleCalendarOAuthIsAvailableFor("customer@example.com")).toBe(false);
-
-    process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC = "true";
-    expect(googleCalendarOAuthIsAvailableFor("customer@example.com")).toBe(true);
   });
 
   it("labels writable shared calendars for the destination selector", async () => {

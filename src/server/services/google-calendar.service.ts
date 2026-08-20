@@ -189,22 +189,6 @@ export function googleCalendarIsConfigured() {
   );
 }
 
-/**
- * Keeps unverified OAuth scopes away from general production traffic while
- * still allowing named review/test accounts to record the Google demo.
- */
-export function googleCalendarOAuthIsAvailableFor(email: string) {
-  if (process.env.NODE_ENV !== "production") return true;
-  if (process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC?.trim().toLowerCase() === "true") {
-    return true;
-  }
-  const reviewUsers = (process.env.GOOGLE_CALENDAR_VERIFICATION_USERS ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  return reviewUsers.includes(email.trim().toLowerCase());
-}
-
 export function googleCalendarRedirectUri() {
   return (
     process.env.GOOGLE_CALENDAR_REDIRECT_URI ??

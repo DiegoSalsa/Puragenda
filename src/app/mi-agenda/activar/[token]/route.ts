@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   CLIENT_PORTAL_COOKIE_NAME,
-  createClientPortalSessionToken,
+  createClientPortalAccountSession,
   getClientPortalAppUrl,
   getClientPortalCookieOptions,
   verifyClientPortalAccount,
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
   destination.searchParams.set("cuenta", "activada");
   const response = NextResponse.redirect(destination, { status: 303 });
-  response.cookies.set(CLIENT_PORTAL_COOKIE_NAME, createClientPortalSessionToken(email), getClientPortalCookieOptions());
+  response.cookies.set(CLIENT_PORTAL_COOKIE_NAME, await createClientPortalAccountSession(email), getClientPortalCookieOptions());
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

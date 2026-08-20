@@ -7,6 +7,15 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
     updateMany: vi.fn(),
   },
+  clientPortalAccount: {
+    findUnique: vi.fn(),
+  },
+  clientPortalSession: {
+    deleteMany: vi.fn(),
+    create: vi.fn(),
+    findUnique: vi.fn(),
+    updateMany: vi.fn(),
+  },
   appointment: {
     findFirst: vi.fn(),
   },
@@ -18,12 +27,14 @@ vi.mock("@/server/db/prisma", () => ({ prisma: prismaMock }));
 
 import {
   consumeClientPortalMagicToken,
+  createClientPortalAccountSession,
   createClientPortalSessionToken,
   getClientPortalAppUrl,
   getClientPortalAppointment,
   hashClientPortalToken,
   issueClientPortalEmailToken,
   normalizeClientPortalEmail,
+  resolveClientPortalSessionToken,
   verifyClientPortalSessionToken,
 } from "@/server/services/client-portal.service";
 
@@ -52,6 +63,38 @@ describe("acceso sin contraseña al portal del cliente", () => {
   it("rechaza una sesión vencida", () => {
     const expired = createClientPortalSessionToken("client@example.com", -1);
     expect(verifyClientPortalSessionToken(expired)).toBeNull();
+  });
+
+  it("crea una sesión opaca, revocable y de larga duración para una cuenta activa", async () => {
+    prismaMock.clientPortalAccount.findUnique.mockResolvedValue({ id: "account-1", emailVerifiedAt: new Date() });
+    prismaMock.$transaction.mockResolvedValue([]);
+
+    const token = await createClientPortalAccountSession("client@example.com");
+
+    expect(token).toMatch(/^cps_[A-Za-z0-9_-]{43}$/);
+    expect(token).not.toContain("client@example.com");
+    expect(prismaMock.clientPortalSession.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        accountId: "account-1",
+        tokenHash: hashClientPortalToken(token),
+        expiresAt: expect.any(Date),
+      }),
+    });
+  });
+
+  it("solo resuelve sesiones opacas vigentes asociadas a una cuenta verificada", async () => {
+    const token = `cps_${"a".repeat(43)}`;
+    prismaMock.clientPortalSession.findUnique.mockResolvedValue({
+      id: "session-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      account: { email: "Client@Example.com", emailVerifiedAt: new Date() },
+    });
+    prismaMock.clientPortalSession.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(resolveClientPortalSessionToken(token)).resolves.toBe("client@example.com");
+    expect(prismaMock.clientPortalSession.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { tokenHash: hashClientPortalToken(token) },
+    }));
   });
 
   it("consume un enlace mágico de forma atómica y una sola vez", async () => {
