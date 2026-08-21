@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   appointment: vi.fn(),
   agendaScope: vi.fn(),
   permissions: vi.fn(),
-  deleteMany: vi.fn(),
+  updateMany: vi.fn(),
 }));
 
 vi.mock("@/server/auth/user-session", () => ({
@@ -24,8 +24,9 @@ vi.mock("@/server/services/appointment.service", () => ({
   getAppointmentByIdAndBusiness: mocks.appointment,
 }));
 vi.mock("@/server/db/prisma", () => ({
-  prisma: { appointment: { deleteMany: mocks.deleteMany } },
+  prisma: { appointment: { updateMany: mocks.updateMany } },
 }));
+vi.mock("@/server/lib/audit", () => ({ createAuditLog: vi.fn() }));
 vi.mock("@/server/email/send", () => ({
   sendConfirmationEmail: vi.fn(),
   sendCancellationEmail: vi.fn(),
@@ -70,7 +71,7 @@ describe("dashboard appointment DELETE", () => {
     mocks.appointment.mockResolvedValue(pendingAppointment);
     mocks.agendaScope.mockResolvedValue({ ownStaffId: null });
     mocks.permissions.mockResolvedValue(["appointments.manage_all"]);
-    mocks.deleteMany.mockResolvedValue({ count: 1 });
+    mocks.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("requires an authenticated dashboard session", async () => {
@@ -79,7 +80,7 @@ describe("dashboard appointment DELETE", () => {
     const response = await DELETE(request(), { params: Promise.resolve({ id: appointmentId }) });
 
     expect(response.status).toBe(401);
-    expect(mocks.deleteMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects appointments that are not awaiting payment", async () => {
@@ -89,7 +90,7 @@ describe("dashboard appointment DELETE", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({ error: expect.stringContaining("esperando pago") });
-    expect(mocks.deleteMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it("enforces the dashboard appointment scope before deleting", async () => {
@@ -99,15 +100,15 @@ describe("dashboard appointment DELETE", () => {
     const response = await DELETE(request(), { params: Promise.resolve({ id: appointmentId }) });
 
     expect(response.status).toBe(403);
-    expect(mocks.deleteMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
-  it("deletes only the business-owned appointment still awaiting payment", async () => {
+  it("cancels only the business-owned appointment still awaiting payment", async () => {
     const response = await DELETE(request(), { params: Promise.resolve({ id: appointmentId }) });
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
-    expect(mocks.deleteMany).toHaveBeenCalledWith({
+    expect(mocks.updateMany).toHaveBeenCalledWith({
       where: {
         id: appointmentId,
         businessId: business.id,
@@ -115,11 +116,12 @@ describe("dashboard appointment DELETE", () => {
         paymentStatus: "PENDING",
         recurringBookingId: null,
       },
+      data: expect.objectContaining({ status: "CANCELLED" }),
     });
   });
 
   it("returns a conflict when the payment state changes before deletion", async () => {
-    mocks.deleteMany.mockResolvedValue({ count: 0 });
+    mocks.updateMany.mockResolvedValue({ count: 0 });
     mocks.appointment
       .mockResolvedValueOnce(pendingAppointment)
       .mockResolvedValueOnce({ ...pendingAppointment, status: "CONFIRMED", paymentStatus: "APPROVED" });

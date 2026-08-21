@@ -225,7 +225,7 @@ export function WeeklyCalendar({
 
   async function handleDeleteAwaitingPayment() {
     if (!selected || selected.status !== "AWAITING_PAYMENT" || selected.paymentStatus !== "PENDING") return;
-    if (!window.confirm("¿Eliminar esta reserva que está esperando pago? La hora quedará libre y el enlace dejará de estar asociado. Si el enlace ya fue enviado, podría seguir aceptando un pago externo: avisa a la clienta y verifica el proveedor. Esta acción no se puede deshacer.")) return;
+    if (!window.confirm("¿Cancelar esta reserva que está esperando pago? La hora quedará libre y la reserva permanecerá registrada para poder auditarla o recuperarla.")) return;
     setLoading("DELETE");
     try {
       const response = await fetch(`/api/dashboard/appointments/${selected.id}`, { method: "DELETE" });
@@ -725,7 +725,7 @@ export function WeeklyCalendar({
                       className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
                     >
                       {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      Eliminar reserva y liberar hora
+                      Cancelar reserva y liberar hora
                     </button>
                   )}
                 </div>
@@ -742,7 +742,7 @@ export function WeeklyCalendar({
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
                   >
                     {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    Eliminar reserva y liberar hora
+                    Cancelar reserva y liberar hora
                   </button>
                 )}
 

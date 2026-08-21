@@ -26,6 +26,7 @@ vi.mock("@/server/services/google-calendar.service", () => ({
 vi.mock("@/server/lib/cloudinary", () => ({
   cloudinary: { uploader: { destroy: vi.fn() } },
 }));
+vi.mock("@/server/lib/audit", () => ({ createAuditLog: vi.fn() }));
 
 vi.mock("@/server/email/send", () => ({
   sendConfirmationEmail: vi.fn(),
@@ -183,7 +184,7 @@ describe("DELETE dashboard appointment hotfix", () => {
     const response = await DELETE(request(), routeContext());
 
     expect(response.status).toBe(502);
-    expect(prisma.appointment.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.appointment.updateMany).not.toHaveBeenCalled();
     expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
   });
 
@@ -198,10 +199,8 @@ describe("DELETE dashboard appointment hotfix", () => {
 
     expect(response.status).toBe(200);
     expect(vi.mocked(removeAppointmentFromGoogle).mock.invocationCallOrder[0])
-      .toBeLessThan(vi.mocked(prisma.appointment.deleteMany).mock.invocationCallOrder[0]);
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("receipts/appointment-1", {
-      resource_type: "raw",
-    });
+      .toBeLessThan(vi.mocked(prisma.appointment.updateMany).mock.invocationCallOrder[0]);
+    expect(cloudinary.uploader.destroy).not.toHaveBeenCalled();
   });
 
   it("mantiene el éxito aunque falle el cleanup del comprobante", async () => {
@@ -215,12 +214,12 @@ describe("DELETE dashboard appointment hotfix", () => {
     const response = await DELETE(request(), routeContext());
 
     expect(response.status).toBe(200);
-    expect(prisma.appointment.deleteMany).toHaveBeenCalledTimes(1);
+    expect(prisma.appointment.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it("restaura Google si el pago gana la carrera antes del borrado", async () => {
     vi.mocked(removeAppointmentFromGoogle).mockResolvedValue({ removed: true });
-    vi.mocked(prisma.appointment.deleteMany).mockResolvedValue({ count: 0 });
+    vi.mocked(prisma.appointment.updateMany).mockResolvedValue({ count: 0 });
     vi.mocked(syncAppointmentToGoogle).mockResolvedValue({
       synced: true,
       action: "updated",
@@ -245,12 +244,7 @@ describe("DELETE dashboard appointment hotfix", () => {
   it("permite una sola eliminación cuando dos solicitudes compiten", async () => {
     let attempts = 0;
     const atomicMutation = vi.fn(async () => ({ count: attempts++ === 0 ? 1 : 0 }));
-    vi.mocked(prisma.appointment.deleteMany).mockImplementation(atomicMutation as never);
     vi.mocked(prisma.appointment.updateMany).mockImplementation(atomicMutation as never);
-    vi.mocked(prisma.appointment.delete).mockImplementation((async () => {
-      if (attempts++ === 0) return appointment as never;
-      throw new Error("P2025");
-    }) as never);
 
     const responses = await Promise.all([
       DELETE(request(), routeContext()),

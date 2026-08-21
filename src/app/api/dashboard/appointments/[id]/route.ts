@@ -17,7 +17,7 @@ import {
   removeAppointmentFromGoogle,
   syncAppointmentToGoogle,
 } from "@/server/services/google-calendar.service";
-import { cloudinary } from "@/server/lib/cloudinary";
+import { createAuditLog } from "@/server/lib/audit";
 
 function canManageTarget(
   permissions: string[],
@@ -285,37 +285,10 @@ export async function PATCH(
 }
 
 /**
- * Receipt files are detached from the appointment row after a successful
- * delete. Cloudinary is intentionally best-effort here: the appointment has
- * already been released and a transient provider error must not turn a
- * successful user action into a retry that could delete another row.
- */
-async function cleanupDepositReceipt(
-  appointmentId: string,
-  publicId: string | null,
-  resourceType: string | null,
-) {
-  if (!publicId) return;
-
-  try {
-    await cloudinary.uploader.destroy(publicId, {
-      resource_type: (resourceType || "image") as "image" | "raw" | "video",
-    });
-  } catch (error) {
-    console.error("[dashboard appointments DELETE] Receipt cleanup failed", {
-      appointmentId,
-      resourceType: resourceType || "image",
-      error,
-    });
-  }
-}
-
-/**
- * Deletes only appointments whose deposit is still awaiting payment.
+ * Releases only appointments whose deposit is still awaiting payment.
  *
- * The status and payment checks are repeated in the delete predicate so a
- * payment/status transition racing this request cannot result in deleting a
- * paid or otherwise managed appointment.
+ * The row and any receipt evidence are intentionally retained. This makes an
+ * operator action recoverable and leaves enough data to audit incidents.
  */
 export async function DELETE(
   request: NextRequest,
@@ -359,7 +332,7 @@ export async function DELETE(
       );
     }
 
-    const deleted = await prisma.appointment.deleteMany({
+    const cancelled = await prisma.appointment.updateMany({
       where: {
         id,
         businessId: business.id,
@@ -367,10 +340,16 @@ export async function DELETE(
         paymentStatus: "PENDING",
         recurringBookingId: null,
       },
+      data: {
+        status: "CANCELLED",
+        customerActionTokenHash: null,
+        customerActionTokenExpiresAt: null,
+        customerActionTokenUsedAt: new Date(),
+      },
     });
 
-    if (deleted.count === 0) {
-      // Google cleanup happened before the conditional delete. If a payment
+    if (cancelled.count === 0) {
+      // Google cleanup happened before the conditional cancellation. If a payment
       // confirmation won that race, restore the event before returning so a
       // confirmed appointment is never left without its calendar event.
       if (googleCleanup.removed) {
@@ -392,16 +371,21 @@ export async function DELETE(
       );
     }
 
-    await cleanupDepositReceipt(
-      id,
-      existing.depositReceiptPublicId,
-      existing.depositReceiptResourceType,
-    );
+    await createAuditLog("APPOINTMENT_AWAITING_PAYMENT_CANCELLED", {
+      appointmentId: id,
+      businessId: business.id,
+      previousStatus: existing.status,
+      previousPaymentStatus: existing.paymentStatus,
+      depositAmount: existing.depositAmount,
+      startTime: existing.startTime,
+      endTime: existing.endTime,
+      staffId: existing.staffId,
+    }, user.id);
 
     return Response.json({ success: true });
   } catch (error) {
     console.error("[dashboard appointments DELETE]", error);
-    return Response.json({ error: "No se pudo eliminar la cita" }, { status: 500 });
+    return Response.json({ error: "No se pudo cancelar la cita" }, { status: 500 });
   }
 }
 
