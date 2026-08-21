@@ -8,6 +8,7 @@ import {
   Building2,
   DollarSign,
   Users,
+  UserCheck,
   Clock,
   Sparkles,
   ArrowUpRight,
@@ -32,6 +33,8 @@ export default async function AdminDashboardPage() {
     totalBusinesses,
     subscriptions,
     totalUsers,
+    totalClientAccounts,
+    verifiedClientAccounts,
     recentBusinesses,
     weeklyAppointments,
     topBusinessesByAppointments,
@@ -52,6 +55,8 @@ export default async function AdminDashboardPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.count({ where: { deletedAt: null } }),
+    prisma.clientPortalAccount.count(),
+    prisma.clientPortalAccount.count({ where: { emailVerifiedAt: { not: null } } }),
     prisma.business.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -158,8 +163,8 @@ export default async function AdminDashboardPage() {
         </Link>
       </div>
 
-      {/* Stats Grid — 4 principales */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
           {
             label: "MRR Estimado",
@@ -185,11 +190,18 @@ export default async function AdminDashboardPage() {
             bg: "bg-[#FFF5BA]",
           },
           {
-            label: "Usuarios",
+            label: "Usuarios internos",
             value: totalUsers,
             sub: `Tasa de conv: ${conversionRate}%`,
             icon: Users,
             bg: "bg-[#FFB5E8]",
+          },
+          {
+            label: "Cuentas de clientes",
+            value: totalClientAccounts,
+            sub: `${verifiedClientAccounts} verificadas · ${totalClientAccounts - verifiedClientAccounts} pendientes`,
+            icon: UserCheck,
+            bg: "bg-[#FFD6A5]",
           },
         ].map((stat) => (
           <div key={stat.label} className={`border-4 border-black ${stat.bg} p-5 shadow-[6px_6px_0_#000]`}>
