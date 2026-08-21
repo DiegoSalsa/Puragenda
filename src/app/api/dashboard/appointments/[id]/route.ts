@@ -132,12 +132,16 @@ export async function PATCH(
         return Response.json({ error: "Esta cita no tiene un abono pendiente" }, { status: 409 });
       }
       if (existing.paymentStatus === "APPROVED") return Response.json(existing);
-      if (existing.status !== "AWAITING_PAYMENT" || existing.paymentStatus !== "PENDING") {
+      if (existing.status !== "AWAITING_PAYMENT") {
         return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
       }
 
       const paidTransition = await prisma.appointment.updateMany({
-        where: { id, status: "AWAITING_PAYMENT", paymentStatus: "PENDING" },
+        where: {
+          id,
+          status: "AWAITING_PAYMENT",
+          paymentStatus: existing.paymentStatus,
+        },
         data: {
           status: "CONFIRMED",
           paymentStatus: "APPROVED",

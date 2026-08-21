@@ -128,6 +128,27 @@ describe("manual deposit confirmation", () => {
     });
   });
 
+  it("allows a rejected online payment to be confirmed as received manually", async () => {
+    vi.mocked(getAppointmentByIdAndBusiness).mockResolvedValue({
+      ...appointment,
+      paymentStatus: "REJECTED",
+    } as never);
+
+    const response = await PATCH(request(), {
+      params: Promise.resolve({ id: "appointment-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(prisma.appointment.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "appointment-1",
+        status: "AWAITING_PAYMENT",
+        paymentStatus: "REJECTED",
+      },
+      data: { status: "CONFIRMED", paymentStatus: "APPROVED" },
+    });
+  });
+
   it("refuses to approve an appointment whose deposit is no longer pending", async () => {
     vi.mocked(getAppointmentByIdAndBusiness).mockResolvedValue({
       ...appointment,
