@@ -7,6 +7,8 @@ import { StampProgress } from "./stamp-progress";
 import { RewardCard } from "./reward-card";
 import type { Metadata, Viewport } from "next";
 import { getClientPortalEmail } from "@/server/services/client-portal.service";
+import { getLoyaltyWalletAvailability } from "@/server/services/loyalty-wallet.service";
+import { WalletSaveLinks } from "@/components/loyalty/wallet-save-links";
 
 interface PageProps {
   params: Promise<{ clientId: string }>;
@@ -113,6 +115,7 @@ export default async function MisPremiosPage({ params }: PageProps) {
   const secondaryRgb = hexToRgb(business.secondaryColor || "#5B21B6");
   const bgRgb = hexToRgb(business.backgroundColor || "#0A0A0A");
   const textRgb = hexToRgb(business.textColor || "#FFFFFF");
+  const walletAvailability = getLoyaltyWalletAvailability();
 
   return (
     <div
@@ -201,6 +204,8 @@ export default async function MisPremiosPage({ params }: PageProps) {
                 }
               </p>
             )}
+
+            <WalletSaveLinks clientId={client.id} availability={walletAvailability} />
           </div>
 
           {/* ── Card 2: Stats - Visits (Half) ── */}

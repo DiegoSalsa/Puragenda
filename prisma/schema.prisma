@@ -1345,6 +1345,7 @@ model Client {
   business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments      Appointment[]
   loyaltyCodes      LoyaltyCode[]
+  loyaltyWalletPass LoyaltyWalletPass?
   recurringBookings RecurringBooking[]
   productionOrders  ProductionOrder[]
 
@@ -1355,6 +1356,46 @@ model Client {
 // ==========================================
 // LOYALTY / FIDELIZACIÃƒâ€œN
 // ==========================================
+
+// Stable per-client credentials. Apple uses the serial number and authentication
+// token to fetch updates; the opaque scan token keeps customer data out of QRs.
+model LoyaltyWalletPass {
+  id                       String   @id @default(cuid())
+  clientId                 String   @unique
+  serialNumber             String   @unique
+  scanToken                String   @unique
+  appleAuthenticationToken String   @unique
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  client        Client                         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  registrations AppleWalletPassRegistration[]
+
+  @@index([updatedAt])
+}
+
+// A device can install several passes and a pass can live on multiple devices.
+model AppleWalletDevice {
+  deviceLibraryIdentifier String   @id
+  pushToken               String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  registrations AppleWalletPassRegistration[]
+}
+
+model AppleWalletPassRegistration {
+  id                      String   @id @default(cuid())
+  loyaltyWalletPassId     String
+  deviceLibraryIdentifier String
+  createdAt               DateTime @default(now())
+
+  loyaltyWalletPass LoyaltyWalletPass @relation(fields: [loyaltyWalletPassId], references: [id], onDelete: Cascade)
+  device            AppleWalletDevice @relation(fields: [deviceLibraryIdentifier], references: [deviceLibraryIdentifier], onDelete: Cascade)
+
+  @@unique([loyaltyWalletPassId, deviceLibraryIdentifier])
+  @@index([deviceLibraryIdentifier])
+}
 
 model LoyaltyCode {
   id            String   @id @default(cuid())

@@ -3,6 +3,7 @@
 import { prisma } from "@/server/db/prisma";
 import { sendLoyaltyStampEmail, sendLoyaltyRewardEmail } from "@/server/email/send";
 import { buildLoyaltyRewardCode } from "@/server/services/loyalty-code.service";
+import { refreshLoyaltyWalletPass } from "@/server/services/loyalty-wallet.service";
 import crypto from "crypto";
 
 /**
@@ -117,6 +118,11 @@ export async function processLoyaltyStamps(appointmentId: string) {
   // ── Send emails AFTER the transaction succeeds (fire-and-forget) ──
 
   const rewardName = business.rewardName || "Premio de fidelización";
+
+  // Wallet sync is non-blocking so provider failures never affect the visit.
+  refreshLoyaltyWalletPass(client.id).catch((err) =>
+    console.error("[Loyalty Wallet] Error synchronizing pass after stamp:", err)
+  );
 
   if (emailScenario === "reward") {
     sendLoyaltyRewardEmail({

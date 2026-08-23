@@ -19,6 +19,8 @@ import {
   ClientPortalLogout,
   ClientPortalProfileEditor,
 } from "./client-portal-client";
+import { WalletSaveLinks } from "@/components/loyalty/wallet-save-links";
+import { getLoyaltyWalletAvailability } from "@/server/services/loyalty-wallet.service";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +61,7 @@ export default async function ClientPortalPage({
     getClientPortalData(email),
     getClientPortalProfile(email),
   ]);
+  const walletAvailability = getLoyaltyWalletAvailability();
   if (returnTo && profile) redirect(returnTo);
   const firstName = data.displayName.split(/\s+/)[0];
 
@@ -202,6 +205,7 @@ export default async function ClientPortalPage({
                         {client.loyaltyCodes.map((reward) => <p key={reward.id} className="mt-2 font-mono text-sm font-black">{reward.code}</p>)}
                       </div>
                     )}
+                    <WalletSaveLinks clientId={client.id} availability={walletAvailability} className="border-black/15 bg-white/35" />
                     <Link href={`/widget/${client.business.slug}`} className="mt-4 inline-flex items-center text-xs font-black underline decoration-2 underline-offset-4"><LocalizedText id="6SU94P85w4-J" /></Link>
                   </article>
                 );

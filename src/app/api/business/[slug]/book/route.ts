@@ -17,6 +17,7 @@ import { getLocationForBusiness } from "@/server/services/location.service";
 import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.service";
 import { isServiceAvailableAtTime } from "@/core/service-availability";
 import { getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
+import { refreshLoyaltyWalletPass } from "@/server/services/loyalty-wallet.service";
 
 type ScheduleRange = {
   startTime: string;
@@ -896,7 +897,7 @@ export async function POST(
         try {
           const loyaltyCode = await prisma.loyaltyCode.findUnique({
             where: { code: rewardCode },
-            include: { client: { select: { email: true } } },
+            include: { client: { select: { id: true, email: true } } },
           });
 
           if (
@@ -909,6 +910,9 @@ export async function POST(
               where: { id: loyaltyCode.id },
               data: { isUsed: true },
             });
+            refreshLoyaltyWalletPass(loyaltyCode.client.id).catch((walletError) =>
+              console.error("[Book] Error synchronizing loyalty wallet after reward redemption:", walletError)
+            );
           }
         } catch (err) {
           console.error("[Book] Error redeeming reward code:", err);
@@ -1044,7 +1048,7 @@ export async function POST(
       try {
         const loyaltyCode = await prisma.loyaltyCode.findUnique({
           where: { code: rewardCode },
-          include: { client: { select: { email: true } } },
+          include: { client: { select: { id: true, email: true } } },
         });
 
         if (
@@ -1057,6 +1061,9 @@ export async function POST(
             where: { id: loyaltyCode.id },
             data: { isUsed: true },
           });
+          refreshLoyaltyWalletPass(loyaltyCode.client.id).catch((walletError) =>
+            console.error("[Book] Error synchronizing loyalty wallet after reward redemption:", walletError)
+          );
         }
       } catch (err) {
         console.error("[Book] Error redeeming reward code:", err);
