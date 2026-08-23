@@ -87,6 +87,7 @@ describe("dashboard availability service", () => {
       allowSameDayBookings: false,
       minAdvanceBookingMinutes: 120,
       slotInterval: 60,
+      subscription: { plan: "EQUIPO" },
       businessHours: weeklyHours(),
       scheduleOverrides: [],
     });
@@ -139,6 +140,7 @@ describe("dashboard availability service", () => {
       allowSameDayBookings: true,
       minAdvanceBookingMinutes: 120,
       slotInterval: 60,
+      subscription: { plan: "EQUIPO" },
       businessHours: weeklyHours("09:00", "18:00"),
       scheduleOverrides: [],
     });
@@ -260,6 +262,36 @@ describe("dashboard availability service", () => {
     });
 
     expect(result.days[0].slots).toEqual([]);
+  });
+
+  it("uses the business schedule instead of the professional schedule for Individual", async () => {
+    const unavailableOnMonday = staffMember("staff-1", ["service-1"]);
+    unavailableOnMonday.schedule = unavailableOnMonday.schedule.map((entry) =>
+      entry.dayOfWeek === 1 ? { ...entry, isWorking: false } : entry,
+    );
+    mocks.businessFindUnique.mockResolvedValue({
+      ...businessContext,
+      maxServicesPerBooking: 3,
+      allowSameDayBookings: false,
+      minAdvanceBookingMinutes: 120,
+      slotInterval: 60,
+      subscription: { plan: "INDIVIDUAL" },
+      businessHours: weeklyHours(),
+      scheduleOverrides: [],
+    });
+    mocks.staffFindMany.mockResolvedValue([unavailableOnMonday]);
+
+    const result = await getDashboardAvailability(user, businessContext, {
+      mode: "overview",
+      locationId: "location-1",
+      serviceIds: [],
+      staffId: "staff-1",
+      selectedOptionAlternativeIds: [],
+      fromDate: "2026-08-17",
+      days: 1,
+    });
+
+    expect(result.days[0].slots.map((slot) => slot.time)).toEqual(["09:00", "10:00", "11:00"]);
   });
 
   it("does not let an own-agenda user request another professional overview", async () => {

@@ -16,6 +16,7 @@ import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/
 import { getLocationForBusiness } from "@/server/services/location.service";
 import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.service";
 import { isServiceAvailableAtTime } from "@/core/service-availability";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
 
 type ScheduleRange = {
@@ -110,6 +111,7 @@ export async function POST(
     if (!business) {
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
+    const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
 
     // Validate API Key
     const apiKey = request.headers.get("x-api-key") || body.apiKey;
@@ -490,7 +492,7 @@ export async function POST(
       }
 
       const selectedStaffSchedule = selectedStaff.locations[0]?.schedule ?? selectedStaff.schedule;
-      if (selectedStaffSchedule.length > 0) {
+      if (!useBusinessScheduleOnly && selectedStaffSchedule.length > 0) {
         // Check for staff schedule override for this specific date
         const staffOverride = await prisma.staffScheduleOverride.findUnique({
           where: {
@@ -666,7 +668,7 @@ export async function POST(
         const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
         const groupEnd = new Date(requestedStart.getTime() + groupDuration * 60 * 1000);
         const assigned = staffById.get(assignedStaffId);
-        if (assigned) {
+        if (assigned && !useBusinessScheduleOnly) {
           const schedule = assigned.locations[0]?.schedule ?? assigned.schedule;
           if (schedule.length > 0) {
             // Check for staff schedule override for this specific date

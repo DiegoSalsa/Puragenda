@@ -34,7 +34,10 @@ export async function getCustomerAppointmentByToken(token: string) {
       service: true,
       staff: true,
       business: {
-        include: { owner: { select: { email: true, name: true } } },
+        include: {
+          owner: { select: { email: true, name: true } },
+          subscription: { select: { plan: true } },
+        },
       },
     },
   });

@@ -119,6 +119,7 @@ interface Props {
   initialDate?: string;
   storyCampaignToken?: string;
   previewMode?: boolean;
+  useBusinessScheduleOnly?: boolean;
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -250,7 +251,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -564,7 +565,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const slots = useMemo(() => {
     const dur = isMultiService ? totalDuration : selectedService?.duration;
     if (!selectedDate || !dur) return [];
-    const staffSched = selectedStaffSchedule;
+    const staffSched = useBusinessScheduleOnly ? undefined : selectedStaffSchedule;
+    const staffOverrides = useBusinessScheduleOnly ? undefined : selectedStaff?.scheduleOverrides;
     // The API returns appointment timestamps in UTC. Convert their end to the
     // business timezone before using it as a wall-clock start candidate.
     const appointmentEndStarts = blockedSlots.map((blocked) =>
@@ -578,7 +580,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       slotInterval,
       effectiveOverrides,
       appointmentEndStarts,
-      selectedStaff?.scheduleOverrides,
+      staffOverrides,
     );
 
     // Same-day filtering logic
@@ -599,7 +601,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     );
 
     return generated;
-  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone, activeServices]);
+  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone, activeServices, useBusinessScheduleOnly]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -659,7 +661,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
       const serviceEnd = addMinutes(slot.start, durationByServiceId.get(service.id) ?? service.duration);
       const serviceSlot = { start: slot.start, end: serviceEnd };
-      if (!isStaffAvailableForSlot({ ...staff, schedule: getStaffScheduleForLocation(staff, selectedLocation?.id) ?? staff.schedule }, serviceSlot)) return true;
+      if (!useBusinessScheduleOnly && !isStaffAvailableForSlot({ ...staff, schedule: getStaffScheduleForLocation(staff, selectedLocation?.id) ?? staff.schedule }, serviceSlot)) return true;
 
       const staffBlockedSlots = blockedSlots.filter((blocked) => blocked.staffId === staffId);
       if (isBlocked(serviceSlot, staffBlockedSlots, effectiveTimezone)) return true;
@@ -675,6 +677,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     staffMembers,
     effectiveTimezone,
     selectedLocation?.id,
+    useBusinessScheduleOnly,
   ]);
 
   useEffect(() => {
@@ -1685,7 +1688,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
                     // Calculate typical slots for this day based on standard hours
                     const dummyDate = new Date(2024, 0, d.value === 0 ? 7 : d.value);
-                    const slotsForDay = buildSlots(dummyDate, selectedService.duration, effectiveHours, selectedStaffSchedule, slotInterval, effectiveOverrides, [], selectedStaff?.scheduleOverrides).map(s => format(s.start, "HH:mm"));
+                    const slotsForDay = buildSlots(
+                      dummyDate,
+                      selectedService.duration,
+                      effectiveHours,
+                      useBusinessScheduleOnly ? undefined : selectedStaffSchedule,
+                      slotInterval,
+                      effectiveOverrides,
+                      [],
+                      useBusinessScheduleOnly ? undefined : selectedStaff?.scheduleOverrides,
+                    ).map((slot) => format(slot.start, "HH:mm"));
 
                     return (
                       <div key={d.value} className="rounded-2xl border transition-all duration-300 overflow-hidden" 
@@ -2114,7 +2126,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                   {days.map((day) => {
                     const sel = selectedDate?.toDateString() === day.toDateString();
-                    const staffWorking = splitStaffMode
+                    const staffWorking = useBusinessScheduleOnly ? true : splitStaffMode
                       ? activeServices.every((service) => {
                           const staff = staffMembers?.find((item) => item.id === selectedStaffByServiceId[service.id]);
                           return staff ? isStaffWorkingOnDay(staff, day, getStaffScheduleForLocation(staff, selectedLocation?.id)) : false;

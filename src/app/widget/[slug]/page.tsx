@@ -87,6 +87,7 @@ export default async function WidgetPage({
   const business = await prisma.business.findUnique({
     where: { slug },
     include: {
+      subscription: { select: { plan: true } },
       services: {
         orderBy: [{ position: "asc" }, { name: "asc" }],
         include: {
@@ -328,6 +329,7 @@ export default async function WidgetPage({
       initialDate={sp.date}
       storyCampaignToken={sp.story}
       previewMode={previewMode}
+      useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
     />
     </>
   );

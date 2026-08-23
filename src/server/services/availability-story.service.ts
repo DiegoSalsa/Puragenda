@@ -2,6 +2,7 @@ import { addDays, format } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { buildSlots, type AvailabilityScheduleOverride } from "@/core/availability";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { prisma } from "@/server/db/prisma";
 import { getStaffAgendaScope } from "@/server/services/business.service";
 import { getBlockedSlots } from "@/server/services/appointment.service";
@@ -391,6 +392,7 @@ export async function getAvailabilityStoryOpportunities(
   const fullBusiness = await prisma.business.findUnique({
     where: { id: business.id },
     include: {
+      subscription: { select: { plan: true } },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
       scheduleOverrides: { orderBy: { date: "asc" } },
     },
@@ -443,6 +445,7 @@ export async function getAvailabilityStoryOpportunities(
   ]);
 
   const locale = resolveLocale(fullBusiness.locale);
+  const useBusinessScheduleOnly = usesBusinessScheduleOnly(fullBusiness.subscription?.plan);
   const dateLocale = getDateLocale(locale);
   const opportunities: AvailabilityStoryOpportunity[] = [];
   const now = new Date();
@@ -505,11 +508,11 @@ export async function getAvailabilityStoryOpportunities(
             date,
             service.duration,
             businessHours,
-            staffSchedule,
+            useBusinessScheduleOnly ? undefined : staffSchedule,
             fullBusiness.slotInterval,
             businessOverrides,
             localBlockedEnds,
-            staffOverrides,
+            useBusinessScheduleOnly ? undefined : staffOverrides,
           ).filter((slot) => {
             const utcSlot = {
               start: fromZonedTime(slot.start, location.timezone),
@@ -521,7 +524,7 @@ export async function getAvailabilityStoryOpportunities(
           });
           if (slots.length === 0) continue;
 
-          const hasStaffOverride = staff.scheduleOverrides.some(
+          const hasStaffOverride = !useBusinessScheduleOnly && staff.scheduleOverrides.some(
             (entry) => entry.date.toISOString().slice(0, 10) === dateKey,
           );
           const source = hasBusinessOverride || hasStaffOverride ? "EXPLICIT" : "RECURRING";
@@ -575,6 +578,7 @@ export async function buildAvailabilityStory(
   const business = await prisma.business.findUnique({
     where: { id: businessId },
     include: {
+      subscription: { select: { plan: true } },
       businessHours: { orderBy: { dayOfWeek: "asc" } },
       scheduleOverrides: { orderBy: { date: "asc" } },
     },
@@ -696,6 +700,7 @@ export async function buildAvailabilityStory(
   }
 
   const businessHours = location.hours.length ? location.hours : business.businessHours;
+  const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
   const businessOverrides = (location.scheduleOverrides.length
     ? location.scheduleOverrides
     : business.scheduleOverrides).map(mapBusinessOverride);
@@ -729,11 +734,11 @@ export async function buildAvailabilityStory(
           date,
           service.duration,
           businessHours,
-          staffSchedule,
+          useBusinessScheduleOnly ? undefined : staffSchedule,
           business.slotInterval,
           businessOverrides,
           localBlockedEnds,
-          staffOverrides,
+          useBusinessScheduleOnly ? undefined : staffOverrides,
         );
 
         for (const slot of slots) {

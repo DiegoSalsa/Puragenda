@@ -2,6 +2,7 @@ import { addDays, format } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { buildSlots, type AvailabilityScheduleOverride } from "@/core/availability";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { prisma } from "@/server/db/prisma";
 import { getGoogleCalendarBusySlots } from "@/server/services/google-calendar.service";
 import { getStaffAgendaScope } from "@/server/services/business.service";
@@ -369,6 +370,7 @@ export async function getDashboardAvailability(
     prisma.business.findUnique({
       where: { id: businessContext.id },
       include: {
+        subscription: { select: { plan: true } },
         businessHours: { orderBy: { dayOfWeek: "asc" } },
         scheduleOverrides: { orderBy: { date: "asc" } },
       },
@@ -467,6 +469,7 @@ export async function getDashboardAvailability(
   );
 
   const businessHours = location.hours.length ? location.hours : business.businessHours;
+  const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
   const businessOverrides = (location.scheduleOverrides.length
     ? location.scheduleOverrides
     : business.scheduleOverrides).map(mapBusinessOverride);
@@ -496,11 +499,11 @@ export async function getDashboardAvailability(
           date,
           group.duration,
           businessHours,
-          staffSchedule,
+          useBusinessScheduleOnly ? undefined : staffSchedule,
           business.slotInterval,
           businessOverrides,
           localBlockedEnds,
-          staffOverrides,
+          useBusinessScheduleOnly ? undefined : staffOverrides,
         ).filter((slot) => {
           const utcSlot = {
             start: fromZonedTime(slot.start, location.timezone),

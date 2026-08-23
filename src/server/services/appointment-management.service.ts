@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { checkAppointmentCollision } from "@/server/services/appointment.service";
 import type { ManagedAppointmentInput } from "@/server/validations/appointment-management";
 import { isServiceAvailableAtTime } from "@/core/service-availability";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 
 type ResolvedManagedAppointment = {
   startTime: Date;
@@ -25,7 +26,7 @@ function parseClock(value: string) {
 }
 
 export async function resolveManagedAppointment(
-  business: { id: string; timezone: string },
+  business: { id: string; timezone: string; subscription?: { plan: "INDIVIDUAL" | "EQUIPO" | "TEST" } | null },
   input: ManagedAppointmentInput,
   excludeAppointmentId?: string,
 ): Promise<{ error: string } | { value: ResolvedManagedAppointment }> {
@@ -111,6 +112,7 @@ export async function resolveManagedAppointment(
   const localStart = toZonedTime(requestedStart, business.timezone);
   const localEnd = toZonedTime(endTime, business.timezone);
   const dayOfWeek = localStart.getDay();
+  const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
 
   if (!isServiceAvailableAtTime({
     availabilityType: service.availabilityType,
@@ -137,7 +139,7 @@ export async function resolveManagedAppointment(
     prisma.businessScheduleOverride.findUnique({
       where: { businessId_date: { businessId: business.id, date: new Date(`${dateKey}T00:00:00.000Z`) } },
     }),
-    staff.id
+    !useBusinessScheduleOnly && staff.id
       ? prisma.staffScheduleOverride.findUnique({
           where: { staffId_date: { staffId: staff.id, date: new Date(`${dateKey}T00:00:00.000Z`) } },
         })
@@ -169,7 +171,7 @@ export async function resolveManagedAppointment(
   }
 
   // ── Staff schedule validation (override takes priority) ──
-  if (staffOverride) {
+  if (!useBusinessScheduleOnly && staffOverride) {
     if (!staffOverride.isWorking) return { error: `${staff.name} no trabaja ese día` };
     if (staffOverride.startTime && staffOverride.endTime) {
       const starts = minutesOfDay(localStart);
@@ -181,7 +183,7 @@ export async function resolveManagedAppointment(
         return { error: `La cita se cruza con la pausa de ${staff.name}` };
       }
     }
-  } else if (staff.schedule.length > 0) {
+  } else if (!useBusinessScheduleOnly && staff.schedule.length > 0) {
     const staffDay = staff.schedule.find((entry) => entry.dayOfWeek === dayOfWeek);
     if (!staffDay?.isWorking) return { error: `${staff.name} no trabaja ese día` };
     const starts = minutesOfDay(localStart);

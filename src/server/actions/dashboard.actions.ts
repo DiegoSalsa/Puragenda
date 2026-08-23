@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { sendStaffInviteEmail } from "@/server/email/send";
 import { resolveLocale } from "@/i18n/config";
 import { isValidTime, isValidTimeRange } from "@/lib/time";
@@ -263,6 +264,13 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
   if (!business) return { error: "No tienes un negocio" };
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
     return { error: "No tienes permisos para modificar horarios profesionales" };
+  }
+  const subscription = await prisma.subscription.findUnique({
+    where: { businessId: business.id },
+    select: { plan: true },
+  });
+  if (usesBusinessScheduleOnly(subscription?.plan)) {
+    return { error: "El plan Individual usa automáticamente el horario del negocio" };
   }
   const validationError = validateDailyHours(schedule);
   if (validationError) return { error: validationError };

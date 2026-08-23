@@ -115,6 +115,7 @@ export default async function StaffPage() {
         accessProfiles={accessProfiles}
         canManageRoles={business.ownerId === user.id}
         allLocations={businessLocations}
+        useBusinessScheduleOnly={limitInfo.plan === "INDIVIDUAL"}
       />
 
       <PageTutorial

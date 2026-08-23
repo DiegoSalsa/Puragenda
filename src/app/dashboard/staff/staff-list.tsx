@@ -141,6 +141,7 @@ export function StaffList({
   allLocations = [],
   accessProfiles = [],
   canManageRoles = false,
+  useBusinessScheduleOnly = false,
 }: {
   staff: StaffMember[];
   limitInfo: LimitInfo;
@@ -148,6 +149,7 @@ export function StaffList({
   allLocations?: { id: string; name: string }[];
   accessProfiles?: AccessProfileOption[];
   canManageRoles?: boolean;
+  useBusinessScheduleOnly?: boolean;
 }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
@@ -203,6 +205,12 @@ export function StaffList({
   const atLimit = !limitInfo.canAdd;
   const activeCount = initialStaff.filter((member) => member.isActive).length;
   const accessCount = initialStaff.filter((member) => member.userId).length;
+  const drawerTabs: [StaffDrawerTab, string][] = [
+    ["general", "General"],
+    ["services", "Servicios"],
+    ...(!useBusinessScheduleOnly ? [["schedule", "Horario"] as [StaffDrawerTab, string]] : []),
+    ["blocks", "Bloqueos"],
+  ];
 
   // Build a name map for services
   const serviceNameMap: Record<string, string> = {};
@@ -559,12 +567,7 @@ export function StaffList({
                       <button type="button" onClick={() => setExpandedId(null)} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={legacy("nUCY4THlFves")}><X className="h-4 w-4" /></button>
                     </div>
                     <div className="mt-4 flex gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
-                      {([
-                        ["general", "General"],
-                        ["services", "Servicios"],
-                        ["schedule", "Horario"],
-                        ["blocks", "Bloqueos"],
-                      ] as [StaffDrawerTab, string][]).map(([tab, label]) => (
+                      {drawerTabs.map(([tab, label]) => (
                         <button key={tab} type="button" onClick={() => setDrawerTab(tab)} className={`min-w-max flex-1 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${drawerTab === tab ? "bg-background text-brand-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{label}</button>
                       ))}
                     </div>
@@ -717,7 +720,7 @@ export function StaffList({
                   )}
 
                   {/* ── Section: Schedule ── */}
-                  {drawerTab === "schedule" && <div className="space-y-3">
+                  {drawerTab === "schedule" && !useBusinessScheduleOnly && <div className="space-y-3">
                     {allLocations.length > 0 && <div className="rounded-xl border border-border bg-muted/30 p-3">
                       <p className="mb-2 text-xs font-semibold text-foreground"><LocalizedText id="5KyhZArQLuI9" /></p>
                       <div className="flex flex-wrap gap-x-4 gap-y-2">

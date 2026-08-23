@@ -12,6 +12,7 @@ import {
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import { toZonedTime } from "date-fns-tz";
 import { timeToMinutes } from "@/lib/time";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 
 type ScheduleWindow = {
   startTime: string;
@@ -134,6 +135,10 @@ export async function rescheduleAppointmentAction(
     }
   }
 
+  const useBusinessScheduleOnly = usesBusinessScheduleOnly(
+    appointment.business.subscription?.plan,
+  );
+
   const [blockedDate, businessHours, staffSchedule] = await Promise.all([
     prisma.blockedDate.findUnique({
       where: {
@@ -148,7 +153,7 @@ export async function rescheduleAppointmentAction(
       where: { businessId: appointment.business.id },
       orderBy: { dayOfWeek: "asc" },
     }),
-    appointment.staffId
+    !useBusinessScheduleOnly && appointment.staffId
       ? prisma.staffSchedule.findMany({
           where: { staffId: appointment.staffId },
           orderBy: { dayOfWeek: "asc" },
@@ -172,7 +177,7 @@ export async function rescheduleAppointmentAction(
         },
       },
     }),
-    appointment.staffId
+    !useBusinessScheduleOnly && appointment.staffId
       ? prisma.staffScheduleOverride.findUnique({
           where: {
             staffId_date: {
@@ -227,7 +232,7 @@ export async function rescheduleAppointmentAction(
   }
 
   // ── Staff schedule validation (override takes priority) ──
-  if (staffOverride) {
+  if (!useBusinessScheduleOnly && staffOverride) {
     if (!staffOverride.isWorking) {
       return { error: "El profesional no trabaja el día seleccionado" };
     }
@@ -245,7 +250,7 @@ export async function rescheduleAppointmentAction(
       );
       if (staffScheduleError) return { error: staffScheduleError };
     }
-  } else if (staffSchedule.length > 0) {
+  } else if (!useBusinessScheduleOnly && staffSchedule.length > 0) {
     const staffDay = staffSchedule.find((entry) => entry.dayOfWeek === dayOfWeek);
     if (!staffDay?.isWorking) {
       return { error: "El profesional no trabaja el día seleccionado" };

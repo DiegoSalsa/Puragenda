@@ -44,6 +44,7 @@ import {
   updateBusinessPoliciesAction,
   updateProductionOrdersEnabledAction,
   updateServiceCategoryGroupingAction,
+  saveStaffScheduleAction,
   updateStaffServicesAction,
 } from "@/server/actions/dashboard.actions";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -201,6 +202,26 @@ describe("dashboard action permission boundaries", () => {
       error: "La hora de inicio debe ser anterior a la hora de fin",
     });
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("does not save a separate professional schedule for Individual", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+      plan: "INDIVIDUAL",
+    } as never);
+
+    const result = await saveStaffScheduleAction("staff-1", [
+      {
+        dayOfWeek: 1,
+        startTime: "09:00",
+        endTime: "18:00",
+        isWorking: true,
+      },
+    ]);
+
+    expect(result).toEqual({
+      error: "El plan Individual usa automáticamente el horario del negocio",
+    });
+    expect(prisma.staff.findFirst).not.toHaveBeenCalled();
   });
 
   it("rejects non-finite booking policy values", async () => {
