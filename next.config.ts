@@ -26,6 +26,7 @@ const noIndexRoutes = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   outputFileTracingRoot: projectRoot,
   turbopack: {
     root: projectRoot,

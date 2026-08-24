@@ -9,7 +9,7 @@ import { es } from "date-fns/locale";
 import {
   RefreshCw, Mail, Loader2, CheckCircle2, XCircle, PauseCircle, PlayCircle,
   Calendar, Clock, User, Briefcase, AlertTriangle, Shield,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 
 // ── Types ──
 

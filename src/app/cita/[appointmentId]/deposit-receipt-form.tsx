@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, ExternalLink, Loader2, Upload } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, Loader2, Upload } from "@/components/icons/hover-icons";
 
 type ReceiptStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED";
 

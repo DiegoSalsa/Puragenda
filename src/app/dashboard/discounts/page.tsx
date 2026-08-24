@@ -1,4 +1,4 @@
-import { Percent } from "lucide-react";
+import { Percent } from "@/components/icons/hover-icons";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";

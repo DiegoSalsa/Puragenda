@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useMemo, useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, ExternalLink, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, ExternalLink, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "@/components/icons/hover-icons";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";

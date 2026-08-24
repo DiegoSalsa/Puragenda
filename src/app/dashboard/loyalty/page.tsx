@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { Stamp } from "lucide-react";
+import { Stamp } from "@/components/icons/hover-icons";
 import { LoyaltyConfigForm } from "./loyalty-config-form";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";

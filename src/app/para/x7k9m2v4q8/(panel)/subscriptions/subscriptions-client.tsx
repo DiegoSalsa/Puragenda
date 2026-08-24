@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState, useTransition } from "react";
 import { format, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { AlertTriangle, XCircle, Clock, TrendingUp, RefreshCw, Gift, Percent, Save, Trash2, Zap } from "lucide-react";
+import { AlertTriangle, XCircle, Clock, TrendingUp, RefreshCw, Gift, Percent, Save, Trash2, Zap } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import {

@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Clock3 } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";

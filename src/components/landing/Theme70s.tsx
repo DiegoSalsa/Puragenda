@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Palette, Shield, CreditCard } from "lucide-react";
+import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Palette, Shield, CreditCard } from "@/components/icons/hover-icons";
 import { Navbar } from "@/components/landing/navbar";
 import { WordCarousel } from "@/components/landing/word-carousel";
 import type { LandingIdentityProps } from "@/components/landing/types";

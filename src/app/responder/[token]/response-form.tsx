@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2, Loader2, Send } from "lucide-react";
+import { CheckCircle2, Loader2, Send } from "@/components/icons/hover-icons";
 
 type Field = {
   id: string;

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "@/components/icons/hover-icons";
 import { useRouter } from "next/navigation";
 import { getCountryConfig, getTimezoneOptions } from "@/core/countries";
 import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";

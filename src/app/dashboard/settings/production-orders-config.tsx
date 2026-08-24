@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
-import { Check, Loader2, Package } from "lucide-react";
+import { Check, Loader2, Package } from "@/components/icons/hover-icons";
 import { updateProductionOrdersEnabledAction } from "@/server/actions/dashboard.actions";
 
 export function ProductionOrdersConfig({ initialEnabled }: { initialEnabled: boolean }) {

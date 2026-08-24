@@ -1,7 +1,7 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { CHANGELOG_DATA } from "@/config/changelog";
-import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from "@/components/icons/hover-icons";
 
 export default function ChangelogPage() {
   return (

@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { differenceInDays, differenceInHours } from "date-fns";
-import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
 import { PRICING, STAFF_LIMITS } from "@/core/constants";

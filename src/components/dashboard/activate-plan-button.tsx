@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { AlertCircle, CreditCard, Loader2 } from "@/components/icons/hover-icons";
 import { startBillingCheckout } from "@/components/paddle/checkout";
 
 function getFriendlyBillingError(data: { error?: string; code?: string }, status: number) {

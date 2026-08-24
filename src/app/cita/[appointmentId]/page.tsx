@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { es } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
-import { CheckCircle2, XCircle, Clock, Calendar, User, Briefcase } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Calendar, User, Briefcase } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 import { DepositReceiptForm } from "./deposit-receipt-form";
 

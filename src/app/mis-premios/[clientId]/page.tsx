@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
 import { notFound, redirect } from "next/navigation";
-import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "lucide-react";
+import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "@/components/icons/hover-icons";
 import { StampProgress } from "./stamp-progress";
 import { RewardCard } from "./reward-card";
 import type { Metadata, Viewport } from "next";

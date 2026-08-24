@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { saveLoyaltyConfigAction } from "@/server/actions/dashboard.actions";
-import { Loader2, Save, ToggleLeft, ToggleRight, Gift, Hash, Percent, DollarSign } from "lucide-react";
+import { Loader2, Save, ToggleLeft, ToggleRight, Gift, Hash, Percent, DollarSign } from "@/components/icons/hover-icons";
 
 interface LoyaltyConfigFormProps {
   initialData: {

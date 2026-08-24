@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
-import { Copy, Loader2, Pause, Play, Plus, Tag } from "lucide-react";
+import { Copy, Loader2, Pause, Play, Plus, Tag } from "@/components/icons/hover-icons";
 import {
   createPlatformDiscountCodeAction,
   togglePlatformDiscountCodeAction,

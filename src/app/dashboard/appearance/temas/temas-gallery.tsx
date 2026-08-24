@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Check, Loader2, ChevronLeft, ChevronRight, X, Eye, Copy, Trash2, SlidersHorizontal } from "lucide-react";
+import { Search, Check, Loader2, ChevronLeft, ChevronRight, X, Eye, Copy, Trash2, SlidersHorizontal } from "@/components/icons/hover-icons";
 import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
 import { deleteWidgetThemeAction, duplicateWidgetThemeAction } from "@/server/actions/appearance-studio.actions";
 

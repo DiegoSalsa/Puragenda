@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Percent, Power, Trash2 } from "lucide-react";
+import { Loader2, Percent, Power, Trash2 } from "@/components/icons/hover-icons";
 import {
   createBookingDiscountCodeAction,
   deleteBookingDiscountCodeAction,

@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import { ContactForm } from "@/components/landing/contact-form";
 import { absoluteUrl } from "@/lib/site";

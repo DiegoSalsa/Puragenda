@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus } from "@/components/icons/hover-icons";
 
 const faqs = [
   {

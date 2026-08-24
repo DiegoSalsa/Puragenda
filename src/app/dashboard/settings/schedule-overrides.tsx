@@ -13,7 +13,7 @@ import {
   Save,
   Trash2,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import {
   saveScheduleOverrideAction,
   deleteScheduleOverrideAction,

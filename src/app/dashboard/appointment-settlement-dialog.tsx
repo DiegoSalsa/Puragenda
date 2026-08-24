@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Banknote, CheckCircle2, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Banknote, CheckCircle2, Loader2, Plus, Trash2, X } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 
 type SettlementItem = { description: string; amount: number };

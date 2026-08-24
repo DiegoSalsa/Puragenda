@@ -7,7 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
-import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "lucide-react";
+import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "@/components/icons/hover-icons";
 import { CopyButton } from "./copy-button";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";

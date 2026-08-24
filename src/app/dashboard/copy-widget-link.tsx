@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { Link as LinkIcon, Check, Copy } from "lucide-react";
+import { Link as LinkIcon, Check, Copy } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 
 export function CopyWidgetLink({ slug }: { slug: string }) {

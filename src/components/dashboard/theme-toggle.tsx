@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 
 const themes = [

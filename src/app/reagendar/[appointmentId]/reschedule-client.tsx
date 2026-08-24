@@ -9,7 +9,7 @@ import { es } from "date-fns/locale";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import {
   Calendar, Clock, Briefcase, User, Loader2, CheckCircle2, XCircle, ArrowRight,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { rescheduleAppointmentAction } from "@/server/actions/appointment.actions";
 
 interface Props {

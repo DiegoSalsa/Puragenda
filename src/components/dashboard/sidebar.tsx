@@ -35,7 +35,7 @@ import {
   UsersRound,
   Wrench,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { InstallPWAButton } from "@/components/pwa/install-button";

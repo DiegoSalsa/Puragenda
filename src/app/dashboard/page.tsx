@@ -4,7 +4,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { addDays, endOfWeek, format, parseISO, startOfWeek } from "date-fns";
 import Link from "next/link";
-import { Building2, UserRound } from "lucide-react";
+import { Building2, UserRound } from "@/components/icons/hover-icons";
 import { SubscriptionBanner } from "@/components/dashboard/subscription-banner";
 import { WeeklyCalendar } from "./weekly-calendar";
 import { CopyWidgetLink } from "./copy-widget-link";

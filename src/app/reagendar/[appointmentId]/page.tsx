@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { XCircle, AlertTriangle, Clock } from "lucide-react";
+import { XCircle, AlertTriangle, Clock } from "@/components/icons/hover-icons";
 import { RescheduleClient } from "./reschedule-client";
 import { getCustomerAppointmentByToken } from "@/server/services/customer-appointment-action.service";
 

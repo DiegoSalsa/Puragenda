@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { CalendarPlus, CheckCircle2, Loader2, Mail, X } from "lucide-react";
+import { CalendarPlus, CheckCircle2, Loader2, Mail, X } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 

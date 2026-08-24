@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useEffect } from "react";
-import { Download, X } from "lucide-react";
+import { Download, X } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 
 interface BeforeInstallPromptEvent extends Event {

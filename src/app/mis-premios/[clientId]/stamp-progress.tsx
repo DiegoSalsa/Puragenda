@@ -1,6 +1,6 @@
 "use client";
 
-import { Stamp } from "lucide-react";
+import { Stamp } from "@/components/icons/hover-icons";
 
 interface StampProgressProps {
   currentStamps: number;

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { GUIDED_HELP_KEYS } from "@/i18n/guided-help-keys";
 
-import { CircleHelp } from "lucide-react";
+import { CircleHelp } from "@/components/icons/hover-icons";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { driver, type DriveStep } from "driver.js";

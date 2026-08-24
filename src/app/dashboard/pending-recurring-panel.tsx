@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, CheckCircle2, XCircle, ChevronDown, ChevronUp, User, Calendar, Clock } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronDown, ChevronUp, User, Calendar, Clock } from "@/components/icons/hover-icons";
 import { approveRecurringBookingAction, rejectRecurringBookingAction } from "@/server/actions/recurring.actions";
 import { useRouter } from "next/navigation";
 

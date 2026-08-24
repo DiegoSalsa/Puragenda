@@ -5,7 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
-import { CalendarDays, Check, Clock, Gift, History, MapPin, Sparkles, Store } from "lucide-react";
+import { CalendarDays, Check, Clock, Gift, History, MapPin, Sparkles, Store } from "@/components/icons/hover-icons";
 import {
   getClientPortalData,
   getClientPortalEmail,

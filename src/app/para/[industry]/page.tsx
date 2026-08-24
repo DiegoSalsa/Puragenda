@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { industriesData } from "@/lib/data/industries";
 import { getCurrentSessionUser } from "@/server/auth/user-session";

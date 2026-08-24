@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Eye, EyeOff } from "lucide-react";
+import { Check, Copy, Eye, EyeOff } from "@/components/icons/hover-icons";
 
 export function SecretField({ value, label = "secreto" }: { value: string; label?: string }) {
   const [visible, setVisible] = useState(false);

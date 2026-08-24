@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "lucide-react";
+import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "@/components/icons/hover-icons";
 import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 import { getCountryConfig } from "@/core/countries";
 import { startBillingCheckout } from "@/components/paddle/checkout";

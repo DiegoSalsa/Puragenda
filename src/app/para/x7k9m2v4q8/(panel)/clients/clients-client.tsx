@@ -12,7 +12,7 @@ import {
   Mail,
   Search,
   UserCheck,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 
 type ClientAccount = {
   id: string;

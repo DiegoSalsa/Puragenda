@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {

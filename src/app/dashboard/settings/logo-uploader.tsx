@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useRef } from "react";
-import { Upload, Loader2, Trash2, ImageIcon } from "lucide-react";
+import { Upload, Loader2, Trash2, ImageIcon } from "@/components/icons/hover-icons";
 import { updateBusinessLogoAction, removeBusinessLogoAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 

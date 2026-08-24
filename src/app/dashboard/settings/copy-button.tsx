@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@/components/icons/hover-icons";
 
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

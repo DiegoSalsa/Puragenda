@@ -4,7 +4,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
 import { getOrCreateAffiliate, getUserPrizes, getTokenBalance } from "@/server/services/affiliate.service";
-import { Trophy } from "lucide-react";
+import { Trophy } from "@/components/icons/hover-icons";
 import { RewardsClient } from "./rewards-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";

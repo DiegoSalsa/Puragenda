@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Banknote, CheckCircle2, Loader2, QrCode, X } from "lucide-react";
+import { Banknote, CheckCircle2, Loader2, QrCode, X } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 
 interface PosQrPayment {

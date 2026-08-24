@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useState } from "react";
-import { Check, Copy, Gift, Sparkles } from "lucide-react";
+import { Check, Copy, Gift, Sparkles } from "@/components/icons/hover-icons";
 
 interface RewardCardProps {
   code: string;

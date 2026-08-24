@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition, useEffect } from "react";
-import { Coins, Trophy, Loader2, ChevronRight, ChevronLeft, Gift, Gem, Star, Award, Crown, Search, X } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Coins, Trophy, Loader2, ChevronRight, ChevronLeft, Gift, Gem, Star, Award, Crown, Search, X } from "@/components/icons/hover-icons";
+import type { LucideIcon } from "@/components/icons/hover-icons";
 import { spinRouletteAction, redeemFixedDiscountAction, activatePrizeAction } from "./actions";
 import { RouletteMinigame } from "@/components/dashboard/roulette-minigame";
 

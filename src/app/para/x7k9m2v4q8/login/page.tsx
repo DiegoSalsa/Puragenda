@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, Mail, ShieldCheck } from "@/components/icons/hover-icons";
 
 type Step = "email" | "code";
 

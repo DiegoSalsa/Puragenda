@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Loader2, Save, MapPin, Map } from "lucide-react";
+import { Loader2, Save, MapPin, Map } from "@/components/icons/hover-icons";
 import { updateBusinessLocationAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 

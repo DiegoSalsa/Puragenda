@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronLeft, ImagePlus, Loader2, Package, Trash2, Upload } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ImagePlus, Loader2, Package, Trash2, Upload } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 
 interface ProductionWindow {

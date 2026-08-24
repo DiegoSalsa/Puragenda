@@ -16,7 +16,7 @@ import {
   TrendingUp,
   CalendarCheck,
   AlertTriangle,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 

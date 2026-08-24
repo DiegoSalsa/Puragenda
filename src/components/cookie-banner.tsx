@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Cookie } from "lucide-react";
+import { Cookie } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 

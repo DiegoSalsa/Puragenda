@@ -12,7 +12,7 @@ import {
   TrendingUp,
   UserRound,
   Users,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { getTranslations } from "next-intl/server";
 
 type PeriodMode = "week" | "month";

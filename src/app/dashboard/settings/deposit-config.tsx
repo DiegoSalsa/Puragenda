@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save } from "@/components/icons/hover-icons";
 import { saveDepositConfigAction } from "@/server/actions/dashboard.actions";
 
 interface Props {

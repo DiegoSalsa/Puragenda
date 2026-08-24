@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Loader2, Pencil, Plus, ShieldCheck, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Pencil, Plus, ShieldCheck, Trash2, X } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { PERMISSION_CATALOG } from "@/core/permissions";
 import { deleteAccessProfileAction, saveAccessProfileAction } from "@/server/actions/access-profile.actions";

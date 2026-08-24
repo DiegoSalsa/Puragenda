@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
 import { updateBusinessPoliciesAction } from "@/server/actions/dashboard.actions";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "@/components/icons/hover-icons";
 
 interface Props {
   initialAllowRescheduling: boolean;

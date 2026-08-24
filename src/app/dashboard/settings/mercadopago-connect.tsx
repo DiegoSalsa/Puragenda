@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, AlertCircle, Loader2, Unlink } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Unlink } from "@/components/icons/hover-icons";
 import { disconnectMercadoPagoAction } from "@/server/actions/dashboard.actions";
 
 interface Props {

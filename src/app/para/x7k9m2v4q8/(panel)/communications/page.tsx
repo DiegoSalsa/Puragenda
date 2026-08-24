@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
-import { AlertTriangle, AtSign, CheckCircle2, FileText, Mail, MousePointerClick, Send, Users } from "lucide-react";
+import { AlertTriangle, AtSign, CheckCircle2, FileText, Mail, MousePointerClick, Send, Users } from "@/components/icons/hover-icons";
 import { sendMassEmailAction } from "@/server/actions/admin.actions";
 
 type Segment = "ALL" | "TRIALING" | "ACTIVE" | "CANCELLED";

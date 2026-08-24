@@ -4,7 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { addDays, differenceInMinutes, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
 import type { Locale } from "date-fns/locale";
 import Link from "next/link";
-import { Building2, UserRound } from "lucide-react";
+import { Building2, UserRound } from "@/components/icons/hover-icons";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { BusinessInsights } from "../business-insights";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";

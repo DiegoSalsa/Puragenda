@@ -4,7 +4,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2 } from "@/components/icons/hover-icons";
 import { deleteBusinessAction } from "@/server/actions/admin.actions";
 
 export function DeleteBusinessButton({

@@ -1,7 +1,7 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
-import { CalendarCheck2, ShieldCheck, UsersRound } from "lucide-react";
+import { CalendarCheck2, ShieldCheck, UsersRound } from "@/components/icons/hover-icons";
 
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { getCurrentSessionUser } from "@/server/auth/user-session";

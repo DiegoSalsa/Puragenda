@@ -16,7 +16,7 @@ import {
   Clock,
   Sparkles,
   Zap,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import type { SubscriptionPlan } from "@/core/entities";
 
 interface MarketingDashboardProps {

@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, CheckCircle2 } from "@/components/icons/hover-icons";
 import { createBusinessAction } from "@/server/actions/admin.actions";
 
 export default function NewBusinessPage() {

@@ -1,6 +1,6 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
-import { Palette } from "lucide-react";
+import { Palette } from "@/components/icons/hover-icons";
 
 export default function AppearanceLayout({ children }: { children: React.ReactNode }) {
   return (

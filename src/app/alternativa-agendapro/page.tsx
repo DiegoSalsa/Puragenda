@@ -2,7 +2,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "@/components/icons/hover-icons";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { absoluteUrl } from "@/lib/site";

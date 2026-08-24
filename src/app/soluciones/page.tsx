@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "lucide-react";
+import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
 import { absoluteUrl } from "@/lib/site";

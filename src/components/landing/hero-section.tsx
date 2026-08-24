@@ -1,7 +1,7 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
-import { ArrowRight, Scissors, Sparkles, Stethoscope, ShieldCheck } from "lucide-react";
+import { ArrowRight, Scissors, Sparkles, Stethoscope, ShieldCheck } from "@/components/icons/hover-icons";
 import { WordCarousel } from "@/components/landing/word-carousel";
 
 export function HeroSection() {

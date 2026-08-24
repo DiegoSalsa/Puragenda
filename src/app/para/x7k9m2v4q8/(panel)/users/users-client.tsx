@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState, useMemo, useTransition } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Users, Search, Shield, Building2, UserX, UserCheck, Filter } from "lucide-react";
+import { Users, Search, Shield, Building2, UserX, UserCheck, Filter } from "@/components/icons/hover-icons";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import Link from "next/link";
 import { deactivateUserAction, reactivateUserAction } from "@/server/actions/admin.actions";

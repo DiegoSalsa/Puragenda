@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getGuide, guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";

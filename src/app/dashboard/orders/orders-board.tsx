@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { format, parseISO, startOfWeek } from "date-fns";
-import { Banknote, CalendarRange, Check, ChevronDown, ImageIcon, Loader2, Package, Phone, UserRound, type LucideIcon } from "lucide-react";
+import { Banknote, CalendarRange, Check, ChevronDown, ImageIcon, Loader2, Package, Phone, UserRound, type LucideIcon } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 import { useLocale, useTranslations } from "next-intl";
 import { getDateLocale } from "@/i18n/date-locale";

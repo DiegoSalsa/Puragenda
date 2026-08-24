@@ -1,7 +1,7 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons/hover-icons";
 
 export default function NotFound() {
   return (

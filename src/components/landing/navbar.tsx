@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "@/components/icons/hover-icons";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
 
-import { Store } from "lucide-react";
+import { Store } from "@/components/icons/hover-icons";
 
 interface NavbarProps {
   user?: { name: string } | null;

@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Copy, Check, Gift, Users, TrendingUp, Coins, ArrowRight } from "lucide-react";
+import { Copy, Check, Gift, Users, TrendingUp, Coins, ArrowRight } from "@/components/icons/hover-icons";
 import Link from "next/link";
 
 interface ReferredBusiness {

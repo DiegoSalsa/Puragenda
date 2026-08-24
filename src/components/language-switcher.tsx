@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown, Loader2, LocateFixed, MapPin } from "lucide-react";
+import { Check, ChevronDown, Loader2, LocateFixed, MapPin } from "@/components/icons/hover-icons";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import {

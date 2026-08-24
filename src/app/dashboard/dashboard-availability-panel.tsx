@@ -12,7 +12,7 @@ import {
   Loader2,
   PlayCircle,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 
 interface AvailabilityResult {

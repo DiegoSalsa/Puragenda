@@ -1,6 +1,6 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
-import { CheckCircle2, Clock3, Package, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, Package, XCircle } from "@/components/icons/hover-icons";
 import { prisma } from "@/server/db/prisma";
 import { formatPrice } from "@/lib/utils";
 

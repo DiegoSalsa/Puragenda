@@ -3,7 +3,7 @@
 import { FormEvent, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Lock, ArrowLeft, CheckCircle2, AlertTriangle } from "@/components/icons/hover-icons";
 import { resetPasswordAction } from "@/server/actions/auth.actions";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";

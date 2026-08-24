@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Plus, Loader2, UserCheck, UserX, Clock, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff, Upload, ImageIcon, Coffee, MoreHorizontal } from "lucide-react";
+import { Plus, Loader2, UserCheck, UserX, Clock, Save, AlertTriangle, Crown, Trash2, X, ShieldAlert, Wrench, Settings2, Ban, CalendarOff, Upload, ImageIcon, Coffee, MoreHorizontal } from "@/components/icons/hover-icons";
 import { createStaffAction, toggleStaffActiveAction, saveStaffScheduleAction, setStaffLocationAssignmentAction, deleteStaffAction, updateStaffServicesAction, updateStaffRoleAction, createScheduleBlockAction, deleteScheduleBlockAction, updateStaffImageAction, removeStaffImageAction } from "@/server/actions/dashboard.actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

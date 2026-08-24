@@ -11,7 +11,7 @@ import {
   Loader2,
   RefreshCw,
   Unlink,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { useRouter } from "next/navigation";
 
 type ConnectionSummary = {

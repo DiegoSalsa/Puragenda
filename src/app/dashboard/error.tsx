@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useEffect } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "@/components/icons/hover-icons";
 
 export default function DashboardError({
   error,

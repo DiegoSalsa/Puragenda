@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Loader2 } from "lucide-react";
+import { LogOut, Loader2 } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 
 export function LogoutButton() {

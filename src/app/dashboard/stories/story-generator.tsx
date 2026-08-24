@@ -21,7 +21,7 @@ import {
   Trash2,
   WandSparkles,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import { getStoryVisibilityDefaults } from "@/core/story-visibility";
 import { AvailabilityStoryImage } from "@/server/stories/availability-story-image";

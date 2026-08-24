@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown, Banknote, Trash2 } from "lucide-react";
+import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown, Banknote, Trash2 } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import { getDateLocale } from "@/i18n/date-locale";
 import { formatPrice } from "@/lib/utils";

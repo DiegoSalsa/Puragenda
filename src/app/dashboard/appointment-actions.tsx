@@ -3,7 +3,7 @@
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useRouter } from "next/navigation";
-import { Check, CheckCircle, Loader2, X, UserCheck, UserX } from "lucide-react";
+import { Check, CheckCircle, Loader2, X, UserCheck, UserX } from "@/components/icons/hover-icons";
 import { useState } from "react";
 
 const STATUS_ACTIONS = [

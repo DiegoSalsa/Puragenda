@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon, CalendarRange, Clock3 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, ChevronDown, ChevronUp, Info, Upload, ImageIcon, CalendarRange, Clock3 } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
 import { updateMaxServicesAction, updateServiceCategoryGroupingAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
 import { createRecurringPlanAction, deleteRecurringPlanAction } from "@/server/actions/recurring.actions";

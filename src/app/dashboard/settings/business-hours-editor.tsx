@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "lucide-react";
+import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "@/components/icons/hover-icons";
 import { saveBusinessHoursAction } from "@/server/actions/dashboard.actions";
 import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
 import { TimeTextInput } from "@/components/ui/time-text-input";

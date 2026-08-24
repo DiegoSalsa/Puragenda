@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getAffiliateInfo, getOrCreateAffiliate, getTokenBalance } from "@/server/services/affiliate.service";
-import { Gift } from "lucide-react";
+import { Gift } from "@/components/icons/hover-icons";
 import { ReferralsClient } from "./referrals-client";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";

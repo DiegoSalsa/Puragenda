@@ -24,7 +24,7 @@ import {
   Trash2,
   Type,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 import { saveAppearanceAction } from "@/server/actions/dashboard.actions";
 import {
   createWidgetPromoBlockAction,

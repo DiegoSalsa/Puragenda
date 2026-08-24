@@ -12,7 +12,7 @@ import {
   RefreshCw,
   ShieldCheck,
   X,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 
 type RecoveryConfig = {
   publicKey: string;

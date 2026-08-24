@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CalendarClock, Check, IdCard, KeyRound, Loader2, LogOut, MapPin, Phone, RefreshCw, Save, UserPlus, UserRound, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, IdCard, KeyRound, Loader2, LogOut, MapPin, Phone, RefreshCw, Save, UserPlus, UserRound, X } from "@/components/icons/hover-icons";
 
 export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }: { invalidLink?: boolean; returnTo?: string | null }) {
   const legacy = useTranslations("legacy");

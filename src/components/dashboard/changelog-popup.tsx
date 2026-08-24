@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
-import { X, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { X, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from "@/components/icons/hover-icons";
 
 export function ChangelogPopup() {
   const legacy = useTranslations("legacy");

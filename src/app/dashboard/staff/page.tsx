@@ -3,7 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
-import { ShieldCheck, Users } from "lucide-react";
+import { ShieldCheck, Users } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { StaffList } from "./staff-list";
 import { getStaffLimitInfo } from "@/server/actions/dashboard.actions";

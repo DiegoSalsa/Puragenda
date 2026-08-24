@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, Loader2, CheckCircle2, Save } from "lucide-react";
+import { CreditCard, Loader2, CheckCircle2, Save } from "@/components/icons/hover-icons";
 import { updateSubscriptionAction } from "@/server/actions/admin.actions";
 import { STAFF_LIMITS } from "@/core/constants";
 

@@ -3,7 +3,7 @@
 import React from "react";
 
 import { useState, useMemo, useTransition } from "react";
-import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, StickyNote, RefreshCw, Edit2, Check, X } from "lucide-react";
+import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, StickyNote, RefreshCw, Edit2, Check, X } from "@/components/icons/hover-icons";
 import { updateClientNotesAction, updateClientRutAction } from "@/server/actions/client.actions";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";

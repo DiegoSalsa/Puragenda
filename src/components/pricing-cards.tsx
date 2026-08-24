@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "lucide-react";
+import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import {
   PRICING,

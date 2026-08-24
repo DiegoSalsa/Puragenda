@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X } from "lucide-react";
+import { Shield, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X } from "@/components/icons/hover-icons";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 

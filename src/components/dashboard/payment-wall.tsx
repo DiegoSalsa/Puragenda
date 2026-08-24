@@ -14,7 +14,7 @@ import {
   Store,
   User,
   UserX,
-} from "lucide-react";
+} from "@/components/icons/hover-icons";
 
 import { PRICING } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
