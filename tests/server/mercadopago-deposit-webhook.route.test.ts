@@ -15,21 +15,23 @@ vi.mock("@/server/services/mercadopago-oauth.service", () => ({
   getValidMercadoPagoAccessToken: vi.fn(),
 }));
 
-vi.mock("@/server/email/send", () => ({
-  sendDepositConfirmedNotifications: vi.fn(),
-}));
-
-vi.mock("@/server/services/google-calendar.service", () => ({
-  syncAppointmentToGoogle: vi.fn(),
+vi.mock("@/server/services/deposit.service", () => ({
+  findRelatedDepositAppointments: vi.fn(),
+  confirmDepositPayment: vi.fn(),
+  rejectDepositPayment: vi.fn(),
 }));
 
 import { POST } from "@/app/api/webhooks/deposit/route";
 import { prisma } from "@/server/db/prisma";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import {
+  confirmDepositPayment,
+  findRelatedDepositAppointments,
+} from "@/server/services/deposit.service";
 
 const findAppointment = vi.mocked(prisma.appointment.findUnique);
-const findRelatedAppointments = vi.mocked(prisma.appointment.findMany);
-const updateAppointments = vi.mocked(prisma.appointment.updateMany);
+const findRelatedAppointments = vi.mocked(findRelatedDepositAppointments);
+const confirmPayment = vi.mocked(confirmDepositPayment);
 const getAccessToken = vi.mocked(getValidMercadoPagoAccessToken);
 
 function webhookRequest() {
@@ -52,7 +54,7 @@ function appointment() {
 
 describe("Mercado Pago deposit webhook verification", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     getAccessToken.mockResolvedValue("TEST-DUMMY-ACCESS-TOKEN");
     findAppointment.mockResolvedValue(appointment() as never);
     findRelatedAppointments.mockResolvedValue([
@@ -78,6 +80,55 @@ describe("Mercado Pago deposit webhook verification", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ received: true });
-    expect(updateAppointments).not.toHaveBeenCalled();
+    expect(confirmPayment).not.toHaveBeenCalled();
+  });
+
+  it("confirms an approved payment through the shared deposit service", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "approved",
+        external_reference: "appointment-ar",
+        transaction_amount: 2500,
+        currency_id: "ARS",
+      }),
+    }));
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: ["appointment-ar", "appointment-ar-2"],
+      auditedOnlyIds: [],
+      shouldRunSideEffects: true,
+    });
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(200);
+    expect(confirmPayment).toHaveBeenCalledWith({
+      appointmentIds: ["appointment-ar", "appointment-ar-2"],
+      businessId: "business-ar",
+      paymentId: "payment-dummy",
+      source: "webhook",
+    });
+  });
+
+  it("does not confirm when the webhook businessId does not match the appointment", async () => {
+    findAppointment.mockResolvedValue({
+      ...appointment(),
+      businessId: "business-other",
+    } as never);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "approved",
+        external_reference: "appointment-ar",
+        transaction_amount: 2500,
+        currency_id: "ARS",
+      }),
+    }));
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(200);
+    expect(confirmPayment).not.toHaveBeenCalled();
   });
 });

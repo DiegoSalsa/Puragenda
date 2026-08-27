@@ -68,6 +68,14 @@ export default async function CitaPage({
       title: "Pago pendiente",
       subtitle: "Tu pago está siendo procesado. Recibirás una confirmación por correo cuando se apruebe.",
     },
+    recorded: {
+      icon: Clock,
+      iconColor: "text-amber-400",
+      bgColor: "bg-amber-500/10",
+      borderColor: "border-amber-500/20",
+      title: "Pago registrado",
+      subtitle: "Recibimos el pago, pero esta cita ya no está activa. El negocio revisará el caso. No se confirmó un nuevo horario.",
+    },
   };
 
   const config = payment ? statusConfig[payment as keyof typeof statusConfig] : null;

@@ -1,68 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { sendDepositConfirmedNotifications } from "@/server/email/send";
-import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
-
-async function getAppointmentForEmail(appointmentId: string) {
-  return prisma.appointment.findUnique({
-    where: { id: appointmentId },
-    include: {
-      service: true,
-      staff: true,
-      business: {
-        include: { owner: { select: { email: true, name: true } } },
-      },
-    },
-  });
-}
-
-async function getRelatedAppointments(appointment: {
-  id: string;
-  businessId: string;
-  mpPreferenceId: string | null;
-  depositAmount: number | null;
-}) {
-  if (!appointment.mpPreferenceId) {
-    return [{ id: appointment.id, depositAmount: appointment.depositAmount }];
-  }
-
-  return prisma.appointment.findMany({
-    where: {
-      businessId: appointment.businessId,
-      mpPreferenceId: appointment.mpPreferenceId,
-    },
-    select: { id: true, depositAmount: true },
-  });
-}
-
-async function markGroupApproved(appointmentIds: string[], paymentId: string) {
-  await prisma.appointment.updateMany({
-    where: { id: { in: appointmentIds } },
-    data: {
-      paymentStatus: "APPROVED",
-      mpPaymentId: paymentId,
-      status: "CONFIRMED",
-    },
-  });
-
-  for (const appointmentId of appointmentIds) {
-    const appointment = await getAppointmentForEmail(appointmentId);
-    if (!appointment) continue;
-    await sendDepositConfirmedNotifications(appointment);
-    await syncAppointmentToGoogle(appointmentId);
-  }
-}
-
-async function markGroupRejected(appointmentIds: string[], paymentId: string) {
-  await prisma.appointment.updateMany({
-    where: { id: { in: appointmentIds } },
-    data: {
-      paymentStatus: "REJECTED",
-      mpPaymentId: paymentId,
-    },
-  });
-}
+import {
+  confirmDepositPayment,
+  findRelatedDepositAppointments,
+  rejectDepositPayment,
+} from "@/server/services/deposit.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    const relatedAppointments = await getRelatedAppointments(appointment);
+    const relatedAppointments = await findRelatedDepositAppointments(appointment);
     const relatedIds = relatedAppointments.map((item) => item.id);
     const expectedAmount = relatedAppointments.reduce(
       (total, item) => total + (item.depositAmount ?? 0),
@@ -134,9 +77,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (paymentStatus === "approved") {
-      await markGroupApproved(relatedIds, paymentId);
+      await confirmDepositPayment({
+        appointmentIds: relatedIds,
+        businessId: appointment.businessId,
+        paymentId: String(paymentId),
+        source: "webhook",
+      });
     } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
-      await markGroupRejected(relatedIds, paymentId);
+      await rejectDepositPayment({
+        appointmentIds: relatedIds,
+        businessId: appointment.businessId,
+        paymentId: String(paymentId),
+      });
     }
 
     return NextResponse.json({ received: true }, { status: 200 });

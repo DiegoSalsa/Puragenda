@@ -8,14 +8,20 @@ vi.mock("@/server/db/prisma", () => ({
   },
 }));
 
+vi.mock("@/server/services/deposit.service", () => ({
+  confirmDepositPayment: vi.fn(),
+  rejectDepositPayment: vi.fn(),
+}));
+
 import { GET, POST } from "@/app/api/dev/payment-simulator/route";
 import { prisma } from "@/server/db/prisma";
+import { confirmDepositPayment } from "@/server/services/deposit.service";
 import { createLocalPaymentToken } from "@/server/services/local-payment-simulator";
 
 const findSubscription = vi.mocked(prisma.subscription.findUnique);
 const updateSubscription = vi.mocked(prisma.subscription.update);
 const findAppointment = vi.mocked(prisma.appointment.findUnique);
-const updateAppointment = vi.mocked(prisma.appointment.update);
+const confirmPayment = vi.mocked(confirmDepositPayment);
 
 function postRequest(token: string, result: "approved" | "rejected") {
   const form = new FormData();
@@ -90,7 +96,12 @@ describe("local payment simulator route", () => {
       status: "AWAITING_PAYMENT",
       business: { currencyCode: "ARS" },
     } as never);
-    updateAppointment.mockResolvedValue({} as never);
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: ["appointment-ar"],
+      auditedOnlyIds: [],
+      shouldRunSideEffects: true,
+    });
     const token = createLocalPaymentToken({
       kind: "deposit",
       entityId: "appointment-ar",
@@ -103,8 +114,10 @@ describe("local payment simulator route", () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toContain("/cita/appointment-ar?payment=success");
-    expect(updateAppointment).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ paymentStatus: "APPROVED", status: "CONFIRMED" }),
+    expect(confirmPayment).toHaveBeenCalledWith(expect.objectContaining({
+      appointmentIds: ["appointment-ar"],
+      businessId: "business-ar",
+      source: "simulator",
     }));
   });
 

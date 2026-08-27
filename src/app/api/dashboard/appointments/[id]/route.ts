@@ -18,6 +18,7 @@ import {
   syncAppointmentToGoogle,
 } from "@/server/services/google-calendar.service";
 import { createAuditLog } from "@/server/lib/audit";
+import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 
 function canManageTarget(
   permissions: string[],
@@ -192,20 +193,31 @@ export async function PATCH(
 
     if (existing.status === status) return Response.json(existing);
 
-    const transition = await prisma.appointment.updateMany({
-      where: { id, status: existing.status },
-      data: {
-        status,
-        ...(status === "CANCELLED" && {
+    if (status === "CANCELLED") {
+      const cancelled = await cancelAppointmentUnlessDepositApproved({
+        appointmentId: id,
+        businessId: business.id,
+        extraData: {
           customerActionTokenHash: null,
           customerActionTokenExpiresAt: null,
           customerActionTokenUsedAt: new Date(),
-        }),
-      },
-    });
-    if (transition.count === 0) {
-      const current = await getAppointmentByIdAndBusiness(id, business.id);
-      return Response.json(current ?? { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
+        },
+      });
+      if (!cancelled.ok) {
+        return Response.json(
+          { error: cancelled.error },
+          { status: cancelled.code === "NOT_FOUND" ? 404 : 409 },
+        );
+      }
+    } else {
+      const transition = await prisma.appointment.updateMany({
+        where: { id, status: existing.status },
+        data: { status },
+      });
+      if (transition.count === 0) {
+        const current = await getAppointmentByIdAndBusiness(id, business.id);
+        return Response.json(current ?? { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
+      }
     }
 
     const appointment = await getAppointmentByIdAndBusiness(id, business.id);

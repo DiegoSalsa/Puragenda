@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { sendDepositConfirmedNotifications } from "@/server/email/send";
-import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import {
+  confirmDepositPayment,
+  findRelatedDepositAppointments,
+  rejectDepositPayment,
+} from "@/server/services/deposit.service";
 
 /**
  * GET /api/mercadopago/deposit-return
  *
- * Handles the redirect from MercadoPago after the user completes (or fails) 
+ * Handles the redirect from MercadoPago after the user completes (or fails)
  * a deposit payment. Redirects to a status page in the widget.
- * Also triggers email notifications when payment is approved.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -35,15 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${baseUrl}?error=not_found`);
     }
 
-    const relatedAppointments = appointment.mpPreferenceId
-      ? await prisma.appointment.findMany({
-          where: {
-            businessId: appointment.businessId,
-            mpPreferenceId: appointment.mpPreferenceId,
-          },
-          select: { id: true, depositAmount: true },
-        })
-      : [{ id: appointmentId, depositAmount: appointment.depositAmount }];
+    const relatedAppointments = await findRelatedDepositAppointments(appointment);
     const relatedAppointmentIds = relatedAppointments.map((item) => item.id);
     const expectedAmount = relatedAppointments.reduce((total, item) => total + (item.depositAmount ?? 0), 0);
 
@@ -51,9 +45,7 @@ export async function GET(request: NextRequest) {
       const accessToken = await getValidMercadoPagoAccessToken(appointment.businessId);
       if (!accessToken) {
         console.warn("[deposit-return] No seller token available for payment verification");
-        const pendingUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-        pendingUrl.searchParams.set("payment", "pending");
-        return NextResponse.redirect(pendingUrl.toString());
+        return redirectPayment(baseUrl, appointmentId, "pending");
       }
 
       const paymentResponse = await fetch(
@@ -62,9 +54,7 @@ export async function GET(request: NextRequest) {
       );
       if (!paymentResponse.ok) {
         console.warn("[deposit-return] Could not verify payment:", paymentId);
-        const pendingUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-        pendingUrl.searchParams.set("payment", "pending");
-        return NextResponse.redirect(pendingUrl.toString());
+        return redirectPayment(baseUrl, appointmentId, "pending");
       }
 
       const payment = await paymentResponse.json() as {
@@ -85,67 +75,56 @@ export async function GET(request: NextRequest) {
           matchesAmount,
           matchesCurrency,
         });
-        const pendingUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-        pendingUrl.searchParams.set("payment", "pending");
-        return NextResponse.redirect(pendingUrl.toString());
+        return redirectPayment(baseUrl, appointmentId, "pending");
       }
 
       if (payment.status === "approved") {
-        // Mark appointment group as paid and confirmed
-        await prisma.appointment.updateMany({
-          where: { id: { in: relatedAppointmentIds } },
-          data: {
-            paymentStatus: "APPROVED",
-            mpPaymentId: paymentId,
-            status: "CONFIRMED",
-          },
+        const result = await confirmDepositPayment({
+          appointmentIds: relatedAppointmentIds,
+          businessId: appointment.businessId,
+          paymentId,
+          source: "return",
         });
 
-        // Send email notifications (owner, staff, client)
-        const fullAppointments = await prisma.appointment.findMany({
-          where: { id: { in: relatedAppointmentIds } },
-          include: {
-            service: true,
-            staff: true,
-            business: {
-              include: { owner: { select: { email: true, name: true } } },
-            },
-          },
-        });
-        for (const fullAppointment of fullAppointments) {
-          await sendDepositConfirmedNotifications(fullAppointment);
-          await syncAppointmentToGoogle(fullAppointment.id);
+        if (result.confirmedIds.includes(appointmentId)) {
+          return redirectPayment(baseUrl, appointmentId, "success");
+        }
+        if (result.auditedOnlyIds.includes(appointmentId)) {
+          return redirectPayment(baseUrl, appointmentId, "recorded");
         }
 
-        // Redirect to widget with success
-        const successUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-        successUrl.searchParams.set("payment", "success");
-        return NextResponse.redirect(successUrl.toString());
+        const current = await prisma.appointment.findUnique({
+          where: { id: appointmentId },
+          select: { status: true, paymentStatus: true },
+        });
+        if (current?.paymentStatus === "APPROVED" && current.status === "CANCELLED") {
+          return redirectPayment(baseUrl, appointmentId, "recorded");
+        }
+        if (current?.paymentStatus === "APPROVED") {
+          return redirectPayment(baseUrl, appointmentId, "success");
+        }
+        return redirectPayment(baseUrl, appointmentId, "pending");
       }
 
       if (payment.status === "rejected" || payment.status === "cancelled") {
-        // Mark appointment group as rejected
-        await prisma.appointment.updateMany({
-          where: { id: { in: relatedAppointmentIds } },
-          data: {
-            paymentStatus: "REJECTED",
-            mpPaymentId: paymentId || null,
-          },
+        await rejectDepositPayment({
+          appointmentIds: relatedAppointmentIds,
+          businessId: appointment.businessId,
+          paymentId,
         });
-
-        const failUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-        failUrl.searchParams.set("payment", "failed");
-        return NextResponse.redirect(failUrl.toString());
+        return redirectPayment(baseUrl, appointmentId, "failed");
       }
     }
 
-    // Pending or other status
-    const pendingUrl = new URL(`${baseUrl}/cita/${appointmentId}`);
-    pendingUrl.searchParams.set("payment", "pending");
-    return NextResponse.redirect(pendingUrl.toString());
+    return redirectPayment(baseUrl, appointmentId, "pending");
   } catch (error) {
     console.error("[deposit-return] Error:", error);
     return NextResponse.redirect(`${baseUrl}?error=server_error`);
   }
 }
 
+function redirectPayment(baseUrl: string, appointmentId: string, payment: "success" | "failed" | "pending" | "recorded") {
+  const url = new URL(`${baseUrl}/cita/${appointmentId}`);
+  url.searchParams.set("payment", payment);
+  return NextResponse.redirect(url.toString());
+}

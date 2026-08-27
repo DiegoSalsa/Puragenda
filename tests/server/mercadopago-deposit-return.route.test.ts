@@ -6,7 +6,6 @@ vi.mock("@/server/db/prisma", () => ({
     appointment: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
-      updateMany: vi.fn(),
     },
   },
 }));
@@ -15,22 +14,26 @@ vi.mock("@/server/services/mercadopago-oauth.service", () => ({
   getValidMercadoPagoAccessToken: vi.fn(),
 }));
 
-vi.mock("@/server/email/send", () => ({
-  sendDepositConfirmedNotifications: vi.fn(),
-}));
-
-vi.mock("@/server/services/google-calendar.service", () => ({
-  syncAppointmentToGoogle: vi.fn(),
+vi.mock("@/server/services/deposit.service", () => ({
+  findRelatedDepositAppointments: vi.fn(),
+  confirmDepositPayment: vi.fn(),
+  rejectDepositPayment: vi.fn(),
 }));
 
 import { GET } from "@/app/api/mercadopago/deposit-return/route";
 import { prisma } from "@/server/db/prisma";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
+import {
+  confirmDepositPayment,
+  findRelatedDepositAppointments,
+  rejectDepositPayment,
+} from "@/server/services/deposit.service";
 
 const findAppointment = vi.mocked(prisma.appointment.findUnique);
-const findRelatedAppointments = vi.mocked(prisma.appointment.findMany);
-const updateAppointments = vi.mocked(prisma.appointment.updateMany);
 const getAccessToken = vi.mocked(getValidMercadoPagoAccessToken);
+const findRelated = vi.mocked(findRelatedDepositAppointments);
+const confirmPayment = vi.mocked(confirmDepositPayment);
+const rejectPayment = vi.mocked(rejectDepositPayment);
 
 function appointment(currencyCode = "ARS") {
   return {
@@ -51,12 +54,15 @@ function request() {
 
 describe("Mercado Pago deposit return verification", () => {
   beforeEach(() => {
-    findAppointment
-      .mockResolvedValueOnce(appointment() as never)
-      .mockResolvedValue(appointment() as never);
-    findRelatedAppointments.mockResolvedValue([{ id: "appointment-ar", depositAmount: 2500 }] as never);
-    updateAppointments.mockResolvedValue({ count: 1 } as never);
+    findAppointment.mockResolvedValue(appointment() as never);
+    findRelated.mockResolvedValue([{ id: "appointment-ar", depositAmount: 2500 }]);
     getAccessToken.mockResolvedValue("TEST-DUMMY-SELLER-TOKEN");
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: ["appointment-ar"],
+      auditedOnlyIds: [],
+      shouldRunSideEffects: true,
+    });
   });
 
   it("approves only after provider-confirmed reference, amount and currency", async () => {
@@ -75,14 +81,51 @@ describe("Mercado Pago deposit return verification", () => {
       "https://api.mercadopago.com/v1/payments/payment-dummy",
       { headers: { Authorization: "Bearer TEST-DUMMY-SELLER-TOKEN" }, cache: "no-store" },
     );
-    expect(updateAppointments).toHaveBeenCalledWith({
-      where: { id: { in: ["appointment-ar"] } },
-      data: {
-        paymentStatus: "APPROVED",
-        mpPaymentId: "payment-dummy",
-        status: "CONFIRMED",
-      },
+    expect(confirmPayment).toHaveBeenCalledWith({
+      appointmentIds: ["appointment-ar"],
+      businessId: "business-ar",
+      paymentId: "payment-dummy",
+      source: "return",
     });
+  });
+
+  it("does not present a late payment on a cancelled appointment as confirmed", async () => {
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: [],
+      auditedOnlyIds: ["appointment-ar"],
+      shouldRunSideEffects: false,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "approved",
+      external_reference: "appointment-ar",
+      transaction_amount: 2500,
+      currency_id: "ARS",
+    }), { status: 200 })));
+
+    const response = await GET(request());
+
+    expect(response.headers.get("location")).toBe("http://localhost:3000/cita/appointment-ar?payment=recorded");
+    expect(confirmPayment).toHaveBeenCalled();
+  });
+
+  it("does not present a grouped payment as confirmed when its primary appointment was cancelled", async () => {
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: ["appointment-ar-2"],
+      auditedOnlyIds: ["appointment-ar"],
+      shouldRunSideEffects: true,
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "approved",
+      external_reference: "appointment-ar",
+      transaction_amount: 2500,
+      currency_id: "ARS",
+    }), { status: 200 })));
+
+    const response = await GET(request());
+
+    expect(response.headers.get("location")).toBe("http://localhost:3000/cita/appointment-ar?payment=recorded");
   });
 
   it.each([
@@ -102,6 +145,7 @@ describe("Mercado Pago deposit return verification", () => {
     const response = await GET(request());
 
     expect(response.headers.get("location")).toBe("http://localhost:3000/cita/appointment-ar?payment=pending");
-    expect(updateAppointments).not.toHaveBeenCalled();
+    expect(confirmPayment).not.toHaveBeenCalled();
+    expect(rejectPayment).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { calculatePriorityReleaseAt } from "@/server/services/schedule-block.service";
 import { normalizeLoyaltyCodePrefix } from "@/server/services/loyalty-code.service";
+import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import {
   getMercadoPagoCurrency,
@@ -83,7 +84,15 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
   if (!canManageAll && (!agendaScope.ownStaffId || apt.staffId !== agendaScope.ownStaffId)) {
     return { error: "No tienes permisos para modificar esta cita" };
   }
-  await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
+  if (status === "CANCELLED") {
+    const cancelled = await cancelAppointmentUnlessDepositApproved({
+      appointmentId,
+      businessId: business.id,
+    });
+    if (!cancelled.ok) return { error: cancelled.error };
+  } else {
+    await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
+  }
   await syncAppointmentToGoogle(appointmentId);
   revalidatePath("/dashboard");
   return { success: true };

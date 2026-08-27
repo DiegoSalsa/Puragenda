@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/server/db/prisma";
 import {
+  confirmDepositPayment,
+  rejectDepositPayment,
+} from "@/server/services/deposit.service";
+import {
   isLocalPaymentSimulatorEnabled,
   verifyLocalPaymentToken,
 } from "@/server/services/local-payment-simulator";
@@ -102,17 +106,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Abono simulado no encontrado" }, { status: 404 });
   }
 
-  const approved = result === "approved";
-  await prisma.appointment.update({
-    where: { id: appointment.id },
-    data: {
-      paymentStatus: approved ? "APPROVED" : "REJECTED",
-      status: approved ? "CONFIRMED" : appointment.status,
-      mpPaymentId: `LOCAL_PAYMENT:${crypto.randomUUID()}`,
-    },
-  });
+  const paymentId = `LOCAL_PAYMENT:${crypto.randomUUID()}`;
+  if (result === "approved") {
+    const confirmation = await confirmDepositPayment({
+      appointmentIds: [appointment.id],
+      businessId: appointment.businessId,
+      paymentId,
+      source: "simulator",
+    });
+    const redirect = new URL(`/cita/${appointment.id}`, request.nextUrl.origin);
+    redirect.searchParams.set(
+      "payment",
+      confirmation.confirmedIds.length > 0
+        ? "success"
+        : confirmation.auditedOnlyIds.length > 0
+          ? "recorded"
+          : "pending",
+    );
+    return NextResponse.redirect(redirect, 303);
+  }
 
+  await rejectDepositPayment({
+    appointmentIds: [appointment.id],
+    businessId: appointment.businessId,
+    paymentId,
+  });
   const redirect = new URL(`/cita/${appointment.id}`, request.nextUrl.origin);
-  redirect.searchParams.set("payment", approved ? "success" : "failed");
+  redirect.searchParams.set("payment", "failed");
   return NextResponse.redirect(redirect, 303);
 }
