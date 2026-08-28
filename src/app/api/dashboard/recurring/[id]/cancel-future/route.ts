@@ -51,6 +51,7 @@ export async function POST(
         recurringBookingId: id,
         startTime: { gte: from },
         status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
+        paymentStatus: { not: "APPROVED" },
       },
     });
     await cancelFutureSessions(id, from);

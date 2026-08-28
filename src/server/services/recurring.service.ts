@@ -347,6 +347,7 @@ export async function cancelFutureSessions(recurringBookingId: string, fromDate:
       recurringBookingId,
       startTime: { gte: fromDate },
       status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
+      paymentStatus: { not: "APPROVED" },
     },
     select: { id: true },
   });
@@ -355,6 +356,7 @@ export async function cancelFutureSessions(recurringBookingId: string, fromDate:
       recurringBookingId,
       startTime: { gte: fromDate },
       status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
+      paymentStatus: { not: "APPROVED" },
     },
     data: { status: "CANCELLED" },
   });
@@ -372,6 +374,7 @@ export async function cancelSpecificSessions(recurringBookingId: string, dates: 
         recurringBookingId,
         startTime: { gte: dayStart, lt: dayEnd },
         status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        paymentStatus: { not: "APPROVED" },
       },
       select: { id: true },
     });
@@ -380,6 +383,7 @@ export async function cancelSpecificSessions(recurringBookingId: string, dates: 
         recurringBookingId,
         startTime: { gte: dayStart, lt: dayEnd },
         status: { notIn: ["CANCELLED", "NO_SHOW"] },
+        paymentStatus: { not: "APPROVED" },
       },
       data: { status: "CANCELLED" },
     });

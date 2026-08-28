@@ -6,6 +6,7 @@ import {
 } from "@/server/email/send";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import { appointmentActionLimiter } from "@/server/lib/rate-limit";
+import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 
 export const dynamic = "force-dynamic";
 
@@ -109,12 +110,18 @@ export async function POST(req: Request) {
 
     if (action === "cancel") {
       // Cancel appointment
-      const updated = await prisma.appointment.updateMany({
-        where: { id: appointment.id, actionToken: token, status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] } },
-        data: { status: "CANCELLED", actionToken: null },
+      const updated = await cancelAppointmentUnlessDepositApproved({
+        appointmentId: appointment.id,
+        businessId: appointment.businessId,
+        eligibility: {
+          allowedStatuses: ["PENDING", "AWAITING_PAYMENT", "CONFIRMED"],
+          actionToken: token,
+          startTimeAfter: new Date(),
+        },
+        extraData: { actionToken: null },
       });
-      if (updated.count !== 1) {
-        return NextResponse.json({ error: "Esta cita ya fue procesada", alreadyProcessed: true }, { status: 409 });
+      if (!updated.ok) {
+        return NextResponse.json({ error: updated.error, alreadyProcessed: updated.code !== "APPROVED" }, { status: 409 });
       }
       await syncAppointmentToGoogle(appointment.id);
 

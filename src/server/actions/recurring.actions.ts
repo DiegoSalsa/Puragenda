@@ -618,6 +618,7 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
       where: {
         recurringBookingId,
         status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
+        paymentStatus: { not: "APPROVED" },
       },
       data: { status: "CANCELLED" },
     }),

@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/server/db/prisma";
 import {
   sendAppointmentActionNotification,
   sendAppointmentActionStaffNotification,
@@ -10,6 +9,7 @@ import {
   getClientPortalEmailFromRequest,
 } from "@/server/services/client-portal.service";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 
 export async function POST(
   request: NextRequest,
@@ -31,22 +31,22 @@ export async function POST(
     return Response.json({ error: "Esta cita ya no se puede cancelar" }, { status: 409 });
   }
 
-  const result = await prisma.appointment.updateMany({
-    where: {
-      id: appointment.id,
-      status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
-      startTime: { gt: new Date() },
+  const result = await cancelAppointmentUnlessDepositApproved({
+    appointmentId: appointment.id,
+    businessId: appointment.businessId,
+    eligibility: {
+      allowedStatuses: ["PENDING", "AWAITING_PAYMENT", "CONFIRMED"],
+      startTimeAfter: new Date(),
     },
-    data: {
-      status: "CANCELLED",
+    extraData: {
       actionToken: null,
       customerActionTokenHash: null,
       customerActionTokenExpiresAt: null,
       customerActionTokenUsedAt: new Date(),
     },
   });
-  if (result.count !== 1) {
-    return Response.json({ error: "Esta cita ya fue procesada" }, { status: 409 });
+  if (!result.ok) {
+    return Response.json({ error: result.error, alreadyProcessed: result.code !== "APPROVED" }, { status: 409 });
   }
 
   await syncAppointmentToGoogle(appointment.id);

@@ -8,8 +8,14 @@ import {
 } from "@/server/services/deposit.service";
 
 export async function POST(request: NextRequest) {
+  let body: { type?: unknown; data?: unknown };
   try {
-    const body = await request.json();
+    body = await request.json() as { type?: unknown; data?: unknown };
+  } catch {
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  try {
     const notificationType = body.type as string | undefined;
     const paymentId = (body.data as Record<string, unknown>)?.id as string | undefined;
 
@@ -23,7 +29,7 @@ export async function POST(request: NextRequest) {
       : process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!accessToken) {
       console.error("[webhook/deposit] No access token available");
-      return NextResponse.json({ received: true }, { status: 200 });
+      return NextResponse.json({ received: false, error: "Payment verification unavailable" }, { status: 503 });
     }
 
     const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
@@ -32,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     if (!paymentResponse.ok) {
       console.warn("[webhook/deposit] Could not fetch payment:", paymentId);
-      return NextResponse.json({ received: true }, { status: 200 });
+      return NextResponse.json({ received: false, error: "Payment verification failed" }, { status: 502 });
     }
 
     const paymentData = await paymentResponse.json();
@@ -94,6 +100,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     console.error("[webhook/deposit] Error:", error);
-    return NextResponse.json({ received: true }, { status: 200 });
+    // Mercado Pago retries non-2xx notifications. The payment transition is
+    // idempotent, so a retry is safer than acknowledging lost work.
+    return NextResponse.json({ received: false, error: "Webhook processing failed" }, { status: 500 });
   }
 }

@@ -253,7 +253,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
  *
  * Errors are logged but never thrown.
  */
-export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations) {
+export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations): Promise<boolean> {
   const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
   const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
   const data = {
@@ -273,7 +273,7 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     ...actionUrls,
   };
 
-  const tasks: Promise<unknown>[] = [];
+  const tasks: Promise<boolean>[] = [];
 
   // 1. Email to business owner — notify about the new confirmed + paid booking
   if (appointment.business.owner?.email) {
@@ -320,8 +320,14 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     );
   }
 
-  await Promise.allSettled(tasks);
+  const results = await Promise.all(tasks);
+  const delivered = results.filter(Boolean).length;
+  if (delivered !== tasks.length) {
+    console.warn(`[Email] Deposit-confirmed notifications incomplete for appointment ${appointment.id ?? "unknown"}: ${delivered}/${tasks.length}`);
+    return false;
+  }
   console.log(`[Email] Deposit-confirmed notifications sent for appointment with ${data.customerName}`);
+  return true;
 }
 
 /**

@@ -111,6 +111,25 @@ describe("public appointment rescheduling availability", () => {
     expect(prisma.appointment.findFirst).not.toHaveBeenCalled();
   });
 
+  it("does not reschedule an appointment whose deposit was already approved", async () => {
+    vi.mocked(getCustomerAppointmentByToken).mockResolvedValue({
+      ...appointment,
+      paymentStatus: "APPROVED",
+    } as never);
+
+    const result = await rescheduleAppointmentAction(
+      appointment.id,
+      "2026-08-11T15:00:00.000Z",
+      "2026-08-11T16:00:00.000Z",
+      "a".repeat(64),
+    );
+
+    expect(result).toEqual({
+      error: "No puedes reagendar una cita con abono aprobado. Contacta al negocio.",
+    });
+    expect(prisma.appointment.findFirst).not.toHaveBeenCalled();
+  });
+
   it("rejects a time outside business hours", async () => {
     const result = await rescheduleAppointmentAction(
       appointment.id,

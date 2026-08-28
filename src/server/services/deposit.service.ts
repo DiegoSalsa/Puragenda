@@ -1,3 +1,4 @@
+import { AppointmentStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { sendDepositConfirmedNotifications } from "@/server/email/send";
 import { createAuditLog } from "@/server/lib/audit";
@@ -27,6 +28,43 @@ const depositNotificationInclude = {
   },
 } as const;
 
+const deliveryLeaseMs = 5 * 60 * 1000;
+
+export type DepositCancellationEligibility = {
+  allowedStatuses?: readonly AppointmentStatus[];
+  actionToken?: string;
+  customerActionTokenHash?: string;
+  customerActionTokenUnused?: boolean;
+  startTimeAfter?: Date;
+};
+
+/**
+ * Shared predicate for every automatic appointment cancellation.
+ * An approved deposit always needs an explicit/manual resolution; this
+ * predicate is intentionally reusable inside caller-owned transactions too.
+ */
+export function depositSafeCancellationWhere(input: {
+  appointmentId: string;
+  businessId: string;
+  eligibility?: DepositCancellationEligibility;
+}): Prisma.AppointmentWhereInput {
+  const eligibility = input.eligibility;
+  return {
+    id: input.appointmentId,
+    businessId: input.businessId,
+    paymentStatus: { not: "APPROVED" },
+    status: eligibility?.allowedStatuses
+      ? { in: [...eligibility.allowedStatuses] }
+      : { not: "CANCELLED" },
+    ...(eligibility?.actionToken ? { actionToken: eligibility.actionToken } : {}),
+    ...(eligibility?.customerActionTokenHash
+      ? { customerActionTokenHash: eligibility.customerActionTokenHash }
+      : {}),
+    ...(eligibility?.customerActionTokenUnused ? { customerActionTokenUsedAt: null } : {}),
+    ...(eligibility?.startTimeAfter ? { startTime: { gt: eligibility.startTimeAfter } } : {}),
+  };
+}
+
 export async function findRelatedDepositAppointments(appointment: DepositAppointmentRef) {
   if (!appointment.mpPreferenceId) {
     return [{ id: appointment.id, depositAmount: appointment.depositAmount }];
@@ -49,7 +87,8 @@ export async function findRelatedDepositAppointments(appointment: DepositAppoint
  * (`paymentStatus = PENDING`). A second concurrent caller sees 0 rows
  * and must not run emails or Google Calendar sync.
  *
- * External I/O runs only after the transaction commits.
+ * A durable delivery record is written in the same transaction. External I/O
+ * runs after commit and is retried by the delivery job if this request fails.
  */
 export async function confirmDepositPayment(input: {
   appointmentIds: string[];
@@ -95,6 +134,16 @@ export async function confirmDepositPayment(input: {
       },
     });
 
+    if (confirmed.length > 0) {
+      await tx.depositPaymentDelivery.createMany({
+        data: confirmed.map((appointment) => ({
+          appointmentId: appointment.id,
+          paymentId: input.paymentId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     return { confirmed, audited };
   });
 
@@ -115,33 +164,7 @@ export async function confirmDepositPayment(input: {
     });
   }
 
-  if (shouldRunSideEffects) {
-    for (const id of confirmedIds) {
-      const appointment = await prisma.appointment.findUnique({
-        where: { id },
-        include: depositNotificationInclude,
-      });
-      if (!appointment) continue;
-      try {
-        await sendDepositConfirmedNotifications(appointment);
-      } catch (error) {
-        console.error("[deposit] Confirmation email failed after payment was persisted", {
-          appointmentId: id,
-          paymentId: input.paymentId,
-          error,
-        });
-      }
-      try {
-        await syncAppointmentToGoogle(id);
-      } catch (error) {
-        console.error("[deposit] Google Calendar sync failed after payment was persisted", {
-          appointmentId: id,
-          paymentId: input.paymentId,
-          error,
-        });
-      }
-    }
-  }
+  if (shouldRunSideEffects) await processPendingDepositPaymentDeliveries({ appointmentIds: confirmedIds });
 
   return {
     alreadyProcessed: confirmedIds.length === 0 && auditedOnlyIds.length === 0,
@@ -178,6 +201,105 @@ export async function rejectDepositPayment(input: {
   return { rejectedIds: rejected.map((row) => row.id) };
 }
 
+/**
+ * Delivers the effects of confirmed deposits. A conditional lease prevents
+ * simultaneous webhook/return/cron workers from delivering the same event.
+ * Delivery is at-least-once: the database state is durable and failed work is
+ * retried with backoff instead of being lost after a process interruption.
+ */
+export async function processPendingDepositPaymentDeliveries(input: {
+  appointmentIds?: string[];
+  now?: Date;
+  limit?: number;
+} = {}) {
+  const now = input.now ?? new Date();
+  const appointmentIds = input.appointmentIds ? uniqueIds(input.appointmentIds) : undefined;
+  const deliveries = await prisma.depositPaymentDelivery.findMany({
+    where: {
+      ...(appointmentIds ? { appointmentId: { in: appointmentIds } } : {}),
+      nextAttemptAt: { lte: now },
+      OR: [
+        { notificationsDeliveredAt: null },
+        { calendarSyncedAt: null },
+      ],
+    },
+    include: {
+      appointment: { include: depositNotificationInclude },
+    },
+    orderBy: { nextAttemptAt: "asc" },
+    take: input.limit ?? 50,
+  });
+
+  const result = { checked: 0, delivered: 0, errors: [] as string[] };
+  for (const delivery of deliveries) {
+    const leaseUntil = new Date(now.getTime() + deliveryLeaseMs);
+    const claimed = await prisma.depositPaymentDelivery.updateMany({
+      where: {
+        id: delivery.id,
+        nextAttemptAt: { lte: now },
+        OR: [
+          { notificationsDeliveredAt: null },
+          { calendarSyncedAt: null },
+        ],
+      },
+      data: { nextAttemptAt: leaseUntil },
+    });
+    if (claimed.count !== 1) continue;
+    result.checked++;
+
+    let notificationsDelivered = Boolean(delivery.notificationsDeliveredAt);
+    let calendarSynced = Boolean(delivery.calendarSyncedAt);
+    const errors: string[] = [];
+
+    if (!notificationsDelivered) {
+      try {
+        notificationsDelivered = await sendDepositConfirmedNotifications(delivery.appointment);
+        if (!notificationsDelivered) errors.push("email delivery failed");
+      } catch (error) {
+        errors.push(`email delivery failed: ${formatDeliveryError(error)}`);
+      }
+    }
+
+    if (!calendarSynced) {
+      try {
+        const calendar = await syncAppointmentToGoogle(delivery.appointmentId);
+        // A later Google connection explicitly backfills all appointments, so
+        // the absence of one is not a retryable failure for this delivery.
+        calendarSynced = calendar.synced || calendar.reason === "connection_not_found";
+        if (!calendarSynced) errors.push(`calendar sync failed: ${calendar.error ?? calendar.reason}`);
+      } catch (error) {
+        errors.push(`calendar sync failed: ${formatDeliveryError(error)}`);
+      }
+    }
+
+    const failed = errors.length > 0;
+    await prisma.depositPaymentDelivery.update({
+      where: { id: delivery.id },
+      data: {
+        ...(notificationsDelivered && !delivery.notificationsDeliveredAt
+          ? { notificationsDeliveredAt: now }
+          : {}),
+        ...(calendarSynced && !delivery.calendarSyncedAt ? { calendarSyncedAt: now } : {}),
+        ...(failed
+          ? {
+              attempts: { increment: 1 },
+              lastError: errors.join("; ").slice(0, 2000),
+              nextAttemptAt: retryAt(now, delivery.attempts),
+            }
+          : { lastError: null }),
+      },
+    });
+
+    if (failed) {
+      result.errors.push(`${delivery.appointmentId}: ${errors.join("; ")}`);
+    } else {
+      result.delivered++;
+    }
+  }
+
+  return result;
+}
+
 export type DashboardCancelResult =
   | { ok: true; alreadyCancelled?: boolean }
   | { ok: false; error: string; code: "NOT_FOUND" | "APPROVED" | "CONFLICT" };
@@ -189,19 +311,16 @@ export type DashboardCancelResult =
 export async function cancelAppointmentUnlessDepositApproved(input: {
   appointmentId: string;
   businessId: string;
+  eligibility?: DepositCancellationEligibility;
   extraData?: {
+    actionToken?: null;
     customerActionTokenHash?: null;
     customerActionTokenExpiresAt?: null;
     customerActionTokenUsedAt?: Date;
   };
 }): Promise<DashboardCancelResult> {
   const cancelled = await prisma.appointment.updateMany({
-    where: {
-      id: input.appointmentId,
-      businessId: input.businessId,
-      status: { not: "CANCELLED" },
-      paymentStatus: { not: "APPROVED" },
-    },
+    where: depositSafeCancellationWhere(input),
     data: {
       status: "CANCELLED",
       ...input.extraData,
@@ -238,4 +357,13 @@ export async function cancelAppointmentUnlessDepositApproved(input: {
 
 function uniqueIds(ids: string[]) {
   return [...new Set(ids.filter(Boolean))];
+}
+
+function retryAt(now: Date, attempts: number) {
+  const delayMinutes = Math.min(2 ** Math.min(attempts + 1, 8), 360);
+  return new Date(now.getTime() + delayMinutes * 60 * 1000);
+}
+
+function formatDeliveryError(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }

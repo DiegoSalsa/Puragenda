@@ -11,6 +11,7 @@ import {
 } from "@/server/email/send";
 import { appointmentActionLimiter } from "@/server/lib/rate-limit";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 
 export async function GET(request: NextRequest) {
   const limited = appointmentActionLimiter.check(request);
@@ -69,22 +70,43 @@ export async function POST(request: NextRequest) {
     }
 
     const consumedAt = new Date();
-    const result = await prisma.appointment.updateMany({
-      where: {
-        id: appointment.id,
-        customerActionTokenHash: hashCustomerAppointmentToken(token),
-        customerActionTokenUsedAt: null,
-        status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
-      },
-      data: {
-        status: action === "cancel" ? "CANCELLED" : "CONFIRMED",
-        customerActionTokenHash: null,
-        customerActionTokenExpiresAt: null,
-        customerActionTokenUsedAt: consumedAt,
-      },
-    });
-    if (result.count !== 1) {
-      return Response.json({ error: "Esta acción ya fue procesada", alreadyProcessed: true }, { status: 409 });
+    if (action === "cancel") {
+      const cancelled = await cancelAppointmentUnlessDepositApproved({
+        appointmentId: appointment.id,
+        businessId: appointment.businessId,
+        eligibility: {
+          allowedStatuses: ["PENDING", "AWAITING_PAYMENT", "CONFIRMED"],
+          customerActionTokenHash: hashCustomerAppointmentToken(token),
+          customerActionTokenUnused: true,
+          startTimeAfter: consumedAt,
+        },
+        extraData: {
+          customerActionTokenHash: null,
+          customerActionTokenExpiresAt: null,
+          customerActionTokenUsedAt: consumedAt,
+        },
+      });
+      if (!cancelled.ok) {
+        return Response.json({ error: cancelled.error, alreadyProcessed: cancelled.code !== "APPROVED" }, { status: 409 });
+      }
+    } else {
+      const result = await prisma.appointment.updateMany({
+        where: {
+          id: appointment.id,
+          customerActionTokenHash: hashCustomerAppointmentToken(token),
+          customerActionTokenUsedAt: null,
+          status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
+        },
+        data: {
+          status: "CONFIRMED",
+          customerActionTokenHash: null,
+          customerActionTokenExpiresAt: null,
+          customerActionTokenUsedAt: consumedAt,
+        },
+      });
+      if (result.count !== 1) {
+        return Response.json({ error: "Esta acción ya fue procesada", alreadyProcessed: true }, { status: 409 });
+      }
     }
 
     await syncAppointmentToGoogle(appointment.id);

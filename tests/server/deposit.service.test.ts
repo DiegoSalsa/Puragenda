@@ -21,6 +21,17 @@ type UpdateManyArgs = {
 };
 
 const rows = new Map<string, AppointmentRow>();
+type DeliveryRow = {
+  id: string;
+  appointmentId: string;
+  paymentId: string;
+  notificationsDeliveredAt: Date | null;
+  calendarSyncedAt: Date | null;
+  attempts: number;
+  lastError: string | null;
+  nextAttemptAt: Date;
+};
+const deliveries = new Map<string, DeliveryRow>();
 const updateGate = { current: Promise.resolve() };
 
 function matches(row: AppointmentRow, where: UpdateManyArgs["where"]) {
@@ -52,10 +63,66 @@ async function updateMany(args: UpdateManyArgs) {
   return { count: updated.length };
 }
 
+async function createDeliveries({ data }: { data: Array<{ appointmentId: string; paymentId: string }> }) {
+  for (const item of data) {
+    if ([...deliveries.values()].some((delivery) => delivery.appointmentId === item.appointmentId)) continue;
+    deliveries.set(`delivery-${item.appointmentId}`, {
+      id: `delivery-${item.appointmentId}`,
+      appointmentId: item.appointmentId,
+      paymentId: item.paymentId,
+      notificationsDeliveredAt: null,
+      calendarSyncedAt: null,
+      attempts: 0,
+      lastError: null,
+      nextAttemptAt: new Date(),
+    });
+  }
+  return { count: data.length };
+}
+
+function deliveryMatches(delivery: DeliveryRow, where: Record<string, unknown>) {
+  if (typeof where.id === "string" && delivery.id !== where.id) return false;
+  const appointmentId = where.appointmentId as { in?: string[] } | undefined;
+  if (appointmentId?.in && !appointmentId.in.includes(delivery.appointmentId)) return false;
+  const nextAttemptAt = where.nextAttemptAt as { lte?: Date } | undefined;
+  if (nextAttemptAt?.lte && delivery.nextAttemptAt > nextAttemptAt.lte) return false;
+  return true;
+}
+
+async function findDeliveryRows({ where }: { where: Record<string, unknown> }) {
+  return [...deliveries.values()]
+    .filter((delivery) => deliveryMatches(delivery, where))
+    .filter((delivery) => !delivery.notificationsDeliveredAt || !delivery.calendarSyncedAt)
+    .map((delivery) => ({ ...delivery, appointment: findUniqueImpl({ where: { id: delivery.appointmentId } }) }));
+}
+
+function applyDeliveryData(delivery: DeliveryRow, data: Record<string, unknown>) {
+  if (data.notificationsDeliveredAt instanceof Date) delivery.notificationsDeliveredAt = data.notificationsDeliveredAt;
+  if (data.calendarSyncedAt instanceof Date) delivery.calendarSyncedAt = data.calendarSyncedAt;
+  if (typeof data.lastError === "string" || data.lastError === null) delivery.lastError = data.lastError as string | null;
+  if (data.nextAttemptAt instanceof Date) delivery.nextAttemptAt = data.nextAttemptAt;
+  const attempts = data.attempts as { increment?: number } | undefined;
+  if (attempts?.increment) delivery.attempts += attempts.increment;
+}
+
+async function updateManyDeliveries({ where, data }: { where: Record<string, unknown>; data: Record<string, unknown> }) {
+  const matching = [...deliveries.values()].filter((delivery) => deliveryMatches(delivery, where));
+  matching.forEach((delivery) => applyDeliveryData(delivery, data));
+  return { count: matching.length };
+}
+
+async function updateDelivery({ where, data }: { where: { id: string }; data: Record<string, unknown> }) {
+  const delivery = deliveries.get(where.id);
+  if (!delivery) throw new Error("Delivery not found");
+  applyDeliveryData(delivery, data);
+  return { ...delivery };
+}
+
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
     $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({
       appointment: { updateManyAndReturn, updateMany, findFirst: findFirstImpl, findUnique: findUniqueImpl, findMany: findManyImpl },
+      depositPaymentDelivery: { createMany: createDeliveries },
     })),
     appointment: {
       updateManyAndReturn: vi.fn(updateManyAndReturn),
@@ -63,6 +130,12 @@ vi.mock("@/server/db/prisma", () => ({
       findUnique: vi.fn(findUniqueImpl),
       findFirst: vi.fn(findFirstImpl),
       findMany: vi.fn(findManyImpl),
+    },
+    depositPaymentDelivery: {
+      createMany: vi.fn(createDeliveries),
+      findMany: vi.fn(findDeliveryRows),
+      updateMany: vi.fn(updateManyDeliveries),
+      update: vi.fn(updateDelivery),
     },
   },
 }));
@@ -86,6 +159,7 @@ import { syncAppointmentToGoogle } from "@/server/services/google-calendar.servi
 import {
   cancelAppointmentUnlessDepositApproved,
   confirmDepositPayment,
+  processPendingDepositPaymentDeliveries,
   rejectDepositPayment,
 } from "@/server/services/deposit.service";
 
@@ -129,8 +203,9 @@ function seed(row: AppointmentRow) {
 describe("confirmDepositPayment", () => {
   beforeEach(() => {
     rows.clear();
+    deliveries.clear();
     updateGate.current = Promise.resolve();
-    vi.mocked(sendDepositConfirmedNotifications).mockResolvedValue(undefined as never);
+    vi.mocked(sendDepositConfirmedNotifications).mockResolvedValue(true);
     vi.mocked(syncAppointmentToGoogle).mockResolvedValue({ synced: true, action: "created" } as never);
     vi.mocked(createAuditLog).mockResolvedValue(undefined as never);
   });
@@ -374,6 +449,41 @@ describe("confirmDepositPayment", () => {
 
     expect(result.shouldRunSideEffects).toBe(true);
     expect(rows.get("apt-1")?.paymentStatus).toBe("APPROVED");
+  });
+
+  it("persists failed delivery work and retries it after the backoff", async () => {
+    seed({
+      id: "apt-retry",
+      businessId: "biz-1",
+      status: "AWAITING_PAYMENT",
+      paymentStatus: "PENDING",
+      mpPaymentId: null,
+      depositAmount: 5000,
+      mpPreferenceId: "pref-1",
+    });
+    vi.mocked(sendDepositConfirmedNotifications)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    await confirmDepositPayment({
+      appointmentIds: ["apt-retry"],
+      businessId: "biz-1",
+      paymentId: "pay-retry",
+      source: "webhook",
+    });
+
+    const pendingDelivery = [...deliveries.values()][0];
+    expect(pendingDelivery).toMatchObject({
+      appointmentId: "apt-retry",
+      attempts: 1,
+      notificationsDeliveredAt: null,
+    });
+
+    const retry = await processPendingDepositPaymentDeliveries({ now: pendingDelivery.nextAttemptAt });
+
+    expect(retry).toMatchObject({ checked: 1, delivered: 1, errors: [] });
+    expect([...deliveries.values()][0]?.notificationsDeliveredAt).toBeInstanceOf(Date);
+    expect(sendDepositConfirmedNotifications).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/google-calendar-sync",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/deposit-payment-deliveries",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

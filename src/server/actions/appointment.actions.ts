@@ -10,6 +10,7 @@ import {
   hashCustomerAppointmentToken,
 } from "@/server/services/customer-appointment-action.service";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
+import { depositSafeCancellationWhere } from "@/server/services/deposit.service";
 import { toZonedTime } from "date-fns-tz";
 import { timeToMinutes } from "@/lib/time";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
@@ -84,6 +85,9 @@ export async function rescheduleAppointmentAction(
     return { error: "El enlace no es válido, ya fue utilizado o venció" };
   }
   if (appointment.status === "CANCELLED") return { error: "Esta cita ya fue cancelada" };
+  if (appointment.paymentStatus === "APPROVED") {
+    return { error: "No puedes reagendar una cita con abono aprobado. Contacta al negocio." };
+  }
   if (appointment.recurringBookingId) return { error: "Las sesiones de un plan recurrente no se pueden reagendar por esta vía" };
   if (!appointment.business.allowRescheduling) return { error: "Este negocio no permite reagendamiento" };
 
@@ -295,12 +299,15 @@ export async function rescheduleAppointmentAction(
   // Cancel old, create new
   const newApt = await prisma.$transaction(async (tx) => {
     const consumed = await tx.appointment.updateMany({
-      where: {
-        id: appointmentId,
-        customerActionTokenHash: hashCustomerAppointmentToken(token),
-        customerActionTokenUsedAt: null,
-        status: { notIn: ["CANCELLED", "COMPLETED", "NO_SHOW"] },
-      },
+      where: depositSafeCancellationWhere({
+        appointmentId,
+        businessId: appointment.business.id,
+        eligibility: {
+          allowedStatuses: ["PENDING", "AWAITING_PAYMENT", "CONFIRMED"],
+          customerActionTokenHash: hashCustomerAppointmentToken(token),
+          customerActionTokenUnused: true,
+        },
+      }),
       data: {
         status: "CANCELLED",
         customerActionTokenHash: null,

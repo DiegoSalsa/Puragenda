@@ -131,4 +131,22 @@ describe("Mercado Pago deposit webhook verification", () => {
     expect(response.status).toBe(200);
     expect(confirmPayment).not.toHaveBeenCalled();
   });
+
+  it("returns a retryable response when seller credentials are unavailable", async () => {
+    getAccessToken.mockResolvedValue(null);
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(503);
+    expect(confirmPayment).not.toHaveBeenCalled();
+  });
+
+  it("returns a retryable response when Mercado Pago cannot be queried", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(502);
+    expect(confirmPayment).not.toHaveBeenCalled();
+  });
 });
