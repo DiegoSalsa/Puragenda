@@ -44,17 +44,14 @@ export async function POST(
     if (!booking) return NextResponse.json({ error: "Plan no encontrado" }, { status: 404 });
 
     const from = new Date(fromDate);
+    if (Number.isNaN(from.getTime())) {
+      return NextResponse.json({ error: "fromDate invÃ¡lido" }, { status: 400 });
+    }
 
-    // Cancel all future appointments that are still active
-    const appointmentsToCancel = await prisma.appointment.count({
-      where: {
-        recurringBookingId: id,
-        startTime: { gte: from },
-        status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
-        paymentStatus: { not: "APPROVED" },
-      },
-    });
-    await cancelFutureSessions(id, from);
+    const cancellation = await cancelFutureSessions(id, from);
+    if (!cancellation.ok) {
+      return NextResponse.json({ error: cancellation.error }, { status: 409 });
+    }
 
     // If no more future active appointments remain, mark the booking as CANCELLED
     const remainingActive = await prisma.appointment.count({
@@ -74,7 +71,7 @@ export async function POST(
 
     return NextResponse.json({
       ok: true,
-      cancelled: appointmentsToCancel,
+      cancelled: cancellation.cancelledAppointmentIds.length,
       bookingCancelled: remainingActive === 0,
     });
   } catch (err) {

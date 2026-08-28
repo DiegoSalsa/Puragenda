@@ -3,6 +3,17 @@ import { prisma } from "@/server/db/prisma";
 
 const TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 
+function customerAppointmentTokenSecret() {
+  const secret = process.env.CUSTOMER_APPOINTMENT_TOKEN_SECRET
+    ?? process.env.AUTH_SECRET
+    ?? process.env.NEXTAUTH_SECRET;
+  if (secret && secret.length >= 32) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CUSTOMER_APPOINTMENT_TOKEN_SECRET or AUTH_SECRET must be configured in production");
+  }
+  return "dev-only-customer-appointment-token-secret";
+}
+
 export function hashCustomerAppointmentToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -13,7 +24,13 @@ export async function issueCustomerAppointmentToken(
 ) {
   if (expiresAt <= new Date()) return null;
 
-  const token = crypto.randomBytes(32).toString("hex");
+  // Retries of the same confirmation email must produce the exact same
+  // payload for Resend's idempotency key. This HMAC remains unguessable and
+  // changes whenever the appointment time (and therefore expiry) changes.
+  const token = crypto
+    .createHmac("sha256", customerAppointmentTokenSecret())
+    .update(`customer-appointment-action:${appointmentId}:${expiresAt.toISOString()}`)
+    .digest("hex");
   await prisma.appointment.update({
     where: { id: appointmentId },
     data: {

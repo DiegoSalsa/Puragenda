@@ -110,10 +110,13 @@ async function localized(template: EmailTemplate, lookup: EmailLocaleLookup): Pr
 
 async function deliverEmail(
   context: string,
-  params: Parameters<typeof resend.emails.send>[0]
+  params: Parameters<typeof resend.emails.send>[0],
+  options?: Parameters<typeof resend.emails.send>[1],
 ) {
   try {
-    const result = await resend.emails.send(params);
+    const result = options
+      ? await resend.emails.send(params, options)
+      : await resend.emails.send(params);
     if (result.error) {
       console.error(`[Email] Resend rejected ${context}:`, result.error);
       return false;
@@ -253,9 +256,33 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
  *
  * Errors are logged but never thrown.
  */
-export async function sendDepositConfirmedNotifications(appointment: AppointmentWithRelations): Promise<boolean> {
+export type DepositNotificationDeliveryState = {
+  ownerDelivered?: boolean;
+  staffDelivered?: boolean;
+  customerDelivered?: boolean;
+};
+
+export type DepositNotificationDeliveryResult = {
+  ownerDelivered: boolean;
+  staffDelivered: boolean;
+  customerDelivered: boolean;
+  failedRecipients: Array<"owner" | "staff" | "customer">;
+};
+
+/**
+ * Sends only notification recipients that have not yet been durably recorded.
+ * Each recipient uses a stable Resend idempotency key, so a timeout can be
+ * retried without creating duplicate confirmation messages.
+ */
+export async function sendDepositConfirmedNotifications(
+  appointment: AppointmentWithRelations,
+  deliveredState: DepositNotificationDeliveryState = {},
+): Promise<DepositNotificationDeliveryResult> {
   const locale = await resolveEmailLocale({ locale: appointment.business.locale, businessId: appointment.businessId, businessName: appointment.business.name, customerEmail: appointment.customerEmail });
-  const actionUrls = await buildCustomerAppointmentActionUrls(appointment);
+  const needsCustomerEmail = !deliveredState.customerDelivered;
+  const actionUrls = needsCustomerEmail
+    ? await buildCustomerAppointmentActionUrls(appointment)
+    : { cancelUrl: undefined, rescheduleUrl: undefined };
   const data = {
     locale,
     customerName: appointment.customerName,
@@ -273,61 +300,85 @@ export async function sendDepositConfirmedNotifications(appointment: Appointment
     ...actionUrls,
   };
 
-  const tasks: Promise<boolean>[] = [];
+  const tasks: Array<Promise<{ recipient: "owner" | "staff" | "customer"; delivered: boolean }>> = [];
+  const idempotencyPrefix = appointment.id
+    ? `deposit-confirmed/${appointment.id}`
+    : undefined;
+  const ownerEmail = appointment.business.owner?.email;
+  const staffEmail = appointment.staff?.email;
 
   // 1. Email to business owner — notify about the new confirmed + paid booking
-  if (appointment.business.owner?.email) {
+  if (!deliveredState.ownerDelivered && ownerEmail) {
     const { subject, html } = localizeEmailTemplate(newBookingOwnerEmail(data), locale);
-    tasks.push(
-      deliverEmail(`deposit confirmed to owner ${appointment.business.owner.email}`, {
+    tasks.push((async () => ({
+      recipient: "owner" as const,
+      delivered: await deliverEmail(`deposit confirmed to owner ${ownerEmail}`, {
         from: EMAIL_FROM,
-        to: appointment.business.owner.email,
+        to: ownerEmail,
         subject,
         html,
-      })
-    );
+      }, idempotencyPrefix ? { idempotencyKey: `${idempotencyPrefix}/owner` } : undefined),
+    }))());
   }
 
   // 2. Email to staff
-  if (appointment.staff?.email) {
+  if (!deliveredState.staffDelivered && staffEmail) {
     const { subject, html } = localizeEmailTemplate(newBookingStaffEmail(data), locale);
-    tasks.push(
-      deliverEmail(`deposit confirmed to staff ${appointment.staff.email}`, {
+    tasks.push((async () => ({
+      recipient: "staff" as const,
+      delivered: await deliverEmail(`deposit confirmed to staff ${staffEmail}`, {
         from: EMAIL_FROM,
-        to: appointment.staff.email,
+        to: staffEmail,
         subject,
         html,
-      })
-    );
-  } else {
+      }, idempotencyPrefix ? { idempotencyKey: `${idempotencyPrefix}/staff` } : undefined),
+    }))());
+  } else if (!deliveredState.staffDelivered) {
     console.warn(`[Email] Deposit-confirmed booking ${appointment.id ?? "unknown"} has no staff email`);
   }
 
   // 3. Email to customer — use CONFIRMED template (they paid, so it's confirmed immediately)
-  {
-    const template = await addClientPortalLinkToEmail(
-      appointment.customerEmail,
-      confirmedBookingClientEmail(data),
-    );
-    const { subject, html } = localizeEmailTemplate(template, locale);
-    tasks.push(
-      deliverEmail(`deposit confirmed to client ${appointment.customerEmail}`, {
+  if (needsCustomerEmail) {
+    // A client-portal magic URL is intentionally not included: it changes on
+    // every attempt, which would defeat the provider idempotency key. The
+    // appointment action URL above is stable for the same appointment/time.
+    const { subject, html } = localizeEmailTemplate(confirmedBookingClientEmail(data), locale);
+    tasks.push((async () => ({
+      recipient: "customer" as const,
+      delivered: await deliverEmail(`deposit confirmed to client ${appointment.customerEmail}`, {
         from: EMAIL_FROM,
         to: appointment.customerEmail,
         subject,
         html,
-      })
-    );
+      }, idempotencyPrefix ? { idempotencyKey: `${idempotencyPrefix}/customer` } : undefined),
+    }))());
   }
 
   const results = await Promise.all(tasks);
-  const delivered = results.filter(Boolean).length;
-  if (delivered !== tasks.length) {
-    console.warn(`[Email] Deposit-confirmed notifications incomplete for appointment ${appointment.id ?? "unknown"}: ${delivered}/${tasks.length}`);
-    return false;
+  const deliveredByRecipient = new Map(results.map((result) => [result.recipient, result.delivered]));
+  const ownerDelivered = deliveredState.ownerDelivered
+    || !ownerEmail
+    || deliveredByRecipient.get("owner") === true;
+  const staffDelivered = deliveredState.staffDelivered
+    || !staffEmail
+    || deliveredByRecipient.get("staff") === true;
+  const customerDelivered = deliveredState.customerDelivered || deliveredByRecipient.get("customer") === true;
+  const failedRecipients = ([
+    ["owner", ownerDelivered],
+    ["staff", staffDelivered],
+    ["customer", customerDelivered],
+  ] as const)
+    .filter(([, delivered]) => !delivered)
+    .map(([recipient]) => recipient);
+
+  if (failedRecipients.length > 0) {
+    console.warn(
+      `[Email] Deposit-confirmed notifications incomplete for appointment ${appointment.id ?? "unknown"}: ${failedRecipients.join(", ")}`,
+    );
+  } else {
+    console.log(`[Email] Deposit-confirmed notifications sent for appointment with ${data.customerName}`);
   }
-  console.log(`[Email] Deposit-confirmed notifications sent for appointment with ${data.customerName}`);
-  return true;
+  return { ownerDelivered, staffDelivered, customerDelivered, failedRecipients };
 }
 
 /**

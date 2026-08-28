@@ -209,6 +209,12 @@ export async function PATCH(
           { status: cancelled.code === "NOT_FOUND" ? 404 : 409 },
         );
       }
+      // A concurrent request already completed the state transition. Do not
+      // replay calendar sync, CRM effects, or cancellation emails.
+      if (cancelled.alreadyCancelled) {
+        const current = await getAppointmentByIdAndBusiness(id, business.id);
+        return Response.json(current ?? { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
+      }
     } else {
       const transition = await prisma.appointment.updateMany({
         where: { id, status: existing.status },

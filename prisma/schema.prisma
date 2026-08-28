@@ -1189,7 +1189,9 @@ model DepositPaymentDelivery {
   id                       String   @id @default(cuid())
   appointmentId            String   @unique
   paymentId                String
-  notificationsDeliveredAt DateTime?
+  ownerEmailDeliveredAt    DateTime?
+  staffEmailDeliveredAt    DateTime?
+  customerEmailDeliveredAt DateTime?
   calendarSyncedAt         DateTime?
   attempts                 Int      @default(0)
   lastError                String?

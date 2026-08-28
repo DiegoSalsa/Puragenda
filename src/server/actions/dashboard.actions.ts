@@ -90,6 +90,10 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
       businessId: business.id,
     });
     if (!cancelled.ok) return { error: cancelled.error };
+    if (cancelled.alreadyCancelled) {
+      revalidatePath("/dashboard");
+      return { success: true };
+    }
   } else {
     await prisma.appointment.update({ where: { id: appointmentId }, data: { status } });
   }

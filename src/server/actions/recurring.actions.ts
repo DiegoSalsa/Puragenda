@@ -8,7 +8,7 @@ import crypto from "crypto";
 import {
   generateAppointments,
   detectAllConflicts,
-  cancelFutureSessions,
+  cancelRecurringBookingUnlessDepositApproved,
   cancelSpecificSessions,
   regenerateFromDate,
   applyTimePunctual,
@@ -613,21 +613,12 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
   });
   if (!booking) return { error: "Suscripcion no encontrada" };
 
-  await prisma.$transaction([
-    prisma.appointment.updateMany({
-      where: {
-        recurringBookingId,
-        status: { notIn: ["CANCELLED", "NO_SHOW", "CHECKED_IN", "COMPLETED"] },
-        paymentStatus: { not: "APPROVED" },
-      },
-      data: { status: "CANCELLED" },
-    }),
-    prisma.recurringBooking.update({
-      where: { id: recurringBookingId },
-      data: { status: "CANCELLED" },
-    }),
-  ]);
-  await syncRecurringBookingAppointments(recurringBookingId);
+  const cancellation = await cancelRecurringBookingUnlessDepositApproved({
+    recurringBookingId,
+    businessId: business.id,
+    status: "CANCELLED",
+  });
+  if (!cancellation.ok) return { error: cancellation.error };
 
   try {
     await sendRecurringBookingCancelledClient({
@@ -658,11 +649,13 @@ export async function cancelFutureRecurringAction(recurringBookingId: string) {
   if (!booking) return { error: "Suscripcion no encontrada" };
 
   const now = new Date();
-  await cancelFutureSessions(recurringBookingId, now);
-  await prisma.recurringBooking.update({
-    where: { id: recurringBookingId },
-    data: { status: "CANCELLED" },
+  const cancellation = await cancelRecurringBookingUnlessDepositApproved({
+    recurringBookingId,
+    businessId: business.id,
+    fromDate: now,
+    status: "CANCELLED",
   });
+  if (!cancellation.ok) return { error: cancellation.error };
 
   revalidatePath("/dashboard/recurring");
   return { success: true };
@@ -681,7 +674,8 @@ export async function cancelSpecificSessionsAction(recurringBookingId: string, d
   if (!booking) return { error: "Suscripcion no encontrada" };
 
   const parsedDates = dates.map((d) => new Date(d));
-  await cancelSpecificSessions(recurringBookingId, parsedDates, business.timezone);
+  const cancellation = await cancelSpecificSessions(recurringBookingId, parsedDates, business.timezone);
+  if (!cancellation.ok) return { error: cancellation.error };
 
   revalidatePath("/dashboard/recurring");
   return { success: true };
@@ -767,13 +761,17 @@ export async function pauseRecurringAction(recurringBookingId: string, pauseUnti
   if (booking.status !== "ACTIVE") return { error: "Solo se puede pausar una suscripcion activa" };
 
   const pauseUntilDate = new Date(pauseUntil);
+  if (Number.isNaN(pauseUntilDate.getTime())) return { error: "Fecha de pausa invÃ¡lida" };
   const now = new Date();
 
-  await cancelFutureSessions(recurringBookingId, now);
-  await prisma.recurringBooking.update({
-    where: { id: recurringBookingId },
-    data: { status: "PAUSED", pausedUntil: pauseUntilDate },
+  const cancellation = await cancelRecurringBookingUnlessDepositApproved({
+    recurringBookingId,
+    businessId: business.id,
+    fromDate: now,
+    status: "PAUSED",
+    pausedUntil: pauseUntilDate,
   });
+  if (!cancellation.ok) return { error: cancellation.error };
 
   revalidatePath("/dashboard/recurring");
   return { success: true };

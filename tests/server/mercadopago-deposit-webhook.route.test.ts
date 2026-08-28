@@ -1,5 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+
+const webhookMocks = vi.hoisted(() => {
+  class InvalidWebhookSignatureError extends Error {}
+  return {
+    validateSignature: vi.fn(),
+    InvalidWebhookSignatureError,
+  };
+});
+
+vi.mock("mercadopago", () => ({
+  InvalidWebhookSignatureError: webhookMocks.InvalidWebhookSignatureError,
+  WebhookSignatureValidator: { validate: webhookMocks.validateSignature },
+}));
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
@@ -37,7 +50,11 @@ const getAccessToken = vi.mocked(getValidMercadoPagoAccessToken);
 function webhookRequest() {
   return new NextRequest("http://localhost/api/webhooks/deposit?businessId=business-ar", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "x-request-id": "request-1",
+      "x-signature": "ts=1,v1=test",
+    },
     body: JSON.stringify({ type: "payment", data: { id: "payment-dummy" } }),
   });
 }
@@ -55,12 +72,35 @@ function appointment() {
 describe("Mercado Pago deposit webhook verification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("MERCADOPAGO_WEBHOOK_SECRET", "test-webhook-secret");
     getAccessToken.mockResolvedValue("TEST-DUMMY-ACCESS-TOKEN");
     findAppointment.mockResolvedValue(appointment() as never);
     findRelatedAppointments.mockResolvedValue([
       { id: "appointment-ar", depositAmount: 1500 },
       { id: "appointment-ar-2", depositAmount: 1000 },
     ] as never);
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("fails closed when the webhook secret is missing", async () => {
+    vi.stubEnv("MERCADOPAGO_WEBHOOK_SECRET", "");
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(503);
+    expect(getAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid signature before querying Mercado Pago", async () => {
+    webhookMocks.validateSignature.mockImplementationOnce(() => {
+      throw new webhookMocks.InvalidWebhookSignatureError("invalid");
+    });
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(401);
+    expect(getAccessToken).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -103,6 +143,11 @@ describe("Mercado Pago deposit webhook verification", () => {
     const response = await POST(webhookRequest());
 
     expect(response.status).toBe(200);
+    expect(webhookMocks.validateSignature).toHaveBeenCalledWith(expect.objectContaining({
+      dataId: "payment-dummy",
+      secret: "test-webhook-secret",
+      toleranceSeconds: 300,
+    }));
     expect(confirmPayment).toHaveBeenCalledWith({
       appointmentIds: ["appointment-ar", "appointment-ar-2"],
       businessId: "business-ar",

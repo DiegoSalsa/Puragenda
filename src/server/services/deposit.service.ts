@@ -219,7 +219,9 @@ export async function processPendingDepositPaymentDeliveries(input: {
       ...(appointmentIds ? { appointmentId: { in: appointmentIds } } : {}),
       nextAttemptAt: { lte: now },
       OR: [
-        { notificationsDeliveredAt: null },
+        { ownerEmailDeliveredAt: null },
+        { staffEmailDeliveredAt: null },
+        { customerEmailDeliveredAt: null },
         { calendarSyncedAt: null },
       ],
     },
@@ -238,7 +240,9 @@ export async function processPendingDepositPaymentDeliveries(input: {
         id: delivery.id,
         nextAttemptAt: { lte: now },
         OR: [
-          { notificationsDeliveredAt: null },
+          { ownerEmailDeliveredAt: null },
+          { staffEmailDeliveredAt: null },
+          { customerEmailDeliveredAt: null },
           { calendarSyncedAt: null },
         ],
       },
@@ -247,14 +251,25 @@ export async function processPendingDepositPaymentDeliveries(input: {
     if (claimed.count !== 1) continue;
     result.checked++;
 
-    let notificationsDelivered = Boolean(delivery.notificationsDeliveredAt);
+    let ownerEmailDelivered = Boolean(delivery.ownerEmailDeliveredAt);
+    let staffEmailDelivered = Boolean(delivery.staffEmailDeliveredAt);
+    let customerEmailDelivered = Boolean(delivery.customerEmailDeliveredAt);
     let calendarSynced = Boolean(delivery.calendarSyncedAt);
     const errors: string[] = [];
 
-    if (!notificationsDelivered) {
+    if (!ownerEmailDelivered || !staffEmailDelivered || !customerEmailDelivered) {
       try {
-        notificationsDelivered = await sendDepositConfirmedNotifications(delivery.appointment);
-        if (!notificationsDelivered) errors.push("email delivery failed");
+        const notificationResult = await sendDepositConfirmedNotifications(delivery.appointment, {
+          ownerDelivered: ownerEmailDelivered,
+          staffDelivered: staffEmailDelivered,
+          customerDelivered: customerEmailDelivered,
+        });
+        ownerEmailDelivered = notificationResult.ownerDelivered;
+        staffEmailDelivered = notificationResult.staffDelivered;
+        customerEmailDelivered = notificationResult.customerDelivered;
+        if (notificationResult.failedRecipients.length > 0) {
+          errors.push(`email delivery failed: ${notificationResult.failedRecipients.join(", ")}`);
+        }
       } catch (error) {
         errors.push(`email delivery failed: ${formatDeliveryError(error)}`);
       }
@@ -276,8 +291,14 @@ export async function processPendingDepositPaymentDeliveries(input: {
     await prisma.depositPaymentDelivery.update({
       where: { id: delivery.id },
       data: {
-        ...(notificationsDelivered && !delivery.notificationsDeliveredAt
-          ? { notificationsDeliveredAt: now }
+        ...(ownerEmailDelivered && !delivery.ownerEmailDeliveredAt
+          ? { ownerEmailDeliveredAt: now }
+          : {}),
+        ...(staffEmailDelivered && !delivery.staffEmailDeliveredAt
+          ? { staffEmailDeliveredAt: now }
+          : {}),
+        ...(customerEmailDelivered && !delivery.customerEmailDeliveredAt
+          ? { customerEmailDeliveredAt: now }
           : {}),
         ...(calendarSynced && !delivery.calendarSyncedAt ? { calendarSyncedAt: now } : {}),
         ...(failed

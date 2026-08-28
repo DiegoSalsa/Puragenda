@@ -1,3 +1,4 @@
+import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
@@ -17,11 +18,33 @@ export async function POST(request: NextRequest) {
 
   try {
     const notificationType = body.type as string | undefined;
-    const paymentId = (body.data as Record<string, unknown>)?.id as string | undefined;
+    const bodyPaymentId = (body.data as Record<string, unknown>)?.id;
+    const queryPaymentId = request.nextUrl.searchParams.get("data.id");
+    if (
+      queryPaymentId
+      && bodyPaymentId !== undefined
+      && String(bodyPaymentId) !== queryPaymentId
+    ) {
+      return NextResponse.json({ error: "Conflicting payment identifiers" }, { status: 400 });
+    }
+    const paymentId = queryPaymentId ?? (bodyPaymentId === undefined ? undefined : String(bodyPaymentId));
 
     if (notificationType !== "payment" || !paymentId) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
+
+    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error("[webhook/deposit] MERCADOPAGO_WEBHOOK_SECRET is not configured");
+      return NextResponse.json({ received: false, error: "Webhook verification unavailable" }, { status: 503 });
+    }
+    WebhookSignatureValidator.validate({
+      xSignature: request.headers.get("x-signature"),
+      xRequestId: request.headers.get("x-request-id"),
+      dataId: paymentId,
+      secret: webhookSecret,
+      toleranceSeconds: 300,
+    });
 
     const businessId = request.nextUrl.searchParams.get("businessId");
     const accessToken = businessId
@@ -99,6 +122,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
+    if (error instanceof InvalidWebhookSignatureError) {
+      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
+    }
     console.error("[webhook/deposit] Error:", error);
     // Mercado Pago retries non-2xx notifications. The payment transition is
     // idempotent, so a retry is safer than acknowledging lost work.

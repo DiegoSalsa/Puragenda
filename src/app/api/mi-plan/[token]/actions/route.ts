@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db/prisma";
-import { cancelFutureSessions, dateOnlyInTimezone, regenerateFromDate, type SelectedTimes } from "@/server/services/recurring.service";
+import {
+  cancelRecurringBookingUnlessDepositApproved,
+  dateOnlyInTimezone,
+  regenerateFromDate,
+  type SelectedTimes,
+} from "@/server/services/recurring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -52,13 +57,19 @@ export async function POST(
         if (!pauseUntil) {
           return NextResponse.json({ error: "Fecha de pausa requerida" }, { status: 400 });
         }
-        // Cancel all future appointments (same as dashboard pause)
+        const pauseUntilDate = new Date(pauseUntil);
+        if (Number.isNaN(pauseUntilDate.getTime())) {
+          return NextResponse.json({ error: "Fecha de pausa invÃ¡lida" }, { status: 400 });
+        }
         const now = new Date();
-        await cancelFutureSessions(booking.id, now);
-        await prisma.recurringBooking.update({
-          where: { id: booking.id },
-          data: { status: "PAUSED", pausedUntil: new Date(pauseUntil) },
+        const cancellation = await cancelRecurringBookingUnlessDepositApproved({
+          recurringBookingId: booking.id,
+          businessId: booking.businessId,
+          fromDate: now,
+          status: "PAUSED",
+          pausedUntil: pauseUntilDate,
         });
+        if (!cancellation.ok) return NextResponse.json({ error: cancellation.error }, { status: 409 });
         return NextResponse.json({ ok: true, message: "Plan pausado" });
       }
 
@@ -104,13 +115,14 @@ export async function POST(
         if (!["ACTIVE", "PAUSED"].includes(booking.status)) {
           return NextResponse.json({ error: "No puedes cancelar este plan" }, { status: 400 });
         }
-        // Cancel all future appointments
         const now = new Date();
-        await cancelFutureSessions(booking.id, now);
-        await prisma.recurringBooking.update({
-          where: { id: booking.id },
-          data: { status: "CANCELLED" },
+        const cancellation = await cancelRecurringBookingUnlessDepositApproved({
+          recurringBookingId: booking.id,
+          businessId: booking.businessId,
+          fromDate: now,
+          status: "CANCELLED",
         });
+        if (!cancellation.ok) return NextResponse.json({ error: cancellation.error }, { status: 409 });
 
         // Send cancellation email
         try {

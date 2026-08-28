@@ -25,7 +25,9 @@ type DeliveryRow = {
   id: string;
   appointmentId: string;
   paymentId: string;
-  notificationsDeliveredAt: Date | null;
+  ownerEmailDeliveredAt: Date | null;
+  staffEmailDeliveredAt: Date | null;
+  customerEmailDeliveredAt: Date | null;
   calendarSyncedAt: Date | null;
   attempts: number;
   lastError: string | null;
@@ -70,7 +72,9 @@ async function createDeliveries({ data }: { data: Array<{ appointmentId: string;
       id: `delivery-${item.appointmentId}`,
       appointmentId: item.appointmentId,
       paymentId: item.paymentId,
-      notificationsDeliveredAt: null,
+      ownerEmailDeliveredAt: null,
+      staffEmailDeliveredAt: null,
+      customerEmailDeliveredAt: null,
       calendarSyncedAt: null,
       attempts: 0,
       lastError: null,
@@ -92,12 +96,19 @@ function deliveryMatches(delivery: DeliveryRow, where: Record<string, unknown>) 
 async function findDeliveryRows({ where }: { where: Record<string, unknown> }) {
   return [...deliveries.values()]
     .filter((delivery) => deliveryMatches(delivery, where))
-    .filter((delivery) => !delivery.notificationsDeliveredAt || !delivery.calendarSyncedAt)
+    .filter((delivery) => (
+      !delivery.ownerEmailDeliveredAt
+      || !delivery.staffEmailDeliveredAt
+      || !delivery.customerEmailDeliveredAt
+      || !delivery.calendarSyncedAt
+    ))
     .map((delivery) => ({ ...delivery, appointment: findUniqueImpl({ where: { id: delivery.appointmentId } }) }));
 }
 
 function applyDeliveryData(delivery: DeliveryRow, data: Record<string, unknown>) {
-  if (data.notificationsDeliveredAt instanceof Date) delivery.notificationsDeliveredAt = data.notificationsDeliveredAt;
+  if (data.ownerEmailDeliveredAt instanceof Date) delivery.ownerEmailDeliveredAt = data.ownerEmailDeliveredAt;
+  if (data.staffEmailDeliveredAt instanceof Date) delivery.staffEmailDeliveredAt = data.staffEmailDeliveredAt;
+  if (data.customerEmailDeliveredAt instanceof Date) delivery.customerEmailDeliveredAt = data.customerEmailDeliveredAt;
   if (data.calendarSyncedAt instanceof Date) delivery.calendarSyncedAt = data.calendarSyncedAt;
   if (typeof data.lastError === "string" || data.lastError === null) delivery.lastError = data.lastError as string | null;
   if (data.nextAttemptAt instanceof Date) delivery.nextAttemptAt = data.nextAttemptAt;
@@ -205,7 +216,12 @@ describe("confirmDepositPayment", () => {
     rows.clear();
     deliveries.clear();
     updateGate.current = Promise.resolve();
-    vi.mocked(sendDepositConfirmedNotifications).mockResolvedValue(true);
+    vi.mocked(sendDepositConfirmedNotifications).mockResolvedValue({
+      ownerDelivered: true,
+      staffDelivered: true,
+      customerDelivered: true,
+      failedRecipients: [],
+    });
     vi.mocked(syncAppointmentToGoogle).mockResolvedValue({ synced: true, action: "created" } as never);
     vi.mocked(createAuditLog).mockResolvedValue(undefined as never);
   });
@@ -462,8 +478,18 @@ describe("confirmDepositPayment", () => {
       mpPreferenceId: "pref-1",
     });
     vi.mocked(sendDepositConfirmedNotifications)
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
+      .mockResolvedValueOnce({
+        ownerDelivered: true,
+        staffDelivered: false,
+        customerDelivered: true,
+        failedRecipients: ["staff"],
+      })
+      .mockResolvedValueOnce({
+        ownerDelivered: true,
+        staffDelivered: true,
+        customerDelivered: true,
+        failedRecipients: [],
+      });
 
     await confirmDepositPayment({
       appointmentIds: ["apt-retry"],
@@ -476,13 +502,15 @@ describe("confirmDepositPayment", () => {
     expect(pendingDelivery).toMatchObject({
       appointmentId: "apt-retry",
       attempts: 1,
-      notificationsDeliveredAt: null,
+      ownerEmailDeliveredAt: expect.any(Date),
+      staffEmailDeliveredAt: null,
+      customerEmailDeliveredAt: expect.any(Date),
     });
 
     const retry = await processPendingDepositPaymentDeliveries({ now: pendingDelivery.nextAttemptAt });
 
     expect(retry).toMatchObject({ checked: 1, delivered: 1, errors: [] });
-    expect([...deliveries.values()][0]?.notificationsDeliveredAt).toBeInstanceOf(Date);
+    expect([...deliveries.values()][0]?.staffEmailDeliveredAt).toBeInstanceOf(Date);
     expect(sendDepositConfirmedNotifications).toHaveBeenCalledTimes(2);
   });
 });

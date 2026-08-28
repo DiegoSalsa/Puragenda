@@ -12,7 +12,10 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   try {
-    const result = await processPendingDepositPaymentDeliveries();
+    // Keep this bounded well below the Vercel function timeout. Successful
+    // payment return/webhook requests process their own delivery immediately;
+    // this daily cron is the all-plan-compatible recovery path.
+    const result = await processPendingDepositPaymentDeliveries({ limit: 10 });
     return NextResponse.json({ ok: result.errors.length === 0, ...result }, {
       status: result.errors.length === 0 ? 200 : 500,
     });
