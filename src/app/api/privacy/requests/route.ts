@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
         visitorId: parsed.data.visitorId,
         userId: user?.id,
         dueAt,
+        initialDueAt: dueAt,
       },
       select: { id: true },
     });

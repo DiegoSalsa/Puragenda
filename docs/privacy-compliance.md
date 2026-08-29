@@ -31,7 +31,7 @@ Antes de producción, registrar los acuerdos de tratamiento, subencargados, ubic
 1. La persona presenta la solicitud en `/privacidad/solicitud`.
 2. La bandeja de superadmin aparece en `/para/x7k9m2v4q8/privacy-requests`.
 3. El equipo verifica identidad por un canal confiable y marca la solicitud como verificada.
-4. Se responde dentro de 30 días corridos, con una única prórroga cuando corresponda. Las solicitudes de bloqueo temporal se responden dentro de 2 días hábiles y no se procesan nuevos eventos identificables mientras están pendientes.
+4. Se responde dentro de 30 días corridos, con una única prórroga de hasta 30 días cuando corresponda; el panel exige registrar su motivo y notificación. Las solicitudes de bloqueo temporal se responden dentro de 2 días hábiles y no se procesan nuevos eventos identificables mientras están pendientes.
 5. Para supresión u oposición del tracking, dejar de procesar nuevos eventos y eliminar los eventos localizables cuando no exista otra base legal para conservarlos.
 
 ## Seguridad e incidentes

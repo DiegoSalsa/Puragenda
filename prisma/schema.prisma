@@ -1559,6 +1559,10 @@ model PrivacyRequest {
   responseSentAt  DateTime?
   responseChannel String?
   responseContent String?
+  initialDueAt    DateTime?
+  extensionUsed   Boolean   @default(false)
+  extensionNoticeSentAt DateTime?
+  extensionNotes  String?
 
   @@index([status, dueAt])
   @@index([email, createdAt])
