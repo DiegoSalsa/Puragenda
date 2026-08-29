@@ -1,10 +1,10 @@
-# Puragenda · Programa base de protección de datos
+# Puragenda · Programa de protección de datos
 
-Este documento acompaña la implementación de tracking de `trackingtest` y debe revisarse con asesoría legal chilena antes de declarar cumplimiento. La referencia normativa es la Ley 21.719, cuya entrada en vigor está prevista para el 1 de diciembre de 2026.
+Este documento acompaña la implementación de `trackingtest`. La referencia normativa es la Ley 21.719, cuya entrada en vigor está prevista para el 1 de diciembre de 2026. La implementación técnica no reemplaza la validación jurídica de la identidad del responsable, contratos ni transferencias.
 
 ## Responsable y contacto
 
-- Responsable operativo: PuroCode / Puragenda.
+- Responsable operativo: PuroCode / Puragenda. El nombre legal, identificación, domicilio y representante se publican mediante `PRIVACY_CONTROLLER_*`; deben contener datos reales en Production.
 - Canal para titulares: `contacto@purocode.com` y `/privacidad/solicitud`.
 - Responsable de privacidad: designar formalmente al dueño o a un delegado con autonomía, medios y acceso a las solicitudes.
 
@@ -12,38 +12,41 @@ Este documento acompaña la implementación de tracking de `trackingtest` y debe
 
 | Tratamiento | Datos | Base | Finalidad | Conservación |
 | --- | --- | --- | --- | --- |
-| Analítica de producto | ID seudónimo de visitante/sesión, ruta, dominio de referencia, UTM, evento permitido y, si corresponde, ID interno de cuenta/negocio | Consentimiento | Medir adquisición, activación, uso y errores | 395 días |
-| Evidencia de consentimiento | Decisión, versión de política, IDs seudónimos opcionales, usuario autenticado opcional, fecha de servidor | Obligación de acreditar la licitud | Demostrar y respetar la elección del titular | 395 días |
-| Solicitudes de titulares | Nombre, correo, tipo, detalle, ID seudónimo opcional, estado y notas de resolución | Obligación legal / gestión de derechos | Verificar identidad y responder solicitudes | Mientras sea necesario; las solicitudes resueltas se depuran después de 1.460 días |
+| Analítica de producto | ID seudónimo de visitante/sesión, plantilla de ruta, dominio de referencia, UTM, evento permitido e ID interno opcional | Consentimiento | Medir adquisición, activación, uso y errores | 395 días |
+| Evidencia de consentimiento | Decisión, versión, IDs seudónimos opcionales, usuario autenticado opcional y fecha de servidor | Obligación de acreditar licitud | Demostrar y respetar la elección | 395 días |
+| Solicitudes de titulares | Nombre, correo, tipo, detalle, ID seudónimo opcional, estado, evidencia y respuesta | Obligación legal | Verificar identidad y responder derechos | Resueltas: 1.460 días |
 
-No se envían nombres, teléfonos, correos ni contenido de formularios a la analítica de producto. Las propiedades están allowlisteadas en `src/lib/analytics/events.ts`.
+No se envían nombres, teléfonos, correos ni contenido de formularios a la analítica. Las propiedades están permitidas explícitamente en `src/lib/analytics/events.ts`.
 
 ## Proveedores y transferencias
 
-- Supabase: base operativa y almacenamiento de los registros.
-- Vercel: hosting y ejecución de rutas.
-- PostHog: opcional; solo se inicializa con token configurado y consentimiento. La captura de sesiones está desactivada por defecto.
+- Supabase: base operativa y registros.
+- Vercel: hosting y ejecución.
+- PostHog: opcional; solo tras consentimiento y con captura de sesiones desactivada por defecto.
 
-Antes de producción, registrar los acuerdos de tratamiento, subencargados, ubicaciones y garantías para transferencias internacionales de cada proveedor. Si PostHog no tiene un acuerdo y evaluación aprobados, mantener `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` sin configurar.
+Mantener inventario de contratos, subencargados, regiones y garantías de transferencias. Si PostHog no tiene una evaluación aprobada, mantener `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` sin configurar.
 
-## Derechos y plazos operativos
+## Derechos y plazos
 
 1. La persona presenta la solicitud en `/privacidad/solicitud`.
-2. La bandeja de superadmin aparece en `/para/x7k9m2v4q8/privacy-requests`.
-3. El equipo verifica identidad por un canal confiable y marca la solicitud como verificada.
-4. Se responde dentro de 30 días corridos, con una única prórroga de hasta 30 días cuando corresponda; el panel exige registrar su motivo y notificación. Las solicitudes de bloqueo temporal se responden dentro de 2 días hábiles y no se procesan nuevos eventos identificables mientras están pendientes.
-5. Para supresión u oposición del tracking, dejar de procesar nuevos eventos y eliminar los eventos localizables cuando no exista otra base legal para conservarlos.
+2. El sistema envía acuse al titular, alerta al equipo y crea la tarea en la bandeja restringida.
+3. El equipo verifica identidad por un canal confiable.
+4. Se responde dentro de 30 días corridos, con una única prórroga documentada; el bloqueo temporal se atiende dentro de 2 días hábiles.
+5. Bloqueo, oposición y supresión crean inmediatamente una restricción persistente. Tras verificar identidad, el panel ejecuta supresión de analítica o mantiene el bloqueo y guarda auditoría.
+6. Acceso y portabilidad producen un JSON descargable sin contraseñas, tokens ni notas internas. Rectificaciones y supresiones de datos operativos requieren revisar obligaciones contractuales, tributarias y derechos de terceros; el panel no permite cerrar una solicitud sin evidencia técnica.
 
 ## Seguridad e incidentes
 
-- `TrackingEvent`, `TrackingConsent` y `PrivacyRequest` tienen RLS habilitado y no deben exponerse al Data API.
-- El panel de superadmin es el único lector de solicitudes y métricas agregadas.
-- Las rutas públicas tienen validación Zod, límites de tasa y no registran payloads en logs.
-- Mantener un registro de incidentes, evaluar riesgo, preservar evidencia y notificar según el procedimiento legal aplicable.
+- Las tablas de tracking, solicitudes, restricciones y rate limiting tienen RLS habilitado y privilegios de `anon`/`authenticated` revocados.
+- Las rutas públicas exigen mismo origen, validación Zod y límites de tasa persistentes.
+- Rutas con tokens, IDs o slugs se convierten en plantillas en cliente y nuevamente en servidor.
+- Un evento solo se acepta si la última evidencia de consentimiento de esa versión está aceptada.
+- Mantener registro de incidentes, evaluar riesgo, preservar evidencia y notificar según el procedimiento aplicable.
 
 ## Liberación
 
-- Revisar y versionar la política de privacidad y los términos con asesoría legal.
-- Confirmar contratos/DPA de proveedores y transferencias.
-- Ejecutar pruebas de consentimiento, revocación, solicitudes y retención.
-- Confirmar que `CRON_SECRET` exista en Production y que el cron de retención se active solo tras el despliegue de producción autorizado.
+- Completar `PRIVACY_CONTROLLER_ID`, `PRIVACY_POSTAL_ADDRESS` y `PRIVACY_REPRESENTATIVE` con datos reales y revisar textos con asesoría legal.
+- Confirmar contratos/DPA, subencargados y transferencias.
+- Ejecutar pruebas de consentimiento, revocación, solicitudes, exportación, supresión y retención.
+- Confirmar `CRON_SECRET` en Production. El cron diario borra en lotes, respeta retenciones legales y limpia buckets vencidos.
+- Preview no ejecuta migraciones. Production es el único propietario de `prisma migrate deploy`; las pruebas de escritura deberían usar una base Preview separada.

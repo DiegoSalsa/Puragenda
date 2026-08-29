@@ -16,7 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacidadPage() {
-  const notice = getTrackingNotice(await getLocale());
+  const locale = await getLocale();
+  const notice = getTrackingNotice(locale);
+  const controllerName = process.env.PRIVACY_CONTROLLER_NAME || "PuroCode / Puragenda";
+  const controllerId = process.env.PRIVACY_CONTROLLER_ID;
+  const postalAddress = process.env.PRIVACY_POSTAL_ADDRESS;
+  const representative = process.env.PRIVACY_REPRESENTATIVE;
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-[#7C3AED]/30">
       <Navbar />
@@ -56,6 +61,18 @@ export default async function PrivacidadPage() {
               [&_a]:text-[#7C3AED] hover:[&_a]:text-[#A78BFA] [&_a]:underline [&_a]:transition-colors
               [&_strong]:text-foreground [&_strong]:font-semibold
             ">
+              <h2>Responsable del tratamiento</h2>
+              <p>
+                El responsable operativo es <strong>{controllerName}</strong>
+                {controllerId ? `, identificación ${controllerId}` : ""}
+                {postalAddress ? `, con domicilio en ${postalAddress}` : ""}
+                {representative ? `, representado por ${representative}` : ""}.
+                El canal de privacidad es <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
+              </p>
+              <p>
+                Puedes reclamar ante la Agencia de Protección de Datos Personales cuando corresponda legalmente. Aplicamos controles de acceso, cifrado en tránsito, minimización, registros de auditoría, retención limitada y gestión de incidentes; ningún control elimina por completo el riesgo.
+              </p>
+
               <h2><LocalizedText id="4J9I31Uf1b_H" /></h2>
               <p>
                 <LocalizedText id="4Xpy66dI30T8" />

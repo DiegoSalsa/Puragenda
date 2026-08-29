@@ -7,15 +7,26 @@ import { ANALYTICS_RETENTION_DAYS, PRIVACY_REQUEST_RETENTION_DAYS } from "@/lib/
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const DEFAULT_RETENTION_DAYS = ANALYTICS_RETENTION_DAYS;
-const MIN_RETENTION_DAYS = 30;
-const MAX_RETENTION_DAYS = 730;
+const DELETE_BATCH_SIZE = 1_000;
+const MAX_BATCHES_PER_RUN = 50;
 
-function analyticsRetentionDays() {
-  const configured = Number.parseInt(process.env.ANALYTICS_RETENTION_DAYS ?? "", 10);
-  if (!Number.isInteger(configured)) return DEFAULT_RETENTION_DAYS;
-
-  return Math.min(Math.max(configured, MIN_RETENTION_DAYS), MAX_RETENTION_DAYS);
+async function deleteExpiredInBatches(table: "TrackingEvent" | "TrackingConsent", cutoff: Date) {
+  let total = 0;
+  for (let batch = 0; batch < MAX_BATCHES_PER_RUN; batch += 1) {
+    const deleted = await prisma.$executeRawUnsafe(
+      `WITH candidates AS (
+         SELECT "id" FROM "${table}"
+         WHERE "occurredAt" < $1
+           AND ("retentionHoldUntil" IS NULL OR "retentionHoldUntil" < NOW())
+         ORDER BY "occurredAt" ASC LIMIT $2
+       ) DELETE FROM "${table}" WHERE "id" IN (SELECT "id" FROM candidates)`,
+      cutoff,
+      DELETE_BATCH_SIZE,
+    );
+    total += deleted;
+    if (deleted < DELETE_BATCH_SIZE) break;
+  }
+  return total;
 }
 
 /**
@@ -26,23 +37,27 @@ export async function GET(request: Request) {
   const unauthorized = authorizeCronRequest(request);
   if (unauthorized) return unauthorized;
 
-  const retentionDays = analyticsRetentionDays();
+  const retentionDays = ANALYTICS_RETENTION_DAYS;
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
   const privacyRequestCutoff = new Date(Date.now() - PRIVACY_REQUEST_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
   try {
-    const [events, consents, privacyRequests] = await prisma.$transaction([
-      prisma.trackingEvent.deleteMany({ where: { occurredAt: { lt: cutoff } } }),
-      prisma.trackingConsent.deleteMany({ where: { occurredAt: { lt: cutoff } } }),
+    const deletedEvents = await deleteExpiredInBatches("TrackingEvent", cutoff);
+    const deletedConsents = await deleteExpiredInBatches("TrackingConsent", cutoff);
+    const [privacyRequests, rateLimitBuckets, overduePrivacyRequests] = await prisma.$transaction([
       prisma.privacyRequest.deleteMany({ where: { resolvedAt: { not: null, lt: privacyRequestCutoff } } }),
+      prisma.apiRateLimitBucket.deleteMany({ where: { resetAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }),
+      prisma.privacyRequest.count({ where: { status: { in: ["RECEIVED", "IN_REVIEW"] }, dueAt: { lt: new Date() } } }),
     ]);
 
     return NextResponse.json({
       ok: true,
       retentionDays,
-      deletedEvents: events.count,
-      deletedConsents: consents.count,
+      deletedEvents,
+      deletedConsents,
       deletedPrivacyRequests: privacyRequests.count,
+      deletedRateLimitBuckets: rateLimitBuckets.count,
+      overduePrivacyRequests,
     });
   } catch (error) {
     console.error("[cron/tracking-retention] Failed:", error);

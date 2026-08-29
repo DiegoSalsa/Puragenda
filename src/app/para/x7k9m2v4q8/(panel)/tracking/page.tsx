@@ -23,10 +23,6 @@ function normalizeRange(value: string | undefined) {
   return RANGE_OPTIONS.includes(parsed as (typeof RANGE_OPTIONS)[number]) ? parsed : 30;
 }
 
-function uniqueVisitors(events: Array<{ visitorId: string | null; userId: string | null; sessionId: string | null; id: string }>) {
-  return new Set(events.map((event) => event.visitorId || event.userId || event.sessionId || event.id)).size;
-}
-
 function percentage(numerator: number, denominator: number) {
   return denominator > 0 ? `${Math.round((numerator / denominator) * 100)}%` : "—";
 }
@@ -45,28 +41,35 @@ export default async function TrackingPage({
   const now = new Date();
   const since = subDays(now, range - 1);
 
-  const [events, consents, activatedSubscriptions, approvedDeposits] = await Promise.all([
+  type NamedCount = { name: string; count: number };
+  type EventVisitorCount = { event: string; count: number };
+  type DayCount = { day: Date; count: number };
+  const [recentEvents, totalEvents, eventCountsRows, visitorCountsRows, pageRows, sourceRows, dayRows, consentCounts, activatedSubscriptions, approvedDeposits] = await Promise.all([
     prisma.trackingEvent.findMany({
       where: { occurredAt: { gte: since } },
-      select: {
-        id: true,
-        event: true,
-        occurredAt: true,
-        visitorId: true,
-        sessionId: true,
-        userId: true,
-        path: true,
-        referrerDomain: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-      },
-      orderBy: { occurredAt: "desc" },
+      select: { id: true, event: true, occurredAt: true, path: true, referrerDomain: true, utmSource: true },
+      orderBy: { occurredAt: "desc" }, take: 20,
     }),
-    prisma.trackingConsent.findMany({
-      where: { occurredAt: { gte: since } },
-      select: { decision: true, occurredAt: true },
-      orderBy: { occurredAt: "desc" },
+    prisma.trackingEvent.count({ where: { occurredAt: { gte: since } } }),
+    prisma.$queryRaw<Array<{ event: string; count: number }>>`
+      SELECT "event", COUNT(*)::int AS "count" FROM "TrackingEvent"
+      WHERE "occurredAt" >= ${since} GROUP BY "event" ORDER BY "count" DESC`,
+    prisma.$queryRaw<EventVisitorCount[]>`
+      SELECT "event", COUNT(DISTINCT COALESCE("visitorId", "userId", "sessionId", "id"))::int AS "count"
+      FROM "TrackingEvent" WHERE "occurredAt" >= ${since} GROUP BY "event"`,
+    prisma.$queryRaw<NamedCount[]>`
+      SELECT "path" AS "name", COUNT(*)::int AS "count" FROM "TrackingEvent"
+      WHERE "occurredAt" >= ${since} AND "event" = 'page_view' AND "path" IS NOT NULL
+      GROUP BY "path" ORDER BY "count" DESC LIMIT 8`,
+    prisma.$queryRaw<NamedCount[]>`
+      SELECT COALESCE("utmSource", "referrerDomain", 'Directo') AS "name", COUNT(*)::int AS "count"
+      FROM "TrackingEvent" WHERE "occurredAt" >= ${since} AND "event" = 'page_view'
+      GROUP BY 1 ORDER BY "count" DESC LIMIT 6`,
+    prisma.$queryRaw<DayCount[]>`
+      SELECT DATE_TRUNC('day', "occurredAt") AS "day", COUNT(*)::int AS "count"
+      FROM "TrackingEvent" WHERE "occurredAt" >= ${since} GROUP BY 1 ORDER BY 1`,
+    prisma.trackingConsent.groupBy({
+      by: ["decision"], where: { occurredAt: { gte: since } }, _count: { _all: true },
     }),
     prisma.subscription.count({
       where: {
@@ -82,33 +85,19 @@ export default async function TrackingPage({
     }),
   ]);
 
-  const byEvent = (event: string) => events.filter((item) => item.event === event);
-  const visitors = uniqueVisitors(byEvent("page_view"));
-  const ctaVisitors = uniqueVisitors(byEvent("landing_cta_clicked"));
-  const registrationStarts = uniqueVisitors(byEvent("registration_started"));
-  const registrations = uniqueVisitors(byEvent("registration_completed"));
-  const checkoutStarts = uniqueVisitors(byEvent("checkout_started"));
-  const widgetOpens = uniqueVisitors(byEvent("widget_opened"));
-  const serviceSelections = uniqueVisitors(byEvent("booking_service_selected"));
-  const slotSelections = uniqueVisitors(byEvent("booking_slot_selected"));
-  const detailsSubmissions = uniqueVisitors(byEvent("booking_details_submitted"));
-  const bookings = uniqueVisitors(byEvent("booking_created"));
-  const paymentsRequired = uniqueVisitors(byEvent("booking_payment_required"));
-
-  const pageCounts = new Map<string, number>();
-  const sourceCounts = new Map<string, number>();
-  const eventCounts = new Map<string, number>();
-  const eventsByDay = new Map<string, number>();
-  for (const event of events) {
-    eventCounts.set(event.event, (eventCounts.get(event.event) || 0) + 1);
-    const day = format(event.occurredAt, "yyyy-MM-dd");
-    eventsByDay.set(day, (eventsByDay.get(day) || 0) + 1);
-    if (event.event === "page_view" && event.path) {
-      pageCounts.set(event.path, (pageCounts.get(event.path) || 0) + 1);
-      const source = event.utmSource || event.referrerDomain || "Directo";
-      sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
-    }
-  }
+  const visitorCounts = new Map(visitorCountsRows.map((row) => [row.event, row.count]));
+  const visitors = visitorCounts.get("page_view") || 0;
+  const ctaVisitors = visitorCounts.get("landing_cta_clicked") || 0;
+  const registrationStarts = visitorCounts.get("registration_started") || 0;
+  const registrations = visitorCounts.get("registration_completed") || 0;
+  const checkoutStarts = visitorCounts.get("checkout_started") || 0;
+  const widgetOpens = visitorCounts.get("widget_opened") || 0;
+  const serviceSelections = visitorCounts.get("booking_service_selected") || 0;
+  const slotSelections = visitorCounts.get("booking_slot_selected") || 0;
+  const detailsSubmissions = visitorCounts.get("booking_details_submitted") || 0;
+  const bookings = visitorCounts.get("booking_created") || 0;
+  const paymentsRequired = visitorCounts.get("booking_payment_required") || 0;
+  const eventsByDay = new Map(dayRows.map((row) => [format(row.day, "yyyy-MM-dd"), row.count]));
 
   const days = Array.from({ length: range }, (_, index) => subDays(now, range - index - 1));
   const dailyCounts = days.map((day) => ({
@@ -116,11 +105,11 @@ export default async function TrackingPage({
     total: eventsByDay.get(format(day, "yyyy-MM-dd")) || 0,
   }));
   const maxDailyCount = Math.max(1, ...dailyCounts.map((day) => day.total));
-  const topPages = Array.from(pageCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const topSources = Array.from(sourceCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const topEvents = Array.from(eventCounts.entries()).sort((a, b) => b[1] - a[1]);
-  const acceptedConsents = consents.filter((consent) => consent.decision === "accepted").length;
-  const rejectedConsents = consents.filter((consent) => consent.decision === "rejected").length;
+  const topPages = pageRows.map((row) => [row.name, row.count] as const);
+  const topSources = sourceRows.map((row) => [row.name, row.count] as const);
+  const topEvents = eventCountsRows.map((row) => [row.event, row.count] as const);
+  const acceptedConsents = consentCounts.find((row) => row.decision === "accepted")?._count._all || 0;
+  const rejectedConsents = consentCounts.find((row) => row.decision === "rejected")?._count._all || 0;
 
   const funnels = [
     {
@@ -155,7 +144,7 @@ export default async function TrackingPage({
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em] text-black/45">Producto y adquisición</p>
           <h1 className="mt-1 text-3xl font-black uppercase tracking-tighter text-black sm:text-4xl">Tracking</h1>
-          <p className="mt-1 text-sm font-bold text-black/55">Eventos consentidos, sin datos personales ni contenido de formularios. Política de consentimiento {ANALYTICS_POLICY_VERSION}.</p>
+          <p className="mt-1 text-sm font-bold text-black/55">Eventos consentidos y seudonimizados, sin datos de contacto ni contenido de formularios. Política de consentimiento {ANALYTICS_POLICY_VERSION}.</p>
         </div>
         <div className="flex border-2 border-black bg-white p-1 shadow-[3px_3px_0_#000]">
           {RANGE_OPTIONS.map((option) => (
@@ -172,14 +161,14 @@ export default async function TrackingPage({
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-8">
         {[
-          { label: "Visitantes", value: visitors, sub: `${events.length} eventos`, icon: Users, bg: "bg-[#85E3FF]" },
+          { label: "Visitantes", value: visitors, sub: `${totalEvents} eventos`, icon: Users, bg: "bg-[#85E3FF]" },
           { label: "Registro", value: percentage(registrations, ctaVisitors), sub: `${registrations} completados`, icon: TrendingUp, bg: "bg-[#BFFCC6]" },
           { label: "Reserva", value: percentage(bookings, widgetOpens), sub: `${bookings} creadas`, icon: CalendarCheck, bg: "bg-[#FFF5BA]" },
           { label: "Checkouts", value: checkoutStarts, sub: "iniciados", icon: CreditCard, bg: "bg-[#FFB5E8]" },
           { label: "Suscripciones", value: activatedSubscriptions, sub: "activadas en el período", icon: TrendingUp, bg: "bg-[#BFFCC6]" },
           { label: "Abonos aprobados", value: approvedDeposits, sub: "confirmados en el período", icon: CreditCard, bg: "bg-[#FFB5E8]" },
           { label: "Consentimiento", value: acceptedConsents, sub: `${rejectedConsents} rechazados`, icon: ShieldCheck, bg: "bg-[#BFFCC6]" },
-          { label: "Datos recientes", value: events.length > 0 ? "Activo" : "Esperando", sub: events.length > 0 ? `desde ${format(events[events.length - 1].occurredAt, "d MMM", { locale: es })}` : "acepta cookies para generar eventos", icon: BarChart3, bg: "bg-[#B28DFF]" },
+          { label: "Datos recientes", value: recentEvents.length > 0 ? "Activo" : "Esperando", sub: recentEvents.length > 0 ? `último ${format(recentEvents[0].occurredAt, "d MMM HH:mm", { locale: es })}` : "acepta cookies para generar eventos", icon: BarChart3, bg: "bg-[#B28DFF]" },
         ].map((stat) => (
           <div key={stat.label} className={`border-4 border-black ${stat.bg} p-4 shadow-[5px_5px_0_#000]`}>
             <div className="flex items-start justify-between gap-2">
@@ -297,11 +286,11 @@ export default async function TrackingPage({
           </div>
           <ArrowUpRight className="h-5 w-5 text-[#BFFCC6]" />
         </div>
-        {events.length === 0 ? (
+        {recentEvents.length === 0 ? (
           <div className="p-5"><EmptyState /></div>
         ) : (
           <div className="divide-y-2 divide-black">
-            {events.slice(0, 20).map((event) => (
+            {recentEvents.map((event) => (
               <div key={event.id} className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
                 <div className="min-w-0">
                   <p className="font-black capitalize text-black">{eventLabel(event.event)}</p>

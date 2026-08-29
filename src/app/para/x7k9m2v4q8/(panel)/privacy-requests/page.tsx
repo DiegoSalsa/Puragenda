@@ -1,7 +1,8 @@
 import { format, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { prisma } from "@/server/db/prisma";
-import { updatePrivacyRequestStatus } from "./actions";
+import { executePrivacyTechnicalAction, updatePrivacyRequestStatus } from "./actions";
+import { ADMIN_SECRET_PATH } from "@/core/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,19 @@ export default async function PrivacyRequestsPage() {
                     <span className={`inline-flex w-fit border-2 border-black px-2 py-1 text-xs font-black uppercase ${request.status === "FULFILLED" ? "bg-[#BFFCC6]" : request.status === "DENIED" ? "bg-black text-white" : "bg-[#FFF5BA]"}`}>{STATUS_LABELS[request.status] || request.status}</span>
                   </div>
                   <p className="mt-4 whitespace-pre-wrap border-2 border-black/20 bg-black/[0.03] p-3 text-sm leading-6">{request.details}</p>
+                  <div className="mt-4 border-2 border-black bg-[#E7FFAC] p-3 text-xs font-bold">
+                    <p>Acuse al titular: {request.acknowledgementSentAt ? "enviado" : `pendiente${request.acknowledgementError ? ` (${request.acknowledgementError})` : ""}`} · Aviso interno: {request.adminNotifiedAt ? "enviado" : "pendiente"}</p>
+                    <p className="mt-1">Acción técnica: {request.technicalActionAt ? `${request.technicalAction} · ${format(request.technicalActionAt, "d MMM yyyy HH:mm", { locale: es })}` : "pendiente"}</p>
+                    {request.technicalActionEvidence && <p className="mt-1 whitespace-pre-wrap">Evidencia: {request.technicalActionEvidence}</p>}
+                  </div>
+                  {request.identityStatus === "VERIFIED" && (request.requestType === "ACCESS" || request.requestType === "PORTABILITY") && (
+                    <a href={`${ADMIN_SECRET_PATH}/privacy-requests/${request.id}/export`} className="mt-4 inline-flex border-2 border-black bg-[#85E3FF] px-4 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#000]">Descargar exportación JSON</a>
+                  )}
+                  {request.requestType !== "ACCESS" && request.requestType !== "PORTABILITY" && <form action={executePrivacyTechnicalAction} className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                    <input type="hidden" name="id" value={request.id} />
+                    <label className="text-xs font-black uppercase">Evidencia de acción técnica<textarea name="technicalActionEvidence" defaultValue={request.technicalActionEvidence || ""} maxLength={4000} rows={2} className="mt-1 w-full resize-y border-2 border-black bg-white px-2 py-2 text-sm font-medium normal-case" placeholder="Describe verificaciones, sistemas afectados y resultado. Para supresión/oposición/bloqueo, el botón también ejecuta la acción de analítica." /></label>
+                    <button type="submit" className="border-2 border-black bg-[#BFFCC6] px-4 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#000]">Ejecutar / registrar</button>
+                  </form>}
                   <form action={updatePrivacyRequestStatus} className="mt-4 grid gap-3 md:grid-cols-[180px_150px_1fr_auto] md:items-end">
                     <input type="hidden" name="id" value={request.id} />
                     <label className="text-xs font-black uppercase">Estado<select name="status" defaultValue={request.status} className="mt-1 w-full border-2 border-black bg-white px-2 py-2 text-sm font-bold">{Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

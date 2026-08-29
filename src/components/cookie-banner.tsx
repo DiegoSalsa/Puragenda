@@ -9,11 +9,14 @@ import {
   setAnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { recordAnalyticsConsent } from "@/lib/analytics/client";
+import { getTrackingIdentifiers } from "@/lib/analytics/client";
 
 export function CookieBanner() {
   const t = useTranslations("cookies");
   const [visible, setVisible] = useState(false);
   const [hasSavedChoice, setHasSavedChoice] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -30,18 +33,37 @@ export function CookieBanner() {
     return () => window.removeEventListener("puragenda:open-cookie-settings", openPreferences);
   }, []);
 
-  function handleAccept() {
-    setAnalyticsConsent("accepted");
-    recordAnalyticsConsent("accepted");
-    setHasSavedChoice(true);
-    setVisible(false);
+  async function handleAccept() {
+    setSaving(true);
+    setError("");
+    try {
+      await recordAnalyticsConsent("accepted");
+      setAnalyticsConsent("accepted");
+      setHasSavedChoice(true);
+      setVisible(false);
+    } catch {
+      setError("No pudimos guardar tu preferencia. Intenta nuevamente.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleReject() {
+  async function handleReject() {
+    const identifiers = getTrackingIdentifiers();
+    setSaving(true);
+    setError("");
+    // Stop optional processing immediately; server evidence is then recorded
+    // with the identifiers captured before local analytics state is cleared.
     setAnalyticsConsent("rejected");
-    recordAnalyticsConsent("rejected");
     setHasSavedChoice(true);
-    setVisible(false);
+    try {
+      await recordAnalyticsConsent("rejected", identifiers);
+      setVisible(false);
+    } catch {
+      setError("El rechazo ya se aplicó en este navegador, pero no pudimos guardar el comprobante. Intenta nuevamente.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -67,14 +89,17 @@ export function CookieBanner() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 pt-2 sm:justify-end">
+              {error && <p role="alert" className="text-xs font-bold text-red-700 sm:absolute sm:bottom-full sm:mb-2 sm:bg-white sm:p-2">{error}</p>}
               <button
                 onClick={handleReject}
+                disabled={saving}
                 className="flex-1 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] sm:flex-none"
               >
                 {t("reject")}
               </button>
               <button
                 onClick={handleAccept}
+                disabled={saving}
                 className="flex-1 rounded-lg border-2 border-black bg-[#BFFCC6] px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none sm:flex-none"
               >
                 {t("accept")}

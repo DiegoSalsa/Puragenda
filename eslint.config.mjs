@@ -13,6 +13,11 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scratch/**",
+    "marketing/**/build/**",
+    "marketing/**/tmp/**",
+    ".codex-remote-attachments/**",
+    "check*.ts",
+    "migrate_locations.ts",
   ]),
 ]);
 

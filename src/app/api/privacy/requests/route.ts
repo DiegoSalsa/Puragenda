@@ -3,7 +3,10 @@ import { addBusinessDays } from "date-fns";
 import { z } from "zod";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
-import { privacyRequestLimiter } from "@/server/lib/rate-limit";
+import { privacyDistributedLimiter } from "@/server/lib/distributed-rate-limit";
+import { requireSameOrigin } from "@/server/security/same-origin";
+import { hashPrivacyEmail, normalizePrivacyEmail } from "@/lib/privacy/identity";
+import { sendPrivacyRequestAcknowledgement, sendPrivacyRequestAdminAlert } from "@/server/email/privacy";
 
 const REQUEST_TYPES = ["ACCESS", "RECTIFICATION", "SUPPRESSION", "OPPOSITION", "PORTABILITY", "BLOCKING"] as const;
 
@@ -16,13 +19,11 @@ const payloadSchema = z.object({
 }).strict();
 
 export async function POST(request: NextRequest) {
-  const limited = privacyRequestLimiter.check(request);
+  const limited = await privacyDistributedLimiter.check(request);
   if (limited) return limited;
 
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) {
-    return NextResponse.json({ error: "Origen no permitido" }, { status: 403 });
-  }
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
 
   try {
     const parsed = payloadSchema.safeParse(await request.json());
@@ -38,21 +39,56 @@ export async function POST(request: NextRequest) {
     const dueAt = parsed.data.requestType === "BLOCKING"
       ? addBusinessDays(now, 2)
       : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const created = await prisma.privacyRequest.create({
-      data: {
+    const email = normalizePrivacyEmail(parsed.data.email);
+    const created = await prisma.$transaction(async (tx) => {
+      const privacyRequest = await tx.privacyRequest.create({ data: {
         requestType: parsed.data.requestType,
         name: parsed.data.name,
-        email: parsed.data.email.toLowerCase(),
+        email,
         details: parsed.data.details,
         visitorId: parsed.data.visitorId,
         userId: user?.id,
         dueAt,
         initialDueAt: dueAt,
-      },
-      select: { id: true },
+      }, select: { id: true } });
+
+      if (["BLOCKING", "OPPOSITION", "SUPPRESSION"].includes(parsed.data.requestType)) {
+        await tx.privacyRestriction.create({
+          data: {
+            emailHash: hashPrivacyEmail(email),
+            visitorId: parsed.data.visitorId,
+            userId: user?.id,
+            reason: `PENDING_${parsed.data.requestType}`,
+            sourceRequestId: privacyRequest.id,
+          },
+        });
+      }
+      return privacyRequest;
     });
 
-    return NextResponse.json({ ok: true, reference: created.id.slice(-8).toUpperCase() }, { status: 202 });
+    const reference = created.id.slice(-8).toUpperCase();
+    let acknowledgementError: string | null = null;
+    let acknowledgementSentAt: Date | null = null;
+    let adminNotifiedAt: Date | null = null;
+    try {
+      await sendPrivacyRequestAcknowledgement({ email, name: parsed.data.name, reference, requestType: parsed.data.requestType, dueAt });
+      acknowledgementSentAt = new Date();
+    } catch (error) {
+      acknowledgementError = error instanceof Error ? error.message.slice(0, 500) : "Error de correo";
+      console.error("[privacy/requests] acknowledgement failed", error);
+    }
+    try {
+      await sendPrivacyRequestAdminAlert({ reference, requestType: parsed.data.requestType, dueAt });
+      adminNotifiedAt = new Date();
+    } catch (error) {
+      console.error("[privacy/requests] admin alert failed", error);
+    }
+    await prisma.privacyRequest.update({
+      where: { id: created.id },
+      data: { acknowledgementSentAt, acknowledgementError, adminNotifiedAt },
+    });
+
+    return NextResponse.json({ ok: true, reference }, { status: 202 });
   } catch (error) {
     console.error("[privacy/requests] could not store request", error);
     return NextResponse.json({ error: "No se pudo registrar la solicitud" }, { status: 500 });
