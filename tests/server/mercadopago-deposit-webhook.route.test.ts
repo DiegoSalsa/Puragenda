@@ -138,6 +138,7 @@ describe("Mercado Pago deposit webhook verification", () => {
       confirmedIds: ["appointment-ar", "appointment-ar-2"],
       auditedOnlyIds: [],
       shouldRunSideEffects: true,
+      deliveryErrors: [],
     });
 
     const response = await POST(webhookRequest());
@@ -154,6 +155,29 @@ describe("Mercado Pago deposit webhook verification", () => {
       paymentId: "payment-dummy",
       source: "webhook",
     });
+  });
+
+  it("asks Mercado Pago to retry when a confirmed payment still has pending effects", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "approved",
+        external_reference: "appointment-ar",
+        transaction_amount: 2500,
+        currency_id: "ARS",
+      }),
+    }));
+    confirmPayment.mockResolvedValue({
+      alreadyProcessed: false,
+      confirmedIds: ["appointment-ar"],
+      auditedOnlyIds: [],
+      shouldRunSideEffects: true,
+      deliveryErrors: ["appointment-ar: email delivery failed"],
+    });
+
+    const response = await POST(webhookRequest());
+
+    expect(response.status).toBe(500);
   });
 
   it("does not confirm when the webhook businessId does not match the appointment", async () => {

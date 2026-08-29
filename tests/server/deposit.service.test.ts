@@ -32,6 +32,7 @@ type DeliveryRow = {
   attempts: number;
   lastError: string | null;
   nextAttemptAt: Date;
+  lockedUntil: Date | null;
 };
 const deliveries = new Map<string, DeliveryRow>();
 const updateGate = { current: Promise.resolve() };
@@ -79,17 +80,25 @@ async function createDeliveries({ data }: { data: Array<{ appointmentId: string;
       attempts: 0,
       lastError: null,
       nextAttemptAt: new Date(),
+      lockedUntil: null,
     });
   }
   return { count: data.length };
 }
 
-function deliveryMatches(delivery: DeliveryRow, where: Record<string, unknown>) {
+function deliveryMatches(delivery: DeliveryRow, where: Record<string, unknown>): boolean {
   if (typeof where.id === "string" && delivery.id !== where.id) return false;
   const appointmentId = where.appointmentId as { in?: string[] } | undefined;
   if (appointmentId?.in && !appointmentId.in.includes(delivery.appointmentId)) return false;
   const nextAttemptAt = where.nextAttemptAt as { lte?: Date } | undefined;
   if (nextAttemptAt?.lte && delivery.nextAttemptAt > nextAttemptAt.lte) return false;
+  const lockedUntil = where.lockedUntil as { lte?: Date } | null | undefined;
+  if (lockedUntil === null && delivery.lockedUntil !== null) return false;
+  if (lockedUntil?.lte && (!delivery.lockedUntil || delivery.lockedUntil > lockedUntil.lte)) return false;
+  const and = where.AND as Record<string, unknown>[] | undefined;
+  if (and && !and.every((condition) => deliveryMatches(delivery, condition))) return false;
+  const or = where.OR as Record<string, unknown>[] | undefined;
+  if (or && !or.some((condition) => deliveryMatches(delivery, condition))) return false;
   return true;
 }
 
@@ -112,6 +121,7 @@ function applyDeliveryData(delivery: DeliveryRow, data: Record<string, unknown>)
   if (data.calendarSyncedAt instanceof Date) delivery.calendarSyncedAt = data.calendarSyncedAt;
   if (typeof data.lastError === "string" || data.lastError === null) delivery.lastError = data.lastError as string | null;
   if (data.nextAttemptAt instanceof Date) delivery.nextAttemptAt = data.nextAttemptAt;
+  if (data.lockedUntil instanceof Date || data.lockedUntil === null) delivery.lockedUntil = data.lockedUntil as Date | null;
   const attempts = data.attempts as { increment?: number } | undefined;
   if (attempts?.increment) delivery.attempts += attempts.increment;
 }
@@ -249,6 +259,7 @@ describe("confirmDepositPayment", () => {
       confirmedIds: ["apt-1"],
       auditedOnlyIds: [],
       shouldRunSideEffects: true,
+      deliveryErrors: [],
     });
     expect(rows.get("apt-1")).toMatchObject({
       status: "CONFIRMED",
@@ -344,6 +355,7 @@ describe("confirmDepositPayment", () => {
       confirmedIds: [],
       auditedOnlyIds: ["apt-1"],
       shouldRunSideEffects: false,
+      deliveryErrors: [],
     });
     expect(rows.get("apt-1")).toMatchObject({
       status: "CANCELLED",
@@ -491,12 +503,13 @@ describe("confirmDepositPayment", () => {
         failedRecipients: [],
       });
 
-    await confirmDepositPayment({
+    const firstConfirmation = await confirmDepositPayment({
       appointmentIds: ["apt-retry"],
       businessId: "biz-1",
       paymentId: "pay-retry",
       source: "webhook",
     });
+    expect(firstConfirmation.deliveryErrors).toHaveLength(1);
 
     const pendingDelivery = [...deliveries.values()][0];
     expect(pendingDelivery).toMatchObject({
@@ -507,9 +520,14 @@ describe("confirmDepositPayment", () => {
       customerEmailDeliveredAt: expect.any(Date),
     });
 
-    const retry = await processPendingDepositPaymentDeliveries({ now: pendingDelivery.nextAttemptAt });
+    const retry = await confirmDepositPayment({
+      appointmentIds: ["apt-retry"],
+      businessId: "biz-1",
+      paymentId: "pay-retry",
+      source: "webhook",
+    });
 
-    expect(retry).toMatchObject({ checked: 1, delivered: 1, errors: [] });
+    expect(retry).toMatchObject({ alreadyProcessed: true, deliveryErrors: [] });
     expect([...deliveries.values()][0]?.staffEmailDeliveredAt).toBeInstanceOf(Date);
     expect(sendDepositConfirmedNotifications).toHaveBeenCalledTimes(2);
   });

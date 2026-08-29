@@ -101,6 +101,7 @@ describe("local payment simulator route", () => {
       confirmedIds: ["appointment-ar"],
       auditedOnlyIds: [],
       shouldRunSideEffects: true,
+      deliveryErrors: [],
     });
     const token = createLocalPaymentToken({
       kind: "deposit",

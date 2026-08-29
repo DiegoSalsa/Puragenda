@@ -62,6 +62,7 @@ describe("Mercado Pago deposit return verification", () => {
       confirmedIds: ["appointment-ar"],
       auditedOnlyIds: [],
       shouldRunSideEffects: true,
+      deliveryErrors: [],
     });
   });
 
@@ -95,6 +96,7 @@ describe("Mercado Pago deposit return verification", () => {
       confirmedIds: [],
       auditedOnlyIds: ["appointment-ar"],
       shouldRunSideEffects: false,
+      deliveryErrors: [],
     });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "approved",
@@ -115,6 +117,7 @@ describe("Mercado Pago deposit return verification", () => {
       confirmedIds: ["appointment-ar-2"],
       auditedOnlyIds: ["appointment-ar"],
       shouldRunSideEffects: true,
+      deliveryErrors: [],
     });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "approved",

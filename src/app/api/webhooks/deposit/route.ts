@@ -106,12 +106,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (paymentStatus === "approved") {
-      await confirmDepositPayment({
+      const confirmation = await confirmDepositPayment({
         appointmentIds: relatedIds,
         businessId: appointment.businessId,
         paymentId: String(paymentId),
         source: "webhook",
       });
+      if (confirmation.deliveryErrors.length > 0) {
+        // The payment transition is already durable. Returning non-2xx asks
+        // Mercado Pago to deliver this idempotent event again, which retries
+        // only the unfinished side effects without requiring a Vercel cron.
+        return NextResponse.json(
+          { received: false, error: "Payment recorded; delivery retry required" },
+          { status: 500 },
+        );
+      }
     } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
       await rejectDepositPayment({
         appointmentIds: relatedIds,

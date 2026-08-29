@@ -18,6 +18,7 @@ export type ConfirmDepositPaymentResult = {
   confirmedIds: string[];
   auditedOnlyIds: string[];
   shouldRunSideEffects: boolean;
+  deliveryErrors: string[];
 };
 
 const depositNotificationInclude = {
@@ -88,7 +89,8 @@ export async function findRelatedDepositAppointments(appointment: DepositAppoint
  * and must not run emails or Google Calendar sync.
  *
  * A durable delivery record is written in the same transaction. External I/O
- * runs after commit and is retried by the delivery job if this request fails.
+ * runs after commit; repeated provider notifications and an authenticated
+ * dashboard recovery action can safely retry an incomplete delivery.
  */
 export async function confirmDepositPayment(input: {
   appointmentIds: string[];
@@ -103,6 +105,7 @@ export async function confirmDepositPayment(input: {
       confirmedIds: [],
       auditedOnlyIds: [],
       shouldRunSideEffects: false,
+      deliveryErrors: [],
     };
   }
 
@@ -164,13 +167,21 @@ export async function confirmDepositPayment(input: {
     });
   }
 
-  if (shouldRunSideEffects) await processPendingDepositPaymentDeliveries({ appointmentIds: confirmedIds });
+  // Do this even for a duplicate provider notification: the state transition
+  // is idempotent, while a prior external email/calendar delivery may still
+  // be pending. `force` ignores retry backoff but respects the active lease.
+  const delivery = await processPendingDepositPaymentDeliveries({
+    appointmentIds,
+    businessId: input.businessId,
+    force: true,
+  });
 
   return {
     alreadyProcessed: confirmedIds.length === 0 && auditedOnlyIds.length === 0,
     confirmedIds,
     auditedOnlyIds,
     shouldRunSideEffects,
+    deliveryErrors: delivery.errors,
   };
 }
 
@@ -203,26 +214,40 @@ export async function rejectDepositPayment(input: {
 
 /**
  * Delivers the effects of confirmed deposits. A conditional lease prevents
- * simultaneous webhook/return/cron workers from delivering the same event.
- * Delivery is at-least-once: the database state is durable and failed work is
- * retried with backoff instead of being lost after a process interruption.
+ * simultaneous webhook, return, and dashboard recovery workers from delivering
+ * the same event. Delivery is at-least-once: the database state is durable,
+ * and failures can be retried by a duplicate provider notification or an
+ * authenticated dashboard request without relying on a platform cron.
  */
 export async function processPendingDepositPaymentDeliveries(input: {
   appointmentIds?: string[];
+  businessId?: string;
   now?: Date;
   limit?: number;
+  force?: boolean;
 } = {}) {
   const now = input.now ?? new Date();
   const appointmentIds = input.appointmentIds ? uniqueIds(input.appointmentIds) : undefined;
   const deliveries = await prisma.depositPaymentDelivery.findMany({
     where: {
       ...(appointmentIds ? { appointmentId: { in: appointmentIds } } : {}),
-      nextAttemptAt: { lte: now },
-      OR: [
-        { ownerEmailDeliveredAt: null },
-        { staffEmailDeliveredAt: null },
-        { customerEmailDeliveredAt: null },
-        { calendarSyncedAt: null },
+      ...(input.businessId ? { appointment: { businessId: input.businessId } } : {}),
+      ...(input.force ? {} : { nextAttemptAt: { lte: now } }),
+      AND: [
+        {
+          OR: [
+            { lockedUntil: null },
+            { lockedUntil: { lte: now } },
+          ],
+        },
+        {
+          OR: [
+            { ownerEmailDeliveredAt: null },
+            { staffEmailDeliveredAt: null },
+            { customerEmailDeliveredAt: null },
+            { calendarSyncedAt: null },
+          ],
+        },
       ],
     },
     include: {
@@ -238,15 +263,24 @@ export async function processPendingDepositPaymentDeliveries(input: {
     const claimed = await prisma.depositPaymentDelivery.updateMany({
       where: {
         id: delivery.id,
-        nextAttemptAt: { lte: now },
-        OR: [
-          { ownerEmailDeliveredAt: null },
-          { staffEmailDeliveredAt: null },
-          { customerEmailDeliveredAt: null },
-          { calendarSyncedAt: null },
+        AND: [
+          {
+            OR: [
+              { lockedUntil: null },
+              { lockedUntil: { lte: now } },
+            ],
+          },
+          {
+            OR: [
+              { ownerEmailDeliveredAt: null },
+              { staffEmailDeliveredAt: null },
+              { customerEmailDeliveredAt: null },
+              { calendarSyncedAt: null },
+            ],
+          },
         ],
       },
-      data: { nextAttemptAt: leaseUntil },
+      data: { lockedUntil: leaseUntil },
     });
     if (claimed.count !== 1) continue;
     result.checked++;
@@ -291,6 +325,7 @@ export async function processPendingDepositPaymentDeliveries(input: {
     await prisma.depositPaymentDelivery.update({
       where: { id: delivery.id },
       data: {
+        lockedUntil: null,
         ...(ownerEmailDelivered && !delivery.ownerEmailDeliveredAt
           ? { ownerEmailDeliveredAt: now }
           : {}),
@@ -307,7 +342,7 @@ export async function processPendingDepositPaymentDeliveries(input: {
               lastError: errors.join("; ").slice(0, 2000),
               nextAttemptAt: retryAt(now, delivery.attempts),
             }
-          : { lastError: null }),
+          : { lastError: null, nextAttemptAt: now }),
       },
     });
 

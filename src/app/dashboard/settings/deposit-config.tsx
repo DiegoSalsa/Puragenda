@@ -20,7 +20,9 @@ export function DepositConfig({ initialDepositRequired, initialDepositPaymentMod
   const [depositRequired, setDepositRequired] = useState(initialDepositRequired);
   const [depositPaymentMode, setDepositPaymentMode] = useState(initialDepositPaymentMode);
   const [saving, setSaving] = useState(false);
+  const [retryingDeliveries, setRetryingDeliveries] = useState(false);
   const [message, setMessage] = useState("");
+  const [retryMessage, setRetryMessage] = useState("");
 
   async function handleSave() {
     setSaving(true);
@@ -34,6 +36,26 @@ export function DepositConfig({ initialDepositRequired, initialDepositPaymentMod
     }
     setSaving(false);
     setTimeout(() => setMessage(""), 4000);
+  }
+
+  async function retryPendingDeliveries() {
+    setRetryingDeliveries(true);
+    setRetryMessage("");
+    try {
+      const response = await fetch("/api/dashboard/deposit-payment-deliveries/retry", { method: "POST" });
+      const data = await response.json() as { ok?: boolean; checked?: number; delivered?: number; error?: string; errors?: string[] };
+      if (!response.ok || !data.ok) {
+        setRetryMessage(data.error || data.errors?.[0] || "No se pudieron reintentar las entregas pendientes.");
+      } else if ((data.checked ?? 0) === 0) {
+        setRetryMessage("No hay notificaciones ni sincronizaciones pendientes.");
+      } else {
+        setRetryMessage(`Se reintentaron ${data.checked} entregas y se completaron ${data.delivered ?? 0}.`);
+      }
+    } catch {
+      setRetryMessage("No se pudieron reintentar las entregas pendientes.");
+    } finally {
+      setRetryingDeliveries(false);
+    }
   }
 
   return (
@@ -99,6 +121,24 @@ export function DepositConfig({ initialDepositRequired, initialDepositPaymentMod
           )}
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+        <button
+          type="button"
+          onClick={retryPendingDeliveries}
+          disabled={retryingDeliveries}
+          className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold transition-colors hover:bg-muted disabled:opacity-50"
+        >
+          {retryingDeliveries ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          Reintentar notificaciones pendientes
+        </button>
+        <p className="text-xs text-muted-foreground">Recupera correos o sincronizaciones que hayan fallado, sin usar tareas programadas.</p>
+        {retryMessage && (
+          <p className={`w-full text-xs ${retryMessage.startsWith("No se pudieron") ? "text-red-400" : "text-muted-foreground"}`}>
+            {retryMessage}
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <button
