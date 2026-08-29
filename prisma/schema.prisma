@@ -1510,7 +1510,9 @@ model TrackingEvent {
   utmMedium      String?
   utmCampaign    String?
   properties     Json?
-  createdAt      DateTime @default(now())
+  consentVersion   String?
+  consentGrantedAt DateTime?
+  createdAt        DateTime  @default(now())
 
   @@index([occurredAt])
   @@index([event, occurredAt])
@@ -1518,4 +1520,47 @@ model TrackingEvent {
   @@index([sessionId, occurredAt])
   @@index([userId, occurredAt])
   @@index([businessId, event, occurredAt])
+}
+
+// Consent records provide server-side evidence of the visitor's analytics choice.
+// They intentionally contain only pseudonymous browser identifiers and no form data.
+model TrackingConsent {
+  id            String   @id @default(cuid())
+  decision      String
+  policyVersion String
+  visitorId     String?
+  sessionId     String?
+  userId        String?
+  occurredAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([occurredAt])
+  @@index([visitorId, occurredAt])
+  @@index([userId, occurredAt])
+}
+
+// Privacy requests are kept in a restricted server-side queue so the team can
+// verify identity and meet statutory response deadlines.
+model PrivacyRequest {
+  id              String    @id @default(cuid())
+  requestType     String
+  status          String    @default("RECEIVED")
+  identityStatus  String    @default("PENDING")
+  name            String
+  email           String
+  details         String
+  visitorId       String?
+  userId          String?
+  dueAt           DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  resolvedAt      DateTime?
+  resolutionNotes String?
+  responseSentAt  DateTime?
+  responseChannel String?
+  responseContent String?
+
+  @@index([status, dueAt])
+  @@index([email, createdAt])
+  @@index([visitorId, createdAt])
 }

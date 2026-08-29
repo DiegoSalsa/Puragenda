@@ -4,18 +4,22 @@ import { getApiSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { trackingLimiter } from "@/server/lib/rate-limit";
 import { isTrackingEvent, sanitizeTrackingProperties } from "@/lib/analytics/events";
+import { ANALYTICS_POLICY_VERSION } from "@/lib/analytics/policy";
 
+const pseudonymousId = z.string().regex(/^[A-Za-z0-9._-]{16,128}$/);
 const safeString = z.string().trim().min(1).max(160).optional();
 const payloadSchema = z.object({
   event: z.string().min(1).max(80),
-  visitorId: z.string().min(16).max(128),
-  sessionId: z.string().min(16).max(128),
+  visitorId: pseudonymousId,
+  sessionId: pseudonymousId,
   path: z.string().startsWith("/").max(240),
   referrerDomain: z.string().max(255).optional(),
   utmSource: safeString,
   utmMedium: safeString,
   utmCampaign: safeString,
   businessSlug: z.string().trim().min(1).max(120).optional(),
+  consentVersion: z.literal(ANALYTICS_POLICY_VERSION),
+  consentAt: z.string().datetime({ offset: true }).optional(),
   properties: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).default({}),
 }).strict();
 
@@ -43,6 +47,20 @@ export async function POST(request: NextRequest) {
     }
     const event = data.event;
     const sessionUser = await getApiSessionUser(request);
+    const blockingRequest = await prisma.privacyRequest.findFirst({
+      where: {
+        requestType: "BLOCKING",
+        status: { in: ["RECEIVED", "IN_REVIEW"] },
+        OR: [
+          { visitorId: data.visitorId },
+          ...(sessionUser?.id ? [{ userId: sessionUser.id }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+    if (blockingRequest) {
+      return NextResponse.json({ ok: true, blocked: true }, { status: 202 });
+    }
     const business = data.businessSlug
       ? await prisma.business.findUnique({ where: { slug: data.businessSlug }, select: { id: true } })
       : sessionUser
@@ -69,6 +87,8 @@ export async function POST(request: NextRequest) {
         utmMedium: data.utmMedium,
         utmCampaign: data.utmCampaign,
         properties: sanitizeTrackingProperties(event, data.properties),
+        consentVersion: data.consentVersion,
+        consentGrantedAt: data.consentAt ? new Date(data.consentAt) : null,
       },
     });
 

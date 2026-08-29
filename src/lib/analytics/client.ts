@@ -1,7 +1,8 @@
 "use client";
 
 import posthog from "posthog-js";
-import { hasAnalyticsConsent } from "@/lib/analytics/consent";
+import { getAnalyticsConsentAt, hasAnalyticsConsent } from "@/lib/analytics/consent";
+import { ANALYTICS_POLICY_VERSION } from "@/lib/analytics/policy";
 import {
   type TrackingEventName,
   type TrackingProperties,
@@ -91,7 +92,14 @@ export function track(
   initializeAnalytics();
   const safeProperties = sanitizeTrackingProperties(event, properties);
   const browserContext = currentContext();
-  const payload = { event, ...browserContext, businessSlug: eventContext?.businessSlug, properties: safeProperties };
+  const payload = {
+    event,
+    ...browserContext,
+    consentVersion: ANALYTICS_POLICY_VERSION,
+    consentAt: getAnalyticsConsentAt() || undefined,
+    businessSlug: eventContext?.businessSlug,
+    properties: safeProperties,
+  };
 
   // Keep the internal dashboard independent from any third-party provider.
   void fetch("/api/analytics/track", {
@@ -102,4 +110,22 @@ export function track(
   }).catch(() => undefined);
 
   if (posthogInitialized) posthog.capture(event, { ...safeProperties, $current_url: window.location.origin + payload.path });
+}
+
+/** Records the user's choice so the server can demonstrate when consent was granted or denied. */
+export function recordAnalyticsConsent(decision: "accepted" | "rejected") {
+  if (typeof window === "undefined") return;
+  const browserContext = decision === "accepted" ? currentContext() : {};
+  void fetch("/api/analytics/consent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    keepalive: true,
+    body: JSON.stringify({
+      decision,
+      policyVersion: ANALYTICS_POLICY_VERSION,
+      visitorId: "visitorId" in browserContext ? browserContext.visitorId : undefined,
+      sessionId: "sessionId" in browserContext ? browserContext.sessionId : undefined,
+    }),
+  }).catch(() => undefined);
 }

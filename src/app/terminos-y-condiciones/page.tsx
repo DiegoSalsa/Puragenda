@@ -6,6 +6,8 @@ import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
+import { getLocale } from "next-intl/server";
+import { getTermsNotice } from "@/lib/privacy/tracking-notice";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
@@ -13,7 +15,8 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/terminos-y-condiciones") },
 };
 
-export default function TerminosPage() {
+export default async function TerminosPage() {
+  const notice = getTermsNotice(await getLocale());
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-[#7C3AED]/30">
       <Navbar />
@@ -71,6 +74,10 @@ export default function TerminosPage() {
                 <li><LocalizedText id="Jy0i7Ke5sySS" /></li>
                 <li><LocalizedText id="q70437XJJgV8" /></li>
               </ul>
+
+              <h2>{notice.heading}</h2>
+              <p>{notice.description}</p>
+              <p><Link href="/politica-de-privacidad">{notice.privacyLink}</Link>.</p>
 
               <h2><LocalizedText id="g5BahbfsJndg" /></h2>
               <p>

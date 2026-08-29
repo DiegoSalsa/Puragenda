@@ -8,6 +8,7 @@ import {
   getAnalyticsConsent,
   setAnalyticsConsent,
 } from "@/lib/analytics/consent";
+import { recordAnalyticsConsent } from "@/lib/analytics/client";
 
 export function CookieBanner() {
   const t = useTranslations("cookies");
@@ -15,12 +16,12 @@ export function CookieBanner() {
   const [hasSavedChoice, setHasSavedChoice] = useState(false);
 
   useEffect(() => {
-    const consent = getAnalyticsConsent();
-    setHasSavedChoice(Boolean(consent));
-    if (!consent) {
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      const consent = getAnalyticsConsent();
+      setHasSavedChoice(Boolean(consent));
+      if (!consent) setVisible(true);
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -31,12 +32,14 @@ export function CookieBanner() {
 
   function handleAccept() {
     setAnalyticsConsent("accepted");
+    recordAnalyticsConsent("accepted");
     setHasSavedChoice(true);
     setVisible(false);
   }
 
   function handleReject() {
     setAnalyticsConsent("rejected");
+    recordAnalyticsConsent("rejected");
     setHasSavedChoice(true);
     setVisible(false);
   }

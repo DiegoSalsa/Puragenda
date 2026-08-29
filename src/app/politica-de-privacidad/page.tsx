@@ -6,6 +6,8 @@ import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
+import { getLocale } from "next-intl/server";
+import { getTrackingNotice } from "@/lib/privacy/tracking-notice";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
@@ -13,7 +15,8 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/politica-de-privacidad") },
 };
 
-export default function PrivacidadPage() {
+export default async function PrivacidadPage() {
+  const notice = getTrackingNotice(await getLocale());
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-[#7C3AED]/30">
       <Navbar />
@@ -106,6 +109,16 @@ export default function PrivacidadPage() {
               </ul>
               <p>
                 <LocalizedText id="EELb1kD6pqTv" />
+              </p>
+
+              <h2>{notice.heading}</h2>
+              <p>{notice.summary}</p>
+              <p>{notice.purpose}</p>
+              <p>{notice.providers}</p>
+              <p>{notice.retention}</p>
+              <p>
+                {notice.rights}{" "}
+                <Link href="/privacidad/solicitud">{notice.rightsLink}</Link>.
               </p>
 
               <h2><LocalizedText id="nYLtv7CQehjY" /></h2>

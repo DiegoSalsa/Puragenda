@@ -3,11 +3,13 @@ import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { prisma } from "@/server/db/prisma";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { ANALYTICS_POLICY_VERSION } from "@/lib/analytics/policy";
 import {
   ArrowUpRight,
   BarChart3,
   CalendarCheck,
   CreditCard,
+  ShieldCheck,
   TrendingUp,
   Users,
 } from "@/components/icons/hover-icons";
@@ -43,7 +45,7 @@ export default async function TrackingPage({
   const now = new Date();
   const since = subDays(now, range - 1);
 
-  const [events, activatedSubscriptions, approvedDeposits] = await Promise.all([
+  const [events, consents, activatedSubscriptions, approvedDeposits] = await Promise.all([
     prisma.trackingEvent.findMany({
       where: { occurredAt: { gte: since } },
       select: {
@@ -59,6 +61,11 @@ export default async function TrackingPage({
         utmMedium: true,
         utmCampaign: true,
       },
+      orderBy: { occurredAt: "desc" },
+    }),
+    prisma.trackingConsent.findMany({
+      where: { occurredAt: { gte: since } },
+      select: { decision: true, occurredAt: true },
       orderBy: { occurredAt: "desc" },
     }),
     prisma.subscription.count({
@@ -112,6 +119,8 @@ export default async function TrackingPage({
   const topPages = Array.from(pageCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const topSources = Array.from(sourceCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const topEvents = Array.from(eventCounts.entries()).sort((a, b) => b[1] - a[1]);
+  const acceptedConsents = consents.filter((consent) => consent.decision === "accepted").length;
+  const rejectedConsents = consents.filter((consent) => consent.decision === "rejected").length;
 
   const funnels = [
     {
@@ -146,7 +155,7 @@ export default async function TrackingPage({
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em] text-black/45">Producto y adquisición</p>
           <h1 className="mt-1 text-3xl font-black uppercase tracking-tighter text-black sm:text-4xl">Tracking</h1>
-          <p className="mt-1 text-sm font-bold text-black/55">Eventos consentidos, sin datos personales ni contenido de formularios.</p>
+          <p className="mt-1 text-sm font-bold text-black/55">Eventos consentidos, sin datos personales ni contenido de formularios. Política de consentimiento {ANALYTICS_POLICY_VERSION}.</p>
         </div>
         <div className="flex border-2 border-black bg-white p-1 shadow-[3px_3px_0_#000]">
           {RANGE_OPTIONS.map((option) => (
@@ -161,7 +170,7 @@ export default async function TrackingPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-8">
         {[
           { label: "Visitantes", value: visitors, sub: `${events.length} eventos`, icon: Users, bg: "bg-[#85E3FF]" },
           { label: "Registro", value: percentage(registrations, ctaVisitors), sub: `${registrations} completados`, icon: TrendingUp, bg: "bg-[#BFFCC6]" },
@@ -169,6 +178,7 @@ export default async function TrackingPage({
           { label: "Checkouts", value: checkoutStarts, sub: "iniciados", icon: CreditCard, bg: "bg-[#FFB5E8]" },
           { label: "Suscripciones", value: activatedSubscriptions, sub: "activadas en el período", icon: TrendingUp, bg: "bg-[#BFFCC6]" },
           { label: "Abonos aprobados", value: approvedDeposits, sub: "confirmados en el período", icon: CreditCard, bg: "bg-[#FFB5E8]" },
+          { label: "Consentimiento", value: acceptedConsents, sub: `${rejectedConsents} rechazados`, icon: ShieldCheck, bg: "bg-[#BFFCC6]" },
           { label: "Datos recientes", value: events.length > 0 ? "Activo" : "Esperando", sub: events.length > 0 ? `desde ${format(events[events.length - 1].occurredAt, "d MMM", { locale: es })}` : "acepta cookies para generar eventos", icon: BarChart3, bg: "bg-[#B28DFF]" },
         ].map((stat) => (
           <div key={stat.label} className={`border-4 border-black ${stat.bg} p-4 shadow-[5px_5px_0_#000]`}>

@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X } from "@/components/icons/hover-icons";
+import { Shield, ShieldCheck, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X } from "@/components/icons/hover-icons";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: `${ADMIN_SECRET_PATH}/users`, icon: Users, label: "Usuarios internos" },
   { href: `${ADMIN_SECRET_PATH}/subscriptions`, icon: CreditCard, label: "Suscripciones" },
   { href: `${ADMIN_SECRET_PATH}/tracking`, icon: BarChart3, label: "Tracking" },
+  { href: `${ADMIN_SECRET_PATH}/privacy-requests`, icon: ShieldCheck, label: "Solicitudes de privacidad" },
   { href: `${ADMIN_SECRET_PATH}/discounts`, icon: Tag, label: "Descuentos" },
   { href: `${ADMIN_SECRET_PATH}/communications`, icon: Mail, label: "Comunicaciones" },
 ];

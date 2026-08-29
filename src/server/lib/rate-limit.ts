@@ -192,6 +192,20 @@ export const trackingLimiter = rateLimit({
   message: "Demasiados eventos de analítica. Intenta nuevamente en un momento.",
 });
 
+/** Consent changes: enough for normal preference management without allowing write abuse. */
+export const trackingConsentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: "Demasiados cambios de consentimiento. Intenta nuevamente más tarde.",
+});
+
+/** Public privacy-rights requests: prevent queue flooding while preserving access. */
+export const privacyRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: "Demasiadas solicitudes de privacidad. Intenta nuevamente más tarde.",
+});
+
 /** Marketing: 3 sends per 60 minutes */
 export const marketingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
