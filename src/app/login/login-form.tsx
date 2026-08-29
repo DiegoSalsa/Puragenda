@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, LogIn } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
+import { track } from "@/lib/analytics/client";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -38,6 +39,7 @@ export function LoginForm() {
         return;
       }
 
+      track("login_completed");
       router.push("/dashboard");
       router.refresh();
     } catch {

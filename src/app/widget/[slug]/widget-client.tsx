@@ -14,6 +14,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { buildSlots } from "@/core/availability";
 import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
+import { track } from "@/lib/analytics/client";
 
 export { buildSlots } from "@/core/availability";
 
@@ -363,6 +364,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [recurringSuccess, setRecurringSuccess] = useState<{ requiresApproval: boolean; serviceName: string } | null>(null);
 
   useEffect(() => {
+    track("widget_opened", {
+      embedded: isEmbedded,
+      has_locations: locations.length > 1,
+      has_preselected_service: Boolean(deepLinkedService),
+      preview_mode: previewMode,
+    }, { businessSlug: business.slug });
+  }, [business.slug, deepLinkedService, isEmbedded, locations.length, previewMode]);
+
+  useEffect(() => {
     let active = true;
     fetch("/api/client-portal/profile", { cache: "no-store" })
       .then(async (response) => response.ok ? response.json() : null)
@@ -702,6 +712,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   function handleSelectService(s: Service) {
+    if (!isMultiService) {
+      track("booking_service_selected", {
+        booking_mode: s.bookingMode.toLowerCase(),
+        service_count: 1,
+        has_deposit: depositRequired || s.depositAmount > 0,
+        has_options: s.optionCategories.length > 0,
+      }, { businessSlug: business.slug });
+    }
     if (s.bookingMode === "PRODUCTION") {
       setSelectedServices([]);
       setSelectedService(s);
@@ -800,6 +818,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   function handleMultiServiceContinue() {
     if (selectedServices.length === 0) return;
+    track("booking_service_selected", {
+      booking_mode: "appointment",
+      service_count: selectedServices.length,
+      has_deposit: depositRequired || selectedServices.some((service) => service.depositAmount > 0),
+      has_options: selectedServices.some((service) => service.optionCategories.length > 0),
+    }, { businessSlug: business.slug });
     setSelectedService(selectedServices[0]);
     setSelectedDate(null); setSelectedSlot(null); setSelectedStaff(null); setSelectedStaffByServiceId({}); setStaffSelectionMode("single"); setSelectedOptionByCategory({});
     if (selectedServices.some((service) => service.optionCategories.length > 0)) {
@@ -907,6 +931,10 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       const serviceIds = isMultiService && selectedServices.length > 0
         ? selectedServices.map((s) => s.id)
         : [selectedService.id];
+      track("booking_details_submitted", {
+        has_deposit: depositRequired,
+        service_count: serviceIds.length,
+      }, { businessSlug: business.slug });
       const res = await fetch(`/api/business/${business.slug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
@@ -928,13 +956,23 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
       const data = await res.json();
+      const paymentRequired = Boolean(data.depositRequired && data.paymentUrl);
+      track("booking_created", {
+        has_deposit: Boolean(data.depositRequired),
+        service_count: serviceIds.length,
+        payment_required: paymentRequired,
+      }, { businessSlug: business.slug });
       // If deposit is required and we have a payment URL, redirect to MP
-      if (data.depositRequired && data.paymentUrl) {
+      if (paymentRequired) {
+        track("booking_payment_required", { payment_mode: "external" }, { businessSlug: business.slug });
         window.location.href = data.paymentUrl;
         return;
       }
       setStep("success");
-    } catch (err) { setApiError(err instanceof Error ? err.message : legacy("6ihSDtQvEFAi")); } finally { setSubmitting(false); }
+    } catch (err) {
+      track("booking_failed", { reason: "request_failed", stage: "submit" }, { businessSlug: business.slug });
+      setApiError(err instanceof Error ? err.message : legacy("6ihSDtQvEFAi"));
+    } finally { setSubmitting(false); }
   }
 
   async function activateClientAccount(event: React.FormEvent<HTMLFormElement>) {
@@ -2165,7 +2203,14 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                         const blocked = isSlotUnavailable(slot);
                         const active = selectedSlot?.start.getTime() === slot.start.getTime();
                         return (
-                          <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => setSelectedSlot(slot)}
+                          <button key={slot.start.toISOString()} type="button" disabled={blocked} onClick={() => {
+                            setSelectedSlot(slot);
+                            track("booking_slot_selected", {
+                              lead_days: Math.max(0, Math.ceil((slot.start.getTime() - Date.now()) / 86_400_000)),
+                              has_staff: Boolean(selectedStaff) || splitStaffMode,
+                              service_count: activeServices.length,
+                            }, { businessSlug: business.slug });
+                          }}
                             className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${blocked ? "cursor-not-allowed opacity-20 line-through" : "hover:border-brand/40 hover:shadow-sm hover:-translate-y-0.5"}`}
                             style={active && !blocked ? { borderColor: `${pc}60`, background: `${pc}20`, color: pc, fontWeight: 700 } : blocked ? { borderColor: "var(--wborder)" } : { borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>
                             {format(slot.start, "HH:mm")}

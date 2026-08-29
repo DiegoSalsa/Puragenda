@@ -8,6 +8,7 @@ import { addDays, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarDays, CheckCircle2, ChevronLeft, ImagePlus, Loader2, Package, Trash2, Upload } from "@/components/icons/hover-icons";
 import { formatPrice } from "@/lib/utils";
+import { track } from "@/lib/analytics/client";
 
 interface ProductionWindow {
   key: string;
@@ -159,6 +160,10 @@ export function ProductionOrderFlow({
     }
     setSubmitting(true);
     try {
+      track("booking_details_submitted", {
+        has_deposit: depositAmount > 0,
+        service_count: 1,
+      }, { businessSlug: business.slug });
       const response = await fetch(`/api/business/${business.slug}/production-orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
@@ -179,12 +184,19 @@ export function ProductionOrderFlow({
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.details?.join(". ") || payload.error || "No se pudo enviar el encargo");
+      track("booking_created", {
+        has_deposit: depositAmount > 0,
+        service_count: 1,
+        payment_required: Boolean(payload.paymentUrl),
+      }, { businessSlug: business.slug });
       if (payload.paymentUrl) {
+        track("booking_payment_required", { payment_mode: "external" }, { businessSlug: business.slug });
         window.location.href = payload.paymentUrl;
         return;
       }
       setResult(payload);
     } catch (reason) {
+      track("booking_failed", { reason: "request_failed", stage: "production_submit" }, { businessSlug: business.slug });
       setError(reason instanceof Error ? reason.message : legacy("5zlS8TJtHN93"));
     } finally {
       setSubmitting(false);

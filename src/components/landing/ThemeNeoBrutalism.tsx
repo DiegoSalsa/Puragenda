@@ -11,6 +11,7 @@ import { WordCarousel } from "@/components/landing/word-carousel";
 import { Theme70s } from "@/components/landing/Theme70s";
 import type { LandingIdentityProps } from "@/components/landing/types";
 import { useTranslations } from "next-intl";
+import { track } from "@/lib/analytics/client";
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
 
 const neoVars: React.CSSProperties & Record<string, string> = {
@@ -108,12 +109,12 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto justify-center">
-                <Link href="/register" className="w-full sm:w-auto">
+                <Link href="/register" onClick={() => track("landing_cta_clicked", { cta: "register", placement: "hero" })} className="w-full sm:w-auto">
                   <button className="w-full bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-5 text-xl font-black uppercase shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-[4px] hover:translate-x-[4px] hover:shadow-none transition-all flex justify-center items-center gap-3">
                     {t("startFree")} <ArrowRight className="h-6 w-6 stroke-[3px]" />
                   </button>
                 </Link>
-                <a href="/api/auth/demo" className="w-full sm:w-auto group relative">
+                <a href="/api/auth/demo" onClick={() => track("landing_cta_clicked", { cta: "demo", placement: "hero" })} className="w-full sm:w-auto group relative">
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#BFFCC6] border-2 border-black text-black text-xs font-black uppercase px-2 py-0.5 shadow-[2px_2px_0_#000] whitespace-nowrap z-10">
                     <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse inline-block" />
                     {t("live")}
@@ -445,12 +446,12 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <h2 className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">{t("readyTitle")}</h2>
             <p className="max-w-xl font-bold text-black/70">{t("readyText")}</p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/pricing">
+              <Link href="/pricing" onClick={() => track("landing_cta_clicked", { cta: "pricing", placement: "final_cta" })}>
                 <button className="bg-black text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,0.3)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all flex items-center gap-2">
                   {t("startFree")} <ArrowRight className="h-5 w-5" />
                 </button>
               </Link>
-              <a href="/api/auth/demo">
+              <a href="/api/auth/demo" onClick={() => track("landing_cta_clicked", { cta: "demo", placement: "final_cta" })}>
                 <button className="bg-white text-black border-4 border-black px-8 py-4 font-black uppercase text-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_#000000] hover:bg-gray-100 transition-colors">
                   {t("viewDemo")}
                 </button>

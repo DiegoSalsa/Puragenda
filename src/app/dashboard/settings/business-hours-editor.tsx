@@ -8,6 +8,7 @@ import { Check, Coffee, Copy, Loader2, Save, Sparkles } from "@/components/icons
 import { saveBusinessHoursAction } from "@/server/actions/dashboard.actions";
 import { getDefaultBreakRange, isValidTimeRange } from "@/lib/time";
 import { TimeTextInput } from "@/components/ui/time-text-input";
+import { track } from "@/lib/analytics/client";
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -100,6 +101,7 @@ export function BusinessHoursEditor({ initialHours, locations = [] }: { initialH
     setSaving(false);
 
     if (result.success) {
+      track("dashboard_availability_configured", { scope: locationId ? "location" : "business" });
       setSaved(true);
       setError("");
     } else {

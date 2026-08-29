@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, Loader2, Wrench, Settings2, Banknote, RefreshCw, 
 import { formatPrice } from "@/lib/utils";
 import { updateMaxServicesAction, updateServiceCategoryGroupingAction, uploadServiceImageAssetAction } from "@/server/actions/dashboard.actions";
 import { createRecurringPlanAction, deleteRecurringPlanAction } from "@/server/actions/recurring.actions";
+import { track } from "@/lib/analytics/client";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -598,6 +599,11 @@ export function ServicesClient({
           throw new Error(created.details?.join("\n") || created.error || "No se pudo crear el servicio.");
         }
         serviceId = created.id;
+        track("dashboard_service_created", {
+          booking_mode: form.bookingMode.toLowerCase(),
+          has_deposit: Number(form.depositAmount || "0") > 0,
+          has_options: optionCategories.length > 0,
+        });
       }
 
       // Handle recurring plan

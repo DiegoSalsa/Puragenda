@@ -8,6 +8,7 @@ import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/
 import { getCountryConfig } from "@/core/countries";
 import { startBillingCheckout } from "@/components/paddle/checkout";
 import { useLocale, useTranslations } from "next-intl";
+import { track } from "@/lib/analytics/client";
 
 export function RegisterForm({
   countryOptions,
@@ -74,6 +75,11 @@ export function RegisterForm({
     try {
       // Step 1: Create account
       setLoadingStep("register");
+      track("registration_started", {
+        plan: wantsPlan || "EQUIPO",
+        intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
+        extra_staff: extraStaffCount,
+      });
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,6 +106,12 @@ export function RegisterForm({
         return;
       }
 
+      track("registration_completed", {
+        plan: wantsPlan || "EQUIPO",
+        intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
+        country: countryCode || "unknown",
+      });
+
       // Step 2: Start the provider selected by the business country.
       if (isDirectSubscription) {
         setLoadingStep("payment");
@@ -112,6 +124,11 @@ export function RegisterForm({
         const billingData = await billingRes.json();
 
         if (billingRes.ok && (billingData.init_point || billingData.provider === "paddle")) {
+          track("checkout_started", {
+            plan: wantsPlan || "EQUIPO",
+            provider: billingData.provider === "paddle" ? "paddle" : "mercadopago",
+            extra_staff: extraStaffCount,
+          });
           await startBillingCheckout(billingData);
           return;
         }

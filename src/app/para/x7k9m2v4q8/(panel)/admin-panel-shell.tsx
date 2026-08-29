@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: `${ADMIN_SECRET_PATH}/clients`, icon: Contact, label: "Clientes" },
   { href: `${ADMIN_SECRET_PATH}/users`, icon: Users, label: "Usuarios internos" },
   { href: `${ADMIN_SECRET_PATH}/subscriptions`, icon: CreditCard, label: "Suscripciones" },
+  { href: `${ADMIN_SECRET_PATH}/tracking`, icon: BarChart3, label: "Tracking" },
   { href: `${ADMIN_SECRET_PATH}/discounts`, icon: Tag, label: "Descuentos" },
   { href: `${ADMIN_SECRET_PATH}/communications`, icon: Mail, label: "Comunicaciones" },
 ];

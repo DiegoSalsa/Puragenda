@@ -1488,3 +1488,34 @@ model SystemError {
   @@index([createdAt])
   @@index([source])
 }
+
+// ==========================================
+// PRIVACY-SAFE PRODUCT ANALYTICS
+// ==========================================
+
+// Events are intentionally decoupled from the user and business relations. This
+// keeps the analytics store minimal: it can be aggregated or deleted without
+// touching operational records, and no personally identifiable data is required.
+model TrackingEvent {
+  id             String   @id @default(cuid())
+  event          String
+  occurredAt     DateTime @default(now())
+  visitorId      String?
+  sessionId      String?
+  userId         String?
+  businessId     String?
+  path           String?
+  referrerDomain String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  properties     Json?
+  createdAt      DateTime @default(now())
+
+  @@index([occurredAt])
+  @@index([event, occurredAt])
+  @@index([visitorId, occurredAt])
+  @@index([sessionId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([businessId, event, occurredAt])
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
+import { track } from "@/lib/analytics/client";
 import {
   PRICING,
   EXTRA_STAFF_COST,
@@ -179,6 +180,12 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   const [error] = useState<string | null>(null);
 
   async function handlePlanAction(key: PlanKey, isTrial: boolean) {
+    track("pricing_plan_selected", {
+      plan: key,
+      intent: isTrial ? "trial" : "subscription",
+      extra_staff: extras[key],
+      billing_cycle: cycle,
+    });
     if (isLoggedIn) {
       window.location.href = "/dashboard";
       return;

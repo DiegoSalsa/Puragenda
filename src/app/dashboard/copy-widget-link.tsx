@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { Link as LinkIcon, Check, Copy } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
+import { track } from "@/lib/analytics/client";
 
 export function CopyWidgetLink({ slug }: { slug: string }) {
   const t = useTranslations("dashboard.widgetLink");
@@ -17,6 +18,7 @@ export function CopyWidgetLink({ slug }: { slug: string }) {
   function handleCopy() {
     if (!url) return;
     navigator.clipboard.writeText(url);
+    track("dashboard_widget_link_copied", { placement: "dashboard" }, { businessSlug: slug });
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }

@@ -185,6 +185,13 @@ export const availabilityStoryLimiter = rateLimit({
   message: "Generaste muchas historias en poco tiempo. Espera unos minutos.",
 });
 
+/** Product analytics: enough room for a normal browsing session, while preventing write abuse. */
+export const trackingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: "Demasiados eventos de analítica. Intenta nuevamente en un momento.",
+});
+
 /** Marketing: 3 sends per 60 minutes */
 export const marketingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

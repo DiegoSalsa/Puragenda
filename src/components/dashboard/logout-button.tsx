@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
+import { resetAnalyticsIdentity } from "@/lib/analytics/client";
 
 export function LogoutButton() {
   const t = useTranslations("dashboard.shell");
@@ -15,6 +16,7 @@ export function LogoutButton() {
 
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+      resetAnalyticsIdentity();
     } finally {
       router.push("/login");
       router.refresh();

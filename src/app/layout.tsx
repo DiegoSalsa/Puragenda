@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { SITE_URL } from "@/lib/site";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -149,6 +150,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
             <RegisterSW />
+            <AnalyticsProvider />
             {children}
             <CookieBanner />
           </ThemeProvider>
