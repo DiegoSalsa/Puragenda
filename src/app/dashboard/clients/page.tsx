@@ -3,13 +3,24 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/server/db/prisma";
 import { ClientsTable } from "./clients-table";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { getClientListStats, listClients } from "@/server/services/client.service";
+import {
+  CLIENT_LIST_DEFAULT_LIMIT,
+  CLIENT_LIST_DEFAULT_PAGE,
+  buildClientListPath,
+  parseClientListQuery,
+} from "@/server/validations/pagination";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { getCountryConfig } from "@/core/countries";
 import { getTranslations } from "next-intl/server";
 
-export default async function ClientsPage() {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[]; limit?: string | string[]; search?: string | string[] }>;
+}) {
   const t = await getTranslations("dashboard.clients");
   const user = await getCurrentSessionUser();
   if (!user) redirect("/login");
@@ -26,55 +37,31 @@ export default async function ClientsPage() {
 
   if (!business) redirect("/dashboard/settings");
 
-  // CRM available for all plans
-  const clients = await prisma.client.findMany({
-    where: { businessId: business.id },
-    include: {
-      _count: {
-        select: { appointments: true },
-      },
-      appointments: {
-        where: { status: "CHECKED_IN" },
-        select: { id: true },
-      },
-      recurringBookings: {
-        where: { status: { in: ["ACTIVE", "PENDING_APPROVAL", "PAUSED"] } },
-        select: { id: true, status: true, durationMonths: true, startDate: true, endDate: true, service: { select: { name: true } } },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const parsed = parseClientListQuery(await searchParams);
+  const query = parsed.success
+    ? parsed.data
+    : { page: CLIENT_LIST_DEFAULT_PAGE, limit: CLIENT_LIST_DEFAULT_LIMIT, search: "" };
 
-  const clientsData = clients.map((c) => ({
-    id: c.id,
-    name: c.name,
-    email: c.email,
-    phone: c.phone,
-    rut: c.rut,
-    privateNotes: c.privateNotes,
-    totalSpent: c.totalSpent,
-    noShowCount: c.noShowCount,
-    totalAppointments: c._count.appointments,
-    completedAppointments: c.appointments.length,
-    createdAt: c.createdAt.toISOString(),
-    recurringBookings: c.recurringBookings.map((r) => ({
-      id: r.id,
-      status: r.status as string,
-      serviceName: r.service.name,
-      durationMonths: r.durationMonths,
-      startDate: r.startDate.toISOString(),
-      endDate: r.endDate.toISOString(),
-    })),
-  }));
+  const [list, stats] = await Promise.all([
+    listClients(business.id, query),
+    getClientListStats(business.id),
+  ]);
+
+  if (query.page > 1 && query.page > list.pagination.totalPages) {
+    redirect(buildClientListPath(Math.max(1, list.pagination.totalPages), query.search, query.limit));
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("registered", { count: clientsData.length })}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("registered", { count: stats.totalClients })}</p>
       </div>
       <ClientsTable
-        clients={clientsData}
+        clients={list.data}
+        pagination={list.pagination}
+        search={query.search}
+        stats={stats}
         currencyCode={business.currencyCode}
         taxIdLabel={getCountryConfig(business.countryCode).taxIdLabel}
         taxIdPlaceholder={getCountryConfig(business.countryCode).taxIdPlaceholder}

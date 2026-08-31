@@ -2,42 +2,66 @@
 
 import React from "react";
 
-import { useState, useMemo, useTransition } from "react";
-import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, StickyNote, RefreshCw, Edit2, Check, X } from "@/components/icons/hover-icons";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { Search, Users, AlertTriangle, TrendingUp, ShieldAlert, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, StickyNote, RefreshCw, Edit2, Check, X } from "@/components/icons/hover-icons";
 import { updateClientNotesAction, updateClientRutAction } from "@/server/actions/client.actions";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import { useLocale, useTranslations } from "next-intl";
+import type { ClientListItem, ClientListPagination, ClientListStats } from "@/server/services/client.service";
+import { buildClientListPath } from "@/server/validations/pagination";
 
-interface RecurringBookingSummary {
-  id: string;
-  status: string;
-  serviceName: string;
-  durationMonths: number;
-  startDate: string;
-  endDate: string;
+const pagerClassName = "inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-sm";
+
+function ClientSearchBox({ initialSearch, limit }: { initialSearch: string; limit: number }) {
+  const t = useTranslations("dashboard.clients");
+  const router = useRouter();
+  const [search, setSearch] = useState(initialSearch);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (search.trim() === initialSearch.trim()) return;
+      router.replace(buildClientListPath(1, search, limit));
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [search, initialSearch, limit, router]);
+
+  return (
+    <div className="relative">
+      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <input
+        type="search"
+        aria-label={t("searchPlaceholder")}
+        placeholder={t("searchPlaceholder")}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full rounded-xl border border-border bg-muted pl-10 pr-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/30 transition-colors"
+      />
+    </div>
+  );
 }
 
-interface ClientData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  rut: string | null;
-  privateNotes: string | null;
-  totalSpent: number;
-  noShowCount: number;
-  totalAppointments: number;
-  completedAppointments: number;
-  createdAt: string;
-  recurringBookings: RecurringBookingSummary[];
-}
-
-export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlaceholder }: { clients: ClientData[]; currencyCode: string; taxIdLabel: string; taxIdPlaceholder: string }) {
+export function ClientsTable({
+  clients,
+  pagination,
+  search: searchFromServer,
+  stats,
+  currencyCode,
+  taxIdLabel,
+  taxIdPlaceholder,
+}: {
+  clients: ClientListItem[];
+  pagination: ClientListPagination;
+  search: string;
+  stats: ClientListStats;
+  currencyCode: string;
+  taxIdLabel: string;
+  taxIdPlaceholder: string;
+}) {
   const t = useTranslations("dashboard.clients");
   const locale = useLocale();
   const router = useRouter();
-  const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingRut, setEditingRut] = useState<string | null>(null);
   const [rutValue, setRutValue] = useState("");
@@ -61,20 +85,9 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
     });
   }
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return clients;
-    const q = search.toLowerCase();
-    return clients.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        (c.phone && c.phone.includes(q))
-    );
-  }, [clients, search]);
-
-  const totalClients = clients.length;
-  const totalRevenue = clients.reduce((sum, c) => sum + c.totalSpent, 0);
-  const flaggedClients = clients.filter((c) => c.noShowCount >= 2).length;
+  const totalClients = stats.totalClients;
+  const totalRevenue = stats.totalRevenue;
+  const flaggedClients = stats.flaggedClients;
 
   return (
     <div className="min-w-0 max-w-full space-y-4">
@@ -115,25 +128,15 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder={t("searchPlaceholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-border bg-muted pl-10 pr-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 focus:border-[#7C3AED]/30 transition-colors"
-        />
-      </div>
+      <ClientSearchBox initialSearch={searchFromServer} limit={pagination.limit} />
 
       {/* Table */}
       <div className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-border bg-card">
-        {filtered.length === 0 ? (
+        {clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Users className="h-8 w-8 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">
-              {search ? t("noSearchResults") : t("noClients")}
+              {searchFromServer ? t("noSearchResults") : t("noClients")}
             </p>
           </div>
         ) : (
@@ -150,7 +153,7 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((client) => {
+                {clients.map((client) => {
                   const isBlocked = client.noShowCount >= 2;
                   return (
                     <React.Fragment key={client.id}>
@@ -379,6 +382,47 @@ export function ClientsTable({ clients, currencyCode, taxIdLabel, taxIdPlacehold
           </div>
         )}
       </div>
+
+      {pagination.totalPages > 1 && (
+        <nav
+          aria-label={t("pagination")}
+          className="flex items-center justify-between gap-3"
+        >
+          <p className="text-sm text-muted-foreground">
+            {t("pageOf", { page: pagination.page, totalPages: pagination.totalPages })}
+          </p>
+          <div className="flex items-center gap-2">
+            {pagination.page <= 1 ? (
+              <span aria-disabled="true" className={`${pagerClassName} opacity-40`}>
+                <ChevronLeft className="h-4 w-4" />
+                {t("previous")}
+              </span>
+            ) : (
+              <Link
+                href={buildClientListPath(pagination.page - 1, searchFromServer, pagination.limit)}
+                className={`${pagerClassName} hover:bg-muted`}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t("previous")}
+              </Link>
+            )}
+            {pagination.page >= pagination.totalPages ? (
+              <span aria-disabled="true" className={`${pagerClassName} opacity-40`}>
+                {t("next")}
+                <ChevronRight className="h-4 w-4" />
+              </span>
+            ) : (
+              <Link
+                href={buildClientListPath(pagination.page + 1, searchFromServer, pagination.limit)}
+                className={`${pagerClassName} hover:bg-muted`}
+              >
+                {t("next")}
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
