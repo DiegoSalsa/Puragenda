@@ -313,7 +313,7 @@ export function Theme70s({ user, business }: LandingIdentityProps) {
                 </div>
                 <p className="text-sm font-bold text-black/80 dark:text-[#FFFDD0]/80"><LocalizedText id="nAIWbZb6bUEm" /></p>
                 <div className="flex items-center justify-center rounded-xl border-[4px] border-[#009EE3] bg-white px-5 py-4 shadow-[4px_4px_0_#009EE3] mt-2">
-                  <img src="/logos/mercadopago.svg" alt="Mercado Pago" className="h-14 w-auto" />
+                  <img src="/logos/mercadopago.svg" alt="Mercado Pago" width="183" height="74" className="h-14 w-auto" />
                 </div>
               </div>
             </div>

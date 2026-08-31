@@ -23,7 +23,7 @@ export const guides: Guide[] = [
     description:
       "Guía práctica para talleres, artistas y negocios que reciben encargos personalizados con meses de anticipación, cupos limitados y pagos de reserva.",
     eyebrow: "Encargos y producción",
-    updatedAt: "2026-07-23",
+    updatedAt: "2026-08-31",
     readingMinutes: 8,
     sections: [
       {
@@ -101,7 +101,7 @@ export const guides: Guide[] = [
     description:
       "Qué mostrar antes del pago, cómo confirmar una reserva y qué políticas definir al cobrar una seña o abono por internet.",
     eyebrow: "Pagos y reservas",
-    updatedAt: "2026-07-23",
+    updatedAt: "2026-08-31",
     readingMinutes: 7,
     sections: [
       {
@@ -164,7 +164,7 @@ export const guides: Guide[] = [
     description:
       "Un sistema práctico de confirmaciones, recordatorios, abonos y reglas de cancelación para disminuir horas perdidas sin hostigar a los clientes.",
     eyebrow: "Operación de agenda",
-    updatedAt: "2026-07-23",
+    updatedAt: "2026-08-31",
     readingMinutes: 7,
     sections: [
       {
@@ -232,7 +232,7 @@ export const guides: Guide[] = [
     description:
       "Criterios verificables para comparar agendas digitales, pagos, soporte, costos y experiencia del cliente antes de contratar.",
     eyebrow: "Comparación de software",
-    updatedAt: "2026-07-23",
+    updatedAt: "2026-08-31",
     readingMinutes: 9,
     sections: [
       {

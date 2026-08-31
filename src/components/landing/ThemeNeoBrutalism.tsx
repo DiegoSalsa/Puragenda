@@ -4,6 +4,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ArrowRight, CalendarClock, Scissors, Sparkles, Stethoscope, Users, Palette, Shield, CreditCard } from "@/components/icons/hover-icons";
 import { Navbar } from "@/components/landing/navbar";
@@ -12,6 +13,7 @@ import { Theme70s } from "@/components/landing/Theme70s";
 import type { LandingIdentityProps } from "@/components/landing/types";
 import { useTranslations } from "next-intl";
 import { track } from "@/lib/analytics/client";
+import { customerTestimonials } from "@/lib/data/testimonials";
 const Footer = dynamic(() => import("@/components/landing/footer").then((m) => m.Footer), { ssr: true });
 
 const neoVars: React.CSSProperties & Record<string, string> = {
@@ -357,7 +359,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               <p className="text-sm font-bold text-black/70 dark:text-white/70">{t("onlineDepositsText")}</p>
               {/* MercadoPago official logo */}
               <div className="flex items-center justify-center rounded-lg border-2 border-[#009EE3] bg-white px-5 py-3.5 shadow-[2px_2px_0_#009EE3]">
-                <img src="/logos/mercadopago.svg" alt="Mercado Pago" className="h-16 w-auto" />
+                <Image src="/logos/mercadopago.svg" alt="Mercado Pago" width={198} height={80} className="h-16 w-auto" />
               </div>
             </div>
           </div>
@@ -402,41 +404,41 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {/* Card 1 - amarillo, rotada levemente */}
-            <div className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
-              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialOne")}</p>
-              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
-                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">V</div>
+            <figure className="rounded-2xl border-4 border-black bg-[#FFF5BA] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFF5BA] flex flex-col gap-4 rotate-[-0.8deg]">
+              <span aria-hidden="true" className="text-4xl font-black text-black/20 leading-none select-none">“</span>
+              <blockquote lang="es" className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{customerTestimonials[0].quote}</blockquote>
+              <figcaption className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#FFB5E8] flex items-center justify-center text-lg font-black text-black shrink-0">{customerTestimonials[0].initial}</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="Hle8mLHoThST" /></p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60"><LocalizedText id="v8gaH59R-d6E" /></p>
+                  <p className="text-sm font-black text-black dark:text-white">{customerTestimonials[0].author}</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{customerTestimonials[0].business}</p>
                 </div>
-              </div>
-            </div>
+              </figcaption>
+            </figure>
             {/* Card 2 - verde, un poco mas grande visualmente */}
-            <div className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
-              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialTwo")}</p>
-              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
-                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">M</div>
+            <figure className="rounded-2xl border-4 border-black bg-[#BFFCC6] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#BFFCC6] flex flex-col gap-4 md:-translate-y-3">
+              <span aria-hidden="true" className="text-4xl font-black text-black/20 leading-none select-none">“</span>
+              <blockquote lang="es" className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{customerTestimonials[1].quote}</blockquote>
+              <figcaption className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#85E3FF] flex items-center justify-center text-lg font-black text-black shrink-0">{customerTestimonials[1].initial}</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="D8s4ptaGQnCI" /></p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("clinicType")}</p>
+                  <p className="text-sm font-black text-black dark:text-white">{customerTestimonials[1].author}</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{customerTestimonials[1].business}</p>
                 </div>
-              </div>
-            </div>
+              </figcaption>
+            </figure>
             {/* Card 3 - cyan, rotada al otro lado */}
-            <div className="rounded-2xl border-4 border-black bg-[#85E3FF] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#85E3FF] flex flex-col gap-4 rotate-[0.8deg]">
-              <span className="text-4xl font-black text-black/20 leading-none select-none"><LocalizedText id="wtzcjbLNrVZ_" /></span>
-              <p className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{t("testimonialThree")}</p>
-              <div className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
-                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#B28DFF] flex items-center justify-center text-lg font-black text-black shrink-0">C</div>
+            <figure className="rounded-2xl border-4 border-black bg-[#85E3FF] dark:bg-black dark:border-white p-7 shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#85E3FF] flex flex-col gap-4 rotate-[0.8deg]">
+              <span aria-hidden="true" className="text-4xl font-black text-black/20 leading-none select-none">“</span>
+              <blockquote lang="es" className="text-base font-bold text-black dark:text-white leading-relaxed -mt-4">{customerTestimonials[2].quote}</blockquote>
+              <figcaption className="flex items-center gap-3 mt-auto pt-4 border-t-2 border-black/20 dark:border-white/20">
+                <div className="h-11 w-11 rounded-xl border-2 border-black shadow-[2px_2px_0_#000] bg-[#B28DFF] flex items-center justify-center text-lg font-black text-black shrink-0">{customerTestimonials[2].initial}</div>
                 <div>
-                  <p className="text-sm font-black text-black dark:text-white"><LocalizedText id="LCmtJSuhpp_c" /></p>
-                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{t("salonType")}</p>
+                  <p className="text-sm font-black text-black dark:text-white">{customerTestimonials[2].author}</p>
+                  <p className="text-xs font-bold text-black/60 dark:text-white/60">{customerTestimonials[2].business}</p>
                 </div>
-              </div>
-            </div>
+              </figcaption>
+            </figure>
           </div>
         </section>
 

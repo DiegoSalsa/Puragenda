@@ -5,14 +5,19 @@ import { absoluteUrl } from "@/lib/site";
 import { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SUPPORTED_LOCALES } from "@/i18n/config";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { customerTestimonials } from "@/lib/data/testimonials";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const t = await getTranslations({ locale, namespace: "metadata" });
+  const title = locale === "es" ? "Sistema de reservas online en Chile | Puragenda" : t("homeTitle");
+  const description = locale === "es"
+    ? "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos y organiza clientes, horarios y profesionales. Prueba 30 días gratis."
+    : t("homeDescription");
   return {
-    title: { absolute: t("homeTitle") },
-    description: t("homeDescription"),
-    alternates: { canonical: absoluteUrl("/") },
+    ...createPageMetadata({ title, description, path: "/" }),
+    title: { absolute: title },
   };
 }
 
@@ -58,6 +63,18 @@ export default async function HomePage() {
       name: "PuroCode",
       url: "https://purocode.com",
     },
+    review: customerTestimonials.map((testimonial) => ({
+      "@type": "Review",
+      reviewBody: testimonial.quote,
+      inLanguage: "es-CL",
+      author: testimonial.authorType === "Person"
+        ? {
+            "@type": "Person",
+            name: testimonial.author,
+            affiliation: { "@type": "Organization", name: testimonial.business },
+          }
+        : { "@type": "Organization", name: testimonial.author },
+    })),
   };
 
   const jsonLdOrg = {
@@ -102,9 +119,9 @@ export default async function HomePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdOrg) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdWebsite) }} />
       <ThemeNeoBrutalism user={user} business={business} />
     </>
   );

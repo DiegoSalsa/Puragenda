@@ -9,6 +9,7 @@ import { industriesData } from "@/lib/data/industries";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import {
   Accordion,
   AccordionContent,
@@ -29,22 +30,12 @@ export async function generateMetadata({ params }: { params: Promise<{ industry:
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) return {};
 
-  const url = absoluteUrl(`/para/${data.slug}`);
-
-  return {
+  return createPageMetadata({
     title: data.title,
     description: data.description,
+    path: `/para/${data.slug}`,
     keywords: data.keywords,
-    openGraph: {
-      title: data.title,
-      description: data.description,
-      url,
-      type: "website",
-    },
-    alternates: {
-      canonical: url,
-    },
-  };
+  });
 }
 
 export default async function IndustryPage({ params }: { params: Promise<{ industry: string }> }) {
@@ -102,9 +93,9 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
 
   return (
     <LandingLayout user={user} business={business}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumbs) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdFaq) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdBreadcrumbs) }} />
 
       {/* HERO */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">
@@ -131,6 +122,24 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
           </a>
         </div>
         <p className="mt-8 text-sm font-bold opacity-50"><LocalizedText id="0-9SNZCT992I" /></p>
+      </section>
+
+      <section className="mx-auto w-full max-w-5xl px-6 pb-20" aria-labelledby="respuesta-rubro">
+        <div className="grid gap-8 rounded-3xl border-4 border-black bg-white p-8 shadow-[8px_8px_0_#000] dark:border-white dark:bg-[#111] dark:shadow-[8px_8px_0_#fff] md:grid-cols-[1.4fr_1fr] md:p-10">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wider text-[#6D28D9] dark:text-[#C4B5FD]">Respuesta rápida</p>
+            <h2 id="respuesta-rubro" className="mt-3 text-3xl font-black uppercase tracking-tight">¿Cómo ayuda una agenda online a {data.name.toLowerCase()}?</h2>
+            <p className="mt-5 text-lg font-bold leading-8 opacity-80">{data.description} El cliente ve solo horarios realmente disponibles y el negocio conserva el control de profesionales, servicios y reglas de reserva.</p>
+          </div>
+          <div className="border-t-4 border-black pt-6 dark:border-white md:border-l-4 md:border-t-0 md:pl-8 md:pt-0">
+            <h3 className="text-xl font-black uppercase">Flujo en 3 pasos</h3>
+            <ol className="mt-4 space-y-3 font-bold">
+              <li><span className="mr-2 text-[#7C3AED]">1.</span>Configura servicios y disponibilidad.</li>
+              <li><span className="mr-2 text-[#7C3AED]">2.</span>Comparte tu enlace de reservas.</li>
+              <li><span className="mr-2 text-[#7C3AED]">3.</span>Recibe y gestiona cada cita.</li>
+            </ol>
+          </div>
+        </div>
       </section>
 
       {/* BENEFITS */}

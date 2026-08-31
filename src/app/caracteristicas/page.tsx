@@ -6,13 +6,13 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3, Database, Gift, Stamp, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
-import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Características del sistema de reservas",
-  description: "Descubre todas las funcionalidades de Puragenda para tu negocio.",
-  alternates: { canonical: absoluteUrl("/caracteristicas") },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: "Características del sistema de reservas Puragenda",
+  description: "Reservas 24/7, abonos, múltiples profesionales, Google Calendar, recordatorios, CRM, fidelización y encargos para negocios en Chile.",
+  path: "/caracteristicas",
+});
 
 const bentoFeatures = [
   { title: "Reservas 24/7", description: "Tus clientes agendan solos, incluso cuando duermes.", icon: CalendarClock, bg: "bg-[#B28DFF]", colSpan: "md:col-span-2", size: "text-2xl" },

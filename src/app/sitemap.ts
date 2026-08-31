@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 import { industriesData } from "@/lib/data/industries";
 import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
+import { featureSolutions } from "@/lib/data/feature-solutions";
 
-const contentUpdatedAt = new Date("2026-07-23T00:00:00-04:00");
+const contentUpdatedAt = new Date("2026-08-31T00:00:00-04:00");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -40,5 +41,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticRoutes, ...industryRoutes, ...guideRoutes];
+  const featureRoutes: MetadataRoute.Sitemap = featureSolutions.map((feature) => ({
+    url: absoluteUrl(`/funciones/${feature.slug}`),
+    lastModified: contentUpdatedAt,
+    changeFrequency: "monthly",
+    priority: 0.9,
+  }));
+
+  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes];
 }

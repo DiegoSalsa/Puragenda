@@ -78,3 +78,10 @@ export const privacyDistributedLimiter = distributedRateLimit({
   message: "Demasiadas solicitudes de privacidad. Intenta nuevamente más tarde.",
 });
 
+export const contactDistributedLimiter = distributedRateLimit({
+  namespace: "contact-lead",
+  windowMs: 3_600_000,
+  max: 5,
+  message: "Demasiados mensajes de contacto. Intenta nuevamente más tarde.",
+});
+

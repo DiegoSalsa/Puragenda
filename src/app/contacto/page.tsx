@@ -6,12 +6,15 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { Mail, Phone } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import { ContactForm } from "@/components/landing/contact-form";
-import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata } from "@/lib/seo";
 import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("contact");
-  return { title: t("metadataTitle"), description: t("metadataDescription"), alternates: { canonical: absoluteUrl("/contacto") } };
+  return createPageMetadata({
+    title: "Contacto y demostración de Puragenda",
+    description: "Conversa con el equipo de Puragenda sobre reservas, abonos, migración o configuración. Atención directa en español para negocios en Chile.",
+    path: "/contacto",
+  });
 }
 
 export default async function ContactoPage() {

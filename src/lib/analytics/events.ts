@@ -1,6 +1,8 @@
 export const TRACKING_EVENTS = [
   "page_view",
   "landing_cta_clicked",
+  "contact_lead_submitted",
+  "whatsapp_clicked",
   "pricing_plan_selected",
   "registration_started",
   "registration_completed",
@@ -26,12 +28,14 @@ export type TrackingProperties = Record<string, TrackingPropertyValue>;
 // This is a deny-by-default schema. Adding an event or property is an explicit
 // product decision and makes accidental collection of PII much harder.
 export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]> = {
-  page_view: ["page_type"],
-  landing_cta_clicked: ["cta", "placement"],
-  pricing_plan_selected: ["plan", "intent", "extra_staff", "billing_cycle"],
-  registration_started: ["plan", "intent", "extra_staff"],
-  registration_completed: ["plan", "intent", "country"],
-  checkout_started: ["plan", "provider", "extra_staff"],
+  page_view: ["page_type", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  landing_cta_clicked: ["cta", "placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  contact_lead_submitted: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  whatsapp_clicked: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  pricing_plan_selected: ["plan", "intent", "extra_staff", "billing_cycle", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  registration_started: ["plan", "intent", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  registration_completed: ["plan", "intent", "country", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  checkout_started: ["plan", "provider", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
   login_completed: [],
   widget_opened: ["embedded", "has_locations", "has_preselected_service", "preview_mode"],
   booking_service_selected: ["booking_mode", "service_count", "has_deposit", "has_options"],

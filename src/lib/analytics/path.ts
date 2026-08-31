@@ -6,6 +6,7 @@ const STATIC_PATHS = new Set([
   "/faq",
   "/sobre-nosotros",
   "/contacto",
+  "/alternativa-agendapro",
   "/politica-de-privacidad",
   "/terminos-y-condiciones",
   "/privacidad/solicitud",
@@ -25,6 +26,7 @@ const DYNAMIC_ROUTES: Array<[RegExp, string]> = [
   [/^\/encargo\/[^/]+(?:\/.*)?$/, "/encargo/[order]"],
   [/^\/guias\/[^/]+(?:\/.*)?$/, "/guias/[slug]"],
   [/^\/para\/[^/]+(?:\/.*)?$/, "/para/[industry]"],
+  [/^\/funciones\/[^/]+(?:\/.*)?$/, "/funciones/[slug]"],
 ];
 
 /**

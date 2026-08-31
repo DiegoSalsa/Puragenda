@@ -6,13 +6,13 @@ import { ArrowRight, Code2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Sobre nosotros",
-  description: "Conoce a PuroCode, el equipo detrás de Puragenda. Desarrollamos software SaaS de alta calidad para negocios locales en Chile y Latinoamérica.",
-  alternates: { canonical: absoluteUrl("/sobre-nosotros") },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: "Sobre Puragenda y el equipo de PuroCode",
+  description: "Conoce al equipo chileno detrás de Puragenda, la plataforma de reservas creada para negocios locales y profesionales de servicios.",
+  path: "/sobre-nosotros",
+});
 
 export default async function AboutPage() {
   const user = await getCurrentSessionUser();

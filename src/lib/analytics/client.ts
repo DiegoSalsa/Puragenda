@@ -12,6 +12,7 @@ import { normalizeTrackingPath } from "@/lib/analytics/path";
 
 const VISITOR_ID_KEY = "puragenda_tracking_visitor_id";
 const SESSION_ID_KEY = "puragenda_tracking_session_id";
+const ATTRIBUTION_KEY = "puragenda_first_touch";
 
 let posthogInitialized = false;
 
@@ -46,6 +47,45 @@ function currentContext() {
     utmMedium: url.searchParams.get("utm_medium") || undefined,
     utmCampaign: url.searchParams.get("utm_campaign") || undefined,
   };
+}
+
+type FirstTouchAttribution = {
+  landingPath: string;
+  referrerDomain?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+};
+
+function firstTouchAttribution(): FirstTouchAttribution {
+  const stored = window.localStorage.getItem(ATTRIBUTION_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as FirstTouchAttribution;
+      if (parsed.landingPath) return parsed;
+    } catch {
+      window.localStorage.removeItem(ATTRIBUTION_KEY);
+    }
+  }
+
+  const url = new URL(window.location.href);
+  let referrerDomain: string | undefined;
+  try {
+    const referrer = document.referrer ? new URL(document.referrer) : null;
+    if (referrer && referrer.hostname !== url.hostname) referrerDomain = referrer.hostname;
+  } catch {
+    referrerDomain = undefined;
+  }
+
+  const attribution: FirstTouchAttribution = {
+    landingPath: normalizeTrackingPath(url.pathname),
+    referrerDomain,
+    utmSource: url.searchParams.get("utm_source") || undefined,
+    utmMedium: url.searchParams.get("utm_medium") || undefined,
+    utmCampaign: url.searchParams.get("utm_campaign") || undefined,
+  };
+  window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution));
+  return attribution;
 }
 
 export function initializeAnalytics() {
@@ -104,7 +144,15 @@ export function track(
   if (typeof window === "undefined" || !hasAnalyticsConsent()) return;
 
   initializeAnalytics();
-  const safeProperties = sanitizeTrackingProperties(event, properties);
+  const attribution = firstTouchAttribution();
+  const safeProperties = sanitizeTrackingProperties(event, {
+    ...properties,
+    landing_path: attribution.landingPath,
+    first_referrer_domain: attribution.referrerDomain,
+    first_utm_source: attribution.utmSource,
+    first_utm_medium: attribution.utmMedium,
+    first_utm_campaign: attribution.utmCampaign,
+  });
   const browserContext = currentContext();
   const payload = {
     event,

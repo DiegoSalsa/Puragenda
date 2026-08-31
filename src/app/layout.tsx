@@ -5,6 +5,7 @@ import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { SITE_URL } from "@/lib/site";
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import "./globals.css";
@@ -22,18 +23,16 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Puragenda — Reservas online, abonos y agenda para negocios",
+    default: "Sistema de reservas online en Chile | Puragenda",
     template: "%s | Puragenda",
   },
   description:
-    "Sistema de reservas online para negocios de servicios y encargos. Gestiona citas, cupos, abonos, clientes y profesionales desde un solo lugar.",
+    "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos y gestiona clientes, horarios y profesionales desde un solo lugar.",
   keywords: [
     "sistema de reservas online",
     "agenda online",
@@ -75,24 +74,24 @@ const baseMetadata: Metadata = {
     locale: "es_CL",
     url: "/",
     siteName: "Puragenda",
-    title: "Puragenda — Reservas online, abonos y agenda para negocios",
+    title: "Sistema de reservas online en Chile | Puragenda",
     description:
-      "Gestiona citas, encargos, cupos, abonos, clientes y profesionales desde un solo lugar.",
+      "Recibe reservas 24/7, cobra abonos y gestiona clientes, horarios y profesionales desde un solo lugar.",
     images: [
       {
-        url: "/android-chrome-512x512.png",
-        width: 512,
-        height: 512,
-        alt: "Puragenda Logo",
+        url: DEFAULT_SOCIAL_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Puragenda — sistema de reservas online para negocios en Chile",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Puragenda — Reservas online, abonos y agenda para negocios",
+    title: "Sistema de reservas online en Chile | Puragenda",
     description:
-      "Gestiona citas, encargos, cupos, abonos, clientes y profesionales desde un solo lugar.",
-    images: ["/android-chrome-512x512.png"],
+      "Recibe reservas 24/7, cobra abonos y gestiona clientes, horarios y profesionales desde un solo lugar.",
+    images: [DEFAULT_SOCIAL_IMAGE],
   },
   robots: {
     index: true,

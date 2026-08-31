@@ -8,20 +8,13 @@ import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Guías de reservas, abonos y gestión de agenda",
-  description:
-    "Guías prácticas para elegir un sistema de reservas, cobrar abonos, reducir inasistencias y administrar encargos con fechas de entrega futuras.",
-  alternates: { canonical: absoluteUrl("/guias") },
-  openGraph: {
-    title: "Guías de reservas, abonos y gestión de agenda",
-    description:
-      "Contenido práctico para negocios que trabajan con citas, clientes, abonos o encargos.",
-    url: absoluteUrl("/guias"),
-    type: "website",
-  },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: "Guías de reservas, abonos y agenda online",
+  description: "Contenido práctico para elegir un sistema de reservas en Chile, cobrar abonos, reducir inasistencias y organizar encargos y equipos.",
+  path: "/guias",
+});
 
 export default async function GuidesPage() {
   const user = await getCurrentSessionUser();
@@ -44,7 +37,7 @@ export default async function GuidesPage() {
     <LandingLayout user={user} business={business}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <main className="mx-auto w-full max-w-6xl px-6 py-16">
         <header className="mx-auto max-w-4xl text-center">

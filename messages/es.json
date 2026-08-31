@@ -16,7 +16,7 @@
     "locationError": "No pudimos acceder a tu ubicación. Puedes elegir el idioma manualmente."
   },
   "metadata": {
-    "siteTitle": "Puragenda — Reservas online y agenda para negocios", "siteDescription": "Sistema de reservas online para gestionar citas, clientes y profesionales desde un solo lugar.", "homeTitle": "Puragenda — Tu agenda online", "homeDescription": "Recibe reservas, cobra abonos y gestiona tu negocio con una agenda online disponible 24/7."
+    "siteTitle": "Sistema de reservas online en Chile | Puragenda", "siteDescription": "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos y gestiona clientes, horarios y profesionales.", "homeTitle": "Sistema de reservas online en Chile | Puragenda", "homeDescription": "Recibe reservas 24/7, cobra abonos y organiza clientes, horarios y profesionales. Prueba Puragenda gratis por 30 días."
   },
   "navigation": {
     "discounts": "Códigos de descuento",
@@ -40,7 +40,7 @@
     "noCommissions": "Sin comisiones",
     "freeTrial": "30 días gratis",
     "noContract": "Sin contrato",
-    "srTitle": "Tu agenda online inteligente, automática y disponible 24/7",
+    "srTitle": "Sistema de reservas online para negocios en Chile, disponible 24/7",
     "titleLine1": "Tu agenda",
     "titleLine2": "online",
     "carousel": "PURAGENDA.|INTELIGENTE.|AUTOMÁTICA.|24/7 ONLINE.|SIN ESTRÉS.",
@@ -63,7 +63,7 @@
     "gelManicure": "Manicure gel",
     "readyTitle": "Tu agenda online lista en minutos",
     "footerDescription": "Plataforma de agendamiento inteligente para negocios que trabajan por reserva.",
-    "adminPreview": "Panel de administración · Vista del dueño", "appointments": "Citas", "team": "Equipo", "services": "Servicios", "today": "Hoy", "upcoming": "Próximas citas", "customization": "Personalización", "customizationText": "Cada negocio define sus colores. El widget se adapta a su marca.", "multiProfessional": "Multi-profesional", "multiProfessionalText": "Cada profesional tiene su propio horario y agenda independiente.", "collisionProtection": "Protección de horarios", "collisionProtectionText": "Detección automática de colisiones. Nunca dos citas iguales.", "onlineDeposits": "Abonos online", "onlineDepositsText": "Cobra abonos al momento de la reserva, directamente desde el widget.", "calendarSyncText": "Sincroniza citas y bloquea las horas ocupadas con Google Calendar.", "testimonialsTitle": "Negocios que recuperaron el control de su agenda", "testimonialOne": "Coordinaba todo por WhatsApp y era un caos. Ahora mis clientas reservan solas y yo recibo cada actualización.", "testimonialTwo": "Cuatro profesionales con horarios distintos y sin cruces. Los recordatorios redujeron las inasistencias.", "testimonialThree": "Los clientes acumulan recompensas y vuelven a canjearlas. La fidelización ocurre sin trabajo manual.", "clinicType": "Clínica de kinesiología", "salonType": "Peluquería y barbería", "readyText": "Te acompañamos desde la configuración inicial hasta la publicación en tu sitio."
+    "adminPreview": "Panel de administración · Vista del dueño", "appointments": "Citas", "team": "Equipo", "services": "Servicios", "today": "Hoy", "upcoming": "Próximas citas", "customization": "Personalización", "customizationText": "Cada negocio define sus colores. El widget se adapta a su marca.", "multiProfessional": "Multi-profesional", "multiProfessionalText": "Cada profesional tiene su propio horario y agenda independiente.", "collisionProtection": "Protección de horarios", "collisionProtectionText": "Detección automática de colisiones. Nunca dos citas iguales.", "onlineDeposits": "Abonos online", "onlineDepositsText": "Cobra abonos al momento de la reserva, directamente desde el widget.", "calendarSyncText": "Sincroniza citas y bloquea las horas ocupadas con Google Calendar.", "testimonialsTitle": "Lo que dicen clientes reales de Puragenda", "testimonialOne": "Nos ha ayudado mucho a llevar todo el control de la barbería, además de que siempre hay buena disposición a escuchar nuestro feedback.", "testimonialTwo": "Plataforma con mucha calidad y escuchan a los clientes.", "testimonialThree": "Me ha ayudado a dejar de lado WhatsApp y a dejar de perder mensajes. Tengo todo mucho más ordenado.", "clinicType": "Clínica de kinesiología", "salonType": "Peluquería y barbería", "readyText": "Te acompañamos desde la configuración inicial hasta la publicación en tu sitio."
   },
   "auth": {
     "loginTitle": "Iniciar sesión",

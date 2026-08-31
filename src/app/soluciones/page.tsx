@@ -6,13 +6,15 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
-import { absoluteUrl } from "@/lib/site";
+import { featureSolutions } from "@/lib/data/feature-solutions";
+import { industriesData } from "@/lib/data/industries";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Soluciones por industria",
-  description: "Descubre cómo Puragenda se adapta a las necesidades específicas de tu rubro.",
-  alternates: { canonical: absoluteUrl("/soluciones") },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: "Soluciones de reservas online para negocios",
+  description: "Explora agendas por rubro, reservas con abono, coordinación de equipos, Google Calendar y gestión de encargos para negocios en Chile.",
+  path: "/soluciones",
+});
 
 const metrics = [
   { value: "24/7", label: "Reservas fuera de horario", icon: Clock, bg: "bg-[#FFB5E8]" },
@@ -34,6 +36,22 @@ export default async function SolucionesPage() {
         <p className="text-xl font-bold mb-16 opacity-80 max-w-3xl mx-auto">
           <LocalizedText id="XaaVBSSUhVPw" />
         </p>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-20" aria-labelledby="rubros-heading">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="font-black uppercase text-[#7C3AED]">Agendas por rubro</p>
+          <h2 id="rubros-heading" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">Una experiencia adaptada a tu forma de trabajar</h2>
+        </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {industriesData.map((industry) => (
+            <Link key={industry.slug} href={`/para/${industry.slug}`} className="group rounded-2xl border-4 border-black bg-white p-5 text-black shadow-[5px_5px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              <h3 className="text-lg font-black uppercase">{industry.name}</h3>
+              <p className="mt-3 text-sm font-bold leading-6 opacity-70">{industry.description}</p>
+              <span className="mt-4 inline-flex font-black text-[#5B21B6] underline underline-offset-4 group-hover:no-underline">Ver solución <span aria-hidden="true">→</span></span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* Zig Zag Layouts */}
@@ -134,6 +152,28 @@ export default async function SolucionesPage() {
             <Link href="/guias/agenda-encargos-con-abono" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
               <LocalizedText id="BWkP2tnsea3X" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y-4 border-black bg-[#FFF5BA] py-20 text-black dark:border-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="font-black uppercase text-[#7C3AED]">Funciones para vender capacidad</p>
+            <h2 className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-6xl">Elige el flujo que necesita tu negocio</h2>
+            <p className="mt-5 text-lg font-bold opacity-75">Páginas detalladas para evaluar cada función antes de iniciar tu prueba.</p>
+          </div>
+          <div className="mt-12 grid gap-7 md:grid-cols-3">
+            {featureSolutions.map((feature, index) => (
+              <article key={feature.slug} className={`border-4 border-black p-7 shadow-[7px_7px_0_#000] ${["bg-[#BFFCC6]", "bg-[#FFB5E8]", "bg-[#85E3FF]"][index % 3]}`}>
+                <p className="text-xs font-black uppercase tracking-wider">{feature.eyebrow}</p>
+                <h3 className="mt-3 text-2xl font-black uppercase">{feature.title}</h3>
+                <p className="mt-4 font-bold leading-7 opacity-75">{feature.directAnswer}</p>
+                <Link href={`/funciones/${feature.slug}`} className="mt-6 inline-flex items-center gap-2 font-black uppercase text-[#5B21B6] underline">
+                  Ver cómo funciona <span aria-hidden="true">→</span>
+                </Link>
+              </article>
+            ))}
           </div>
         </div>
       </section>

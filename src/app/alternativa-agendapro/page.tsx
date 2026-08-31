@@ -6,20 +6,16 @@ import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "@/component
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Alternativa a AgendaPro: guía de comparación",
+export const metadata: Metadata = createPageMetadata({
+  title: "AgendaPro: precios y alternativa para reservas",
   description:
-    "Compara Puragenda con AgendaPro usando precio total, flujo de reserva, pagos, exportación, soporte y necesidades reales de tu negocio.",
-  alternates: { canonical: absoluteUrl("/alternativa-agendapro") },
-  openGraph: {
-    title: "Alternativa a AgendaPro: guía de comparación",
-    description:
-      "Una comparación transparente para elegir software de reservas en Chile sin depender de afirmaciones difíciles de verificar.",
-    url: absoluteUrl("/alternativa-agendapro"),
-    type: "article",
-  },
-};
+    "¿Cuánto cuesta AgendaPro? Revisa qué comparar en precios, reservas, abonos, soporte y datos antes de elegir AgendaPro o una alternativa en Chile.",
+  path: "/alternativa-agendapro",
+  keywords: ["AgendaPro precios", "cuánto cuesta AgendaPro", "alternativa AgendaPro", "AgendaPro Chile"],
+  type: "article",
+});
 
 const criteria = [
   {
@@ -54,6 +50,21 @@ const criteria = [
   },
 ];
 
+const faq = [
+  {
+    question: "¿Cuánto cuesta AgendaPro?",
+    answer: "Los precios y condiciones de AgendaPro pueden cambiar según el plan y el negocio. Para comparar correctamente, solicita su cotización vigente y confirma qué funciones, usuarios y cobros adicionales incluye. Puragenda publica planes desde $12.990 CLP al mes.",
+  },
+  {
+    question: "¿Qué alternativa a AgendaPro existe en Chile?",
+    answer: "Puragenda es una alternativa chilena para profesionales y equipos que necesitan reservas online, abonos, personalización y soporte directo en español, con 30 días de prueba sin tarjeta.",
+  },
+  {
+    question: "¿Qué debería comparar además del precio mensual?",
+    answer: "Compara el costo total, cantidad de profesionales, experiencia móvil del cliente, pagos o abonos, recordatorios, exportación de datos, soporte y facilidad de migración.",
+  },
+];
+
 export default function AlternativaAgendaProPage() {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -62,7 +73,7 @@ export default function AlternativaAgendaProPage() {
     description:
       "Criterios verificables para comparar Puragenda, AgendaPro y otras plataformas de reservas.",
     datePublished: "2026-07-23",
-    dateModified: "2026-07-23",
+    dateModified: "2026-08-31",
     inLanguage: "es-CL",
     mainEntityOfPage: absoluteUrl("/alternativa-agendapro"),
     author: {
@@ -71,10 +82,20 @@ export default function AlternativaAgendaProPage() {
       url: absoluteUrl("/sobre-nosotros"),
     },
   };
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       <Navbar />
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pt-40">
@@ -90,6 +111,17 @@ export default function AlternativaAgendaProPage() {
             <LocalizedText id="Zd1r5e2CNA7Z" />
           </p>
         </header>
+
+        <section className="mx-auto mt-14 max-w-4xl rounded-3xl border-4 border-black bg-[#E9D5FF] p-7 text-black shadow-[7px_7px_0_#000] dark:border-white sm:p-9" aria-labelledby="precio-agendapro">
+          <p className="text-sm font-black uppercase tracking-wider">Respuesta breve</p>
+          <h2 id="precio-agendapro" className="mt-2 text-3xl font-black uppercase tracking-tight">¿Cuánto cuesta AgendaPro?</h2>
+          <p className="mt-4 text-lg font-bold leading-8">
+            AgendaPro puede adaptar sus precios y condiciones al plan contratado. Para obtener una cifra comparable, pide una cotización vigente y confirma qué incluye. Puragenda publica planes desde <strong>$12.990 CLP al mes</strong>, con 30 días de prueba sin tarjeta y reservas ilimitadas.
+          </p>
+          <Link href="/pricing" className="mt-6 inline-flex items-center gap-2 font-black underline decoration-2 underline-offset-4">
+            Ver precios publicados de Puragenda <ArrowRight className="h-4 w-4" />
+          </Link>
+        </section>
 
         <section className="mt-16" aria-labelledby="comparison-heading">
           <h2 id="comparison-heading" className="text-3xl font-black uppercase tracking-tight">
@@ -158,6 +190,18 @@ export default function AlternativaAgendaProPage() {
                 <LocalizedText id="2L7icG6B0ZJi" /> <ExternalLink className="h-4 w-4" />
               </span>
             </a>
+          </div>
+        </section>
+
+        <section className="mx-auto mt-20 max-w-4xl" aria-labelledby="faq-comparacion">
+          <h2 id="faq-comparacion" className="text-3xl font-black uppercase">Preguntas frecuentes</h2>
+          <div className="mt-7 space-y-5">
+            {faq.map((item) => (
+              <article key={item.question} className="rounded-2xl border-4 border-black bg-white p-6 text-black shadow-[5px_5px_0_#000] dark:border-white">
+                <h3 className="text-xl font-black">{item.question}</h3>
+                <p className="mt-3 font-medium leading-7 opacity-80">{item.answer}</p>
+              </article>
+            ))}
           </div>
         </section>
 

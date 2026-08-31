@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Menu, X } from "@/components/icons/hover-icons";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -55,7 +56,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           {/* Logo */}
           <div className="flex w-[8.5rem] shrink-0 items-center justify-start min-[1500px]:w-[9.75rem]">
             <Link href="/" className="flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]">
-              <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-10 w-auto origin-left scale-[1.2] sm:h-12 min-[1500px]:h-14 min-[1500px]:scale-[1.35]" />
+              <Image src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} width={166} height={95} priority className="h-10 w-auto origin-left scale-[1.2] sm:h-12 min-[1500px]:h-14 min-[1500px]:scale-[1.35]" />
             </Link>
           </div>
 
@@ -86,7 +87,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               <Link href="/dashboard">
                 <button className="group flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-2 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
                   {business?.logoUrl ? (
-                    <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded-md object-cover" />
+                    <Image src={business.logoUrl} alt={business.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
                   ) : (
                     <Store className="h-4 w-4 text-[#7C3AED]" />
                   )}
@@ -146,7 +147,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/50 p-6">
                 <div className="flex items-center gap-2.5">
-                  <img src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} className="h-10 sm:h-12 w-auto scale-[1.3] origin-left" />
+                  <Image src="/logos/logoPuragendaSVG.svg" alt={legacy("VtgsteC0Ewqn")} width={166} height={95} className="h-10 w-auto origin-left scale-[1.3] sm:h-12" />
                 </div>
                 <button aria-label={t("closeMenu")} onClick={() => setMobileOpen(false)} className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <X className="h-5 w-5" />
@@ -184,7 +185,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block">
                     <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border/50 bg-card/60 py-3 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
                       {business?.logoUrl ? (
-                        <img src={business.logoUrl} alt={business.name} className="h-5 w-5 rounded-md object-cover" />
+                        <Image src={business.logoUrl} alt={business.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
                       ) : (
                         <Store className="h-4 w-4 text-[#7C3AED]" />
                       )}

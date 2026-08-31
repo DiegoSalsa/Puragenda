@@ -9,6 +9,7 @@ import { getGuide, guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
+import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
 type GuidePageProps = { params: Promise<{ slug: string }> };
 
@@ -23,20 +24,14 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
   const guide = getGuide(slug);
   if (!guide) return {};
 
-  const url = absoluteUrl(`/guias/${guide.slug}`);
-  return {
+  return createPageMetadata({
     title: guide.title,
     description: guide.description,
-    alternates: { canonical: url },
-    openGraph: {
-      title: guide.title,
-      description: guide.description,
-      type: "article",
-      url,
-      publishedTime: guide.updatedAt,
-      modifiedTime: guide.updatedAt,
-    },
-  };
+    path: `/guias/${guide.slug}`,
+    type: "article",
+    publishedTime: guide.updatedAt,
+    modifiedTime: guide.updatedAt,
+  });
 }
 
 export default async function GuidePage({ params }: GuidePageProps) {
@@ -102,7 +97,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
         <script
           key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
         />
       ))}
 
@@ -126,7 +121,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
             <div className="mt-7 flex flex-wrap gap-5 text-sm font-black uppercase opacity-65">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4" />
-                <LocalizedText id="1DBAi64RIZpt" />
+                Actualizado <time dateTime={guide.updatedAt}>31 de agosto de 2026</time>
               </span>
               <span className="flex items-center gap-2">
                 <Clock3 className="h-4 w-4" />
@@ -134,6 +129,15 @@ export default async function GuidePage({ params }: GuidePageProps) {
               </span>
             </div>
           </header>
+
+          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border-2 border-black/20 bg-[#F5F3FF] p-5 text-black dark:border-white/30">
+            <p className="font-black">Revisado por el Equipo Puragenda</p>
+            <p className="mt-2 text-sm font-bold leading-6 opacity-75">Contenido elaborado desde la experiencia operando una plataforma de reservas para negocios chilenos. Explicamos capacidades verificables del producto y evitamos promesas de resultados garantizados.</p>
+            <div className="mt-3 flex flex-wrap gap-4 text-sm font-black">
+              <Link href="/sobre-nosotros" className="underline underline-offset-4">Conoce al equipo</Link>
+              <Link href="/contacto" className="underline underline-offset-4">Reportar una corrección</Link>
+            </div>
+          </div>
 
           <div className="mx-auto mt-12 max-w-3xl space-y-14">
             {guide.sections.map((section) => (

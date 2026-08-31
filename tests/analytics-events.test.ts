@@ -33,4 +33,22 @@ describe("tracking event privacy controls", () => {
     expect(properties.reason).toHaveLength(120);
     expect(properties.stage).toBe("submit");
   });
+
+  it("keeps campaign attribution but drops contact details from lead events", () => {
+    const properties = sanitizeTrackingProperties("contact_lead_submitted", {
+      placement: "contact_form",
+      landing_path: "/alternativa-agendapro",
+      first_utm_source: "google",
+      first_utm_campaign: "reservas_chile",
+      email: "cliente@example.com",
+      message: "Necesito una demostración",
+    });
+
+    expect(properties).toEqual({
+      placement: "contact_form",
+      landing_path: "/alternativa-agendapro",
+      first_utm_source: "google",
+      first_utm_campaign: "reservas_chile",
+    });
+  });
 });
