@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { getOrCreateAffiliate } from "@/server/services/affiliate.service";
 import { syncMercadoPagoSubscriptionAmount } from "@/server/services/subscription-billing.service";
 import { createPrimaryLocation } from "@/server/services/location.service";
+import { fromZonedTime } from "date-fns-tz";
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -809,6 +810,8 @@ export async function createPlatformDiscountCodeAction(data: {
   discountValue: number;
   maxRedemptions?: number | null;
   expiresAt?: string | null;
+  trialEndsAtFrom?: string | null;
+  trialEndsAtTo?: string | null;
   appliesToPlans: string[];
 }) {
   const user = await requireSuperAdmin();
@@ -827,8 +830,25 @@ export async function createPlatformDiscountCodeAction(data: {
   if (data.discountType === "PERCENTAGE" && discountValue > 100) return { error: "El porcentaje no puede superar 100%" };
   if (maxRedemptions !== null && maxRedemptions <= 0) return { error: "El limite de usos debe ser mayor a 0" };
 
-  const expiresAt = data.expiresAt ? new Date(`${data.expiresAt}T23:59:59.999`) : null;
+  const expiresAt = data.expiresAt
+    ? fromZonedTime(`${data.expiresAt}T23:59:59.999`, "America/Santiago")
+    : null;
   if (expiresAt && Number.isNaN(expiresAt.getTime())) return { error: "Fecha de expiracion invalida" };
+  const trialEndsAtFrom = data.trialEndsAtFrom
+    ? fromZonedTime(`${data.trialEndsAtFrom}T00:00:00.000`, "America/Santiago")
+    : null;
+  const trialEndsAtTo = data.trialEndsAtTo
+    ? fromZonedTime(`${data.trialEndsAtTo}T23:59:59.999`, "America/Santiago")
+    : null;
+  if (trialEndsAtFrom && Number.isNaN(trialEndsAtFrom.getTime())) {
+    return { error: "Inicio de ventana de prueba invalido" };
+  }
+  if (trialEndsAtTo && Number.isNaN(trialEndsAtTo.getTime())) {
+    return { error: "Fin de ventana de prueba invalido" };
+  }
+  if (trialEndsAtFrom && trialEndsAtTo && trialEndsAtFrom > trialEndsAtTo) {
+    return { error: "La ventana de termino de prueba esta invertida" };
+  }
 
   try {
     await prisma.platformDiscountCode.create({
@@ -839,6 +859,8 @@ export async function createPlatformDiscountCodeAction(data: {
         discountValue,
         maxRedemptions,
         expiresAt,
+        trialEndsAtFrom,
+        trialEndsAtTo,
         appliesToPlans,
         createdById: user.id,
       },

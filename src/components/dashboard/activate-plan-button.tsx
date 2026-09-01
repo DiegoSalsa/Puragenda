@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
-import { AlertCircle, CreditCard, Loader2 } from "@/components/icons/hover-icons";
+import { AlertCircle, CreditCard, Gift, Loader2 } from "@/components/icons/hover-icons";
 import { startBillingCheckout } from "@/components/paddle/checkout";
 
 function getFriendlyBillingError(data: { error?: string; code?: string }, status: number) {
@@ -27,10 +27,17 @@ function getFriendlyBillingError(data: { error?: string; code?: string }, status
   );
 }
 
-export function ActivatePlanButton({ plan }: { plan: string }) {
+export function ActivatePlanButton({
+  plan,
+  allowDiscount = false,
+}: {
+  plan: string;
+  allowDiscount?: boolean;
+}) {
   const legacy = useTranslations("legacy");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
 
   const planLabel = plan === "EQUIPO" ? "Equipo" : "Individual";
 
@@ -42,7 +49,12 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
       const res = await fetch("/api/billing/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({
+          plan,
+          discountCode: allowDiscount && discountCode.trim()
+            ? discountCode.trim().toUpperCase()
+            : undefined,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -61,7 +73,25 @@ export function ActivatePlanButton({ plan }: { plan: string }) {
   }
 
   return (
-    <div>
+    <div className="space-y-2">
+      {allowDiscount && (
+        <label className="block space-y-1.5">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
+            Código de descuento (opcional)
+          </span>
+          <input
+            type="text"
+            value={discountCode}
+            onChange={(event) => setDiscountCode(event.target.value.toUpperCase())}
+            maxLength={32}
+            autoComplete="off"
+            placeholder="Ingresa tu código"
+            disabled={loading}
+            className="w-full min-w-56 rounded-xl border border-border bg-background px-3 py-2 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/50 disabled:opacity-60"
+          />
+        </label>
+      )}
       <button
         type="button"
         onClick={handleActivate}

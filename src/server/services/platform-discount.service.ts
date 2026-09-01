@@ -43,7 +43,7 @@ export async function quotePlatformDiscount(params: {
         where: {
           status: { in: ["PENDING", "APPLIED"] },
         },
-        select: { businessId: true },
+        select: { businessId: true, status: true },
       },
     },
   });
@@ -59,8 +59,37 @@ export async function quotePlatformDiscount(params: {
   if (discount.maxRedemptions !== null && discount.redeemedCount >= discount.maxRedemptions) {
     return { error: "Este codigo ya alcanzo su limite de usos" };
   }
-  if (discount.redemptions.some((r) => r.businessId === params.businessId)) {
+  if (discount.redemptions.some((r) => r.businessId === params.businessId && r.status === "APPLIED")) {
     return { error: "Este negocio ya uso este codigo" };
+  }
+
+  const subscription = await prisma.subscription.findUnique({
+    where: { businessId: params.businessId },
+    select: {
+      status: true,
+      trialEndsAt: true,
+      hasCountedAsPaidReferral: true,
+      lastPaymentId: true,
+    },
+  });
+
+  const isAwaitingFirstPayment =
+    subscription !== null &&
+    (subscription.status === "TRIALING" || subscription.status === "INACTIVE") &&
+    !subscription.hasCountedAsPaidReferral &&
+    !subscription.lastPaymentId;
+
+  if (!isAwaitingFirstPayment || !subscription) {
+    return { error: "Este codigo es exclusivo para el primer pago de usuarios nuevos" };
+  }
+
+  if (
+    (discount.trialEndsAtFrom || discount.trialEndsAtTo) &&
+    (!subscription.trialEndsAt ||
+      (discount.trialEndsAtFrom && subscription.trialEndsAt < discount.trialEndsAtFrom) ||
+      (discount.trialEndsAtTo && subscription.trialEndsAt > discount.trialEndsAtTo))
+  ) {
+    return { error: "Este codigo no aplica a la fecha de termino de tu prueba" };
   }
 
   const discountedAmount = calculateDiscountedAmount(discount.discountType, discount.discountValue, params.amount);

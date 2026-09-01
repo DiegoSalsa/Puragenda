@@ -545,20 +545,22 @@ model AccessProfile {
 // ==========================================
 
 model PlatformDiscountCode {
-  id             String    @id @default(cuid())
-  code           String    @unique
-  name           String
-  discountType   String // 'PERCENTAGE' | 'FIXED'
-  discountValue  Int
-  maxRedemptions Int?
-  redeemedCount  Int       @default(0)
-  startsAt       DateTime?
-  expiresAt      DateTime?
-  isActive       Boolean   @default(true)
-  appliesToPlans String[]  @default([])
-  createdById    String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  code            String    @unique
+  name            String
+  discountType    String // 'PERCENTAGE' | 'FIXED'
+  discountValue   Int
+  maxRedemptions  Int?
+  redeemedCount   Int       @default(0)
+  startsAt        DateTime?
+  expiresAt       DateTime?
+  trialEndsAtFrom DateTime?
+  trialEndsAtTo   DateTime?
+  isActive        Boolean   @default(true)
+  appliesToPlans  String[]  @default([])
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   createdBy   User?                        @relation("PlatformDiscountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   redemptions PlatformDiscountRedemption[]

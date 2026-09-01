@@ -22,6 +22,8 @@ export default async function DiscountsPage() {
         maxRedemptions: code.maxRedemptions,
         redeemedCount: code.redeemedCount,
         expiresAt: code.expiresAt?.toISOString() ?? null,
+        trialEndsAtFrom: code.trialEndsAtFrom?.toISOString() ?? null,
+        trialEndsAtTo: code.trialEndsAtTo?.toISOString() ?? null,
         isActive: code.isActive,
         appliesToPlans: code.appliesToPlans,
         createdAt: code.createdAt.toISOString(),

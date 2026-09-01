@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CreditCard,
+  Gift,
   Loader2,
   Shield,
   Store,
@@ -45,6 +46,7 @@ export function PaymentWall({
   const [verifying, setVerifying] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
   const isPastDue = reason === "past_due";
   const isInternational = countryCode !== "CL";
   const planName =
@@ -89,7 +91,12 @@ export function PaymentWall({
       const response = await fetch("/api/billing/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({
+          plan,
+          discountCode: !isInternational && discountCode.trim()
+            ? discountCode.trim().toUpperCase()
+            : undefined,
+        }),
       });
       const data = (await response.json()) as { init_point?: string; provider?: string; error?: string };
 
@@ -210,6 +217,25 @@ export function PaymentWall({
             <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-center text-sm text-red-400">
               {error}
             </div>
+          )}
+
+          {!isInternational && !isPastDue && (
+            <label className="mb-4 block space-y-1.5">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Gift className="h-4 w-4 text-brand-foreground" />
+                Código de descuento (opcional)
+              </span>
+              <input
+                type="text"
+                value={discountCode}
+                onChange={(event) => setDiscountCode(event.target.value.toUpperCase())}
+                maxLength={32}
+                autoComplete="off"
+                placeholder="Ingresa tu código"
+                disabled={loading || cancelling}
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-brand-foreground/50 disabled:opacity-60"
+              />
+            </label>
           )}
 
           {isPastDue && !paymentSimulatorEnabled && !isInternational ? (

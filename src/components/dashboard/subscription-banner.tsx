@@ -120,7 +120,7 @@ export async function SubscriptionBanner({
           </div>
           <div className="flex flex-wrap gap-2">
             {/* Primary CTA: Activate current plan */}
-            <ActivatePlanButton plan={plan} />
+            <ActivatePlanButton plan={plan} allowDiscount />
 
             {/* Secondary CTA: Upgrade if on Individual */}
             {plan === "INDIVIDUAL" && (

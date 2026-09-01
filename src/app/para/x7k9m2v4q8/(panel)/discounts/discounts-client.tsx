@@ -19,6 +19,8 @@ type DiscountCode = {
   maxRedemptions: number | null;
   redeemedCount: number;
   expiresAt: string | null;
+  trialEndsAtFrom: string | null;
+  trialEndsAtTo: string | null;
   isActive: boolean;
   appliesToPlans: string[];
   createdAt: string;
@@ -46,6 +48,8 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
     discountValue: 25,
     maxRedemptions: "",
     expiresAt: "",
+    trialEndsAtFrom: "",
+    trialEndsAtTo: "",
     appliesToPlans: ["INDIVIDUAL", "EQUIPO"],
   });
 
@@ -66,6 +70,8 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
         ...form,
         maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
         expiresAt: form.expiresAt || null,
+        trialEndsAtFrom: form.trialEndsAtFrom || null,
+        trialEndsAtTo: form.trialEndsAtTo || null,
       });
       if (result.error) {
         setError(result.error);
@@ -79,6 +85,8 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
         discountValue: 25,
         maxRedemptions: "",
         expiresAt: "",
+        trialEndsAtFrom: "",
+        trialEndsAtTo: "",
         appliesToPlans: ["INDIVIDUAL", "EQUIPO"],
       });
     });
@@ -162,6 +170,33 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                   onChange={(e) => setForm((p) => ({ ...p, discountValue: Number(e.target.value) }))}
                   className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 text-sm font-black outline-none"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2 border-2 border-black bg-[#E7FFAC] p-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-black/70">Ventana de prueba elegible</p>
+                <p className="text-[11px] font-bold text-black/50">Opcional. Limita el código a usuarios cuya prueba termina entre estas fechas.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="space-y-1 text-[11px] font-black uppercase text-black/60">
+                  Desde
+                  <input
+                    type="date"
+                    value={form.trialEndsAtFrom}
+                    onChange={(e) => setForm((p) => ({ ...p, trialEndsAtFrom: e.target.value }))}
+                    className="w-full border-2 border-black bg-white px-2 py-2 text-xs font-bold outline-none"
+                  />
+                </label>
+                <label className="space-y-1 text-[11px] font-black uppercase text-black/60">
+                  Hasta
+                  <input
+                    type="date"
+                    value={form.trialEndsAtTo}
+                    onChange={(e) => setForm((p) => ({ ...p, trialEndsAtTo: e.target.value }))}
+                    className="w-full border-2 border-black bg-white px-2 py-2 text-xs font-bold outline-none"
+                  />
+                </label>
               </div>
             </div>
 
@@ -283,6 +318,13 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                             </span>
                           ))}
                         </div>
+                        {(code.trialEndsAtFrom || code.trialEndsAtTo) && (
+                          <p className="mt-1 text-[10px] font-bold text-black/50">
+                            Prueba: {code.trialEndsAtFrom ? new Date(code.trialEndsAtFrom).toLocaleDateString("es-CL", { timeZone: "America/Santiago" }) : "…"}
+                            {" — "}
+                            {code.trialEndsAtTo ? new Date(code.trialEndsAtTo).toLocaleDateString("es-CL", { timeZone: "America/Santiago" }) : "…"}
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`border-2 border-black px-2 py-1 text-xs font-black ${code.isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
