@@ -4,7 +4,7 @@ import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 
-const contentUpdatedAt = new Date("2026-08-31T00:00:00-04:00");
+const contentUpdatedAt = new Date("2026-09-01T00:00:00-04:00");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
