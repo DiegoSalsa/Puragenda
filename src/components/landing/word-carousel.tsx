@@ -18,11 +18,17 @@ export function WordCarousel({ words = defaultPhrases, className = "" }: WordCar
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % words.length);
-    }, 3000);
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    const startTimer = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setIndex((prevIndex) => (prevIndex + 1) % words.length);
+      }, 3000);
+    }, 8000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearTimeout(startTimer);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [words.length]);
 
   return (

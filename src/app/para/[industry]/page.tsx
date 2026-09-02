@@ -6,8 +6,6 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { industriesData } from "@/lib/data/industries";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 import {
@@ -18,6 +16,7 @@ import {
 } from "@/components/ui/accordion";
 
 export const dynamicParams = true; // Changed to true to allow ISR fallback on Vercel
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return industriesData.map((ind) => ({
@@ -42,9 +41,6 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const { industry } = await params;
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
-
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
 
   // JSON-LD specific for the industry SoftwareApplication + FAQ
   const jsonLdFaq = {
@@ -92,7 +88,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const accentColors = ["bg-[#B28DFF]", "bg-[#FFB5E8]", "bg-[#85E3FF]", "bg-[#BFFCC6]"];
 
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdFaq) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdBreadcrumbs) }} />

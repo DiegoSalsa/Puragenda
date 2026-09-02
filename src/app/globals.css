@@ -273,6 +273,37 @@
 }
 
 /* Cookie banner slide-up */
+.landing-translated {
+  display: none;
+}
+
+html:not([lang="es"]) .landing-es {
+  display: none;
+}
+
+html:not([lang="es"]) .landing-translated {
+  display: contents;
+}
+
+@media (min-width: 64rem) and (max-height: 47.5rem) {
+  .landing-hero {
+    min-height: 630px;
+    padding-top: 6rem;
+    padding-bottom: 2rem;
+  }
+
+  .landing-hero-title,
+  .landing-hero-carousel {
+    font-size: 4.5rem;
+    line-height: 1;
+  }
+
+  .landing-hero-actions {
+    margin-top: 1.5rem;
+    gap: 1.25rem;
+  }
+}
+
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

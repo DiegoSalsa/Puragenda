@@ -3,8 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { featureSolutions, getFeatureSolution } from "@/lib/data/feature-solutions";
 import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
@@ -13,6 +11,7 @@ import { TrackedLink } from "@/components/analytics/tracked-link";
 type Props = { params: Promise<{ slug: string }> };
 
 export const dynamicParams = false;
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return featureSolutions.map(({ slug }) => ({ slug }));
@@ -32,8 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FeatureSolutionPage({ params }: Props) {
   const solution = getFeatureSolution((await params).slug);
   if (!solution) notFound();
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
   const url = absoluteUrl(`/funciones/${solution.slug}`);
 
   const structuredData = [
@@ -75,7 +72,7 @@ export default async function FeatureSolutionPage({ params }: Props) {
   ];
 
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       {structuredData.map((item, index) => (
         <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(item) }} />
       ))}

@@ -28,6 +28,12 @@ const noIndexRoutes = [
 const canonicalHostRedirects = [
   {
     source: "/:path*",
+    has: [{ type: "host" as const, value: "puragenda.cl" }],
+    destination: "https://www.puragenda.cl/:path*",
+    permanent: true,
+  },
+  {
+    source: "/:path*",
     has: [{ type: "host" as const, value: "puragenda.vercel.app" }],
     destination: "https://www.puragenda.cl/:path*",
     permanent: true,

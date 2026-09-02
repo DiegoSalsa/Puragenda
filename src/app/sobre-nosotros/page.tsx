@@ -4,8 +4,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Code2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -14,12 +12,11 @@ export const metadata: Metadata = createPageMetadata({
   path: "/sobre-nosotros",
 });
 
-export default async function AboutPage() {
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
+export const revalidate = 3600;
 
+export default async function AboutPage() {
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       <main className="mx-auto max-w-4xl px-6 py-16">
         <div className="space-y-8 text-center mb-16">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-[#7C3AED] dark:text-[#B28DFF] bg-[#FFF5BA] dark:bg-black border-2 border-black dark:border-white inline-block px-4 py-1 shadow-[2px_2px_0_#000] dark:shadow-[2px_2px_0_#FFFFFF]"><LocalizedText id="GQG8TPyrYsZC" /></p>

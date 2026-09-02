@@ -1,6 +1,5 @@
 "use client";
 
-import posthog from "posthog-js";
 import { hasAnalyticsConsent } from "@/lib/analytics/consent";
 import { ANALYTICS_POLICY_VERSION } from "@/lib/analytics/policy";
 import {
@@ -14,7 +13,46 @@ const VISITOR_ID_KEY = "puragenda_tracking_visitor_id";
 const SESSION_ID_KEY = "puragenda_tracking_session_id";
 const ATTRIBUTION_KEY = "puragenda_first_touch";
 
-let posthogInitialized = false;
+type PostHogClient = typeof import("posthog-js")["default"];
+
+let posthogClient: PostHogClient | null = null;
+let posthogPromise: Promise<PostHogClient | null> | null = null;
+
+function loadPosthog(): Promise<PostHogClient | null> {
+  if (posthogClient) return Promise.resolve(posthogClient);
+  if (posthogPromise) return posthogPromise;
+
+  const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  if (!token || !hasAnalyticsConsent()) return Promise.resolve(null);
+
+  posthogPromise = import("posthog-js").then(({ default: posthog }) => {
+    if (!hasAnalyticsConsent()) return null;
+    posthog.init(token, {
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+      capture_pageview: false,
+      autocapture: false,
+      disable_session_recording: true,
+      session_recording: {
+        maskAllInputs: true,
+        maskTextSelector: "*",
+        maskCapturedNetworkRequestFn: (request) => {
+          if (request.name) request.name = request.name.split("?")[0];
+          return request;
+        },
+      },
+    });
+    posthogClient = posthog;
+    return posthog;
+  }).then((posthog) => {
+    if (!posthog) posthogPromise = null;
+    return posthog;
+  }).catch(() => {
+    posthogPromise = null;
+    return null;
+  });
+
+  return posthogPromise;
+}
 
 function createId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -90,45 +128,31 @@ function firstTouchAttribution(): FirstTouchAttribution {
 
 export function initializeAnalytics() {
   if (!hasAnalyticsConsent()) return;
-  if (posthogInitialized) {
-    posthog.opt_in_capturing();
+  if (posthogClient) {
+    posthogClient.opt_in_capturing();
     return;
   }
-
-  const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-  if (!token) return;
-
-  posthog.init(token, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-    capture_pageview: false,
-    autocapture: false,
-    disable_session_recording: true,
-    session_recording: {
-      maskAllInputs: true,
-      maskTextSelector: "*",
-      maskCapturedNetworkRequestFn: (request) => {
-        if (request.name) request.name = request.name.split("?")[0];
-        return request;
-      },
-    },
-  });
-  posthogInitialized = true;
+  void loadPosthog();
 }
 
 export function setSessionReplayEnabled(enabled: boolean) {
-  if (!posthogInitialized) return;
-  if (enabled) posthog.startSessionRecording();
-  else posthog.stopSessionRecording();
+  if (posthogClient) {
+    if (enabled) posthogClient.startSessionRecording();
+    else posthogClient.stopSessionRecording();
+    return;
+  }
+  if (enabled) void loadPosthog().then((posthog) => posthog?.startSessionRecording());
 }
 
 export function identifyAnalytics(userId: string, role: string) {
-  if (posthogInitialized) posthog.identify(userId, { role });
+  if (posthogClient) posthogClient.identify(userId, { role });
+  else void loadPosthog().then((posthog) => posthog?.identify(userId, { role }));
 }
 
 export function resetAnalyticsIdentity() {
-  if (posthogInitialized) {
-    posthog.opt_out_capturing();
-    posthog.reset();
+  if (posthogClient) {
+    posthogClient.opt_out_capturing();
+    posthogClient.reset();
   }
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(VISITOR_ID_KEY);
@@ -170,7 +194,9 @@ export function track(
     keepalive: true,
   }).catch(() => undefined);
 
-  if (posthogInitialized) posthog.capture(event, { ...safeProperties, $current_url: window.location.origin + payload.path });
+  void loadPosthog().then((posthog) => {
+    posthog?.capture(event, { ...safeProperties, $current_url: window.location.origin + payload.path });
+  });
 }
 
 /** Records the user's choice so the server can demonstrate when consent was granted or denied. */

@@ -1,8 +1,6 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3, Database, Gift, Stamp, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -15,6 +13,8 @@ export const metadata: Metadata = createPageMetadata({
   path: "/caracteristicas",
 });
 
+export const revalidate = 3600;
+
 const bentoFeatures = [
   { title: "Reservas 24/7", description: "Tus clientes agendan solos, incluso cuando duermes.", icon: CalendarClock, bg: "bg-[#B28DFF]", colSpan: "md:col-span-2", size: "text-2xl" },
   { title: "Widget Marca Blanca", description: "Se adapta a tus colores.", icon: LayoutTemplate, bg: "bg-[#FFF5BA]", colSpan: "md:col-span-1", size: "text-xl" },
@@ -24,8 +24,6 @@ const bentoFeatures = [
 ];
 
 export default async function CaracteristicasPage() {
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
   const jsonLdSoftware = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -54,7 +52,7 @@ export default async function CaracteristicasPage() {
   };
 
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
       {/* Hero Features */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">

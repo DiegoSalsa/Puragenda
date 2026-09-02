@@ -6,8 +6,6 @@ import { ArrowRight, BookOpen, Clock3 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = createPageMetadata({
@@ -16,10 +14,9 @@ export const metadata: Metadata = createPageMetadata({
   path: "/guias",
 });
 
-export default async function GuidesPage() {
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
+export const revalidate = 3600;
 
+export default async function GuidesPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -34,7 +31,7 @@ export default async function GuidesPage() {
   };
 
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}

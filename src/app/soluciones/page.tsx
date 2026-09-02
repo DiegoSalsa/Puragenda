@@ -1,8 +1,6 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -16,6 +14,8 @@ export const metadata: Metadata = createPageMetadata({
   path: "/soluciones",
 });
 
+export const revalidate = 3600;
+
 const metrics = [
   { value: "24/7", label: "Reservas fuera de horario", icon: Clock, bg: "bg-[#FFB5E8]" },
   { value: "1 panel", label: "Agenda, clientes y pagos", icon: Users2, bg: "bg-[#FFF5BA]" },
@@ -23,11 +23,8 @@ const metrics = [
 ];
 
 export default async function SolucionesPage() {
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
-
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       {/* Hero */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16 text-center">
         <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-7xl mb-6">

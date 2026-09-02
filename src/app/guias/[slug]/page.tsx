@@ -7,13 +7,12 @@ import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from "@/components/icons/
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getGuide, guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
 type GuidePageProps = { params: Promise<{ slug: string }> };
 
 export const dynamicParams = false;
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return guides.map((guide) => ({ slug: guide.slug }));
@@ -39,8 +38,6 @@ export default async function GuidePage({ params }: GuidePageProps) {
   const guide = getGuide(slug);
   if (!guide) notFound();
 
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
   const guideUrl = absoluteUrl(`/guias/${guide.slug}`);
   const relatedGuides = guide.related
     .map((relatedSlug) => getGuide(relatedSlug))
@@ -92,7 +89,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
   };
 
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       {[articleJsonLd, faqJsonLd, breadcrumbJsonLd].map((data, index) => (
         <script
           key={index}

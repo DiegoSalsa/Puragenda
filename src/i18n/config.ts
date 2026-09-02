@@ -4,6 +4,7 @@ export type AppLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: AppLocale = "es";
 export const LOCALE_COOKIE = "puragenda_locale";
+export const LOCALE_CHANGED_EVENT = "puragenda:locale-change";
 
 export const LOCALE_LABELS: Record<AppLocale, { native: string; short: string; flag: string }> = {
   es: { native: "Español", short: "ES", flag: "🇨🇱" },

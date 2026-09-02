@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
@@ -6,13 +7,17 @@ import { CookieBanner } from "@/components/cookie-banner";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { SITE_URL } from "@/lib/site";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { MarketingIntlProvider } from "@/components/i18n/marketing-intl-provider";
+import { buildMarketingMessages } from "@/i18n/marketing-messages";
+import esMessages from "../../messages/es.json";
+import esLegacyMessages from "../../messages/legacy/es.json";
+import esDashboardMessages from "../../messages/dashboard/es.json";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "optional",
 });
 
 
@@ -25,7 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const baseMetadata: Metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Sistema de reservas online en Chile | Puragenda",
@@ -106,54 +111,28 @@ const baseMetadata: Metadata = {
   },
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
-  const t = await getTranslations({ locale, namespace: "metadata" });
-  const title = t("siteTitle");
-  const description = t("siteDescription");
-  const openGraphLocale = {
-    es: "es_CL", en: "en_US", it: "it_IT", pt: "pt_BR", fr: "fr_FR", de: "de_DE", "zh-CN": "zh_CN",
-  }[locale] ?? "es_CL";
+const initialMarketingMessages = buildMarketingMessages(esMessages, esLegacyMessages, esDashboardMessages);
 
-  return {
-    ...baseMetadata,
-    title: { default: title, template: "%s | Puragenda" },
-    description,
-    openGraph: {
-      ...baseMetadata.openGraph,
-      locale: openGraphLocale,
-      title,
-      description,
-    },
-    twitter: {
-      ...baseMetadata.twitter,
-      title,
-      description,
-    },
-  };
-}
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
   return (
-    <html lang={locale} className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
+    <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <MarketingIntlProvider initialMessages={initialMarketingMessages}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
             <RegisterSW />
-            <AnalyticsProvider />
+            <Suspense fallback={null}>
+              <AnalyticsProvider />
+            </Suspense>
             {children}
             <CookieBanner />
           </ThemeProvider>
-        </NextIntlClientProvider>
+        </MarketingIntlProvider>
       </body>
     </html>
   );

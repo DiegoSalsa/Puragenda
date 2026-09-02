@@ -1,3 +1,4 @@
+"use client";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import Link from "next/link";

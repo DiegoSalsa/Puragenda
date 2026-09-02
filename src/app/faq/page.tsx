@@ -1,8 +1,6 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
 import { FAQSection } from "@/components/landing/faq-section";
 import { Metadata } from "next";
 import { createPageMetadata } from "@/lib/seo";
@@ -13,12 +11,11 @@ export const metadata: Metadata = createPageMetadata({
   path: "/faq",
 });
 
-export default async function FAQPage() {
-  const user = await getCurrentSessionUser();
-  const business = user ? await getBusinessForUser(user.id) : null;
+export const revalidate = 3600;
 
+export default async function FAQPage() {
   return (
-    <LandingLayout user={user} business={business}>
+    <LandingLayout>
       {/* Hero */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">
         <div className="inline-block bg-[#B28DFF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]"><LocalizedText id="EEugEQcKJy4G" /></div>

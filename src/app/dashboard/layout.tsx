@@ -13,6 +13,7 @@ import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { hasDunningAccess } from "@/server/services/subscription-dunning.service";
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
+import { RequestIntlProvider } from "@/components/i18n/request-intl-provider";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -45,6 +46,7 @@ export default async function DashboardLayout({
 
     if (subscription?.status === "INACTIVE" || pastDueAccessExpired) {
       return (
+        <RequestIntlProvider>
         <PaymentWall 
           userEmail={user.email} 
           userName={user.name}
@@ -55,6 +57,7 @@ export default async function DashboardLayout({
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={pastDueAccessExpired ? "past_due" : "pending"}
         />
+        </RequestIntlProvider>
       );
     }
   }
@@ -63,6 +66,7 @@ export default async function DashboardLayout({
   const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
+    <RequestIntlProvider>
     <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
       <div className="fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full overflow-hidden bg-background">
         <DashboardSidebar
@@ -86,5 +90,6 @@ export default async function DashboardLayout({
         <ChangelogPopup />
       </div>
     </DashboardOverlayProvider>
+    </RequestIntlProvider>
   );
 }

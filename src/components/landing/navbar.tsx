@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Menu, X } from "@/components/icons/hover-icons";
+import { ArrowRight, X } from "@/components/icons/hover-icons";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
@@ -24,6 +24,8 @@ export function Navbar({ user, business }: NavbarProps = {}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [sessionUser, setSessionUser] = useState(user ?? null);
+  const [sessionBusiness, setSessionBusiness] = useState(business ?? null);
   const navLinks = [
     { href: "/soluciones", label: t("solutions") },
     { href: "/caracteristicas", label: t("features") },
@@ -31,6 +33,22 @@ export function Navbar({ user, business }: NavbarProps = {}) {
     { href: "/faq", label: t("faq") },
     { href: "/contacto", label: t("contact") },
   ];
+
+  useEffect(() => {
+    if (user) return;
+
+    const controller = new AbortController();
+    fetch("/api/auth/me", { signal: controller.signal, credentials: "same-origin" })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (!payload?.user) return;
+        setSessionUser({ name: payload.user.name });
+        setSessionBusiness(payload.business ?? null);
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,15 +101,15 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
           {/* Desktop actions */}
           <div className="flex shrink-0 items-center justify-end gap-1.5 min-[1500px]:gap-2">
-            {user ? (
+            {sessionUser ? (
               <Link href="/dashboard">
                 <button className="group flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-2 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
-                  {business?.logoUrl ? (
-                    <Image src={business.logoUrl} alt={business.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
+                  {sessionBusiness?.logoUrl ? (
+                    <Image src={sessionBusiness.logoUrl} alt={sessionBusiness.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
                   ) : (
                     <Store className="h-4 w-4 text-[#7C3AED]" />
                   )}
-                  <span className="font-semibold text-foreground">{business?.name || user.name}</span>
+                  <span className="font-semibold text-foreground">{sessionBusiness?.name || sessionUser.name}</span>
                 </button>
               </Link>
             ) : (
@@ -125,9 +143,13 @@ export function Navbar({ user, business }: NavbarProps = {}) {
             <button
               onClick={() => setMobileOpen(true)}
               aria-label={t("openMenu")}
-              className="rounded-full p-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="min-h-11 min-w-11 rounded-full p-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <Menu className="h-5 w-5" />
+              <span aria-hidden="true" className="flex h-5 w-5 flex-col justify-center gap-1.5">
+                <span className="h-0.5 w-5 rounded-full bg-current" />
+                <span className="h-0.5 w-5 rounded-full bg-current" />
+                <span className="h-0.5 w-5 rounded-full bg-current" />
+              </span>
             </button>
           </div>
         </div>
@@ -181,15 +203,15 @@ export function Navbar({ user, business }: NavbarProps = {}) {
                   <ThemeToggle />
                   <LanguageSwitcher compact />
                 </div>
-                {user ? (
+                {sessionUser ? (
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block">
                     <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border/50 bg-card/60 py-3 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
-                      {business?.logoUrl ? (
-                        <Image src={business.logoUrl} alt={business.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
+                      {sessionBusiness?.logoUrl ? (
+                        <Image src={sessionBusiness.logoUrl} alt={sessionBusiness.name} width={20} height={20} unoptimized className="h-5 w-5 rounded-md object-cover" />
                       ) : (
                         <Store className="h-4 w-4 text-[#7C3AED]" />
                       )}
-                      <span className="font-semibold text-foreground">{business?.name || user.name}</span>
+                      <span className="font-semibold text-foreground">{sessionBusiness?.name || sessionUser.name}</span>
                     </button>
                   </Link>
                 ) : (

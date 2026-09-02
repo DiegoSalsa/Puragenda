@@ -51,3 +51,6 @@ next-env.d.ts
 # local QA and marketing artifacts
 /scratch/
 /marketing/
+
+# local SEO audit cache
+/.seo-cache/

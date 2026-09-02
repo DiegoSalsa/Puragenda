@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import {
   type AppLocale,
+  LOCALE_CHANGED_EVENT,
   LOCALE_COOKIE,
   LOCALE_LABELS,
   resolveLocale,
@@ -163,6 +164,7 @@ function localeFromCoordinates(
 function persistLocalePreference(nextLocale: AppLocale) {
   document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(nextLocale)}; Path=/; Max-Age=31536000; SameSite=Lax`;
   document.documentElement.setAttribute("lang", nextLocale);
+  window.dispatchEvent(new CustomEvent<AppLocale>(LOCALE_CHANGED_EVENT, { detail: nextLocale }));
 }
 
 export function LanguageSwitcher({

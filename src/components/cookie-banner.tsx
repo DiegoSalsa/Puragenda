@@ -23,7 +23,7 @@ export function CookieBanner() {
       const consent = getAnalyticsConsent();
       setHasSavedChoice(Boolean(consent));
       if (!consent) setVisible(true);
-    }, 1500);
+    }, 0);
     return () => clearTimeout(timer);
   }, []);
 
@@ -70,16 +70,16 @@ export function CookieBanner() {
     <>
       {visible && (
         <div
-          className="fixed bottom-4 left-4 right-4 z-[9998] animate-slide-up sm:left-6 sm:right-auto sm:max-w-md"
+          className="fixed bottom-3 left-3 right-3 z-[9998] animate-slide-up sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-md"
         >
-          <div className="flex flex-col gap-4 rounded-xl border-4 border-black bg-[#FFF5BA] p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-[#111] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+          <div className="flex flex-col gap-2 rounded-xl border-4 border-black bg-[#FFF5BA] p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-[#111] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] sm:gap-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-black bg-white dark:border-white dark:bg-black">
+              <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-black bg-white dark:border-white dark:bg-black sm:flex">
                 <Cookie className="h-5 w-5 text-black dark:text-white" />
               </div>
-              <div className="space-y-1">
-                <p className="text-base font-bold uppercase text-black dark:text-white">{t("title")}</p>
-                <p className="text-sm font-medium text-black/80 dark:text-white/80">
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-bold uppercase text-black dark:text-white sm:text-base">{t("title")}</p>
+                <p className="text-xs font-medium leading-tight text-black/80 dark:text-white/80 sm:text-sm sm:leading-normal">
                   {t("description")}
                   <br />
                   <Link href="/politica-de-privacidad" className="font-bold underline underline-offset-2 hover:text-[#7C3AED]">
@@ -88,19 +88,19 @@ export function CookieBanner() {
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2 pt-2 sm:justify-end">
+            <div className="flex shrink-0 items-center gap-2 sm:justify-end sm:pt-2">
               {error && <p role="alert" className="text-xs font-bold text-red-700 sm:absolute sm:bottom-full sm:mb-2 sm:bg-white sm:p-2">{error}</p>}
               <button
                 onClick={handleReject}
                 disabled={saving}
-                className="flex-1 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] sm:flex-none"
+                className="min-h-11 flex-1 rounded-lg border-2 border-black bg-white px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)] sm:flex-none"
               >
                 {t("reject")}
               </button>
               <button
                 onClick={handleAccept}
                 disabled={saving}
-                className="flex-1 rounded-lg border-2 border-black bg-[#BFFCC6] px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none sm:flex-none"
+                className="min-h-11 flex-1 rounded-lg border-2 border-black bg-[#BFFCC6] px-4 py-2 text-sm font-bold uppercase text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none sm:flex-none"
               >
                 {t("accept")}
               </button>

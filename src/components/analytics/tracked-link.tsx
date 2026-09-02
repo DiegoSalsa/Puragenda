@@ -25,6 +25,22 @@ type TrackedAnchorProps = ComponentProps<"a"> & {
   placement: string;
 };
 
+type TrackedCtaAnchorProps = TrackedAnchorProps & {
+  cta: string;
+};
+
+export function TrackedCtaAnchor({ cta, placement, onClick, ...props }: TrackedCtaAnchorProps) {
+  return (
+    <a
+      {...props}
+      onClick={(event) => {
+        track("landing_cta_clicked", { cta, placement });
+        onClick?.(event);
+      }}
+    />
+  );
+}
+
 export function TrackedWhatsAppLink({ placement, onClick, ...props }: TrackedAnchorProps) {
   return (
     <a

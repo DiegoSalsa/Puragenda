@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics/client";
 import {
   PRICING,
@@ -105,6 +106,7 @@ function BillingToggle({
 export function PricingCards({ mode = "landing" }: PricingCardsProps) {
   const t = useTranslations("pricing");
   const locale = useLocale();
+  const router = useRouter();
   const plans: {
     key: PlanKey;
     name: string;
@@ -187,16 +189,16 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
       billing_cycle: cycle,
     });
     if (isLoggedIn) {
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
       return;
     }
 
     // If user is NOT logged in, redirect to register with plan info
     const extraParam = key === "EQUIPO" && extras.EQUIPO > 0 ? `&extraStaff=${extras.EQUIPO}` : "";
     if (isTrial) {
-      window.location.href = `/register?plan=${key}&trial=1${extraParam}`;
+      router.push(`/register?plan=${key}&trial=1${extraParam}`);
     } else {
-      window.location.href = `/register?plan=${key}${extraParam}`;
+      router.push(`/register?plan=${key}${extraParam}`);
     }
   }
 

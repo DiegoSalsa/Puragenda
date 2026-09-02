@@ -3,8 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "@/components/icons/hover-icons";
-import { Navbar } from "@/components/landing/navbar";
-import { Footer } from "@/components/landing/footer";
+import { LandingLayout } from "@/components/landing/landing-layout";
 import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
 
@@ -16,6 +15,8 @@ export const metadata: Metadata = createPageMetadata({
   keywords: ["AgendaPro precios", "cuánto cuesta AgendaPro", "alternativa AgendaPro", "AgendaPro Chile"],
   type: "article",
 });
+
+export const revalidate = 3600;
 
 const criteria = [
   {
@@ -93,12 +94,11 @@ export default function AlternativaAgendaProPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
+    <LandingLayout>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
-      <Navbar />
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pt-40">
+      <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-8 md:pt-16">
         <header className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 border-2 border-black bg-[#FFF5BA] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
             <SearchCheck className="h-4 w-4" />
@@ -219,9 +219,7 @@ export default function AlternativaAgendaProPage() {
             </Link>
           </div>
         </section>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </LandingLayout>
   );
 }

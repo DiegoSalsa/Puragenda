@@ -1,0 +1,78 @@
+import type { AbstractIntlMessages } from "next-intl";
+
+export const MARKETING_LEGACY_IDS = [
+  "_anO1IuU3rA8", "_wceWn113Gqm", "_YKGMzKZqhIN", "-g-aGH0LeBdx",
+  "-KeqKZlzAQ3L", "-uojIkY8tDDO", "-XVrIxkEiZSE", "0-9SNZCT992I",
+  "0IyxI_tnaxsj", "0XlRQfxgHDRt", "1addc5hF7n2W", "1CcZ8q9J0O6q",
+  "1gktyGn4SBwd", "1oAUcpw8pq5F", "28SLln04FkyL", "2L7icG6B0ZJi",
+  "2MYvZ1hgx8OK", "2qLG5jU-ZF1A", "3__-DXhULfaV", "40AgLH_frvYD",
+  "6OEdZaLJj5V9", "6S0uszxuAMKl", "6umtmuPZ1dyc", "70ys10DDI3Nr",
+  "7DshHJgBsagU", "7i-lr3mu7w3U", "7jHx46OZQ4k9", "7Ncc9y6QgRZZ",
+  "7rCWAV3Xrkft", "86MPUKFzO_C-", "8E4L8d1N3hiN", "8QZLb3hCTAZk",
+  "9-IpV0KgzZ2c", "97Pqwc-XGT2p", "9gCyOZ4PUBu3", "9I7PGnOxFuWP",
+  "9OCsCAQsmHqb", "9p-ikd4TTjzF", "a2yoi_zh6rND", "a9HBBXAo2fOH",
+  "AjR3RwCdnhL7", "akDt8fyHop8k", "att0xgfKJxDi", "aU4pPMMS7E5U",
+  "aZ5nHkHcLME_", "B0rydBFNOg1_", "b1jvq7GAyWnq", "bK77dZuab_CO",
+  "bmAZN4ZcWV4B", "bNu5F1hiW6oI", "BQAkDl61RWsH", "brrj9qrVXilr",
+  "BU82Fgd5B_oS", "BWkP2tnsea3X", "c1Rzec5sk8ev", "cbKZRzHEqPbW",
+  "Ce8yJPgK4gZM", "cEiOP-zt3LzF", "CItQIrz-F7B3", "cNYH-P54ciO1",
+  "cnz99Bg0UU67", "CQ_WJP7-7ahj", "cqzFS3ySpvQn", "cspHjuyTHL_D",
+  "csuxtEhcBkt3", "czYWUXRUyFd1", "D_8czenqI3pC", "D-IdVfIbRd9D",
+  "D8s4ptaGQnCI", "DDWFCltLnThQ", "DR1TMoyo8U2H", "DSG9UgIsp_fp",
+  "eb_R1f76sXGb", "eDyQ6Wf_apzl", "EEugEQcKJy4G", "EfwNfuH1yoOh",
+  "ELDBZQHIDJlT", "EoHfjFKiJkE7", "EXTYaJUwiOvx", "F02w61460Tk-",
+  "Fbab3m5uPOta", "fnnS9IbA0RvN", "FqMkocein-za", "FR12jluEq-rt",
+  "FtS0eyHNOtQA", "FVHax1TRyRbe", "g-vkbJlOudNh", "g1XMOWbV71E4",
+  "g4b57whrUrpi", "geQUdwd2Hhtz", "GQG8TPyrYsZC", "guhn1ujzXsRE",
+  "H2-m9p0YXmCG", "H7f1LNqFdiC9", "hHB9HCaao0J_", "hkkOxgSz-pKM",
+  "Hle8mLHoThST", "hPyv89zH2tum", "HrD5OWVvbmr_", "Hvo7RVoGJF6_",
+  "HY86f_-OqzVM", "hyPR2b6CvGRE", "HzoDPPx88iX-", "i8SlbEiuwp1f",
+  "I9ewL8g7MpaJ", "IgYYYPanfcEa", "iiIVFE3C41nI", "IQg5LlFOLzMn",
+  "ith8agD-xiEU", "iZw_89OGupgq", "J_K6wcKNmdNt", "JpF7xFX9W7cW",
+  "k_SuAKBA6Lgv", "k4Z5q8KEHh5f", "k7Kp73gsrNZx", "KaaTlif_z7LN",
+  "KGcpOgWVpJ0g", "kMxHQLQF1LFa", "KSXIZISGP7RI", "ksy92cYsIz3-",
+  "LCmtJSuhpp_c", "LCsCsgMtfdtK", "LlW-J-wKcnvF", "lpzL089jAOzV",
+  "LtEXF-9Jokpx", "LUeR3_CU1l8s", "lxXSFM7QEL_e", "m_mO2V80oj8E",
+  "M8m4YGdgS2Pm", "McXHiejB5jM2", "MolWB7Y0b8pL", "n3RZ0c2ccTx-",
+  "nAIWbZb6bUEm", "nD4-d-RgzG7O", "njL4SL8MHBdm", "NON2NMBZVy8O",
+  "NqC0Mo3B6h7f", "Nuj0ae1yfPk2", "o_NRzgWAdoNW", "o8wo7WFMFhY4",
+  "oD9trLpGywEr", "OHWtjcFBNX8d", "p634YNsp6myz", "P9BhRaYS9nOr",
+  "pCmg3FHKIEBI", "PpOqzBFB-3yd", "PSudvDdmZJlG", "pzQT9Pl_6ICF",
+  "QBmYgp3yqmgG", "qq8PaMYa8YRG", "Qx6QrYQs-Z6R", "qxZSqw0Uc5Il",
+  "qzVpJwMmR-YY", "r_TRnW7kOyBL", "R06NJJTE2k4A", "RaAzvOAkPtfY",
+  "rBGEuo8AmdZu", "RcZ9dPomMmMc", "rp-1suXzUbxC", "rUqE0iBhItxM",
+  "S5jQCu9nrDb_", "S5pMm6glV6EC", "S89ytKA3J4E6", "sUhZDAsLj9kJ",
+  "sYhv0Cp5GprX", "tA-ba9YWWfmH", "tanhwvvval_S", "Th8TqSkxybtS",
+  "tj8fSPedw8Ax", "tJca4miZeGXd", "tpJbf1kUMbtj", "TUXAM_tgQOYC",
+  "TVWRiZnvTHlS", "U1NR2bZMBG5E", "U5gbA7C93cOu", "Ubrd4m6A1hS1",
+  "Uh7T7DpKqd5l", "Unh-gHk6V0Gy", "UNzN0nO8Ud1f", "URlT4L0q7tki",
+  "UtNwE9aCe2m7", "V3WshjMvT-w3", "VAhlwkTkJMXG", "VC6y0DN6Wp0l",
+  "vcni4knTgNJJ", "vl0LKp3tsZBd", "vl1iR-Xzs5bN", "VlM5vE0z1ygX",
+  "vMuWeVfzosRe", "vP-8OnnRFj1a", "VrF44eoBu1NB", "vsDlpEZhwVC-",
+  "VtgsteC0Ewqn", "VUrmQfVUNilp", "vXnWWfr5O5Hd", "w_zrnUHi0onX",
+  "W03nWeFJRSfo", "w5i8i4pc2Gml", "W9PCHbBv2nN1", "WafzZ-nQbTje",
+  "wdT-2zGprJCm", "WHoiy7Xtvls7", "wk1GRWMFhb2b", "WkO0cgNABFYx",
+  "WlKsettNWyfR", "wtzcjbLNrVZ_", "x6CNUX4arjJB", "XaaVBSSUhVPw",
+  "XbEgTlbh1dKU", "XSyKjfEWn1w7", "YdH4SycF9L9c", "yEmZcjGwRI2g",
+  "YGat2NGUkuFC", "yhYqVTz7mQ5e", "yJlifq5Lze3T", "yLCeyXMhIRBj",
+  "YYqZ2YHVEw7O", "Yzf6yfxwkh4U", "Zd1r5e2CNA7Z", "Zef1fEdWSEAC",
+  "ZN7KcC2IOKTF",
+] as const;
+
+export function buildMarketingMessages(
+  siteMessages: unknown,
+  legacyMessages: Record<string, string>,
+  dashboardMessages: Record<string, unknown>,
+): AbstractIntlMessages {
+  const legacy = Object.fromEntries(
+    MARKETING_LEGACY_IDS.flatMap((id) =>
+      Object.hasOwn(legacyMessages, id) ? [[id, legacyMessages[id]]] : [],
+    ),
+  );
+
+  return {
+    ...(siteMessages as Record<string, unknown>),
+    dashboard: { shell: dashboardMessages.shell },
+    legacy,
+  } as AbstractIntlMessages;
+}
