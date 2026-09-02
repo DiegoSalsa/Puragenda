@@ -168,6 +168,52 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         </div>
       </section>
 
+      <section className="mx-auto w-full max-w-6xl px-6 py-20" aria-labelledby="soluciones-relacionadas">
+        <div className="max-w-3xl">
+          <p className="font-black uppercase text-[#7C3AED]">Evalúa el flujo completo</p>
+          <h2 id="soluciones-relacionadas" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
+            Soluciones relacionadas para {data.name.toLowerCase()}
+          </h2>
+          <p className="mt-5 text-lg font-bold opacity-75">
+            Revisa cómo Puragenda coordina al equipo, protege las horas y reduce tareas manuales antes de elegir un plan.
+          </p>
+        </div>
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              href: "/funciones/reservas-online-con-abono",
+              title: "Reservas con abono",
+              description: "Protege servicios y horarios de alta demanda con un anticipo informado.",
+            },
+            {
+              href: "/funciones/agenda-multiples-profesionales",
+              title: "Agenda para equipos",
+              description: "Coordina disponibilidad, servicios y permisos de cada profesional.",
+            },
+            {
+              href: "/guias/reducir-inasistencias-reservas",
+              title: "Reducir inasistencias",
+              description: "Aplica confirmaciones, políticas claras y seguimiento de clientes.",
+            },
+            {
+              href: "/pricing",
+              title: "Planes y precios",
+              description: "Compara profesionales incluidos, funciones y prueba gratuita.",
+            },
+          ].map((item, index) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white ${["bg-[#BFFCC6]", "bg-[#85E3FF]", "bg-[#FFF5BA]", "bg-[#FFB5E8]"][index]}`}
+            >
+              <h3 className="text-xl font-black uppercase">{item.title}</h3>
+              <p className="mt-3 font-bold leading-6 opacity-75">{item.description}</p>
+              <span className="mt-5 inline-flex font-black uppercase text-[#5B21B6]">Ver detalle →</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="mx-auto w-full max-w-4xl px-6 py-20">
         <div className="text-center mb-12">

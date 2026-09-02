@@ -440,6 +440,17 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               </figcaption>
             </figure>
           </div>
+          <div className="mt-12 flex flex-wrap justify-center gap-4 text-center">
+            <Link href="/para/barberias" className="rounded-full border-2 border-black bg-[#FFF5BA] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              Agenda online para barberías
+            </Link>
+            <Link href="/para/estetica" className="rounded-full border-2 border-black bg-[#FFB5E8] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              Reservas para estética y spa
+            </Link>
+            <Link href="/funciones/agenda-multiples-profesionales" className="rounded-full border-2 border-black bg-[#85E3FF] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              Agenda para equipos
+            </Link>
+          </div>
         </section>
 
         {/* CTA FINAL */}

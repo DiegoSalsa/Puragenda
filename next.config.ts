@@ -25,6 +25,15 @@ const noIndexRoutes = [
   "/para/x7k9m2v4q8/:path*",
 ];
 
+const canonicalHostRedirects = [
+  {
+    source: "/:path*",
+    has: [{ type: "host" as const, value: "puragenda.vercel.app" }],
+    destination: "https://www.puragenda.cl/:path*",
+    permanent: true,
+  },
+];
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   outputFileTracingRoot: projectRoot,
@@ -35,6 +44,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "10mb",
     },
+  },
+  async redirects() {
+    return canonicalHostRedirects;
   },
   async headers() {
     return [
