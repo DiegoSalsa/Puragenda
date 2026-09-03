@@ -14,6 +14,10 @@ describe("getGoogleAnalyticsId", () => {
     expect(getGoogleAnalyticsId("G-TESTID01")).toBe("G-TESTID01");
   });
 
+  it("prefixes a bare measurement id with G-", () => {
+    expect(getGoogleAnalyticsId("TESTID01")).toBe("G-TESTID01");
+  });
+
   it("rejects empty, GTM, and malformed values", () => {
     expect(getGoogleAnalyticsId("")).toBeNull();
     expect(getGoogleAnalyticsId("   ")).toBeNull();

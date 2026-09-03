@@ -8,7 +8,9 @@ import { ANALYTICS_POLICY_VERSION } from "./policy";
 export const GOOGLE_ANALYTICS_ID_PATTERN = /^G-[A-Z0-9]+$/i;
 
 export function getGoogleAnalyticsId(value = process.env.NEXT_PUBLIC_GA_ID) {
-  const id = value?.trim() ?? "";
+  const raw = value?.trim() ?? "";
+  if (!raw) return null;
+  const id = /^G-/i.test(raw) ? raw.toUpperCase() : `G-${raw.toUpperCase()}`;
   return GOOGLE_ANALYTICS_ID_PATTERN.test(id) ? id : null;
 }
 
