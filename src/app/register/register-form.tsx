@@ -97,14 +97,15 @@ export function RegisterForm({
           termsAccepted,
         }),
       });
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         const message = data.error || t("errors.createAccount");
         const details = data.details?.length ? `: ${data.details.join(", ")}` : "";
         setError(`${message}${details}`);
         return;
       }
+      if (!data.user) return;
 
       track("registration_completed", {
         plan: wantsPlan || "EQUIPO",

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   ANALYTICS_CONSENT_CHANGED,
   hasAnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { isGoogleAnalyticsPath } from "@/lib/analytics/google-analytics";
+import { toGoogleAnalyticsPagePath } from "@/lib/analytics/path";
 
 type Gtag = (...args: unknown[]) => void;
 
@@ -25,6 +26,7 @@ function setAnalyticsStorage(granted: boolean) {
 export function GoogleAnalyticsConsent() {
   const pathname = usePathname();
   const allowed = isGoogleAnalyticsPath(pathname);
+  const lastSpaPath = useRef<string | null>(null);
 
   useEffect(() => {
     const sync = () => {
@@ -34,6 +36,23 @@ export function GoogleAnalyticsConsent() {
     window.addEventListener(ANALYTICS_CONSENT_CHANGED, sync);
     return () => window.removeEventListener(ANALYTICS_CONSENT_CHANGED, sync);
   }, [allowed]);
+
+  useEffect(() => {
+    if (!allowed) return;
+    if (lastSpaPath.current === null) {
+      lastSpaPath.current = pathname;
+      return;
+    }
+    if (lastSpaPath.current === pathname) return;
+    lastSpaPath.current = pathname;
+    const gtag = getGtag();
+    if (!gtag) return;
+    const pagePath = toGoogleAnalyticsPagePath(pathname);
+    gtag("event", "page_view", {
+      page_path: pagePath,
+      page_location: `${window.location.origin}${pagePath}`,
+    });
+  }, [allowed, pathname]);
 
   return null;
 }

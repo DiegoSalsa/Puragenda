@@ -4,6 +4,7 @@ import { LandingLayout } from "@/components/landing/landing-layout";
 import { Scissors, Sparkles, CheckCircle2, TrendingUp, Users2, Clock, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 import { industriesData } from "@/lib/data/industries";
 import { createPageMetadata } from "@/lib/seo";
@@ -203,11 +204,11 @@ export default async function SolucionesPage() {
           <LocalizedText id="brrj9qrVXilr" />
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/register">
+          <TrackedLink href="/register" cta="register" placement="final_cta">
             <button className="bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 transition-all">
               <LocalizedText id="Qx6QrYQs-Z6R" />
             </button>
-          </Link>
+          </TrackedLink>
           <Link href="/contacto">
             <button className="bg-black text-white dark:bg-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 transition-all">
               <LocalizedText id="QBmYgp3yqmgG" />

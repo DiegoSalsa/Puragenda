@@ -63,3 +63,34 @@ describe("Google Analytics layout tag", () => {
     expect(script).toContain('analytics_storage: granted ? "granted" : "denied"');
   });
 });
+
+describe("GA4 conversion wiring", () => {
+  it("does not import @next/third-parties as a second analytics implementation", () => {
+    const layout = readFileSync(resolve(process.cwd(), "src/app/layout.tsx"), "utf8");
+    const client = readFileSync(resolve(process.cwd(), "src/lib/analytics/client.ts"), "utf8");
+    expect(layout).not.toContain("@next/third-parties");
+    expect(client).toContain("sendGoogleAnalyticsEvents");
+    expect(client).toContain("getGoogleAnalyticsId()");
+  });
+
+  it("records sign_up only after a successful register payload", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/app/register/register-form.tsx"), "utf8");
+    expect(source).toContain('track("registration_started"');
+    expect(source).toContain('track("registration_completed"');
+    expect(source.indexOf('track("registration_started"')).toBeLessThan(source.indexOf('track("registration_completed"'));
+    expect(source).toContain("if (!data.user) return;");
+    expect(source.indexOf("if (!response.ok)")).toBeLessThan(source.indexOf('track("registration_completed"'));
+  });
+
+  it("records login only after a successful authentication response", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/app/login/login-form.tsx"), "utf8");
+    expect(source).toContain('track("login_completed")');
+    expect(source.indexOf("if (!response.ok)")).toBeLessThan(source.indexOf('track("login_completed")'));
+  });
+
+  it("records booking_created only after the booking request succeeds", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/app/widget/[slug]/widget-client.tsx"), "utf8");
+    expect(source.indexOf("if (!res.ok)")).toBeLessThan(source.indexOf('track("booking_created"'));
+    expect(source.indexOf('track("booking_created"')).toBeLessThan(source.indexOf('track("booking_failed"'));
+  });
+});

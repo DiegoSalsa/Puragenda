@@ -736,6 +736,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       setStaffSelectionMode("single");
       setSelectedDate(null);
       setSelectedSlot(null);
+      const alreadySelected = selectedServices.some((item) => item.id === s.id);
+      if (!alreadySelected && selectedServices.length === 0) {
+        track("booking_service_selected", {
+          booking_mode: s.bookingMode.toLowerCase(),
+          service_count: 1,
+          has_deposit: depositRequired || s.depositAmount > 0,
+          has_options: s.optionCategories.length > 0,
+        }, { businessSlug: business.slug });
+      }
       setSelectedServices((prev) => {
         const exists = prev.find((x) => x.id === s.id);
         if (exists) return prev.filter((x) => x.id !== s.id);

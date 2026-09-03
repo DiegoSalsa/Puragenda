@@ -3,6 +3,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Code2 } from "@/components/icons/hover-icons";
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -121,11 +122,11 @@ export default async function AboutPage() {
         <div className="mt-20 border-t-4 border-black dark:border-white pt-12 text-center space-y-6">
           <p className="text-xl font-black uppercase opacity-70"><LocalizedText id="1CcZ8q9J0O6q" /></p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
+            <TrackedLink href="/register" cta="register" placement="final_cta">
               <button className="flex items-center gap-2 bg-[#FFB5E8] text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
                 <LocalizedText id="k4Z5q8KEHh5f" /> <ArrowRight className="h-5 w-5" />
               </button>
-            </Link>
+            </TrackedLink>
             <Link href="/pricing">
               <button className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
                 <LocalizedText id="WafzZ-nQbTje" />

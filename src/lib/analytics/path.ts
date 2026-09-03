@@ -57,3 +57,24 @@ export function normalizeTrackingPath(input: string): string {
     : "/other";
 }
 
+/**
+ * GA4 landing-page reports need real public URLs. Tokenized and private
+ * routes stay collapsed so identifiers never leave the browser as page_path.
+ */
+export function toGoogleAnalyticsPagePath(input: string): string {
+  let path: string;
+  try {
+    path = new URL(input, "https://analytics.invalid").pathname;
+  } catch {
+    return "/other";
+  }
+
+  if (path === "/" || STATIC_PATHS.has(path) || path === "/guias") return path;
+  if (path.startsWith("/para/x7k9m2v4q8")) return "/other";
+  if (/^\/para\/[a-z0-9-]+$/i.test(path)) return path;
+  if (/^\/funciones\/[a-z0-9-]+$/i.test(path)) return path;
+  if (/^\/guias\/[a-z0-9-]+$/i.test(path)) return path;
+  if (path === "/demo") return "/demo";
+  return normalizeTrackingPath(path);
+}
+

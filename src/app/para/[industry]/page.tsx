@@ -4,6 +4,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getRelatedIndustries, industriesData } from "@/lib/data/industries";
 import { createPageMetadata } from "@/lib/seo";
@@ -81,11 +82,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         </p>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link href="/register">
+          <TrackedLink href="/register" cta="register" placement="hero">
             <button className="bg-[#7C3AED] text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all flex items-center gap-3 mx-auto sm:mx-0">
               <LocalizedText id="NqC0Mo3B6h7f" /> <ArrowRight className="h-5 w-5" />
             </button>
-          </Link>
+          </TrackedLink>
           <a href="/demo">
             <button className="bg-white dark:bg-black text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFFFFF] hover:translate-y-1 hover:shadow-[3px_3px_0_#000] dark:hover:shadow-[3px_3px_0_#FFFFFF] transition-all mx-auto sm:mx-0">
               <LocalizedText id="vP-8OnnRFj1a" />

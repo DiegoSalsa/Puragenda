@@ -7,6 +7,8 @@ import {
   type TrackingProperties,
   sanitizeTrackingProperties,
 } from "@/lib/analytics/events";
+import { googleAnalyticsEventsFor } from "@/lib/analytics/google-events";
+import { getGoogleAnalyticsId } from "@/lib/analytics/google-analytics";
 import { normalizeTrackingPath } from "@/lib/analytics/path";
 
 const VISITOR_ID_KEY = "puragenda_tracking_visitor_id";
@@ -197,6 +199,19 @@ export function track(
   void loadPosthog().then((posthog) => {
     posthog?.capture(event, { ...safeProperties, $current_url: window.location.origin + payload.path });
   });
+
+  sendGoogleAnalyticsEvents(event, safeProperties);
+}
+
+function sendGoogleAnalyticsEvents(event: TrackingEventName, properties: TrackingProperties) {
+  if (!getGoogleAnalyticsId()) return;
+  const gtag = (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
+  if (typeof gtag !== "function") return;
+
+  const gaEvents = googleAnalyticsEventsFor(event, properties, { pagePath: window.location.pathname });
+  for (const gaEvent of gaEvents) {
+    gtag("event", gaEvent.name, gaEvent.params);
+  }
 }
 
 /** Records the user's choice so the server can demonstrate when consent was granted or denied. */
