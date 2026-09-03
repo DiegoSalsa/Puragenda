@@ -10,7 +10,7 @@ export const SOFTWARE_ID = `${SITE_URL}#software`;
 export const PUBLIC_CONTACT = {
   email: "contacto@purocode.com",
   telephone: "+56949255006",
-  purocodeUrl: "https://purocode.com",
+  purocodeUrl: "https://www.purocode.com",
   purocodeInstagram: "https://www.instagram.com/purocodecl/",
 } as const;
 

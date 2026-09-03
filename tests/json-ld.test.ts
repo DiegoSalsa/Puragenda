@@ -32,6 +32,7 @@ describe("JSON-LD helpers", () => {
     expect(softwareApplicationNode()["@id"]).toBe(SOFTWARE_ID);
     expect(softwareApplicationNode().publisher).toEqual({ "@id": ORGANIZATION_ID });
     expect(WEBSITE_ID).toBe("https://www.puragenda.cl#website");
+    expect(organizationNode().parentOrganization.url).toBe("https://www.purocode.com");
   });
 
   it("uses published plan prices as Offer, not AggregateOffer", () => {
