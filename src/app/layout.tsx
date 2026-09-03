@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     "SaaS",
     "Puragenda",
   ],
-  authors: [{ name: "PuroCode", url: "https://purocode.com" }],
+  authors: [{ name: "PuroCode", url: "https://www.purocode.com" }],
   creator: "PuroCode",
   publisher: "PuroCode",
   manifest: "/site.webmanifest",

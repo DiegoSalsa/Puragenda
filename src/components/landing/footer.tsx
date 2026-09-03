@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { TrackedWhatsAppLink } from "@/components/analytics/tracked-link";
+import { PUBLIC_CONTACT } from "@/lib/json-ld";
 
 export function Footer() {
   const navigation = useTranslations("navigation");
@@ -37,7 +38,7 @@ export function Footer() {
               <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("faq")}</Link>
               <Link href="/mi-agenda" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("myAppointments")}</Link>
               <a href="/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
-              <Link href="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>
+              <Link href="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>
             </nav>
           </div>
 
@@ -72,7 +73,7 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("social")}</p>
             <div className="flex items-center gap-3">
               <a
-                href="https://www.instagram.com/purocodecl?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                href={PUBLIC_CONTACT.purocodeInstagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:border-[#7C3AED]/30 hover:text-[#7C3AED]"

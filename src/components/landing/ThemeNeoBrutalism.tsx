@@ -409,6 +409,12 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             <Link href="/para/estetica" className="rounded-full border-2 border-black bg-[#FFB5E8] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
               Reservas para estética y spa
             </Link>
+            <Link href="/para/psicologos" className="rounded-full border-2 border-black bg-[#BFFCC6] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              Agenda online para psicólogos
+            </Link>
+            <Link href="/para/manicure" className="rounded-full border-2 border-black bg-[#FFC9DE] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
+              Reservas para manicure
+            </Link>
             <Link href="/funciones/agenda-multiples-profesionales" className="rounded-full border-2 border-black bg-[#85E3FF] px-5 py-3 text-sm font-black uppercase text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-1 dark:border-white">
               Agenda para equipos
             </Link>

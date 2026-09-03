@@ -15,6 +15,7 @@ export type IndustrySEOData = {
     answer: string;
   }[];
   keywords: string[];
+  relatedSlugs: string[];
 };
 
 export const industriesData: IndustrySEOData[] = [
@@ -59,6 +60,7 @@ export const industriesData: IndustrySEOData[] = [
       },
     ],
     keywords: ["software peluquería", "agenda online salón", "reservas peluquería", "sistema citas peluqueros"],
+    relatedSlugs: ["barberias", "estetica", "manicure"],
   },
   {
     slug: "barberias",
@@ -105,6 +107,7 @@ export const industriesData: IndustrySEOData[] = [
       },
     ],
     keywords: ["agenda online para barberías", "agenda barbería Chile", "software para barberías", "reservas online barbería", "agenda para barberos"],
+    relatedSlugs: ["peluquerias", "tatuadores"],
   },
   {
     slug: "estetica",
@@ -147,6 +150,7 @@ export const industriesData: IndustrySEOData[] = [
       },
     ],
     keywords: ["software estética", "agenda centro estético", "reservas spa", "sistema gestión clínica estética"],
+    relatedSlugs: ["peluquerias", "manicure"],
   },
   {
     slug: "clinicas",
@@ -189,6 +193,7 @@ export const industriesData: IndustrySEOData[] = [
       },
     ],
     keywords: ["software médico", "agenda clínica", "reservas médicos", "sistema gestión pacientes"],
+    relatedSlugs: ["psicologos", "kinesiologos"],
   },
   {
     slug: "psicologos",
@@ -210,6 +215,7 @@ export const industriesData: IndustrySEOData[] = [
       { question: "¿Puedo solicitar un abono por la sesión?", answer: "Sí. Puedes definir el monto del abono por servicio para reducir reservas que luego no se concretan." },
     ],
     keywords: ["agenda para psicólogos", "software psicólogos Chile", "reservas psicólogo online", "agenda pacientes psicología"],
+    relatedSlugs: ["clinicas", "kinesiologos"],
   },
   {
     slug: "kinesiologos",
@@ -231,6 +237,7 @@ export const industriesData: IndustrySEOData[] = [
       { question: "¿Es una ficha clínica electrónica?", answer: "No. Puragenda organiza la agenda y los clientes, pero no reemplaza una ficha clínica ni un software médico especializado." },
     ],
     keywords: ["agenda kinesiólogos", "software kinesiología Chile", "reservas centro kinesiológico", "agenda rehabilitación"],
+    relatedSlugs: ["clinicas", "psicologos"],
   },
   {
     slug: "manicure",
@@ -252,6 +259,7 @@ export const industriesData: IndustrySEOData[] = [
       { question: "¿Funciona para una manicurista independiente?", answer: "Sí. Puedes comenzar con el plan Individual y probarlo 30 días sin tarjeta." },
     ],
     keywords: ["agenda para manicuristas", "software nail studio", "reservas manicure Chile", "agenda online uñas"],
+    relatedSlugs: ["estetica", "peluquerias"],
   },
   {
     slug: "tatuadores",
@@ -273,5 +281,15 @@ export const industriesData: IndustrySEOData[] = [
       { question: "¿Puedo revisar una solicitud antes de aceptarla?", answer: "Sí. El modo de encargos está pensado para evaluar requisitos, capacidad y fecha estimada antes de avanzar." },
     ],
     keywords: ["agenda tatuadores", "software estudio tatuajes", "reservas tatuajes Chile", "abonos tatuadores"],
+    relatedSlugs: ["barberias", "estetica"],
   },
 ];
+
+export function getRelatedIndustries(slug: string): IndustrySEOData[] {
+  const current = industriesData.find((industry) => industry.slug === slug);
+  if (!current) return [];
+
+  return current.relatedSlugs
+    .map((relatedSlug) => industriesData.find((industry) => industry.slug === relatedSlug))
+    .filter((industry): industry is IndustrySEOData => Boolean(industry));
+}

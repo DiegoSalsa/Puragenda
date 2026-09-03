@@ -167,7 +167,7 @@ export default function AlternativaAgendaProPage() {
               </span>
             </Link>
             <a
-              href="https://www.agendapro.com/"
+              href="https://agendapro.com/cl"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-2xl border-4 border-black bg-[#FFF5BA] p-6 text-black shadow-[5px_5px_0_#000] dark:border-white"

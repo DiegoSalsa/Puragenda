@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { industriesData } from "@/lib/data/industries";
+import { getRelatedIndustries, industriesData } from "@/lib/data/industries";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
 import {
@@ -48,6 +48,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const { industry } = await params;
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
+  const relatedIndustries = getRelatedIndustries(data.slug);
 
   const structuredData = jsonLdGraph([
     organizationRef(),
@@ -183,6 +184,33 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
           ))}
         </div>
       </section>
+
+      {relatedIndustries.length > 0 ? (
+        <section className="mx-auto w-full max-w-6xl px-6 pb-8" aria-labelledby="rubros-relacionados">
+          <div className="max-w-3xl">
+            <p className="font-black uppercase text-[#7C3AED]">Otros rubros</p>
+            <h2 id="rubros-relacionados" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
+              Otras agendas relacionadas
+            </h2>
+            <p className="mt-5 text-lg font-bold opacity-75">
+              Si tu negocio se parece más a otro oficio, revisa la página específica antes de elegir un plan.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {relatedIndustries.map((item, index) => (
+              <Link
+                key={item.slug}
+                href={`/para/${item.slug}`}
+                className={`border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white ${["bg-[#FFF5BA]", "bg-[#FFB5E8]", "bg-[#85E3FF]"][index % 3]}`}
+              >
+                <h3 className="text-xl font-black uppercase">{item.name}</h3>
+                <p className="mt-3 font-bold leading-6 opacity-75">{item.description}</p>
+                <span className="mt-5 inline-flex font-black uppercase text-[#5B21B6]">Ver agenda para {item.name.toLowerCase()} →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* FAQ */}
       <section className="mx-auto w-full max-w-4xl px-6 py-20">
