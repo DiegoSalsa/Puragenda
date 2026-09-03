@@ -43,7 +43,7 @@ export function HeroSection() {
                 </span>
               </button>
             </Link>
-            <a href="/api/auth/demo" className="w-full sm:w-auto">
+            <a href="/demo" className="w-full sm:w-auto">
               <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-card/40 px-8 py-3.5 text-sm font-semibold text-foreground backdrop-blur-xl transition-all hover:bg-muted/60 hover:border-border shadow-sm">
                 <LocalizedText id="vP-8OnnRFj1a" />
               </button>

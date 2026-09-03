@@ -78,7 +78,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                     <LandingText id="startFree" /> <ArrowRight className="h-6 w-6 stroke-[3px]" />
                   </button>
                 </TrackedLink>
-                <TrackedCtaAnchor href="/api/auth/demo" cta="demo" placement="hero" className="w-full sm:w-auto group relative">
+                <TrackedCtaAnchor href="/demo" cta="demo" placement="hero" className="w-full sm:w-auto group relative">
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#BFFCC6] border-2 border-black text-black text-xs font-black uppercase px-2 py-0.5 shadow-[2px_2px_0_#000] whitespace-nowrap z-10">
                     <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse inline-block" />
                     <LandingText id="live" />
@@ -426,7 +426,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
                   <LandingText id="startFree" /> <ArrowRight className="h-5 w-5" />
                 </button>
               </TrackedLink>
-              <TrackedCtaAnchor href="/api/auth/demo" cta="demo" placement="final_cta">
+              <TrackedCtaAnchor href="/demo" cta="demo" placement="final_cta">
                 <button className="bg-white text-black border-4 border-black px-8 py-4 font-black uppercase text-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_#000000] hover:bg-gray-100 transition-colors">
                   <LandingText id="viewDemo" />
                 </button>

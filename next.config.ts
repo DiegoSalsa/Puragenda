@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import createNextIntlPlugin from "next-intl/plugin";
+import { NOINDEX_HEADER_SOURCES } from "./src/lib/crawler-policy";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -11,19 +12,7 @@ const upgradeInsecureRequests = process.env.NODE_ENV === "production"
   : "";
 const unsafeEval = process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'";
 
-const noIndexRoutes = [
-  "/dashboard/:path*",
-  "/login",
-  "/register",
-  "/widget/:path*",
-  "/cita/:path*",
-  "/encargo/:path*",
-  "/mi-plan/:path*",
-  "/mis-premios/:path*",
-  "/reagendar/:path*",
-  "/responder/:path*",
-  "/para/x7k9m2v4q8/:path*",
-];
+const noIndexRoutes = [...NOINDEX_HEADER_SOURCES];
 
 const canonicalHostRedirects = [
   {

@@ -36,7 +36,7 @@ export function Footer() {
               <Link href="/funciones/agenda-multiples-profesionales" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Agenda para equipos</Link>
               <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("faq")}</Link>
               <Link href="/mi-agenda" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("myAppointments")}</Link>
-              <a href="/api/auth/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
+              <a href="/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
               <Link href="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>
             </nav>
           </div>

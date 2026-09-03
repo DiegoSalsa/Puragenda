@@ -62,7 +62,7 @@ export function Theme70s({ user, business }: LandingIdentityProps) {
                   <LocalizedText id="NqC0Mo3B6h7f" /> <ArrowRight className="h-6 w-6 stroke-[3px]" />
                 </button>
               </Link>
-              <a href="/api/auth/demo" className="w-full sm:w-auto group relative">
+              <a href="/demo" className="w-full sm:w-auto group relative">
                 <span className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#32CD32] border-[3px] border-black dark:border-[#FFFDD0] text-black text-xs font-black uppercase px-3 py-1 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFDD0] whitespace-nowrap z-10 rotate-3">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse inline-block" />
                   <LocalizedText id="M8m4YGdgS2Pm" />
@@ -389,7 +389,7 @@ export function Theme70s({ user, business }: LandingIdentityProps) {
                   <LocalizedText id="NqC0Mo3B6h7f" /> <ArrowRight className="h-6 w-6" />
                 </button>
               </Link>
-              <a href="/api/auth/demo">
+              <a href="/demo">
                 <button className="rounded-full border-[4px] border-black dark:border-[#FFFDD0] bg-[#FF4500] px-10 py-5 text-xl font-black text-white shadow-[8px_8px_0_#000] dark:shadow-[8px_8px_0_#FFFDD0] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0_#000] dark:hover:shadow-[4px_4px_0_#FFFDD0] transition-all -rotate-1 flex items-center gap-3">
                   <LocalizedText id="vP-8OnnRFj1a" />
                 </button>
