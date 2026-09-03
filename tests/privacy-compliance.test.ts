@@ -9,7 +9,7 @@ import { getTermsNotice, getTrackingNotice } from "@/lib/privacy/tracking-notice
 
 describe("privacy compliance baseline", () => {
   it("keeps the consent policy version and retention windows explicit", () => {
-    expect(ANALYTICS_POLICY_VERSION).toBe("2026-08-29");
+    expect(ANALYTICS_POLICY_VERSION).toBe("2026-09-02");
     expect(ANALYTICS_RETENTION_DAYS).toBe(395);
     expect(PRIVACY_REQUEST_RETENTION_DAYS).toBe(1460);
   });
@@ -19,6 +19,7 @@ describe("privacy compliance baseline", () => {
     const terms = getTermsNotice("es");
 
     expect(tracking.summary.toLowerCase()).toContain("consentimiento previo");
+    expect(tracking.providers.toLowerCase()).toContain("google analytics");
     expect(tracking.rights.toLowerCase()).toContain("30 días");
     expect(terms.description.toLowerCase()).toContain("opcionales");
   });

@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { getGoogleAnalyticsId } from "@/lib/analytics/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo";
 import { MarketingIntlProvider } from "@/components/i18n/marketing-intl-provider";
@@ -112,6 +114,7 @@ export const metadata: Metadata = {
 };
 
 const initialMarketingMessages = buildMarketingMessages(esMessages, esLegacyMessages, esDashboardMessages);
+const googleAnalyticsId = getGoogleAnalyticsId();
 
 export default function RootLayout({
   children,
@@ -129,6 +132,7 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
+            {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
             {children}
             <CookieBanner />
           </ThemeProvider>

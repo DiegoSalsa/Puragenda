@@ -23,8 +23,9 @@ No se envían nombres, teléfonos, correos ni contenido de formularios a la anal
 - Supabase: base operativa y registros.
 - Vercel: hosting y ejecución.
 - PostHog: opcional; solo tras consentimiento y con captura de sesiones desactivada por defecto.
+- Google Analytics 4: opcional; se carga `gtag.js` solo tras consentimiento cuando `NEXT_PUBLIC_GA_ID` está configurado.
 
-Mantener inventario de contratos, subencargados, regiones y garantías de transferencias. Si PostHog no tiene una evaluación aprobada, mantener `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` sin configurar.
+Mantener inventario de contratos, subencargados, regiones y garantías de transferencias. Si PostHog no tiene una evaluación aprobada, mantener `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` sin configurar. Si no hay DPA de Google Analytics, mantener `NEXT_PUBLIC_GA_ID` sin configurar.
 
 ## Derechos y plazos
 
