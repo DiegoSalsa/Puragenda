@@ -89,9 +89,14 @@ export default async function SolucionesPage() {
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> <LocalizedText id="bmAZN4ZcWV4B" /></li>
               <li className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#7C3AED]" /> <LocalizedText id="czYWUXRUyFd1" /></li>
             </ul>
-            <Link href="/para/barberias" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
-              <LocalizedText id="NON2NMBZVy8O" />
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+              <Link href="/para/barberias" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
+                <LocalizedText id="NON2NMBZVy8O" />
+              </Link>
+              <Link href="/software-agenda-barberias" className="inline-flex font-black uppercase text-[#7C3AED] hover:underline">
+                Software de agenda para barberías
+              </Link>
+            </div>
           </div>
         </div>
 

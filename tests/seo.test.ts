@@ -24,14 +24,15 @@ describe("SEO helpers", () => {
     expect(serializeJsonLd({ text: "</script>" })).toContain("\\u003c/script>");
   });
 
-  it("targets the commercial barber search intent with complete answer content", () => {
+  it("keeps the barbershop industry spoke distinct from the software landing", () => {
     const barberias = industriesData.find((industry) => industry.slug === "barberias");
 
     expect(barberias).toMatchObject({
-      title: "Agenda online para barberías en Chile",
-      heroHeadline: "Agenda online para barberías en Chile",
+      title: "Puragenda para barberías",
+      heroHeadline: "Puragenda para barberías",
     });
-    expect(barberias?.description).toContain("reservas 24/7");
+    expect(barberias?.title).not.toBe("Software de agenda para barberías");
+    expect(barberias?.keywords).not.toContain("software para barberías");
     expect(barberias?.faq.some((item) => item.question.includes("Cuánto cuesta"))).toBe(true);
     expect(barberias?.faq.some((item) => item.answer.includes("navegador del celular"))).toBe(true);
   });

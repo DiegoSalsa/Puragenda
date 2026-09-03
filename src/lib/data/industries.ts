@@ -66,10 +66,10 @@ export const industriesData: IndustrySEOData[] = [
     slug: "barberias",
     name: "Barberías",
     singularName: "Barbería",
-    title: "Agenda online para barberías en Chile",
-    description: "Agenda online para barberías en Chile: recibe reservas 24/7, organiza horarios por barbero, cobra abonos y reduce inasistencias. Prueba 30 días gratis.",
-    heroHeadline: "Agenda online para barberías en Chile",
-    heroSubheadline: "Tus clientes eligen servicio, barbero y una hora realmente disponible desde Instagram, WhatsApp o Google. Tú reduces mensajes, choques de horario e inasistencias.",
+    title: "Puragenda para barberías",
+    description: "Cómo encaja Puragenda en una barbería: reservas desde Instagram o WhatsApp, horario por barbero y un panel para el local. El software de agenda está en una landing aparte.",
+    heroHeadline: "Puragenda para barberías",
+    heroSubheadline: "Página del rubro: el cliente reserva desde tu enlace y cada barbero mantiene su jornada. Si estás evaluando un software de agenda para el local, usa la landing comercial.",
     benefits: [
       {
         title: "Reservas 24/7 desde tu enlace",
@@ -86,8 +86,8 @@ export const industriesData: IndustrySEOData[] = [
     ],
     faq: [
       {
-        question: "¿Cómo funciona una agenda online para barberías?",
-        answer: "Configuras servicios, duración, horarios y barberos. El cliente abre tu enlace, elige a quién quiere reservar y ve solo las horas disponibles. Al confirmar, la cita aparece en el panel del negocio.",
+        question: "¿Esta página es el software de agenda para barberías?",
+        answer: "No. Esta es la ficha del rubro dentro de Soluciones. El software de agenda para barberías —horarios por barbero, duraciones, abonos y flujo de reserva— está en su landing comercial.",
       },
       {
         question: "¿Cada barbero puede tener un horario diferente?",
@@ -106,7 +106,7 @@ export const industriesData: IndustrySEOData[] = [
         answer: "El precio depende de si trabaja un profesional o un equipo. Los valores vigentes, profesionales incluidos y condiciones de la prueba gratuita están publicados en la página de planes.",
       },
     ],
-    keywords: ["agenda online para barberías", "agenda barbería Chile", "software para barberías", "reservas online barbería", "agenda para barberos"],
+    keywords: ["Puragenda para barberías", "reservas para barberías", "barbería con agenda digital"],
     relatedSlugs: ["peluquerias", "tatuadores"],
   },
   {

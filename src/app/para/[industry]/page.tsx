@@ -102,6 +102,15 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
             <p className="text-sm font-black uppercase tracking-wider text-[#6D28D9] dark:text-[#C4B5FD]">Respuesta rápida</p>
             <h2 id="respuesta-rubro" className="mt-3 text-3xl font-black uppercase tracking-tight">¿Cómo ayuda una agenda online a {data.name.toLowerCase()}?</h2>
             <p className="mt-5 text-lg font-bold leading-8 opacity-80">{data.description} El cliente ve solo horarios realmente disponibles y el negocio conserva el control de profesionales, servicios y reglas de reserva.</p>
+            {data.slug === "barberias" ? (
+              <p className="mt-4 text-lg font-bold leading-8">
+                Si evalúas un{" "}
+                <Link href="/software-agenda-barberias" className="underline underline-offset-4">
+                  software de agenda para barberías
+                </Link>
+                , esa landing cubre horarios por barbero, duraciones y abonos.
+              </p>
+            ) : null}
           </div>
           <div className="border-t-4 border-black pt-6 dark:border-white md:border-l-4 md:border-t-0 md:pl-8 md:pt-0">
             <h3 className="text-xl font-black uppercase">Flujo en 3 pasos</h3>
@@ -152,6 +161,13 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
+            ...(data.slug === "barberias"
+              ? [{
+                  href: "/software-agenda-barberias",
+                  title: "Software de agenda para barberías",
+                  description: "Landing comercial: cómo el local organiza barberos, servicios y reservas.",
+                }]
+              : []),
             {
               href: "/funciones/reservas-online-con-abono",
               title: "Reservas con abono",
@@ -176,7 +192,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
             <Link
               key={item.href}
               href={item.href}
-              className={`border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white ${["bg-[#BFFCC6]", "bg-[#85E3FF]", "bg-[#FFF5BA]", "bg-[#FFB5E8]"][index]}`}
+              className={`border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white ${["bg-[#BFFCC6]", "bg-[#85E3FF]", "bg-[#FFF5BA]", "bg-[#FFB5E8]"][index % 4]}`}
             >
               <h3 className="text-xl font-black uppercase">{item.title}</h3>
               <p className="mt-3 font-bold leading-6 opacity-75">{item.description}</p>

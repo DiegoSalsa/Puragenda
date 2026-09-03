@@ -204,7 +204,11 @@ export default async function SchedulingSystemLandingPage() {
           ))}
         </div>
         <p className="mt-8 font-bold">
-          También hay páginas para clínicas, kinesiólogos, manicure y tatuadores en{" "}
+          Si evalúas un{" "}
+          <Link href="/software-agenda-barberias" className="font-black text-[#7C3AED] underline underline-offset-4">
+            software de agenda para barberías
+          </Link>
+          , esa landing cubre horarios por barbero y el flujo del local. También hay páginas para clínicas, kinesiólogos, manicure y tatuadores en{" "}
           <Link href="/soluciones" className="font-black text-[#7C3AED] underline underline-offset-4">
             soluciones
           </Link>
