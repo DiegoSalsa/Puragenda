@@ -53,7 +53,7 @@ describe("Google Analytics layout tag", () => {
   it("emits gtag.js from the root layout HTML", () => {
     const layout = readFileSync(resolve(process.cwd(), "src/app/layout.tsx"), "utf8");
     expect(layout).toContain("https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}");
-    expect(layout).toContain('strategy="beforeInteractive"');
+    expect(layout).toContain("dangerouslySetInnerHTML");
     expect(layout).toContain("process.env.NEXT_PUBLIC_GA_ID");
   });
 

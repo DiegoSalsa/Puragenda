@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
@@ -127,19 +126,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
-      {googleAnalyticsId ? (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-            strategy="beforeInteractive"
-          />
-          <Script id="ga-init" strategy="beforeInteractive">
-            {`${getGoogleConsentBootstrapScript()}
+      <head>
+        {googleAnalyticsId ? (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `${getGoogleConsentBootstrapScript()}
 gtag("js", new Date());
-gtag("config", ${JSON.stringify(googleAnalyticsId)});`}
-          </Script>
-        </>
-      ) : null}
+gtag("config", ${JSON.stringify(googleAnalyticsId)});`,
+              }}
+            />
+          </>
+        ) : null}
+      </head>
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
