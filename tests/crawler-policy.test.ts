@@ -1,16 +1,16 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-import { GET as demoGet } from "@/app/demo/route";
+import { metadata as demoMetadata } from "@/app/demo/layout";
+import { metadata as notFoundMetadata } from "@/app/not-found";
 import { GET as llmsGet } from "@/app/llms.txt/route";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import {
   DEMO_LOGIN_PATH,
   DEMO_PUBLIC_PATH,
+  NOT_FOUND_ROBOTS,
   SEARCH_AND_RETRIEVAL_USER_AGENTS,
-  isKnownCrawler,
   isNoIndexPath,
   isPathDisallowedForCrawler,
 } from "@/lib/crawler-policy";
@@ -148,23 +148,22 @@ describe("crawler policy", () => {
     }
   });
 
-  it("serves a noindex document to crawlers on /demo and logs humans into the demo", async () => {
-    const botResponse = demoGet(
-      new NextRequest("http://localhost:3000/demo", {
-        headers: { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
-      }),
-    );
-    expect(botResponse.status).toBe(200);
-    expect(botResponse.headers.get("X-Robots-Tag")).toBe("noindex, nofollow, noarchive");
-    expect(await botResponse.text()).toContain("noindex");
+  it("serves /demo as a noindex page and starts the demo only via POST", () => {
+    expect(demoMetadata.robots).toMatchObject({ index: false, follow: false });
+    const demoPage = readFileSync(join(process.cwd(), "src/app/demo/page.tsx"), "utf8");
+    const demoAction = readFileSync(join(process.cwd(), "src/server/actions/demo.actions.ts"), "utf8");
+    expect(demoPage).toContain("startDemoAction");
+    expect(demoPage).toContain("<form action={startDemoAction}>");
+    expect(demoPage).not.toContain(DEMO_LOGIN_PATH);
+    expect(demoAction).toContain("startDemoAction");
+    expect(demoAction).toContain("redirect(\"/dashboard\")");
+  });
 
-    const humanResponse = demoGet(
-      new NextRequest("http://localhost:3000/demo", {
-        headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0" },
-      }),
-    );
-    expect(humanResponse.status).toBe(307);
-    expect(humanResponse.headers.get("location")).toBe("http://localhost:3000/api/auth/demo");
+  it("marks 404 metadata as noindex without a home canonical", () => {
+    expect(notFoundMetadata.robots).toEqual(NOT_FOUND_ROBOTS);
+    expect(notFoundMetadata.alternates).toEqual({ canonical: null });
+    expect(notFoundMetadata.openGraph).not.toMatchObject({ url: "https://www.puragenda.cl" });
+    expect(notFoundMetadata.openGraph).not.toMatchObject({ url: "/" });
   });
 
   it("keeps llms.txt as a complement to robots and sitemap", async () => {
@@ -179,12 +178,4 @@ describe("crawler policy", () => {
     expect(body).not.toContain("/api/");
   });
 
-  it("recognizes search crawlers without treating browsers as bots", () => {
-    expect(isKnownCrawler("Googlebot/2.1")).toBe(true);
-    expect(isKnownCrawler("Mozilla/5.0 (compatible; bingbot/2.0)")).toBe(true);
-    expect(isKnownCrawler("OAI-SearchBot/1.0")).toBe(true);
-    expect(isKnownCrawler("ChatGPT-User/1.0")).toBe(true);
-    expect(isKnownCrawler("Mozilla/5.0 (compatible; Google-Extended)")).toBe(true);
-    expect(isKnownCrawler("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")).toBe(false);
-  });
 });

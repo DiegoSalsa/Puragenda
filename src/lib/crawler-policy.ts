@@ -8,10 +8,21 @@
  * Linked app URLs (login, register, dashboard, /demo, /mi-agenda, /auth)
  * are intentionally NOT robots-disallowed: they appear in public HTML, so a
  * Disallow would be reported as "Googlebot blocked" while still leaking the
- * URL. Those routes use noindex + auth instead.
+ * URL. Those routes use noindex + auth instead. `/demo` is a 200 noindex
+ * page; the demo session starts only from an explicit POST, not from GET.
  */
 
 export const PRIVATE_PAGE_ROBOTS = { index: false, follow: false } as const;
+
+/** Replaces the root layout's index/follow, including googleBot. */
+export const NOT_FOUND_ROBOTS = {
+  index: false,
+  follow: false,
+  googleBot: {
+    index: false,
+    follow: false,
+  },
+} as const;
 
 /**
  * Prefixes blocked in robots.txt. Matching is robots.txt prefix matching.
@@ -86,44 +97,6 @@ export const SEARCH_AND_RETRIEVAL_USER_AGENTS = [
 
 export const DEMO_PUBLIC_PATH = "/demo";
 export const DEMO_LOGIN_PATH = "/api/auth/demo";
-
-const CRAWLER_UA_TOKENS = [
-  "googlebot",
-  "google-extended",
-  "google-inspectiontool",
-  "bingbot",
-  "bingpreview",
-  "slurp",
-  "duckduckbot",
-  "baiduspider",
-  "yandexbot",
-  "yandex.com/bots",
-  "oai-searchbot",
-  "chatgpt-user",
-  "gptbot",
-  "claude-searchbot",
-  "claude-user",
-  "claudebot",
-  "perplexitybot",
-  "perplexity-user",
-  "ccbot",
-  "bytespider",
-  "applebot",
-  "semrushbot",
-  "ahrefsbot",
-  "dotbot",
-  "mj12bot",
-  "petalbot",
-  "facebookexternalhit",
-  "linkedinbot",
-  "twitterbot",
-] as const;
-
-export function isKnownCrawler(userAgent: string | null | undefined): boolean {
-  if (!userAgent) return false;
-  const ua = userAgent.toLowerCase();
-  return CRAWLER_UA_TOKENS.some((token) => ua.includes(token));
-}
 
 export function isRobotsDisallowedPath(pathname: string): boolean {
   const path = pathname.startsWith("/") ? pathname : `/${pathname}`;

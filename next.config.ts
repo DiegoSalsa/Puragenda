@@ -14,6 +14,9 @@ const unsafeEval = process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"
 
 const noIndexRoutes = [...NOINDEX_HEADER_SOURCES];
 
+// Permanent (308) when the request reaches Next.js. The live apex 307 is
+// Vercel's domain-level redirect, which runs before this config. See the
+// SEO-001 follow-up notes for the Vercel Domains change required.
 const canonicalHostRedirects = [
   {
     source: "/:path*",
