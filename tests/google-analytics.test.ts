@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import {
   getGoogleAnalyticsId,
+  getGoogleConsentBootstrapScript,
   isGoogleAnalyticsPath,
 } from "@/lib/analytics/google-analytics";
+import { ANALYTICS_CONSENT_KEY } from "@/lib/analytics/consent";
 
 describe("getGoogleAnalyticsId", () => {
   it("accepts a GA4 measurement id", () => {
@@ -40,5 +42,19 @@ describe("Google Analytics CSP", () => {
     expect(config).toContain("https://www.googletagmanager.com");
     expect(config).toContain("https://*.google-analytics.com");
     expect(config).toContain("https://*.analytics.google.com");
+  });
+});
+
+describe("Google Analytics layout tag", () => {
+  it("mounts @next/third-parties GoogleAnalytics in the root layout", () => {
+    const layout = readFileSync(resolve(process.cwd(), "src/app/layout.tsx"), "utf8");
+    expect(layout).toContain('@next/third-parties/google');
+    expect(layout).toContain("<GoogleAnalytics gaId={googleAnalyticsId} />");
+  });
+
+  it("defaults Consent Mode to denied until cookie consent is granted", () => {
+    const script = getGoogleConsentBootstrapScript();
+    expect(script).toContain(ANALYTICS_CONSENT_KEY);
+    expect(script).toContain('analytics_storage: granted ? "granted" : "denied"');
   });
 });

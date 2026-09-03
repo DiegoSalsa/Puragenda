@@ -1,12 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
-import { GoogleAnalytics } from "@/components/analytics/google-analytics";
-import { getGoogleAnalyticsId } from "@/lib/analytics/google-analytics";
+import { GoogleAnalyticsConsent } from "@/components/analytics/google-analytics";
+import {
+  getGoogleAnalyticsId,
+  getGoogleConsentBootstrapScript,
+} from "@/lib/analytics/google-analytics";
 import { SITE_URL } from "@/lib/site";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo";
 import { MarketingIntlProvider } from "@/components/i18n/marketing-intl-provider";
@@ -123,6 +128,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
+      {googleAnalyticsId ? (
+        <Script id="ga-consent-default" strategy="beforeInteractive">
+          {getGoogleConsentBootstrapScript()}
+        </Script>
+      ) : null}
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
@@ -132,12 +142,13 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
-            {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
+            {googleAnalyticsId ? <GoogleAnalyticsConsent /> : null}
             {children}
             <CookieBanner />
           </ThemeProvider>
         </MarketingIntlProvider>
       </body>
+      {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
     </html>
   );
 }

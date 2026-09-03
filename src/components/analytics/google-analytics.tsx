@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { GoogleAnalytics as NextGoogleAnalytics } from "@next/third-parties/google";
 import {
   ANALYTICS_CONSENT_CHANGED,
   hasAnalyticsConsent,
@@ -22,27 +21,19 @@ function setAnalyticsStorage(granted: boolean) {
   gtag("consent", "update", { analytics_storage: granted ? "granted" : "denied" });
 }
 
-/**
- * Loads gtag.js once via @next/third-parties after cookie consent.
- * Page views come from the initial gtag config plus GA4 enhanced measurement
- * of history changes, so this component must not send extra page_view events.
- */
-export function GoogleAnalytics({ gaId }: { gaId: string }) {
+/** Keeps GA4 Consent Mode in sync. gtag.js itself is mounted from the root layout. */
+export function GoogleAnalyticsConsent() {
   const pathname = usePathname();
-  const [scriptReady, setScriptReady] = useState(false);
   const allowed = isGoogleAnalyticsPath(pathname);
 
   useEffect(() => {
     const sync = () => {
-      const granted = allowed && hasAnalyticsConsent();
-      if (granted) setScriptReady(true);
-      setAnalyticsStorage(granted);
+      setAnalyticsStorage(allowed && hasAnalyticsConsent());
     };
     sync();
     window.addEventListener(ANALYTICS_CONSENT_CHANGED, sync);
     return () => window.removeEventListener(ANALYTICS_CONSENT_CHANGED, sync);
   }, [allowed]);
 
-  if (!scriptReady) return null;
-  return <NextGoogleAnalytics gaId={gaId} />;
+  return null;
 }
