@@ -42,6 +42,9 @@ const canonicalHostRedirects = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  env: {
+    NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID ?? "",
+  },
   outputFileTracingRoot: projectRoot,
   turbopack: {
     root: projectRoot,

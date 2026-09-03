@@ -50,10 +50,11 @@ describe("Google Analytics CSP", () => {
 });
 
 describe("Google Analytics layout tag", () => {
-  it("mounts @next/third-parties GoogleAnalytics in the root layout", () => {
+  it("emits gtag.js from the root layout HTML", () => {
     const layout = readFileSync(resolve(process.cwd(), "src/app/layout.tsx"), "utf8");
-    expect(layout).toContain('@next/third-parties/google');
-    expect(layout).toContain("<GoogleAnalytics gaId={googleAnalyticsId} />");
+    expect(layout).toContain("https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}");
+    expect(layout).toContain('strategy="beforeInteractive"');
+    expect(layout).toContain("process.env.NEXT_PUBLIC_GA_ID");
   });
 
   it("defaults Consent Mode to denied until cookie consent is granted", () => {

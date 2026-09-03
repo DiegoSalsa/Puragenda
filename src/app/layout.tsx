@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -119,7 +118,7 @@ export const metadata: Metadata = {
 };
 
 const initialMarketingMessages = buildMarketingMessages(esMessages, esLegacyMessages, esDashboardMessages);
-const googleAnalyticsId = getGoogleAnalyticsId();
+const googleAnalyticsId = getGoogleAnalyticsId(process.env.NEXT_PUBLIC_GA_ID);
 
 export default function RootLayout({
   children,
@@ -129,9 +128,17 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
       {googleAnalyticsId ? (
-        <Script id="ga-consent-default" strategy="beforeInteractive">
-          {getGoogleConsentBootstrapScript()}
-        </Script>
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+            strategy="beforeInteractive"
+          />
+          <Script id="ga-init" strategy="beforeInteractive">
+            {`${getGoogleConsentBootstrapScript()}
+gtag("js", new Date());
+gtag("config", ${JSON.stringify(googleAnalyticsId)});`}
+          </Script>
+        </>
       ) : null}
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
@@ -148,7 +155,6 @@ export default function RootLayout({
           </ThemeProvider>
         </MarketingIntlProvider>
       </body>
-      {googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
     </html>
   );
 }
