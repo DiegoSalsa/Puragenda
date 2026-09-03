@@ -3,6 +3,7 @@ const STATIC_PATHS = new Set([
   "/pricing",
   "/caracteristicas",
   "/soluciones",
+  "/sistema-de-agendamiento-online",
   "/faq",
   "/sobre-nosotros",
   "/contacto",

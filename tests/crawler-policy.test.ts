@@ -20,6 +20,7 @@ const PUBLIC_PATHS = [
   "/pricing",
   "/soluciones",
   "/caracteristicas",
+  "/sistema-de-agendamiento-online",
   "/faq",
   "/contacto",
   "/sobre-nosotros",
@@ -174,6 +175,7 @@ describe("crawler policy", () => {
     expect(body).toContain("https://www.puragenda.cl/sitemap.xml");
     expect(body).toContain("No sustituye");
     expect(body).toContain("/para/barberias");
+    expect(body).toContain("/sistema-de-agendamiento-online");
     expect(body).not.toContain("/dashboard");
     expect(body).not.toContain("/api/");
   });

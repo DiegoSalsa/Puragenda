@@ -30,6 +30,7 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("product")}</p>
             <nav className="flex flex-col gap-2">
               <Link href="/caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("features")}</Link>
+              <Link href="/sistema-de-agendamiento-online" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Sistema de agendamiento online</Link>
               <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("pricing")}</Link>
               <Link href="/guias" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("practicalGuides")}</Link>
               <Link href="/alternativa-agendapro" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Alternativa a AgendaPro</Link>

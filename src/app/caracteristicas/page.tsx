@@ -53,9 +53,11 @@ export default async function CaracteristicasPage() {
             ¿Qué incluye el sistema de reservas Puragenda?
           </h2>
           <p className="mt-5 max-w-4xl text-lg font-bold leading-8 opacity-80">
-            Puragenda reúne reservas online 24/7, cobro de abonos, agendas por profesional, Google Calendar, recordatorios, CRM y encargos en un solo panel. Cada negocio activa las funciones que necesita y comparte su agenda mediante un enlace o un widget.
+            Puragenda reúne reservas online 24/7, cobro de abonos, agendas por profesional, Google Calendar, recordatorios, CRM y encargos en un solo panel. Cada negocio activa las funciones que necesita y comparte su agenda mediante un enlace o un widget. La explicación del flujo completo está en el{" "}
+            <Link href="/sistema-de-agendamiento-online" className="underline underline-offset-4">sistema de agendamiento online</Link>.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
+            <Link href="/sistema-de-agendamiento-online" className="font-black text-[#6D28D9] underline underline-offset-4">Ver sistema de agendamiento</Link>
             <Link href="/funciones/reservas-online-con-abono" className="font-black text-[#6D28D9] underline underline-offset-4">Ver reservas con abono</Link>
             <Link href="/funciones/agenda-multiples-profesionales" className="font-black text-[#6D28D9] underline underline-offset-4">Ver agenda para equipos</Link>
             <Link href="/funciones/agenda-google-calendar" className="font-black text-[#6D28D9] underline underline-offset-4">Ver integración con Google Calendar</Link>

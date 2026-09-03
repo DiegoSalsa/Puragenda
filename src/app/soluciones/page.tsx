@@ -31,8 +31,15 @@ export default async function SolucionesPage() {
         <h1 className="text-5xl font-black uppercase tracking-tighter sm:text-7xl mb-6">
           <LocalizedText id="S5jQCu9nrDb_" />
         </h1>
-        <p className="text-xl font-bold mb-16 opacity-80 max-w-3xl mx-auto">
+        <p className="text-xl font-bold mb-8 opacity-80 max-w-3xl mx-auto">
           <LocalizedText id="XaaVBSSUhVPw" />
+        </p>
+        <p className="mx-auto mb-16 max-w-3xl text-base font-bold leading-7 opacity-70">
+          Puragenda es un{" "}
+          <Link href="/sistema-de-agendamiento-online" className="text-[#7C3AED] underline underline-offset-4">
+            sistema de agendamiento online
+          </Link>{" "}
+          para negocios de servicios. Aquí ves cómo se adapta a cada rubro; la página pilar explica el flujo compartido.
         </p>
       </section>
 

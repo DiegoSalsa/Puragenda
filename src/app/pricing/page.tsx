@@ -38,6 +38,7 @@ export default async function PricingPage() {
           <h2 id="precio-reservas" className="mt-2 text-3xl font-black uppercase tracking-tight">¿Cuánto cuesta un sistema de reservas online?</h2>
           <p className="mt-4 text-lg font-bold leading-8">En Puragenda, el plan para un profesional cuesta <strong>$12.990 CLP al mes</strong> y el plan para equipos <strong>$29.990 CLP al mes</strong>. Ambos incluyen reservas ilimitadas y puedes probarlos 30 días sin tarjeta.</p>
           <div className="mt-6 flex flex-wrap gap-5 font-black">
+            <Link href="/sistema-de-agendamiento-online" className="underline decoration-2 underline-offset-4">Cómo funciona el sistema de agendamiento</Link>
             <Link href="/alternativa-agendapro" className="underline decoration-2 underline-offset-4">Comparar con AgendaPro</Link>
             <Link href="/contacto" className="underline decoration-2 underline-offset-4">Pedir orientación</Link>
           </div>

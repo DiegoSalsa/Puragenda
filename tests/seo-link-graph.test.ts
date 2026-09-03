@@ -23,6 +23,7 @@ const MARKETING_SOURCES = [
   "src/app/para/[industry]/page.tsx",
   "src/app/caracteristicas/page.tsx",
   "src/app/soluciones/page.tsx",
+  "src/app/sistema-de-agendamiento-online/page.tsx",
   "src/app/guias/page.tsx",
   "src/app/guias/[slug]/page.tsx",
   "src/app/funciones/[slug]/page.tsx",
@@ -98,6 +99,10 @@ describe("SEO-003 public link graph", () => {
     const soluciones = readSrc("src/app/soluciones/page.tsx");
     expect(footer).toContain('href="/guias"');
     expect(footer).toContain('href="/alternativa-agendapro"');
+    expect(footer).toContain('href="/sistema-de-agendamiento-online"');
+    expect(readSrc("src/components/landing/ThemeNeoBrutalism.tsx")).toContain('href="/sistema-de-agendamiento-online"');
+    expect(readSrc("src/app/caracteristicas/page.tsx")).toContain('href="/sistema-de-agendamiento-online"');
+    expect(soluciones).toContain('href="/sistema-de-agendamiento-online"');
     expect(soluciones).toContain("`/para/${industry.slug}`");
     expect(soluciones).toContain("`/funciones/${feature.slug}`");
 

@@ -351,12 +351,19 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
         </section>
 
         {/* Link to see all features */}
-        <section className="flex justify-center pb-16">
+        <section className="flex flex-col items-center gap-6 px-6 pb-16">
           <Link href="/caracteristicas">
              <button className="bg-transparent text-black dark:text-white border-4 border-black dark:border-white px-8 py-4 font-black uppercase text-lg shadow-[6px_6px_0px_rgba(0,0,0,1)] dark:shadow-[6px_6px_0px_#FFFFFF] hover:translate-y-1 transition-all">
                 <LocalizedText id="Zef1fEdWSEAC" />
              </button>
           </Link>
+          <p className="max-w-2xl text-center text-sm font-bold leading-6 opacity-70">
+            Si estás evaluando un{" "}
+            <Link href="/sistema-de-agendamiento-online" className="font-black text-[#7C3AED] underline underline-offset-4">
+              sistema de agendamiento online
+            </Link>
+            , revisa el flujo completo: cómo configura el negocio y cómo reserva el cliente.
+          </p>
         </section>
 
         {/* TESTIMONIALS */}

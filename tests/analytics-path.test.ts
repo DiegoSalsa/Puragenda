@@ -16,5 +16,6 @@ describe("normalizeTrackingPath", () => {
 
   it("keeps allowlisted public paths", () => {
     expect(normalizeTrackingPath("/pricing?plan=secret")).toBe("/pricing");
+    expect(normalizeTrackingPath("/sistema-de-agendamiento-online")).toBe("/sistema-de-agendamiento-online");
   });
 });

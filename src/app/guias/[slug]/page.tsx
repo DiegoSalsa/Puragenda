@@ -108,6 +108,15 @@ export default async function GuidePage({ params }: GuidePageProps) {
               <Link href="/sobre-nosotros" className="underline underline-offset-4">Conoce al equipo</Link>
               <Link href="/contacto" className="underline underline-offset-4">Reportar una corrección</Link>
             </div>
+            {guide.slug === "como-elegir-sistema-reservas-chile" ? (
+              <p className="mt-4 text-sm font-bold leading-6">
+                Si ya estás comparando software, revisa también el{" "}
+                <Link href="/sistema-de-agendamiento-online" className="underline underline-offset-4">
+                  sistema de agendamiento online de Puragenda
+                </Link>
+                : qué es, cómo reserva el cliente y qué funciones están disponibles hoy.
+              </p>
+            ) : null}
           </div>
 
           <div className="mx-auto mt-12 max-w-3xl space-y-14">
