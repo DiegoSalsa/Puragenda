@@ -7,7 +7,15 @@ import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from "@/components/icons/
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getGuide, guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import {
+  articleNode,
+  breadcrumbListNode,
+  faqPageNode,
+  jsonLdGraph,
+  organizationRef,
+} from "@/lib/json-ld";
 
 type GuidePageProps = { params: Promise<{ slug: string }> };
 
@@ -43,60 +51,26 @@ export default async function GuidePage({ params }: GuidePageProps) {
     .map((relatedSlug) => getGuide(relatedSlug))
     .filter((related): related is NonNullable<typeof related> => Boolean(related));
 
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: guide.title,
-    description: guide.description,
-    datePublished: guide.updatedAt,
-    dateModified: guide.updatedAt,
-    inLanguage: "es-CL",
-    mainEntityOfPage: guideUrl,
-    author: {
-      "@type": "Organization",
-      name: "Equipo Puragenda",
-      url: absoluteUrl("/sobre-nosotros"),
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Puragenda",
-      url: absoluteUrl("/"),
-      logo: {
-        "@type": "ImageObject",
-        url: absoluteUrl("/android-chrome-512x512.png"),
-      },
-    },
-  };
-
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: guide.faq.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
-
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "Guías", item: absoluteUrl("/guias") },
-      { "@type": "ListItem", position: 3, name: guide.title, item: guideUrl },
-    ],
-  };
-
   return (
     <LandingLayout>
-      {[articleJsonLd, faqJsonLd, breadcrumbJsonLd].map((data, index) => (
-        <script
-          key={index}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
-        />
-      ))}
+      <JsonLd
+        data={jsonLdGraph([
+          organizationRef(),
+          articleNode({
+            headline: guide.title,
+            description: guide.description,
+            url: guideUrl,
+            datePublished: guide.updatedAt,
+            dateModified: guide.updatedAt,
+          }),
+          faqPageNode(guide.faq),
+          breadcrumbListNode([
+            { name: "Inicio", path: "/" },
+            { name: "Guías", path: "/guias" },
+            { name: guide.title, path: `/guias/${guide.slug}` },
+          ]),
+        ])}
+      />
 
       <main className="mx-auto w-full max-w-5xl px-6 py-12">
         <Link href="/guias" className="inline-flex items-center gap-2 text-sm font-black uppercase hover:text-[#7C3AED]">

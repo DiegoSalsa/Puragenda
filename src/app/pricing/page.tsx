@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
-import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import { faqPageNode, jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 import { PricingComparisonTable, PricingHero } from "@/components/pricing-page-sections";
 
 export const revalidate = 3600;
@@ -20,29 +21,15 @@ export default async function PricingPage() {
     { question: "¿Puragenda cobra comisión por cada reserva?", answer: "No. Los planes publicados no agregan una comisión por cada reserva recibida." },
     { question: "¿Puedo probar la agenda antes de pagar?", answer: "Sí. Puedes usar Puragenda durante 30 días sin ingresar una tarjeta y decidir después si activas un plan." },
   ];
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        name: "Puragenda",
-        applicationCategory: "BusinessApplication",
-        operatingSystem: "Web",
-        offers: [
-          { "@type": "Offer", name: "Plan Individual", price: "12990", priceCurrency: "CLP", url: absoluteUrl("/pricing") },
-          { "@type": "Offer", name: "Plan Equipo", price: "29990", priceCurrency: "CLP", url: absoluteUrl("/pricing") },
-        ],
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: pricingFaq.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } })),
-      },
-    ],
-  };
-
   return (
     <LandingLayout>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+      <JsonLd
+        data={jsonLdGraph([
+          organizationRef(),
+          softwareApplicationNode(),
+          faqPageNode(pricingFaq),
+        ])}
+      />
       <PricingHero />
 
       <section className="mx-auto w-full max-w-4xl px-4 pb-8 sm:px-6" aria-labelledby="precio-reservas">

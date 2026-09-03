@@ -5,7 +5,9 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ExternalLink, SearchCheck } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { absoluteUrl } from "@/lib/site";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import { articleNode, faqPageNode, jsonLdGraph, organizationRef } from "@/lib/json-ld";
 
 export const metadata: Metadata = createPageMetadata({
   title: "AgendaPro: precios y alternativa para reservas",
@@ -67,36 +69,22 @@ const faq = [
 ];
 
 export default function AlternativaAgendaProPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "Alternativa a AgendaPro: guía de comparación",
-    description:
-      "Criterios verificables para comparar Puragenda, AgendaPro y otras plataformas de reservas.",
-    datePublished: "2026-07-23",
-    dateModified: "2026-08-31",
-    inLanguage: "es-CL",
-    mainEntityOfPage: absoluteUrl("/alternativa-agendapro"),
-    author: {
-      "@type": "Organization",
-      name: "Equipo Puragenda",
-      url: absoluteUrl("/sobre-nosotros"),
-    },
-  };
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faq.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
-    })),
-  };
-
   return (
     <LandingLayout>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
+      <JsonLd
+        data={jsonLdGraph([
+          organizationRef(),
+          articleNode({
+            headline: "Alternativa a AgendaPro: guía de comparación",
+            description:
+              "Criterios verificables para comparar Puragenda, AgendaPro y otras plataformas de reservas.",
+            url: absoluteUrl("/alternativa-agendapro"),
+            datePublished: "2026-07-23",
+            dateModified: "2026-08-31",
+          }),
+          faqPageNode(faq),
+        ])}
+      />
 
       <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-8 md:pt-16">
         <header className="mx-auto max-w-4xl text-center">

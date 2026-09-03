@@ -4,6 +4,8 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState } from "react";
 import { Plus, Minus } from "@/components/icons/hover-icons";
+import { serializeJsonLd } from "@/lib/seo";
+import { faqPageNode } from "@/lib/json-ld";
 
 const faqs = [
   {
@@ -234,12 +236,7 @@ export function FAQSection() {
 
   const jsonLdFaq = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: { "@type": "Answer", text: faq.answer },
-    })),
+    ...faqPageNode(faqs),
   };
 
   const filtered = activeCategory
@@ -250,7 +247,7 @@ export function FAQSection() {
     <section id="faq" className="mx-auto w-full max-w-6xl px-6 py-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdFaq) }}
       />
 
       {/* Category filter chips */}

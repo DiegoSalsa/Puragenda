@@ -4,8 +4,9 @@ import { LandingLayout } from "@/components/landing/landing-layout";
 import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3, Database, Gift, Stamp, PackageCheck } from "@/components/icons/hover-icons";
 import { Metadata } from "next";
 import Link from "next/link";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
-import { absoluteUrl } from "@/lib/site";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import { jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Características del sistema de reservas Puragenda",
@@ -24,36 +25,16 @@ const bentoFeatures = [
 ];
 
 export default async function CaracteristicasPage() {
-  const jsonLdSoftware = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Puragenda",
-    url: absoluteUrl("/"),
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    description: "Sistema de reservas online para negocios en Chile con abonos, múltiples profesionales, Google Calendar, recordatorios y gestión de clientes.",
-    featureList: [
-      "Reservas online 24/7",
-      "Abonos por servicio",
-      "Agenda para múltiples profesionales",
-      "Integración con Google Calendar",
-      "Recordatorios y marketing de reactivación",
-      "CRM e historial de clientes",
-      "Encargos con cupos de producción",
-    ],
-    offers: {
-      "@type": "AggregateOffer",
-      lowPrice: "12990",
-      highPrice: "29990",
-      priceCurrency: "CLP",
-      offerCount: "2",
-      url: absoluteUrl("/pricing"),
-    },
-  };
-
   return (
     <LandingLayout>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
+      <JsonLd
+        data={jsonLdGraph([
+          organizationRef(),
+          softwareApplicationNode(
+            "Sistema de reservas online para negocios en Chile con abonos, múltiples profesionales, Google Calendar, recordatorios y gestión de clientes.",
+          ),
+        ])}
+      />
       {/* Hero Features */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">
         <div className="inline-block bg-[#85E3FF] border-2 border-black dark:border-white px-4 py-1 mb-6 font-black uppercase text-sm text-black shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFFFFF]"><LocalizedText id="7DshHJgBsagU" /></div>

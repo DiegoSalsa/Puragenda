@@ -6,7 +6,9 @@ import { ArrowRight, BookOpen, Clock3 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import { collectionPageNode, jsonLdGraph, organizationRef } from "@/lib/json-ld";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Guías de reservas, abonos y agenda online",
@@ -17,24 +19,21 @@ export const metadata: Metadata = createPageMetadata({
 export const revalidate = 3600;
 
 export default async function GuidesPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Guías de reservas y gestión de agenda",
-    url: absoluteUrl("/guias"),
-    hasPart: guides.map((guide) => ({
-      "@type": "Article",
-      headline: guide.title,
-      url: absoluteUrl(`/guias/${guide.slug}`),
-      dateModified: guide.updatedAt,
-    })),
-  };
-
   return (
     <LandingLayout>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      <JsonLd
+        data={jsonLdGraph([
+          organizationRef(),
+          collectionPageNode({
+            name: "Guías de reservas y gestión de agenda",
+            url: absoluteUrl("/guias"),
+            parts: guides.map((guide) => ({
+              headline: guide.title,
+              url: absoluteUrl(`/guias/${guide.slug}`),
+              dateModified: guide.updatedAt,
+            })),
+          }),
+        ])}
       />
       <main className="mx-auto w-full max-w-6xl px-6 py-16">
         <header className="mx-auto max-w-4xl text-center">

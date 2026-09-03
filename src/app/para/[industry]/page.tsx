@@ -6,8 +6,15 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { industriesData } from "@/lib/data/industries";
-import { absoluteUrl } from "@/lib/site";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import {
+  breadcrumbListNode,
+  faqPageNode,
+  jsonLdGraph,
+  organizationRef,
+  softwareApplicationNode,
+} from "@/lib/json-ld";
 import {
   Accordion,
   AccordionContent,
@@ -42,56 +49,23 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
 
-  // JSON-LD specific for the industry SoftwareApplication + FAQ
-  const jsonLdFaq = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: data.faq.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-    })),
-  };
-
-  const jsonLdSoftware = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Puragenda",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    url: absoluteUrl("/"),
-    description: data.description,
-    offers: {
-      "@type": "AggregateOffer",
-      lowPrice: "12990",
-      highPrice: "29990",
-      priceCurrency: "CLP",
-      offerCount: "2",
-      url: absoluteUrl("/pricing"),
-    },
-  };
-
-  const jsonLdBreadcrumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "Soluciones", item: absoluteUrl("/soluciones") },
-      { "@type": "ListItem", position: 3, name: data.name, item: absoluteUrl(`/para/${data.slug}`) },
-    ],
-  };
+  const structuredData = jsonLdGraph([
+    organizationRef(),
+    softwareApplicationNode(data.description),
+    faqPageNode(data.faq),
+    breadcrumbListNode([
+      { name: "Inicio", path: "/" },
+      { name: "Soluciones", path: "/soluciones" },
+      { name: data.name, path: `/para/${data.slug}` },
+    ]),
+  ]);
 
   // Rotate accent colors for benefit cards
   const accentColors = ["bg-[#B28DFF]", "bg-[#FFB5E8]", "bg-[#85E3FF]", "bg-[#BFFCC6]"];
 
   return (
     <LandingLayout>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdSoftware) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdFaq) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLdBreadcrumbs) }} />
+      <JsonLd data={structuredData} />
 
       {/* HERO */}
       <section className="mx-auto w-full max-w-6xl px-6 py-16 text-center">

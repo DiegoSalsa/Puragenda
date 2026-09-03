@@ -4,8 +4,15 @@ import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { featureSolutions, getFeatureSolution } from "@/lib/data/feature-solutions";
-import { absoluteUrl } from "@/lib/site";
-import { createPageMetadata, serializeJsonLd } from "@/lib/seo";
+import { createPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/json-ld";
+import {
+  breadcrumbListNode,
+  faqPageNode,
+  jsonLdGraph,
+  organizationRef,
+  softwareApplicationNode,
+} from "@/lib/json-ld";
 import { TrackedLink } from "@/components/analytics/tracked-link";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -31,51 +38,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FeatureSolutionPage({ params }: Props) {
   const solution = getFeatureSolution((await params).slug);
   if (!solution) notFound();
-  const url = absoluteUrl(`/funciones/${solution.slug}`);
-
-  const structuredData = [
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "Puragenda",
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web",
-      url,
-      description: solution.description,
-      offers: {
-        "@type": "AggregateOffer",
-        lowPrice: "12990",
-        highPrice: "29990",
-        priceCurrency: "CLP",
-        offerCount: 2,
-        url: absoluteUrl("/pricing"),
-      },
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: solution.faq.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: { "@type": "Answer", text: item.answer },
-      })),
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-        { "@type": "ListItem", position: 2, name: "Características", item: absoluteUrl("/caracteristicas") },
-        { "@type": "ListItem", position: 3, name: solution.title, item: url },
-      ],
-    },
-  ];
+  const structuredData = jsonLdGraph([
+    organizationRef(),
+    softwareApplicationNode(solution.description),
+    faqPageNode(solution.faq),
+    breadcrumbListNode([
+      { name: "Inicio", path: "/" },
+      { name: "Características", path: "/caracteristicas" },
+      { name: solution.title, path: `/funciones/${solution.slug}` },
+    ]),
+  ]);
 
   return (
     <LandingLayout>
-      {structuredData.map((item, index) => (
-        <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(item) }} />
-      ))}
+      <JsonLd data={structuredData} />
 
       <section className="mx-auto max-w-6xl px-6 py-16 text-center">
         <p className="inline-block border-2 border-black bg-[#85E3FF] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">{solution.eyebrow}</p>
