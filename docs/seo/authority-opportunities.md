@@ -2,7 +2,9 @@
 
 Fecha: 4 de septiembre de 2026
 
-Fase: investigación y priorización. **No se crearon perfiles, no hubo outreach, no se enviaron formularios, no se pagó nada, no se publicó nada y no se modificó el producto.**
+Actualizado: 4 de septiembre de 2026 (SEO-012). Corrección de inventario first-party: Puragenda **ya tiene** Google Business Profile y PuroCode **ya presenta** Puragenda en `https://www.purocode.com/labs`. Esos activos no están pendientes de crear.
+
+Fase original: investigación y priorización. **SEO-011 no creó perfiles, no hubo outreach, no se enviaron formularios, no se pagó nada.** SEO-012 solo consolida señales first-party ya existentes (PuroCode `/labs` y documentación). No se creó un segundo GBP ni una URL `/productos/puragenda`.
 
 Producto: Puragenda (`https://www.puragenda.cl`)
 
@@ -12,7 +14,9 @@ Mercado: Chile primero, luego LATAM, luego directorios SaaS globales de calidad.
 
 ## Resumen ejecutivo
 
-Puragenda casi no existe como entidad fuera de su propio sitio. Semrush no mostró backlinks ni referring domains visibles, ni presencia en plataformas de IA. Eso coincide con lo que se puede verificar en abierto: no hay perfil en Capterra.cl, GetApp.cl, ComparaSoftware.cl, G2, Crunchbase, LinkedIn Company, Clutch, Product Hunt, AlternativeTo, Chiletec ni Google Business.
+Puragenda casi no existe como entidad **de terceros**. Semrush no mostró backlinks ni referring domains visibles, ni presencia en plataformas de IA. En abierto no hay perfil en Capterra.cl, GetApp.cl, ComparaSoftware.cl, G2, Crunchbase, LinkedIn Company, Clutch, Product Hunt, AlternativeTo ni Chiletec.
+
+First-party sí hay superficie: `puragenda.cl`, `purocode.com/labs` y un Google Business Profile de Puragenda (`https://share.google/EI7MRiUwv4xO6xEH3`). Esos tres no deben listarse como “pendientes de crear”. El hueco era de **calidad y consistencia** de esas señales, no de ausencia.
 
 Los competidores relevantes no ganan autoridad “comprando enlaces”. Aparecen en un grafo pequeño y repetible:
 
@@ -32,24 +36,45 @@ La prioridad no es maximizar backlinks. Es construir un grafo mínimo, legítimo
 
 Comprobado antes de recomendar perfiles. No crear duplicados.
 
-| Superficie | ¿Existe? | Evidencia |
+Clasificación usada desde SEO-012:
+
+- **EXISTENTE PERO MEJORABLE** — el activo ya existe; no crear otro; se puede fortalecer copy, enlaces, metadata o consistencia.
+- **NO EXISTENTE** — no hay ficha/página; crear solo cuando se abra una fase de perfiles.
+- **OPORTUNIDAD EXTERNA** — directorio, medio o gremio de terceros; no se toca en SEO-012.
+
+| Superficie | Estado | Evidencia |
 |---|---|---|
-| Sitio de producto | Sí | `https://www.puragenda.cl` — Organization + SoftwareApplication en JSON-LD; `sameAs` de la empresa madre apunta a Instagram de PuroCode |
-| Sitio de la agencia | Sí | `https://www.purocode.com` — indexable, sitemap activo, robots permite Google y bots de IA |
-| Mención Puragenda en purocode.com | **No en sitemap** | El sitemap (lastmod 2026-09-02) no incluye ninguna URL de Puragenda. El JSON-LD de la home describe “soluciones SaaS a medida”, no el producto |
-| Instagram | Sí, PuroCode | `https://www.instagram.com/purocodecl/` |
-| Facebook | Sí, PuroCode | `https://www.facebook.com/PuroCode.com` (declarado en `sameAs` de purocode.com) |
-| LinkedIn Company Puragenda | **No encontrado** | No confundir con homónimos |
-| LinkedIn Company PuroCode Chile | **No encontrado** | Homónimos: [Puro Código RD](https://do.linkedin.com/company/purocodigo), [PureCode AI](https://www.linkedin.com/company/purecodesoftwarecompany) |
-| Google Business / Maps | **No encontrado** | |
-| Crunchbase / PitchBook / Wikidata / Wikipedia | **No encontrado** | |
-| Capterra.cl / GetApp.cl / G2 / AlternativeTo / Product Hunt | **No encontrado** | |
-| ComparaSoftware.cl | **No encontrado** | AgendaPro sí: `https://www.comparasoftware.cl/agendapro` |
-| Chiletec socios | **No encontrado** | Roster: `https://chiletec.org/socios/` |
-| Clutch / GoodFirms | **No encontrado** | [Clutch PureCode Software](https://clutch.co/profile/purecode-software) es una empresa de Austin, no esta |
+| Sitio de producto | EXISTENTE PERO MEJORABLE | `https://www.puragenda.cl` — Organization + SoftwareApplication en JSON-LD; `parentOrganization` apunta a PuroCode; `sameAs` de la empresa madre apunta a Instagram de PuroCode |
+| Sitio de la agencia | EXISTENTE PERO MEJORABLE | `https://www.purocode.com` — indexable, sitemap activo, robots permite Google y bots de IA |
+| Mención Puragenda en purocode.com | **EXISTENTE PERO MEJORABLE** | `https://www.purocode.com/labs` ya presenta Puragenda. Antes de SEO-012: sin metadata propia, fuera del sitemap, copy en componente cliente y afirmaciones inexactas (WhatsApp, métricas). **No crear `/productos/puragenda`.** |
+| Instagram | EXISTENTE PERO MEJORABLE | `https://www.instagram.com/purocodecl/` |
+| Facebook | EXISTENTE PERO MEJORABLE | `https://www.facebook.com/PuroCode.com` (declarado en `sameAs` de purocode.com) |
+| LinkedIn Company Puragenda | NO EXISTENTE | No confundir con homónimos |
+| LinkedIn Company PuroCode Chile | NO EXISTENTE | Homónimos: [Puro Código RD](https://do.linkedin.com/company/purocodigo), [PureCode AI](https://www.linkedin.com/company/purecodesoftwarecompany) |
+| Google Business Profile Puragenda | **EXISTENTE** | Share público: `https://share.google/EI7MRiUwv4xO6xEH3`. **No crear otro. No modificarlo. No usarlo como `sameAs`:** el share link no es una URL estable de Maps. Dirección/horarios no se tratan como requisito de consistencia con el SaaS. |
+| Google Business Profile PuroCode (agencia) | No verificado aquí | Distinto del GBP de Puragenda. No crear un segundo perfil como parte de la entidad de producto. |
+| Crunchbase / PitchBook / Wikidata / Wikipedia | NO EXISTENTE | OPORTUNIDAD EXTERNA cuando se abra esa fase |
+| Capterra.cl / GetApp.cl / G2 / AlternativeTo / Product Hunt | NO EXISTENTE | OPORTUNIDAD EXTERNA |
+| ComparaSoftware.cl | NO EXISTENTE | OPORTUNIDAD EXTERNA. AgendaPro sí: `https://www.comparasoftware.cl/agendapro` |
+| Chiletec socios | NO EXISTENTE | OPORTUNIDAD EXTERNA. Roster: `https://chiletec.org/socios/` |
+| Clutch / GoodFirms | NO EXISTENTE | [Clutch PureCode Software](https://clutch.co/profile/purecode-software) es una empresa de Austin, no esta |
 | SII / Registro de Empresas | No consultable sin RUT | No inventar ficha |
 
 **Colisión de nombres.** Cualquier perfil nuevo debe usar exactamente **PuroCode** + `purocode.com` + Chile / Gran Concepción, y **Puragenda** + `puragenda.cl`. No reclamar ni mezclar: PureCode AI (Austin), Puro Código (República Dominicana), PureCode Software (Clutch).
+
+### Consistencia GBP ↔ puragenda.cl ↔ purocode.com/labs
+
+No se modificó el perfil. El share `https://share.google/EI7MRiUwv4xO6xEH3` confirma existencia; no es URL estable de Maps, así que **no entra en `sameAs`**.
+
+| Señal | puragenda.cl | purocode.com/labs | GBP Puragenda |
+|---|---|---|---|
+| Nombre de marca | Puragenda | Puragenda | Puragenda (perfil existente; no se edita) |
+| Qué es | SaaS de agendamiento / reservas | Mismo, desarrollado por PuroCode | No se infiere de forma fiable desde el share link |
+| Sitio oficial | `https://www.puragenda.cl` | Enlace HTML al mismo | Esperable el mismo; no se verifica ni se corrige aquí |
+| Relación con PuroCode | `parentOrganization` + copy en /sobre-nosotros | Explícita en HTML y JSON-LD | No se exige en GBP |
+| Dirección / horarios | No aplican al SaaS | No aplican | Propios de GBP; no son requisito de consistencia |
+
+Inconsistencia accionable en SEO-012: ninguna que justifique tocar el perfil. El share link no debe usarse como `sameAs`.
 
 ## Método
 
@@ -129,8 +154,8 @@ Costo: lo verificado en páginas públicas. “No determinado” = no hay precio
 | capterra.cl / getapp.cl / softwareadvice.com | [Vendors CL](https://www.capterra.cl/company/vendors) · [AgendaPro](https://www.capterra.cl/software/218709/agendapro) · [Reservo](https://www.capterra.cl/software/1018313/reservo) · [Alternativas AgendaPro](https://www.capterra.cl/alternatives/218709/agendapro) · [GetApp AgendaPro](https://www.getapp.cl/software/2039943/agendapro) | B / C / I | Chile + global | AgendaPro 158 reviews “Producto local”; Reservo 60; Encuadrado 24; Fresha 1.447 | **Un** perfil de producto Puragenda (Appointment Scheduling + Salón/Spa), país Chile, traducciones LATAM. Después reseñas verificadas de clientes reales | Listing básico **gratis**. PPC desde ~USD 2/clic, piso ~USD 500/mes. No hace falta PPC para existir | 5 | 5 | 5 | 5 | 2 | **P0** | Misma familia G2 Digital Markets. No crear fichas duplicadas en GetApp/G2/Software Advice: un producto, locales Chile. Máxima probabilidad de cita IA para “alternativas a AgendaPro” |
 | comparasoftware.cl | [AgendaPro](https://www.comparasoftware.cl/agendapro) · [Servicios vendor](https://www.comparasoftware.cl/nuestros-servicios) · [Reservas](https://www.comparasoftware.cl/reservas) | B / C | Chile / LATAM | AgendaPro y Reservo listados; categoría salón ocupada por Zagenda, ReservApp, TIMP, etc. | Perfil de fabricante PuroCode + producto Puragenda en software para salón / citas | **Gratis** listar. Planes pagos de leads/reputación. Ellos declaran cobro a vendors por conexión | 5 | 4 | 4 | 4 | 1 | **P0** | Mejor catálogo español Chile-first. Contenido delgado (AgendaPro 0 reseñas) pero indexa. Lead-gen comercial, no granja |
 | linkedin.com | Company Pages (no existe slug propio) | A | Chile | AgendaPro y Reservo tienen company page | Dos páginas: **PuroCode** (agencia, Gran Concepción) y **Puragenda** (producto de PuroCode, website puragenda.cl). Mismos NAP | Gratis | 5 | 5 | 2 | 5 | 1 | **P0** | Semilla de knowledge graph. No usar “Puro Código” ni “PureCode” |
-| purocode.com | [Home](https://www.purocode.com) · [Sitemap](https://www.purocode.com/sitemap.xml) · [Portafolio](https://www.purocode.com/portafolio) | A / K | Chile | — | Página crawlable que nombre Puragenda, enlace a `https://www.puragenda.cl` y declare la relación builder/producto. Recíproco en JSON-LD `sameAs` / `parentOrganization` | $0 (activo propio) | 5 | 5 | 4 | 5 | 1 | **P0** | **No es backlink externo; es la cita de entidad más fácil y hoy ausente.** Esta fase no la ejecuta. No es “SEO técnico de Puragenda”; es contenido de PuroCode |
-| google.com (Business Profile) | Google Business Profile | A | Chile | — | GBP de **PuroCode** como desarrollo de software / agencia, área Gran Concepción, teléfono +56 9 4925 5006, web purocode.com, producto Puragenda. Puragenda SaaS no necesita un segundo GBP salvo oficina pública | Gratis | 4 | 5 | 3 | 3 | 2 | **P0** | NAP alineado con LinkedIn y sitios. Verificación postal/teléfono |
+| purocode.com | [Labs](https://www.purocode.com/labs) · [Home](https://www.purocode.com) · [Sitemap](https://www.purocode.com/sitemap.xml) | A / K | Chile | — | **Ya existe `/labs`.** Fortalecer copy factual, HTML SSR, metadata, canonical, sitemap, JSON-LD SoftwareApplication y enlaces recíprocos. **No crear `/productos/puragenda`.** | $0 (activo propio) | 5 | 5 | 4 | 5 | 1 | **P0** | **EXISTENTE PERO MEJORABLE.** Ejecutado en SEO-012. No es backlink externo. |
+| google.com (Business Profile) | [Share Puragenda](https://share.google/EI7MRiUwv4xO6xEH3) | A | Chile | — | **GBP de Puragenda ya existe.** No crear otro. No modificarlo. No verificarlo desde esta fase. No usar el share link como `sameAs`. | Gratis | 4 | 5 | 3 | 3 | — | **P0 (no crear)** | **EXISTENTE.** Dirección/horarios pueden responder a reglas propias de GBP; no forzar paridad con el SaaS. Un GBP de PuroCode agencia, si algún día se evalúa, es otra entidad. |
 | crunchbase.com | [Crunchbase](https://www.crunchbase.com/) · AgendaPro aparece en búsquedas de inversor (YC, CORFO, Fen, Riverwood) | A | Global | AgendaPro org; Puragenda no | Org **PuroCode** + producto **Puragenda**. Sin ronda. No pagar Pro | Add/claim gratis | 4 | 5 | 2 | 4 | 2 | **P0** | Valor de entidad / AEO, no tráfico de comprador chileno |
 | terapiasec.cl | [https://terapiasec.cl/](https://terapiasec.cl/) | H | Chile | — | Botón “Reserva tu hora” / “Agenda tu masaje” al widget Puragenda. WhatsApp se puede conservar para consultas | $0 (sitio del cliente) | 5 | 5 | 4 | 3 | 3 | **P0** | Único cliente con web propia verificada. Hoy el CTA va a `wa.me/56952965077`. **No contactar en esta fase.** Implementación legítima, no anchor exacto |
 
@@ -204,20 +229,20 @@ Costo: lo verificado en páginas públicas. “No determinado” = no hay precio
 
 Objetivo: que un sistema de recuperación pueda afirmar “Puragenda es un software de reservas chileno hecho por PuroCode”.
 
-Hoy esa frase solo se sostiene en `puragenda.cl`. Falta corroboración.
+La frase se sostiene en `puragenda.cl` y, de forma first-party, en `purocode.com/labs` y en el GBP de Puragenda. Falta corroboración **de terceros**.
 
-| # | Acción de entidad | Duplicado? | Valor |
+| # | Acción de entidad | Estado | Valor |
 |---|---|---|---|
-| 1 | Página Puragenda en purocode.com + `sameAs` recíproco | No | Máximo, propio |
-| 2 | LinkedIn Company ×2 | No existen | KG |
-| 3 | GBP PuroCode | No existe | NAP local |
-| 4 | Crunchbase org + product | No existe | KG / AEO |
-| 5 | Capterra.cl SoftwareApplication de terceros | No existe | Cita comercial |
-| 6 | ComparaSoftware producto | No existe | Cita Chile |
-| 7 | Chiletec socio | No está en roster | Empresa TI chilena |
-| 8 | Completar Facebook ya existente | Existe | No duplicar |
-| 9 | Instagram: mencionar producto | Existe | Bio |
-| 10 | Wikidata/Wikipedia | No | **No ahora** |
+| 1 | Fortalecer `/labs` en purocode.com (no crear `/productos/puragenda`) | EXISTENTE PERO MEJORABLE | Máximo, propio. SEO-012 |
+| 2 | LinkedIn Company ×2 | NO EXISTENTE | KG. No ejecutar en SEO-012 |
+| 3 | GBP Puragenda | EXISTENTE | No crear otro. No modificar. Share: `https://share.google/EI7MRiUwv4xO6xEH3` |
+| 4 | Crunchbase org + product | NO EXISTENTE / OPORTUNIDAD EXTERNA | KG / AEO |
+| 5 | Capterra.cl SoftwareApplication de terceros | NO EXISTENTE / OPORTUNIDAD EXTERNA | Cita comercial |
+| 6 | ComparaSoftware producto | NO EXISTENTE / OPORTUNIDAD EXTERNA | Cita Chile |
+| 7 | Chiletec socio | NO EXISTENTE / OPORTUNIDAD EXTERNA | Empresa TI chilena |
+| 8 | Completar Facebook ya existente | EXISTENTE PERO MEJORABLE | No duplicar |
+| 9 | Instagram: mencionar producto | EXISTENTE PERO MEJORABLE | Bio |
+| 10 | Wikidata/Wikipedia | NO EXISTENTE | **No ahora** |
 
 ---
 
@@ -247,7 +272,7 @@ Separación pedida:
 | Tipo | Qué es | Ejemplo útil |
 |---|---|---|
 | **Backlink opportunity** | Enlace follow desde un dominio relevante | Widget del cliente, ficha Capterra, socio Chiletec, nota de Diario Concepción |
-| **Citation/Entity opportunity** | El sistema puede recuperar “Puragenda = software chileno de reservas” aunque el enlace sea nofollow o no exista | LinkedIn, Crunchbase, Capterra, ComparaSoftware, NAP, página en purocode.com |
+| **Citation/Entity opportunity** | El sistema puede recuperar “Puragenda = software chileno de reservas” aunque el enlace sea nofollow o no exista | `/labs` (ya existe), LinkedIn, Crunchbase, Capterra, ComparaSoftware, NAP, GBP Puragenda |
 
 ---
 
@@ -291,9 +316,9 @@ Regla: **si el dominio del tercero no nombra a Puragenda, no es partnership para
 
 1. **Capterra.cl / G2 Digital Markets:** un perfil de producto Puragenda, país Chile, categorías citas + salón/spa. Sin PPC al inicio. Luego pedir reseñas verificadas a clientes reales (nunca compradas).
 2. **ComparaSoftware.cl:** perfil fabricante PuroCode + producto Puragenda, listado gratis en software para salón/citas.
-3. **PuroCode.com:** una URL pública que nombre Puragenda y enlace a `https://www.puragenda.cl`. Completar `sameAs` / relación Organization. (Cambio en el sitio de la agencia, no en el runtime de reservas.)
-4. **LinkedIn Company:** PuroCode y Puragenda, NAP idéntico, sin homónimos.
-5. **Google Business Profile** de PuroCode (Gran Concepción).
+3. **PuroCode.com `/labs`:** ya nombra Puragenda. Fortalecer (no crear otra URL). Completar relación Organization ↔ SoftwareApplication en HTML y JSON-LD. (Cambio en el sitio de la agencia, no en el runtime de reservas.) SEO-012.
+4. **LinkedIn Company:** PuroCode y Puragenda, NAP idéntico, sin homónimos. **No ejecutar en SEO-012.**
+5. **Google Business Profile de Puragenda:** ya existe. No crear otro. No modificar. Un GBP de PuroCode agencia, si se evalúa después, es otra entidad.
 6. **Crunchbase:** org + producto, ficha factual, sin Pro.
 7. **Cliente Terapias SEC:** cuando haya conversación comercial normal, proponer botón “Reserva tu hora” al widget. No outreach SEO.
 8. **Soccerbarber y Lotty Skin:** GBP + bio Instagram “Agenda tu hora” → widget. No inventar sitios.
@@ -339,8 +364,8 @@ Los 78 incluyen: 36 del gap Semrush + directorios Gartner/ComparaSoftware/G2/Alt
 
 Orden operativo, no de esta fase:
 
-1. Entidad propia: página Puragenda en `purocode.com` + NAP alineado (LinkedIn, GBP, Crunchbase).
-2. Entidad de software comprable: **un** listing Gartner (Capterra.cl) + ComparaSoftware.cl.
+1. Entidad propia: **fortalecer** `purocode.com/labs` (ya existe). No crear `/productos/puragenda`. No crear un segundo GBP. LinkedIn y Crunchbase siguen siendo NO EXISTENTE / externos.
+2. Entidad de software comprable: **un** listing Gartner (Capterra.cl) + ComparaSoftware.cl. **No ejecutar en SEO-012.**
 3. Prueba verificable: 3–5 reseñas Capterra de clientes reales que ya testimonian en el sitio.
 4. Un enlace de cliente de verdad: Terapias SEC, “Reserva tu hora”.
 5. Recién entonces: Chiletec, Reserve with Google, MercadoPago Partners, nota en Diario Concepción.
@@ -351,19 +376,19 @@ No empezar por SoftwareWorld, eBool, ni por “conseguir 50 backlinks”.
 
 ## 12. Fuera de alcance (explícito)
 
-Esta fase **no**:
+SEO-011 **no**:
 
 - creó perfiles ni cuentas;
 - envió outreach ni formularios;
 - pagó listings ni compró backlinks;
-- modificó Puragenda, SEO técnico, marketplace ni casos;
-- escribió guest posts;
-- avanzó a ejecución.
+- escribió guest posts.
 
-El único entregable es este documento.
+SEO-012 **sí** consolidó first-party (PuroCode `/labs`, claims, enlaces, JSON-LD, sitemap, reciprocal HTML). **No** creó LinkedIn, Capterra, ComparaSoftware, Crunchbase, ni otro Google Business Profile. **No** hizo outreach. **No** avanzó de fase externa.
+
+El entregable de SEO-011 es este documento, corregido.
 
 ## Fuentes
 
 - Semrush package interno: `semrush-puragenda/07-backlinks/`, `08-backlink-gap/`, `09-ai-visibility/`, `14-summary/priority-opportunities.md`
 - Estudio propio: `docs/estudio-seo-geo-aeo-2026-09-01.md`
-- Sitios vivos visitados el 2026-09-04: capterra.cl, getapp.cl, comparasoftware.cl, softwareworld.co, ebool.com, turnito.app, bookia.cl, medesk.net, purocode.com (sitemap + JSON-LD), puragenda.cl/widget/soccerbarber, terapiasec.cl, chiletec.org, asech.cl, mercadopago.cl/partners, google.com/maps/reserve/partners, emol.com (AgendaPro), y páginas de competidores citadas en las tablas
+- Sitios vivos visitados el 2026-09-04: capterra.cl, getapp.cl, comparasoftware.cl, softwareworld.co, ebool.com, turnito.app, bookia.cl, medesk.net, purocode.com (sitemap + JSON-LD + `/labs`), `https://share.google/EI7MRiUwv4xO6xEH3` (GBP Puragenda), puragenda.cl/widget/soccerbarber, terapiasec.cl, chiletec.org, asech.cl, mercadopago.cl/partners, google.com/maps/reserve/partners, emol.com (AgendaPro), y páginas de competidores citadas en las tablas

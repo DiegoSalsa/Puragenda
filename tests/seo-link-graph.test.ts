@@ -66,6 +66,15 @@ describe("SEO-003 public link graph", () => {
     expect(layout).not.toContain('url: "https://purocode.com"');
   });
 
+  it("links the company footer and about page to PuroCode without a second product URL", () => {
+    const footer = readSrc("src/components/landing/footer.tsx");
+    const about = readSrc("src/app/sobre-nosotros/page.tsx");
+    expect(PUBLIC_CONTACT.purocodeUrl).toBe("https://www.purocode.com");
+    expect(footer).toContain("PUBLIC_CONTACT.purocodeUrl");
+    expect(about).toContain('href="https://www.purocode.com"');
+    expect(about).toContain('href="https://www.purocode.com/labs"');
+  });
+
   it("links the AgendaPro comparison to the current Chile destination", () => {
     const page = readSrc("src/app/alternativa-agendapro/page.tsx");
     expect(page).toContain('href="https://agendapro.com/cl"');

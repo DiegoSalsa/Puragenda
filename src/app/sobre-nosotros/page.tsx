@@ -50,6 +50,21 @@ export default async function AboutPage() {
               <p className="mt-4 font-bold leading-relaxed opacity-80">
                 <LocalizedText id="FR12jluEq-rt" />
               </p>
+              <p className="mt-4 font-bold leading-relaxed">
+                <a
+                  href="https://www.purocode.com"
+                  className="underline decoration-2 underline-offset-4 hover:opacity-80"
+                >
+                  PuroCode
+                </a>
+                {" · "}
+                <a
+                  href="https://www.purocode.com/labs"
+                  className="underline decoration-2 underline-offset-4 hover:opacity-80"
+                >
+                  Puragenda en PuroCode Labs
+                </a>
+              </p>
             </div>
           </div>
 

@@ -61,6 +61,12 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("company")}</p>
             <div className="flex flex-col gap-2">
               <Link href="/sobre-nosotros" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("about")}</Link>
+              <a
+                href={PUBLIC_CONTACT.purocodeUrl}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                PuroCode
+              </a>
               {hasPublishedCaseStudies() ? (
                 <Link href={CASE_STUDIES_PATH} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Casos de éxito</Link>
               ) : null}

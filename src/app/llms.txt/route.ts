@@ -69,6 +69,8 @@ ${marketplaceSection}${caseStudySection}
 ## Identidad
 - Marca: Puragenda
 - Desarrollador: PuroCode, Chile
+- Sitio del desarrollador: https://www.purocode.com
+- Ficha corporativa: https://www.purocode.com/labs
 - Idioma editorial principal: español de Chile
 - Correo: contacto@purocode.com
 
