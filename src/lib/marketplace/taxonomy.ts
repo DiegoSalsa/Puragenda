@@ -1,10 +1,9 @@
 /**
- * Controlled B2C marketplace taxonomy.
+ * SEO-enabled B2C marketplace routes.
  *
- * Barberías / peluquerías are NOT platform categories on Business.
- * They exist today only as B2B marketing slugs (`/para/{industry}` and
- * software landings). This allowlist is the only set of marketplace
- * categories that may ever become indexable.
+ * Admin classification can include other assignable categories (manicure,
+ * bienestar). Those do not get URLs, sitemap entries or indexation until a
+ * later phase adds routes and seoEnabled.
  */
 
 export const MARKETPLACE_CATEGORY_SLUGS = ["barberias", "peluquerias"] as const;

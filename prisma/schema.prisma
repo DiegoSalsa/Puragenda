@@ -1621,17 +1621,21 @@ model ApiRateLimitBucket {
 // Do not infer category or city from free-text fields.
 
 model MarketplaceCategory {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  name      String
-  isActive  Boolean  @default(false)
-  position  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  // Assignable in Admin → Marketplace. Does not imply SEO routes.
+  isActive   Boolean  @default(false)
+  // Eligible for marketplace SEO paths. Still gated by indexingEnabled.
+  seoEnabled Boolean  @default(false)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   listings MarketplaceListingCategory[]
 
   @@index([isActive, position])
+  @@index([seoEnabled, position])
 }
 
 model MarketplaceLocality {

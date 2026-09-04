@@ -28,8 +28,8 @@ const publicListingSelect = {
     },
   },
   categories: {
-    where: { category: { isActive: true } },
-    select: { category: { select: { slug: true, isActive: true } } },
+    where: { category: { seoEnabled: true } },
+    select: { category: { select: { slug: true, isActive: true, seoEnabled: true } } },
   },
 } as const;
 
@@ -38,8 +38,9 @@ const publicListingSelect = {
  * Internal ids are used to resolve location-scoped services, then dropped
  * before candidates leave this module.
  */
-function isMissingMarketplaceTable(error: unknown) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "P2021";
+function isMissingMarketplaceSchema(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error
+    && (error.code === "P2021" || error.code === "P2022");
 }
 
 export async function listPublicMarketplaceListings(): Promise<MarketplaceListingCandidate[]> {
@@ -51,14 +52,14 @@ export async function listPublicMarketplaceListings(): Promise<MarketplaceListin
         locality: { isActive: true },
         location: { isActive: true },
         business: { deletedAt: null },
-        categories: { some: { category: { isActive: true } } },
+        categories: { some: { category: { seoEnabled: true } } },
       },
       select: publicListingSelect,
     });
 
     return rows.flatMap(mapPublishedListingToCandidates);
   } catch (error) {
-    if (isMissingMarketplaceTable(error)) return [];
+    if (isMissingMarketplaceSchema(error)) return [];
     throw error;
   }
 }

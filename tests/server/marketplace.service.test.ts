@@ -27,6 +27,7 @@ describe("listPublicMarketplaceListings", () => {
         locality: { isActive: true },
         location: { isActive: true },
         business: { deletedAt: null },
+        categories: { some: { category: { seoEnabled: true } } },
       }),
     }));
     const select = findMany.mock.calls[0]?.[0]?.select;
@@ -38,6 +39,11 @@ describe("listPublicMarketplaceListings", () => {
 
   it("fails closed with an empty inventory if the table is missing", async () => {
     findMany.mockRejectedValue({ code: "P2021" });
+    await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
+  });
+
+  it("fails closed if seoEnabled has not been migrated yet", async () => {
+    findMany.mockRejectedValue({ code: "P2022" });
     await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
   });
 
@@ -56,7 +62,7 @@ describe("listPublicMarketplaceListings", () => {
           subscription: { plan: "INDIVIDUAL", status: "ACTIVE" },
           services: [{ name: "Corte", bookingMode: "APPOINTMENT", locations: [] }],
         },
-        categories: [{ category: { slug: "barberias", isActive: true } }],
+        categories: [{ category: { slug: "barberias", isActive: true, seoEnabled: true } }],
       },
     ]);
     const listings = await listPublicMarketplaceListings();

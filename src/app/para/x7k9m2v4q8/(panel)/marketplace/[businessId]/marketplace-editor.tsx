@@ -35,7 +35,7 @@ export function MarketplaceEditor({
     listings: EditorListing[];
     services: Array<{ name: string; bookingMode: string; locationIds: string[] }>;
   };
-  categories: Array<{ id: string; slug: string; name: string; isActive: boolean }>;
+  categories: Array<{ id: string; slug: string; name: string; isActive: boolean; seoEnabled: boolean }>;
   localities: Array<{ id: string; slug: string; name: string; regionName: string }>;
 }) {
   const [locationId, setLocationId] = useState(business.locations[0]?.id ?? "");
@@ -149,7 +149,7 @@ export function MarketplaceEditor({
         </label>
 
         <fieldset className="space-y-2">
-          <legend className="text-xs font-black uppercase">Categorías activas</legend>
+          <legend className="text-xs font-black uppercase">Categorías para clasificar</legend>
           {activeCategories.map((category) => (
             <label key={category.id} className="flex items-center gap-2 font-bold">
               <input
@@ -158,10 +158,12 @@ export function MarketplaceEditor({
                 onChange={() => toggleCategory(category.id)}
               />
               {category.name}
+              {category.seoEnabled ? "" : " · sin ruta SEO"}
             </label>
           ))}
           <p className="text-xs font-bold text-black/50">
-            Verticales futuras (inactivas):{" "}
+            Clasificar no publica ni indexa. Solo barberías y peluquerías tienen rutas SEO, y siguen noindex.
+            Verticales aún no asignables:{" "}
             {categories.filter((category) => !category.isActive).map((category) => category.name).join(", ")}
           </p>
         </fieldset>

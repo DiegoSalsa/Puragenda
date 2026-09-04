@@ -22,7 +22,7 @@ export type PublishedListingRecord = {
       locations: Array<{ locationId: string }>;
     }>;
   };
-  categories: Array<{ category: { slug: string; isActive: boolean } }>;
+  categories: Array<{ category: { slug: string; isActive: boolean; seoEnabled: boolean } }>;
 };
 
 export function mapPublishedListingToCandidates(
@@ -57,7 +57,7 @@ export function mapPublishedListingToCandidates(
   };
 
   return record.categories
-    .filter((entry) => entry.category.isActive)
+    .filter((entry) => entry.category.seoEnabled)
     .map((entry) => ({
       ...base,
       categorySlug: entry.category.slug,

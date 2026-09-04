@@ -46,7 +46,13 @@ export default async function MarketplaceBusinessPage({
             locationIds: service.locations.map((item) => item.locationId),
           })),
         }}
-        categories={editor.categories}
+        categories={editor.categories.map((category) => ({
+          id: category.id,
+          slug: category.slug,
+          name: category.name,
+          isActive: category.isActive,
+          seoEnabled: category.seoEnabled,
+        }))}
         localities={editor.localities}
       />
     </div>

@@ -27,16 +27,22 @@ function record(overrides: Partial<PublishedListingRecord> = {}): PublishedListi
       ],
     },
     categories: [
-      { category: { slug: "barberias", isActive: true } },
-      { category: { slug: "estetica", isActive: false } },
+      { category: { slug: "barberias", isActive: true, seoEnabled: true } },
+      { category: { slug: "estetica", isActive: false, seoEnabled: false } },
     ],
     ...overrides,
   };
 }
 
 describe("marketplace inventory mapping", () => {
-  it("expands only active categories and drops inactive verticals", () => {
-    const candidates = mapPublishedListingToCandidates(record());
+  it("expands only SEO-enabled categories and drops classification-only verticals", () => {
+    const candidates = mapPublishedListingToCandidates(record({
+      categories: [
+        { category: { slug: "barberias", isActive: true, seoEnabled: true } },
+        { category: { slug: "manicure", isActive: true, seoEnabled: false } },
+        { category: { slug: "bienestar", isActive: true, seoEnabled: false } },
+      ],
+    }));
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.categorySlug).toBe("barberias");
     expect(candidates[0]?.locationSlug).toBe("principal");

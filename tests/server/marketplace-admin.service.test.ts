@@ -165,6 +165,42 @@ describe("saveMarketplaceListing", () => {
     expect(result.blockers).toEqual(expect.arrayContaining(["location_inactive", "bookable_service_required"]));
   });
 
+  it("allows assigning manicure and bienestar without publishing or enabling SEO", async () => {
+    mocks.categoryFindMany.mockResolvedValue([
+      { id: "cat-manicure", isActive: true, seoEnabled: false },
+      { id: "cat-bienestar", isActive: true, seoEnabled: false },
+    ]);
+    const upsert = vi.fn().mockResolvedValue({ id: "listing-1" });
+    const createMany = vi.fn();
+    mocks.transaction.mockImplementation(async (fn: (tx: {
+      marketplaceListing: { upsert: typeof upsert };
+      marketplaceListingCategory: { deleteMany: ReturnType<typeof vi.fn>; createMany: typeof createMany };
+    }) => Promise<unknown>) => {
+      await fn({
+        marketplaceListing: { upsert },
+        marketplaceListingCategory: { deleteMany: vi.fn(), createMany },
+      });
+    });
+
+    const result = await saveMarketplaceListing("admin-1", {
+      businessId: "biz-1",
+      locationId: "loc-1",
+      localityId: "city-1",
+      categoryIds: ["cat-manicure", "cat-bienestar"],
+      authorizationConfirmed: false,
+      published: false,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(upsert.mock.calls[0]?.[0]?.create.publishedAt).toBeNull();
+    expect(createMany).toHaveBeenCalledWith({
+      data: [
+        { listingId: "listing-1", categoryId: "cat-manicure" },
+        { listingId: "listing-1", categoryId: "cat-bienestar" },
+      ],
+    });
+  });
+
   it("rejects a location from another business", async () => {
     mocks.locationFindFirst.mockResolvedValue(null);
     const result = await saveMarketplaceListing("admin-1", {
