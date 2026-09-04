@@ -33,6 +33,8 @@ const MARKETING_SOURCES = [
   "src/components/marketplace/marketplace-pages.tsx",
   "src/app/guias/page.tsx",
   "src/app/guias/[slug]/page.tsx",
+  "src/app/casos-de-exito/page.tsx",
+  "src/app/casos-de-exito/[slug]/page.tsx",
   "src/app/funciones/[slug]/page.tsx",
   "src/app/pricing/page.tsx",
   "src/app/faq/page.tsx",
@@ -105,6 +107,7 @@ describe("SEO-003 public link graph", () => {
     const footer = readSrc("src/components/landing/footer.tsx");
     const soluciones = readSrc("src/app/soluciones/page.tsx");
     expect(footer).toContain('href="/guias"');
+    expect(footer).toContain('href="/casos-de-exito"');
     expect(footer).toContain('href="/alternativa-agendapro"');
     expect(footer).toContain('href="/sistema-de-agendamiento-online"');
     expect(footer).toContain('href="/software-agenda-barberias"');

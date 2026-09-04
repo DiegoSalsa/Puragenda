@@ -23,5 +23,7 @@ describe("normalizeTrackingPath", () => {
     expect(normalizeTrackingPath("/peluquerias")).toBe("/peluquerias");
     expect(normalizeTrackingPath("/barberias/concepcion")).toBe("/barberias/[city]");
     expect(normalizeTrackingPath("/peluquerias/santiago?orden=nombre")).toBe("/peluquerias/[city]");
+    expect(normalizeTrackingPath("/casos-de-exito")).toBe("/casos-de-exito");
+    expect(normalizeTrackingPath("/casos-de-exito/soccerbarber")).toBe("/casos-de-exito/[slug]");
   });
 });

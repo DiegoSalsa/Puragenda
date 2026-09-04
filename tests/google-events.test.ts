@@ -106,6 +106,8 @@ describe("toGoogleAnalyticsPagePath", () => {
     expect(toGoogleAnalyticsPagePath("/para/psicologos")).toBe("/para/psicologos");
     expect(toGoogleAnalyticsPagePath("/funciones/agenda-google-calendar")).toBe("/funciones/agenda-google-calendar");
     expect(toGoogleAnalyticsPagePath("/guias/cobrar-abonos-reservas-online")).toBe("/guias/cobrar-abonos-reservas-online");
+    expect(toGoogleAnalyticsPagePath("/casos-de-exito")).toBe("/casos-de-exito");
+    expect(toGoogleAnalyticsPagePath("/casos-de-exito/soccerbarber")).toBe("/casos-de-exito/soccerbarber");
     expect(toGoogleAnalyticsPagePath("/pricing")).toBe("/pricing");
     expect(toGoogleAnalyticsPagePath("/sistema-de-agendamiento-online")).toBe("/sistema-de-agendamiento-online");
     expect(toGoogleAnalyticsPagePath("/software-agenda-barberias")).toBe("/software-agenda-barberias");

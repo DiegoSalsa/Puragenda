@@ -5,6 +5,7 @@ import { guides } from "@/lib/data/guides";
 import { getIndexableMarketplaceSitemapEntries } from "@/lib/marketplace";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { featureSolutions } from "@/lib/data/feature-solutions";
+import { CASE_STUDIES_PATH, caseStudyPath, getPublishedCaseStudies } from "@/lib/data/case-studies";
 
 const contentUpdatedAt = new Date("2026-09-01T00:00:00-04:00");
 
@@ -34,6 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/politica-de-privacidad", "yearly", 0.2],
     ["/politica-de-reembolsos", "yearly", 0.2],
     ["/guias", "weekly", 0.9],
+    [CASE_STUDIES_PATH, "weekly", 0.8],
   ]
     .filter(([path]) => isSitemapEligible(path as string))
     .map(([path, changeFrequency, priority]) => ({
@@ -73,10 +75,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     }));
 
+  const caseStudyRoutes: MetadataRoute.Sitemap = getPublishedCaseStudies()
+    .map((item) => ({ item, path: caseStudyPath(item.slug) }))
+    .filter(({ path }) => isSitemapEligible(path))
+    .map(({ item, path }) => ({
+      url: sitemapUrl(path),
+      lastModified: new Date(`${item.updatedAt}T00:00:00-04:00`),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    }));
+
   const marketplaceRoutes = getIndexableMarketplaceSitemapEntries().filter((entry) => {
     const path = new URL(entry.url).pathname === "/" ? "/" : new URL(entry.url).pathname;
     return isSitemapEligible(path);
   });
 
-  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes, ...marketplaceRoutes];
+  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes, ...caseStudyRoutes, ...marketplaceRoutes];
 }

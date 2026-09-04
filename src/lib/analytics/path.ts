@@ -17,6 +17,7 @@ const STATIC_PATHS = new Set([
   "/privacidad/solicitud",
   "/login",
   "/register",
+  "/casos-de-exito",
 ]);
 
 const DYNAMIC_ROUTES: Array<[RegExp, string]> = [
@@ -30,6 +31,7 @@ const DYNAMIC_ROUTES: Array<[RegExp, string]> = [
   [/^\/responder\/[^/]+(?:\/.*)?$/, "/responder/[token]"],
   [/^\/encargo\/[^/]+(?:\/.*)?$/, "/encargo/[order]"],
   [/^\/guias\/[^/]+(?:\/.*)?$/, "/guias/[slug]"],
+  [/^\/casos-de-exito\/[^/]+(?:\/.*)?$/, "/casos-de-exito/[slug]"],
   [/^\/para\/[^/]+(?:\/.*)?$/, "/para/[industry]"],
   [/^\/funciones\/[^/]+(?:\/.*)?$/, "/funciones/[slug]"],
   [/^\/barberias\/[^/]+(?:\/.*)?$/, "/barberias/[city]"],
@@ -53,6 +55,7 @@ export function normalizeTrackingPath(input: string): string {
   if (path === "/dashboard" || path.startsWith("/dashboard/")) return "/dashboard/[section]";
   if (path === "/auth" || path.startsWith("/auth/")) return "/auth/[action]";
   if (path === "/guias") return "/guias";
+  if (path === "/casos-de-exito") return "/casos-de-exito";
 
   for (const [pattern, replacement] of DYNAMIC_ROUTES) {
     if (pattern.test(path)) return replacement;
@@ -76,11 +79,12 @@ export function toGoogleAnalyticsPagePath(input: string): string {
     return "/other";
   }
 
-  if (path === "/" || STATIC_PATHS.has(path) || path === "/guias") return path;
+  if (path === "/" || STATIC_PATHS.has(path) || path === "/guias" || path === "/casos-de-exito") return path;
   if (path.startsWith("/para/x7k9m2v4q8")) return "/other";
   if (/^\/para\/[a-z0-9-]+$/i.test(path)) return path;
   if (/^\/funciones\/[a-z0-9-]+$/i.test(path)) return path;
   if (/^\/guias\/[a-z0-9-]+$/i.test(path)) return path;
+  if (/^\/casos-de-exito\/[a-z0-9-]+$/i.test(path)) return path;
   if (/^\/(barberias|peluquerias)(?:\/[a-z0-9-]+)?$/i.test(path)) return path;
   if (path === "/demo") return "/demo";
   return normalizeTrackingPath(path);

@@ -348,7 +348,11 @@ export default async function BarbershopSoftwareLandingPage() {
             </figcaption>
           </figure>
           <p className="mt-6 text-sm font-bold opacity-70">
-            Solo citamos este testimonio aquí porque el negocio es una barbería. No usamos clientes de otros rubros como si lo fueran.
+            Solo citamos este testimonio aquí porque el negocio es una barbería. No usamos clientes de otros rubros como si lo fueran. El{" "}
+            <Link href="/casos-de-exito/soccerbarber" className="underline underline-offset-4">
+              caso de Soccerbarber
+            </Link>{" "}
+            reúne esa evidencia pública, sin métricas inventadas.
           </p>
         </section>
       ) : null}

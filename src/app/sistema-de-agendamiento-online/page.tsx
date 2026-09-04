@@ -351,6 +351,17 @@ export default async function SchedulingSystemLandingPage() {
             </figure>
           ))}
         </div>
+        <p className="mx-auto mt-8 max-w-3xl text-center font-bold leading-7 opacity-75">
+          El{" "}
+          <Link href="/casos-de-exito/soccerbarber" className="font-black underline underline-offset-4">
+            caso de Soccerbarber
+          </Link>{" "}
+          describe cómo una barbería usa Puragenda, con el testimonio de Nicolás. El resto de casos publicados está en{" "}
+          <Link href="/casos-de-exito" className="font-black underline underline-offset-4">
+            casos de éxito
+          </Link>
+          .
+        </p>
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-6 py-20" aria-labelledby="faq-agendamiento">

@@ -34,6 +34,8 @@ const PUBLIC_PATHS = [
   "/funciones/reservas-online-con-abono",
   "/guias",
   "/guias/como-elegir-sistema-reservas-chile",
+  "/casos-de-exito",
+  "/casos-de-exito/soccerbarber",
   "/demo",
   "/login",
   "/register",

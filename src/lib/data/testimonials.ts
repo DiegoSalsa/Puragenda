@@ -21,3 +21,9 @@ export const customerTestimonials = [
     initial: "L",
   },
 ] as const;
+
+export type CustomerTestimonial = (typeof customerTestimonials)[number];
+
+export function getCustomerTestimonialByBusiness(business: CustomerTestimonial["business"]) {
+  return customerTestimonials.find((item) => item.business === business);
+}

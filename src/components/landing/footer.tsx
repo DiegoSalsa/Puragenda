@@ -60,6 +60,7 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("company")}</p>
             <div className="flex flex-col gap-2">
               <Link href="/sobre-nosotros" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("about")}</Link>
+              <Link href="/casos-de-exito" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Casos de éxito</Link>
               <Link href="/contacto" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("contact")}</Link>
               <a href="mailto:contacto@purocode.com" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 contacto@purocode.com

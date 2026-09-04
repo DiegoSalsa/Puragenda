@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { TrackedLink } from "@/components/analytics/tracked-link";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { getRelatedIndustries, industriesData } from "@/lib/data/industries";
+import { caseStudyPath, getPublishedCaseStudiesByIndustry } from "@/lib/data/case-studies";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
 import {
@@ -50,6 +51,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
   const data = industriesData.find((i) => i.slug === industry);
   if (!data) notFound();
   const relatedIndustries = getRelatedIndustries(data.slug);
+  const industryCases = getPublishedCaseStudiesByIndustry(data.slug);
 
   const structuredData = jsonLdGraph([
     organizationRef(),
@@ -201,6 +203,34 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
           ))}
         </div>
       </section>
+
+      {industryCases.length > 0 ? (
+        <section className="mx-auto w-full max-w-6xl px-6 pb-16" aria-labelledby="caso-rubro">
+          <div className="max-w-3xl">
+            <p className="font-black uppercase text-[#7C3AED]">Evidencia del rubro</p>
+            <h2 id="caso-rubro" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
+              Un caso de {data.name.toLowerCase()}
+            </h2>
+            <p className="mt-5 text-lg font-bold opacity-75">
+              Solo enlazamos casos con testimonio o uso público verificable. No rellenamos esta sección con clientes pendientes.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            {industryCases.map((item) => (
+              <Link
+                key={item.slug}
+                href={caseStudyPath(item.slug)}
+                className="rounded-3xl border-4 border-black bg-[#FFF5BA] p-8 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white"
+              >
+                <p className="text-xs font-black uppercase tracking-wider">{item.eyebrow}</p>
+                <h3 className="mt-3 text-2xl font-black uppercase">{item.businessName}</h3>
+                <p className="mt-3 font-bold leading-7 opacity-75">{item.summary}</p>
+                <span className="mt-5 inline-flex font-black uppercase text-[#5B21B6]">Leer el caso →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {relatedIndustries.length > 0 ? (
         <section className="mx-auto w-full max-w-6xl px-6 pb-8" aria-labelledby="rubros-relacionados">
