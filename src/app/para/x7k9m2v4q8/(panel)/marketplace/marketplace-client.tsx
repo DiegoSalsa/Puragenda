@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { MarketplaceQualityGateReportRow } from "@/lib/marketplace";
+import { marketplaceAdminListSummary, type MarketplaceQualityGateReportRow } from "@/lib/marketplace";
 
 type AdminBusiness = {
   id: string;
@@ -120,7 +120,7 @@ export function MarketplaceClient({
             </thead>
             <tbody>
               {filtered.map((business) => {
-                const published = business.listings.filter((listing) => listing.published);
+                const summary = marketplaceAdminListSummary(business.listings);
                 return (
                   <tr key={business.id} className="border-b border-black/10">
                     <td className="py-3">
@@ -135,13 +135,9 @@ export function MarketplaceClient({
                     <td className="font-bold">
                       {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
                     </td>
-                    <td className="font-bold">
-                      {published.flatMap((listing) => listing.categories).join(", ") || "—"}
-                    </td>
-                    <td className="font-bold">
-                      {published.map((listing) => listing.locality).join(", ") || "—"}
-                    </td>
-                    <td className="font-black">{published.length > 0 ? "SÍ" : "NO"}</td>
+                    <td className="font-bold">{summary.categoriesLabel}</td>
+                    <td className="font-bold">{summary.localityLabel}</td>
+                    <td className="font-black">{summary.published ? "SÍ" : "NO"}</td>
                   </tr>
                 );
               })}

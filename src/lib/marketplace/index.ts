@@ -67,6 +67,11 @@ export {
 } from "./inventory-map";
 
 export {
+  marketplaceAdminListSummary,
+  type MarketplaceAdminListListing,
+} from "./admin-list";
+
+export {
   getIndexableCitySlugs,
   indexableMarketplaceCities,
   resolveMarketplaceCategoryPage,

@@ -74,6 +74,46 @@ describe("saveMarketplaceListing", () => {
     expect(mocks.transaction).toHaveBeenCalled();
   });
 
+  it("persists locality and categories even without authorization or publication", async () => {
+    const upsert = vi.fn().mockResolvedValue({ id: "listing-1" });
+    const createMany = vi.fn();
+    mocks.transaction.mockImplementation(async (fn: (tx: {
+      marketplaceListing: { upsert: typeof upsert };
+      marketplaceListingCategory: { deleteMany: ReturnType<typeof vi.fn>; createMany: typeof createMany };
+    }) => Promise<unknown>) => {
+      await fn({
+        marketplaceListing: { upsert },
+        marketplaceListingCategory: { deleteMany: vi.fn(), createMany },
+      });
+    });
+
+    const result = await saveMarketplaceListing("admin-1", {
+      businessId: "biz-1",
+      locationId: "loc-1",
+      localityId: "city-1",
+      categoryIds: ["cat-barber"],
+      authorizationConfirmed: false,
+      published: false,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({
+        localityId: "city-1",
+        publishedAt: null,
+        authorizationConfirmedAt: null,
+      }),
+      update: expect.objectContaining({
+        localityId: "city-1",
+        publishedAt: null,
+        authorizationConfirmedAt: null,
+      }),
+    }));
+    expect(createMany).toHaveBeenCalledWith({
+      data: [{ listingId: "listing-1", categoryId: "cat-barber" }],
+    });
+  });
+
   it("refuses to publish without authorization", async () => {
     const result = await saveMarketplaceListing("admin-1", {
       businessId: "biz-1",
