@@ -29,19 +29,19 @@ export function Footer() {
           {/* Links */}
           <div className="space-y-3">
             <p className="text-sm font-semibold">{footer("product")}</p>
-            <nav className="flex flex-col gap-2">
-              <Link href="/caracteristicas" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("features")}</Link>
-              <Link href="/sistema-de-agendamiento-online" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Sistema de agendamiento online</Link>
-              <Link href="/software-agenda-barberias" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Software de agenda para barberías</Link>
-              <Link href="/pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("pricing")}</Link>
-              <Link href="/guias" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("practicalGuides")}</Link>
-              <Link href="/alternativa-agendapro" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Alternativa a AgendaPro</Link>
-              <Link href="/funciones/reservas-online-con-abono" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Reservas con abono</Link>
-              <Link href="/funciones/agenda-multiples-profesionales" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Agenda para equipos</Link>
-              <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("faq")}</Link>
-              <Link href="/mi-agenda" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("myAppointments")}</Link>
-              <a href="/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
-              <Link href="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>
+            <nav className="flex flex-col gap-1.5">
+              <Link href="/caracteristicas" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("features")}</Link>
+              <Link href="/sistema-de-agendamiento-online" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Sistema de agendamiento online</Link>
+              <Link href="/software-agenda-barberias" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Software de agenda para barberías</Link>
+              <Link href="/pricing" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("pricing")}</Link>
+              <Link href="/guias" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{footer("practicalGuides")}</Link>
+              <Link href="/alternativa-agendapro" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Alternativa a AgendaPro</Link>
+              <Link href="/funciones/reservas-online-con-abono" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Reservas con abono</Link>
+              <Link href="/funciones/agenda-multiples-profesionales" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Agenda para equipos</Link>
+              <Link href="/faq" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("faq")}</Link>
+              <Link href="/mi-agenda" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("myAppointments")}</Link>
+              <a href="/demo" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
+              <Link href="/login" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>
             </nav>
           </div>
 
