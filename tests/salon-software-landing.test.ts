@@ -67,7 +67,9 @@ describe("SEO-007 salon software landing", () => {
     expect(priceFaq?.answer).toContain(String(TRIAL_DURATION_DAYS));
     expect(pageSource).not.toContain("Soccerbarber");
     expect(pageSource).not.toContain("Lotty Skin");
-    expect(pageSource).toContain("No tenemos publicado un testimonio de una peluquería");
+    expect(pageSource).toContain("Pruébalo en tu propia peluquería");
+    expect(pageSource).toContain('placement="trial_invite"');
+    expect(pageSource).not.toContain("No tenemos publicado un testimonio de una peluquería");
   });
 
   it("keeps FAQ JSON-LD visible and omits invented ratings", () => {

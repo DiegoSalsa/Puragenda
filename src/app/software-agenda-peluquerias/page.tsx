@@ -267,11 +267,19 @@ export default async function SalonSoftwareLandingPage() {
       <section className="border-y-4 border-black bg-[#FFF5BA] py-16 text-black dark:border-white" aria-labelledby="prueba-salon">
         <div className="mx-auto max-w-3xl px-6">
           <h2 id="prueba-salon" className="text-3xl font-black uppercase tracking-tight">
-            Qué sí podemos afirmar sobre prueba social
+            Pruébalo en tu propia peluquería
           </h2>
           <p className="mt-5 text-lg font-bold leading-8 opacity-80">
-            No tenemos publicado un testimonio de una peluquería. No vamos a presentar un centro de estética o una barbería como si fueran un salón. La prueba disponible hoy es usar el producto {TRIAL_DURATION_DAYS} días con tu propio catálogo.
+            Configura tus servicios, profesionales y horarios y prueba Puragenda durante {TRIAL_DURATION_DAYS} días con tu propio catálogo. Así puedes comprobar cómo encaja el sistema en la operación real de tu salón antes de decidir.
           </p>
+          <TrackedLink
+            href="/register"
+            cta="register"
+            placement="trial_invite"
+            className="mt-8 inline-flex border-4 border-black bg-[#7C3AED] px-8 py-4 text-lg font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white"
+          >
+            Probar {TRIAL_DURATION_DAYS} días gratis <ArrowRight className="ml-2 inline h-5 w-5" />
+          </TrackedLink>
         </div>
       </section>
 
