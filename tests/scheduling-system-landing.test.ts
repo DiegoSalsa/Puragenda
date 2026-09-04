@@ -112,8 +112,8 @@ describe("SEO-005 scheduling system pillar", () => {
     expect(pageSource).toContain('href="/pricing"');
     expect(pageSource).toContain('href="/caracteristicas"');
     expect(pageSource).toContain('href="/soluciones"');
-    expect(pageSource).toContain('href="/casos-de-exito/soccerbarber"');
-    expect(pageSource).toContain('href="/casos-de-exito"');
+    expect(pageSource).toContain("getPublishedCaseStudies");
+    expect(pageSource).not.toContain('href="/casos-de-exito/soccerbarber"');
     expect(pageSource).toContain("`/para/${audience.slug}`");
     expect(schedulingSystemAudiences.map((item) => item.slug)).toEqual([
       "barberias",

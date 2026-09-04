@@ -37,7 +37,7 @@ export type CaseStudy = {
 export const caseStudies: CaseStudy[] = [
   {
     slug: "soccerbarber",
-    published: true,
+    published: false,
     businessName: "Soccerbarber",
     testimonialBusiness: "Soccerbarber",
     industrySlug: "barberias",
@@ -112,7 +112,12 @@ export function caseStudyPath(slug: string) {
 
 export function getIndexableCaseStudyPathsFrom(items: readonly Pick<CaseStudy, "slug" | "published" | "testimonialBusiness">[]) {
   const published = items.filter(isPublishedCaseStudy);
+  if (published.length === 0) return [];
   return [CASE_STUDIES_PATH, ...published.map((item) => caseStudyPath(item.slug))];
+}
+
+export function hasPublishedCaseStudies() {
+  return getPublishedCaseStudies().length > 0;
 }
 
 export function getPublishedCaseStudies() {

@@ -14,6 +14,7 @@ import {
 import { createPageMetadata } from "@/lib/seo";
 import { PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 import { customerTestimonials } from "@/lib/data/testimonials";
+import { caseStudyPath, getPublishedCaseStudy } from "@/lib/data/case-studies";
 import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 import {
   BARBERSHOP_SOFTWARE_PATH,
@@ -33,6 +34,7 @@ const faqs = barbershopSoftwareFaqs();
 const individualPrice = formatLandingClp(PRICING.INDIVIDUAL.monthly);
 const teamPrice = formatLandingClp(PRICING.EQUIPO.monthly);
 const barbershopTestimonial = customerTestimonials.find((item) => item.business === "Soccerbarber");
+const publishedBarbershopCase = getPublishedCaseStudy("soccerbarber");
 
 export const metadata: Metadata = createPageMetadata({
   title: barbershopSoftwareMetadata.title,
@@ -348,11 +350,17 @@ export default async function BarbershopSoftwareLandingPage() {
             </figcaption>
           </figure>
           <p className="mt-6 text-sm font-bold opacity-70">
-            Solo citamos este testimonio aquí porque el negocio es una barbería. No usamos clientes de otros rubros como si lo fueran. El{" "}
-            <Link href="/casos-de-exito/soccerbarber" className="underline underline-offset-4">
-              caso de Soccerbarber
-            </Link>{" "}
-            reúne esa evidencia pública, sin métricas inventadas.
+            Solo citamos este testimonio aquí porque el negocio es una barbería. No usamos clientes de otros rubros como si lo fueran.
+            {publishedBarbershopCase ? (
+              <>
+                {" "}
+                El{" "}
+                <Link href={caseStudyPath(publishedBarbershopCase.slug)} className="underline underline-offset-4">
+                  caso de {publishedBarbershopCase.businessName}
+                </Link>{" "}
+                reúne esa evidencia pública, sin métricas inventadas.
+              </>
+            ) : null}
           </p>
         </section>
       ) : null}

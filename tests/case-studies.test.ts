@@ -2,19 +2,24 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GET as llmsGet } from "@/app/llms.txt/route";
+import { metadata as hubMetadata } from "@/app/casos-de-exito/page";
+import { generateStaticParams as generateCaseStudyParams } from "@/app/casos-de-exito/[slug]/page";
 import sitemap from "@/app/sitemap";
+import { NOT_FOUND_ROBOTS } from "@/lib/crawler-policy";
 import { toGoogleAnalyticsPagePath } from "@/lib/analytics/path";
 import {
   CASE_STUDIES_PATH,
   caseStudies,
   caseStudyPath,
   formatCaseStudyDate,
+  getCaseStudy,
   getCaseStudyTestimonial,
   getIndexableCaseStudyPaths,
   getIndexableCaseStudyPathsFrom,
   getPublishedCaseStudies,
   getPublishedCaseStudy,
   getPublishedCaseStudiesByIndustry,
+  hasPublishedCaseStudies,
   isPublishedCaseStudy,
 } from "@/lib/data/case-studies";
 import { customerTestimonials } from "@/lib/data/testimonials";
@@ -38,7 +43,7 @@ function readSrc(relativePath: string) {
 const hubSource = readSrc("src/app/casos-de-exito/page.tsx");
 const caseSource = readSrc("src/app/casos-de-exito/[slug]/page.tsx");
 const caseDataSource = readSrc("src/lib/data/case-studies.ts");
-const soccerbarber = getPublishedCaseStudy("soccerbarber");
+const soccerbarber = getCaseStudy("soccerbarber");
 const soccerbarberTestimonial = customerTestimonials.find((item) => item.business === "Soccerbarber");
 
 const INVENTED_METRIC_PATTERN =
@@ -66,10 +71,10 @@ describe("SEO-010 verifiable case studies", () => {
     });
   });
 
-  it("publishes Soccerbarber with unique article metadata when the public testimonial exists", () => {
+  it("keeps Soccerbarber as a draft with unique article metadata ready to publish", () => {
     expect(soccerbarber).toBeDefined();
     expect(soccerbarberTestimonial).toBeDefined();
-    if (!soccerbarber) throw new Error("expected published Soccerbarber case");
+    if (!soccerbarber) throw new Error("expected Soccerbarber case draft");
 
     const metadata = createPageMetadata({
       title: soccerbarber.title,
@@ -80,8 +85,10 @@ describe("SEO-010 verifiable case studies", () => {
       modifiedTime: soccerbarber.updatedAt,
     });
 
+    expect(soccerbarber.published).toBe(false);
     expect(soccerbarber.h1).toBe("Soccerbarber utiliza Puragenda para gestionar su barbería");
     expect(soccerbarber.title).not.toBe("Casos de éxito de Puragenda");
+    expect(getPublishedCaseStudy("soccerbarber")).toBeUndefined();
     expect(caseSource).toContain("{item.h1}");
     expect(metadata.alternates).toEqual({
       canonical: "https://www.puragenda.cl/casos-de-exito/soccerbarber",
@@ -97,7 +104,7 @@ describe("SEO-010 verifiable case studies", () => {
 
   it("reuses the canonical Soccerbarber testimonial without altering its words", () => {
     expect(soccerbarber).toBeDefined();
-    if (!soccerbarber || !soccerbarberTestimonial) throw new Error("expected Soccerbarber evidence");
+    if (!soccerbarber || !soccerbarberTestimonial) throw new Error("expected Soccerbarber draft evidence");
 
     expect(getCaseStudyTestimonial(soccerbarber)).toEqual(soccerbarberTestimonial);
     expect(caseSource).toContain("getCaseStudyTestimonial(item)");
@@ -121,7 +128,7 @@ describe("SEO-010 verifiable case studies", () => {
 
   it("emits Article and BreadcrumbList without Review, LocalBusiness or ratings", () => {
     expect(soccerbarber).toBeDefined();
-    if (!soccerbarber) throw new Error("expected published Soccerbarber case");
+    if (!soccerbarber) throw new Error("expected Soccerbarber case draft");
 
     const graph = jsonLdGraph([
       organizationRef(),
@@ -165,47 +172,59 @@ describe("SEO-010 verifiable case studies", () => {
     expect(hubSource).toContain("collectionPageNode(");
   });
 
-  it("keeps unpublished cases out of sitemap, llms.txt and static params", async () => {
+  it("keeps unpublished cases and an empty hub out of sitemap, llms.txt and static params", async () => {
     const unpublished = {
       slug: "cinnamon-nails",
       published: false,
       testimonialBusiness: "Soccerbarber" as const,
     };
     const urls = sitemap().map((entry) => entry.url);
+    const publishableSoccerbarber = soccerbarber ? { ...soccerbarber, published: true } : unpublished;
 
     expect(isPublishedCaseStudy(unpublished)).toBe(false);
-    expect(getIndexableCaseStudyPathsFrom([unpublished, ...caseStudies])).toEqual([
+    expect(hasPublishedCaseStudies()).toBe(false);
+    expect(getPublishedCaseStudies()).toEqual([]);
+    expect(getIndexableCaseStudyPathsFrom([unpublished, ...caseStudies])).toEqual([]);
+    expect(getIndexableCaseStudyPaths()).toEqual([]);
+    expect(getIndexableCaseStudyPathsFrom([publishableSoccerbarber])).toEqual([
       "/casos-de-exito",
       "/casos-de-exito/soccerbarber",
     ]);
-    expect(getIndexableCaseStudyPaths()).toEqual(["/casos-de-exito", "/casos-de-exito/soccerbarber"]);
+    expect(getPublishedCaseStudy("soccerbarber")).toBeUndefined();
     expect(getPublishedCaseStudy("cinnamon-nails")).toBeUndefined();
-    expect(urls).toContain("https://www.puragenda.cl/casos-de-exito");
-    expect(urls).toContain("https://www.puragenda.cl/casos-de-exito/soccerbarber");
+    expect(generateCaseStudyParams()).toEqual([]);
+    expect(hubMetadata.robots).toEqual(NOT_FOUND_ROBOTS);
+    expect(urls).not.toContain("https://www.puragenda.cl/casos-de-exito");
+    expect(urls).not.toContain("https://www.puragenda.cl/casos-de-exito/soccerbarber");
     expect(urls).not.toContain("https://www.puragenda.cl/casos-de-exito/cinnamon-nails");
-    expect(urls.filter((url) => url.includes("/casos-de-exito")).length).toBe(1 + getPublishedCaseStudies().length);
+    expect(urls.filter((url) => url.includes("/casos-de-exito"))).toEqual([]);
 
     const body = await llmsGet().text();
-    expect(body).toContain("https://www.puragenda.cl/casos-de-exito");
-    expect(body).toContain("https://www.puragenda.cl/casos-de-exito/soccerbarber");
+    expect(body).not.toContain("https://www.puragenda.cl/casos-de-exito");
+    expect(body).not.toContain("soccerbarber");
     expect(body).not.toContain("cinnamon-nails");
     expect(caseSource).toContain("getPublishedCaseStudies().map((item) => ({ slug: item.slug }))");
+    expect(hubSource).toContain("hubIsIndexable");
     expect(MARKETPLACE_QUALITY_GATE.indexingEnabled).toBe(false);
   });
 
-  it("links commercial barbershop surfaces to the published case and back to product pages", () => {
+  it("gates commercial links on published cases and keeps product links on the draft", () => {
     const barbershopLanding = readSrc("src/app/software-agenda-barberias/page.tsx");
     const schedulingLanding = readSrc("src/app/sistema-de-agendamiento-online/page.tsx");
     const industryPage = readSrc("src/app/para/[industry]/page.tsx");
     const footer = readSrc("src/components/landing/footer.tsx");
 
-    expect(barbershopLanding).toContain('href="/casos-de-exito/soccerbarber"');
-    expect(schedulingLanding).toContain('href="/casos-de-exito/soccerbarber"');
-    expect(schedulingLanding).toContain('href="/casos-de-exito"');
+    expect(barbershopLanding).toContain("getPublishedCaseStudy");
+    expect(barbershopLanding).toContain("caseStudyPath(publishedBarbershopCase.slug)");
+    expect(barbershopLanding).not.toContain('href="/casos-de-exito/soccerbarber"');
+    expect(schedulingLanding).toContain("getPublishedCaseStudies");
+    expect(schedulingLanding).toContain("getPublishedCaseStudy");
+    expect(schedulingLanding).not.toContain('href="/casos-de-exito/soccerbarber"');
     expect(industryPage).toContain("getPublishedCaseStudiesByIndustry");
     expect(industryPage).toContain("caseStudyPath(item.slug)");
-    expect(footer).toContain('href="/casos-de-exito"');
-    expect(getPublishedCaseStudiesByIndustry("barberias").map((item) => item.slug)).toEqual(["soccerbarber"]);
+    expect(footer).toContain("hasPublishedCaseStudies");
+    expect(footer).toContain("CASE_STUDIES_PATH");
+    expect(getPublishedCaseStudiesByIndustry("barberias")).toEqual([]);
     expect(getPublishedCaseStudiesByIndustry("peluquerias")).toEqual([]);
     expect(caseSource).toContain("{item.relatedLinks.map");
     expect(caseSource).toContain("href={link.href}");

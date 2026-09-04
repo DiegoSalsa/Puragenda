@@ -107,7 +107,8 @@ describe("SEO-003 public link graph", () => {
     const footer = readSrc("src/components/landing/footer.tsx");
     const soluciones = readSrc("src/app/soluciones/page.tsx");
     expect(footer).toContain('href="/guias"');
-    expect(footer).toContain('href="/casos-de-exito"');
+    expect(footer).toContain("hasPublishedCaseStudies");
+    expect(footer).toContain("CASE_STUDIES_PATH");
     expect(footer).toContain('href="/alternativa-agendapro"');
     expect(footer).toContain('href="/sistema-de-agendamiento-online"');
     expect(footer).toContain('href="/software-agenda-barberias"');

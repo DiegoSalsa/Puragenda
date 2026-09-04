@@ -97,7 +97,8 @@ describe("SEO-006 barbershop software landing", () => {
     expect(pageSource).toContain('href="/funciones/reservas-online-con-abono"');
     expect(pageSource).toContain('href="/guias/reducir-inasistencias-reservas"');
     expect(pageSource).toContain('href="/para/barberias"');
-    expect(pageSource).toContain('href="/casos-de-exito/soccerbarber"');
+    expect(pageSource).toContain("getPublishedCaseStudy");
+    expect(pageSource).not.toContain('href="/casos-de-exito/soccerbarber"');
     expect(barbershopSoftwareFaqs().some((item) => item.answer.includes("correo el día anterior"))).toBe(true);
     expect(JSON.stringify(barbershopSoftwareCopy)).not.toMatch(/el mejor|#1|l[íi]der del mercado/i);
   });

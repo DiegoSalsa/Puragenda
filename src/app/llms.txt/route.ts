@@ -2,7 +2,7 @@ import { absoluteUrl } from "@/lib/site";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 import { industriesData } from "@/lib/data/industries";
 import { getIndexableMarketplacePaths } from "@/lib/marketplace";
-import { CASE_STUDIES_PATH, caseStudyPath, getPublishedCaseStudies } from "@/lib/data/case-studies";
+import { CASE_STUDIES_PATH, caseStudyPath, getIndexableCaseStudyPaths, getPublishedCaseStudies } from "@/lib/data/case-studies";
 
 export const revalidate = 86400;
 
@@ -18,6 +18,10 @@ export function GET() {
     ? `\n## Directorio\n${marketplacePaths.map((path) => `- [${path}](${absoluteUrl(path)})`).join("\n")}\n`
     : "";
   const publishedCases = getPublishedCaseStudies();
+  const indexableCasePaths = getIndexableCaseStudyPaths();
+  const caseStudyHubLine = indexableCasePaths.includes(CASE_STUDIES_PATH)
+    ? `- [Casos de éxito](${absoluteUrl(CASE_STUDIES_PATH)})\n`
+    : "";
   const caseStudySection = publishedCases.length
     ? `\n## Casos de éxito\n${publishedCases
         .map((item) => `- [${item.businessName}](${absoluteUrl(caseStudyPath(item.slug))})`)
@@ -42,8 +46,7 @@ Este archivo ayuda a agentes a encontrar páginas públicas. No sustituye a [rob
 - [Soluciones por industria](${absoluteUrl("/soluciones")})
 - [Preguntas frecuentes](${absoluteUrl("/faq")})
 - [Guías editoriales](${absoluteUrl("/guias")})
-- [Casos de éxito](${absoluteUrl(CASE_STUDIES_PATH)})
-- [Comparación con AgendaPro](${absoluteUrl("/alternativa-agendapro")})
+${caseStudyHubLine}- [Comparación con AgendaPro](${absoluteUrl("/alternativa-agendapro")})
 - [Contacto](${absoluteUrl("/contacto")})
 - [Empresa y equipo](${absoluteUrl("/sobre-nosotros")})
 

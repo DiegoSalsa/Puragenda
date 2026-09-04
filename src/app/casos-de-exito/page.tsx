@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/json-ld";
 import { breadcrumbListNode, collectionPageNode, jsonLdGraph, organizationRef } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
+import { NOT_FOUND_ROBOTS } from "@/lib/crawler-policy";
 import {
   CASE_STUDIES_PATH,
   caseStudyPath,
@@ -17,36 +18,42 @@ import { TRIAL_DURATION_DAYS } from "@/core/constants";
 export const revalidate = 3600;
 
 const publishedCases = getPublishedCaseStudies();
+const hubIsIndexable = publishedCases.length > 0;
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Casos de éxito de Puragenda",
-  description:
-    "Casos verificables de negocios que usan Puragenda. Publicamos solo evidencia autorizada, sin métricas inventadas.",
-  path: CASE_STUDIES_PATH,
-  keywords: ["casos de éxito Puragenda", "clientes Puragenda", "barbería Puragenda"],
-});
+export const metadata: Metadata = {
+  ...createPageMetadata({
+    title: "Casos de éxito de Puragenda",
+    description:
+      "Casos verificables de negocios que usan Puragenda. Publicamos solo evidencia autorizada, sin métricas inventadas.",
+    path: CASE_STUDIES_PATH,
+    keywords: ["casos de éxito Puragenda", "clientes Puragenda", "barbería Puragenda"],
+  }),
+  ...(hubIsIndexable ? {} : { robots: NOT_FOUND_ROBOTS }),
+};
 
 export default async function CaseStudiesHubPage() {
   return (
     <LandingLayout>
-      <JsonLd
-        data={jsonLdGraph([
-          organizationRef(),
-          collectionPageNode({
-            name: "Casos de éxito de Puragenda",
-            url: absoluteUrl(CASE_STUDIES_PATH),
-            parts: publishedCases.map((item) => ({
-              headline: item.title,
-              url: absoluteUrl(caseStudyPath(item.slug)),
-              dateModified: item.updatedAt,
-            })),
-          }),
-          breadcrumbListNode([
-            { name: "Inicio", path: "/" },
-            { name: "Casos de éxito", path: CASE_STUDIES_PATH },
-          ]),
-        ])}
-      />
+      {hubIsIndexable ? (
+        <JsonLd
+          data={jsonLdGraph([
+            organizationRef(),
+            collectionPageNode({
+              name: "Casos de éxito de Puragenda",
+              url: absoluteUrl(CASE_STUDIES_PATH),
+              parts: publishedCases.map((item) => ({
+                headline: item.title,
+                url: absoluteUrl(caseStudyPath(item.slug)),
+                dateModified: item.updatedAt,
+              })),
+            }),
+            breadcrumbListNode([
+              { name: "Inicio", path: "/" },
+              { name: "Casos de éxito", path: CASE_STUDIES_PATH },
+            ]),
+          ])}
+        />
+      ) : null}
 
       <main className="mx-auto w-full max-w-6xl px-6 py-16">
         <nav aria-label="Miga de pan" className="mb-8 text-sm font-bold">

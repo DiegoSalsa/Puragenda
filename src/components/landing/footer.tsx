@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { TrackedWhatsAppLink } from "@/components/analytics/tracked-link";
 import { PUBLIC_CONTACT } from "@/lib/json-ld";
+import { CASE_STUDIES_PATH, hasPublishedCaseStudies } from "@/lib/data/case-studies";
 
 export function Footer() {
   const navigation = useTranslations("navigation");
@@ -60,7 +61,9 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("company")}</p>
             <div className="flex flex-col gap-2">
               <Link href="/sobre-nosotros" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{footer("about")}</Link>
-              <Link href="/casos-de-exito" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Casos de éxito</Link>
+              {hasPublishedCaseStudies() ? (
+                <Link href={CASE_STUDIES_PATH} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Casos de éxito</Link>
+              ) : null}
               <Link href="/contacto" className="text-sm text-muted-foreground transition-colors hover:text-foreground">{navigation("contact")}</Link>
               <a href="mailto:contacto@purocode.com" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 contacto@purocode.com

@@ -22,6 +22,7 @@ import {
 import { createPageMetadata } from "@/lib/seo";
 import { PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
 import { customerTestimonials } from "@/lib/data/testimonials";
+import { CASE_STUDIES_PATH, caseStudyPath, getPublishedCaseStudies, getPublishedCaseStudy } from "@/lib/data/case-studies";
 import {
   SCHEDULING_SYSTEM_PATH,
   formatLandingClp,
@@ -39,6 +40,8 @@ import {
 export const revalidate = 3600;
 
 const faqs = schedulingSystemFaqs();
+const publishedCases = getPublishedCaseStudies();
+const publishedSoccerbarberCase = getPublishedCaseStudy("soccerbarber");
 const individualPrice = formatLandingClp(PRICING.INDIVIDUAL.monthly);
 const teamPrice = formatLandingClp(PRICING.EQUIPO.monthly);
 
@@ -351,17 +354,24 @@ export default async function SchedulingSystemLandingPage() {
             </figure>
           ))}
         </div>
-        <p className="mx-auto mt-8 max-w-3xl text-center font-bold leading-7 opacity-75">
-          El{" "}
-          <Link href="/casos-de-exito/soccerbarber" className="font-black underline underline-offset-4">
-            caso de Soccerbarber
-          </Link>{" "}
-          describe cómo una barbería usa Puragenda, con el testimonio de Nicolás. El resto de casos publicados está en{" "}
-          <Link href="/casos-de-exito" className="font-black underline underline-offset-4">
-            casos de éxito
-          </Link>
-          .
-        </p>
+        {publishedCases.length > 0 ? (
+          <p className="mx-auto mt-8 max-w-3xl text-center font-bold leading-7 opacity-75">
+            {publishedSoccerbarberCase ? (
+              <>
+                El{" "}
+                <Link href={caseStudyPath(publishedSoccerbarberCase.slug)} className="font-black underline underline-offset-4">
+                  caso de {publishedSoccerbarberCase.businessName}
+                </Link>{" "}
+                describe cómo una barbería usa Puragenda, con el testimonio de Nicolás.{" "}
+              </>
+            ) : null}
+            El resto de casos publicados está en{" "}
+            <Link href={CASE_STUDIES_PATH} className="font-black underline underline-offset-4">
+              casos de éxito
+            </Link>
+            .
+          </p>
+        ) : null}
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-6 py-20" aria-labelledby="faq-agendamiento">
