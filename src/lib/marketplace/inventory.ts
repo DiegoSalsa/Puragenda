@@ -1,14 +1,9 @@
 import type { MarketplaceListingCandidate } from "./visibility";
 
 /**
- * Production inventory source for SEO-008.
- *
- * Business has no platform category, no canonical city/comuna, and no
- * directory publication flag. Inferring those from free-text `address` or
- * from per-tenant `ServiceCategory.name` would invent taxonomy and leak
- * private shops into a public SERP.
- *
- * Fail closed: no listings until those fields exist and are populated.
+ * Empty fallback used by unit tests that do not hit the database.
+ * Production public inventory is loaded in marketplace.service.ts from
+ * admin-curated MarketplaceListing rows.
  */
 export function loadPublicMarketplaceInventory(): MarketplaceListingCandidate[] {
   return [];

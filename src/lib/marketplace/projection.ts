@@ -35,9 +35,13 @@ export function projectPublicMarketplaceCard(
       ? candidate.logoUrl
       : null;
 
+  const bookingPath = candidate.locationSlug
+    ? `/widget/${candidate.slug}?location=${encodeURIComponent(candidate.locationSlug)}`
+    : `/widget/${candidate.slug}`;
+
   return {
     name: candidate.name.trim(),
-    bookingPath: `/widget/${candidate.slug}`,
+    bookingPath,
     categorySlug: candidate.categorySlug,
     citySlug: candidate.citySlug,
     cityName: cityDisplayName(candidate.citySlug),

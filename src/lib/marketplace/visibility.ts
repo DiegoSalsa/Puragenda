@@ -1,7 +1,7 @@
 import { isSupportedMarketplaceCategory } from "./taxonomy";
 import { isCanonicalCitySlug } from "./geo";
 
-export const MARKETPLACE_EXCLUDED_SLUGS = new Set(["purocode-demo"]);
+export const MARKETPLACE_EXCLUDED_SLUGS = new Set(["purocode-demo", "estetica-bella"]);
 
 export const MARKETPLACE_FORBIDDEN_PUBLIC_FIELDS = [
   "id",
@@ -32,6 +32,7 @@ export type MarketplaceListingCandidate = {
   slug: string;
   name: string;
   logoUrl: string | null;
+  locationSlug?: string;
   categorySlug: string;
   citySlug: string;
   serviceNames: readonly string[];

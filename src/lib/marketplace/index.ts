@@ -48,6 +48,25 @@ export {
 export { loadPublicMarketplaceInventory } from "./inventory";
 
 export {
+  canPublishMarketplaceListing,
+  isMarketplaceSubscriptionActive,
+  locationHasBookableAppointmentService,
+  marketplacePublishBlockers,
+  bookableServiceNamesForLocation,
+  type MarketplacePublishReadinessInput,
+} from "./publication";
+
+export {
+  buildMarketplaceQualityGateReport,
+  type MarketplaceQualityGateReportRow,
+} from "./quality-gate-report";
+
+export {
+  mapPublishedListingToCandidates,
+  type PublishedListingRecord,
+} from "./inventory-map";
+
+export {
   getIndexableCitySlugs,
   indexableMarketplaceCities,
   resolveMarketplaceCategoryPage,

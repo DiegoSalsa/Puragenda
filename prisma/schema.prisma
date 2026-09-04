@@ -60,6 +60,7 @@ model User {
   storyPresets              StoryPreset[]
   posPaymentsCreated        PosPayment[]               @relation("PosPaymentCreatedBy")
   settledAppointments       Appointment[]              @relation("AppointmentSettledBy")
+  marketplaceAuthorizations MarketplaceListing[]       @relation("MarketplaceListingAuthorizedBy")
 }
 
 // ==========================================
@@ -333,6 +334,7 @@ model Business {
   storyCampaigns              StoryCampaign[]
   storyPresets                StoryPreset[]
   posPayments                 PosPayment[]
+  marketplaceListings         MarketplaceListing[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -364,7 +366,8 @@ model BusinessLocation {
   recurringBookings RecurringBooking[]
   productionOrders  ProductionOrder[]
   scheduleBlocks    ScheduleBlock[]
-  storyCampaigns    StoryCampaign[]
+  storyCampaigns      StoryCampaign[]
+  marketplaceListings MarketplaceListing[]
 
   @@unique([businessId, slug])
   @@index([businessId, isActive, position])
@@ -1608,4 +1611,77 @@ model ApiRateLimitBucket {
   updatedAt DateTime @updatedAt
 
   @@index([resetAt])
+}
+
+// ==========================================
+// MARKETPLACE DIRECTORY (admin-curated)
+// ==========================================
+// Listings are opt-in, unpublished by default, and attached to a physical
+// BusinessLocation so multi-branch shops can appear once per sucursal.
+// Do not infer category or city from free-text fields.
+
+model MarketplaceCategory {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  isActive  Boolean  @default(false)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings MarketplaceListingCategory[]
+
+  @@index([isActive, position])
+}
+
+model MarketplaceLocality {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  regionName  String
+  communeName String?
+  isActive    Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings MarketplaceListing[]
+
+  @@index([isActive, position])
+}
+
+model MarketplaceListing {
+  id                         String    @id @default(cuid())
+  businessId                 String
+  locationId                 String
+  localityId                 String
+  authorizationConfirmedAt   DateTime?
+  authorizationConfirmedById String?
+  publishedAt                DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  business                 Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location                 BusinessLocation       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locality                 MarketplaceLocality    @relation(fields: [localityId], references: [id], onDelete: Restrict)
+  authorizationConfirmedBy User?                  @relation("MarketplaceListingAuthorizedBy", fields: [authorizationConfirmedById], references: [id], onDelete: SetNull)
+  categories               MarketplaceListingCategory[]
+
+  @@unique([businessId, locationId])
+  @@index([publishedAt, localityId])
+  @@index([businessId])
+  @@index([locationId])
+  @@index([authorizationConfirmedById])
+}
+
+model MarketplaceListingCategory {
+  listingId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  listing  MarketplaceListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category MarketplaceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, categoryId])
+  @@index([categoryId, listingId])
 }

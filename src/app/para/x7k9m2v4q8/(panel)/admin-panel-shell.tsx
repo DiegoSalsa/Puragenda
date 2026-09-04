@@ -5,13 +5,14 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield, ShieldCheck, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X } from "@/components/icons/hover-icons";
+import { Shield, ShieldCheck, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X, MapPin } from "@/components/icons/hover-icons";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 
 const NAV_ITEMS = [
   { href: ADMIN_SECRET_PATH, icon: BarChart3, label: "Dashboard" },
   { href: `${ADMIN_SECRET_PATH}/businesses`, icon: Building2, label: "Negocios" },
+  { href: `${ADMIN_SECRET_PATH}/marketplace`, icon: MapPin, label: "Marketplace" },
   { href: `${ADMIN_SECRET_PATH}/clients`, icon: Contact, label: "Clientes" },
   { href: `${ADMIN_SECRET_PATH}/users`, icon: Users, label: "Usuarios internos" },
   { href: `${ADMIN_SECRET_PATH}/subscriptions`, icon: CreditCard, label: "Suscripciones" },

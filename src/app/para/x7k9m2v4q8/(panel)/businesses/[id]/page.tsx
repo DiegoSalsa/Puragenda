@@ -13,6 +13,7 @@ import {
   Mail,
   Palette,
   Share2,
+  MapPin,
 } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
@@ -107,6 +108,13 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href={`${ADMIN_SECRET_PATH}/marketplace/${business.id}`}
+              className="inline-flex items-center gap-2 border-2 border-black bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#000]"
+            >
+              <MapPin className="h-4 w-4" />
+              Marketplace
+            </Link>
             <ImpersonateButton businessId={business.id} />
             <DeleteBusinessButton businessId={business.id} businessName={business.name} />
           </div>

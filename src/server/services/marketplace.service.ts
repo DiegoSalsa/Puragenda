@@ -1,22 +1,69 @@
 import {
-  loadPublicMarketplaceInventory,
+  buildMarketplaceQualityGateReport,
+  mapPublishedListingToCandidates,
   type MarketplaceListingCandidate,
+  type MarketplaceQualityGateReportRow,
 } from "@/lib/marketplace";
+import { prisma } from "@/server/db/prisma";
+
+const publicListingSelect = {
+  publishedAt: true,
+  locality: { select: { slug: true } },
+  location: { select: { id: true, slug: true, isActive: true } },
+  business: {
+    select: {
+      name: true,
+      slug: true,
+      logoUrl: true,
+      deletedAt: true,
+      productionOrdersEnabled: true,
+      subscription: { select: { plan: true, status: true } },
+      services: {
+        select: {
+          name: true,
+          bookingMode: true,
+          locations: { select: { locationId: true } },
+        },
+      },
+    },
+  },
+  categories: {
+    where: { category: { isActive: true } },
+    select: { category: { select: { slug: true, isActive: true } } },
+  },
+} as const;
 
 /**
- * Public marketplace inventory boundary.
- *
- * Do not reuse `getBusinessBySlug` / `getBusinessWithServices` here: those
- * return api keys, staff emails, subscription internals and other tenant
- * fields. When Business gains directory publication, platform category and
- * canonical city, this function should query a whitelist `select` only:
- *
- *   where: { deletedAt: null, directoryPublishedAt: { not: null }, ... }
- *   select: { name, slug, logoUrl, ... }
- *
- * SEO-008: those columns do not exist. Fail closed with an empty list.
- * No migration: a query against missing fields is not justified yet.
+ * Public marketplace inventory. Whitelist select only.
+ * Internal ids are used to resolve location-scoped services, then dropped
+ * before candidates leave this module.
  */
+function isMissingMarketplaceTable(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "P2021";
+}
+
 export async function listPublicMarketplaceListings(): Promise<MarketplaceListingCandidate[]> {
-  return loadPublicMarketplaceInventory();
+  try {
+    const rows = await prisma.marketplaceListing.findMany({
+      where: {
+        publishedAt: { not: null },
+        authorizationConfirmedAt: { not: null },
+        locality: { isActive: true },
+        location: { isActive: true },
+        business: { deletedAt: null },
+        categories: { some: { category: { isActive: true } } },
+      },
+      select: publicListingSelect,
+    });
+
+    return rows.flatMap(mapPublishedListingToCandidates);
+  } catch (error) {
+    if (isMissingMarketplaceTable(error)) return [];
+    throw error;
+  }
+}
+
+export async function getMarketplaceQualityGateReport(): Promise<MarketplaceQualityGateReportRow[]> {
+  const inventory = await listPublicMarketplaceListings();
+  return buildMarketplaceQualityGateReport(inventory);
 }
