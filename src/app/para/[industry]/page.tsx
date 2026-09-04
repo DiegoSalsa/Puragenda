@@ -102,13 +102,13 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
             <p className="text-sm font-black uppercase tracking-wider text-[#6D28D9] dark:text-[#C4B5FD]">Respuesta rápida</p>
             <h2 id="respuesta-rubro" className="mt-3 text-3xl font-black uppercase tracking-tight">¿Cómo ayuda una agenda online a {data.name.toLowerCase()}?</h2>
             <p className="mt-5 text-lg font-bold leading-8 opacity-80">{data.description} El cliente ve solo horarios realmente disponibles y el negocio conserva el control de profesionales, servicios y reglas de reserva.</p>
-            {data.slug === "barberias" ? (
+            {data.softwareHub ? (
               <p className="mt-4 text-lg font-bold leading-8">
-                Si evalúas un{" "}
-                <Link href="/software-agenda-barberias" className="underline underline-offset-4">
-                  software de agenda para barberías
+                <Link href={data.softwareHub.href} className="underline underline-offset-4">
+                  {data.softwareHub.title}
                 </Link>
-                , esa landing cubre horarios por barbero, duraciones y abonos.
+                {": "}
+                {data.softwareHub.context}
               </p>
             ) : null}
           </div>
@@ -161,11 +161,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
-            ...(data.slug === "barberias"
+            ...(data.softwareHub
               ? [{
-                  href: "/software-agenda-barberias",
-                  title: "Software de agenda para barberías",
-                  description: "Landing comercial: cómo el local organiza barberos, servicios y reservas.",
+                  href: data.softwareHub.href,
+                  title: data.softwareHub.title,
+                  description: data.softwareHub.description,
                 }]
               : []),
             {

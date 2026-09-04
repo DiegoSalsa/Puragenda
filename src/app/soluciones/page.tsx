@@ -57,6 +57,17 @@ export default async function SolucionesPage() {
             </Link>
           ))}
         </div>
+        <p className="mx-auto mt-8 max-w-3xl text-center font-bold">
+          Si estás eligiendo software, hay landings comerciales para{" "}
+          <Link href="/software-agenda-barberias" className="text-[#7C3AED] underline underline-offset-4">
+            barberías
+          </Link>{" "}
+          y{" "}
+          <Link href="/software-agenda-peluquerias" className="text-[#7C3AED] underline underline-offset-4">
+            peluquerías
+          </Link>
+          .
+        </p>
       </section>
 
       {/* Zig Zag Layouts */}

@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   "/caracteristicas",
   "/sistema-de-agendamiento-online",
   "/software-agenda-barberias",
+  "/software-agenda-peluquerias",
   "/faq",
   "/contacto",
   "/sobre-nosotros",
@@ -178,6 +179,7 @@ describe("crawler policy", () => {
     expect(body).toContain("/para/barberias");
     expect(body).toContain("/sistema-de-agendamiento-online");
     expect(body).toContain("/software-agenda-barberias");
+    expect(body).toContain("/software-agenda-peluquerias");
     expect(body).not.toContain("/dashboard");
     expect(body).not.toContain("/api/");
   });

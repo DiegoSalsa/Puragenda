@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/", "weekly", 1],
     ["/sistema-de-agendamiento-online", "weekly", 0.9],
     ["/software-agenda-barberias", "weekly", 0.9],
+    ["/software-agenda-peluquerias", "weekly", 0.9],
     ["/pricing", "monthly", 0.8],
     ["/soluciones", "monthly", 0.8],
     ["/caracteristicas", "monthly", 0.8],

@@ -24,6 +24,7 @@ Este archivo ayuda a agentes a encontrar páginas públicas. No sustituye a [rob
 - [Producto](${absoluteUrl("/")})
 - [Sistema de agendamiento online](${absoluteUrl("/sistema-de-agendamiento-online")})
 - [Software de agenda para barberías](${absoluteUrl("/software-agenda-barberias")})
+- [Software de agenda para peluquerías](${absoluteUrl("/software-agenda-peluquerias")})
 - [Planes y precios](${absoluteUrl("/pricing")})
 - [Características](${absoluteUrl("/caracteristicas")})
 - [Soluciones por industria](${absoluteUrl("/soluciones")})

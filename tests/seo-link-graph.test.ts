@@ -25,6 +25,7 @@ const MARKETING_SOURCES = [
   "src/app/soluciones/page.tsx",
   "src/app/sistema-de-agendamiento-online/page.tsx",
   "src/app/software-agenda-barberias/page.tsx",
+  "src/app/software-agenda-peluquerias/page.tsx",
   "src/app/guias/page.tsx",
   "src/app/guias/[slug]/page.tsx",
   "src/app/funciones/[slug]/page.tsx",

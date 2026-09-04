@@ -1,3 +1,10 @@
+export type IndustrySoftwareHub = {
+  href: string;
+  title: string;
+  description: string;
+  context: string;
+};
+
 export type IndustrySEOData = {
   slug: string;
   name: string;
@@ -16,6 +23,7 @@ export type IndustrySEOData = {
   }[];
   keywords: string[];
   relatedSlugs: string[];
+  softwareHub?: IndustrySoftwareHub;
 };
 
 export const industriesData: IndustrySEOData[] = [
@@ -23,10 +31,10 @@ export const industriesData: IndustrySEOData[] = [
     slug: "peluquerias",
     name: "Peluquerías",
     singularName: "Peluquería",
-    title: "Software de Reservas para Peluquerías y Salones",
-    description: "La agenda online perfecta para peluquerías. Tus clientes agendan 24/7, evitas llamadas perdidas y coordinas a tus estilistas sin solapamientos.",
-    heroHeadline: "Agenda más cortes, contesta menos llamadas",
-    heroSubheadline: "El sistema de reservas diseñado específicamente para peluquerías y salones de belleza. Tus clientes se agendan solos mientras tú te enfocas en tu arte.",
+    title: "Puragenda para peluquerías",
+    description: "Cómo encaja Puragenda en un salón: reservas desde el enlace, estilistas con jornada propia y un panel para el local. El software de agenda está en una landing aparte.",
+    heroHeadline: "Puragenda para peluquerías",
+    heroSubheadline: "Página del rubro: la clienta reserva desde tu enlace y cada estilista mantiene su jornada. Si evalúas un software de agenda para el salón, usa la landing comercial.",
     benefits: [
       {
         title: "Agenda multi-estilista",
@@ -43,8 +51,8 @@ export const industriesData: IndustrySEOData[] = [
     ],
     faq: [
       {
-        question: "¿Puedo tener diferentes duraciones de servicio por estilista?",
-        answer: "Sí, puedes configurar qué servicios realiza cada estilista y ajustar sus horarios individualmente.",
+        question: "¿Esta página es el software de agenda para peluquerías?",
+        answer: "No. Esta es la ficha del rubro dentro de Soluciones. El software de agenda para peluquerías —duraciones, estilistas, opciones y reservas— está en su landing comercial.",
       },
       {
         question: "¿Mis clientes necesitan bajar una app?",
@@ -59,8 +67,14 @@ export const industriesData: IndustrySEOData[] = [
         answer: "Puedes bloquear sus días o períodos no disponibles sin cerrar la agenda del resto del equipo.",
       },
     ],
-    keywords: ["software peluquería", "agenda online salón", "reservas peluquería", "sistema citas peluqueros"],
+    keywords: ["Puragenda para peluquerías", "reservas para peluquerías", "salón con agenda digital"],
     relatedSlugs: ["barberias", "estetica", "manicure"],
+    softwareHub: {
+      href: "/software-agenda-peluquerias",
+      title: "Software de agenda para peluquerías",
+      description: "Landing comercial: cómo el salón organiza duraciones, estilistas y reservas.",
+      context: "cómo el salón organiza color versus corte, estilistas y clientas recurrentes.",
+    },
   },
   {
     slug: "barberias",
@@ -108,6 +122,12 @@ export const industriesData: IndustrySEOData[] = [
     ],
     keywords: ["Puragenda para barberías", "reservas para barberías", "barbería con agenda digital"],
     relatedSlugs: ["peluquerias", "tatuadores"],
+    softwareHub: {
+      href: "/software-agenda-barberias",
+      title: "Software de agenda para barberías",
+      description: "Landing comercial: cómo el local organiza barberos, servicios y reservas.",
+      context: "cómo el local organiza horarios por barbero, duraciones y abonos.",
+    },
   },
   {
     slug: "estetica",

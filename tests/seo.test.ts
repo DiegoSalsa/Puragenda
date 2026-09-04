@@ -36,4 +36,16 @@ describe("SEO helpers", () => {
     expect(barberias?.faq.some((item) => item.question.includes("Cuánto cuesta"))).toBe(true);
     expect(barberias?.faq.some((item) => item.answer.includes("navegador del celular"))).toBe(true);
   });
+
+  it("keeps the salon industry spoke distinct from the software landing", () => {
+    const peluquerias = industriesData.find((industry) => industry.slug === "peluquerias");
+
+    expect(peluquerias).toMatchObject({
+      title: "Puragenda para peluquerías",
+      heroHeadline: "Puragenda para peluquerías",
+    });
+    expect(peluquerias?.title).not.toBe("Software de agenda para peluquerías");
+    expect(peluquerias?.keywords).not.toContain("software peluquería");
+    expect(peluquerias?.softwareHub?.href).toBe("/software-agenda-peluquerias");
+  });
 });
