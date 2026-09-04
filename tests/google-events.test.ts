@@ -110,6 +110,10 @@ describe("toGoogleAnalyticsPagePath", () => {
     expect(toGoogleAnalyticsPagePath("/sistema-de-agendamiento-online")).toBe("/sistema-de-agendamiento-online");
     expect(toGoogleAnalyticsPagePath("/software-agenda-barberias")).toBe("/software-agenda-barberias");
     expect(toGoogleAnalyticsPagePath("/software-agenda-peluquerias")).toBe("/software-agenda-peluquerias");
+    expect(toGoogleAnalyticsPagePath("/barberias")).toBe("/barberias");
+    expect(toGoogleAnalyticsPagePath("/peluquerias")).toBe("/peluquerias");
+    expect(toGoogleAnalyticsPagePath("/barberias/concepcion")).toBe("/barberias/concepcion");
+    expect(toGoogleAnalyticsPagePath("/peluquerias/santiago")).toBe("/peluquerias/santiago");
     expect(toGoogleAnalyticsPagePath("/widget/soccerbarber")).toBe("/widget/[slug]");
     expect(toGoogleAnalyticsPagePath("/cita/secret-id")).toBe("/cita/[appointment]");
     expect(toGoogleAnalyticsPagePath("/s/private-token")).toBe("/s/[token]");

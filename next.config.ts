@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import createNextIntlPlugin from "next-intl/plugin";
 import { NOINDEX_HEADER_SOURCES } from "./src/lib/crawler-policy";
+import { marketplaceAliasRedirects } from "./src/lib/marketplace/taxonomy";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -47,7 +48,7 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return canonicalHostRedirects;
+    return [...canonicalHostRedirects, ...marketplaceAliasRedirects()];
   },
   async headers() {
     return [

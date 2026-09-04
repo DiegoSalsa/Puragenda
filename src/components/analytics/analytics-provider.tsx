@@ -22,6 +22,8 @@ function pageType(pathname: string) {
   if (pathname.startsWith("/register")) return "registration";
   if (pathname.startsWith("/pricing")) return "pricing";
   if (pathname.startsWith("/para/")) return "industry_landing";
+  if (pathname === "/barberias" || pathname.startsWith("/barberias/")) return "marketplace";
+  if (pathname === "/peluquerias" || pathname.startsWith("/peluquerias/")) return "marketplace";
   return "marketing";
 }
 

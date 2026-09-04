@@ -1,6 +1,7 @@
 import { absoluteUrl } from "@/lib/site";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 import { industriesData } from "@/lib/data/industries";
+import { getIndexableMarketplacePaths } from "@/lib/marketplace";
 
 export const revalidate = 86400;
 
@@ -11,6 +12,10 @@ export function GET() {
   const industryLines = industriesData
     .map((industry) => `- [${industry.name}](${absoluteUrl(`/para/${industry.slug}`)})`)
     .join("\n");
+  const marketplacePaths = getIndexableMarketplacePaths();
+  const marketplaceSection = marketplacePaths.length
+    ? `\n## Directorio\n${marketplacePaths.map((path) => `- [${path}](${absoluteUrl(path)})`).join("\n")}\n`
+    : "";
 
   const body = `# Puragenda
 
@@ -39,7 +44,7 @@ ${featureLines}
 
 ## Industrias
 ${industryLines}
-
+${marketplaceSection}
 ## Guías destacadas
 - [Elegir un sistema de reservas en Chile](${absoluteUrl("/guias/como-elegir-sistema-reservas-chile")})
 - [Cobrar abonos en reservas online](${absoluteUrl("/guias/cobrar-abonos-reservas-online")})

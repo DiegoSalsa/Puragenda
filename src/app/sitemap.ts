@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { isNoIndexPath, isPathDisallowedForCrawler } from "@/lib/crawler-policy";
 import { industriesData } from "@/lib/data/industries";
 import { guides } from "@/lib/data/guides";
+import { getIndexableMarketplaceSitemapEntries } from "@/lib/marketplace";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { featureSolutions } from "@/lib/data/feature-solutions";
 
@@ -72,5 +73,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     }));
 
-  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes];
+  const marketplaceRoutes = getIndexableMarketplaceSitemapEntries().filter((entry) => {
+    const path = new URL(entry.url).pathname === "/" ? "/" : new URL(entry.url).pathname;
+    return isSitemapEligible(path);
+  });
+
+  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes, ...marketplaceRoutes];
 }

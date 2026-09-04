@@ -19,5 +19,9 @@ describe("normalizeTrackingPath", () => {
     expect(normalizeTrackingPath("/sistema-de-agendamiento-online")).toBe("/sistema-de-agendamiento-online");
     expect(normalizeTrackingPath("/software-agenda-barberias")).toBe("/software-agenda-barberias");
     expect(normalizeTrackingPath("/software-agenda-peluquerias")).toBe("/software-agenda-peluquerias");
+    expect(normalizeTrackingPath("/barberias")).toBe("/barberias");
+    expect(normalizeTrackingPath("/peluquerias")).toBe("/peluquerias");
+    expect(normalizeTrackingPath("/barberias/concepcion")).toBe("/barberias/[city]");
+    expect(normalizeTrackingPath("/peluquerias/santiago?orden=nombre")).toBe("/peluquerias/[city]");
   });
 });

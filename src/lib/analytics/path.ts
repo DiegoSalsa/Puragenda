@@ -6,6 +6,8 @@ const STATIC_PATHS = new Set([
   "/sistema-de-agendamiento-online",
   "/software-agenda-barberias",
   "/software-agenda-peluquerias",
+  "/barberias",
+  "/peluquerias",
   "/faq",
   "/sobre-nosotros",
   "/contacto",
@@ -30,6 +32,8 @@ const DYNAMIC_ROUTES: Array<[RegExp, string]> = [
   [/^\/guias\/[^/]+(?:\/.*)?$/, "/guias/[slug]"],
   [/^\/para\/[^/]+(?:\/.*)?$/, "/para/[industry]"],
   [/^\/funciones\/[^/]+(?:\/.*)?$/, "/funciones/[slug]"],
+  [/^\/barberias\/[^/]+(?:\/.*)?$/, "/barberias/[city]"],
+  [/^\/peluquerias\/[^/]+(?:\/.*)?$/, "/peluquerias/[city]"],
 ];
 
 /**
@@ -77,6 +81,7 @@ export function toGoogleAnalyticsPagePath(input: string): string {
   if (/^\/para\/[a-z0-9-]+$/i.test(path)) return path;
   if (/^\/funciones\/[a-z0-9-]+$/i.test(path)) return path;
   if (/^\/guias\/[a-z0-9-]+$/i.test(path)) return path;
+  if (/^\/(barberias|peluquerias)(?:\/[a-z0-9-]+)?$/i.test(path)) return path;
   if (path === "/demo") return "/demo";
   return normalizeTrackingPath(path);
 }

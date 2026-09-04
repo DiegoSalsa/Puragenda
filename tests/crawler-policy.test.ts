@@ -23,6 +23,8 @@ const PUBLIC_PATHS = [
   "/sistema-de-agendamiento-online",
   "/software-agenda-barberias",
   "/software-agenda-peluquerias",
+  "/barberias",
+  "/peluquerias",
   "/faq",
   "/contacto",
   "/sobre-nosotros",
