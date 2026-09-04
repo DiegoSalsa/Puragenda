@@ -64,10 +64,13 @@ export default async function SolucionesPage() {
           </Link>,{" "}
           <Link href="/software-agenda-peluquerias" className="text-[#7C3AED] underline underline-offset-4">
             peluquerías
-          </Link>{" "}
-          y{" "}
+          </Link>,{" "}
           <Link href="/software-agenda-manicure" className="text-[#7C3AED] underline underline-offset-4">
             manicure y nail studios
+          </Link>,{" "}
+          y{" "}
+          <Link href="/software-agenda-estetica" className="text-[#7C3AED] underline underline-offset-4">
+            centros de estética
           </Link>
           .
         </p>

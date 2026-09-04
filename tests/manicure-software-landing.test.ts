@@ -131,7 +131,7 @@ describe("SEO-016 manicure commercial hub", () => {
     expect(urls.filter((url) => url === `https://www.puragenda.cl${MANICURE_SOFTWARE_PATH}`)).toHaveLength(1);
     expect(urls).toContain("https://www.puragenda.cl/para/manicure");
     expect(MARKETPLACE_QUALITY_GATE.indexingEnabled).toBe(false);
-    for (const route of ["manicure", "manicure/[city]", "software-agenda-unas", "software-agenda-nail-studio", "software-para-manicuristas", "software-agenda-estetica", "software-agenda-psicologos"]) {
+    for (const route of ["manicure", "manicure/[city]", "software-agenda-unas", "software-agenda-nail-studio", "software-para-manicuristas", "software-agenda-psicologos"]) {
       expect(existsSync(join(process.cwd(), "src/app", route, "page.tsx"))).toBe(false);
       expect(urls).not.toContain(`https://www.puragenda.cl/${route}`);
     }
