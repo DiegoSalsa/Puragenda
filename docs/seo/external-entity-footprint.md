@@ -1,8 +1,7 @@
-# SEO-013 — External entity footprint
+# External entity footprint — SEO-013 + SEO-014
 
-Fecha: 4 de septiembre de 2026
-
-Fase: crear o preparar las primeras referencias externas legítimas de entidad.
+Fecha investigación (SEO-013): 4 de septiembre de 2026  
+Fecha ejecución (SEO-014): 4 de septiembre de 2026
 
 Producto: Puragenda (`https://www.puragenda.cl`)
 
@@ -10,23 +9,37 @@ Empresa/desarrollador: PuroCode (`https://www.purocode.com`)
 
 Ficha corporativa first-party: `https://www.purocode.com/labs`
 
-**Esta fase no tocó el producto.** No se cambió marketplace, `indexingEnabled`, rutas SEO, schema, landings, robots, sitemap, precios, funcionalidades ni analytics.
+**No se tocó el producto.** No se cambió marketplace, `indexingEnabled`, rutas SEO, schema, landings, robots, sitemap, precios, funcionalidades ni analytics.
 
-**Esta fase no envió solicitudes.** Los altas de Capterra/GetApp, ComparaSoftware y Crunchbase requieren cuenta verificada en un correo corporativo (`contacto@purocode.com`) y, en Crunchbase, autenticación social. No se crearon cuentas alternativas, no se usó un correo personal como vendor, no se pagó nada, no se pidieron reviews.
+SEO-013 preparó el paquete y no envió altas. SEO-014 envió las dos altas P0 gratuitas. No se pagó nada, no se pidieron reviews, no se activó PPC ni leads.
 
 ## Resumen ejecutivo
 
-Puragenda sigue sin corroboración de terceros en los comparadores P0/P1.
-
-| Plataforma | Entidad buscada | Resultado | Estado |
+| Plataforma | Entidad | Resultado | Estado |
 |---|---|---|---|
-| Capterra / G2 Digital Markets | Puragenda, PuroCode | No hay ficha propia | REQUIRES USER |
-| GetApp | Puragenda | No hay ficha propia; no crear alta separada | REQUIRES USER (misma cuenta G2DM) |
-| ComparaSoftware.cl | Puragenda, PuroCode | 404 en slugs canónicos | REQUIRES USER |
-| Crunchbase | PuroCode, Puragenda | No hay org propia | REQUIRES USER |
-| LinkedIn Company PuroCode | — | Ya bloqueado | BLOCKED / REQUIRES USER |
-| LinkedIn Company Puragenda | — | Ya bloqueado | BLOCKED / REQUIRES USER |
+| Capterra / G2 Digital Markets | Puragenda, vendor PuroCode | Solicitud enviada a review | SUBMITTED / PENDING REVIEW |
+| GetApp | Puragenda | No solicitar hasta que Capterra esté LIVE | REQUIRES USER (dependiente de Capterra LIVE) |
+| ComparaSoftware.cl | Puragenda, fabricante PuroCode | Solicitud enviada a review | SUBMITTED / PENDING REVIEW |
+| Crunchbase | PuroCode / Puragenda | No ejecutado: social auth + campos no verificables | REQUIRES USER |
+| LinkedIn Company PuroCode | — | Sin nuevos intentos | BLOCKED / REQUIRES USER |
+| LinkedIn Company Puragenda | — | Sin nuevos intentos | BLOCKED / REQUIRES USER |
 | Google Business Profile Puragenda | Puragenda | Perfil existente | EXISTING |
+
+### SEO-014 — ejecución
+
+| Campo | Capterra / G2DM | ComparaSoftware |
+|---|---|---|
+| Cuenta | `contacto@purocode.com` en app.g2digitalmarkets.com | fabricante en comparasoftware.cl/panel-usuario/register |
+| Producto | Puragenda | Puragenda |
+| Vendor / fabricante | PuroCode | PuroCode |
+| Website | https://www.puragenda.cl | https://www.puragenda.cl |
+| Request / reference | `81028715-7431-469c-9bc6-e98313eca26e` | panel de fabricante; URL pública aún no indexada |
+| Fecha submission | 2026-09-04 | 2026-09-04 |
+| Categoría pedida | Appointment Scheduling (no 360 Degree Feedback) | agenda / reservas / citas |
+| Pricing | CLP; Individual 12990/mes; Equipo 29990/mes; trial 30 días sin tarjeta | consistente con precios públicos si el formulario lo pidió |
+| Coste | $0 | $0 listado gratis |
+| Upsell rechazado | PPC / brand building / lead generation | PPC, Reputación Digital, Generación de Demanda |
+| URL pública | aún no (pending review; publicación puede tardar semanas) | aún no (pending review) |
 
 Cambio de proceso respecto de SEO-011: Gartner Digital Markets pasó a **G2 Digital Markets** (cierre febrero 2026). El alta gratuita de Capterra ahora parte de `https://app.g2digitalmarkets.com/get-listed/start`. Una sola cuenta de vendor. La ficha inicial se publica en Capterra; GetApp y Software Advice se piden después desde el mismo cabinet. No crear un segundo producto.
 
@@ -149,20 +162,18 @@ No verificados / no rellenar todavía:
 
 | Platform | Entity | Profile URL | Status | Created/Existing | Description used | Website | Category | Requires review | Requires user action | Cost | Block reason | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Capterra (G2 Digital Markets) | Puragenda, vendor PuroCode | — | REQUIRES USER | No | Ver paquete | https://www.puragenda.cl | Appointment scheduling | Sí, el vendor review de G2DM | Sí: cuenta + correo `contacto@purocode.com` | $0 listing básico. PPC/leads = pago, no tomar | Alta gated por cuenta/email | Una sola entidad. No duplicar en GetApp/Software Advice/G2.com |
-| GetApp | Puragenda | — | REQUIRES USER | No | La misma, vía cabinet G2DM | https://www.puragenda.cl | Scheduling / barbershop directory del mismo producto | Sí | Sí, **después** de Capterra live, desde el mismo login | $0 si se pide desde el cabinet | No es un segundo alta | No crear ficha independiente |
+| Capterra (G2 Digital Markets) | Puragenda, vendor PuroCode | request `81028715-7431-469c-9bc6-e98313eca26e` (aún no hay URL pública) | SUBMITTED / PENDING REVIEW | Created 2026-09-04 | SaaS de agendamiento y reservas; developer PuroCode | https://www.puragenda.cl | Appointment Scheduling | Sí | Esperar publicación; luego pedir GetApp en el mismo cabinet | $0 | — | No duplicar producto. No PPC. Currency CLP. Trial 30 días, sin tarjeta. |
+| GetApp | Puragenda | — | REQUIRES USER | No | Misma ficha G2DM | https://www.puragenda.cl | Mismo producto, no segundo alta | No hasta Capterra LIVE | Sí, **después** de Capterra LIVE | $0 si se pide desde el cabinet | Capterra aún no está LIVE | No registrar otra instancia |
 | Software Advice | Puragenda | — | SKIPPED | No | — | — | — | No en esta fase | No | $0 teórico | Fuera del P0 de esta fase | Cubierto por el mismo vendor account; no solicitar ahora |
 | G2.com (cabinet distinto) | Puragenda | — | SKIPPED | No | — | — | — | No | No | Listing gratis existe; no es P0 LATAM | SEO-011 lo dejó en P2 | Un listing G2.com no crea Capterra. No fragmentar entidad |
-| ComparaSoftware.cl | Puragenda, fabricante PuroCode | — | REQUIRES USER | No | Ver paquete ES | https://www.puragenda.cl | Reservas / citas / salón si el taxón encaja | Sí, verificación de perfil | Sí: `/panel-usuario/register` con correo corporativo | $0 plan “Presencia en listados”. Planes pagos = cotizar, no tomar | Alta gated por cuenta | 404 en slugs. No usar formulario “Contactar” de planes pagos |
+| ComparaSoftware.cl | Puragenda, fabricante PuroCode | — (pendiente de publicación) | SUBMITTED / PENDING REVIEW | Created 2026-09-04 | consistente con Capterra y /labs | https://www.puragenda.cl | agenda / reservas / citas | Sí | Esperar ficha LIVE; ignorar upsell | $0 Presencia en listados | — | Cuenta fabricante, no partner. No Reputación Digital ni leads. |
 | Crunchbase | PuroCode (org) | — | REQUIRES USER | No | Ver paquete Crunchbase | https://www.purocode.com | Software / SaaS | Posible moderación | Sí: cuenta + **social auth** | $0 crear/editar. No Pro | Social auth + campos no verificables | Priorizar org PuroCode y mencionar Puragenda. No forzar producto separado |
 | Crunchbase | Puragenda (producto/org) | — | SKIPPED | No | — | https://www.puragenda.cl | — | — | No hasta que exista PuroCode | $0 | Arquitectura incierta | Crear solo si Crunchbase permite producto hijo sin inventar campos |
 | LinkedIn Company | PuroCode | — | BLOCKED / REQUIRES USER | No | — | https://www.purocode.com | — | — | Sí, cuando la cuenta cumpla el umbral de red | $0 | LinkedIn no deja crear Company Page con la cuenta actual | Sin nuevos intentos |
 | LinkedIn Company / Product | Puragenda | — | BLOCKED / REQUIRES USER | No | — | https://www.puragenda.cl | — | — | Igual | $0 | Mismo bloqueo | Sin nuevos intentos |
 | Google Business Profile | Puragenda | https://share.google/EI7MRiUwv4xO6xEH3 | EXISTING | Existing | No se editó | Esperable puragenda.cl; no verificado aquí | Local GBP | No | No | $0 | — | No duplicar. No modificar. El share link no es `sameAs` estable |
 
-Estados usados: EXISTING, REQUIRES USER, BLOCKED / REQUIRES USER, SKIPPED.
-
-No hay filas CREATED, SUBMITTED, PENDING REVIEW ni REJECTED.
+Estados usados: EXISTING, SUBMITTED, PENDING REVIEW, REQUIRES USER, BLOCKED / REQUIRES USER, SKIPPED.
 
 ---
 
@@ -209,11 +220,16 @@ Homónimo a no reclamar: **ProAgenda** (`capterra.com/p/204217/ProAgenda-com/`) 
 
 ### Estado
 
-**REQUIRES USER**
+**SUBMITTED / PENDING REVIEW** (SEO-014, 2026-09-04)
 
-No se envió la solicitud. El flujo `app.g2digitalmarkets.com/get-listed/start` exige cuenta de vendor y verificación de correo. El correo correcto es `contacto@purocode.com`. No hay acceso a ese inbox desde esta sesión. Crear la cuenta con otro mail fragmentaría el vendor.
+Request ID: `81028715-7431-469c-9bc6-e98313eca26e`  
+Cuenta: `contacto@purocode.com`  
+Producto: Puragenda. Vendor: PuroCode. Website: `https://www.puragenda.cl`.  
+Categoría pedida: Appointment Scheduling.  
+Pricing: CLP, Individual 12990, Equipo 29990, trial 30 días, sin tarjeta.  
+Upsell PPC/leads: no.
 
-GetApp: **no requiere alta separada ahora**. Queda como paso 2 del mismo cabinet, después de que Capterra esté live.
+GetApp: **no solicitado**. Mismo cabinet, solo cuando Capterra esté LIVE.
 
 ### Instrucción de envío (usuario)
 
@@ -276,9 +292,9 @@ Si después del alta gratuita intentan vender: no implica aceptación. No firmar
 
 ### Estado
 
-**REQUIRES USER**
+**SUBMITTED / PENDING REVIEW** (SEO-014, 2026-09-04)
 
-El register es un panel de cuenta (`/panel-usuario/register`). No se creó el usuario porque hay que verificar `contacto@purocode.com`.
+Cuenta de fabricante con `contacto@purocode.com`. Producto Puragenda, fabricante PuroCode, plan Presencia en listados. URL pública aún no indexada (`/puragenda` seguía 404 al investigar). Upsell de leads/PPC no aceptado.
 
 ### Instrucción de envío (usuario)
 
@@ -497,36 +513,43 @@ Regla de envío: **producto = Puragenda, vendor/developer/manufacturer = PuroCod
 
 ---
 
-## 15. Qué ejecutar en SEO-014
+## 15. SEO-014 — cerrado
 
-No avanzar a Chiletec, ASECH, prensa, Product Hunt, AlternativeTo, outreach a clientes ni Reserve with Google.
+Ejecutado el 2026-09-04:
 
-SEO-014 debería ser **operación de las altas ya preparadas**, no una fase nueva de directorios:
+1. Capterra / G2DM: SUBMITTED / PENDING REVIEW. Request `81028715-7431-469c-9bc6-e98313eca26e`.
+2. ComparaSoftware: SUBMITTED / PENDING REVIEW. Fabricante + producto, plan gratis.
+3. GetApp: no solicitado. Esperar Capterra LIVE y usar el mismo cabinet.
+4. Crunchbase: no ejecutado (social auth + campos no verificables).
+5. LinkedIn: BLOCKED, sin intentos.
+6. GBP: EXISTING, sin cambios.
+7. Reviews: no.
 
-1. Usuario envía Capterra (G2DM) con este paquete.
-2. Usuario crea ComparaSoftware fabricante + producto, plan gratis.
-3. Documentar URLs live o el ID de solicitud cuando existan.
-4. Recién entonces: añadir GetApp desde el mismo cabinet.
-5. Crunchbase solo si hay social auth limpio.
-6. LinkedIn sigue en espera.
-7. Reviews de clientes reales: todavía no.
+### Qué haría SEO-015 (no ejecutar ahora)
 
-Criterio de cierre de 014: al menos una URL pública de tercero que afirme “Puragenda = software de reservas, PuroCode = developer, Chile, puragenda.cl”.
+1. Vigilar publicación de Capterra y ComparaSoftware; guardar URLs LIVE.
+2. Cuando Capterra esté LIVE: pedir GetApp desde el mismo producto G2DM, sin segundo alta y sin pago.
+3. Crunchbase org PuroCode solo si hay social auth limpio y sin inventar founding/employees/funding.
+4. LinkedIn cuando la cuenta cumpla el umbral.
+5. Reviews de clientes reales: todavía no.
+6. No Chiletec, prensa, Product Hunt, AlternativeTo ni outreach.
 
 ---
 
 ## Fuera de alcance (explícito)
 
-SEO-013 no:
+SEO-013 no envió altas. SEO-014 sí envió Capterra y ComparaSoftware, ambos gratis.
+
+Ninguna de las dos fases:
 
 - activó marketplace ni `indexingEnabled`;
 - creó `/manicure` ni `/bienestar`;
 - inventó métricas, reviews ni ratings;
-- pagó listings;
+- pagó listings, PPC o leads;
 - tocó GBP;
 - intentó LinkedIn;
-- hizo outreach a Soccerbarber, Terapias SEC u otros clientes;
-- avanzó a SEO-014.
+- hizo outreach a clientes;
+- avanzó a SEO-015.
 
 ## Fuentes
 
