@@ -180,7 +180,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
               title: "Agenda para equipos",
               description: "Coordina disponibilidad, servicios y permisos de cada profesional.",
             },
-            {
+            data.slug === "manicure" ? {
+              href: "/guias/cobrar-abonos-reservas-online",
+              title: "Configurar y comunicar un abono",
+              description: "Define el monto y explica las condiciones antes de recibir una reserva.",
+            } : {
               href: "/guias/reducir-inasistencias-reservas",
               title: "Reducir inasistencias",
               description: "Aplica confirmaciones, políticas claras y seguimiento de clientes.",
@@ -251,7 +255,11 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
                 className={`border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] transition-transform hover:-translate-y-1 dark:border-white ${["bg-[#FFF5BA]", "bg-[#FFB5E8]", "bg-[#85E3FF]"][index % 3]}`}
               >
                 <h3 className="text-xl font-black uppercase">{item.name}</h3>
-                <p className="mt-3 font-bold leading-6 opacity-75">{item.description}</p>
+                <p className="mt-3 font-bold leading-6 opacity-75">{data.slug === "manicure"
+                  ? item.slug === "estetica"
+                    ? "Contexto de otros servicios del centro: faciales, cejas y pestañas."
+                    : "Si también atiendes cabello, revisa la organización de corte, color y estilistas."
+                  : item.description}</p>
                 <span className="mt-5 inline-flex font-black uppercase text-[#5B21B6]">Ver agenda para {item.name.toLowerCase()} →</span>
               </Link>
             ))}

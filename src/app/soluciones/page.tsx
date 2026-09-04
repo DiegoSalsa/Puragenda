@@ -61,10 +61,13 @@ export default async function SolucionesPage() {
           Si estás eligiendo software, hay landings comerciales para{" "}
           <Link href="/software-agenda-barberias" className="text-[#7C3AED] underline underline-offset-4">
             barberías
-          </Link>{" "}
-          y{" "}
+          </Link>,{" "}
           <Link href="/software-agenda-peluquerias" className="text-[#7C3AED] underline underline-offset-4">
             peluquerías
+          </Link>{" "}
+          y{" "}
+          <Link href="/software-agenda-manicure" className="text-[#7C3AED] underline underline-offset-4">
+            manicure y nail studios
           </Link>
           .
         </p>

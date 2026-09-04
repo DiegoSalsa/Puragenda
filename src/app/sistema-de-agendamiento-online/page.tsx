@@ -215,7 +215,11 @@ export default async function SchedulingSystemLandingPage() {
           <Link href="/software-agenda-peluquerias" className="font-black text-[#7C3AED] underline underline-offset-4">
             software de agenda para peluquerías
           </Link>
-          , esas landings cubren el flujo de cada local. También hay páginas para clínicas, kinesiólogos, manicure y tatuadores en{" "}
+          , esas páginas cubren el flujo de cada local. Para un catálogo de uñas con esmaltado y retiro, consulta el{" "}
+          <Link href="/software-agenda-manicure" className="font-black text-[#7C3AED] underline underline-offset-4">
+            software de agenda para manicure
+          </Link>
+          . También hay páginas para clínicas, kinesiólogos y tatuadores en{" "}
           <Link href="/soluciones" className="font-black text-[#7C3AED] underline underline-offset-4">
             soluciones
           </Link>
