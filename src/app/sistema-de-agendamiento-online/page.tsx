@@ -223,6 +223,10 @@ export default async function SchedulingSystemLandingPage() {
           <Link href="/software-agenda-estetica" className="font-black text-[#7C3AED] underline underline-offset-4">
             software de agenda para centros de estética
           </Link>
+          . Para organizar citas de una consulta de psicología, revisa el{" "}
+          <Link href="/software-agenda-psicologos" className="font-black text-[#7C3AED] underline underline-offset-4">
+            software de agenda para psicólogos
+          </Link>
           . También hay páginas para clínicas, kinesiólogos y tatuadores en{" "}
           <Link href="/soluciones" className="font-black text-[#7C3AED] underline underline-offset-4">
             soluciones

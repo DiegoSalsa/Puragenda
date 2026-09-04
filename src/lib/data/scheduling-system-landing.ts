@@ -150,7 +150,7 @@ export const schedulingSystemAudiences = [
   {
     slug: "psicologos",
     name: "Psicólogos",
-    description: "Sesiones presenciales u online, abono opcional y agenda privada por profesional.",
+    description: "Tipos de cita, horarios por profesional, bloqueos y abono opcional.",
   },
 ] as const;
 

@@ -8,6 +8,7 @@ const STATIC_PATHS = new Set([
   "/software-agenda-peluquerias",
   "/software-agenda-manicure",
   "/software-agenda-estetica",
+  "/software-agenda-psicologos",
   "/barberias",
   "/peluquerias",
   "/faq",

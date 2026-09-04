@@ -158,7 +158,9 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
             Soluciones relacionadas para {data.name.toLowerCase()}
           </h2>
           <p className="mt-5 text-lg font-bold opacity-75">
-            Revisa cómo Puragenda coordina al equipo, protege las horas y reduce tareas manuales antes de elegir un plan.
+            {data.slug === "psicologos"
+              ? "Revisa cómo se configuran los tipos de cita, las jornadas y los bloqueos antes de evaluar el software completo."
+              : "Revisa cómo Puragenda coordina al equipo, protege las horas y reduce tareas manuales antes de elegir un plan."}
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -173,22 +175,32 @@ export default async function IndustryPage({ params }: { params: Promise<{ indus
             {
               href: "/funciones/reservas-online-con-abono",
               title: "Reservas con abono",
-              description: "Protege servicios y horarios de alta demanda con un anticipo informado.",
+              description: data.slug === "psicologos"
+                ? "Configura un monto visible durante la reserva cuando corresponda."
+                : "Protege servicios y horarios de alta demanda con un anticipo informado.",
             },
             {
               href: "/funciones/agenda-multiples-profesionales",
               title: "Agenda para equipos",
               description: "Coordina disponibilidad, servicios y permisos de cada profesional.",
             },
-            data.slug === "manicure" ? {
-              href: "/guias/cobrar-abonos-reservas-online",
-              title: "Configurar y comunicar un abono",
-              description: "Define el monto y explica las condiciones antes de recibir una reserva.",
-            } : {
-              href: "/guias/reducir-inasistencias-reservas",
-              title: "Reducir inasistencias",
-              description: "Aplica confirmaciones, políticas claras y seguimiento de clientes.",
-            },
+            data.slug === "manicure"
+              ? {
+                  href: "/guias/cobrar-abonos-reservas-online",
+                  title: "Configurar y comunicar un abono",
+                  description: "Define el monto y explica las condiciones antes de recibir una reserva.",
+                }
+              : data.slug === "psicologos"
+                ? {
+                    href: "/funciones/agenda-google-calendar",
+                    title: "Google Calendar",
+                    description: "Conecta la agenda y revisa el alcance exacto de los eventos y la disponibilidad.",
+                  }
+                : {
+                    href: "/guias/reducir-inasistencias-reservas",
+                    title: "Reducir inasistencias",
+                    description: "Aplica confirmaciones, políticas claras y seguimiento de clientes.",
+                  },
             {
               href: "/pricing",
               title: "Planes y precios",

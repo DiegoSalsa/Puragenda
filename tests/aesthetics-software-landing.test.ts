@@ -152,7 +152,7 @@ describe("SEO-017 aesthetics commercial hub", () => {
     expect(urls.filter((url) => url === `https://www.puragenda.cl${AESTHETICS_SOFTWARE_PATH}`)).toHaveLength(1);
     expect(urls).toContain("https://www.puragenda.cl/para/estetica");
     expect(MARKETPLACE_QUALITY_GATE.indexingEnabled).toBe(false);
-    for (const route of ["software-agenda-spa", "software-estetica", "software-centro-estetico", "agenda-estetica", "estetica", "estetica/[city]", "spa/[city]", "software-agenda-psicologos"]) {
+    for (const route of ["software-agenda-spa", "software-estetica", "software-centro-estetico", "agenda-estetica", "estetica", "estetica/[city]", "spa/[city]"]) {
       expect(existsSync(join(process.cwd(), "src/app", route, "page.tsx"))).toBe(false);
       expect(urls).not.toContain(`https://www.puragenda.cl/${route}`);
     }
