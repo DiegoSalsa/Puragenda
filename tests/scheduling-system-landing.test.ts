@@ -133,10 +133,10 @@ describe("SEO-005 scheduling system pillar", () => {
   });
 
   it("connects register CTAs to the existing sign_up tracking", () => {
-    expect(pageSource).toContain('cta="register"');
-    expect(pageSource).toContain('placement="hero"');
-    expect(pageSource).toContain('placement="final_cta"');
-    expect(pageSource).toContain('href="/register"');
+    expect(pageSource).toMatch(/cta:\s*"register"|cta="register"/);
+    expect(pageSource).toMatch(/placement:\s*"hero"|placement="hero"/);
+    expect(pageSource).toMatch(/placement:\s*"final_cta"|placement="final_cta"/);
+    expect(pageSource).toMatch(/href:\s*"\/register"|href="\/register"/);
     expect(toGoogleAnalyticsPagePath(SCHEDULING_SYSTEM_PATH)).toBe(SCHEDULING_SYSTEM_PATH);
   });
 

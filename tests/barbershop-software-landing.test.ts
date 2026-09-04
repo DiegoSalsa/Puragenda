@@ -90,7 +90,7 @@ describe("SEO-006 barbershop software landing", () => {
   });
 
   it("links the commercial hubs and does not advertise WhatsApp reminders", () => {
-    expect(pageSource).toContain('href="/sistema-de-agendamiento-online"');
+    expect(pageSource).toMatch(/href[=:]\s*"\/sistema-de-agendamiento-online"/);
     expect(pageSource).toContain('href="/pricing"');
     expect(pageSource).toContain('href="/caracteristicas"');
     expect(pageSource).toContain('href="/funciones/agenda-multiples-profesionales"');
@@ -104,9 +104,9 @@ describe("SEO-006 barbershop software landing", () => {
   });
 
   it("connects register CTAs and keeps the GA4 path uncollapsed", () => {
-    expect(pageSource).toContain('cta="register"');
-    expect(pageSource).toContain('placement="hero"');
-    expect(pageSource).toContain('placement="final_cta"');
+    expect(pageSource).toMatch(/cta:\s*"register"|cta="register"/);
+    expect(pageSource).toMatch(/placement:\s*"hero"|placement="hero"/);
+    expect(pageSource).toMatch(/placement:\s*"final_cta"|placement="final_cta"/);
     expect(toGoogleAnalyticsPagePath(BARBERSHOP_SOFTWARE_PATH)).toBe(BARBERSHOP_SOFTWARE_PATH);
   });
 

@@ -91,14 +91,14 @@ describe("SEO-007 salon software landing", () => {
   });
 
   it("links the commercial hubs and keeps the GA4 path uncollapsed", () => {
-    expect(pageSource).toContain('href="/sistema-de-agendamiento-online"');
+    expect(pageSource).toMatch(/href[=:]\s*"\/sistema-de-agendamiento-online"/);
     expect(pageSource).toContain('href="/pricing"');
     expect(pageSource).toContain('href="/caracteristicas"');
     expect(pageSource).toContain('href="/funciones/reservas-online-con-abono"');
     expect(pageSource).toContain('href="/guias/reducir-inasistencias-reservas"');
     expect(pageSource).toContain('href="/para/peluquerias"');
     expect(salonFeatures.some((feature) => feature.href === "/funciones/agenda-multiples-profesionales")).toBe(true);
-    expect(pageSource).toContain('cta="register"');
+    expect(pageSource).toMatch(/cta:\s*"register"|cta="register"/);
     expect(toGoogleAnalyticsPagePath(SALON_SOFTWARE_PATH)).toBe(SALON_SOFTWARE_PATH);
   });
 

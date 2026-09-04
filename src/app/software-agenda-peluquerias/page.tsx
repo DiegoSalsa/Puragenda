@@ -1,9 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Sparkles } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { TrackedCtaAnchor, TrackedLink } from "@/components/analytics/tracked-link";
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { JsonLd } from "@/components/json-ld";
+import {
+  FaqItem,
+  FinalCta,
+  LandingHero,
+  PricingSection,
+  ProductFrame,
+  SectionIntro,
+  ServiceCatalogPreview,
+  StaffAvailabilityPreview,
+  VerticalFaq,
+  seo,
+} from "@/components/landing/seo";
 import {
   breadcrumbListNode,
   faqPageNode,
@@ -25,6 +36,7 @@ import {
   salonSoftwareMetadata,
   salonSteps,
 } from "@/lib/data/salon-software-landing";
+import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
 
@@ -55,275 +67,182 @@ export default async function SalonSoftwareLandingPage() {
         ])}
       />
 
-      <section className="mx-auto w-full max-w-5xl px-6 pt-8 pb-14 text-center">
-        <nav aria-label="Miga de pan" className="mb-8 text-left text-sm font-bold">
-          <ol className="flex flex-wrap items-center gap-2 opacity-70">
-            <li>
-              <Link href="/" className="underline underline-offset-4 hover:text-[#7C3AED]">
-                Inicio
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link href="/sistema-de-agendamiento-online" className="underline underline-offset-4 hover:text-[#7C3AED]">
-                Sistema de agendamiento
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page">Software de agenda para peluquerías</li>
-          </ol>
-        </nav>
-        <p className="inline-block border-2 border-black bg-[#FFB5E8] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
-          {salonSoftwareCopy.eyebrow}
-        </p>
-        <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-black uppercase tracking-tighter sm:text-6xl">
-          {salonSoftwareCopy.h1}
-        </h1>
-        <p className="mx-auto mt-6 max-w-3xl text-lg font-bold leading-8 opacity-80 sm:text-xl">
-          {salonSoftwareCopy.heroLead}
-        </p>
-        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <TrackedLink
-            href="/register"
-            cta="register"
-            placement="hero"
-            className="border-4 border-black bg-[#7C3AED] px-8 py-4 text-lg font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white"
-          >
-            Probar {TRIAL_DURATION_DAYS} días gratis <ArrowRight className="ml-2 inline h-5 w-5" />
-          </TrackedLink>
-          <TrackedCtaAnchor
-            href="/demo"
-            cta="demo"
-            placement="hero"
-            className="border-4 border-black bg-white px-8 py-4 text-lg font-black uppercase text-black shadow-[6px_6px_0_#000] dark:border-white dark:bg-black dark:text-white"
-          >
-            Ver demo
-          </TrackedCtaAnchor>
-        </div>
-        <p className="mt-5 text-sm font-bold opacity-60">{salonSoftwareCopy.heroNote}</p>
-      </section>
+      <LandingHero
+        breadcrumbs={[
+          { href: "/", label: "Inicio" },
+          { href: "/sistema-de-agendamiento-online", label: "Sistema de agendamiento" },
+          { label: "Software de agenda para peluquerías" },
+        ]}
+        eyebrow={salonSoftwareCopy.eyebrow}
+        tone="pink"
+        h1={salonSoftwareCopy.h1}
+        lead={salonSoftwareCopy.heroLead}
+        note={salonSoftwareCopy.heroNote}
+        primaryCta={{ href: "/register", label: `Probar ${TRIAL_DURATION_DAYS} días gratis`, cta: "register", placement: "hero" }}
+        secondaryCta={{ href: "/demo", label: "Ver demo", cta: "demo", placement: "hero" }}
+        visual={
+          <ProductFrame label="Catálogo del salón" caption="Ejemplos de uso, no el catálogo de un salón cliente." tone="pink">
+            <ServiceCatalogPreview
+              services={salonDurationExamples.map((item, index) => ({
+                name: item.name,
+                duration: item.duration,
+                price: index === 1 ? "Servicio largo" : "Bloque propio",
+                professional: index === 2 ? "Otra categoría" : "Estilista asignada",
+                note: item.note,
+                selected: index === 1,
+              }))}
+            />
+            <div className="mt-4 border-t-2 border-black/10 pt-4">
+              <StaffAvailabilityPreview
+                staff={[
+                  { name: "Estilista 1", selected: true, meta: "color" },
+                  { name: "Estilista 2", meta: "corte" },
+                ]}
+                times={[
+                  { time: "11:00", available: false },
+                  { time: "13:00", available: true },
+                  { time: "15:30", available: true },
+                ]}
+              />
+            </div>
+          </ProductFrame>
+        }
+      />
 
-      <section className="mx-auto w-full max-w-6xl px-6 pb-16" aria-labelledby="catalogo-ejemplo">
-        <h2 id="catalogo-ejemplo" className="sr-only">
-          Ejemplo de catálogo con distinta duración
-        </h2>
-        <p className="mb-4 text-center text-sm font-bold opacity-60">
-          Ejemplos de uso, no el catálogo de un salón cliente.
-        </p>
-        <div className="grid gap-4 md:grid-cols-3">
-          {salonDurationExamples.map((item, index) => (
-            <article
-              key={item.name}
-              className={`rounded-3xl border-4 border-black p-6 text-black shadow-[6px_6px_0_#000] dark:border-white ${["bg-[#FFF5BA]", "bg-[#B28DFF]", "bg-[#BFFCC6]"][index]}`}
-            >
-              <p className="text-sm font-black uppercase opacity-70">{item.name}</p>
-              <p className="mt-2 text-4xl font-black">{item.duration}</p>
-              <p className="mt-3 font-bold leading-6 opacity-80">{item.note}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-y-4 border-black bg-[#E9D5FF] py-16 text-black dark:border-white" aria-labelledby="que-es-puragenda-peluqueria">
-        <div className="mx-auto max-w-4xl px-6">
-          <p className="text-sm font-black uppercase tracking-wider text-[#6D28D9]">Respuesta rápida</p>
-          <h2 id="que-es-puragenda-peluqueria" className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">
+      <section className={seo.band} aria-labelledby="que-es-puragenda-peluqueria">
+        <div className="mx-auto max-w-4xl px-6 py-14 sm:py-16">
+          <p className={seo.kicker}>Respuesta rápida</p>
+          <h2 id="que-es-puragenda-peluqueria" className={cn(seo.h2, "mt-3")}>
             {salonSoftwareCopy.definitionHeading}
           </h2>
-          <p className="mt-5 text-xl font-bold leading-9">{salonSoftwareCopy.definition}</p>
+          <p className={cn(seo.body, "mt-5")}>{salonSoftwareCopy.definition}</p>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-20" aria-labelledby="problemas-salon">
-        <div className="max-w-3xl">
-          <p className="font-black uppercase text-[#7C3AED]">Operación del salón</p>
-          <h2 id="problemas-salon" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-            Dónde se traba una peluquería que agenda a mano
-          </h2>
-        </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
+      <section className={seo.section} aria-labelledby="problemas-salon">
+        <SectionIntro id="problemas-salon" kicker="Operación del salón" title="Dónde se traba una peluquería que agenda a mano" />
+        <div className="mt-12 grid gap-8 md:grid-cols-2">
           {salonProblems.map((item) => (
-            <article key={item.title} className="rounded-3xl border-4 border-black bg-white p-7 shadow-[6px_6px_0_#000] dark:border-white dark:bg-black">
-              <h3 className="text-2xl font-black uppercase">{item.title}</h3>
-              <p className="mt-3 font-bold leading-7 opacity-75">{item.description}</p>
+            <article key={item.title} className="border-t-2 border-black/15 pt-5 dark:border-white/20">
+              <h3 className={seo.h3}>{item.title}</h3>
+              <p className={cn(seo.body, "mt-3 text-base")}>{item.description}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="border-y-4 border-black bg-[#85E3FF] py-20 text-black dark:border-white" aria-labelledby="como-funciona-salon">
-        <div className="mx-auto w-full max-w-6xl px-6">
-          <h2 id="como-funciona-salon" className="text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-            Del catálogo a la silla ocupada
-          </h2>
-          <ol className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <section className={seo.bandWarm} aria-labelledby="como-funciona-salon">
+        <div className={seo.section}>
+          <h2 id="como-funciona-salon" className={seo.h2}>Del catálogo a la silla ocupada</h2>
+          <ol className="mt-10 grid gap-0 overflow-hidden rounded-[24px] border-2 border-black bg-white dark:border-white dark:bg-[#0c0c0c] md:grid-cols-2 lg:grid-cols-4">
             {salonSteps.map((step, index) => (
-              <li key={step.title} className="rounded-3xl border-4 border-black bg-white p-6 shadow-[5px_5px_0_#000]">
-                <span className="text-4xl font-black text-[#7C3AED]">{index + 1}</span>
-                <h3 className="mt-3 text-xl font-black uppercase">{step.title}</h3>
-                <p className="mt-3 font-bold leading-7 opacity-75">{step.description}</p>
+              <li key={step.title} className="border-black p-6 dark:border-white md:border-r-2 md:last:border-r-0 max-md:border-b-2 max-md:last:border-b-0">
+                <span className="text-3xl font-black text-[#7C3AED]">{index + 1}</span>
+                <h3 className={cn(seo.h3, "mt-3")}>{step.title}</h3>
+                <p className={cn(seo.body, "mt-3 text-base")}>{step.description}</p>
               </li>
             ))}
           </ol>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-20" aria-labelledby="funciones-salon">
-        <div className="max-w-3xl">
-          <p className="font-black uppercase text-[#7C3AED]">Qué usa el salón</p>
-          <h2 id="funciones-salon" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-            Catálogo, equipo y clientas fijas
-          </h2>
-          <p className="mt-5 text-lg font-bold leading-8 opacity-75">
+      <section className={seo.section} aria-labelledby="funciones-salon">
+        <SectionIntro id="funciones-salon" kicker="Qué usa el salón" title="Catálogo, equipo y clientas fijas">
+          <p>
             El listado general del producto está en{" "}
-            <Link href="/caracteristicas" className="underline underline-offset-4">
-              características
-            </Link>
+            <Link href="/caracteristicas" className={seo.link}>características</Link>
             . Aquí importan las piezas que un salón usa todos los días.
           </p>
-        </div>
-        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+        </SectionIntro>
+        <div className="mt-12 divide-y-2 divide-black/10 border-y-2 border-black/10 dark:divide-white/15 dark:border-white/15">
           {salonFeatures.map((feature) => (
-            <article key={feature.title} className="rounded-3xl border-4 border-black bg-[#FFFAEB] p-7 shadow-[6px_6px_0_#000] dark:border-white dark:bg-black">
-              <h3 className="text-2xl font-black uppercase">{feature.title}</h3>
-              <p className="mt-3 font-bold leading-7 opacity-75">{feature.description}</p>
-              <Link href={feature.href} className="mt-5 inline-flex font-black uppercase text-[#5B21B6] underline underline-offset-4">
-                {feature.hrefLabel} →
-              </Link>
+            <article key={feature.title} className="grid gap-3 py-6 lg:grid-cols-2">
+              <h3 className={seo.h3}>{feature.title}</h3>
+              <div>
+                <p className={cn(seo.body, "text-base")}>{feature.description}</p>
+                <Link href={feature.href} className={cn(seo.link, "mt-3 inline-flex")}>{feature.hrefLabel} →</Link>
+              </div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="border-y-4 border-black bg-[#BFFCC6] py-20 text-black dark:border-white" aria-labelledby="abonos-salon">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className={seo.band} aria-labelledby="abonos-salon">
+        <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <p className="font-black uppercase text-[#6D28D9]">Servicios largos</p>
-            <h2 id="abonos-salon" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-              El abono protege el bloque, no garantiza la asistencia
-            </h2>
-            <p className="mt-5 text-lg font-bold leading-8 opacity-80">
+            <p className={seo.kicker}>Servicios largos</p>
+            <h2 id="abonos-salon" className={cn(seo.h2, "mt-3")}>El abono protege el bloque, no garantiza la asistencia</h2>
+            <p className={cn(seo.body, "mt-5")}>
               Una coloración reserva más tiempo que un corte. Si el salón pide anticipo en esos servicios, la clienta ve el monto y el saldo antes de pagar. Puragenda no cobra comisión por reserva.
             </p>
             <div className="mt-6 flex flex-wrap gap-5 font-black">
-              <Link href="/funciones/reservas-online-con-abono" className="underline underline-offset-4">
-                Reservas con abono
-              </Link>
-              <Link href="/guias/reducir-inasistencias-reservas" className="underline underline-offset-4">
-                Cómo reducir inasistencias
-              </Link>
-              <Link href="/funciones/agenda-google-calendar" className="underline underline-offset-4">
-                Google Calendar
-              </Link>
+              <Link href="/funciones/reservas-online-con-abono" className={seo.link}>Reservas con abono</Link>
+              <Link href="/guias/reducir-inasistencias-reservas" className={seo.link}>Cómo reducir inasistencias</Link>
+              <Link href="/funciones/agenda-google-calendar" className={seo.link}>Google Calendar</Link>
             </div>
           </div>
-          <article className="rounded-3xl border-4 border-black bg-white p-8 shadow-[8px_8px_0_#000]">
-            <h3 className="text-2xl font-black uppercase">Qué hace la clienta</h3>
+          <article className={cn(seo.panel, "p-7 sm:p-8")}>
+            <h3 className={cn(seo.h3, "text-2xl")}>Qué hace la clienta</h3>
             <ol className="mt-6 space-y-3">
               {salonCustomerSteps.map((step, index) => (
-                <li key={step} className="flex gap-3 font-bold leading-7">
+                <li key={step} className="flex gap-3 text-base font-medium leading-7">
                   <span className="font-black text-[#5B21B6]">{index + 1}.</span>
                   <span>{step}</span>
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-sm font-bold opacity-70">
-              Reserva de la clienta del salón, no una búsqueda de “peluquería cerca”.
-            </p>
+            <p className="mt-6 text-sm font-semibold text-black/60">Reserva de la clienta del salón, no una búsqueda de “peluquería cerca”.</p>
           </article>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-5xl px-6 py-20" aria-labelledby="precios-salon">
-        <div className="text-center">
-          <p className="font-black uppercase text-[#7C3AED]">Precios vigentes</p>
-          <h2 id="precios-salon" className="mt-3 text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-            Cuánto cuesta el sistema para un salón
-          </h2>
-          <p className="mx-auto mt-5 max-w-3xl text-lg font-bold leading-8 opacity-80">
+      <PricingSection
+        id="precios-salon"
+        title="Cuánto cuesta el sistema para un salón"
+        intro={
+          <p>
             Un profesional usa el plan {PRICING.INDIVIDUAL.name}. Un equipo de estilistas, el plan {PRICING.EQUIPO.name} ({STAFF_LIMITS.EQUIPO} incluidos). Detalle en{" "}
-            <Link href="/pricing" className="underline underline-offset-4">
-              precios
-            </Link>
-            .
+            <Link href="/pricing" className={seo.link}>precios</Link>.
           </p>
-        </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <article className="rounded-3xl border-4 border-black bg-white p-8 shadow-[7px_7px_0_#000] dark:border-white dark:bg-black">
-            <h3 className="text-2xl font-black uppercase">Estilista independiente</h3>
-            <p className="mt-4 text-4xl font-black">
-              {individualPrice} <span className="text-lg">CLP / mes</span>
-            </p>
-          </article>
-          <article className="rounded-3xl border-4 border-black bg-white p-8 shadow-[7px_7px_0_#000] dark:border-white dark:bg-black">
-            <h3 className="text-2xl font-black uppercase">Salón con equipo</h3>
-            <p className="mt-4 text-4xl font-black">
-              {teamPrice} <span className="text-lg">CLP / mes</span>
-            </p>
-          </article>
-        </div>
-      </section>
+        }
+        individual={{ name: "Estilista independiente", price: individualPrice, detail: `Plan ${PRICING.INDIVIDUAL.name}.` }}
+        team={{ name: "Salón con equipo", price: teamPrice, detail: `Plan ${PRICING.EQUIPO.name}.` }}
+      />
 
-      <section className="border-y-4 border-black bg-[#FFF5BA] py-16 text-black dark:border-white" aria-labelledby="prueba-salon">
-        <div className="mx-auto max-w-3xl px-6">
-          <h2 id="prueba-salon" className="text-3xl font-black uppercase tracking-tight">
-            Pruébalo en tu propia peluquería
-          </h2>
-          <p className="mt-5 text-lg font-bold leading-8 opacity-80">
+      <section className={seo.bandWarm} aria-labelledby="prueba-salon">
+        <div className="mx-auto max-w-3xl px-6 py-14 sm:py-16">
+          <h2 id="prueba-salon" className={seo.h2}>Pruébalo en tu propia peluquería</h2>
+          <p className={cn(seo.body, "mt-5")}>
             Configura tus servicios, profesionales y horarios y prueba Puragenda durante {TRIAL_DURATION_DAYS} días con tu propio catálogo. Así puedes comprobar cómo encaja el sistema en la operación real de tu salón antes de decidir.
           </p>
           <TrackedLink
             href="/register"
             cta="register"
             placement="trial_invite"
-            className="mt-8 inline-flex border-4 border-black bg-[#7C3AED] px-8 py-4 text-lg font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white"
+            className={cn(seo.primaryCta, "mt-8")}
           >
-            Probar {TRIAL_DURATION_DAYS} días gratis <ArrowRight className="ml-2 inline h-5 w-5" />
+            Probar {TRIAL_DURATION_DAYS} días gratis
           </TrackedLink>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-4xl px-6 py-20" aria-labelledby="faq-salon">
-        <h2 id="faq-salon" className="text-center text-4xl font-black uppercase tracking-tighter sm:text-5xl">
-          Preguntas de quien administra el salón
-        </h2>
-        <div className="mt-10 space-y-5">
-          {faqs.map((item) => (
-            <article key={item.question} className="rounded-2xl border-4 border-black bg-white p-6 shadow-[5px_5px_0_#000] dark:border-white dark:bg-black">
-              <h3 className="text-xl font-black">{item.question}</h3>
-              <p className="mt-3 font-medium leading-7 opacity-80">{item.answer}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      <VerticalFaq id="faq-salon" title="Preguntas de quien administra el salón">
+        {faqs.map((item) => (
+          <FaqItem key={item.question} question={item.question} answer={item.answer} />
+        ))}
+      </VerticalFaq>
 
-      <section className="border-t-4 border-black bg-[#FFB5E8] py-24 text-center dark:border-white dark:bg-black">
-        <div className="mx-auto max-w-4xl px-6">
-          <Sparkles className="mx-auto h-10 w-10" />
-          <h2 className="mt-6 text-4xl font-black uppercase tracking-tighter text-black dark:text-white sm:text-5xl">
-            Carga un corte y un color, y reserva como tu clienta
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg font-bold leading-8 opacity-75">
-            Si solo quieres la ficha corta del rubro, está en Soluciones.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <TrackedLink
-              href="/register"
-              cta="register"
-              placement="final_cta"
-              className="border-4 border-black bg-[#7C3AED] px-8 py-4 text-lg font-black uppercase text-white shadow-[6px_6px_0_#000] dark:border-white"
-            >
-              Crear cuenta gratis <ArrowRight className="ml-2 inline h-5 w-5" />
-            </TrackedLink>
-            <Link
-              href="/para/peluquerias"
-              className="border-4 border-black bg-white px-8 py-4 text-lg font-black uppercase text-black shadow-[6px_6px_0_#000] dark:border-white dark:bg-black dark:text-white"
-            >
-              Ver página de rubro
-            </Link>
-          </div>
-        </div>
-      </section>
+      <FinalCta
+        id="cierre-salon"
+        title="Carga un corte y un color, y reserva como tu clienta"
+        primary={{ href: "/register", label: "Crear cuenta gratis", cta: "register", placement: "final_cta" }}
+        secondary={{ href: "/para/peluquerias", label: "Ver página de rubro", tracked: false }}
+      >
+        <p>
+          Si solo quieres la ficha corta del rubro, está en Soluciones o en la{" "}
+          <Link href="/para/peluquerias" className={seo.link}>página de peluquerías</Link>.
+        </p>
+      </FinalCta>
     </LandingLayout>
   );
 }
