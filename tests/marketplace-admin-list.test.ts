@@ -12,6 +12,7 @@ describe("admin marketplace list vs public inventory", () => {
     const summary = marketplaceAdminListSummary([
       {
         published: false,
+        authorized: false,
         locality: "Concepción",
         categories: ["Barberías"],
       },
@@ -21,6 +22,8 @@ describe("admin marketplace list vs public inventory", () => {
       categoriesLabel: "Barberías",
       localityLabel: "Concepción",
       published: false,
+      authorized: false,
+      authorizationLabel: "No",
     });
   });
 
@@ -49,6 +52,7 @@ describe("admin marketplace list vs public inventory", () => {
     const after = marketplaceAdminListSummary([
       {
         published: false,
+        authorized: false,
         locality: "Talcahuano",
         categories: ["Peluquerías"],
       },
@@ -58,11 +62,15 @@ describe("admin marketplace list vs public inventory", () => {
       categoriesLabel: "—",
       localityLabel: "—",
       published: false,
+      authorized: false,
+      authorizationLabel: "No",
     });
     expect(after).toEqual({
       categoriesLabel: "Peluquerías",
       localityLabel: "Talcahuano",
       published: false,
+      authorized: false,
+      authorizationLabel: "No",
     });
   });
 

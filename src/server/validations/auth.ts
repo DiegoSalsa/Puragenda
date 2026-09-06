@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isSupportedCountryCode, isValidTimeZone } from "@/core/countries";
+import { registrationMarketplaceShapeErrors } from "@/lib/marketplace/onboarding";
 
 export const registerSchema = z.object({
   email: z
@@ -66,7 +67,53 @@ export const registerSchema = z.object({
     .optional()
     .nullable(),
 
+  marketplaceCategorySlug: z
+    .string({ message: "Selecciona el rubro del negocio" })
+    .trim()
+    .toLowerCase()
+    .min(1, "Selecciona el rubro del negocio")
+    .max(64),
+
+  marketplaceOtherDescription: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .nullable(),
+
+  marketplaceLocalitySlug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(64)
+    .optional()
+    .nullable(),
+
+  marketplaceLocalityNotFound: z.boolean().optional().default(false),
+
+  marketplaceCityName: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .nullable(),
+
+  marketplaceAuthorized: z.boolean().optional().default(false),
+
   termsAccepted: z.literal(true, { error: "Debes aceptar los Términos de Servicio" }),
+}).superRefine((data, ctx) => {
+  const errors = registrationMarketplaceShapeErrors({
+    countryCode: data.countryCode,
+    categorySlug: data.marketplaceCategorySlug,
+    otherDescription: data.marketplaceOtherDescription,
+    localitySlug: data.marketplaceLocalitySlug,
+    localityNotFound: data.marketplaceLocalityNotFound,
+    cityName: data.marketplaceCityName,
+    authorized: data.marketplaceAuthorized,
+  });
+  for (const message of errors) {
+    ctx.addIssue({ code: "custom", message });
+  }
 });
 
 export const loginSchema = z.object({

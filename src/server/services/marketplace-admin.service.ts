@@ -1,4 +1,6 @@
 import {
+  MARKETPLACE_AUTHORIZATION_SOURCE_ADMIN,
+  MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
   MARKETPLACE_EXCLUDED_SLUGS,
   canPublishMarketplaceListing,
   isMarketplaceSubscriptionActive,
@@ -11,7 +13,7 @@ import { createAuditLog } from "@/server/lib/audit";
 export type SaveMarketplaceListingInput = {
   businessId: string;
   locationId: string;
-  localityId: string;
+  localityId: string | null;
   categoryIds: string[];
   authorizationConfirmed: boolean;
   published: boolean;
@@ -66,6 +68,10 @@ export async function listMarketplaceAdminRows() {
         select: {
           publishedAt: true,
           authorizationConfirmedAt: true,
+          authorizationRevokedAt: true,
+          authorizationSource: true,
+          pendingCategoryDescription: true,
+          pendingLocalityName: true,
           locality: { select: { name: true, slug: true } },
           location: { select: { name: true, isActive: true } },
           categories: {
@@ -104,6 +110,11 @@ export async function getMarketplaceBusinessEditor(businessId: string) {
           locationId: true,
           localityId: true,
           authorizationConfirmedAt: true,
+          authorizationRevokedAt: true,
+          authorizationSource: true,
+          authorizationTextVersion: true,
+          pendingCategoryDescription: true,
+          pendingLocalityName: true,
           publishedAt: true,
           categories: { select: { categoryId: true } },
         },
@@ -121,6 +132,8 @@ export async function saveMarketplaceListing(
   adminUserId: string,
   input: SaveMarketplaceListingInput,
 ): Promise<{ ok: true } | { ok: false; error: string; blockers: string[] }> {
+  const localityId = input.localityId?.trim() || null;
+
   const [business, location, locality, categories] = await Promise.all([
     prisma.business.findUnique({
       where: { id: input.businessId },
@@ -143,10 +156,12 @@ export async function saveMarketplaceListing(
       where: { id: input.locationId, businessId: input.businessId },
       select: { id: true, isActive: true },
     }),
-    prisma.marketplaceLocality.findUnique({
-      where: { id: input.localityId },
-      select: { id: true, isActive: true },
-    }),
+    localityId
+      ? prisma.marketplaceLocality.findUnique({
+          where: { id: localityId },
+          select: { id: true, isActive: true },
+        })
+      : Promise.resolve(null),
     prisma.marketplaceCategory.findMany({
       where: { id: { in: input.categoryIds } },
       select: { id: true, isActive: true },
@@ -155,7 +170,7 @@ export async function saveMarketplaceListing(
 
   if (!business) return { ok: false, error: "Negocio no encontrado", blockers: [] };
   if (!location) return { ok: false, error: "La sucursal no pertenece a este negocio", blockers: [] };
-  if (!locality || !locality.isActive) {
+  if (localityId && (!locality || !locality.isActive)) {
     return { ok: false, error: "Ubicación canónica inválida", blockers: [] };
   }
   if (categories.length !== input.categoryIds.length) {
@@ -180,7 +195,7 @@ export async function saveMarketplaceListing(
     locationActive: location.isActive,
     authorizationConfirmed: input.authorizationConfirmed,
     hasActiveCategory: activeCategoryIds.length > 0,
-    hasCanonicalLocality: true,
+    hasCanonicalLocality: Boolean(locality?.id),
     hasBookableService,
   });
 
@@ -199,17 +214,48 @@ export async function saveMarketplaceListing(
       id: true,
       authorizationConfirmedAt: true,
       authorizationConfirmedById: true,
+      authorizationSource: true,
+      authorizationTextVersion: true,
+      authorizationRevokedAt: true,
+      pendingCategoryDescription: true,
+      pendingLocalityName: true,
       publishedAt: true,
     },
   });
 
-  const authorizationConfirmedAt = input.authorizationConfirmed
-    ? existing?.authorizationConfirmedAt ?? now
-    : null;
-  const authorizationConfirmedById = input.authorizationConfirmed
-    ? existing?.authorizationConfirmedById ?? adminUserId
-    : null;
+  const currentlyAuthorized =
+    existing?.authorizationConfirmedAt != null && existing.authorizationRevokedAt == null;
+
+  let authorizationConfirmedAt = existing?.authorizationConfirmedAt ?? null;
+  let authorizationConfirmedById = existing?.authorizationConfirmedById ?? null;
+  let authorizationSource = existing?.authorizationSource ?? null;
+  let authorizationTextVersion = existing?.authorizationTextVersion ?? null;
+  let authorizationRevokedAt = existing?.authorizationRevokedAt ?? null;
+
+  if (input.authorizationConfirmed) {
+    authorizationRevokedAt = null;
+    if (!currentlyAuthorized) {
+      authorizationConfirmedAt = now;
+      authorizationConfirmedById = adminUserId;
+      authorizationSource = MARKETPLACE_AUTHORIZATION_SOURCE_ADMIN;
+      authorizationTextVersion = MARKETPLACE_AUTHORIZATION_TEXT_VERSION;
+    }
+  } else if (currentlyAuthorized) {
+    authorizationRevokedAt = now;
+  } else if (!existing?.authorizationConfirmedAt) {
+    authorizationConfirmedAt = null;
+    authorizationConfirmedById = null;
+    authorizationSource = null;
+    authorizationTextVersion = null;
+    authorizationRevokedAt = null;
+  }
+
   const publishedAt = input.published ? existing?.publishedAt ?? now : null;
+  const resolvedLocalityId = locality?.id ?? null;
+  const pendingLocalityName = resolvedLocalityId ? null : existing?.pendingLocalityName ?? null;
+  const pendingCategoryDescription = activeCategoryIds.length > 0
+    ? null
+    : existing?.pendingCategoryDescription ?? null;
 
   await prisma.$transaction(async (tx) => {
     const listing = await tx.marketplaceListing.upsert({
@@ -217,15 +263,25 @@ export async function saveMarketplaceListing(
       create: {
         businessId: business.id,
         locationId: location.id,
-        localityId: locality.id,
+        localityId: resolvedLocalityId,
+        pendingCategoryDescription,
+        pendingLocalityName,
         authorizationConfirmedAt,
         authorizationConfirmedById,
+        authorizationSource,
+        authorizationTextVersion,
+        authorizationRevokedAt,
         publishedAt,
       },
       update: {
-        localityId: locality.id,
+        localityId: resolvedLocalityId,
+        pendingCategoryDescription,
+        pendingLocalityName,
         authorizationConfirmedAt,
         authorizationConfirmedById,
+        authorizationSource,
+        authorizationTextVersion,
+        authorizationRevokedAt,
         publishedAt,
       },
     });
@@ -244,7 +300,7 @@ export async function saveMarketplaceListing(
       businessSlug: business.slug,
       locationId: location.id,
       published: Boolean(publishedAt),
-      authorized: Boolean(authorizationConfirmedAt),
+      authorized: input.authorizationConfirmed,
       categoryCount: activeCategoryIds.length,
     },
     adminUserId,

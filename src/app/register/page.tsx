@@ -8,6 +8,7 @@ import { getCountryOptions, isSupportedCountryCode } from "@/core/countries";
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { getLocale } from "next-intl/server";
+import { listRegistrationMarketplaceCatalog } from "@/server/services/marketplace-onboarding.service";
 
 export default async function RegisterPage() {
   const user = await getCurrentSessionUser();
@@ -19,6 +20,8 @@ export default async function RegisterPage() {
   if (user) {
     redirect("/dashboard");
   }
+
+  const marketplaceCatalog = await listRegistrationMarketplaceCatalog();
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-12">
@@ -37,6 +40,8 @@ export default async function RegisterPage() {
         <Suspense>
           <RegisterForm
             countryOptions={getCountryOptions(locale)}
+            categoryOptions={marketplaceCatalog.categories}
+            localityOptions={marketplaceCatalog.localities}
             paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
             initialCountryCode={initialCountryCode}
           />

@@ -25,6 +25,9 @@ import { SecretField } from "@/components/dashboard/secret-field";
 import { ScheduleOverridesEditor } from "./schedule-overrides";
 import { BusinessCountryEditor } from "./business-country-editor";
 import { LocationsManager } from "./locations-manager";
+import { DirectoryVisibilityEditor } from "./directory-visibility-editor";
+import { getPrimaryMarketplaceListingForBusiness } from "@/server/services/marketplace-onboarding.service";
+import { isMarketplaceListingAuthorized } from "@/lib/marketplace";
 import {
   getCountryConfig,
   getCountryOptions,
@@ -47,7 +50,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   }
   if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="8rEGoq2nl-vn" /></div>;
 
-  const [hours, subscription, locations, services] = await Promise.all([
+  const [hours, subscription, locations, services, marketplaceListing] = await Promise.all([
     getBusinessHours(business.id),
     prisma.subscription.findUnique({ where: { businessId: business.id } }),
     prisma.businessLocation.findMany({
@@ -56,6 +59,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       include: { services: { select: { serviceId: true } }, hours: { orderBy: { dayOfWeek: "asc" } } },
     }),
     prisma.service.findMany({ where: { businessId: business.id }, orderBy: [{ position: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
+    getPrimaryMarketplaceListingForBusiness(business.id),
   ]);
 
   const params = await searchParams;
@@ -255,6 +259,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <ImageIcon className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="TBHo5ixeBXEe" />
           </div>
           <LogoUploader currentLogoUrl={business.logoUrl} />
+        </div>
+
+        <div id="directory-visibility" className="rounded-2xl border border-border bg-card p-6">
+          <DirectoryVisibilityEditor
+            hasListing={Boolean(marketplaceListing)}
+            authorized={marketplaceListing ? isMarketplaceListingAuthorized(marketplaceListing) : false}
+            revoked={Boolean(marketplaceListing?.authorizationRevokedAt)}
+            categoryLabel={
+              marketplaceListing?.categories.map((entry) => entry.category.name).join(", ")
+              || marketplaceListing?.pendingCategoryDescription
+              || null
+            }
+            localityLabel={marketplaceListing?.locality?.name || marketplaceListing?.pendingLocalityName || null}
+          />
         </div>
 
         <div id="business-location" className="rounded-2xl border border-border bg-card p-6">

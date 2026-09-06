@@ -21,18 +21,26 @@ function flattenMessages(tree: MessageTree, prefix = ""): Record<string, string>
 
 function loadMessages(locale: string) {
   const file = resolve(process.cwd(), "messages", `${locale}.json`);
+  const marketplaceOnboardingFile = resolve(process.cwd(), "messages", "marketplace-onboarding", `${locale}.json`);
   const dashboardFile = resolve(process.cwd(), "messages", "dashboard", `${locale}.json`);
   const dashboardClientsFile = resolve(process.cwd(), "messages", "dashboard", "clients", `${locale}.json`);
   const dashboardAnalyticsFile = resolve(process.cwd(), "messages", "dashboard", "analytics", `${locale}.json`);
   const dashboardModulesFile = resolve(process.cwd(), "messages", "dashboard", "modules", `${locale}.json`);
   const legacyFile = resolve(process.cwd(), "messages", "legacy", `${locale}.json`);
   const dashboardMessages = JSON.parse(readFileSync(dashboardFile, "utf8")) as MessageTree;
+  const siteMessages = JSON.parse(readFileSync(file, "utf8")) as MessageTree;
+  const marketplaceOnboardingMessages = JSON.parse(readFileSync(marketplaceOnboardingFile, "utf8")) as MessageTree;
   return flattenMessages({
-    ...(JSON.parse(readFileSync(file, "utf8")) as MessageTree),
+    ...siteMessages,
+    register: {
+      ...(siteMessages.register as MessageTree),
+      ...(marketplaceOnboardingMessages.register as MessageTree),
+    },
     legacy: JSON.parse(readFileSync(legacyFile, "utf8")) as MessageTree,
     dashboard: {
       ...dashboardMessages,
       ...(JSON.parse(readFileSync(dashboardModulesFile, "utf8")) as MessageTree),
+      ...(marketplaceOnboardingMessages.dashboard as MessageTree),
       clients: JSON.parse(readFileSync(dashboardClientsFile, "utf8")) as MessageTree,
       analytics: JSON.parse(readFileSync(dashboardAnalyticsFile, "utf8")) as MessageTree,
     },

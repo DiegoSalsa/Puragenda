@@ -1658,16 +1658,22 @@ model MarketplaceListing {
   id                         String    @id @default(cuid())
   businessId                 String
   locationId                 String
-  localityId                 String
+  // Optional: CL catalog locality. Null for other countries or pending normalization.
+  localityId                 String?
+  pendingCategoryDescription String?
+  pendingLocalityName        String?
   authorizationConfirmedAt   DateTime?
   authorizationConfirmedById String?
+  authorizationSource        String?
+  authorizationTextVersion   String?
+  authorizationRevokedAt     DateTime?
   publishedAt                DateTime?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 
   business                 Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
   location                 BusinessLocation       @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locality                 MarketplaceLocality    @relation(fields: [localityId], references: [id], onDelete: Restrict)
+  locality                 MarketplaceLocality?   @relation(fields: [localityId], references: [id], onDelete: Restrict)
   authorizationConfirmedBy User?                  @relation("MarketplaceListingAuthorizedBy", fields: [authorizationConfirmedById], references: [id], onDelete: SetNull)
   categories               MarketplaceListingCategory[]
 
@@ -1676,6 +1682,7 @@ model MarketplaceListing {
   @@index([businessId])
   @@index([locationId])
   @@index([authorizationConfirmedById])
+  @@index([authorizationRevokedAt])
 }
 
 model MarketplaceListingCategory {

@@ -7,8 +7,9 @@ export default getRequestConfig(async () => {
   const savedLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = resolveInitialLocale(savedLocale);
 
-  const [siteMessages, dashboardMessages, dashboardClientsMessages, dashboardAnalyticsMessages, dashboardModulesMessages, legacyMessages] = await Promise.all([
+  const [siteMessages, marketplaceOnboardingMessages, dashboardMessages, dashboardClientsMessages, dashboardAnalyticsMessages, dashboardModulesMessages, legacyMessages] = await Promise.all([
     import(`../../messages/${locale}.json`).then((module) => module.default),
+    import(`../../messages/marketplace-onboarding/${locale}.json`).then((module) => module.default),
     import(`../../messages/dashboard/${locale}.json`).then((module) => module.default),
     import(`../../messages/dashboard/clients/${locale}.json`).then((module) => module.default),
     import(`../../messages/dashboard/analytics/${locale}.json`).then((module) => module.default),
@@ -18,7 +19,18 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: { ...siteMessages, legacy: legacyMessages, dashboard: { ...dashboardMessages, ...dashboardModulesMessages, clients: dashboardClientsMessages, analytics: dashboardAnalyticsMessages } },
+    messages: {
+      ...siteMessages,
+      register: { ...siteMessages.register, ...marketplaceOnboardingMessages.register },
+      legacy: legacyMessages,
+      dashboard: {
+        ...dashboardMessages,
+        ...dashboardModulesMessages,
+        ...marketplaceOnboardingMessages.dashboard,
+        clients: dashboardClientsMessages,
+        analytics: dashboardAnalyticsMessages,
+      },
+    },
     timeZone: "America/Santiago",
     onError(error) {
       if (process.env.NODE_ENV !== "production") console.error(error);

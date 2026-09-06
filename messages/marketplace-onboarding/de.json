@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "Unternehmensdaten",
+    "locality": "Stadt/Gemeinde",
+    "selectLocality": "Stadt oder Gemeinde auswählen",
+    "localityNotFound": "Ich finde meine Stadt nicht",
+    "localityHelp": "Wir verwenden den kanonischen Verzeichniskatalog, um doppelte Orte zu vermeiden.",
+    "city": "Stadt oder Ort",
+    "cityPlaceholder": "Z. B. Córdoba",
+    "internationalCityHelp": "Wir speichern diesen Ort für deinen Hauptstandort. Er wird nicht im Chile-Verzeichnis veröffentlicht.",
+    "pendingLocalityHelp": "Wir speichern diesen Ort zur administrativen Normalisierung, ohne eine öffentliche Seite zu erstellen.",
+    "businessCategory": "Unternehmenskategorie",
+    "selectBusinessCategory": "Kategorie auswählen",
+    "otherCategory": "Andere",
+    "otherCategoryQuestion": "Was bietet dein Unternehmen an?",
+    "otherCategoryHelp": "Die Klassifizierung bleibt bis zur administrativen Prüfung offen.",
+    "marketplaceAuthorization": "Ich möchte, dass mein Unternehmen im öffentlichen Puragenda-Verzeichnis erscheinen kann.",
+    "marketplaceAuthorizationDetails": "Puragenda darf öffentliche Unternehmensinformationen wie Name, Kategorie, Stadt und Buchungslink anzeigen. Du kannst diese Genehmigung später widerrufen.",
+    "marketplaceAuthorizationDisclaimer": "Die Genehmigung zur Veröffentlichung garantiert keine sofortige Aufnahme in das Verzeichnis."
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "Sichtbarkeit im Verzeichnis",
+      "description": "Steuere die Genehmigung, mit der dein Unternehmen im öffentlichen Verzeichnis erscheinen kann.",
+      "missing": "Dieses Unternehmen hat noch keinen Verzeichniseintrag. Bitte Marketplace Admin, ihn vorzubereiten.",
+      "classification": "Klassifizierung",
+      "revoked": "Die Genehmigung wurde widerrufen und der Eintrag ist nicht veröffentlicht.",
+      "authorized": "Die Veröffentlichung ist genehmigt, bleibt aber von einer administrativen Prüfung abhängig.",
+      "authorize": "Ich möchte, dass mein Unternehmen im öffentlichen Puragenda-Verzeichnis erscheinen kann.",
+      "details": "Puragenda darf öffentliche Unternehmensinformationen wie Name, Kategorie, Stadt und Buchungslink anzeigen. Du kannst diese Genehmigung später widerrufen.",
+      "disclaimer": "Die Genehmigung zur Veröffentlichung garantiert keine sofortige Aufnahme in das Verzeichnis.",
+      "saving": "Speichern…",
+      "save": "Sichtbarkeit speichern",
+      "saved": "Die Verzeichnissichtbarkeit wurde aktualisiert."
+    }
+  }
+}

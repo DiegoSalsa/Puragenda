@@ -41,12 +41,48 @@ export async function POST(request: NextRequest) {
       || request.headers.get("x-real-ip")
       || "unknown";
 
-    const { email, password, name, businessName, countryCode, timezone, currencyCode, referralCode, planIntent, extraStaffCount } = parsed.data;
+    const {
+      email,
+      password,
+      name,
+      businessName,
+      countryCode,
+      timezone,
+      currencyCode,
+      referralCode,
+      planIntent,
+      extraStaffCount,
+      marketplaceCategorySlug,
+      marketplaceOtherDescription,
+      marketplaceLocalitySlug,
+      marketplaceLocalityNotFound,
+      marketplaceCityName,
+      marketplaceAuthorized,
+    } = parsed.data;
     const locale = resolveInitialLocale(request.cookies.get(LOCALE_COOKIE)?.value);
-    const result = await registerUser({ email, password, name, businessName, countryCode, timezone, currencyCode, ip, referralCode, planIntent, extraStaffCount, locale });
+    const result = await registerUser({
+      email,
+      password,
+      name,
+      businessName,
+      countryCode,
+      timezone,
+      currencyCode,
+      ip,
+      referralCode,
+      planIntent,
+      extraStaffCount,
+      locale,
+      marketplaceCategorySlug,
+      marketplaceOtherDescription,
+      marketplaceLocalitySlug,
+      marketplaceLocalityNotFound,
+      marketplaceCityName,
+      marketplaceAuthorized,
+    });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 409 });
+      return NextResponse.json({ error: result.error }, { status: result.status ?? 409 });
     }
 
     const token = createSessionToken({

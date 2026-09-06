@@ -26,14 +26,23 @@ export default async function MarketplaceAdminPage() {
         deleted: Boolean(business.deletedAt),
         plan: business.subscription?.plan ?? "SIN PLAN",
         status: business.subscription?.status ?? "SIN SUB",
-        listings: business.marketplaceListings.map((listing) => ({
-          published: Boolean(listing.publishedAt),
-          authorized: Boolean(listing.authorizationConfirmedAt),
-          locality: listing.locality.name,
-          location: listing.location.name,
-          locationActive: listing.location.isActive,
-          categories: listing.categories.map((entry) => entry.category.name),
-        })),
+        listings: business.marketplaceListings.map((listing) => {
+          const authorized = Boolean(listing.authorizationConfirmedAt) && !listing.authorizationRevokedAt;
+          const categories = listing.categories.map((entry) => entry.category.name);
+          if (listing.pendingCategoryDescription && categories.length === 0) {
+            categories.push("Pendiente");
+          }
+          return {
+            published: Boolean(listing.publishedAt),
+            authorized,
+            revoked: Boolean(listing.authorizationRevokedAt),
+            locality: listing.locality?.name
+              || (listing.pendingLocalityName ? `Pendiente (${listing.pendingLocalityName})` : "Pendiente"),
+            location: listing.location.name,
+            locationActive: listing.location.isActive,
+            categories,
+          };
+        }),
       }))}
     />
   );

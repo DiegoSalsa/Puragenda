@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "Datos del negocio",
+    "locality": "Ciudad/comuna",
+    "selectLocality": "Selecciona tu ciudad o comuna",
+    "localityNotFound": "No encuentro mi ciudad",
+    "localityHelp": "Usamos el catálogo canónico del directorio para evitar localidades duplicadas.",
+    "city": "Ciudad o localidad",
+    "cityPlaceholder": "Ej.: Córdoba",
+    "internationalCityHelp": "Guardaremos esta ubicación en tu sucursal principal. El directorio de Chile no la publicará.",
+    "pendingLocalityHelp": "Guardaremos esta ubicación para normalización administrativa, sin crear una ruta pública.",
+    "businessCategory": "Rubro del negocio",
+    "selectBusinessCategory": "Selecciona un rubro",
+    "otherCategory": "Otro",
+    "otherCategoryQuestion": "¿A qué se dedica tu negocio?",
+    "otherCategoryHelp": "Quedará pendiente de clasificación para revisión administrativa.",
+    "marketplaceAuthorization": "Quiero que mi negocio pueda aparecer en el directorio público de Puragenda.",
+    "marketplaceAuthorizationDetails": "Puragenda podrá mostrar información pública de tu negocio, como nombre, rubro, ciudad y enlace para reservar. Puedes retirar esta autorización posteriormente.",
+    "marketplaceAuthorizationDisclaimer": "Autorizar la publicación no garantiza que el negocio aparezca inmediatamente en el directorio."
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "Visibilidad en el directorio",
+      "description": "Controla la autorización para que tu negocio pueda aparecer en el directorio público.",
+      "missing": "Este negocio todavía no tiene una ficha de directorio. Puedes solicitar que Admin Marketplace la prepare.",
+      "classification": "Clasificación",
+      "revoked": "La autorización fue revocada y la ficha no está publicada.",
+      "authorized": "La publicación está autorizada, pero sigue sujeta a revisión administrativa.",
+      "authorize": "Quiero que mi negocio pueda aparecer en el directorio público de Puragenda.",
+      "details": "Puragenda podrá mostrar información pública de tu negocio, como nombre, rubro, ciudad y enlace para reservar. Puedes retirar esta autorización posteriormente.",
+      "disclaimer": "Autorizar la publicación no garantiza que el negocio aparezca inmediatamente en el directorio.",
+      "saving": "Guardando…",
+      "save": "Guardar visibilidad",
+      "saved": "La visibilidad del directorio se actualizó."
+    }
+  }
+}

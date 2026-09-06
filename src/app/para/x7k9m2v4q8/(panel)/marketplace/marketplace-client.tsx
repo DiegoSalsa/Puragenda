@@ -14,6 +14,7 @@ type AdminBusiness = {
   listings: Array<{
     published: boolean;
     authorized: boolean;
+    revoked?: boolean;
     locality: string;
     location: string;
     locationActive: boolean;
@@ -113,8 +114,9 @@ export function MarketplaceClient({
               <tr className="border-b-2 border-black text-xs font-black uppercase">
                 <th className="py-2">Nombre</th>
                 <th>Estado</th>
-                <th>Categorías</th>
-                <th>Ubicación</th>
+                <th>Categoría</th>
+                <th>Localidad</th>
+                <th>Autorizado</th>
                 <th>Publicado</th>
               </tr>
             </thead>
@@ -137,6 +139,7 @@ export function MarketplaceClient({
                     </td>
                     <td className="font-bold">{summary.categoriesLabel}</td>
                     <td className="font-bold">{summary.localityLabel}</td>
+                    <td className="font-black">{summary.authorizationLabel}</td>
                     <td className="font-black">{summary.published ? "SÍ" : "NO"}</td>
                   </tr>
                 );

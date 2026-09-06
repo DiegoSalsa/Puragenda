@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "Informations de l'entreprise",
+    "locality": "Ville/commune",
+    "selectLocality": "Sélectionnez votre ville ou commune",
+    "localityNotFound": "Je ne trouve pas ma ville",
+    "localityHelp": "Nous utilisons le catalogue canonique de l'annuaire pour éviter les doublons.",
+    "city": "Ville ou localité",
+    "cityPlaceholder": "Ex. : Córdoba",
+    "internationalCityHelp": "Nous enregistrerons ce lieu dans votre établissement principal. Il ne sera pas publié dans l'annuaire chilien.",
+    "pendingLocalityHelp": "Nous enregistrerons ce lieu pour normalisation administrative, sans créer de page publique.",
+    "businessCategory": "Secteur d'activité",
+    "selectBusinessCategory": "Sélectionnez un secteur",
+    "otherCategory": "Autre",
+    "otherCategoryQuestion": "Quelle est l'activité de votre entreprise ?",
+    "otherCategoryHelp": "La classification restera en attente d'une révision administrative.",
+    "marketplaceAuthorization": "Je souhaite que mon entreprise puisse apparaître dans l'annuaire public de Puragenda.",
+    "marketplaceAuthorizationDetails": "Puragenda pourra afficher des informations publiques sur votre entreprise, comme son nom, son secteur, sa ville et son lien de réservation. Vous pourrez retirer cette autorisation ultérieurement.",
+    "marketplaceAuthorizationDisclaimer": "Autoriser la publication ne garantit pas une apparition immédiate dans l'annuaire."
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "Visibilité dans l'annuaire",
+      "description": "Gérez l'autorisation permettant à votre entreprise d'apparaître dans l'annuaire public.",
+      "missing": "Cette entreprise n'a pas encore de fiche d'annuaire. Vous pouvez demander à l'administrateur Marketplace de la préparer.",
+      "classification": "Classification",
+      "revoked": "L'autorisation a été révoquée et la fiche n'est pas publiée.",
+      "authorized": "La publication est autorisée, mais reste soumise à une révision administrative.",
+      "authorize": "Je souhaite que mon entreprise puisse apparaître dans l'annuaire public de Puragenda.",
+      "details": "Puragenda pourra afficher des informations publiques sur votre entreprise, comme son nom, son secteur, sa ville et son lien de réservation. Vous pourrez retirer cette autorisation ultérieurement.",
+      "disclaimer": "Autoriser la publication ne garantit pas une apparition immédiate dans l'annuaire.",
+      "saving": "Enregistrement…",
+      "save": "Enregistrer la visibilité",
+      "saved": "La visibilité dans l'annuaire a été mise à jour."
+    }
+  }
+}

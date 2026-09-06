@@ -7,7 +7,7 @@ import {
 
 export type PublishedListingRecord = {
   publishedAt: Date | null;
-  locality: { slug: string };
+  locality: { slug: string } | null;
   location: { id: string; slug: string; isActive: boolean };
   business: {
     name: string;
@@ -28,6 +28,8 @@ export type PublishedListingRecord = {
 export function mapPublishedListingToCandidates(
   record: PublishedListingRecord,
 ): MarketplaceListingCandidate[] {
+  if (!record.locality) return [];
+
   const serviceInput = {
     locationId: record.location.id,
     productionOrdersEnabled: record.business.productionOrdersEnabled,

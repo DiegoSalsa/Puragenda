@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "Dati dell'attività",
+    "locality": "Città/comune",
+    "selectLocality": "Seleziona la tua città o comune",
+    "localityNotFound": "Non trovo la mia città",
+    "localityHelp": "Usiamo il catalogo canonico dell'elenco per evitare località duplicate.",
+    "city": "Città o località",
+    "cityPlaceholder": "Es.: Córdoba",
+    "internationalCityHelp": "Salveremo questa località nella sede principale. Non sarà pubblicata nell'elenco del Cile.",
+    "pendingLocalityHelp": "Salveremo questa località per la normalizzazione amministrativa, senza creare una pagina pubblica.",
+    "businessCategory": "Settore dell'attività",
+    "selectBusinessCategory": "Seleziona un settore",
+    "otherCategory": "Altro",
+    "otherCategoryQuestion": "Di cosa si occupa la tua attività?",
+    "otherCategoryHelp": "Rimarrà in attesa di classificazione per la revisione amministrativa.",
+    "marketplaceAuthorization": "Voglio che la mia attività possa apparire nell'elenco pubblico di Puragenda.",
+    "marketplaceAuthorizationDetails": "Puragenda potrà mostrare informazioni pubbliche sull'attività, come nome, settore, città e link di prenotazione. Potrai ritirare questa autorizzazione in seguito.",
+    "marketplaceAuthorizationDisclaimer": "Autorizzare la pubblicazione non garantisce che l'attività appaia subito nell'elenco."
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "Visibilità nell'elenco",
+      "description": "Controlla l'autorizzazione affinché la tua attività possa apparire nell'elenco pubblico.",
+      "missing": "Questa attività non ha ancora una scheda nell'elenco. Puoi chiedere all'amministratore Marketplace di prepararla.",
+      "classification": "Classificazione",
+      "revoked": "L'autorizzazione è stata revocata e la scheda non è pubblicata.",
+      "authorized": "La pubblicazione è autorizzata, ma resta soggetta a revisione amministrativa.",
+      "authorize": "Voglio che la mia attività possa apparire nell'elenco pubblico di Puragenda.",
+      "details": "Puragenda potrà mostrare informazioni pubbliche sull'attività, come nome, settore, città e link di prenotazione. Potrai ritirare questa autorizzazione in seguito.",
+      "disclaimer": "Autorizzare la pubblicazione non garantisce che l'attività appaia subito nell'elenco.",
+      "saving": "Salvataggio…",
+      "save": "Salva visibilità",
+      "saved": "La visibilità nell'elenco è stata aggiornata."
+    }
+  }
+}

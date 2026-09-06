@@ -5,6 +5,7 @@ import { saveMarketplaceListingAction } from "@/server/actions/marketplace-admin
 import {
   MARKETPLACE_EXCLUDED_SLUGS,
   bookableServiceNamesForLocation,
+  groupLocalitiesByRegion,
   isMarketplaceSubscriptionActive,
   marketplacePublishBlockers,
   type MarketplacePublishReadinessInput,
@@ -13,9 +14,15 @@ import {
 type EditorLocation = { id: string; name: string; slug: string; isActive: boolean; isPrimary: boolean };
 type EditorListing = {
   locationId: string;
-  localityId: string;
+  localityId: string | null;
   categoryIds: string[];
   authorizationConfirmed: boolean;
+  authorizationSource: string | null;
+  authorizationConfirmedAt: string | null;
+  authorizationRevokedAt: string | null;
+  authorizationTextVersion: string | null;
+  pendingCategoryDescription: string | null;
+  pendingLocalityName: string | null;
   published: boolean;
 };
 
@@ -40,7 +47,7 @@ export function MarketplaceEditor({
 }) {
   const [locationId, setLocationId] = useState(business.locations[0]?.id ?? "");
   const current = business.listings.find((listing) => listing.locationId === locationId);
-  const [localityId, setLocalityId] = useState(current?.localityId ?? localities[0]?.id ?? "");
+  const [localityId, setLocalityId] = useState(current?.localityId ?? "");
   const [categoryIds, setCategoryIds] = useState<string[]>(current?.categoryIds ?? []);
   const [authorizationConfirmed, setAuthorizationConfirmed] = useState(
     current?.authorizationConfirmed ?? false,
@@ -52,7 +59,7 @@ export function MarketplaceEditor({
   function loadLocation(nextLocationId: string) {
     const listing = business.listings.find((item) => item.locationId === nextLocationId);
     setLocationId(nextLocationId);
-    setLocalityId(listing?.localityId ?? localities[0]?.id ?? "");
+    setLocalityId(listing?.localityId ?? "");
     setCategoryIds(listing?.categoryIds ?? []);
     setAuthorizationConfirmed(listing?.authorizationConfirmed ?? false);
     setPublished(listing?.published ?? false);
@@ -80,15 +87,7 @@ export function MarketplaceEditor({
   };
   const blockers = marketplacePublishBlockers(readiness);
 
-  const localitiesByRegion = useMemo(() => {
-    const groups = new Map<string, typeof localities>();
-    for (const locality of localities) {
-      const bucket = groups.get(locality.regionName) ?? [];
-      bucket.push(locality);
-      groups.set(locality.regionName, bucket);
-    }
-    return [...groups.entries()];
-  }, [localities]);
+  const localitiesByRegion = useMemo(() => groupLocalitiesByRegion(localities), [localities]);
 
   function toggleCategory(id: string) {
     setCategoryIds((currentIds) =>
@@ -101,7 +100,7 @@ export function MarketplaceEditor({
       const result = await saveMarketplaceListingAction({
         businessId: business.id,
         locationId,
-        localityId,
+        localityId: localityId || null,
         categoryIds,
         authorizationConfirmed,
         published,
@@ -175,6 +174,7 @@ export function MarketplaceEditor({
             onChange={(event) => setLocalityId(event.target.value)}
             className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 font-bold"
           >
+            <option value="">Pendiente de normalización</option>
             {localitiesByRegion.map(([region, items]) => (
               <optgroup key={region} label={region}>
                 {items.map((locality) => (
@@ -185,7 +185,18 @@ export function MarketplaceEditor({
               </optgroup>
             ))}
           </select>
+          {current?.pendingLocalityName ? (
+            <p className="text-xs font-bold text-black/50">
+              Localidad pendiente informada en registro: {current.pendingLocalityName}
+            </p>
+          ) : null}
         </label>
+
+        {current?.pendingCategoryDescription ? (
+          <p className="text-sm font-bold text-black/60">
+            Rubro “Otro” pendiente de revisión: {current.pendingCategoryDescription}
+          </p>
+        ) : null}
 
         <label className="flex items-start gap-2 font-bold">
           <input
@@ -195,6 +206,14 @@ export function MarketplaceEditor({
           />
           <span>Autorización del negocio para aparecer en el directorio confirmada</span>
         </label>
+        {current ? (
+          <p className="text-xs font-bold text-black/50">
+            Fuente: {current.authorizationSource || "—"}
+            {current.authorizationConfirmedAt ? ` · ${new Date(current.authorizationConfirmedAt).toLocaleString("es-CL")}` : ""}
+            {current.authorizationTextVersion ? ` · texto ${current.authorizationTextVersion}` : ""}
+            {current.authorizationRevokedAt ? ` · revocada ${new Date(current.authorizationRevokedAt).toLocaleString("es-CL")}` : ""}
+          </p>
+        ) : null}
 
         <label className="flex items-start gap-2 font-bold">
           <input

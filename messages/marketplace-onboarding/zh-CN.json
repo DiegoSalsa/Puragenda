@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "商家信息",
+    "locality": "城市/市镇",
+    "selectLocality": "选择城市或市镇",
+    "localityNotFound": "找不到我的城市",
+    "localityHelp": "我们使用目录的规范地点清单，以避免重复地点。",
+    "city": "城市或地点",
+    "cityPlaceholder": "例如：科尔多瓦",
+    "internationalCityHelp": "我们会将此地点保存到您的主要门店，但不会发布到智利目录。",
+    "pendingLocalityHelp": "我们会保存此地点供管理员规范化，不会自动创建公开页面。",
+    "businessCategory": "商家类别",
+    "selectBusinessCategory": "选择类别",
+    "otherCategory": "其他",
+    "otherCategoryQuestion": "您的商家从事什么业务？",
+    "otherCategoryHelp": "该信息将等待管理员审核和分类。",
+    "marketplaceAuthorization": "我希望我的商家可以出现在 Puragenda 的公开目录中。",
+    "marketplaceAuthorizationDetails": "Puragenda 可以展示商家名称、类别、城市和预约链接等公开信息。您之后可以撤回此授权。",
+    "marketplaceAuthorizationDisclaimer": "授权发布并不保证商家会立即出现在目录中。"
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "目录可见性",
+      "description": "管理您的商家是否获准出现在公开目录中。",
+      "missing": "此商家尚无目录条目。您可以请 Marketplace 管理员准备。",
+      "classification": "分类",
+      "revoked": "授权已撤回，该条目未发布。",
+      "authorized": "已授权发布，但仍需管理员审核。",
+      "authorize": "我希望我的商家可以出现在 Puragenda 的公开目录中。",
+      "details": "Puragenda 可以展示商家名称、类别、城市和预约链接等公开信息。您之后可以撤回此授权。",
+      "disclaimer": "授权发布并不保证商家会立即出现在目录中。",
+      "saving": "正在保存…",
+      "save": "保存可见性",
+      "saved": "目录可见性已更新。"
+    }
+  }
+}

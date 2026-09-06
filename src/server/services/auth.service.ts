@@ -9,7 +9,16 @@ import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
 import { getCountryConfig } from "@/core/countries";
 import { createPrimaryLocation } from "@/server/services/location.service";
+import {
+  createRegistrationMarketplaceListing,
+  resolveRegistrationMarketplaceClassification,
+} from "@/server/services/marketplace-onboarding.service";
 import { type AppLocale, resolveLocale } from "@/i18n/config";
+import { createAuditLog } from "@/server/lib/audit";
+import {
+  MARKETPLACE_AUTHORIZATION_SOURCE_REGISTRATION,
+  MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
+} from "@/lib/marketplace";
 
 async function generateUniqueBusinessSlug(
   baseSlug: string,
@@ -75,10 +84,29 @@ export async function registerUser(data: {
   planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
   extraStaffCount?: number;
   locale?: AppLocale;
+  marketplaceCategorySlug: string;
+  marketplaceOtherDescription?: string | null;
+  marketplaceLocalitySlug?: string | null;
+  marketplaceLocalityNotFound?: boolean;
+  marketplaceCityName?: string | null;
+  marketplaceAuthorized?: boolean;
 }) {
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
-    return { success: false as const, error: "Ya existe una cuenta con ese email" };
+    return { success: false as const, error: "Ya existe una cuenta con ese email", status: 409 as const };
+  }
+
+  const marketplace = await resolveRegistrationMarketplaceClassification({
+    countryCode: data.countryCode,
+    categorySlug: data.marketplaceCategorySlug,
+    otherDescription: data.marketplaceOtherDescription,
+    localitySlug: data.marketplaceLocalitySlug,
+    localityNotFound: data.marketplaceLocalityNotFound,
+    cityName: data.marketplaceCityName,
+    authorized: data.marketplaceAuthorized,
+  });
+  if (!marketplace.ok) {
+    return { success: false as const, error: marketplace.error, status: 400 as const };
   }
 
   const ip = data.ip || null;
@@ -125,7 +153,18 @@ export async function registerUser(data: {
       data: { name: data.name, email: data.email, businessId: business.id, userId: user.id, isActive: true },
     });
 
-    await createPrimaryLocation(tx, business, ownerStaff.id);
+    const location = await createPrimaryLocation(
+      tx,
+      { ...business, address: marketplace.classification.locationAddress },
+      ownerStaff.id,
+    );
+
+    await createRegistrationMarketplaceListing(tx, {
+      businessId: business.id,
+      locationId: location.id,
+      userId: user.id,
+      classification: marketplace.classification,
+    });
 
     // Determine subscription plan and status
     const planIntent = data.planIntent;
@@ -178,6 +217,18 @@ export async function registerUser(data: {
 
     return { user, business, givesTrial, plan };
   });
+
+  if (marketplace.classification.authorized) {
+    await createAuditLog(
+      "MARKETPLACE_AUTHORIZATION_CONFIRMED",
+      {
+        businessId: created.business.id,
+        source: MARKETPLACE_AUTHORIZATION_SOURCE_REGISTRATION,
+        textVersion: MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
+      },
+      created.user.id,
+    );
+  }
 
   // Apply referral code if provided (outside transaction for affiliate service calls)
   if (data.referralCode && data.referralCode.trim()) {

@@ -1,0 +1,37 @@
+{
+  "register": {
+    "businessData": "Business details",
+    "locality": "City/commune",
+    "selectLocality": "Select your city or commune",
+    "localityNotFound": "I can't find my city",
+    "localityHelp": "We use the directory's canonical catalog to avoid duplicate locations.",
+    "city": "City or locality",
+    "cityPlaceholder": "E.g. Córdoba",
+    "internationalCityHelp": "We will save this location to your primary branch. It will not be published in the Chile directory.",
+    "pendingLocalityHelp": "We will save this location for administrative normalization without creating a public route.",
+    "businessCategory": "Business category",
+    "selectBusinessCategory": "Select a category",
+    "otherCategory": "Other",
+    "otherCategoryQuestion": "What does your business do?",
+    "otherCategoryHelp": "It will remain pending classification for administrative review.",
+    "marketplaceAuthorization": "I want my business to be eligible to appear in Puragenda's public directory.",
+    "marketplaceAuthorizationDetails": "Puragenda may display public business information such as its name, category, city, and booking link. You can withdraw this authorization later.",
+    "marketplaceAuthorizationDisclaimer": "Authorizing publication does not guarantee that the business will appear in the directory immediately."
+  },
+  "dashboard": {
+    "marketplaceVisibility": {
+      "title": "Directory visibility",
+      "description": "Control whether your business is authorized to appear in the public directory.",
+      "missing": "This business does not have a directory listing yet. You can ask Marketplace Admin to prepare it.",
+      "classification": "Classification",
+      "revoked": "Authorization was revoked and the listing is not published.",
+      "authorized": "Publication is authorized, but remains subject to administrative review.",
+      "authorize": "I want my business to be eligible to appear in Puragenda's public directory.",
+      "details": "Puragenda may display public business information such as its name, category, city, and booking link. You can withdraw this authorization later.",
+      "disclaimer": "Authorizing publication does not guarantee that the business will appear in the directory immediately.",
+      "saving": "Saving…",
+      "save": "Save visibility",
+      "saved": "Directory visibility was updated."
+    }
+  }
+}

@@ -9,13 +9,22 @@ import { getCountryConfig } from "@/core/countries";
 import { startBillingCheckout } from "@/components/paddle/checkout";
 import { useLocale, useTranslations } from "next-intl";
 import { track } from "@/lib/analytics/client";
+import {
+  MARKETPLACE_LOCALITY_NOT_FOUND,
+  MARKETPLACE_OTHER_CATEGORY_SLUG,
+  groupLocalitiesByRegion,
+} from "@/lib/marketplace";
 
 export function RegisterForm({
   countryOptions,
+  categoryOptions,
+  localityOptions,
   paymentSimulatorEnabled,
   initialCountryCode = "",
 }: {
   countryOptions: Array<{ code: string; name: string }>;
+  categoryOptions: Array<{ slug: string; name: string }>;
+  localityOptions: Array<{ slug: string; name: string; regionName: string }>;
   paymentSimulatorEnabled: boolean;
   initialCountryCode?: string;
 }) {
@@ -45,6 +54,11 @@ export function RegisterForm({
   const [referralCode, setReferralCode] = useState("");
   const [discountCode, setDiscountCode] = useState(searchParams.get("discount")?.toUpperCase() || "");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketplaceCategorySlug, setMarketplaceCategorySlug] = useState("");
+  const [marketplaceOtherDescription, setMarketplaceOtherDescription] = useState("");
+  const [marketplaceLocalitySlug, setMarketplaceLocalitySlug] = useState("");
+  const [marketplaceCityName, setMarketplaceCityName] = useState("");
+  const [marketplaceAuthorized, setMarketplaceAuthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<"register" | "payment" | null>(null);
@@ -54,7 +68,12 @@ export function RegisterForm({
     setCountryCode(nextCountry);
     setTimezone(defaults.timezone);
     setCurrencyCode(defaults.currency);
+    setMarketplaceLocalitySlug("");
+    setMarketplaceCityName("");
   }
+
+  const localityGroups = groupLocalitiesByRegion(localityOptions);
+  const localityNotFound = countryCode === "CL" && marketplaceLocalitySlug === MARKETPLACE_LOCALITY_NOT_FOUND;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,6 +114,18 @@ export function RegisterForm({
           planIntent: wantsPlan || undefined,
           extraStaffCount,
           termsAccepted,
+          marketplaceCategorySlug,
+          marketplaceOtherDescription: marketplaceCategorySlug === MARKETPLACE_OTHER_CATEGORY_SLUG
+            ? marketplaceOtherDescription.trim()
+            : undefined,
+          marketplaceLocalitySlug: countryCode === "CL" && !localityNotFound
+            ? marketplaceLocalitySlug
+            : undefined,
+          marketplaceLocalityNotFound: localityNotFound,
+          marketplaceCityName: countryCode !== "CL" || localityNotFound
+            ? marketplaceCityName.trim()
+            : undefined,
+          marketplaceAuthorized,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -223,6 +254,10 @@ export function RegisterForm({
           />
         </div>
 
+        <div className="border-t border-border pt-4">
+          <p className="text-sm font-semibold">{t("businessData")}</p>
+        </div>
+
         <div className="space-y-1.5">
           <label htmlFor="countryCode" className="text-sm text-muted-foreground">{t("country")}</label>
           <select
@@ -241,6 +276,120 @@ export function RegisterForm({
           <p className="text-xs text-muted-foreground">
             {t("countryHelp")}
           </p>
+        </div>
+
+
+        {countryCode === "CL" ? (
+          <div className="space-y-1.5">
+            <label htmlFor="marketplaceLocalitySlug" className="text-sm text-muted-foreground">
+              {t("locality")}
+            </label>
+            <select
+              id="marketplaceLocalitySlug"
+              value={marketplaceLocalitySlug}
+              onChange={(event) => {
+                setMarketplaceLocalitySlug(event.target.value);
+                setMarketplaceCityName("");
+              }}
+              required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            >
+              <option value="" disabled>{t("selectLocality")}</option>
+              {localityGroups.map(([region, localities]) => (
+                <optgroup key={region} label={region}>
+                  {localities.map((locality) => (
+                    <option key={locality.slug} value={locality.slug}>{locality.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+              <option value={MARKETPLACE_LOCALITY_NOT_FOUND}>{t("localityNotFound")}</option>
+            </select>
+            <p id="marketplace-locality-help" className="text-xs text-muted-foreground">
+              {t("localityHelp")}
+            </p>
+          </div>
+        ) : countryCode ? (
+          <div className="space-y-1.5">
+            <label htmlFor="marketplaceCityName" className="text-sm text-muted-foreground">{t("city")}</label>
+            <input
+              id="marketplaceCityName"
+              value={marketplaceCityName}
+              onChange={(event) => setMarketplaceCityName(event.target.value)}
+              placeholder={t("cityPlaceholder")}
+              maxLength={100}
+              required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            />
+            <p className="text-xs text-muted-foreground">{t("internationalCityHelp")}</p>
+          </div>
+        ) : null}
+
+        {localityNotFound ? (
+          <div className="space-y-1.5">
+            <label htmlFor="marketplaceCityName" className="text-sm text-muted-foreground">{t("city")}</label>
+            <input
+              id="marketplaceCityName"
+              value={marketplaceCityName}
+              onChange={(event) => setMarketplaceCityName(event.target.value)}
+              placeholder={t("cityPlaceholder")}
+              maxLength={100}
+              required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            />
+            <p className="text-xs text-muted-foreground">{t("pendingLocalityHelp")}</p>
+          </div>
+        ) : null}
+
+        <div className="space-y-1.5">
+          <label htmlFor="marketplaceCategorySlug" className="text-sm text-muted-foreground">{t("businessCategory")}</label>
+          <select
+            id="marketplaceCategorySlug"
+            value={marketplaceCategorySlug}
+            onChange={(event) => {
+              setMarketplaceCategorySlug(event.target.value);
+              if (event.target.value !== MARKETPLACE_OTHER_CATEGORY_SLUG) setMarketplaceOtherDescription("");
+            }}
+            required
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+          >
+            <option value="" disabled>{t("selectBusinessCategory")}</option>
+            {categoryOptions.map((category) => (
+              <option key={category.slug} value={category.slug}>{category.name}</option>
+            ))}
+            <option value={MARKETPLACE_OTHER_CATEGORY_SLUG}>{t("otherCategory")}</option>
+          </select>
+        </div>
+
+        {marketplaceCategorySlug === MARKETPLACE_OTHER_CATEGORY_SLUG ? (
+          <div className="space-y-1.5">
+            <label htmlFor="marketplaceOtherDescription" className="text-sm text-muted-foreground">
+              {t("otherCategoryQuestion")}
+            </label>
+            <input
+              id="marketplaceOtherDescription"
+              value={marketplaceOtherDescription}
+              onChange={(event) => setMarketplaceOtherDescription(event.target.value)}
+              maxLength={200}
+              required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
+            />
+            <p className="text-xs text-muted-foreground">{t("otherCategoryHelp")}</p>
+          </div>
+        ) : null}
+
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4">
+          <input
+            type="checkbox"
+            id="marketplaceAuthorized"
+            checked={marketplaceAuthorized}
+            onChange={(event) => setMarketplaceAuthorized(event.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-border bg-muted text-[#7C3AED] focus:ring-[#7C3AED]"
+          />
+          <label htmlFor="marketplaceAuthorized" className="space-y-1 text-sm leading-snug">
+            <span className="block font-medium">{t("marketplaceAuthorization")}</span>
+            <span className="block text-muted-foreground">{t("marketplaceAuthorizationDetails")}</span>
+            <span className="block text-xs text-muted-foreground">{t("marketplaceAuthorizationDisclaimer")}</span>
+          </label>
         </div>
 
         {countryCode && (

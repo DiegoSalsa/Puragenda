@@ -24,6 +24,7 @@ describe("listPublicMarketplaceListings", () => {
       where: expect.objectContaining({
         publishedAt: { not: null },
         authorizationConfirmedAt: { not: null },
+        authorizationRevokedAt: null,
         locality: { isActive: true },
         location: { isActive: true },
         business: { deletedAt: null },

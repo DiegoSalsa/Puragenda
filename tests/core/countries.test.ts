@@ -16,6 +16,8 @@ const validRegistration = {
   password: "password-segura",
   name: "Cliente Prueba",
   businessName: "Negocio Prueba",
+  marketplaceCategorySlug: "barberias",
+  marketplaceLocalitySlug: "concepcion",
   termsAccepted: true as const,
 };
 
@@ -84,8 +86,20 @@ describe("country tax identifiers", () => {
 
 describe("registration country validation", () => {
   it("accepts countries worldwide and keeps Chile as a legacy API default", () => {
-    expect(registerSchema.parse({ ...validRegistration, countryCode: "AR" }).countryCode).toBe("AR");
-    expect(registerSchema.parse({ ...validRegistration, countryCode: "JP", timezone: "Asia/Tokyo", currencyCode: "JPY" })).toMatchObject({
+    expect(registerSchema.parse({
+      ...validRegistration,
+      countryCode: "AR",
+      marketplaceLocalitySlug: undefined,
+      marketplaceCityName: "Buenos Aires",
+    }).countryCode).toBe("AR");
+    expect(registerSchema.parse({
+      ...validRegistration,
+      countryCode: "JP",
+      timezone: "Asia/Tokyo",
+      currencyCode: "JPY",
+      marketplaceLocalitySlug: undefined,
+      marketplaceCityName: "Tokio",
+    })).toMatchObject({
       countryCode: "JP",
       timezone: "Asia/Tokyo",
       currencyCode: "JPY",
@@ -96,5 +110,13 @@ describe("registration country validation", () => {
   it("rejects unsupported countries", () => {
     expect(registerSchema.safeParse({ ...validRegistration, countryCode: "XX" }).success).toBe(false);
     expect(registerSchema.safeParse({ ...validRegistration, countryCode: "JP", timezone: "Mars/Tokyo" }).success).toBe(false);
+  });
+
+  it("requires a normal city for countries outside Chile", () => {
+    expect(registerSchema.safeParse({
+      ...validRegistration,
+      countryCode: "AR",
+      marketplaceLocalitySlug: undefined,
+    }).success).toBe(false);
   });
 });

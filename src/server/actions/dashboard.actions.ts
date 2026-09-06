@@ -1227,6 +1227,28 @@ export async function updateBusinessPoliciesAction(data: {
   return { success: true };
 }
 
+export async function updateMarketplaceDirectoryVisibilityAction(authorized: boolean) {
+  const user = await getCurrentSessionUser();
+  if (!user) return { error: "No autenticado" };
+  const business = await getBusinessForUser(user.id);
+  if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SETTINGS_MANAGE))) {
+    return { error: "No tienes permisos para configurar el directorio" };
+  }
+  if (typeof authorized !== "boolean") {
+    return { error: "La autorización del directorio es inválida" };
+  }
+
+  const { setBusinessMarketplaceAuthorization } = await import(
+    "@/server/services/marketplace-onboarding.service"
+  );
+  const result = await setBusinessMarketplaceAuthorization(business.id, user.id, authorized);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/dashboard/settings");
+  return { success: true, authorized: result.authorized };
+}
+
 // ─── Encargos personalizados ───
 
 export async function updateProductionOrdersEnabledAction(enabled: boolean) {
