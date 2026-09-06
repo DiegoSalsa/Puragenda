@@ -307,6 +307,7 @@ model Business {
   createdAt                                    DateTime           @default(now())
   updatedAt                                    DateTime           @updatedAt
   deletedAt                                    DateTime?
+  marketplacePromptDismissedAt                 DateTime?
 
   owner                       User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   referredByAffiliate         Affiliate?                   @relation("ReferredBy", fields: [referredByAffiliateId], references: [id], onDelete: SetNull)

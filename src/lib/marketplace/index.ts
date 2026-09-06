@@ -74,13 +74,23 @@ export {
 export {
   MARKETPLACE_AUTHORIZATION_COPY,
   MARKETPLACE_AUTHORIZATION_SOURCE_ADMIN,
+  MARKETPLACE_AUTHORIZATION_SOURCE_DASHBOARD_PROMPT,
   MARKETPLACE_AUTHORIZATION_SOURCE_REGISTRATION,
   MARKETPLACE_AUTHORIZATION_SOURCE_SETTINGS,
   MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
   MARKETPLACE_OTHER_CATEGORY_SLUG,
   MARKETPLACE_PUBLIC_AUTHORIZATION_SCOPE,
   isMarketplaceListingAuthorized,
+  marketplaceConsentState,
+  marketplaceConsentStateLabel,
+  type MarketplaceConsentState,
 } from "./authorization";
+
+export {
+  MARKETPLACE_READY_REGISTRATION_CUTOFF,
+  shouldShowExistingBusinessMarketplacePrompt,
+  type ExistingBusinessMarketplacePromptEligibility,
+} from "./existing-business-prompt";
 
 export {
   MARKETPLACE_LOCALITY_NOT_FOUND,

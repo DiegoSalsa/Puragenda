@@ -32,6 +32,32 @@
       "saving": "Speichern…",
       "save": "Sichtbarkeit speichern",
       "saved": "Die Verzeichnissichtbarkeit wurde aktualisiert."
+    },
+    "marketplacePrompt": {
+      "successTitle": "Fertig. Dein Unternehmen ist für das Verzeichnis autorisiert.",
+      "successDescription": "Wir prüfen die Angaben vor der Veröffentlichung.",
+      "title": "Mach dein Unternehmen auf Puragenda auffindbar",
+      "description": "Du kannst uns erlauben, dein Unternehmen im öffentlichen Puragenda-Verzeichnis anzuzeigen, damit Kundinnen und Kunden es finden und bei dir buchen können.",
+      "categoryLabel": "Kategorie",
+      "localityLabel": "Stadt",
+      "publicDataTitle": "Angaben, die das Verzeichnis anzeigen darf",
+      "publicBusinessName": "Unternehmensname",
+      "publicCategory": "Kategorie",
+      "publicCity": "Stadt",
+      "publicLogo": "Logo, falls vorhanden",
+      "publicServices": "Öffentliche Dienstleistungen",
+      "publicBookingLink": "Buchungslink",
+      "optional": "Die Teilnahme ist freiwillig und du kannst die Genehmigung später in den Einstellungen widerrufen.",
+      "disclaimer": "Die Genehmigung veröffentlicht dein Unternehmen nicht sofort: Die Angaben warten auf eine administrative Prüfung.",
+      "saving": "Speichern…",
+      "appear": "Ich möchte erscheinen",
+      "notNow": "Jetzt nicht",
+      "selectCategory": "Kategorie auswählen",
+      "other": "Andere",
+      "otherQuestion": "Was bietet dein Unternehmen an?",
+      "selectLocality": "Stadt oder Gemeinde auswählen",
+      "localityNotFound": "Ich finde meine Stadt nicht",
+      "cityLabel": "Stadt oder Ort"
     }
   }
 }

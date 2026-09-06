@@ -32,6 +32,32 @@
       "saving": "Salvataggio…",
       "save": "Salva visibilità",
       "saved": "La visibilità nell'elenco è stata aggiornata."
+    },
+    "marketplacePrompt": {
+      "successTitle": "Fatto. La tua attività è autorizzata per l'elenco.",
+      "successDescription": "Esamineremo le informazioni prima di pubblicarle.",
+      "title": "Fai trovare la tua attività su Puragenda",
+      "description": "Puoi autorizzarci a mostrare la tua attività nell'elenco pubblico di Puragenda, così le persone potranno trovarla e prenotare con te.",
+      "categoryLabel": "Settore",
+      "localityLabel": "Città",
+      "publicDataTitle": "Dati che l'elenco potrà mostrare",
+      "publicBusinessName": "Nome commerciale",
+      "publicCategory": "Settore",
+      "publicCity": "Città",
+      "publicLogo": "Logo, se applicabile",
+      "publicServices": "Servizi pubblici",
+      "publicBookingLink": "Link di prenotazione",
+      "optional": "La partecipazione è facoltativa e potrai ritirare l'autorizzazione in seguito dalle Impostazioni.",
+      "disclaimer": "L'autorizzazione non pubblica subito la tua attività: le informazioni restano in attesa di revisione amministrativa.",
+      "saving": "Salvataggio…",
+      "appear": "Voglio apparire",
+      "notNow": "Non ora",
+      "selectCategory": "Seleziona un settore",
+      "other": "Altro",
+      "otherQuestion": "Di cosa si occupa la tua attività?",
+      "selectLocality": "Seleziona la tua città o comune",
+      "localityNotFound": "Non trovo la mia città",
+      "cityLabel": "Città o località"
     }
   }
 }

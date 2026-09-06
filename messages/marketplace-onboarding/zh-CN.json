@@ -32,6 +32,32 @@
       "saving": "正在保存…",
       "save": "保存可见性",
       "saved": "目录可见性已更新。"
+    },
+    "marketplacePrompt": {
+      "successTitle": "完成。您的商家已获准加入目录。",
+      "successDescription": "我们会在发布前审核这些信息。",
+      "title": "让顾客在 Puragenda 找到您的商家",
+      "description": "您可以授权我们在 Puragenda 公开目录中展示您的商家，让顾客能够找到您并预约服务。",
+      "categoryLabel": "类别",
+      "localityLabel": "城市",
+      "publicDataTitle": "目录可以展示的信息",
+      "publicBusinessName": "商家名称",
+      "publicCategory": "类别",
+      "publicCity": "城市",
+      "publicLogo": "商家标志（如适用）",
+      "publicServices": "公开服务",
+      "publicBookingLink": "预约链接",
+      "optional": "参与完全自愿，您之后可以在设置中撤回授权。",
+      "disclaimer": "授权不会立即发布您的商家：信息仍需管理员审核。",
+      "saving": "正在保存…",
+      "appear": "我想加入",
+      "notNow": "暂时不要",
+      "selectCategory": "选择类别",
+      "other": "其他",
+      "otherQuestion": "您的商家从事什么业务？",
+      "selectLocality": "选择您的城市或市镇",
+      "localityNotFound": "找不到我的城市",
+      "cityLabel": "城市或地区"
     }
   }
 }

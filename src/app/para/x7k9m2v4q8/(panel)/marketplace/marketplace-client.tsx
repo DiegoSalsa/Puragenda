@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { marketplaceAdminListSummary, type MarketplaceQualityGateReportRow } from "@/lib/marketplace";
+import {
+  marketplaceAdminListSummary,
+  marketplaceConsentStateLabel,
+  type MarketplaceConsentState,
+  type MarketplaceQualityGateReportRow,
+} from "@/lib/marketplace";
 
 type AdminBusiness = {
   id: string;
@@ -11,6 +16,7 @@ type AdminBusiness = {
   deleted: boolean;
   plan: string;
   status: string;
+  consentState: MarketplaceConsentState;
   listings: Array<{
     published: boolean;
     authorized: boolean;
@@ -116,7 +122,7 @@ export function MarketplaceClient({
                 <th>Estado</th>
                 <th>Categoría</th>
                 <th>Localidad</th>
-                <th>Autorizado</th>
+                <th>Consentimiento</th>
                 <th>Publicado</th>
               </tr>
             </thead>
@@ -139,7 +145,7 @@ export function MarketplaceClient({
                     </td>
                     <td className="font-bold">{summary.categoriesLabel}</td>
                     <td className="font-bold">{summary.localityLabel}</td>
-                    <td className="font-black">{summary.authorizationLabel}</td>
+                    <td className="font-black">{marketplaceConsentStateLabel(business.consentState)}</td>
                     <td className="font-black">{summary.published ? "SÍ" : "NO"}</td>
                   </tr>
                 );

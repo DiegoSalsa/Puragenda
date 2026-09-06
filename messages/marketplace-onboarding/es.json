@@ -32,6 +32,32 @@
       "saving": "Guardando…",
       "save": "Guardar visibilidad",
       "saved": "La visibilidad del directorio se actualizó."
+    },
+    "marketplacePrompt": {
+      "successTitle": "Listo. Tu negocio quedó autorizado para el directorio.",
+      "successDescription": "Revisaremos la información antes de publicarlo.",
+      "title": "Haz que encuentren tu negocio en Puragenda",
+      "description": "Puedes autorizar que mostremos tu negocio en el directorio público de Puragenda para que las personas puedan encontrarlo y reservar contigo.",
+      "categoryLabel": "Rubro",
+      "localityLabel": "Ciudad",
+      "publicDataTitle": "Datos que podrá mostrar el directorio",
+      "publicBusinessName": "Nombre comercial",
+      "publicCategory": "Rubro",
+      "publicCity": "Ciudad",
+      "publicLogo": "Logo, si corresponde",
+      "publicServices": "Servicios públicos",
+      "publicBookingLink": "Enlace de reserva",
+      "optional": "Participar es opcional y puedes retirar la autorización después desde Configuración.",
+      "disclaimer": "Autorizar no publica tu negocio inmediatamente: la información queda pendiente de revisión administrativa.",
+      "saving": "Guardando…",
+      "appear": "Quiero aparecer",
+      "notNow": "Ahora no",
+      "selectCategory": "Selecciona un rubro",
+      "other": "Otro",
+      "otherQuestion": "¿A qué se dedica tu negocio?",
+      "selectLocality": "Selecciona tu ciudad o comuna",
+      "localityNotFound": "No encuentro mi ciudad",
+      "cityLabel": "Ciudad o localidad"
     }
   }
 }

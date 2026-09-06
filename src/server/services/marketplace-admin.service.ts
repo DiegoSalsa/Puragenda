@@ -63,6 +63,7 @@ export async function listMarketplaceAdminRows() {
       name: true,
       slug: true,
       deletedAt: true,
+      marketplacePromptDismissedAt: true,
       subscription: { select: { plan: true, status: true } },
       marketplaceListings: {
         select: {

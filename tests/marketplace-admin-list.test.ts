@@ -92,4 +92,24 @@ describe("admin marketplace list vs public inventory", () => {
     expect(rows).toContain("export async function listMarketplaceAdminRows");
     expect(rows).not.toMatch(/marketplaceListings:\s*\{\s*where:\s*\{\s*publishedAt/);
   });
+
+  it("admin exposes prompt decision separately from publication", () => {
+    const page = readFileSync(
+      join(process.cwd(), "src/app/para/x7k9m2v4q8/(panel)/marketplace/page.tsx"),
+      "utf8",
+    );
+    const client = readFileSync(
+      join(process.cwd(), "src/app/para/x7k9m2v4q8/(panel)/marketplace/marketplace-client.tsx"),
+      "utf8",
+    );
+    const rows = readFileSync(
+      join(process.cwd(), "src/server/services/marketplace-admin.service.ts"),
+      "utf8",
+    );
+
+    expect(rows).toContain("marketplacePromptDismissedAt: true");
+    expect(page).toContain("marketplaceConsentState({");
+    expect(client).toContain("marketplaceConsentStateLabel(business.consentState)");
+    expect(client).toContain("<th>Publicado</th>");
+  });
 });

@@ -32,6 +32,32 @@
       "saving": "Enregistrement…",
       "save": "Enregistrer la visibilité",
       "saved": "La visibilité dans l'annuaire a été mise à jour."
+    },
+    "marketplacePrompt": {
+      "successTitle": "C'est fait. Votre entreprise est autorisée pour l'annuaire.",
+      "successDescription": "Nous vérifierons les informations avant de les publier.",
+      "title": "Aidez les clients à trouver votre entreprise sur Puragenda",
+      "description": "Vous pouvez nous autoriser à afficher votre entreprise dans l'annuaire public de Puragenda afin que les clients puissent la trouver et réserver avec vous.",
+      "categoryLabel": "Secteur",
+      "localityLabel": "Ville",
+      "publicDataTitle": "Informations que l'annuaire pourra afficher",
+      "publicBusinessName": "Nom commercial",
+      "publicCategory": "Secteur",
+      "publicCity": "Ville",
+      "publicLogo": "Logo, le cas échéant",
+      "publicServices": "Services publics",
+      "publicBookingLink": "Lien de réservation",
+      "optional": "La participation est facultative et vous pourrez retirer l'autorisation plus tard dans les paramètres.",
+      "disclaimer": "L'autorisation ne publie pas votre entreprise immédiatement : les informations restent soumises à une révision administrative.",
+      "saving": "Enregistrement…",
+      "appear": "Je veux apparaître",
+      "notNow": "Pas maintenant",
+      "selectCategory": "Sélectionnez un secteur",
+      "other": "Autre",
+      "otherQuestion": "Quelle est l'activité de votre entreprise ?",
+      "selectLocality": "Sélectionnez votre ville ou commune",
+      "localityNotFound": "Je ne trouve pas ma ville",
+      "cityLabel": "Ville ou localité"
     }
   }
 }

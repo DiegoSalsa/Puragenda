@@ -16,6 +16,8 @@ import { DASHBOARD_PERMISSIONS, type DashboardPermission } from "@/core/permissi
 import { redirect } from "next/navigation";
 import { getCountryConfig } from "@/core/countries";
 import { getTranslations } from "next-intl/server";
+import { MarketplaceConsentPrompt } from "./marketplace-consent-prompt";
+import { getExistingBusinessMarketplacePrompt } from "@/server/services/marketplace-onboarding.service";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN) &&
     !!agendaScope.ownStaffId;
   const canManageAppointments = canManageAllAppointments || canManageOwnAppointments;
+  const marketplacePrompt = permissions.includes(DASHBOARD_PERMISSIONS.SETTINGS_MANAGE)
+    ? await getExistingBusinessMarketplacePrompt(business.id)
+    : null;
   const params = await searchParams;
   const locations = await prisma.businessLocation.findMany({ where: { businessId: business.id, isActive: true }, orderBy: [{ position: "asc" }, { name: "asc" }], include: { hours: { orderBy: { dayOfWeek: "asc" } } } });
   const selectedLocation = locations.find((location) => location.slug === params.location) ?? locations.find((location) => location.isPrimary) ?? locations[0] ?? null;
@@ -309,6 +314,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         timezone={business.timezone}
         countryCode={business.countryCode}
       />
+
+      {marketplacePrompt ? <MarketplaceConsentPrompt prompt={marketplacePrompt} /> : null}
 
       {locations.length > 1 && <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3">
         {locations.map((location) => <Link key={location.id} href={dashboardHref(showingOwnAgenda ? "mine" : undefined, location.slug)} className={`rounded-lg px-3 py-2 text-sm font-medium ${selectedLocation?.id === location.id ? "bg-[#7C3AED] text-white" : "bg-muted text-muted-foreground"}`}>{location.name}</Link>)}

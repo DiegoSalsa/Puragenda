@@ -32,6 +32,32 @@
       "saving": "Saving…",
       "save": "Save visibility",
       "saved": "Directory visibility was updated."
+    },
+    "marketplacePrompt": {
+      "successTitle": "Done. Your business is authorized for the directory.",
+      "successDescription": "We will review the information before publishing it.",
+      "title": "Help people find your business on Puragenda",
+      "description": "You can authorize us to show your business in Puragenda's public directory so people can find it and book with you.",
+      "categoryLabel": "Category",
+      "localityLabel": "City",
+      "publicDataTitle": "Information the directory may show",
+      "publicBusinessName": "Business name",
+      "publicCategory": "Category",
+      "publicCity": "City",
+      "publicLogo": "Logo, when applicable",
+      "publicServices": "Public services",
+      "publicBookingLink": "Booking link",
+      "optional": "Participation is optional, and you can withdraw authorization later in Settings.",
+      "disclaimer": "Authorizing does not publish your business immediately: the information remains pending administrative review.",
+      "saving": "Saving…",
+      "appear": "I want to appear",
+      "notNow": "Not now",
+      "selectCategory": "Select a category",
+      "other": "Other",
+      "otherQuestion": "What does your business do?",
+      "selectLocality": "Select your city or municipality",
+      "localityNotFound": "I can't find my city",
+      "cityLabel": "City or locality"
     }
   }
 }

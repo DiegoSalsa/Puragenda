@@ -1,5 +1,5 @@
 import { ADMIN_SECRET_PATH } from "@/core/constants";
-import { MARKETPLACE_QUALITY_GATE } from "@/lib/marketplace";
+import { MARKETPLACE_QUALITY_GATE, marketplaceConsentState } from "@/lib/marketplace";
 import { getMarketplaceQualityGateReport } from "@/server/services/marketplace.service";
 import { listMarketplaceAdminRows } from "@/server/services/marketplace-admin.service";
 import { MarketplaceClient } from "./marketplace-client";
@@ -26,6 +26,10 @@ export default async function MarketplaceAdminPage() {
         deleted: Boolean(business.deletedAt),
         plan: business.subscription?.plan ?? "SIN PLAN",
         status: business.subscription?.status ?? "SIN SUB",
+        consentState: marketplaceConsentState({
+          promptDismissedAt: business.marketplacePromptDismissedAt,
+          listings: business.marketplaceListings,
+        }),
         listings: business.marketplaceListings.map((listing) => {
           const authorized = Boolean(listing.authorizationConfirmedAt) && !listing.authorizationRevokedAt;
           const categories = listing.categories.map((entry) => entry.category.name);
