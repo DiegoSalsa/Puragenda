@@ -228,6 +228,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               billingCycle: sub.billingCycle,
               isTrial: sub.isTrial,
               trialEndsAt: sub.trialEndsAt?.toISOString() || null,
+              currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
               extraStaffCount: sub.extraStaffCount,
               createdAt: sub.createdAt.toISOString(),
             }} />

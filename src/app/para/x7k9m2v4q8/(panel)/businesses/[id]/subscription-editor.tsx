@@ -16,6 +16,7 @@ interface SubscriptionData {
   billingCycle: string;
   isTrial: boolean;
   trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
   extraStaffCount: number;
   createdAt: string;
 }
@@ -30,6 +31,9 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const subscriptionEnd = subscription.status === "TRIALING" && subscription.trialEndsAt
+    ? subscription.trialEndsAt
+    : subscription.currentPeriodEnd;
 
   async function handleSave() {
     setLoading(true);
@@ -119,6 +123,22 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
             </p>
           </div>
         )}
+
+        <div className="border-2 border-black bg-white px-3 py-2">
+          <p className="text-[10px] font-black uppercase tracking-wider text-black/50">
+            Fin de suscripción
+          </p>
+          <p className="text-sm font-black text-black">
+            {subscriptionEnd
+              ? new Date(subscriptionEnd).toLocaleDateString("es-CL")
+              : "Sin fecha registrada"}
+          </p>
+          {subscriptionEnd && (
+            <p className="text-[10px] font-bold text-black/40">
+              {subscription.status === "TRIALING" ? "Fin de prueba" : "Fin del período actual"}
+            </p>
+          )}
+        </div>
 
         {error && (
           <div className="border-2 border-black bg-[#FFB5E8] px-3 py-2 text-xs font-black text-black">
