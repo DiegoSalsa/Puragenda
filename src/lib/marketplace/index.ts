@@ -74,6 +74,12 @@ export {
 
 export { foldMarketplaceSearch, marketplaceSearchMatches } from "./search";
 
+export {
+  marketplaceCategoryDisplayName,
+  marketplacePublicLocationLabel,
+  marketplaceVisibleServices,
+} from "./display";
+
 export { loadPublicMarketplaceInventory } from "./inventory";
 
 export {

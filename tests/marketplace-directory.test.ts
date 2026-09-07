@@ -213,12 +213,19 @@ describe("public /negocios directory", () => {
     })).toEqual({ placement: "card" });
   });
 
+  it("keeps indexing disabled and does not invent business pages", () => {
+    expect(MARKETPLACE_QUALITY_GATE.indexingEnabled).toBe(false);
+  });
+
   it("reuses the public directory page and widget CTA, not a second booking engine", () => {
     const page = readFileSync(join(process.cwd(), "src/app/negocios/page.tsx"), "utf8");
     const view = readFileSync(join(process.cwd(), "src/components/marketplace/directory-page.tsx"), "utf8");
     expect(page).toContain("listPublicMarketplaceDirectory");
     expect(page).not.toContain("prisma.business.findMany");
-    expect(view).toContain('ctaLabel="Reservar"');
+    expect(view).toContain('ctaLabel="Ver horas"');
     expect(view).toContain("Limpiar filtros");
+    expect(view).toContain("min-[1280px]:grid-cols-3");
+    expect(view).not.toContain("uppercase tracking-tighter");
+    expect(view).not.toContain("Local principal");
   });
 });

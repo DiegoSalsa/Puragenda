@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
+  Globe2,
   MapPin,
   Search,
   Store,
@@ -21,11 +22,12 @@ type MarketplacePromptDropdownProps = {
   placeholder: string;
   groups: MarketplacePromptDropdownGroup[];
   onChange: (value: string) => void;
-  tone: "category" | "locality";
+  tone: "category" | "locality" | "region";
   searchable?: boolean;
   searchPlaceholder?: string;
   noResultsLabel?: string;
   optionsLabel?: string;
+  className?: string;
 };
 
 function normalizeSearch(value: string) {
@@ -47,6 +49,7 @@ export function MarketplacePromptDropdown({
   searchPlaceholder = "Buscar…",
   noResultsLabel = "No encontramos resultados",
   optionsLabel = "opciones",
+  className,
 }: MarketplacePromptDropdownProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -95,8 +98,8 @@ export function MarketplacePromptDropdown({
     if (open && searchable) requestAnimationFrame(() => searchRef.current?.focus());
   }, [open, searchable]);
 
-  const accent = tone === "category" ? "#7C3AED" : "#E91E8C";
-  const Icon = tone === "category" ? Store : MapPin;
+  const accent = tone === "locality" ? "#E91E8C" : "#7C3AED";
+  const Icon = tone === "category" ? Store : tone === "region" ? Globe2 : MapPin;
 
   function closeDropdown() {
     setOpen(false);
@@ -104,7 +107,7 @@ export function MarketplacePromptDropdown({
   }
 
   return (
-    <div ref={containerRef} className="relative min-w-0 sm:min-w-64">
+    <div ref={containerRef} className={`relative min-w-0 ${className ?? "sm:min-w-64"}`}>
       <button
         id={id}
         type="button"

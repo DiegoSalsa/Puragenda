@@ -11,40 +11,40 @@ import {
 
 export function MarketplaceDirectoryView({ result }: { result: MarketplaceDirectoryResult }) {
   const hasFilters = marketplaceDirectoryHasFilters(result.query);
+  const countLabel = result.total === 1 ? "1 negocio disponible" : `${result.total} negocios disponibles`;
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pt-4 pb-16 sm:px-6">
       <DirectoryAnalytics />
-      <p className="mb-3 inline-block border-2 border-black bg-[#B28DFF] px-3 py-1 text-xs font-black uppercase tracking-wider text-black shadow-[3px_3px_0_#000]">
+      <p className="mb-3 inline-block border border-black bg-[#B28DFF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-black shadow-[2px_2px_0_#000]">
         Puragenda Marketplace
       </p>
-      <h1 className="max-w-3xl text-4xl font-black uppercase tracking-tighter sm:text-5xl">
+      <h1 className="max-w-3xl text-3xl font-black tracking-tight text-black sm:text-4xl">
         Encuentra un negocio y reserva tu hora
       </h1>
-      <p className="mt-3 max-w-2xl text-base font-bold opacity-80 sm:text-lg">
-        Descubre locales que usan Puragenda y agenda directo en su widget.
+      <p className="mt-2 max-w-xl text-sm font-medium text-black/70 sm:text-base">
+        Elige un local y reserva directo en su agenda.
       </p>
 
       <DirectorySearch result={result} />
 
-      <div className="mt-8" aria-live="polite">
+      <div className="mt-6" aria-live="polite">
         {result.emptyKind === "none" ? (
           <>
-            <p className="text-sm font-bold opacity-70">
-              {result.total} {result.total === 1 ? "negocio" : "negocios"}
-            </p>
-            <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+            <p className="text-sm font-semibold text-black/60">{countLabel}</p>
+            <ul className="mt-3 grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1280px]:grid-cols-3">
               {result.cards.map((card) => (
-                <li key={card.bookingPath}>
+                <li key={card.bookingPath} className="min-w-0">
                   <MarketplaceListingCard
                     name={card.name}
                     bookingPath={card.bookingPath}
                     cityName={card.cityName}
                     categoryNames={card.categoryNames}
+                    categorySlugs={card.categorySlugs}
                     locationName={card.locationName}
                     logoUrl={card.logoUrl}
                     serviceNames={card.serviceNames}
-                    ctaLabel="Reservar"
+                    ctaLabel="Ver horas"
                     trackBooking
                   />
                 </li>
@@ -52,12 +52,12 @@ export function MarketplaceDirectoryView({ result }: { result: MarketplaceDirect
             </ul>
           </>
         ) : (
-          <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
+          <div className="rounded-2xl border-2 border-black bg-white px-5 py-8 text-center shadow-[3px_3px_0_#000]">
             <p className="text-base font-bold">{marketplaceDirectoryEmptyMessage(result)}</p>
             {hasFilters ? (
               <Link
                 href={MARKETPLACE_DIRECTORY_PATH}
-                className="mt-4 inline-flex min-h-11 items-center font-black uppercase text-[#5B21B6] underline underline-offset-4"
+                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-black bg-[#7C3AED] px-4 text-sm font-black text-white shadow-[2px_2px_0_#000]"
               >
                 Limpiar filtros
               </Link>
