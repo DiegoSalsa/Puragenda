@@ -38,6 +38,9 @@ export type ExistingBusinessMarketplacePrompt = {
   countryCode: string;
   categoryLabel: string | null;
   localityLabel: string | null;
+  initialCategorySlug: string;
+  initialOtherDescription: string;
+  initialLocalitySlug: string;
   needsCategory: boolean;
   needsLocality: boolean;
   suggestedLocalitySlug: string | null;
@@ -272,6 +275,10 @@ async function buildExistingBusinessMarketplacePrompt(
     countryCode: context.business.countryCode,
     categoryLabel,
     localityLabel,
+    initialCategorySlug: context.activeCategories[0]?.slug
+      ?? (context.pendingCategoryDescription ? MARKETPLACE_OTHER_CATEGORY_SLUG : ""),
+    initialOtherDescription: context.pendingCategoryDescription ?? "",
+    initialLocalitySlug: context.activeLocality?.slug ?? "",
     needsCategory: categoryLabel == null,
     needsLocality: localityLabel == null,
     suggestedLocalitySlug,
@@ -317,18 +324,17 @@ export async function acceptExistingBusinessMarketplacePrompt(
     ?? (context.pendingCategoryDescription ? MARKETPLACE_OTHER_CATEGORY_SLUG : null);
   const existingLocalitySlug = context.activeLocality?.slug ?? null;
   const localityNotFound = context.business.countryCode === "CL"
-    && !existingLocalitySlug
     && Boolean(input.localityNotFound);
   const cityName = context.business.countryCode === "CL"
     ? localityNotFound ? input.cityName : null
-    : context.initialCityName || input.cityName;
+    : input.cityName ?? context.initialCityName;
 
   const resolved = await resolveRegistrationMarketplaceClassification({
     countryCode: context.business.countryCode,
-    categorySlug: existingCategorySlug ?? input.categorySlug ?? "",
-    otherDescription: context.pendingCategoryDescription ?? input.otherDescription,
+    categorySlug: input.categorySlug ?? existingCategorySlug ?? "",
+    otherDescription: input.otherDescription ?? context.pendingCategoryDescription,
     localitySlug: context.business.countryCode === "CL"
-      ? existingLocalitySlug ?? input.localitySlug ?? prompt.suggestedLocalitySlug
+      ? input.localitySlug ?? existingLocalitySlug ?? prompt.suggestedLocalitySlug
       : null,
     localityNotFound,
     cityName,
@@ -359,18 +365,16 @@ export async function acceptExistingBusinessMarketplacePrompt(
         publishedAt: null,
       },
       update: {
-        ...(!context.activeLocality && context.business.countryCode === "CL"
+        ...(context.business.countryCode === "CL"
           ? {
               localityId: resolved.classification.localityId,
               pendingLocalityName: resolved.classification.pendingLocalityName,
             }
           : {}),
-        ...(context.business.countryCode !== "CL" && !context.listing?.pendingLocalityName
+        ...(context.business.countryCode !== "CL"
           ? { pendingLocalityName: resolved.classification.pendingLocalityName }
           : {}),
-        ...(!context.activeCategories.length && !context.pendingCategoryDescription
-          ? { pendingCategoryDescription: resolved.classification.pendingCategoryDescription }
-          : {}),
+        pendingCategoryDescription: resolved.classification.pendingCategoryDescription,
         authorizationConfirmedAt: now,
         authorizationConfirmedById: userId,
         authorizationSource: MARKETPLACE_AUTHORIZATION_SOURCE_DASHBOARD_PROMPT,
@@ -380,16 +384,14 @@ export async function acceptExistingBusinessMarketplacePrompt(
       },
     });
 
-    if (!context.activeCategories.length && !context.pendingCategoryDescription) {
-      await tx.marketplaceListingCategory.deleteMany({ where: { listingId: listing.id } });
-      if (resolved.classification.categoryIds.length > 0) {
-        await tx.marketplaceListingCategory.createMany({
-          data: resolved.classification.categoryIds.map((categoryId) => ({
-            listingId: listing.id,
-            categoryId,
-          })),
-        });
-      }
+    await tx.marketplaceListingCategory.deleteMany({ where: { listingId: listing.id } });
+    if (resolved.classification.categoryIds.length > 0) {
+      await tx.marketplaceListingCategory.createMany({
+        data: resolved.classification.categoryIds.map((categoryId) => ({
+          listingId: listing.id,
+          categoryId,
+        })),
+      });
     }
 
     await tx.marketplaceListing.updateMany({
@@ -416,6 +418,10 @@ export async function acceptExistingBusinessMarketplacePrompt(
     businessId,
     source: MARKETPLACE_AUTHORIZATION_SOURCE_DASHBOARD_PROMPT,
     textVersion: MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
+    selectedCategorySlug: input.categorySlug ?? existingCategorySlug,
+    selectedLocalitySlug: context.business.countryCode === "CL"
+      ? input.localitySlug ?? existingLocalitySlug
+      : null,
   }, userId);
 
   return { ok: true };

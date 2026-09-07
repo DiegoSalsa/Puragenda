@@ -126,6 +126,8 @@ describe("existing business marketplace prompt service", () => {
     await expect(getExistingBusinessMarketplacePrompt("business-1")).resolves.toMatchObject({
       categoryLabel: "Barberías",
       localityLabel: "Osorno",
+      initialCategorySlug: "barberias",
+      initialLocalitySlug: "osorno",
       needsCategory: false,
       needsLocality: false,
     });
@@ -164,12 +166,15 @@ describe("existing business marketplace prompt service", () => {
     await expect(getExistingBusinessMarketplacePrompt("business-1")).resolves.toBeNull();
   });
 
-  it("authorizes with dashboard_prompt, preserves admin curation and stays unpublished", async () => {
+  it("authorizes the prefilled user selection with dashboard_prompt and stays unpublished", async () => {
     mocks.businessFindUnique.mockResolvedValue(historicalBusiness({
       marketplaceListings: [classifiedListing()],
     }));
 
-    await expect(acceptExistingBusinessMarketplacePrompt("business-1", "user-1", {}))
+    await expect(acceptExistingBusinessMarketplacePrompt("business-1", "user-1", {
+      categorySlug: "barberias",
+      localitySlug: "osorno",
+    }))
       .resolves.toEqual({ ok: true });
 
     const update = mocks.listingUpsert.mock.calls[0]?.[0]?.update;
@@ -181,14 +186,59 @@ describe("existing business marketplace prompt service", () => {
       authorizationRevokedAt: null,
       publishedAt: null,
     });
-    expect(update).not.toHaveProperty("localityId");
-    expect(update).not.toHaveProperty("pendingCategoryDescription");
-    expect(mocks.listingCategoryDeleteMany).not.toHaveBeenCalled();
+    expect(update).toMatchObject({
+      localityId: "locality-osorno",
+      pendingCategoryDescription: null,
+      pendingLocalityName: null,
+    });
+    expect(mocks.listingCategoryDeleteMany).toHaveBeenCalledWith({ where: { listingId: "listing-1" } });
+    expect(mocks.listingCategoryCreateMany).toHaveBeenCalledWith({
+      data: [{ listingId: "listing-1", categoryId: "category-barberias" }],
+    });
     expect(mocks.audit).toHaveBeenCalledWith(
       "MARKETPLACE_AUTHORIZATION_CONFIRMED",
       expect.objectContaining({ businessId: "business-1", source: "dashboard_prompt" }),
       "user-1",
     );
+  });
+
+  it("does not offer the prompt again after the stored authorization is observed", async () => {
+    const business = historicalBusiness({ marketplaceListings: [classifiedListing()] });
+    mocks.businessFindUnique.mockImplementation(() => Promise.resolve(business));
+
+    await expect(acceptExistingBusinessMarketplacePrompt("business-1", "user-1", {
+      categorySlug: "barberias",
+      localitySlug: "osorno",
+    })).resolves.toEqual({ ok: true });
+
+    business.marketplaceListings = [{
+      ...classifiedListing(),
+      authorizationConfirmedAt: new Date("2026-09-06T21:00:00Z"),
+    }];
+
+    await expect(getExistingBusinessMarketplacePrompt("business-1")).resolves.toBeNull();
+  });
+
+  it("lets an existing business replace both its category and Chilean commune", async () => {
+    mocks.businessFindUnique.mockResolvedValue(historicalBusiness({
+      marketplaceListings: [classifiedListing()],
+    }));
+    mocks.categoryFindUnique.mockResolvedValueOnce({ id: "category-manicure", isActive: true });
+    mocks.localityFindUnique.mockResolvedValueOnce({ id: "locality-concepcion", name: "Concepción", isActive: true });
+
+    await expect(acceptExistingBusinessMarketplacePrompt("business-1", "user-1", {
+      categorySlug: "manicure",
+      localitySlug: "concepcion",
+    })).resolves.toEqual({ ok: true });
+
+    expect(mocks.listingUpsert.mock.calls[0]?.[0]?.update).toMatchObject({
+      localityId: "locality-concepcion",
+      pendingCategoryDescription: null,
+      publishedAt: null,
+    });
+    expect(mocks.listingCategoryCreateMany).toHaveBeenCalledWith({
+      data: [{ listingId: "listing-1", categoryId: "category-manicure" }],
+    });
   });
 
   it("fills a missing category through the registration classifier without publishing", async () => {

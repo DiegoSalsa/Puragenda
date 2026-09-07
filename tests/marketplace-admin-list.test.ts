@@ -112,4 +112,23 @@ describe("admin marketplace list vs public inventory", () => {
     expect(client).toContain("marketplaceConsentStateLabel(business.consentState)");
     expect(client).toContain("<th>Publicado</th>");
   });
+
+  it("superadmin detail exposes the stored answers and authorization audit", () => {
+    const editor = readFileSync(
+      join(process.cwd(), "src/app/para/x7k9m2v4q8/(panel)/marketplace/[businessId]/marketplace-editor.tsx"),
+      "utf8",
+    );
+    const page = readFileSync(
+      join(process.cwd(), "src/app/para/x7k9m2v4q8/(panel)/marketplace/[businessId]/page.tsx"),
+      "utf8",
+    );
+
+    expect(editor).toContain("current.pendingCategoryDescription");
+    expect(editor).toContain("current.pendingLocalityName");
+    expect(editor).toContain("current.authorizationSource");
+    expect(editor).toContain("current.authorizationConfirmedAt");
+    expect(editor).toContain("current.authorizationTextVersion");
+    expect(page).toContain("listing.categories.map");
+    expect(page).toContain("listing.localityId");
+  });
 });

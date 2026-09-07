@@ -86,9 +86,24 @@ describe("existing business prompt UI contract", () => {
     expect(spanish.dashboard.marketplacePrompt.notNow).toBe("Ahora no");
   });
 
-  it("is an inline responsive card with focus management and no local-only persistence", () => {
+  it("uses singular display labels without changing the marketplace taxonomy", () => {
+    expect(component).toContain('barberias: "Barbería"');
+    expect(component).toContain('peluquerias: "Peluquería"');
+    expect(component).toContain("marketplacePromptCategoryDisplayLabel(category)");
+  });
+
+  it("is an inline responsive card with always-editable selectors and no local-only persistence", () => {
     expect(component).toContain("<section");
-    expect(component).toContain("requestAnimationFrame(() => firstFieldRef.current?.focus())");
+    expect(component).toContain("<MarketplacePromptDropdown");
+    expect(component).toContain('id="promptMarketplaceCategory"');
+    expect(component).toContain('id="promptMarketplaceLocality"');
+    expect(component).toContain("searchable");
+    expect(component).toContain('searchPlaceholder={t("searchLocality")}');
+    expect(component).toContain("setCompleted(true)");
+    expect(component).toContain("if (completed)");
+    expect(component).toContain("setHidden(true)");
+    expect(component).toContain("prompt.initialCategorySlug");
+    expect(component).toContain("prompt.initialLocalitySlug");
     expect(component).toContain("sm:flex-row");
     expect(component).toContain("w-full");
     expect(component).not.toContain("localStorage");

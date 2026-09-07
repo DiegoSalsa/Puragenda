@@ -56,6 +56,9 @@
       "other": "Altro",
       "otherQuestion": "Di cosa si occupa la tua attività?",
       "selectLocality": "Seleziona la tua città o comune",
+      "searchLocality": "Cerca comune o regione…",
+      "noResults": "Nessun comune corrisponde alla ricerca.",
+      "options": "opzioni",
       "localityNotFound": "Non trovo la mia città",
       "cityLabel": "Città o località"
     }

@@ -56,6 +56,9 @@
       "other": "Andere",
       "otherQuestion": "Was bietet dein Unternehmen an?",
       "selectLocality": "Stadt oder Gemeinde auswählen",
+      "searchLocality": "Gemeinde oder Region suchen…",
+      "noResults": "Keine passenden Gemeinden gefunden.",
+      "options": "Optionen",
       "localityNotFound": "Ich finde meine Stadt nicht",
       "cityLabel": "Stadt oder Ort"
     }

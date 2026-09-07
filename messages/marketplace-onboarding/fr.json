@@ -56,6 +56,9 @@
       "other": "Autre",
       "otherQuestion": "Quelle est l'activité de votre entreprise ?",
       "selectLocality": "Sélectionnez votre ville ou commune",
+      "searchLocality": "Rechercher une commune ou région…",
+      "noResults": "Aucune commune ne correspond à votre recherche.",
+      "options": "options",
       "localityNotFound": "Je ne trouve pas ma ville",
       "cityLabel": "Ville ou localité"
     }

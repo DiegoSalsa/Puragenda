@@ -56,6 +56,9 @@
       "other": "其他",
       "otherQuestion": "您的商家从事什么业务？",
       "selectLocality": "选择您的城市或市镇",
+      "searchLocality": "搜索市镇或地区…",
+      "noResults": "未找到匹配的市镇。",
+      "options": "个选项",
       "localityNotFound": "找不到我的城市",
       "cityLabel": "城市或地区"
     }

@@ -56,6 +56,9 @@
       "other": "Other",
       "otherQuestion": "What does your business do?",
       "selectLocality": "Select your city or municipality",
+      "searchLocality": "Search municipality or region…",
+      "noResults": "No municipalities match your search.",
+      "options": "options",
       "localityNotFound": "I can't find my city",
       "cityLabel": "City or locality"
     }

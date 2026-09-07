@@ -56,6 +56,9 @@
       "other": "Outro",
       "otherQuestion": "A que se dedica seu negócio?",
       "selectLocality": "Selecione sua cidade ou município",
+      "searchLocality": "Buscar município ou região…",
+      "noResults": "Nenhum município corresponde à busca.",
+      "options": "opções",
       "localityNotFound": "Não encontro minha cidade",
       "cityLabel": "Cidade ou localidade"
     }
