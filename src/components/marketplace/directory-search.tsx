@@ -123,7 +123,7 @@ export function DirectorySearch({
               ]}
               onChange={(value) => navigate({ ...result.query, q: query.trim() || undefined, comuna: value || undefined }, "directory_filter")}
               tone="locality"
-              searchable={result.localities.length > 8}
+              searchable
               searchPlaceholder="Buscar comuna"
               noResultsLabel="No encontramos esa comuna"
               className={FILTER_CLASS}

@@ -23,14 +23,14 @@ type MarketplaceListingCardProps = {
 };
 
 function LogoFallback({ name }: { name: string }) {
-  const letter = name.trim().charAt(0).toLocaleUpperCase("es") || "P";
+  const letter = Array.from(name.trim())[0]?.toLocaleUpperCase("es") || "P";
   return (
     <div
       aria-hidden="true"
-      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-black bg-[#FFF5BA]"
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black bg-[#FFFAEB]"
     >
-      <span className="absolute left-0 top-0 h-2 w-2 bg-[#7C3AED]" />
-      <span className="text-sm font-black text-black">{letter}</span>
+      <span className="absolute left-0 top-0 h-1.5 w-1.5 bg-[#7C3AED]" />
+      <span className="text-[13px] font-black leading-none text-black">{letter}</span>
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function MarketplaceListingCard({
       onClick={() => {
         if (trackBooking) track("directory_booking_clicked", { placement: "card" });
       }}
-      className="group flex h-full flex-col rounded-2xl border-2 border-black bg-white p-3.5 text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED]/40 dark:border-white dark:bg-black dark:text-white"
+      className="group flex h-full w-full flex-col rounded-2xl border-2 border-black bg-white p-3.5 text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED]/40 dark:border-white dark:bg-black dark:text-white"
     >
       <div className="flex items-start gap-3">
         {logoUrl ? (
@@ -80,7 +80,7 @@ export function MarketplaceListingCard({
           <LogoFallback name={name} />
         )}
         <div className="min-w-0">
-          <h3 className="text-base font-black leading-snug">{name}</h3>
+          <h3 className="text-base font-black leading-snug [text-transform:none]">{name}</h3>
           {rubro ? <p className="mt-0.5 text-sm font-bold text-[#5B21B6] dark:text-[#C4B5FD]">{rubro}</p> : null}
           <p className="mt-0.5 text-sm font-semibold text-black/65 dark:text-white/70">
             {cityName}
@@ -89,7 +89,7 @@ export function MarketplaceListingCard({
         </div>
       </div>
       {services.visible.length > 0 ? (
-        <ul className="mt-3 flex flex-wrap gap-1.5">
+        <ul className="mt-4 flex flex-wrap gap-1.5">
           {services.visible.map((service) => (
             <li
               key={service}

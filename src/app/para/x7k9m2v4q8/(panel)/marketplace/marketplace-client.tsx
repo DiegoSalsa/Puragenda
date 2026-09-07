@@ -137,7 +137,7 @@ export function MarketplaceClient({
                     <td className="py-3">
                       <Link
                         href={`${adminPath}/marketplace/${business.id}`}
-                        className="font-black uppercase underline decoration-2 underline-offset-2"
+                        className="font-black underline decoration-2 underline-offset-2"
                       >
                         {business.name}
                       </Link>

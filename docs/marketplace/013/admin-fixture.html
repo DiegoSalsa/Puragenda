@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin Marketplace fixture</title>
+  <style>
+    body { margin: 0; background: #FFFAEB; color: #000; font-family: "Plus Jakarta Sans", Arial, sans-serif; }
+    .wrap { padding: 32px 40px; }
+    h1 { font-size: 28px; font-weight: 900; text-transform: uppercase; margin: 0; }
+    .note { margin: 8px 0 24px; font-size: 13px; font-weight: 700; opacity: .6; }
+    .panel { border: 4px solid #000; background: #fff; padding: 20px; box-shadow: 4px 4px 0 #000; }
+    h2 { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 11px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid #000; padding: 8px 8px 8px 0; }
+    td { border-bottom: 1px solid rgba(0,0,0,.1); padding: 12px 8px 12px 0; vertical-align: top; }
+    .name { font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+    .slug { font-family: ui-monospace, monospace; font-size: 11px; color: rgba(0,0,0,.4); margin: 2px 0 0; }
+    .strong { font-weight: 900; }
+    .bold { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Marketplace</h1>
+    <p class="note">Fixture visual. Cuenta y marketplace son estados distintos. No es producción.</p>
+    <section class="panel">
+      <h2>Negocios</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Cuenta</th>
+            <th>Marketplace</th>
+            <th>Categoría</th>
+            <th>Localidad</th>
+            <th>Consentimiento</th>
+            <th>Publicado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="name">LottySkin</div><p class="slug">/lottyskin</p></td>
+            <td class="bold">INDIVIDUAL · ACTIVE</td>
+            <td class="strong">Pendiente</td>
+            <td class="bold">Estética</td>
+            <td class="bold">Pendiente</td>
+            <td class="strong">No preguntado</td>
+            <td class="strong">No</td>
+          </tr>
+          <tr>
+            <td><div class="name">Soccerbarber</div><p class="slug">/soccerbarber</p></td>
+            <td class="bold">EQUIPO · ACTIVE</td>
+            <td class="strong">Activo</td>
+            <td class="bold">Barbería</td>
+            <td class="bold">Osorno</td>
+            <td class="strong">Autorizado</td>
+            <td class="strong">Sí</td>
+          </tr>
+          <tr>
+            <td><div class="name">Lucy.CCP</div><p class="slug">/lucy-ccp</p></td>
+            <td class="bold">INDIVIDUAL · ACTIVE</td>
+            <td class="strong">Pausado</td>
+            <td class="bold">Peluquería</td>
+            <td class="bold">Concepción</td>
+            <td class="strong">Autorizado</td>
+            <td class="strong">No</td>
+          </tr>
+          <tr>
+            <td><div class="name">PuroCode</div><p class="slug">/purocode-demo</p></td>
+            <td class="bold">TEST · ACTIVE</td>
+            <td class="strong">Excluido</td>
+            <td class="bold">—</td>
+            <td class="bold">—</td>
+            <td class="strong">No preguntado</td>
+            <td class="strong">No</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

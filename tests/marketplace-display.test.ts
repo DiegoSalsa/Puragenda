@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   marketplaceCategoryDisplayName,
@@ -22,9 +24,28 @@ describe("marketplace directory display labels", () => {
   });
 
   it("shows at most three services plus a remainder count", () => {
+    expect(marketplaceVisibleServices([])).toEqual({ visible: [], extra: 0 });
+    expect(marketplaceVisibleServices(["Corte"])).toEqual({ visible: ["Corte"], extra: 0 });
+    expect(marketplaceVisibleServices(["Corte", "Barba"])).toEqual({
+      visible: ["Corte", "Barba"],
+      extra: 0,
+    });
+    expect(marketplaceVisibleServices(["Corte", "Barba", "Cejas"])).toEqual({
+      visible: ["Corte", "Barba", "Cejas"],
+      extra: 0,
+    });
     expect(marketplaceVisibleServices(["Corte", "Barba", "Cejas", "Fade", "Kids"])).toEqual({
       visible: ["Corte", "Barba", "Cejas"],
       extra: 2,
     });
+  });
+
+  it("does not rewrite intentional commercial capitalization", () => {
+    const card = readFileSync(join(process.cwd(), "src/components/marketplace/marketplace-listing-card.tsx"), "utf8");
+    expect(card).toContain("{name}");
+    expect(card).not.toContain("toLowerCase(");
+    expect(card).not.toContain("toTitleCase");
+    expect(card).not.toMatch(/name\.replace/);
+    expect(["LottySkin", "Lucy.CCP", "PuroCode"]).toEqual(["LottySkin", "Lucy.CCP", "PuroCode"]);
   });
 });

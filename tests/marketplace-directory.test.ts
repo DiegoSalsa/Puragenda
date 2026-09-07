@@ -217,6 +217,16 @@ describe("public /negocios directory", () => {
     expect(MARKETPLACE_QUALITY_GATE.indexingEnabled).toBe(false);
   });
 
+  it("keeps a usable empty inventory state without fake recommendations", () => {
+    const none = buildMarketplaceDirectoryResult([], {});
+    expect(none.emptyKind).toBe("no_inventory");
+    expect(none.categories).toEqual([]);
+    expect(none.localities).toEqual([]);
+    expect(marketplaceDirectoryEmptyMessage(none)).toBe(
+      "Todavía no hay negocios publicados en el directorio.",
+    );
+  });
+
   it("reuses the public directory page and widget CTA, not a second booking engine", () => {
     const page = readFileSync(join(process.cwd(), "src/app/negocios/page.tsx"), "utf8");
     const view = readFileSync(join(process.cwd(), "src/components/marketplace/directory-page.tsx"), "utf8");

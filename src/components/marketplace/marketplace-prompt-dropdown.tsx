@@ -141,7 +141,7 @@ export function MarketplacePromptDropdown({
       </button>
 
       {open ? (
-        <div className="absolute left-0 z-50 mt-3 w-[min(24rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border-2 border-[#1A1E24] bg-[#FFFAEB] shadow-[6px_6px_0_#1A1E24] dark:border-white dark:bg-[#17131F] dark:shadow-[6px_6px_0_#7C3AED]">
+        <div className="absolute left-0 right-0 z-50 mt-2 w-full overflow-hidden rounded-2xl border-2 border-[#1A1E24] bg-[#FFFAEB] shadow-[6px_6px_0_#1A1E24] sm:right-auto sm:w-[min(24rem,calc(100vw-2rem))] dark:border-white dark:bg-[#17131F] dark:shadow-[6px_6px_0_#7C3AED]">
           <div className="flex items-center justify-between border-b-2 border-[#1A1E24] bg-[#B28DFF] px-4 py-3 text-[#1A1E24] dark:border-white">
             <span className="text-xs font-black uppercase tracking-[0.12em]">{label}</span>
             <span className="rounded-full border-2 border-[#1A1E24] bg-[#FFF5BA] px-2 py-0.5 text-[10px] font-black">
@@ -165,7 +165,7 @@ export function MarketplacePromptDropdown({
             </div>
           ) : null}
 
-          <div id={listboxId} role="listbox" aria-labelledby={id} className="max-h-72 overflow-y-auto overscroll-contain p-2">
+          <div id={listboxId} role="listbox" aria-labelledby={id} className="max-h-[min(16rem,50vh)] overflow-y-auto overscroll-contain p-2">
             {filteredGroups.length > 0 ? filteredGroups.map((group) => (
               <div key={group.label ?? "options"} role="group" aria-label={group.label}>
                 {group.label ? (

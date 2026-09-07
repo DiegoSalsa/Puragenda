@@ -5,9 +5,28 @@ import {
   MARKETPLACE_QUALITY_GATE,
   eligibleMarketplaceListings,
   marketplaceAdminListSummary,
+  marketplaceListingStatusLabel,
 } from "@/lib/marketplace";
 
 describe("admin marketplace list vs public inventory", () => {
+  it("distinguishes marketplace status labels from account status", () => {
+    expect(marketplaceListingStatusLabel("PENDING_REVIEW")).toBe("Pendiente");
+    expect(marketplaceListingStatusLabel("ACTIVE")).toBe("Activo");
+    expect(marketplaceListingStatusLabel("PAUSED")).toBe("Pausado");
+    expect(marketplaceListingStatusLabel("EXCLUDED")).toBe("Excluido");
+    const summary = marketplaceAdminListSummary([
+      {
+        published: true,
+        authorized: true,
+        locality: "Osorno",
+        categories: ["Barbería"],
+        status: "ACTIVE",
+      },
+    ]);
+    expect(summary.marketplaceLabel).toBe("Activo");
+    expect(summary.authorizationLabel).toBe("Autorizado");
+  });
+
   it("shows curated category and locality when the listing is not published", () => {
     const summary = marketplaceAdminListSummary([
       {
@@ -118,6 +137,7 @@ describe("admin marketplace list vs public inventory", () => {
     expect(client).toContain("<th>Marketplace</th>");
     expect(client).toContain("<th>Cuenta</th>");
     expect(client).toContain("<th>Publicado</th>");
+    expect(client).not.toContain('className="font-black uppercase underline decoration-2 underline-offset-2"');
   });
 
   it("superadmin detail exposes the stored answers and authorization audit", () => {

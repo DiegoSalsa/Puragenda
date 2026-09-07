@@ -34,7 +34,7 @@ export function MarketplaceDirectoryView({ result }: { result: MarketplaceDirect
             <p className="text-sm font-semibold text-black/60">{countLabel}</p>
             <ul className="mt-3 grid grid-cols-1 gap-3 min-[768px]:grid-cols-2 min-[1280px]:grid-cols-3">
               {result.cards.map((card) => (
-                <li key={card.bookingPath} className="min-w-0">
+                <li key={card.bookingPath} className="flex h-full min-w-0">
                   <MarketplaceListingCard
                     name={card.name}
                     bookingPath={card.bookingPath}

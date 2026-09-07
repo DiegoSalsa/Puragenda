@@ -1,6 +1,7 @@
 /**
  * Presentation labels for the public directory.
  * Does not change slugs, category IDs, seoEnabled or stored taxonomy names.
+ * Business names are shown exactly as configured. Do not title-case them.
  */
 const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   barberias: "Barbería",
