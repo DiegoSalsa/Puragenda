@@ -1621,6 +1621,13 @@ model ApiRateLimitBucket {
 // BusinessLocation so multi-branch shops can appear once per sucursal.
 // Do not infer category or city from free-text fields.
 
+enum MarketplaceListingStatus {
+  PENDING_REVIEW
+  ACTIVE
+  PAUSED
+  EXCLUDED
+}
+
 model MarketplaceCategory {
   id         String   @id @default(cuid())
   slug       String   @unique
@@ -1656,9 +1663,12 @@ model MarketplaceLocality {
 }
 
 model MarketplaceListing {
-  id                         String    @id @default(cuid())
+  id                         String                    @id @default(cuid())
   businessId                 String
   locationId                 String
+  // Operational marketplace state. Independent from subscription/plan.
+  // Historical rows stay PENDING_REVIEW until Admin decides.
+  status                     MarketplaceListingStatus  @default(PENDING_REVIEW)
   // Optional: CL catalog locality. Null for other countries or pending normalization.
   localityId                 String?
   pendingCategoryDescription String?
@@ -1669,8 +1679,8 @@ model MarketplaceListing {
   authorizationTextVersion   String?
   authorizationRevokedAt     DateTime?
   publishedAt                DateTime?
-  createdAt                  DateTime  @default(now())
-  updatedAt                  DateTime  @updatedAt
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
 
   business                 Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
   location                 BusinessLocation       @relation(fields: [locationId], references: [id], onDelete: Cascade)
@@ -1680,6 +1690,7 @@ model MarketplaceListing {
 
   @@unique([businessId, locationId])
   @@index([publishedAt, localityId])
+  @@index([status, publishedAt])
   @@index([businessId])
   @@index([locationId])
   @@index([authorizationConfirmedById])

@@ -6,6 +6,7 @@ import {
   marketplaceAdminListSummary,
   marketplaceConsentStateLabel,
   type MarketplaceConsentState,
+  type MarketplaceListingStatus,
   type MarketplaceQualityGateReportRow,
 } from "@/lib/marketplace";
 
@@ -18,6 +19,7 @@ type AdminBusiness = {
   status: string;
   consentState: MarketplaceConsentState;
   listings: Array<{
+    status?: MarketplaceListingStatus;
     published: boolean;
     authorized: boolean;
     revoked?: boolean;
@@ -59,8 +61,8 @@ export function MarketplaceClient({
       <div>
         <h1 className="text-3xl font-black uppercase tracking-tight text-black">Marketplace</h1>
         <p className="mt-2 max-w-3xl text-sm font-bold text-black/60">
-          Inventario curado. Un negocio no aparece en el directorio hasta que hay autorización,
-          categoría, localidad canónica y publicación explícita. La indexación sigue apagada.
+          Inventario curado. La cuenta y el marketplace son estados distintos. Un negocio no aparece
+          en el directorio hasta que está Activo, autorizado y publicado. La indexación sigue apagada.
         </p>
       </div>
 
@@ -71,7 +73,7 @@ export function MarketplaceClient({
           {minBookableServices} servicios
         </p>
         {report.length === 0 ? (
-          <p className="mt-4 text-sm font-bold text-black/50">Todavía no hay listings publicados.</p>
+          <p className="mt-4 text-sm font-bold text-black/50">Todavía no hay listings públicos elegibles.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
@@ -115,11 +117,12 @@ export function MarketplaceClient({
           />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[920px] text-left text-sm">
             <thead>
               <tr className="border-b-2 border-black text-xs font-black uppercase">
                 <th className="py-2">Nombre</th>
-                <th>Estado</th>
+                <th>Cuenta</th>
+                <th>Marketplace</th>
                 <th>Categoría</th>
                 <th>Localidad</th>
                 <th>Consentimiento</th>
@@ -143,10 +146,11 @@ export function MarketplaceClient({
                     <td className="font-bold">
                       {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
                     </td>
+                    <td className="font-black">{summary.marketplaceLabel}</td>
                     <td className="font-bold">{summary.categoriesLabel}</td>
                     <td className="font-bold">{summary.localityLabel}</td>
                     <td className="font-black">{marketplaceConsentStateLabel(business.consentState)}</td>
-                    <td className="font-black">{summary.published ? "SÍ" : "NO"}</td>
+                    <td className="font-black">{summary.published ? "Sí" : "No"}</td>
                   </tr>
                 );
               })}

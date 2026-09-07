@@ -4,10 +4,13 @@ import { useMemo, useState, useTransition } from "react";
 import { saveMarketplaceListingAction } from "@/server/actions/marketplace-admin.actions";
 import {
   MARKETPLACE_EXCLUDED_SLUGS,
+  MARKETPLACE_LISTING_STATUSES,
   bookableServiceNamesForLocation,
   groupLocalitiesByRegion,
-  isMarketplaceSubscriptionActive,
+  marketplaceListingStatusLabel,
+  marketplacePublishBlockerLabel,
   marketplacePublishBlockers,
+  type MarketplaceListingStatus,
   type MarketplacePublishReadinessInput,
 } from "@/lib/marketplace";
 
@@ -15,6 +18,7 @@ type EditorLocation = { id: string; name: string; slug: string; isActive: boolea
 type EditorListing = {
   locationId: string;
   localityId: string | null;
+  status: MarketplaceListingStatus;
   categoryIds: string[];
   authorizationConfirmed: boolean;
   authorizationSource: string | null;
@@ -25,6 +29,20 @@ type EditorListing = {
   pendingLocalityName: string | null;
   published: boolean;
 };
+
+const CHECKLIST: Array<{
+  ok: (input: MarketplacePublishReadinessInput) => boolean;
+  label: string;
+}> = [
+  { ok: (input) => input.status === "ACTIVE", label: "Estado marketplace Activo" },
+  { ok: (input) => input.authorizationConfirmed, label: "Autorización vigente" },
+  { ok: (input) => input.hasActiveCategory, label: "Categoría asignada" },
+  { ok: (input) => input.hasCanonicalLocality, label: "Localidad canónica" },
+  { ok: (input) => !input.deleted, label: "Negocio no eliminado" },
+  { ok: (input) => input.locationActive, label: "Sucursal activa" },
+  { ok: (input) => !input.demo && input.plan !== "TEST", label: "No es demo ni plan TEST" },
+  { ok: (input) => input.hasBookableService, label: "Servicio reservable" },
+];
 
 export function MarketplaceEditor({
   business,
@@ -49,6 +67,9 @@ export function MarketplaceEditor({
   const current = business.listings.find((listing) => listing.locationId === locationId);
   const [localityId, setLocalityId] = useState(current?.localityId ?? "");
   const [categoryIds, setCategoryIds] = useState<string[]>(current?.categoryIds ?? []);
+  const [marketplaceStatus, setMarketplaceStatus] = useState<MarketplaceListingStatus>(
+    current?.status ?? "PENDING_REVIEW",
+  );
   const [authorizationConfirmed, setAuthorizationConfirmed] = useState(
     current?.authorizationConfirmed ?? false,
   );
@@ -61,6 +82,7 @@ export function MarketplaceEditor({
     setLocationId(nextLocationId);
     setLocalityId(listing?.localityId ?? "");
     setCategoryIds(listing?.categoryIds ?? []);
+    setMarketplaceStatus(listing?.status ?? "PENDING_REVIEW");
     setAuthorizationConfirmed(listing?.authorizationConfirmed ?? false);
     setPublished(listing?.published ?? false);
     setMessage(null);
@@ -74,6 +96,7 @@ export function MarketplaceEditor({
   });
 
   const readiness: MarketplacePublishReadinessInput = {
+    status: marketplaceStatus,
     authorizationConfirmed,
     hasActiveCategory: categoryIds.some((id) => activeCategories.some((category) => category.id === id)),
     hasCanonicalLocality: Boolean(localityId),
@@ -81,7 +104,6 @@ export function MarketplaceEditor({
     demo: MARKETPLACE_EXCLUDED_SLUGS.has(business.slug),
     slug: business.slug,
     plan: business.plan,
-    subscriptionActive: isMarketplaceSubscriptionActive(business.status),
     locationActive: Boolean(location?.isActive),
     hasBookableService: serviceNames.length > 0,
   };
@@ -95,6 +117,11 @@ export function MarketplaceEditor({
     );
   }
 
+  function changeStatus(next: MarketplaceListingStatus) {
+    setMarketplaceStatus(next);
+    if (next !== "ACTIVE") setPublished(false);
+  }
+
   function save() {
     startTransition(async () => {
       const result = await saveMarketplaceListingAction({
@@ -102,10 +129,16 @@ export function MarketplaceEditor({
         locationId,
         localityId: localityId || null,
         categoryIds,
+        status: marketplaceStatus,
         authorizationConfirmed,
         published,
       });
-      setMessage(result.ok ? "Guardado." : `${result.error} ${result.blockers.join(", ")}`);
+      if (result.ok) {
+        setMessage("Guardado.");
+        return;
+      }
+      const labels = result.blockers.map(marketplacePublishBlockerLabel).join(" · ");
+      setMessage(labels ? `${result.error} ${labels}` : result.error);
     });
   }
 
@@ -127,7 +160,7 @@ export function MarketplaceEditor({
         <h1 className="text-3xl font-black uppercase tracking-tight text-black">{business.name}</h1>
         <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
         <p className="mt-2 text-sm font-bold text-black/60">
-          {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
+          Cuenta: {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
         </p>
       </div>
 
@@ -145,6 +178,25 @@ export function MarketplaceEditor({
               </option>
             ))}
           </select>
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-xs font-black uppercase">Estado marketplace</span>
+          <select
+            value={marketplaceStatus}
+            onChange={(event) => changeStatus(event.target.value as MarketplaceListingStatus)}
+            className="w-full border-2 border-black bg-[#FFFAEB] px-3 py-2 font-bold"
+          >
+            {MARKETPLACE_LISTING_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {marketplaceListingStatusLabel(status)}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs font-bold text-black/50">
+            Independiente de la cuenta/suscripción. Pausar o excluir despublica. Reactivar no vuelve a
+            publicar solo.
+          </p>
         </label>
 
         <fieldset className="space-y-2">
@@ -219,6 +271,7 @@ export function MarketplaceEditor({
           <input
             type="checkbox"
             checked={published}
+            disabled={marketplaceStatus !== "ACTIVE"}
             onChange={(event) => setPublished(event.target.checked)}
           />
           <span>Publicado en directorio</span>
@@ -227,13 +280,29 @@ export function MarketplaceEditor({
         <p className="text-sm font-bold text-black/60">
           Servicios reservables en esta sucursal: {serviceNames.join(", ") || "ninguno"}
         </p>
-        {blockers.length > 0 ? (
-          <p className="text-sm font-bold text-[#7C3AED]">
-            Bloqueos de publicación: {blockers.join(", ")}
-          </p>
-        ) : (
-          <p className="text-sm font-bold text-black/60">Listo para publicar. La indexación sigue apagada.</p>
-        )}
+
+        <section aria-label="Elegibilidad de publicación" className="border-2 border-black bg-[#FFFAEB] p-4">
+          <h2 className="text-xs font-black uppercase">Checklist de publicación</h2>
+          <ul className="mt-3 space-y-1 text-sm font-bold">
+            {CHECKLIST.map((item) => {
+              const ok = item.ok(readiness);
+              return (
+                <li key={item.label} className={ok ? "text-black/70" : "text-[#7C3AED]"}>
+                  {ok ? "✓" : "✕"} {item.label}
+                </li>
+              );
+            })}
+          </ul>
+          {blockers.length > 0 ? (
+            <p className="mt-3 text-sm font-bold text-[#7C3AED]">
+              Bloqueos: {blockers.map(marketplacePublishBlockerLabel).join(" · ")}
+            </p>
+          ) : (
+            <p className="mt-3 text-sm font-bold text-black/60">
+              Listo para publicar. La indexación sigue apagada.
+            </p>
+          )}
+        </section>
 
         <button
           type="button"

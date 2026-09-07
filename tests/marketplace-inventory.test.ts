@@ -69,6 +69,27 @@ describe("marketplace inventory mapping", () => {
 });
 
 describe("marketplace quality gate report", () => {
+  it("does not count PENDING_REVIEW, PAUSED or EXCLUDED listings", () => {
+    const ignored = ["PENDING_REVIEW", "PAUSED", "EXCLUDED"] as const;
+    const candidates = ignored.map((status, index) => ({
+      slug: `barber-${index}`,
+      name: `Barber ${index}`,
+      logoUrl: null,
+      categorySlug: "barberias",
+      citySlug: "concepcion",
+      serviceNames: ["Corte"],
+      deleted: false,
+      directoryPublished: true,
+      status,
+      locationActive: true,
+      demo: false,
+      subscriptionActive: true,
+      plan: "INDIVIDUAL" as const,
+      hasBookableService: true,
+    }));
+    expect(buildMarketplaceQualityGateReport(candidates)).toEqual([]);
+  });
+
   it("reports floors without turning indexing on", () => {
     const candidates = Array.from({ length: 2 }, (_, index) => ({
       slug: `barber-${index}`,
@@ -79,6 +100,8 @@ describe("marketplace quality gate report", () => {
       serviceNames: ["Corte", "Barba", "Cejas", "Fade"],
       deleted: false,
       directoryPublished: true,
+      status: "ACTIVE" as const,
+      locationActive: true,
       demo: false,
       subscriptionActive: true,
       plan: "INDIVIDUAL" as const,
@@ -102,6 +125,7 @@ describe("marketplace sitemap stays closed", () => {
   it("does not advertise curated inventory while indexing is disabled", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).not.toContain("https://www.puragenda.cl/barberias");
+    expect(urls).not.toContain("https://www.puragenda.cl/negocios");
     expect(urls.some((url) => url.endsWith("/barberias/concepcion"))).toBe(false);
     expect(getIndexableMarketplacePaths()).toEqual([]);
   });

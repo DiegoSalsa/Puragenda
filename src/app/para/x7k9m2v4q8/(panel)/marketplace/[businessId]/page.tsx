@@ -36,6 +36,7 @@ export default async function MarketplaceBusinessPage({
           listings: editor.business.marketplaceListings.map((listing) => ({
             locationId: listing.locationId,
             localityId: listing.localityId,
+            status: listing.status,
             categoryIds: listing.categories.map((entry) => entry.categoryId),
             authorizationConfirmed: Boolean(listing.authorizationConfirmedAt) && !listing.authorizationRevokedAt,
             authorizationSource: listing.authorizationSource,

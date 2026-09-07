@@ -21,6 +21,7 @@ export async function saveMarketplaceListingAction(input: SaveMarketplaceListing
     revalidatePath(`${ADMIN_SECRET_PATH}/marketplace/${input.businessId}`);
     revalidatePath("/barberias");
     revalidatePath("/peluquerias");
+    revalidatePath("/negocios");
   }
   return result;
 }

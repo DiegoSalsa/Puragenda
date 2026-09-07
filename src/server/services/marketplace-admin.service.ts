@@ -3,9 +3,11 @@ import {
   MARKETPLACE_AUTHORIZATION_TEXT_VERSION,
   MARKETPLACE_EXCLUDED_SLUGS,
   canPublishMarketplaceListing,
-  isMarketplaceSubscriptionActive,
+  isMarketplaceListingStatus,
   locationHasBookableAppointmentService,
   marketplacePublishBlockers,
+  resolveMarketplacePublishedAt,
+  type MarketplaceListingStatus,
 } from "@/lib/marketplace";
 import { prisma } from "@/server/db/prisma";
 import { createAuditLog } from "@/server/lib/audit";
@@ -15,15 +17,16 @@ export type SaveMarketplaceListingInput = {
   locationId: string;
   localityId: string | null;
   categoryIds: string[];
+  status: MarketplaceListingStatus;
   authorizationConfirmed: boolean;
   published: boolean;
 };
 
 function listingReadiness(input: {
+  status: MarketplaceListingStatus;
   slug: string;
   deletedAt: Date | null;
   plan: string | null;
-  subscriptionStatus: string | null;
   locationActive: boolean;
   authorizationConfirmed: boolean;
   hasActiveCategory: boolean;
@@ -31,6 +34,7 @@ function listingReadiness(input: {
   hasBookableService: boolean;
 }) {
   return {
+    status: input.status,
     authorizationConfirmed: input.authorizationConfirmed,
     hasActiveCategory: input.hasActiveCategory,
     hasCanonicalLocality: input.hasCanonicalLocality,
@@ -38,7 +42,6 @@ function listingReadiness(input: {
     demo: MARKETPLACE_EXCLUDED_SLUGS.has(input.slug),
     slug: input.slug,
     plan: input.plan ?? "INDIVIDUAL",
-    subscriptionActive: isMarketplaceSubscriptionActive(input.subscriptionStatus),
     locationActive: input.locationActive,
     hasBookableService: input.hasBookableService,
   };
@@ -67,6 +70,7 @@ export async function listMarketplaceAdminRows() {
       subscription: { select: { plan: true, status: true } },
       marketplaceListings: {
         select: {
+          status: true,
           publishedAt: true,
           authorizationConfirmedAt: true,
           authorizationRevokedAt: true,
@@ -110,6 +114,7 @@ export async function getMarketplaceBusinessEditor(businessId: string) {
           id: true,
           locationId: true,
           localityId: true,
+          status: true,
           authorizationConfirmedAt: true,
           authorizationRevokedAt: true,
           authorizationSource: true,
@@ -133,6 +138,10 @@ export async function saveMarketplaceListing(
   adminUserId: string,
   input: SaveMarketplaceListingInput,
 ): Promise<{ ok: true } | { ok: false; error: string; blockers: string[] }> {
+  if (!isMarketplaceListingStatus(input.status)) {
+    return { ok: false, error: "Estado marketplace inválido", blockers: ["status_not_active"] };
+  }
+
   const localityId = input.localityId?.trim() || null;
 
   const [business, location, locality, categories] = await Promise.all([
@@ -189,10 +198,10 @@ export async function saveMarketplaceListing(
   });
 
   const readiness = listingReadiness({
+    status: input.status,
     slug: business.slug,
     deletedAt: business.deletedAt,
     plan: business.subscription?.plan ?? null,
-    subscriptionStatus: business.subscription?.status ?? null,
     locationActive: location.isActive,
     authorizationConfirmed: input.authorizationConfirmed,
     hasActiveCategory: activeCategoryIds.length > 0,
@@ -200,7 +209,8 @@ export async function saveMarketplaceListing(
     hasBookableService,
   });
 
-  if (input.published && !canPublishMarketplaceListing(readiness)) {
+  const wantsPublicVisibility = input.published && input.status === "ACTIVE";
+  if (wantsPublicVisibility && !canPublishMarketplaceListing(readiness)) {
     return {
       ok: false,
       error: "No se puede publicar: faltan requisitos.",
@@ -213,6 +223,7 @@ export async function saveMarketplaceListing(
     where: { businessId_locationId: { businessId: business.id, locationId: location.id } },
     select: {
       id: true,
+      status: true,
       authorizationConfirmedAt: true,
       authorizationConfirmedById: true,
       authorizationSource: true,
@@ -251,7 +262,12 @@ export async function saveMarketplaceListing(
     authorizationRevokedAt = null;
   }
 
-  const publishedAt = input.published ? existing?.publishedAt ?? now : null;
+  const publishedAt = resolveMarketplacePublishedAt({
+    status: input.status,
+    wantPublished: input.published,
+    existingPublishedAt: existing?.publishedAt ?? null,
+    now,
+  });
   const resolvedLocalityId = locality?.id ?? null;
   const pendingLocalityName = resolvedLocalityId ? null : existing?.pendingLocalityName ?? null;
   const pendingCategoryDescription = activeCategoryIds.length > 0
@@ -264,6 +280,7 @@ export async function saveMarketplaceListing(
       create: {
         businessId: business.id,
         locationId: location.id,
+        status: input.status,
         localityId: resolvedLocalityId,
         pendingCategoryDescription,
         pendingLocalityName,
@@ -275,6 +292,7 @@ export async function saveMarketplaceListing(
         publishedAt,
       },
       update: {
+        status: input.status,
         localityId: resolvedLocalityId,
         pendingCategoryDescription,
         pendingLocalityName,
@@ -302,6 +320,7 @@ export async function saveMarketplaceListing(
       locationId: location.id,
       published: Boolean(publishedAt),
       authorized: input.authorizationConfirmed,
+      status: input.status,
       categoryCount: activeCategoryIds.length,
     },
     adminUserId,

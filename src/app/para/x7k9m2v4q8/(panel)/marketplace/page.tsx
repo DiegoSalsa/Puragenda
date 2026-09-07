@@ -37,6 +37,7 @@ export default async function MarketplaceAdminPage() {
             categories.push("Pendiente");
           }
           return {
+            status: listing.status,
             published: Boolean(listing.publishedAt),
             authorized,
             revoked: Boolean(listing.authorizationRevokedAt),

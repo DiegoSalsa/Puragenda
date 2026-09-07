@@ -10,7 +10,11 @@ vi.mock("@/server/db/prisma", () => ({
   },
 }));
 
-import { listPublicMarketplaceListings } from "@/server/services/marketplace.service";
+import {
+  listPublicMarketplaceDirectory,
+  listPublicMarketplaceListings,
+  listSeoMarketplaceListings,
+} from "@/server/services/marketplace.service";
 
 describe("listPublicMarketplaceListings", () => {
   beforeEach(() => {
@@ -22,13 +26,14 @@ describe("listPublicMarketplaceListings", () => {
     await listPublicMarketplaceListings();
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
+        status: "ACTIVE",
         publishedAt: { not: null },
         authorizationConfirmedAt: { not: null },
         authorizationRevokedAt: null,
         locality: { isActive: true },
         location: { isActive: true },
         business: { deletedAt: null },
-        categories: { some: { category: { seoEnabled: true } } },
+        categories: { some: { category: { isActive: true } } },
       }),
     }));
     const select = findMany.mock.calls[0]?.[0]?.select;
@@ -43,7 +48,7 @@ describe("listPublicMarketplaceListings", () => {
     await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
   });
 
-  it("fails closed if seoEnabled has not been migrated yet", async () => {
+  it("fails closed if marketplace columns have not been migrated yet", async () => {
     findMany.mockRejectedValue({ code: "P2022" });
     await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
   });
@@ -51,9 +56,10 @@ describe("listPublicMarketplaceListings", () => {
   it("does not emit unpublished or inactive-category rows as public inventory", async () => {
     findMany.mockResolvedValue([
       {
+        status: "ACTIVE",
         publishedAt: new Date(),
-        locality: { slug: "concepcion" },
-        location: { id: "loc-1", slug: "principal", isActive: true },
+        locality: { slug: "concepcion", name: "Concepción", regionName: "Biobío" },
+        location: { id: "loc-1", slug: "principal", name: "Principal", isActive: true },
         business: {
           name: "Local",
           slug: "local-publico",
@@ -63,7 +69,7 @@ describe("listPublicMarketplaceListings", () => {
           subscription: { plan: "INDIVIDUAL", status: "ACTIVE" },
           services: [{ name: "Corte", bookingMode: "APPOINTMENT", locations: [] }],
         },
-        categories: [{ category: { slug: "barberias", isActive: true, seoEnabled: true } }],
+        categories: [{ category: { slug: "barberias", name: "Barberías", isActive: true, seoEnabled: true } }],
       },
     ]);
     const listings = await listPublicMarketplaceListings();
@@ -76,5 +82,23 @@ describe("listPublicMarketplaceListings", () => {
     });
     expect(listings[0]).not.toHaveProperty("id");
     expect(listings[0]).not.toHaveProperty("businessId");
+  });
+
+  it("queries SEO inventory by seoEnabled and directory cards by isActive", async () => {
+    findMany.mockResolvedValue([]);
+    await listSeoMarketplaceListings();
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        status: "ACTIVE",
+        categories: { some: { category: { seoEnabled: true } } },
+      }),
+    }));
+    await listPublicMarketplaceDirectory({ q: "manicure", comuna: "concepcion" });
+    expect(findMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        status: "ACTIVE",
+        categories: { some: { category: { isActive: true } } },
+      }),
+    }));
   });
 });

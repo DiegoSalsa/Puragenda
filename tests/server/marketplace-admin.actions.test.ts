@@ -22,6 +22,7 @@ const payload = {
   locationId: "loc-1",
   localityId: "city-1",
   categoryIds: ["cat-barber"],
+  status: "PENDING_REVIEW" as const,
   authorizationConfirmed: true,
   published: false,
 };

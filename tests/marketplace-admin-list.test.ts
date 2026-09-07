@@ -24,6 +24,7 @@ describe("admin marketplace list vs public inventory", () => {
       published: false,
       authorized: false,
       authorizationLabel: "No",
+      marketplaceLabel: "—",
     });
   });
 
@@ -38,6 +39,8 @@ describe("admin marketplace list vs public inventory", () => {
         serviceNames: ["Corte"],
         deleted: false,
         directoryPublished: false,
+        status: "PENDING_REVIEW",
+        locationActive: true,
         demo: false,
         subscriptionActive: true,
         plan: "INDIVIDUAL",
@@ -64,6 +67,7 @@ describe("admin marketplace list vs public inventory", () => {
       published: false,
       authorized: false,
       authorizationLabel: "No",
+      marketplaceLabel: "—",
     });
     expect(after).toEqual({
       categoriesLabel: "Peluquerías",
@@ -71,6 +75,7 @@ describe("admin marketplace list vs public inventory", () => {
       published: false,
       authorized: false,
       authorizationLabel: "No",
+      marketplaceLabel: "—",
     });
   });
 
@@ -110,6 +115,8 @@ describe("admin marketplace list vs public inventory", () => {
     expect(rows).toContain("marketplacePromptDismissedAt: true");
     expect(page).toContain("marketplaceConsentState({");
     expect(client).toContain("marketplaceConsentStateLabel(business.consentState)");
+    expect(client).toContain("<th>Marketplace</th>");
+    expect(client).toContain("<th>Cuenta</th>");
     expect(client).toContain("<th>Publicado</th>");
   });
 
@@ -128,6 +135,8 @@ describe("admin marketplace list vs public inventory", () => {
     expect(editor).toContain("current.authorizationSource");
     expect(editor).toContain("current.authorizationConfirmedAt");
     expect(editor).toContain("current.authorizationTextVersion");
+    expect(editor).toContain("Estado marketplace");
+    expect(editor).toContain("Checklist de publicación");
     expect(page).toContain("listing.categories.map");
     expect(page).toContain("listing.localityId");
   });

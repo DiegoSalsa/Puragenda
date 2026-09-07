@@ -34,16 +34,45 @@ export {
   MARKETPLACE_FORBIDDEN_PUBLIC_FIELDS,
   eligibleMarketplaceListings,
   isMarketplaceEligibleListing,
+  isMarketplacePubliclyVisible,
   type MarketplaceListingCandidate,
 } from "./visibility";
 
 export {
+  MARKETPLACE_DIRECTORY_CARD_KEYS,
   MARKETPLACE_PUBLIC_CARD_KEYS,
+  directoryCardLeaksForbiddenFields,
   projectPublicMarketplaceCard,
   projectPublicMarketplaceCards,
+  projectPublicMarketplaceDirectoryCard,
   publicCardLeaksForbiddenFields,
   type PublicMarketplaceCard,
+  type PublicMarketplaceDirectoryCard,
 } from "./projection";
+
+export {
+  MARKETPLACE_LISTING_STATUSES,
+  MARKETPLACE_LISTING_STATUS_LABELS,
+  isMarketplaceListingStatus,
+  isMarketplaceOperationallyActive,
+  marketplaceListingStatusLabel,
+  resolveMarketplacePublishedAt,
+  type MarketplaceListingStatus,
+} from "./status";
+
+export {
+  MARKETPLACE_DIRECTORY_PATH,
+  buildMarketplaceDirectoryResult,
+  filterMarketplaceDirectoryCards,
+  marketplaceDirectoryEmptyMessage,
+  marketplaceDirectoryHasFilters,
+  marketplaceDirectoryHref,
+  parseMarketplaceDirectoryQuery,
+  type MarketplaceDirectoryQuery,
+  type MarketplaceDirectoryResult,
+} from "./directory";
+
+export { foldMarketplaceSearch, marketplaceSearchMatches } from "./search";
 
 export { loadPublicMarketplaceInventory } from "./inventory";
 
@@ -51,8 +80,10 @@ export {
   canPublishMarketplaceListing,
   isMarketplaceSubscriptionActive,
   locationHasBookableAppointmentService,
+  marketplacePublishBlockerLabel,
   marketplacePublishBlockers,
   bookableServiceNamesForLocation,
+  MARKETPLACE_PUBLISH_BLOCKER_LABELS,
   type MarketplacePublishReadinessInput,
 } from "./publication";
 
@@ -63,6 +94,8 @@ export {
 
 export {
   mapPublishedListingToCandidates,
+  mapPublishedListingToDirectoryCard,
+  type MarketplaceCategoryMapMode,
   type PublishedListingRecord,
 } from "./inventory-map";
 
@@ -114,6 +147,10 @@ export {
 
 export { marketplaceCategoryJsonLd, marketplaceCityJsonLd } from "./json-ld";
 
-export { MARKETPLACE_NOT_FOUND_METADATA, marketplacePageMetadata } from "./metadata";
+export {
+  MARKETPLACE_NOT_FOUND_METADATA,
+  marketplaceDirectoryMetadata,
+  marketplacePageMetadata,
+} from "./metadata";
 
 export { getIndexableMarketplacePaths, getIndexableMarketplaceSitemapEntries } from "./sitemap";

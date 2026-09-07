@@ -2,7 +2,7 @@ import {
   evaluateMarketplaceQualityGate,
   MARKETPLACE_QUALITY_GATE,
 } from "./quality-gate";
-import { eligibleMarketplaceListings, type MarketplaceListingCandidate } from "./visibility";
+import { isMarketplacePubliclyVisible, type MarketplaceListingCandidate } from "./visibility";
 
 export type MarketplaceQualityGateReportRow = {
   categorySlug: string;
@@ -17,7 +17,7 @@ export type MarketplaceQualityGateReportRow = {
 export function buildMarketplaceQualityGateReport(
   candidates: readonly MarketplaceListingCandidate[],
 ): MarketplaceQualityGateReportRow[] {
-  const eligible = eligibleMarketplaceListings(candidates);
+  const eligible = candidates.filter(isMarketplacePubliclyVisible);
   const groups = new Map<string, MarketplaceListingCandidate[]>();
 
   for (const listing of eligible) {

@@ -7,6 +7,7 @@ import {
 } from "@/lib/marketplace";
 
 const ready = {
+  status: "ACTIVE" as const,
   authorizationConfirmed: true,
   hasActiveCategory: true,
   hasCanonicalLocality: true,
@@ -14,7 +15,6 @@ const ready = {
   demo: false,
   slug: "soccerbarber",
   plan: "INDIVIDUAL" as const,
-  subscriptionActive: true,
   locationActive: true,
   hasBookableService: true,
 };
@@ -46,7 +46,9 @@ describe("marketplace publish rules", () => {
     expect(marketplacePublishBlockers({ ...ready, deleted: true })).toContain("business_deleted");
     expect(marketplacePublishBlockers({ ...ready, locationActive: false })).toContain("location_inactive");
     expect(marketplacePublishBlockers({ ...ready, hasBookableService: false })).toContain("bookable_service_required");
-    expect(marketplacePublishBlockers({ ...ready, subscriptionActive: false })).toContain("subscription_inactive");
+    expect(marketplacePublishBlockers({ ...ready, status: "PENDING_REVIEW" })).toContain("status_not_active");
+    expect(marketplacePublishBlockers({ ...ready, status: "PAUSED" })).toContain("status_not_active");
+    expect(marketplacePublishBlockers({ ...ready, status: "EXCLUDED" })).toContain("status_not_active");
   });
 
   it("treats unassigned services as available on the location and ignores production-only catalogs", () => {

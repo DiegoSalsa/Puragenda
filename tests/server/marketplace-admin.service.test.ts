@@ -36,6 +36,14 @@ const validBusiness = {
   services: [{ name: "Corte", bookingMode: "APPOINTMENT", locations: [] }],
 };
 
+const baseInput = {
+  businessId: "biz-1",
+  locationId: "loc-1",
+  localityId: "city-1",
+  categoryIds: ["cat-barber"],
+  status: "PENDING_REVIEW" as const,
+};
+
 function mockHappyPath() {
   mocks.businessFindUnique.mockResolvedValue(validBusiness);
   mocks.locationFindFirst.mockResolvedValue({ id: "loc-1", isActive: true });
@@ -63,10 +71,7 @@ describe("saveMarketplaceListing", () => {
 
   it("saves an unpublished listing by default", async () => {
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
+      ...baseInput,
       authorizationConfirmed: true,
       published: false,
     });
@@ -88,10 +93,7 @@ describe("saveMarketplaceListing", () => {
     });
 
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
+      ...baseInput,
       authorizationConfirmed: false,
       published: false,
     });
@@ -116,10 +118,8 @@ describe("saveMarketplaceListing", () => {
 
   it("refuses to publish without authorization", async () => {
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
+      ...baseInput,
+      status: "ACTIVE",
       authorizationConfirmed: false,
       published: true,
     });
@@ -134,10 +134,8 @@ describe("saveMarketplaceListing", () => {
       subscription: { plan: "TEST", status: "ACTIVE" },
     });
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
+      ...baseInput,
+      status: "ACTIVE",
       authorizationConfirmed: true,
       published: true,
     });
@@ -153,10 +151,8 @@ describe("saveMarketplaceListing", () => {
       services: [{ name: "Encargo", bookingMode: "PRODUCTION", locations: [] }],
     });
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
+      ...baseInput,
+      status: "ACTIVE",
       authorizationConfirmed: true,
       published: true,
     });
@@ -183,9 +179,7 @@ describe("saveMarketplaceListing", () => {
     });
 
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
-      locationId: "loc-1",
-      localityId: "city-1",
+      ...baseInput,
       categoryIds: ["cat-manicure", "cat-bienestar"],
       authorizationConfirmed: false,
       published: false,
@@ -204,13 +198,57 @@ describe("saveMarketplaceListing", () => {
   it("rejects a location from another business", async () => {
     mocks.locationFindFirst.mockResolvedValue(null);
     const result = await saveMarketplaceListing("admin-1", {
-      businessId: "biz-1",
+      ...baseInput,
       locationId: "loc-other",
-      localityId: "city-1",
-      categoryIds: ["cat-barber"],
       authorizationConfirmed: true,
       published: false,
     });
     expect(result).toMatchObject({ ok: false, error: "La sucursal no pertenece a este negocio" });
+  });
+
+  it("clears publishedAt when pausing and does not republish on reactivation", async () => {
+    const upsert = vi.fn().mockResolvedValue({ id: "listing-1" });
+    mocks.listingFindUnique.mockResolvedValue({
+      id: "listing-1",
+      status: "ACTIVE",
+      authorizationConfirmedAt: new Date(),
+      authorizationConfirmedById: "admin-1",
+      authorizationSource: "admin",
+      authorizationTextVersion: "v1",
+      authorizationRevokedAt: null,
+      pendingCategoryDescription: null,
+      pendingLocalityName: null,
+      publishedAt: new Date("2026-09-07T12:00:00.000Z"),
+    });
+    mocks.transaction.mockImplementation(async (fn: (tx: {
+      marketplaceListing: { upsert: typeof upsert };
+      marketplaceListingCategory: { deleteMany: ReturnType<typeof vi.fn>; createMany: ReturnType<typeof vi.fn> };
+    }) => Promise<unknown>) => {
+      await fn({
+        marketplaceListing: { upsert },
+        marketplaceListingCategory: { deleteMany: vi.fn(), createMany: vi.fn() },
+      });
+    });
+
+    await saveMarketplaceListing("admin-1", {
+      ...baseInput,
+      status: "PAUSED",
+      authorizationConfirmed: true,
+      published: true,
+    });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ status: "PAUSED", publishedAt: null }),
+    }));
+
+    upsert.mockClear();
+    await saveMarketplaceListing("admin-1", {
+      ...baseInput,
+      status: "ACTIVE",
+      authorizationConfirmed: true,
+      published: false,
+    });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ status: "ACTIVE", publishedAt: null }),
+    }));
   });
 });
