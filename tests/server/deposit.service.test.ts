@@ -180,7 +180,6 @@ import { syncAppointmentToGoogle } from "@/server/services/google-calendar.servi
 import {
   cancelAppointmentUnlessDepositApproved,
   confirmDepositPayment,
-  processPendingDepositPaymentDeliveries,
   rejectDepositPayment,
 } from "@/server/services/deposit.service";
 

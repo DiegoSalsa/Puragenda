@@ -3,7 +3,6 @@
 import { useTransition } from "react";
 import { UserCheck } from "@/components/icons/hover-icons";
 import { impersonateBusinessAction } from "@/server/actions/impersonate.actions";
-import { LocalizedText } from "@/components/i18n/localized-text";
 
 export function ImpersonateButton({ businessId }: { businessId: string }) {
   const [isPending, startTransition] = useTransition();

@@ -51,6 +51,18 @@ next-env.d.ts
 # local QA and marketing artifacts
 /scratch/
 /marketing/
+/carruseles/
+/carruseles-instagram-septiembre-2026/
+/semrush-puragenda/
+/.codex-remote-attachments/
 
-# local SEO audit cache
+# local SEO audit cache and generated lighthouse dumps
 /.seo-cache/
+/seo-audit-puragenda/*.json
+
+# local one-off browser automation / scratch scripts
+/docs/seo/_seo014-browser/
+/check.ts
+/check2.ts
+/check3.ts
+/migrate_locations.ts
