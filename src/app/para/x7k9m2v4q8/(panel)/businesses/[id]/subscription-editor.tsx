@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { CreditCard, Loader2, CheckCircle2, Save } from "@/components/icons/hover-icons";
 import { updateSubscriptionAction } from "@/server/actions/admin.actions";
 import { STAFF_LIMITS } from "@/core/constants";
+import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 
 interface SubscriptionData {
   id: string;
@@ -17,6 +18,8 @@ interface SubscriptionData {
   isTrial: boolean;
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
+  mpSubscriptionId: string | null;
+  paddleSubscriptionId: string | null;
   extraStaffCount: number;
   createdAt: string;
 }
@@ -31,9 +34,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const subscriptionEnd = subscription.status === "TRIALING" && subscription.trialEndsAt
-    ? subscription.trialEndsAt
-    : subscription.currentPeriodEnd;
+  const subscriptionEnd = resolveSubscriptionEndDate(subscription);
 
   async function handleSave() {
     setLoading(true);
@@ -126,18 +127,16 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
 
         <div className="border-2 border-black bg-white px-3 py-2">
           <p className="text-[10px] font-black uppercase tracking-wider text-black/50">
-            Fin de suscripción
+            Próximo pago / vencimiento
           </p>
           <p className="text-sm font-black text-black">
-            {subscriptionEnd
-              ? new Date(subscriptionEnd).toLocaleDateString("es-CL")
+            {subscriptionEnd.date
+              ? subscriptionEnd.date.toLocaleDateString("es-CL")
               : "Sin fecha registrada"}
           </p>
-          {subscriptionEnd && (
-            <p className="text-[10px] font-bold text-black/40">
-              {subscription.status === "TRIALING" ? "Fin de prueba" : "Fin del período actual"}
-            </p>
-          )}
+          <p className="text-[10px] font-bold text-black/40">
+            {subscriptionEnd.context}
+          </p>
         </div>
 
         {error && (

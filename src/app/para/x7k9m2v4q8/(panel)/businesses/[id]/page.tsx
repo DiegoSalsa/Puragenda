@@ -229,6 +229,8 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               isTrial: sub.isTrial,
               trialEndsAt: sub.trialEndsAt?.toISOString() || null,
               currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
+              mpSubscriptionId: sub.mpSubscriptionId,
+              paddleSubscriptionId: sub.paddleSubscriptionId,
               extraStaffCount: sub.extraStaffCount,
               createdAt: sub.createdAt.toISOString(),
             }} />

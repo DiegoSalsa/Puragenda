@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { getCountryName } from "@/core/countries";
+import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 import { extendTrialAction } from "@/server/actions/admin.actions";
 
 type Business = {
@@ -38,6 +39,8 @@ type Business = {
     isTrial: boolean;
     trialEndsAt: Date | null;
     currentPeriodEnd: Date | null;
+    mpSubscriptionId: string | null;
+    paddleSubscriptionId: string | null;
   } | null;
   affiliate: {
     referralCode: string;
@@ -60,19 +63,6 @@ function countryFlag(countryCode: string) {
 function countryLabel(countryCode: string) {
   const normalized = countryCode.toUpperCase();
   return `${countryFlag(normalized)} ${getCountryName(normalized)} · ${normalized}`;
-}
-
-function getSubscriptionEndDate(subscription: Business["subscription"]) {
-  if (!subscription) return null;
-  if (subscription.status === "TRIALING" && subscription.trialEndsAt) {
-    return new Date(subscription.trialEndsAt);
-  }
-  if (subscription.currentPeriodEnd) return new Date(subscription.currentPeriodEnd);
-  return null;
-}
-
-function getSubscriptionEndContext(subscription: Business["subscription"]) {
-  return subscription?.status === "TRIALING" ? "Fin de prueba" : "Fin del período";
 }
 
 export function BusinessesClient({ businesses }: { businesses: Business[] }) {
@@ -105,9 +95,9 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
   }, [businesses, search, planFilter, statusFilter]);
 
   function downloadCSV() {
-    const headers = ["Nombre", "Slug", "Pais", "Dueno", "Email", "Plan", "Estado", "Fin suscripcion", "Staff", "Servicios", "Citas", "Creado"];
+    const headers = ["Nombre", "Slug", "Pais", "Dueno", "Email", "Plan", "Estado", "Proximo pago o vencimiento", "Staff", "Servicios", "Citas", "Fecha de registro"];
     const rows = filtered.map((biz) => {
-      const subscriptionEnd = getSubscriptionEndDate(biz.subscription);
+      const subscriptionEnd = resolveSubscriptionEndDate(biz.subscription).date;
       return [
         biz.name,
         biz.slug,
@@ -218,7 +208,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
         {filtered.map((biz) => {
           const sub = biz.subscription;
           const daysLeft = sub?.isTrial && sub?.trialEndsAt ? differenceInDays(new Date(sub.trialEndsAt), new Date()) : null;
-          const subscriptionEnd = getSubscriptionEndDate(sub);
+          const subscriptionEnd = resolveSubscriptionEndDate(sub);
           return (
             <Link key={biz.id} href={`${ADMIN_SECRET_PATH}/businesses/${biz.id}`} className="block border-4 border-black bg-white p-4 shadow-[4px_4px_0_#000] space-y-3 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
               <div className="flex items-center justify-between">
@@ -243,13 +233,11 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
               </div>
               <div className="flex items-center gap-2 border-t-2 border-black/10 pt-2 text-xs">
                 <Clock className="h-3.5 w-3.5 text-black/50" />
-                <span className="font-black uppercase text-black/50">Fin de suscripción</span>
+                <span className="font-black uppercase text-black/50">Próximo pago / vencimiento</span>
                 <span className="font-black text-black">
-                  {subscriptionEnd ? format(subscriptionEnd, "dd/MM/yyyy", { locale: es }) : "Sin fecha"}
+                  {subscriptionEnd.date ? format(subscriptionEnd.date, "dd/MM/yyyy", { locale: es }) : "Sin fecha"}
                 </span>
-                {subscriptionEnd && (
-                  <span className="font-bold text-black/40">· {getSubscriptionEndContext(sub)}</span>
-                )}
+                <span className="font-bold text-black/40">· {subscriptionEnd.context}</span>
               </div>
               {biz.affiliate && (
                 <div className="flex items-center gap-1">
@@ -279,7 +267,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
               <th className="px-4 py-4"><LocalizedText id="8_ar4QSokQuo" /></th>
               <th className="px-4 py-4"><LocalizedText id="-o7Qvavda8sc" /></th>
               <th className="px-4 py-4"><LocalizedText id="mOWs3bbEaiSP" /></th>
-              <th className="px-4 py-4">Fin suscripción</th>
+              <th className="px-4 py-4">Próximo pago / vencimiento</th>
               <th className="px-4 py-4"><LocalizedText id="wgPakJ2NbGW3" /></th>
               <th className="px-4 py-4 text-center"><LocalizedText id="aBkn40t35Lkb" /></th>
               <th className="px-4 py-4 text-center"><LocalizedText id="UnRPpCLeNiGc" /></th>
@@ -295,7 +283,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                 sub?.isTrial && sub?.trialEndsAt
                   ? differenceInDays(new Date(sub.trialEndsAt), new Date())
                   : null;
-              const subscriptionEnd = getSubscriptionEndDate(sub);
+              const subscriptionEnd = resolveSubscriptionEndDate(sub);
 
               return (
                 <tr key={biz.id} className="border-b-2 border-black/10 hover:bg-[#FFFAEB] transition-colors">
@@ -362,17 +350,17 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    {subscriptionEnd ? (
+                    {subscriptionEnd.date ? (
                       <div className="whitespace-nowrap">
                         <p className="font-black text-black">
-                          {format(subscriptionEnd, "dd/MM/yyyy", { locale: es })}
+                          {format(subscriptionEnd.date, "dd/MM/yyyy", { locale: es })}
                         </p>
                         <p className="text-[10px] font-black uppercase text-black/40">
-                          {getSubscriptionEndContext(sub)}
+                          {subscriptionEnd.context}
                         </p>
                       </div>
                     ) : (
-                      <span className="text-xs font-bold text-black/30">Sin fecha</span>
+                      <span className="text-xs font-bold text-black/40">{subscriptionEnd.context}</span>
                     )}
                   </td>
                   <td className="px-4 py-4">

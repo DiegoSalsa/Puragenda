@@ -15,6 +15,8 @@ export default async function BusinessesPage() {
           isTrial: true,
           trialEndsAt: true,
           currentPeriodEnd: true,
+          mpSubscriptionId: true,
+          paddleSubscriptionId: true,
         },
       },
       affiliate: {
