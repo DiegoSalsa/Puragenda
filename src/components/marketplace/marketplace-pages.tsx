@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { TrackedLink } from "@/components/analytics/tracked-link";
 import { JsonLd } from "@/components/json-ld";
 import { LandingLayout } from "@/components/landing/landing-layout";
+import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 import {
   MARKETPLACE_NOT_FOUND_METADATA,
   getIndexableCitySlugs,
@@ -17,10 +18,10 @@ import {
   type MarketplaceCategorySlug,
   type PublicMarketplaceCard,
 } from "@/lib/marketplace";
-import { listPublicMarketplaceListings } from "@/server/services/marketplace.service";
+import { listSeoMarketplaceListings } from "@/server/services/marketplace.service";
 
 async function inventory() {
-  return listPublicMarketplaceListings();
+  return listSeoMarketplaceListings();
 }
 
 export function generateMarketplaceCategoryMetadata(categorySlug: MarketplaceCategorySlug) {
@@ -172,21 +173,15 @@ function ListingGrid({ cards, heading }: { cards: PublicMarketplaceCard[]; headi
       <h2 className="text-2xl font-black uppercase tracking-tight">{heading}</h2>
       <ul className="mt-4 grid gap-4 sm:grid-cols-2">
         {cards.map((card) => (
-          <li
-            key={card.bookingPath}
-            className="rounded-2xl border-4 border-black bg-white p-5 text-black shadow-[4px_4px_0_#000] dark:border-white dark:bg-black dark:text-white"
-          >
-            <p className="text-lg font-black">{card.name}</p>
-            <p className="mt-1 text-sm font-bold opacity-70">{card.cityName}</p>
-            {card.serviceNames.length > 0 ? (
-              <p className="mt-3 text-sm font-bold opacity-80">{card.serviceNames.join(" · ")}</p>
-            ) : null}
-            <Link
-              href={card.bookingPath}
-              className="mt-4 inline-flex font-black text-[#5B21B6] underline underline-offset-4"
-            >
-              Reservar
-            </Link>
+          <li key={card.bookingPath}>
+            <MarketplaceListingCard
+              name={card.name}
+              bookingPath={card.bookingPath}
+              cityName={card.cityName}
+              logoUrl={card.logoUrl}
+              serviceNames={card.serviceNames}
+              ctaLabel="Reservar"
+            />
           </li>
         ))}
       </ul>

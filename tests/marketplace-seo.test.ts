@@ -4,6 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/services/marketplace.service", () => ({
   listPublicMarketplaceListings: async () => [],
+  listSeoMarketplaceListings: async () => [],
+  listPublicMarketplaceDirectory: async () => ({
+    cards: [],
+    categories: [],
+    localities: [],
+    regions: [],
+    query: {},
+    total: 0,
+    emptyKind: "no_inventory",
+  }),
   getMarketplaceQualityGateReport: async () => [],
 }));
 import sitemap from "@/app/sitemap";
@@ -46,6 +56,8 @@ function listing(
     serviceNames: ["Corte"],
     deleted: false,
     directoryPublished: true,
+    status: "ACTIVE",
+    locationActive: true,
     demo: false,
     subscriptionActive: true,
     plan: "INDIVIDUAL",
@@ -111,7 +123,7 @@ describe("SEO-008 marketplace visibility and projection", () => {
       listing({ slug: "purocode-demo" }),
       listing({ slug: "demo-flag", demo: true }),
       listing({ slug: "test-plan", plan: "TEST" }),
-      listing({ slug: "inactivo", subscriptionActive: false }),
+      listing({ slug: "pausado", status: "PAUSED" }),
       listing({ slug: "sin-reserva", hasBookableService: false }),
       listing({ slug: "ok", name: "Visible" }),
     ];

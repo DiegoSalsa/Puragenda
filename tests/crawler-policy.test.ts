@@ -25,6 +25,7 @@ const PUBLIC_PATHS = [
   "/software-agenda-peluquerias",
   "/barberias",
   "/peluquerias",
+  "/negocios",
   "/faq",
   "/contacto",
   "/sobre-nosotros",
@@ -137,6 +138,7 @@ describe("crawler policy", () => {
     expect(urls.some((url) => url.includes("/api/"))).toBe(false);
     expect(urls.some((url) => url.includes("/para/x7k9m2v4q8"))).toBe(false);
     expect(urls).toContain("https://www.puragenda.cl/para/barberias");
+    expect(urls).not.toContain("https://www.puragenda.cl/negocios");
   });
 
   it("does not advertise the robots-disallowed demo API in public HTML", () => {

@@ -18,6 +18,10 @@ export const TRACKING_EVENTS = [
   "dashboard_service_created",
   "dashboard_availability_configured",
   "dashboard_widget_link_copied",
+  "directory_view",
+  "directory_search",
+  "directory_filter",
+  "directory_booking_clicked",
 ] as const;
 
 export type TrackingEventName = (typeof TRACKING_EVENTS)[number];
@@ -47,6 +51,10 @@ export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]>
   dashboard_service_created: ["booking_mode", "has_deposit", "has_options"],
   dashboard_availability_configured: ["scope"],
   dashboard_widget_link_copied: ["placement"],
+  directory_view: ["page_type"],
+  directory_search: ["has_query"],
+  directory_filter: ["has_category", "has_locality"],
+  directory_booking_clicked: ["placement"],
 };
 
 const MAX_PROPERTY_LENGTH = 120;

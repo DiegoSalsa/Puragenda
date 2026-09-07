@@ -39,6 +39,7 @@ export function Footer() {
               <Link href="/funciones/reservas-online-con-abono" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Reservas con abono</Link>
               <Link href="/funciones/agenda-multiples-profesionales" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Agenda para equipos</Link>
               <Link href="/faq" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("faq")}</Link>
+              <Link href="/negocios" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("exploreBusinesses")}</Link>
               <Link href="/mi-agenda" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("myAppointments")}</Link>
               <a href="/demo" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{footer("demo")}</a>
               <Link href="/login" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{footer("dashboard")}</Link>

@@ -11,6 +11,7 @@ const STATIC_PATHS = new Set([
   "/software-agenda-psicologos",
   "/barberias",
   "/peluquerias",
+  "/negocios",
   "/faq",
   "/sobre-nosotros",
   "/contacto",

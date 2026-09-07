@@ -33,6 +33,9 @@ export function Navbar({ user, business }: NavbarProps = {}) {
     { href: "/faq", label: t("faq") },
     { href: "/contacto", label: t("contact") },
   ];
+  const consumerLinks = [
+    { href: "/negocios", label: t("exploreBusinesses") },
+  ];
 
   useEffect(() => {
     if (user) return;
@@ -101,6 +104,11 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
           {/* Desktop actions */}
           <div className="flex shrink-0 items-center justify-end gap-1.5 min-[1500px]:gap-2">
+            <Link href="/negocios">
+              <button className="rounded-full px-3 py-2 text-sm font-semibold text-[#7C3AED] transition-all duration-200 hover:bg-[#7C3AED]/10 min-[1500px]:px-4 min-[1500px]:text-base">
+                {t("exploreBusinesses")}
+              </button>
+            </Link>
             {sessionUser ? (
               <Link href="/dashboard">
                 <button className="group flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-xl px-5 py-2 text-sm font-medium shadow-sm transition-all hover:bg-muted hover:border-border">
@@ -178,6 +186,23 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
               {/* Nav links */}
               <nav className="flex-1 space-y-2 p-6">
+                {consumerLinks.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`block rounded-2xl px-4 py-3 text-sm sm:text-base font-medium transition-all hover:translate-x-1 ${
+                        isActive
+                          ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
+                          : "text-[#7C3AED] hover:bg-[#7C3AED]/10"
+                      }`}
+                    >
+                      {link.label}
+                    </a>
+                  );
+                })}
                 {navLinks.map((link) => {
                   const isActive = pathname === link.href;
                   return (

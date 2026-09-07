@@ -21,6 +21,8 @@ describe("normalizeTrackingPath", () => {
     expect(normalizeTrackingPath("/software-agenda-peluquerias")).toBe("/software-agenda-peluquerias");
     expect(normalizeTrackingPath("/barberias")).toBe("/barberias");
     expect(normalizeTrackingPath("/peluquerias")).toBe("/peluquerias");
+    expect(normalizeTrackingPath("/negocios")).toBe("/negocios");
+    expect(normalizeTrackingPath("/negocios?q=corte")).toBe("/negocios");
     expect(normalizeTrackingPath("/barberias/concepcion")).toBe("/barberias/[city]");
     expect(normalizeTrackingPath("/peluquerias/santiago?orden=nombre")).toBe("/peluquerias/[city]");
     expect(normalizeTrackingPath("/casos-de-exito")).toBe("/casos-de-exito");
