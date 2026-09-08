@@ -14,6 +14,7 @@ import {
   getClientPortalProfile,
 } from "@/server/services/client-portal.service";
 import { safeClientPortalReturnTo } from "@/server/validations/client-portal";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ClientPortalAccessForm,
   ClientPortalActivationCard,
@@ -53,6 +54,8 @@ export default async function ClientPortalPage({
 }: {
   searchParams: Promise<{ error?: string; cuenta?: string; returnTo?: string }>;
 }) {
+  const loyaltyT = await getTranslations("loyalty.portal");
+  const locale = await getLocale();
   const [email, query] = await Promise.all([getClientPortalEmail(), searchParams]);
   const returnTo = safeClientPortalReturnTo(query.returnTo);
   if (!email) return <ClientPortalAccessForm invalidLink={query.error === "enlace-invalido" || query.error === "activacion-invalida"} returnTo={returnTo} />;
@@ -189,12 +192,13 @@ export default async function ClientPortalPage({
                   freeServiceName: client.business.loyaltyRewardService?.name,
                   rewardName: client.business.rewardName,
                   currencyCode: client.business.currencyCode,
+                  locale,
                 });
                 return (
                   <div key={client.id} className="space-y-3">
                     <LoyaltyCard compact businessName={client.business.name} logoUrl={client.business.logoUrl} currentStamps={client.currentStamps} stampsRequired={required} rewardLabel={rewardLabel} />
-                    {client.loyaltyCodes.length > 0 && <p className="rounded-xl border-2 border-black bg-[#bffcc6] p-3 text-xs font-black">🎁 Tienes {client.loyaltyCodes.length} premio{client.loyaltyCodes.length === 1 ? "" : "s"} disponible{client.loyaltyCodes.length === 1 ? "" : "s"}.</p>}
-                    <div className="grid grid-cols-2 gap-2"><Link href={`/mis-premios/${client.id}`} className="rounded-xl border-2 border-black bg-white px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">Ver mi tarjeta</Link><Link href={`/widget/${client.business.slug}`} className="rounded-xl border-2 border-black bg-[#fff5ba] px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">Reservar</Link></div>
+                    {client.loyaltyCodes.length > 0 && <p className="rounded-xl border-2 border-black bg-[#bffcc6] p-3 text-xs font-black">🎁 {loyaltyT("availableCount", { count: client.loyaltyCodes.length })}</p>}
+                    <div className="grid grid-cols-2 gap-2"><Link href={`/mis-premios/${client.id}`} className="rounded-xl border-2 border-black bg-white px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">{loyaltyT("viewCard")}</Link><Link href={`/widget/${client.business.slug}`} className="rounded-xl border-2 border-black bg-[#fff5ba] px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">{loyaltyT("book")}</Link></div>
                   </div>
                 );
               })}

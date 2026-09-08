@@ -257,6 +257,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
+  const loyaltyT = useTranslations("loyalty.widget");
   const locale = useLocale();
   const previewText = ({
     es: { badge: "Modo simulación", notice: "Recorre el mismo flujo que verá tu cliente. No se creará ninguna reserva ni se iniciará un pago.", finish: "Finalizar simulación", completed: "Simulación completada", completedHint: "El flujo funciona correctamente y no se creó ninguna reserva.", restart: "Reiniciar simulación" },
@@ -2335,11 +2336,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </label>
                   {availableRewards.length > 0 && (
                     <div className="rounded-xl border p-3" style={{ borderColor: `${pc}55`, background: `${pc}0d` }}>
-                      <p className="text-xs font-semibold" style={{ color: textColor }}>Tienes {availableRewards.length} premio{availableRewards.length === 1 ? "" : "s"} disponible{availableRewards.length === 1 ? "" : "s"}</p>
+                      <p className="text-xs font-semibold" style={{ color: textColor }}>{loyaltyT("availableCount", { count: availableRewards.length })}</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {availableRewards.map((reward) => (
                           <button key={reward.code} type="button" disabled={!form.email || rewardStatus === "loading"} onClick={() => { setRewardCode(reward.code); void handleValidateReward(reward.code); }} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ borderColor: `${pc}66`, color: pc }}>
-                            Aplicar {reward.rewardName || "premio"}
+                            {loyaltyT("applyNamed", { name: reward.rewardName || loyaltyT("defaultReward") })}
                           </button>
                         ))}
                       </div>
@@ -2361,13 +2362,13 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                       className="min-h-[44px] shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
                       style={{ background: `${pc}20`, color: pc }}
                     >
-                      {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : "Aplicar"}
+                      {rewardStatus === "loading" ? <Loader2 className="h-4 w-4 animate-spin" /> : rewardStatus === "valid" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : loyaltyT("apply")}
                     </button>
                   </div>
                   {rewardStatus === "valid" && rewardDiscount && (
                     <p className="text-xs text-green-400 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
-                      <LocalizedText id="OyhD8Jiy2VJ8" /> {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : rewardDiscount.type === "FIXED" ? formatPrice(rewardDiscount.value, business.currencyCode) : rewardDiscount.type === "FREE_SERVICE" ? "servicio gratis (extras no incluidos)" : "beneficio a coordinar con el negocio"}
+                      <LocalizedText id="OyhD8Jiy2VJ8" /> {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : rewardDiscount.type === "FIXED" ? formatPrice(rewardDiscount.value, business.currencyCode) : rewardDiscount.type === "FREE_SERVICE" ? loyaltyT("freeService") : loyaltyT("custom")}
                     </p>
                   )}
                   {rewardStatus === "invalid" && rewardError && (

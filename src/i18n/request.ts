@@ -6,8 +6,9 @@ export default getRequestConfig(async () => {
   const cookieStore = await cookies();
   const savedLocale = cookieStore.get(LOCALE_COOKIE)?.value;
   const locale = resolveInitialLocale(savedLocale);
+  const loyaltyLocale = locale === "es" ? "es" : "en";
 
-  const [siteMessages, marketplaceOnboardingMessages, dashboardMessages, dashboardClientsMessages, dashboardAnalyticsMessages, dashboardModulesMessages, legacyMessages] = await Promise.all([
+  const [siteMessages, marketplaceOnboardingMessages, dashboardMessages, dashboardClientsMessages, dashboardAnalyticsMessages, dashboardModulesMessages, legacyMessages, loyaltyMessages] = await Promise.all([
     import(`../../messages/${locale}.json`).then((module) => module.default),
     import(`../../messages/marketplace-onboarding/${locale}.json`).then((module) => module.default),
     import(`../../messages/dashboard/${locale}.json`).then((module) => module.default),
@@ -15,6 +16,7 @@ export default getRequestConfig(async () => {
     import(`../../messages/dashboard/analytics/${locale}.json`).then((module) => module.default),
     import(`../../messages/dashboard/modules/${locale}.json`).then((module) => module.default),
     import(`../../messages/legacy/${locale}.json`).then((module) => module.default),
+    import(`../../messages/loyalty/${loyaltyLocale}.json`).then((module) => module.default),
   ]);
 
   return {
@@ -23,6 +25,7 @@ export default getRequestConfig(async () => {
       ...siteMessages,
       register: { ...siteMessages.register, ...marketplaceOnboardingMessages.register },
       legacy: legacyMessages,
+      loyalty: loyaltyMessages,
       dashboard: {
         ...dashboardMessages,
         ...dashboardModulesMessages,

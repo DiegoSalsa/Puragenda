@@ -1,15 +1,17 @@
+"use client";
+
 import { Check, Gift, Stamp } from "@/components/icons/hover-icons";
+import { useTranslations } from "next-intl";
 
 export function LoyaltyStamp({ index, total, state }: {
   index: number;
   total: number;
   state: "earned" | "next" | "pending" | "reward";
 }) {
+  const t = useTranslations("loyalty.stamp");
   const earned = state === "earned";
   const isReward = state === "reward";
-  const label = isReward
-    ? `Premio al completar ${total} visitas`
-    : `Timbre ${index} de ${total} ${earned ? "obtenido" : state === "next" ? "siguiente" : "pendiente"}`;
+  const label = isReward ? t("reward", { total }) : t(earned ? "earned" : state === "next" ? "next" : "pending", { index, total });
   return (
     <div
       role="img"

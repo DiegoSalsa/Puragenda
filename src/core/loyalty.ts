@@ -63,20 +63,22 @@ export function loyaltyRewardLabel(input: {
   freeServiceName?: string | null;
   rewardName?: string | null;
   currencyCode?: string;
+  locale?: string;
 }) {
+  const english = input.locale?.toLowerCase().startsWith("en") ?? false;
   switch (input.rewardType) {
     case "PERCENTAGE":
-      return `${input.discountValue ?? 0}% de descuento`;
+      return `${input.discountValue ?? 0}% ${english ? "discount" : "de descuento"}`;
     case "FIXED":
-      return new Intl.NumberFormat("es-CL", {
+      return new Intl.NumberFormat(english ? "en-US" : "es-CL", {
         style: "currency",
         currency: input.currencyCode ?? "CLP",
         maximumFractionDigits: 0,
-      }).format(input.discountValue ?? 0) + " de descuento";
+      }).format(input.discountValue ?? 0) + (english ? " discount" : " de descuento");
     case "FREE_SERVICE":
-      return input.freeServiceName ? `${input.freeServiceName} gratis` : "Servicio gratis";
+      return input.freeServiceName ? `${input.freeServiceName} ${english ? "free" : "gratis"}` : english ? "Free service" : "Servicio gratis";
     case "CUSTOM":
-      return input.rewardName || "Beneficio a coordinar con el negocio";
+      return input.rewardName || (english ? "Benefit to arrange with the business" : "Beneficio a coordinar con el negocio");
   }
 }
 

@@ -6,6 +6,10 @@ const redirect = vi.hoisted(() => vi.fn());
 const getClientPortalEmail = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({ notFound, redirect }));
+vi.mock("next-intl/server", () => ({
+  getLocale: vi.fn(async () => "es"),
+  getTranslations: vi.fn(async () => (key: string) => key),
+}));
 vi.mock("@/server/db/prisma", () => ({ prisma: { client: { findFirst } } }));
 vi.mock("@/server/services/client-portal.service", () => ({ getClientPortalEmail }));
 
