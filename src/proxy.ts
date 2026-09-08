@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const AUTH_COOKIE = "puragenda_session";
+const ADMIN_AUTH_COOKIE = "puragenda_admin_session";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/api/dashboard"];
 const ADMIN_PREFIXES = ["/para/x7k9m2v4q8", "/api/admin"];
@@ -27,6 +28,15 @@ function readSessionPayload(token: string): { isSuperAdmin?: boolean; adminAcces
   }
 }
 
+function hasAdminPanelCookie(request: NextRequest): boolean {
+  if (request.cookies.get(ADMIN_AUTH_COOKIE)?.value) return true;
+
+  const legacyToken = request.cookies.get(AUTH_COOKIE)?.value;
+  if (!legacyToken) return false;
+  const payload = readSessionPayload(legacyToken);
+  return Boolean(payload?.isSuperAdmin && payload.adminAccess);
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -43,20 +53,11 @@ export function proxy(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const token = request.cookies.get(AUTH_COOKIE)?.value;
-    if (!token) {
+    if (!hasAdminPanelCookie(request)) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "No autenticado" }, { status: 401 });
       }
       return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url));
-    }
-
-    const payload = readSessionPayload(token);
-    if (!payload?.isSuperAdmin || !payload.adminAccess) {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
-      }
-      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();

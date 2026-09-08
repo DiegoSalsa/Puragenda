@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getCurrentSessionUser = vi.fn();
+const requireSuperAdminSession = vi.fn();
 const saveMarketplaceListing = vi.fn();
 
-vi.mock("@/server/auth/user-session", () => ({
-  getCurrentSessionUser: () => getCurrentSessionUser(),
+vi.mock("@/server/auth/admin-session", () => ({
+  requireSuperAdminSession: () => requireSuperAdminSession(),
 }));
 
 vi.mock("@/server/services/marketplace-admin.service", () => ({
@@ -34,18 +34,18 @@ describe("saveMarketplaceListingAction", () => {
   });
 
   it("rejects users who are not superadmins", async () => {
-    getCurrentSessionUser.mockResolvedValue({ id: "user-1", isSuperAdmin: false, adminAccess: false });
+    requireSuperAdminSession.mockRejectedValue(new Error("Acceso denegado"));
     await expect(saveMarketplaceListingAction(payload)).rejects.toThrow("Acceso denegado");
     expect(saveMarketplaceListing).not.toHaveBeenCalled();
   });
 
-  it("rejects superadmins without adminAccess", async () => {
-    getCurrentSessionUser.mockResolvedValue({ id: "admin-1", isSuperAdmin: true, adminAccess: false });
+  it("rejects superadmins without an admin session", async () => {
+    requireSuperAdminSession.mockRejectedValue(new Error("Acceso denegado"));
     await expect(saveMarketplaceListingAction(payload)).rejects.toThrow("Acceso denegado");
   });
 
   it("passes the admin user id to the curated save", async () => {
-    getCurrentSessionUser.mockResolvedValue({ id: "admin-1", isSuperAdmin: true, adminAccess: true });
+    requireSuperAdminSession.mockResolvedValue({ id: "admin-1", isSuperAdmin: true, adminAccess: true });
     await expect(saveMarketplaceListingAction(payload)).resolves.toEqual({ ok: true });
     expect(saveMarketplaceListing).toHaveBeenCalledWith("admin-1", payload);
   });

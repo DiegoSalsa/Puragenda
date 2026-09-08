@@ -11,10 +11,15 @@ export const DEFAULT_TIMEZONE = "America/Santiago";
 export const SALT_ROUNDS = 12;
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+export const ADMIN_REMEMBERED_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+export const ADMIN_STEP_UP_MAX_AGE_SECONDS = 15 * 60;
+export const ADMIN_SESSION_LAST_USED_THROTTLE_SECONDS = 5 * 60;
 export const ADMIN_LOGIN_CODE_TTL_MINUTES = 10;
 export const ADMIN_LOGIN_CODE_MAX_ATTEMPTS = 5;
 export const ADMIN_LOGIN_CODE_RESEND_SECONDS = 60;
 export const AUTH_COOKIE_NAME = "puragenda_session";
+export const ADMIN_AUTH_COOKIE_NAME = "puragenda_admin_session";
+export const STEP_UP_REQUIRED = "STEP_UP_REQUIRED";
 
 // SuperAdmin emails
 export const SUPERADMIN_EMAILS = (process.env.SUPERADMIN_EMAILS || "admin@purocode.com,diego@purocode.com,contacto@purocode.com").split(",").map(e => e.trim());

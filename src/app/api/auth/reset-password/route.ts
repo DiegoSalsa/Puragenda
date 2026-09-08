@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "@/core/constants";
 import { loginLimiter } from "@/server/lib/rate-limit";
 import { findPasswordResetToken } from "@/server/auth/password-reset";
+import { revokeAllSuperAdminSessionsForEmail } from "@/server/auth/admin-session";
 
 /**
  * POST /api/auth/reset-password
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         where: { email: resetToken.email },
       }),
     ]);
+    await revokeAllSuperAdminSessionsForEmail(resetToken.email);
 
     console.log(`[auth/reset-password] Password reset for ${resetToken.email}`);
 

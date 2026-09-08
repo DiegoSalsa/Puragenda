@@ -1,7 +1,12 @@
 "use server";
 
 import { prisma } from "@/server/db/prisma";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
+import {
+  isRecentAdminAuth,
+  requireSuperAdminSession,
+  revokeAllSuperAdminSessionsForUser,
+  stepUpRequiredResult,
+} from "@/server/auth/admin-session";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { SALT_ROUNDS, API_KEY_PREFIX, SUPERADMIN_EMAILS } from "@/core/constants";
@@ -17,11 +22,7 @@ import { fromZonedTime } from "date-fns-tz";
 // ═══════════════════════════════════════════
 
 async function requireSuperAdmin() {
-  const user = await getCurrentSessionUser();
-  if (!user || !user.isSuperAdmin || !user.adminAccess) {
-    throw new Error("Acceso denegado");
-  }
-  return user;
+  return requireSuperAdminSession();
 }
 
 function createApiKey(): string {
@@ -78,7 +79,7 @@ export async function createBusinessAction(data: {
   plan: "INDIVIDUAL" | "EQUIPO";
   initialBenefit?: "NONE" | SubscriptionBenefitPreset;
 }) {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
 
   const trimmedEmail = data.ownerEmail.trim().toLowerCase();
 
@@ -90,6 +91,7 @@ export async function createBusinessAction(data: {
 
   const hashedPassword = await bcrypt.hash(data.ownerPassword, SALT_ROUNDS);
   const isSuperAdmin = SUPERADMIN_EMAILS.includes(trimmedEmail);
+  if (isSuperAdmin && !isRecentAdminAuth(admin)) return stepUpRequiredResult();
   const baseSlug = toSlug(data.businessName);
   const slug = await generateUniqueSlug(baseSlug);
   const initialBenefit = getInitialNoCardBenefit(data.initialBenefit);
@@ -195,7 +197,8 @@ export async function updateSubscriptionAction(
 // ═══════════════════════════════════════════
 
 export async function deleteBusinessAction(businessId: string) {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
+  if (!isRecentAdminAuth(admin)) return stepUpRequiredResult();
 
   try {
     // Get business to find owner
@@ -450,7 +453,8 @@ export async function syncSubscriptionBillingAction(subscriptionId: string) {
 }
 
 export async function resetUserPasswordAction(userId: string, newPassword: string) {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
+  if (!isRecentAdminAuth(admin)) return stepUpRequiredResult();
 
   if (!newPassword || newPassword.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" };
 
@@ -460,6 +464,7 @@ export async function resetUserPasswordAction(userId: string, newPassword: strin
       where: { id: userId },
       data: { password: hashed, tokenVersion: { increment: 1 } },
     });
+    await revokeAllSuperAdminSessionsForUser(userId);
     return { success: true };
   } catch (err) {
     console.error("[Admin] Error resetting password:", err);
@@ -472,7 +477,8 @@ export async function resetUserPasswordAction(userId: string, newPassword: strin
 // ═══════════════════════════════════════════
 
 export async function deactivateUserAction(userId: string) {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
+  if (!isRecentAdminAuth(admin)) return stepUpRequiredResult();
 
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { isSuperAdmin: true } });
@@ -483,6 +489,7 @@ export async function deactivateUserAction(userId: string) {
       where: { id: userId },
       data: { deletedAt: new Date(), tokenVersion: { increment: 1 } },
     });
+    await revokeAllSuperAdminSessionsForUser(userId);
 
     revalidatePath("/para/x7k9m2v4q8");
     return { success: true };

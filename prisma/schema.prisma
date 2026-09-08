@@ -61,6 +61,7 @@ model User {
   posPaymentsCreated        PosPayment[]               @relation("PosPaymentCreatedBy")
   settledAppointments       Appointment[]              @relation("AppointmentSettledBy")
   marketplaceAuthorizations MarketplaceListing[]       @relation("MarketplaceListingAuthorizedBy")
+  superAdminSessions        SuperAdminSession[]
 }
 
 // ==========================================
@@ -133,6 +134,25 @@ model AdminLoginCode {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model SuperAdminSession {
+  id             String    @id @default(cuid())
+  userId         String
+  tokenHash      String    @unique
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime
+  lastUsedAt     DateTime  @default(now())
+  lastAuthAt     DateTime  @default(now())
+  revokedAt      DateTime?
+  userAgent      String?
+  rememberDevice Boolean   @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([userId, revokedAt])
   @@index([expiresAt])
 }
 

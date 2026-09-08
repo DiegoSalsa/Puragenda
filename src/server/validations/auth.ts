@@ -143,6 +143,7 @@ export const adminCodeVerifySchema = adminCodeRequestSchema.extend({
   code: z
     .string({ message: "El código es obligatorio" })
     .regex(/^\d{6}$/, "El código debe tener 6 dígitos"),
+  rememberDevice: z.boolean().optional().default(true),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

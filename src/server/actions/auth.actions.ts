@@ -8,6 +8,7 @@ import {
   findPasswordResetToken,
   issuePasswordResetToken,
 } from "@/server/auth/password-reset";
+import { revokeAllSuperAdminSessionsForEmail } from "@/server/auth/admin-session";
 
 const TOKEN_EXPIRY_HOURS = 1;
 
@@ -86,6 +87,7 @@ export async function resetPasswordAction(token: string, newPassword: string) {
       }),
       prisma.passwordResetToken.delete({ where: { id: resetToken.id } }),
     ]);
+    await revokeAllSuperAdminSessionsForEmail(resetToken.email);
 
     return { success: true };
   } catch (err) {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getApiSessionUser } from "@/server/auth/user-session";
+import { getApiAdminSessionUser } from "@/server/auth/admin-session";
 import { prisma } from "@/server/db/prisma";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await getApiSessionUser(request);
-  if (!user?.isSuperAdmin || !user.adminAccess) {
+  const user = await getApiAdminSessionUser(request);
+  if (!user) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 

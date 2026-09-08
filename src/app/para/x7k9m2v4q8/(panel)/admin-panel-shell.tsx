@@ -6,8 +6,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shield, ShieldCheck, BarChart3, Building2, CalendarClock, Users, Contact, CreditCard, Mail, Tag, Menu, X, MapPin } from "@/components/icons/hover-icons";
-import { LogoutButton } from "@/components/dashboard/logout-button";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { AdminSessionControls } from "./admin-session-controls";
+
+type AdminSessionSummary = {
+  id: string;
+  userAgent: string | null;
+  lastUsedAt: string;
+  current: boolean;
+};
 
 const NAV_ITEMS = [
   { href: ADMIN_SECRET_PATH, icon: BarChart3, label: "Dashboard" },
@@ -25,10 +32,12 @@ const NAV_ITEMS = [
 export function AdminPanelShell({
   userName,
   userEmail,
+  sessions,
   children,
 }: {
   userName: string;
   userEmail: string;
+  sessions: AdminSessionSummary[];
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -125,7 +134,7 @@ export function AdminPanelShell({
             <p className="text-sm font-black text-black">{userName}</p>
             <p className="text-[11px] font-bold text-black/60">{userEmail}</p>
           </div>
-          <LogoutButton />
+          <AdminSessionControls sessions={sessions} />
         </div>
       </aside>
 

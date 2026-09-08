@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader2 } from "@/components/icons/hover-icons";
 import { deleteBusinessAction } from "@/server/actions/admin.actions";
+import { STEP_UP_REQUIRED } from "@/core/constants";
+import { AdminStepUpForm } from "../../admin-step-up-form";
 
 export function DeleteBusinessButton({
   businessId,
@@ -17,11 +19,16 @@ export function DeleteBusinessButton({
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [needsStepUp, setNeedsStepUp] = useState(false);
 
   async function handleDelete() {
     setLoading(true);
     try {
       const result = await deleteBusinessAction(businessId);
+      if (result.error === STEP_UP_REQUIRED) {
+        setNeedsStepUp(true);
+        return;
+      }
       if (result.error) {
         alert(result.error);
       } else {
@@ -31,6 +38,10 @@ export function DeleteBusinessButton({
     } finally {
       setLoading(false);
     }
+  }
+
+  if (needsStepUp) {
+    return <AdminStepUpForm onVerified={handleDelete} />;
   }
 
   if (confirming) {

@@ -7,9 +7,10 @@ import { useState, useMemo, useTransition } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Users, Search, Shield, Building2, UserX, UserCheck, Filter } from "@/components/icons/hover-icons";
-import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { ADMIN_SECRET_PATH, STEP_UP_REQUIRED } from "@/core/constants";
 import Link from "next/link";
 import { deactivateUserAction, reactivateUserAction } from "@/server/actions/admin.actions";
+import { AdminStepUpForm } from "../admin-step-up-form";
 
 type User = {
   id: string;
@@ -30,6 +31,7 @@ export function UsersClient({ users }: { users: User[] }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [stepUpUserId, setStepUpUserId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -61,16 +63,25 @@ export function UsersClient({ users }: { users: User[] }) {
     setLoadingId(userId);
     startTransition(async () => {
       if (isActive) {
-        await deactivateUserAction(userId);
+        const result = await deactivateUserAction(userId);
+        if (result?.error === STEP_UP_REQUIRED) {
+          setStepUpUserId(userId);
+          setLoadingId(null);
+          return;
+        }
       } else {
         await reactivateUserAction(userId);
       }
+      setStepUpUserId(null);
       setLoadingId(null);
     });
   }
 
   return (
     <div className="space-y-6">
+      {stepUpUserId && (
+        <AdminStepUpForm onVerified={() => handleToggle(stepUpUserId, true)} />
+      )}
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black uppercase tracking-tighter text-black"><LocalizedText id="sGtBq6zY5rTL" /></h1>
@@ -290,4 +301,4 @@ export function UsersClient({ users }: { users: User[] }) {
     </div>
   );
 }
-
+

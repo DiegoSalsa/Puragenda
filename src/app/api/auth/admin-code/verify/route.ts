@@ -7,7 +7,12 @@ import {
   createSessionToken,
   getSessionCookieOptions,
 } from "@/server/auth/session";
-import { ADMIN_SESSION_MAX_AGE_SECONDS } from "@/core/constants";
+import {
+  ADMIN_AUTH_COOKIE_NAME,
+  createSuperAdminSession,
+  getAdminSessionCookieOptions,
+  revokeSuperAdminSessionByToken,
+} from "@/server/auth/admin-session";
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -32,18 +37,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 401 });
     }
 
-    const token = createSessionToken(
-      { ...result.user, adminAccess: true },
-      ADMIN_SESSION_MAX_AGE_SECONDS
-    );
+    await revokeSuperAdminSessionByToken(request.cookies.get(ADMIN_AUTH_COOKIE_NAME)?.value);
+
+    const rememberDevice = parsed.data.rememberDevice !== false;
+    const adminSession = await createSuperAdminSession({
+      user: result.user,
+      rememberDevice,
+      userAgent: request.headers.get("user-agent"),
+    });
+
     const response = NextResponse.json(
-      { message: "Acceso verificado" },
+      {
+        message: "Acceso verificado",
+        rememberDevice,
+        sessionDays: rememberDevice ? 30 : 0,
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
     response.cookies.set(
+      ADMIN_AUTH_COOKIE_NAME,
+      adminSession.token,
+      getAdminSessionCookieOptions(adminSession.maxAgeSeconds)
+    );
+    response.cookies.set(
       AUTH_COOKIE_NAME,
-      token,
-      getSessionCookieOptions(ADMIN_SESSION_MAX_AGE_SECONDS)
+      createSessionToken({ ...result.user, adminAccess: false }),
+      getSessionCookieOptions()
     );
     return response;
   } catch (error) {

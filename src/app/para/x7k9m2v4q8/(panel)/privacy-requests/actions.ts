@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { addDays } from "date-fns";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { requireSuperAdminSession } from "@/server/auth/admin-session";
 import { prisma } from "@/server/db/prisma";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { hashPrivacyEmail } from "@/lib/privacy/identity";
@@ -11,8 +11,7 @@ const STATUS_VALUES = ["RECEIVED", "IN_REVIEW", "FULFILLED", "DENIED"] as const;
 const IDENTITY_VALUES = ["PENDING", "VERIFIED"] as const;
 
 export async function updatePrivacyRequestStatus(formData: FormData) {
-  const user = await getCurrentSessionUser();
-  if (!user?.isSuperAdmin || !user.adminAccess) throw new Error("Acceso denegado");
+  const user = await requireSuperAdminSession();
 
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
@@ -88,8 +87,7 @@ export async function updatePrivacyRequestStatus(formData: FormData) {
 }
 
 export async function executePrivacyTechnicalAction(formData: FormData) {
-  const user = await getCurrentSessionUser();
-  if (!user?.isSuperAdmin || !user.adminAccess) throw new Error("Acceso denegado");
+  const user = await requireSuperAdminSession();
   const id = String(formData.get("id") || "");
   const evidence = String(formData.get("technicalActionEvidence") || "").trim().slice(0, 4000);
   const request = await prisma.privacyRequest.findUnique({ where: { id } });
