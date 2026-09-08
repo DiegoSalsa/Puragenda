@@ -1,87 +1,28 @@
 "use client";
-import { useTranslations } from "next-intl";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Check, Copy, Gift, Sparkles } from "@/components/icons/hover-icons";
+import { Check, Copy, Gift } from "@/components/icons/hover-icons";
+import { loyaltyRewardLabel, type LoyaltyRewardKind } from "@/core/loyalty";
 
-interface RewardCardProps {
-  code: string;
-  rewardName: string | null;
-  discountType: string;
-  discountValue: number;
-  createdAt: string;
-}
+type Reward = {
+  code: string; rewardName: string | null; rewardType: LoyaltyRewardKind; discountValue: number | null;
+  createdAt: Date; expiresAt: Date | null; isUsed: boolean; usedAt: Date | null;
+  freeService: { name: string } | null; redeemedAppointment: { startTime: Date } | null;
+};
 
-export function RewardCard({ code, rewardName, discountType, discountValue, createdAt }: RewardCardProps) {
-  const legacy = useTranslations("legacy");
+export function RewardCard({ reward, currencyCode, bookingUrl, compact = false }: { reward: Reward; currencyCode: string; bookingUrl: string; compact?: boolean }) {
   const [copied, setCopied] = useState(false);
+  const expired = !!reward.expiresAt && new Date(reward.expiresAt) <= new Date();
+  const available = !reward.isUsed && !expired;
+  const benefit = loyaltyRewardLabel({ rewardType: reward.rewardType, discountValue: reward.discountValue, freeServiceName: reward.freeService?.name, rewardName: reward.rewardName, currencyCode });
+  const status = reward.isUsed ? "Utilizado" : expired ? "Vencido" : "Disponible";
+  async function copy() { await navigator.clipboard.writeText(reward.code); setCopied(true); setTimeout(() => setCopied(false), 2000); }
 
-  function handleCopy() {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  }
-
-  const discountLabel =
-    discountType === "PERCENTAGE"
-      ? `${discountValue}% de descuento`
-      : `$${discountValue.toLocaleString()} de descuento`;
-
-  const dateStr = new Date(createdAt).toLocaleDateString("es-CL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-[rgb(var(--color-primary)/0.25)] bg-gradient-to-br from-[rgb(var(--color-primary)/0.08)] via-[rgb(var(--color-text)/0.02)] to-[rgb(var(--color-primary)/0.05)] p-5 transition-all duration-500 hover:border-[rgb(var(--color-primary)/0.4)] hover:shadow-[0_0_30px_rgb(var(--color-primary)/0.12)]">
-      {/* Decorative corner accent */}
-      <div className="absolute top-0 right-0 h-20 w-20 bg-gradient-to-bl from-[rgb(var(--color-primary)/0.1)] to-transparent rounded-bl-3xl" />
-      <div className="absolute bottom-0 left-0 h-16 w-16 bg-gradient-to-tr from-[rgb(var(--color-primary)/0.1)] to-transparent rounded-tr-3xl" />
-
-      <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[rgb(var(--color-primary)/0.3)] to-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-primary)/0.2)]">
-                <Gift className="h-4 w-4 text-[rgb(var(--color-primary))]" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[rgb(var(--color-text))]">
-                  {rewardName || legacy("INezGlmgCjf4")}
-                </p>
-                <p className="text-xs text-[rgb(var(--color-primary)/0.8)] font-medium">{discountLabel}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Sparkles className="h-3 w-3 text-[rgb(var(--color-primary)/0.5)]" />
-            <span className="text-[10px] text-[rgb(var(--color-text)/0.25)]">{dateStr}</span>
-          </div>
-        </div>
-
-        {/* Code */}
-        <div className="mt-4 flex items-center gap-2">
-          <div className="flex-1 rounded-xl border border-[rgb(var(--color-primary)/0.15)] bg-[rgb(var(--color-primary)/0.04)] px-4 py-3 text-center font-mono text-base sm:text-lg tracking-[0.25em] font-bold text-[rgb(var(--color-primary))] select-all">
-            {code}
-          </div>
-          <button
-            onClick={handleCopy}
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 transition-all duration-300 ${
-              copied
-                ? "border-[rgb(var(--color-secondary)/0.4)] bg-[rgb(var(--color-secondary)/0.15)] text-[rgb(var(--color-secondary))] scale-95"
-                : "border-[rgb(var(--color-primary)/0.2)] bg-[rgb(var(--color-primary)/0.06)] text-[rgb(var(--color-primary)/0.7)] hover:border-[rgb(var(--color-primary)/0.4)] hover:text-[rgb(var(--color-primary))] hover:scale-105 active:scale-95"
-            }`}
-            aria-label={legacy("GrILd5fSD3QS")}
-          >
-            {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-          </button>
-        </div>
-
-        <p className="mt-3 text-[11px] text-[rgb(var(--color-text)/0.3)] text-center">
-          {copied ? legacy("-9UuaBka1oWp") : legacy("merEdl3IiBo0")}
-        </p>
-      </div>
-    </div>
-  );
+  return <article className={`rounded-2xl border-3 border-black ${available ? "bg-[#bffcc6] shadow-[5px_5px_0_#000]" : "bg-white opacity-75"} ${compact ? "p-4" : "p-5"}`}>
+    <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-[#fff5ba]"><Gift className="h-5 w-5" /></span><div><p className="text-[10px] font-black uppercase tracking-[.15em]">{available ? "Premio desbloqueado" : "Historial"}</p><h3 className="font-black">{reward.rewardName || "Premio de fidelización"}</h3><p className="text-sm font-semibold">{benefit}</p></div></div><span className={`rounded-full border-2 border-black px-2 py-1 text-[10px] font-black uppercase ${available ? "bg-white" : expired ? "bg-red-100" : "bg-[#c4b5fd]"}`}>{status}</span></div>
+    <div className="mt-4 flex items-center gap-2"><code className="min-w-0 flex-1 truncate rounded-xl border-2 border-black bg-white px-3 py-2 text-center font-black tracking-wider">{reward.code}</code><button type="button" onClick={copy} aria-label="Copiar código" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#000]">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
+    <div className="mt-3 text-xs font-semibold text-black/55"><p>Obtenido: {new Date(reward.createdAt).toLocaleDateString("es-CL")}</p><p>Vigencia: {reward.expiresAt ? `hasta ${new Date(reward.expiresAt).toLocaleDateString("es-CL")}` : "sin vencimiento"}</p>{reward.isUsed && reward.usedAt && <p>Utilizado: {new Date(reward.usedAt).toLocaleDateString("es-CL")}</p>}</div>
+    {available && !compact && <Link href={bookingUrl} className="mt-4 flex min-h-11 items-center justify-center rounded-xl border-2 border-black bg-[#ffb5e8] px-4 text-sm font-black shadow-[3px_3px_0_#000]">Usar mi premio</Link>}
+  </article>;
 }

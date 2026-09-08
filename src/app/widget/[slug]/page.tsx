@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
 import { getCountryConfig } from "@/core/countries";
+import { getClientPortalEmail } from "@/server/services/client-portal.service";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,19 @@ export default async function WidgetPage({
       </div>
     );
   }
+
+  const portalEmail = await getClientPortalEmail();
+  const availableRewards = portalEmail ? await prisma.loyaltyCode.findMany({
+    where: {
+      businessId: business.id,
+      isUsed: false,
+      client: { email: { equals: portalEmail, mode: "insensitive" } },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: { code: true, rewardName: true, rewardType: true, expiresAt: true },
+  }) : [];
 
   // Color cascade: URL params > DB values > defaults
   const primaryHex = business.primaryColor.replace("#", "");
@@ -330,6 +344,7 @@ export default async function WidgetPage({
       storyCampaignToken={sp.story}
       previewMode={previewMode}
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
+      availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}
     />
     </>
   );

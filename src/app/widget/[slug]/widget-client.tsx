@@ -121,6 +121,7 @@ interface Props {
   storyCampaignToken?: string;
   previewMode?: boolean;
   useBusinessScheduleOnly?: boolean;
+  availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -252,7 +253,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [] }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -342,7 +343,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [rewardCode, setRewardCode] = useState("");
   const [rewardStatus, setRewardStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [rewardError, setRewardError] = useState("");
-  const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number } | null>(null);
+  const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number; freeServiceId?: string | null; rewardName?: string | null } | null>(null);
   const [discountCode, setDiscountCode] = useState("");
   const [discountCodeStatus, setDiscountCodeStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [discountCodeError, setDiscountCodeError] = useState("");
@@ -525,7 +526,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       if (rewardDiscount.type === "PERCENTAGE") {
         return Math.max(0, rawTotalPrice - Math.round(rawTotalPrice * rewardDiscount.value / 100));
       }
-      return Math.max(0, rawTotalPrice - rewardDiscount.value);
+      if (rewardDiscount.type === "FIXED") return Math.max(0, rawTotalPrice - rewardDiscount.value);
+      if (rewardDiscount.type === "FREE_SERVICE" && rewardDiscount.freeServiceId) {
+        const freeService = activeServices.find((service) => service.id === rewardDiscount.freeServiceId);
+        return Math.max(0, rawTotalPrice - (freeService?.price ?? 0));
+      }
+      return rawTotalPrice;
     }
     return promotionResult?.quote?.discountedTotal ?? rawTotalPrice;
   }, [bookingDiscount, promotionResult, rawTotalPrice, rewardDiscount]);
@@ -879,12 +885,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
   }
 
-  async function handleValidateReward() {
-    const code = rewardCode.trim().toUpperCase();
+  async function handleValidateReward(codeOverride?: string) {
+    const code = (codeOverride ?? rewardCode).trim().toUpperCase();
     if (!code || !form.email) return;
-    if (bookingDiscount) {
+    if (bookingDiscount || promotionResult?.quote) {
       setRewardStatus("invalid");
-      setRewardError("Los premios no se pueden combinar con un código de reserva.");
+      setRewardError("Los premios no se pueden combinar con promociones ni códigos de reserva.");
       return;
     }
     setRewardStatus("loading");
@@ -893,7 +899,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       const res = await fetch(`/api/business/${business.slug}/validate-reward`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": business.apiKey },
-        body: JSON.stringify({ code, email: form.email }),
+        body: JSON.stringify({ code, email: form.email, serviceIds: activeServices.map((service) => service.id) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -902,7 +908,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         setRewardDiscount(null);
       } else {
         setRewardStatus("valid");
-        setRewardDiscount({ type: data.discountType, value: data.discountValue });
+        setRewardDiscount({ type: data.discountType, value: data.discountValue ?? 0, freeServiceId: data.freeServiceId, rewardName: data.rewardName });
         setDiscountCode("");
         setDiscountCodeStatus("idle");
         setDiscountCodeError("");
@@ -2327,6 +2333,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: textColor }}>
                     <Gift className="h-3.5 w-3.5" /><LocalizedText id="0VFjaPoqf1-e" />
                   </label>
+                  {availableRewards.length > 0 && (
+                    <div className="rounded-xl border p-3" style={{ borderColor: `${pc}55`, background: `${pc}0d` }}>
+                      <p className="text-xs font-semibold" style={{ color: textColor }}>Tienes {availableRewards.length} premio{availableRewards.length === 1 ? "" : "s"} disponible{availableRewards.length === 1 ? "" : "s"}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {availableRewards.map((reward) => (
+                          <button key={reward.code} type="button" disabled={!form.email || rewardStatus === "loading"} onClick={() => { setRewardCode(reward.code); void handleValidateReward(reward.code); }} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40" style={{ borderColor: `${pc}66`, color: pc }}>
+                            Aplicar {reward.rewardName || "premio"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
                     <input
                       type="text"
@@ -2339,7 +2357,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     <button
                       type="button"
                       disabled={!rewardCode.trim() || !form.email || rewardStatus === "loading" || rewardStatus === "valid"}
-                      onClick={handleValidateReward}
+                      onClick={() => void handleValidateReward()}
                       className="min-h-[44px] shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-30 hover:opacity-90 active:scale-95"
                       style={{ background: `${pc}20`, color: pc }}
                     >
@@ -2349,7 +2367,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {rewardStatus === "valid" && rewardDiscount && (
                     <p className="text-xs text-green-400 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" />
-                      <LocalizedText id="OyhD8Jiy2VJ8" /> {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : formatPrice(rewardDiscount.value, business.currencyCode)}
+                      <LocalizedText id="OyhD8Jiy2VJ8" /> {rewardDiscount.type === "PERCENTAGE" ? `${rewardDiscount.value}%` : rewardDiscount.type === "FIXED" ? formatPrice(rewardDiscount.value, business.currencyCode) : rewardDiscount.type === "FREE_SERVICE" ? "servicio gratis (extras no incluidos)" : "beneficio a coordinar con el negocio"}
                     </p>
                   )}
                   {rewardStatus === "invalid" && rewardError && (

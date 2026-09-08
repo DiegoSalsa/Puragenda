@@ -5,7 +5,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { es } from "date-fns/locale";
-import { CalendarDays, Check, Clock, Gift, History, MapPin, Sparkles, Store } from "@/components/icons/hover-icons";
+import { CalendarDays, Clock, Gift, History, MapPin, Sparkles, Store } from "@/components/icons/hover-icons";
+import { LoyaltyCard } from "@/components/loyalty/loyalty-card";
+import { loyaltyRewardLabel } from "@/core/loyalty";
 import {
   getClientPortalData,
   getClientPortalEmail,
@@ -181,29 +183,19 @@ export default async function ClientPortalPage({
                 </div>
               ) : data.clients.filter((client) => client.business.isLoyaltyEnabled).map((client) => {
                 const required = Math.max(1, client.business.stampsRequired);
-                const progress = Math.min(100, Math.round((client.currentStamps / required) * 100));
+                const rewardLabel = loyaltyRewardLabel({
+                  rewardType: client.business.loyaltyRewardType,
+                  discountValue: client.business.discountValue,
+                  freeServiceName: client.business.loyaltyRewardService?.name,
+                  rewardName: client.business.rewardName,
+                  currencyCode: client.business.currencyCode,
+                });
                 return (
-                  <article key={client.id} className="rounded-2xl border-3 border-black bg-[#ffb5e8] p-5 shadow-[5px_5px_0_#000]">
-                    <p className="text-xs font-black uppercase tracking-wider">{client.business.name}</p>
-                    <div className="mt-4 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-3xl font-black">{client.currentStamps}/{required}</p>
-                        <p className="text-xs font-bold"><LocalizedText id="9aUWRMrWCOWZ" /></p>
-                      </div>
-                      <span className="text-xl font-black">{progress}%</span>
-                    </div>
-                    <div className="mt-3 h-4 overflow-hidden rounded-full border-2 border-black bg-white">
-                      <div className="h-full bg-[#7c3aed]" style={{ width: `${progress}%` }} />
-                    </div>
-                    {client.business.rewardName && <p className="mt-3 text-sm font-black"><LocalizedText id="vZnf-Ubjfpbj" /> {client.business.rewardName}</p>}
-                    {client.loyaltyCodes.length > 0 && (
-                      <div className="mt-4 rounded-xl border-2 border-black bg-[#bffcc6] p-3">
-                        <p className="flex items-center gap-2 text-xs font-black uppercase"><Check className="h-4 w-4" /> <LocalizedText id="SXJTCZrmm2K-" /></p>
-                        {client.loyaltyCodes.map((reward) => <p key={reward.id} className="mt-2 font-mono text-sm font-black">{reward.code}</p>)}
-                      </div>
-                    )}
-                    <Link href={`/widget/${client.business.slug}`} className="mt-4 inline-flex items-center text-xs font-black underline decoration-2 underline-offset-4"><LocalizedText id="6SU94P85w4-J" /></Link>
-                  </article>
+                  <div key={client.id} className="space-y-3">
+                    <LoyaltyCard compact businessName={client.business.name} logoUrl={client.business.logoUrl} currentStamps={client.currentStamps} stampsRequired={required} rewardLabel={rewardLabel} />
+                    {client.loyaltyCodes.length > 0 && <p className="rounded-xl border-2 border-black bg-[#bffcc6] p-3 text-xs font-black">🎁 Tienes {client.loyaltyCodes.length} premio{client.loyaltyCodes.length === 1 ? "" : "s"} disponible{client.loyaltyCodes.length === 1 ? "" : "s"}.</p>}
+                    <div className="grid grid-cols-2 gap-2"><Link href={`/mis-premios/${client.id}`} className="rounded-xl border-2 border-black bg-white px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">Ver mi tarjeta</Link><Link href={`/widget/${client.business.slug}`} className="rounded-xl border-2 border-black bg-[#fff5ba] px-3 py-2 text-center text-xs font-black shadow-[2px_2px_0_#000]">Reservar</Link></div>
+                  </div>
                 );
               })}
             </div>

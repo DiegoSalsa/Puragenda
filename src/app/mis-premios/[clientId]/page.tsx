@@ -1,332 +1,66 @@
-
-import { LocalizedText } from "@/components/i18n/localized-text";
-import { prisma } from "@/server/db/prisma";
-import { notFound, redirect } from "next/navigation";
-import { Stamp, Gift, Sparkles, Trophy, Calendar, TrendingUp } from "@/components/icons/hover-icons";
-import { StampProgress } from "./stamp-progress";
-import { RewardCard } from "./reward-card";
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { CalendarDays, Gift, History, Stamp } from "@/components/icons/hover-icons";
+import { LoyaltyCard } from "@/components/loyalty/loyalty-card";
+import { loyaltyRewardLabel } from "@/core/loyalty";
+import { prisma } from "@/server/db/prisma";
 import { getClientPortalEmail } from "@/server/services/client-portal.service";
+import { RewardCard } from "./reward-card";
 
-interface PageProps {
-  params: Promise<{ clientId: string }>;
-}
+export const dynamic = "force-dynamic";
+export function generateViewport(): Viewport { return { themeColor: "#fffaf0" }; }
+export function generateMetadata(): Metadata { return { title: "Mi tarjeta | Puragenda", description: "Tu tarjeta y premios de fidelización.", robots: { index: false, follow: false } }; }
 
-export function generateViewport(): Viewport {
-  return { themeColor: "#0A0A0A" };
-}
-
-export function generateMetadata(): Metadata {
-  return {
-    title: "Mis Premios | Puragenda",
-    description: "Consulta tus premios en el portal privado de Puragenda.",
-    robots: { index: false, follow: false },
-  };
-}
-
-/**
- * Builds a motivational copy based on progress.
- */
-function getMotivationalCopy(current: number, required: number, rewardName: string | null): string {
-  const remaining = required - current;
-  const reward = rewardName || "tu premio";
-
-  if (remaining <= 0) return "🎉 ¡Felicitaciones! ¡Completaste tu tarjeta!";
-  if (remaining === 1) return `🔥 ¡Solo te falta 1 visita para ${reward}!`;
-  if (remaining === 2) return `💪 ¡Casi! Solo 2 visitas más para ${reward}.`;
-  if (current === 0) return `✨ ¡Empieza a acumular timbres con tu primera visita!`;
-  if (current / required >= 0.5) return `🚀 ¡Vas por la mitad! ${remaining} visitas para ${reward}.`;
-  return `⭐ Llevas ${current} timbre${current > 1 ? "s" : ""}. ¡Sigue así!`;
-}
-
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}` : "124 58 237";
-}
-
-export default async function MisPremiosPage({ params }: PageProps) {
+export default async function MisPremiosPage({ params }: { params: Promise<{ clientId: string }> }) {
   const { clientId } = await params;
-  const portalEmail = await getClientPortalEmail();
-  if (!portalEmail) redirect("/mi-agenda");
+  const email = await getClientPortalEmail();
+  if (!email) redirect(`/mi-agenda?returnTo=${encodeURIComponent(`/mis-premios/${clientId}`)}`);
 
   const client = await prisma.client.findFirst({
-    where: {
-      id: clientId,
-      email: { equals: portalEmail, mode: "insensitive" },
-    },
-    include: {
-      business: {
-        select: {
-          name: true,
-          stampsRequired: true,
-          rewardName: true,
-          discountType: true,
-          discountValue: true,
-          isLoyaltyEnabled: true,
-          primaryColor: true,
-          secondaryColor: true,
-          backgroundColor: true,
-          textColor: true,
-          logoUrl: true,
-        },
-      },
-      loyaltyCodes: {
-        where: { isUsed: false },
-        orderBy: { createdAt: "desc" },
-      },
-      appointments: {
-        where: { status: { in: ["CHECKED_IN", "COMPLETED"] } },
-        orderBy: { startTime: "desc" },
-        take: 5,
-        select: {
-          id: true,
-          startTime: true,
-          service: { select: { name: true } },
-        },
-      },
+    where: { id: clientId, email: { equals: email, mode: "insensitive" } },
+    select: {
+      id: true, name: true, currentStamps: true,
+      business: { select: {
+        id: true, name: true, slug: true, logoUrl: true, currencyCode: true,
+        isLoyaltyEnabled: true, stampsRequired: true, rewardName: true,
+        loyaltyRewardType: true, discountValue: true,
+        loyaltyRewardService: { select: { name: true } },
+      } },
+      loyaltyCodes: { orderBy: { createdAt: "desc" }, take: 20, select: {
+        id: true, code: true, rewardName: true, rewardType: true, discountValue: true,
+        createdAt: true, expiresAt: true, isUsed: true, usedAt: true,
+        freeService: { select: { name: true } },
+        redeemedAppointment: { select: { startTime: true } },
+      } },
+      loyaltyStampEvents: { orderBy: { createdAt: "desc" }, take: 12, select: {
+        id: true, delta: true, source: true, reason: true, createdAt: true,
+        appointment: { select: { startTime: true, service: { select: { name: true } } } },
+      } },
     },
   });
+  if (!client) notFound();
 
-  if (!client) return notFound();
+  const now = new Date();
+  const available = client.loyaltyCodes.filter((reward) => !reward.isUsed && (!reward.expiresAt || reward.expiresAt > now));
+  const history = client.loyaltyCodes.filter((reward) => reward.isUsed || (reward.expiresAt && reward.expiresAt <= now));
+  const goalLabel = loyaltyRewardLabel({ rewardType: client.business.loyaltyRewardType, discountValue: client.business.discountValue, freeServiceName: client.business.loyaltyRewardService?.name, rewardName: client.business.rewardName, currencyCode: client.business.currencyCode });
 
-  const { business } = client;
+  return <main className="min-h-screen bg-[#fffaf0] text-black">
+    <header className="border-b-3 border-black bg-white"><div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 sm:px-8"><Link href="/" aria-label="Inicio"><img src="/logos/logoPuragendaSVG.svg" alt="Puragenda" className="h-11 w-auto" /></Link><Link href="/mi-agenda" className="rounded-xl border-2 border-black bg-[#c4b5fd] px-4 py-2 text-sm font-black shadow-[2px_2px_0_#000]">Volver a Mi Agenda</Link></div></header>
+    <div className="mx-auto max-w-5xl space-y-9 px-5 py-8 sm:px-8 sm:py-12">
+      <section className="rounded-[2rem] border-4 border-black bg-[#c4b5fd] p-6 shadow-[8px_8px_0_#000] sm:p-9"><p className="text-xs font-black uppercase tracking-[0.18em]">Mi fidelidad en {client.business.name}</p><h1 className="mt-2 text-3xl font-black sm:text-5xl">Hola, {client.name.split(/\s+/)[0]}.</h1><p className="mt-3 font-semibold">Cada cita completada suma un timbre. Aquí puedes revisar tu tarjeta, premios y actividad.</p></section>
 
-  if (!business.isLoyaltyEnabled) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
-        <div className="text-center text-white/60">
-          <Stamp className="h-12 w-12 mx-auto mb-4 opacity-40" />
-          <p className="text-lg font-medium"><LocalizedText id="jisTk9LwKYkr" /></p>
-          <p className="text-sm mt-1"><LocalizedText id="f4YlhbzaXjx9" /></p>
-        </div>
-      </div>
-    );
-  }
+      {!client.business.isLoyaltyEnabled ? <section className="rounded-2xl border-3 border-dashed border-black/40 bg-white p-8 text-center"><Stamp className="mx-auto h-10 w-10 opacity-40" /><p className="mt-3 font-black">Este programa está desactivado por ahora.</p></section> : <LoyaltyCard businessName={client.business.name} logoUrl={client.business.logoUrl} currentStamps={client.currentStamps} stampsRequired={client.business.stampsRequired} rewardLabel={goalLabel} />}
 
-  const availableRewards = client.loyaltyCodes;
-  const completedVisits = client.appointments || [];
-  const percentage = Math.min(100, Math.round((client.currentStamps / business.stampsRequired) * 100));
-  const remaining = business.stampsRequired - client.currentStamps;
-  const motivationalCopy = getMotivationalCopy(client.currentStamps, business.stampsRequired, business.rewardName);
+      <section><div className="mb-4 flex items-center gap-3"><Gift className="h-6 w-6" /><h2 className="text-2xl font-black">Premios disponibles</h2><span className="rounded-full border-2 border-black bg-[#bffcc6] px-2.5 text-sm font-black">{available.length}</span></div>{available.length ? <div className="grid gap-4 md:grid-cols-2">{available.map((reward) => <RewardCard key={reward.id} reward={reward} currencyCode={client.business.currencyCode} bookingUrl={`/widget/${client.business.slug}`} />)}</div> : <div className="rounded-2xl border-3 border-dashed border-black/35 bg-white/60 p-7 text-center font-semibold">Completa tu tarjeta para desbloquear tu próximo premio.</div>}</section>
 
-  const primaryRgb = hexToRgb(business.primaryColor || "#7C3AED");
-  const secondaryRgb = hexToRgb(business.secondaryColor || "#5B21B6");
-  const bgRgb = hexToRgb(business.backgroundColor || "#0A0A0A");
-  const textRgb = hexToRgb(business.textColor || "#FFFFFF");
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div><div className="mb-4 flex items-center gap-3"><History className="h-6 w-6" /><h2 className="text-xl font-black">Actividad reciente</h2></div><div className="overflow-hidden rounded-2xl border-3 border-black bg-white">{client.loyaltyStampEvents.length ? client.loyaltyStampEvents.map((event, index) => <div key={event.id} className={`flex items-center justify-between gap-4 p-4 ${index ? "border-t-2 border-black/10" : ""}`}><div><p className="font-black">{event.reason || (event.source === "APPOINTMENT" ? "Visita completada" : "Ajuste de timbres")}</p><p className="text-xs font-semibold text-black/50">{event.appointment?.service.name ?? "Registro de fidelización"} · {event.createdAt.toLocaleDateString("es-CL")}</p></div><span className={`rounded-full border-2 border-black px-2 py-1 text-xs font-black ${event.delta > 0 ? "bg-[#bffcc6]" : "bg-[#fff5ba]"}`}>{event.delta > 0 ? "+" : ""}{event.delta}</span></div>) : <p className="p-5 text-sm font-semibold text-black/50">El historial comienza con los nuevos movimientos de Fidelización V2.</p>}</div></div>
+        <div><div className="mb-4 flex items-center gap-3"><CalendarDays className="h-6 w-6" /><h2 className="text-xl font-black">Premios anteriores</h2></div><div className="space-y-3">{history.length ? history.map((reward) => <RewardCard key={reward.id} reward={reward} currencyCode={client.business.currencyCode} bookingUrl={`/widget/${client.business.slug}`} compact />) : <div className="rounded-2xl border-3 border-dashed border-black/35 bg-white/60 p-5 text-sm font-semibold">Tus premios usados o vencidos aparecerán aquí.</div>}</div></div>
+      </section>
 
-  return (
-    <div
-      className="min-h-screen bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))] selection:bg-[rgb(var(--color-primary)/0.3)]"
-      style={{
-        "--color-primary": primaryRgb,
-        "--color-secondary": secondaryRgb,
-        "--color-bg": bgRgb,
-        "--color-text": textRgb,
-      } as React.CSSProperties}
-    >
-      {/* Shimmer keyframes */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      ` }} />
-
-      {/* ─── Hero Header ─── */}
-      <div className="relative overflow-hidden">
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgb(var(--color-text)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgb(var(--color-text)/0.03)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,black_70%,transparent_100%)]" />
-
-        <div className="relative max-w-xl mx-auto px-5 pt-10 pb-6 sm:pt-14 sm:pb-8">
-          {/* Business logo / name */}
-          <div className="flex items-center gap-3 mb-8">
-            {business.logoUrl ? (
-              <img
-                src={business.logoUrl}
-                alt={business.name}
-                className="h-11 w-11 rounded-xl object-cover ring-2 ring-white/10 shadow-lg"
-              />
-            ) : (
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[rgb(var(--color-primary)/0.3)] to-[rgb(var(--color-secondary)/0.2)] ring-2 ring-[rgb(var(--color-primary)/0.3)] shadow-lg">
-                <Sparkles className="h-5 w-5 text-[rgb(var(--color-primary))] opacity-80" />
-              </div>
-            )}
-            <div>
-              <p className="text-xs uppercase tracking-[0.15em] text-[rgb(var(--color-text)/0.4)] font-medium"><LocalizedText id="54tr0vGiMqeK" /></p>
-              <p className="text-sm font-bold text-[rgb(var(--color-text))]">{business.name}</p>
-            </div>
-          </div>
-
-          {/* Greeting */}
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            <LocalizedText id="-DINcEjYeVEU" /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--color-primary)/0.8)] to-[rgb(var(--color-primary))]">{client.name.split(" ")[0]}</span> 👋
-          </h1>
-          <p className="mt-3 text-base text-[rgb(var(--color-text)/0.5)] font-medium leading-relaxed max-w-sm">
-            {motivationalCopy}
-          </p>
-        </div>
-      </div>
-
-      {/* ─── Bento Grid ─── */}
-      <div className="max-w-xl mx-auto px-5 pb-16 -mt-1">
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-
-          {/* ── Card 1: Stamp Progress (Full Width) ── */}
-          <div className="col-span-2 rounded-3xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-5 sm:p-6 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgb(var(--color-primary)/0.15)] border border-[rgb(var(--color-primary)/0.2)]">
-                  <Stamp className="h-4.5 w-4.5 text-[rgb(var(--color-primary))] opacity-80" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold"><LocalizedText id="ker1NFAGWSq7" /></p>
-                  <p className="text-[11px] text-[rgb(var(--color-text)/0.35)]">{client.currentStamps} <LocalizedText id="lZpF1E5vz1g2" /> {business.stampsRequired} <LocalizedText id="n4gHI75ptyeJ" /></p>
-                </div>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[rgb(var(--color-primary)/0.2)] to-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)]">
-                <span className="text-sm font-extrabold text-[rgb(var(--color-primary))]">{percentage}%</span>
-              </div>
-            </div>
-
-            <StampProgress
-              currentStamps={client.currentStamps}
-              stampsRequired={business.stampsRequired}
-            />
-
-            {remaining > 0 && (
-              <p className="mt-4 text-center text-sm font-medium text-[rgb(var(--color-text)/0.4)]">
-                {remaining === 1
-                  ? <span className="text-[rgb(var(--color-primary))]"><LocalizedText id="3AWwS_tbwT39" /></span>
-                  : <>{remaining} <LocalizedText id="rETsmnZDnscW" /></>
-                }
-              </p>
-            )}
-          </div>
-
-          {/* ── Card 2: Stats - Visits (Half) ── */}
-          <div className="rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-4 sm:p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-secondary)/0.15)] mb-3">
-              <TrendingUp className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{completedVisits.length}</p>
-            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5"><LocalizedText id="4l_KGdDgL7pv" /></p>
-          </div>
-
-          {/* ── Card 3: Stats - Rewards (Half) ── */}
-          <div className="rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-4 sm:p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)] mb-3">
-              <Trophy className="h-4 w-4 text-[rgb(var(--color-primary))]" />
-            </div>
-            <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{availableRewards.length}</p>
-            <p className="text-xs text-[rgb(var(--color-text)/0.35)] mt-0.5"><LocalizedText id="2x_QU98WKYa1" /></p>
-          </div>
-
-          {/* ── Card 4: Prize Info (Full Width) ── */}
-          {business.rewardName && (
-            <div className="col-span-2 relative overflow-hidden rounded-2xl border border-[rgb(var(--color-primary)/0.2)] bg-gradient-to-br from-[rgb(var(--color-primary)/0.06)] via-[rgb(var(--color-text)/0.01)] to-[rgb(var(--color-primary)/0.04)] p-5 transition-all duration-300 hover:border-[rgb(var(--color-primary)/0.3)]">
-              <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-bl from-[rgb(var(--color-primary)/0.08)] to-transparent rounded-bl-3xl" />
-              <div className="relative z-10 flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[rgb(var(--color-primary)/0.25)] to-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-primary)/0.25)]">
-                  <Gift className="h-5 w-5 text-[rgb(var(--color-primary))]" />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-[rgb(var(--color-primary)/0.6)] font-semibold mb-1"><LocalizedText id="GxSefNw60Fbu" /></p>
-                  <p className="text-base font-bold text-[rgb(var(--color-text))]">{business.rewardName}</p>
-                  {business.discountType && business.discountValue && (
-                    <p className="text-sm text-[rgb(var(--color-primary)/0.8)] font-medium mt-0.5">
-                      {business.discountType === "PERCENTAGE"
-                        ? `${business.discountValue}% de descuento`
-                        : `$${business.discountValue.toLocaleString()} de descuento`}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Card 5: Available Rewards (Full Width) ── */}
-          <div className="col-span-2 space-y-3">
-            <div className="flex items-center gap-2.5 px-1">
-              <Gift className="h-4.5 w-4.5 text-[rgb(var(--color-primary))]" />
-              <p className="text-sm font-bold"><LocalizedText id="8ihda1XR5muv" /></p>
-              {availableRewards.length > 0 && (
-                <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--color-primary)/0.2)] text-[11px] font-bold text-[rgb(var(--color-primary))]">
-                  {availableRewards.length}
-                </span>
-              )}
-            </div>
-
-            {availableRewards.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[rgb(var(--color-text)/0.08)] bg-[rgb(var(--color-text)/0.02)] p-8 text-center">
-                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgb(var(--color-text)/0.03)] border border-[rgb(var(--color-text)/0.06)]">
-                  <Gift className="h-7 w-7 text-[rgb(var(--color-text)/0.15)]" />
-                </div>
-                <p className="text-sm font-medium text-[rgb(var(--color-text)/0.35)]"><LocalizedText id="9zuUDZAjhUZK" /></p>
-                <p className="text-xs text-[rgb(var(--color-text)/0.2)] mt-1 max-w-[200px] mx-auto">
-                  <LocalizedText id="u8i90Kr_OdwA" />
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {availableRewards.map((reward) => (
-                  <RewardCard
-                    key={reward.id}
-                    code={reward.code}
-                    rewardName={reward.rewardName}
-                    discountType={reward.discountType}
-                    discountValue={reward.discountValue}
-                    createdAt={reward.createdAt.toISOString()}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ── Card 6: Recent Activity (Full Width) ── */}
-          {completedVisits.length > 0 && (
-            <div className="col-span-2 rounded-2xl border border-[rgb(var(--color-text)/0.06)] bg-[rgb(var(--color-text)/0.03)] backdrop-blur-md p-5 transition-all duration-300 hover:border-[rgb(var(--color-text)/0.1)]">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[rgb(var(--color-secondary)/0.1)] border border-[rgb(var(--color-secondary)/0.15)]">
-                  <Calendar className="h-4 w-4 text-[rgb(var(--color-secondary))]" />
-                </div>
-                <p className="text-sm font-bold"><LocalizedText id="kTMvJxut1hEM" /></p>
-              </div>
-
-              <div className="space-y-2">
-                {completedVisits.map((visit) => {
-                  const date = new Date(visit.startTime);
-                  return (
-                    <div
-                      key={visit.id}
-                      className="flex items-center justify-between rounded-xl border border-[rgb(var(--color-text)/0.04)] bg-[rgb(var(--color-text)/0.02)] px-4 py-3 text-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--color-primary)/0.1)] border border-[rgb(var(--color-primary)/0.15)]">
-                          <Stamp className="h-3.5 w-3.5 text-[rgb(var(--color-primary)/0.7)]" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-[rgb(var(--color-text)/0.8)]">{visit.service.name}</p>
-                          <p className="text-[10px] text-[rgb(var(--color-text)/0.3)]">
-                            {date.toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-medium text-[rgb(var(--color-secondary)/0.8)] bg-[rgb(var(--color-secondary)/0.1)] px-2 py-0.5 rounded-full border border-[rgb(var(--color-secondary)/0.15)]">
-                        <LocalizedText id="mjnokc6ETJog" />
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-[10px] text-[rgb(var(--color-text)/0.15)] pt-8 pb-4">
-          <LocalizedText id="_cXS6UEMLYjl" /> <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="text-[rgb(var(--color-primary)/0.4)] font-medium hover:underline">Puragenda</a>
-        </p>
-      </div>
+      <Link href={`/widget/${client.business.slug}`} className="flex min-h-14 items-center justify-center rounded-2xl border-3 border-black bg-[#fff5ba] px-6 text-center font-black shadow-[5px_5px_0_#000]">Reservar nuevamente</Link>
     </div>
-  );
+  </main>;
 }
