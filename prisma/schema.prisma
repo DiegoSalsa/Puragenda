@@ -34,6 +34,19 @@ enum WidgetPromoPlacement {
   FOOTER
 }
 
+enum LoyaltyRewardType {
+  PERCENTAGE
+  FIXED
+  FREE_SERVICE
+  CUSTOM
+}
+
+enum LoyaltyStampSource {
+  APPOINTMENT
+  MANUAL
+  ADJUSTMENT
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -62,6 +75,7 @@ model User {
   settledAppointments       Appointment[]              @relation("AppointmentSettledBy")
   marketplaceAuthorizations MarketplaceListing[]       @relation("MarketplaceListingAuthorizedBy")
   superAdminSessions        SuperAdminSession[]
+  loyaltyStampEventsCreated LoyaltyStampEvent[]        @relation("LoyaltyStampEventCreatedBy")
 }
 
 // ==========================================
@@ -314,6 +328,9 @@ model Business {
   discountType                                 String? // 'PERCENTAGE' | 'FIXED'
   discountValue                                Int?
   loyaltyCodePrefix                            String             @default("PREMIO")
+  loyaltyRewardType                            LoyaltyRewardType  @default(PERCENTAGE)
+  loyaltyRewardServiceId                       String?
+  loyaltyRewardExpirationDays                  Int?
   // ── Politicas del negocio ──
   requiresClientRut                            Boolean            @default(false) // Pedir RUT en el widget
   allowRescheduling                            Boolean            @default(false) // Permitir que clientes reagenden
@@ -341,6 +358,8 @@ model Business {
   businessHours               BusinessHours[]
   blockedDates                BlockedDate[]
   loyaltyCodes                LoyaltyCode[]
+  loyaltyStampEvents          LoyaltyStampEvent[]
+  loyaltyRewardService        Service?                     @relation("LoyaltyRewardService", fields: [loyaltyRewardServiceId], references: [id], onDelete: SetNull)
   marketingCampaigns          MarketingCampaign[]
   recurringBookings           RecurringBooking[]
   productionOrders            ProductionOrder[]
@@ -378,15 +397,15 @@ model BusinessLocation {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business          Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  hours             LocationHours[]
-  scheduleOverrides LocationScheduleOverride[]
-  services          LocationService[]
-  staff             StaffLocation[]
-  appointments      Appointment[]
-  recurringBookings RecurringBooking[]
-  productionOrders  ProductionOrder[]
-  scheduleBlocks    ScheduleBlock[]
+  business            Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  hours               LocationHours[]
+  scheduleOverrides   LocationScheduleOverride[]
+  services            LocationService[]
+  staff               StaffLocation[]
+  appointments        Appointment[]
+  recurringBookings   RecurringBooking[]
+  productionOrders    ProductionOrder[]
+  scheduleBlocks      ScheduleBlock[]
   storyCampaigns      StoryCampaign[]
   marketplaceListings MarketplaceListing[]
 
@@ -831,15 +850,17 @@ model Service {
   specialStartTime         String?
   specialEndTime           String?
 
-  business          Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category          ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  appointments      Appointment[]
-  staff             Staff[]
-  recurringPlan     RecurringPlan?
-  recurringBookings RecurringBooking[]
-  optionCategories  ServiceOptionCategory[]
-  productionOrders  ProductionOrder[]
-  locations         LocationService[]
+  business                Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category                ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  appointments            Appointment[]
+  staff                   Staff[]
+  recurringPlan           RecurringPlan?
+  recurringBookings       RecurringBooking[]
+  optionCategories        ServiceOptionCategory[]
+  productionOrders        ProductionOrder[]
+  locations               LocationService[]
+  loyaltyRewardBusinesses Business[]              @relation("LoyaltyRewardService")
+  loyaltyCodes            LoyaltyCode[]           @relation("LoyaltyCodeFreeService")
 
   @@index([businessId])
   @@index([categoryId])
@@ -1193,6 +1214,8 @@ model Appointment {
   googleCalendarEvent    GoogleCalendarEvent?
   depositPaymentDelivery DepositPaymentDelivery?
   posPayments            PosPayment[]
+  loyaltyStampEvent      LoyaltyStampEvent?
+  redeemedLoyaltyCode    LoyaltyCode?            @relation("LoyaltyCodeRedemption")
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
 
   @@index([businessId])
@@ -1392,11 +1415,12 @@ model Client {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  appointments      Appointment[]
-  loyaltyCodes      LoyaltyCode[]
-  recurringBookings RecurringBooking[]
-  productionOrders  ProductionOrder[]
+  business           Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments       Appointment[]
+  loyaltyCodes       LoyaltyCode[]
+  loyaltyStampEvents LoyaltyStampEvent[]
+  recurringBookings  RecurringBooking[]
+  productionOrders   ProductionOrder[]
 
   @@unique([businessId, email])
   @@index([businessId])
@@ -1407,21 +1431,50 @@ model Client {
 // ==========================================
 
 model LoyaltyCode {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  clientId      String
-  businessId    String
-  discountType  String // 'PERCENTAGE' | 'FIXED'
-  discountValue Int
-  rewardName    String?
-  isUsed        Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id                    String            @id @default(cuid())
+  code                  String            @unique
+  clientId              String
+  businessId            String
+  discountType          String // Legacy snapshot kept for existing integrations
+  discountValue         Int?
+  rewardType            LoyaltyRewardType @default(PERCENTAGE)
+  freeServiceId         String?
+  rewardName            String?
+  isUsed                Boolean           @default(false)
+  usedAt                DateTime?
+  expiresAt             DateTime?
+  redeemedAppointmentId String?           @unique
+  createdAt             DateTime          @default(now())
 
-  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client              Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  business            Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  freeService         Service?     @relation("LoyaltyCodeFreeService", fields: [freeServiceId], references: [id], onDelete: SetNull)
+  redeemedAppointment Appointment? @relation("LoyaltyCodeRedemption", fields: [redeemedAppointmentId], references: [id], onDelete: SetNull)
 
   @@index([clientId])
   @@index([businessId])
+  @@index([businessId, isUsed, expiresAt])
+}
+
+model LoyaltyStampEvent {
+  id            String             @id @default(cuid())
+  businessId    String
+  clientId      String
+  appointmentId String?            @unique
+  delta         Int
+  source        LoyaltyStampSource
+  reason        String?
+  createdById   String?
+  createdAt     DateTime           @default(now())
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  createdBy   User?        @relation("LoyaltyStampEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([businessId, createdAt])
+  @@index([clientId, createdAt])
+  @@index([createdById])
 }
 
 // ==========================================
@@ -1683,12 +1736,12 @@ model MarketplaceLocality {
 }
 
 model MarketplaceListing {
-  id                         String                    @id @default(cuid())
+  id                         String                   @id @default(cuid())
   businessId                 String
   locationId                 String
   // Operational marketplace state. Independent from subscription/plan.
   // Historical rows stay PENDING_REVIEW until Admin decides.
-  status                     MarketplaceListingStatus  @default(PENDING_REVIEW)
+  status                     MarketplaceListingStatus @default(PENDING_REVIEW)
   // Optional: CL catalog locality. Null for other countries or pending normalization.
   localityId                 String?
   pendingCategoryDescription String?
@@ -1699,13 +1752,13 @@ model MarketplaceListing {
   authorizationTextVersion   String?
   authorizationRevokedAt     DateTime?
   publishedAt                DateTime?
-  createdAt                  DateTime                  @default(now())
-  updatedAt                  DateTime                  @updatedAt
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
 
-  business                 Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  location                 BusinessLocation       @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  locality                 MarketplaceLocality?   @relation(fields: [localityId], references: [id], onDelete: Restrict)
-  authorizationConfirmedBy User?                  @relation("MarketplaceListingAuthorizedBy", fields: [authorizationConfirmedById], references: [id], onDelete: SetNull)
+  business                 Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location                 BusinessLocation             @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locality                 MarketplaceLocality?         @relation(fields: [localityId], references: [id], onDelete: Restrict)
+  authorizationConfirmedBy User?                        @relation("MarketplaceListingAuthorizedBy", fields: [authorizationConfirmedById], references: [id], onDelete: SetNull)
   categories               MarketplaceListingCategory[]
 
   @@unique([businessId, locationId])
