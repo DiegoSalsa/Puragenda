@@ -21,7 +21,7 @@ export default async function LoyaltyPage() {
   const [services, clients, participants, stampAggregate, generated, used] = await Promise.all([
     prisma.service.findMany({ where: { businessId: business.id, bookingMode: "APPOINTMENT" }, orderBy: { name: "asc" }, select: { id: true, name: true, price: true } }),
     prisma.client.findMany({ where: { businessId: business.id }, orderBy: [{ currentStamps: "desc" }, { name: "asc" }], take: 12, select: { id: true, name: true, email: true, currentStamps: true } }),
-    prisma.client.count({ where: { businessId: business.id, OR: [{ currentStamps: { gt: 0 } }, { loyaltyCodes: { some: {} } }] } }),
+    prisma.client.count({ where: { businessId: business.id, OR: [{ currentStamps: { gt: 0 } }, { loyaltyStampEvents: { some: {} } }, { loyaltyCodes: { some: {} } }] } }),
     prisma.loyaltyStampEvent.aggregate({ where: { businessId: business.id, delta: { gt: 0 } }, _sum: { delta: true } }),
     prisma.loyaltyCode.count({ where: { businessId: business.id } }),
     prisma.loyaltyCode.count({ where: { businessId: business.id, isUsed: true } }),
