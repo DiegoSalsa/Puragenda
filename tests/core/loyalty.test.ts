@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateLoyaltyReward, loyaltyProgressCopy, validateLoyaltyNoStacking } from "@/core/loyalty";
+import { calculateLoyaltyRedemptionRate, calculateLoyaltyReward, loyaltyPreviewStamps, loyaltyProgressCopy, validateLoyaltyNoStacking } from "@/core/loyalty";
 
 describe("loyalty reward calculations", () => {
   it("calculates percentage rewards from the canonical subtotal", () => {
@@ -37,5 +37,19 @@ describe("loyalty reward calculations", () => {
     expect(validateLoyaltyNoStacking({ rewardCode: "R", promotionId: "P" })).toHaveProperty("error");
     expect(validateLoyaltyNoStacking({ rewardCode: "R", discountCode: "D" })).toHaveProperty("error");
     expect(validateLoyaltyNoStacking({ rewardCode: "R" })).toEqual({ valid: true });
+  });
+
+  it("keeps preview states visual-only and adapts them to the configured goal", () => {
+    expect(loyaltyPreviewStamps(5, "start")).toBe(0);
+    expect(loyaltyPreviewStamps(5, "progress")).toBe(2);
+    expect(loyaltyPreviewStamps(12, "progress")).toBe(4);
+    expect(loyaltyPreviewStamps(12, "oneLeft")).toBe(11);
+    expect(loyaltyPreviewStamps(12, "reward")).toBe(12);
+  });
+
+  it("calculates redemption rate with a zero-safe denominator", () => {
+    expect(calculateLoyaltyRedemptionRate(0, 0)).toBe(0);
+    expect(calculateLoyaltyRedemptionRate(10, 4)).toBe(40);
+    expect(calculateLoyaltyRedemptionRate(10, 99)).toBe(100);
   });
 });

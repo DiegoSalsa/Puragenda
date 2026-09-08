@@ -1,4 +1,4 @@
-import { Gift, Stamp, Trophy, Users } from "@/components/icons/hover-icons";
+import { Gift, Info, Stamp, Trophy, Users } from "@/components/icons/hover-icons";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
@@ -6,6 +6,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { LoyaltyConfigForm } from "./loyalty-config-form";
 import { getTranslations } from "next-intl/server";
+import { calculateLoyaltyRedemptionRate } from "@/core/loyalty";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +26,12 @@ export default async function LoyaltyPage() {
     prisma.loyaltyCode.count({ where: { businessId: business.id } }),
     prisma.loyaltyCode.count({ where: { businessId: business.id, isUsed: true } }),
   ]);
-  const redemptionRate = generated ? Math.round(used * 100 / generated) : 0;
+  const redemptionRate = calculateLoyaltyRedemptionRate(generated, used);
   const metrics = [
     { label: t("participants"), value: participants, icon: Users, color: "bg-[#c4b5fd]" },
-    { label: t("stampsDelivered"), value: stampAggregate._sum.delta ?? 0, icon: Stamp, color: "bg-[#bffcc6]" },
+    { label: t("stampsDelivered"), value: stampAggregate._sum.delta ?? 0, icon: Stamp, color: "bg-[#bffcc6]", hint: t("stampsHint") },
     { label: t("rewardsGenerated"), value: generated, icon: Gift, color: "bg-[#ffb5e8]" },
-    { label: t("redemptionRate"), value: `${redemptionRate}%`, icon: Trophy, color: "bg-[#fff5ba]" },
+    { label: t("redemptionRate"), value: `${redemptionRate}%`, icon: Trophy, color: "bg-[#fff5ba]", hint: t("redemptionHint") },
   ];
 
   return (
@@ -42,7 +43,7 @@ export default async function LoyaltyPage() {
       </header>
 
       <section aria-label={t("metricsLabel")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map(({ label, value, icon: Icon, color }) => <div key={label} className={`${color} rounded-2xl border-3 border-black p-4 shadow-[4px_4px_0_#000]`}><Icon className="h-5 w-5" /><p className="mt-3 text-2xl font-black">{value}</p><p className="text-xs font-black">{label}</p></div>)}
+        {metrics.map(({ label, value, icon: Icon, color, hint }) => <div key={label} className={`${color} rounded-2xl border-3 border-black p-4 shadow-[4px_4px_0_#000]`}><div className="flex items-center justify-between"><Icon className="h-5 w-5" />{hint && <span title={hint} aria-label={hint} tabIndex={0} className="inline-flex cursor-help rounded-full"><Info className="h-4 w-4" /></span>}</div><p className="mt-3 text-2xl font-black">{value}</p><p className="text-xs font-black">{label}</p></div>)}
       </section>
 
       <LoyaltyConfigForm

@@ -96,4 +96,28 @@ describe("loyalty stamp ledger", () => {
     expect(outerClientFind).not.toHaveBeenCalled();
     expect(transaction).not.toHaveBeenCalled();
   });
+
+  it("never lets a minus-one adjustment make currentStamps negative", async () => {
+    clientFind.mockResolvedValue({ ...client, currentStamps: 0 });
+
+    await expect(adjustClientLoyaltyStampsAction({ clientId: "client-1", delta: -1, reason: "Corrección" }))
+      .resolves.toEqual({ error: "No fue posible aplicar el ajuste" });
+    expect(eventCreate).not.toHaveBeenCalled();
+    expect(clientUpdate).not.toHaveBeenCalled();
+  });
+
+  it("snapshots the reward configuration when each card is completed", async () => {
+    clientFind.mockResolvedValue({ ...client, currentStamps: 4 });
+    await processLoyaltyStamps("appointment-1");
+    const firstReward = rewardCreate.mock.calls[0][0].data;
+
+    appointmentFind.mockResolvedValue({ id: "appointment-2", status: "COMPLETED", businessId: "business-1", clientId: "client-1" });
+    clientFind.mockResolvedValue({ ...client, currentStamps: 4 });
+    businessFind.mockResolvedValue({ ...program, loyaltyRewardType: "FREE_SERVICE", loyaltyRewardServiceId: "service-1", rewardName: "Corte clásico gratis" });
+    await processLoyaltyStamps("appointment-2");
+    const secondReward = rewardCreate.mock.calls[1][0].data;
+
+    expect(firstReward).toMatchObject({ rewardType: "PERCENTAGE", discountValue: 20, freeServiceId: null, rewardName: "20%" });
+    expect(secondReward).toMatchObject({ rewardType: "FREE_SERVICE", discountValue: null, freeServiceId: "service-1", rewardName: "Corte clásico gratis" });
+  });
 });

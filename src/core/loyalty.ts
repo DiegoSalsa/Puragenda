@@ -93,6 +93,22 @@ export function loyaltyProgressCopy(current: number, required: number) {
   return `Te faltan ${remaining} visitas`;
 }
 
+export type LoyaltyPreviewState = "start" | "progress" | "oneLeft" | "reward";
+
+export function loyaltyPreviewStamps(required: number, state: LoyaltyPreviewState) {
+  const safeRequired = Math.max(2, Math.min(30, Math.floor(required)));
+  if (state === "start") return 0;
+  if (state === "oneLeft") return Math.max(0, safeRequired - 1);
+  if (state === "reward") return safeRequired;
+  return Math.max(1, Math.round(safeRequired * 0.3));
+}
+
+export function calculateLoyaltyRedemptionRate(generated: number, used: number) {
+  const safeGenerated = Math.max(0, Math.floor(generated));
+  const safeUsed = Math.max(0, Math.min(safeGenerated, Math.floor(used)));
+  return safeGenerated === 0 ? 0 : Math.round(safeUsed * 100 / safeGenerated);
+}
+
 export function validateLoyaltyNoStacking(input: {
   rewardCode?: string | null;
   promotionId?: string | null;
