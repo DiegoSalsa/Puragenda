@@ -67,8 +67,8 @@
     "adjustmentFor": "Motivo del ajuste para {name}",
     "subtract": "Restar 1 timbre",
     "add": "Sumar 1 timbre",
-    "minusOne": "−1 timbre",
-    "plusOne": "+1 timbre",
+    "minusOne": "1 timbre",
+    "plusOne": "1 timbre",
     "adjusted": "Ajuste registrado",
     "noClients": "Todavía no hay clientes."
     ,"searchClients": "Buscar cliente...",
