@@ -37,8 +37,7 @@ export default async function LoyaltyPage() {
   return (
     <div className="space-y-8 pb-12">
       <header>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">{t("eyebrow")}</p>
-        <h1 className="mt-1 flex items-center gap-3 text-3xl font-black tracking-tight"><Stamp className="h-8 w-8" /> {t("title")}</h1>
+        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight"><Stamp className="h-8 w-8" /> {t("title")}</h1>
         <p className="mt-2 max-w-2xl text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
       </header>
 

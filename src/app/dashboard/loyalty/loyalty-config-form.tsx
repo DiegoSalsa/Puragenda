@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DollarSign, Gift, Loader2, Minus, Percent, Plus, Save, Sparkles, Stamp } from "@/components/icons/hover-icons";
+import { DollarSign, Gift, Loader2, Percent, Save, Sparkles, Stamp } from "@/components/icons/hover-icons";
 import { LoyaltyCard } from "@/components/loyalty/loyalty-card";
 import { loyaltyPreviewStamps, loyaltyRewardLabel, type LoyaltyRewardKind } from "@/core/loyalty";
 import { adjustClientLoyaltyStampsAction } from "@/server/actions/loyalty.actions";
@@ -39,7 +39,7 @@ function ManualAdjustmentRow({ client, required }: { client: Props["clients"][nu
   return <div className="grid gap-3 border-t-2 border-black/10 px-4 py-4 first:border-t-0 lg:grid-cols-[1fr_1.2fr_auto] lg:items-center">
     <div className="min-w-0"><p className="truncate font-black">{client.name}</p><p className="truncate text-xs font-semibold text-black/50">{client.email} · {client.currentStamps}/{required} timbres</p></div>
     <div><label className="sr-only" htmlFor={`reason-${client.id}`}>{t("adjustmentFor", { name: client.name })}</label><input id={`reason-${client.id}`} value={reason} onChange={(event) => setReason(event.target.value)} placeholder={t("adjustmentReason")} maxLength={240} className="h-10 w-full rounded-xl border-2 border-black bg-white px-3 text-sm font-semibold outline-none focus:ring-4 focus:ring-[#c4b5fd]" />{message && <p className="mt-1 text-xs font-bold">{message}</p>}</div>
-    <div className="flex flex-wrap gap-2"><button type="button" disabled={busy || client.currentStamps === 0} onClick={() => adjust(-1)} aria-label={t("subtract", { name: client.name })} className="flex h-10 items-center justify-center gap-1 rounded-xl border-2 border-black bg-[#fff5ba] px-3 text-xs font-black shadow-[2px_2px_0_#000] disabled:opacity-40"><Minus className="h-4 w-4" />{t("minusOne")}</button><button type="button" disabled={busy} onClick={() => adjust(1)} aria-label={t("add", { name: client.name })} className="flex h-10 items-center justify-center gap-1 rounded-xl border-2 border-black bg-[#bffcc6] px-3 text-xs font-black shadow-[2px_2px_0_#000] disabled:opacity-40">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{t("plusOne")}</button></div>
+    <div className="flex flex-wrap gap-2"><button type="button" disabled={busy || client.currentStamps === 0} onClick={() => adjust(-1)} aria-label={t("subtract")} className="flex h-10 items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-[#fff5ba] px-3 text-xs font-black shadow-[2px_2px_0_#000] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c4b5fd] disabled:translate-y-0 disabled:opacity-40"><span aria-hidden="true" className="text-base leading-none">−</span>{t("minusOne")}</button><button type="button" disabled={busy} onClick={() => adjust(1)} aria-label={t("add")} className="flex h-10 items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-[#bffcc6] px-3 text-xs font-black shadow-[2px_2px_0_#000] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c4b5fd] disabled:translate-y-0 disabled:opacity-40">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <span aria-hidden="true" className="text-base leading-none">+</span>}{t("plusOne")}</button></div>
   </div>;
 }
 
