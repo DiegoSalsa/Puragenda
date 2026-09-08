@@ -1,99 +1,62 @@
-
-import { LocalizedText } from "@/components/i18n/localized-text";
-import { getCurrentSessionUser } from "@/server/auth/user-session";
-import { getBusinessForUser } from "@/server/services/business.service";
-import { Stamp } from "@/components/icons/hover-icons";
-import { LoyaltyConfigForm } from "./loyalty-config-form";
-import { PageTutorial } from "@/components/dashboard/page-tutorial";
+import { Gift, Stamp, Trophy, Users } from "@/components/icons/hover-icons";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { prisma } from "@/server/db/prisma";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { LoyaltyConfigForm } from "./loyalty-config-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoyaltyPage() {
   const user = await getCurrentSessionUser();
-  if (!user) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="92MLir4qhMgu" /></div>;
-
+  if (!user) return <div className="py-20 text-center">Debes iniciar sesión.</div>;
   const business = await getBusinessForUser(user.id);
-  if (!business) return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="8rEGoq2nl-vn" /></div>;
-  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) {
-    return <div className="py-20 text-center text-muted-foreground"><LocalizedText id="6HL0Yo7lttob" /></div>;
-  }
+  if (!business) return <div className="py-20 text-center">No encontramos tu negocio.</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) return <div className="py-20 text-center">No tienes permisos para administrar fidelización.</div>;
+
+  const [services, clients, participants, stampAggregate, generated, used] = await Promise.all([
+    prisma.service.findMany({ where: { businessId: business.id, bookingMode: "APPOINTMENT" }, orderBy: { name: "asc" }, select: { id: true, name: true, price: true } }),
+    prisma.client.findMany({ where: { businessId: business.id }, orderBy: [{ currentStamps: "desc" }, { name: "asc" }], take: 12, select: { id: true, name: true, email: true, currentStamps: true } }),
+    prisma.client.count({ where: { businessId: business.id, OR: [{ currentStamps: { gt: 0 } }, { loyaltyCodes: { some: {} } }] } }),
+    prisma.loyaltyStampEvent.aggregate({ where: { businessId: business.id, delta: { gt: 0 } }, _sum: { delta: true } }),
+    prisma.loyaltyCode.count({ where: { businessId: business.id } }),
+    prisma.loyaltyCode.count({ where: { businessId: business.id, isUsed: true } }),
+  ]);
+  const redemptionRate = generated ? Math.round(used * 100 / generated) : 0;
+  const metrics = [
+    { label: "Clientes participando", value: participants, icon: Users, color: "bg-[#c4b5fd]" },
+    { label: "Timbres entregados", value: stampAggregate._sum.delta ?? 0, icon: Stamp, color: "bg-[#bffcc6]" },
+    { label: "Premios generados", value: generated, icon: Gift, color: "bg-[#ffb5e8]" },
+    { label: "Tasa de canje", value: `${redemptionRate}%`, icon: Trophy, color: "bg-[#fff5ba]" },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <Stamp className="h-8 w-8 text-brand-foreground" />
-          <LocalizedText id="KfCnckvorAoy" />
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          <LocalizedText id="f8lV4w40Icjf" />
-        </p>
-      </div>
+    <div className="space-y-8 pb-12">
+      <header>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">Fidelización V2</p>
+        <h1 className="mt-1 flex items-center gap-3 text-3xl font-black tracking-tight"><Stamp className="h-8 w-8" /> Constructor de fidelización</h1>
+        <p className="mt-2 max-w-2xl text-sm font-medium text-muted-foreground">Premia automáticamente a tus clientes cuando completan sus visitas.</p>
+      </header>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <LoyaltyConfigForm
-          initialData={{
-            isLoyaltyEnabled: business.isLoyaltyEnabled,
-            stampsRequired: business.stampsRequired,
-            rewardName: business.rewardName ?? "",
-            discountType: business.discountType ?? "PERCENTAGE",
-            discountValue: business.discountValue ?? 0,
-            loyaltyCodePrefix: business.loyaltyCodePrefix,
-          }}
-        />
-      </div>
+      <section aria-label="Métricas de fidelización" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(({ label, value, icon: Icon, color }) => <div key={label} className={`${color} rounded-2xl border-3 border-black p-4 shadow-[4px_4px_0_#000]`}><Icon className="h-5 w-5" /><p className="mt-3 text-2xl font-black">{value}</p><p className="text-xs font-black">{label}</p></div>)}
+      </section>
 
-      {/* Info card */}
-      <div className="rounded-2xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-6">
-        <h3 className="text-sm font-semibold text-brand-foreground mb-2"><LocalizedText id="Th8TqSkxybtS" /></h3>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span><LocalizedText id="xr-QiqF8b3D-" /> <strong className="text-foreground"><LocalizedText id="sUhZDAsLj9kJ" /></strong><LocalizedText id="SGUQ_qoCfufT" /></span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span><LocalizedText id="TUqOrwFQUHLZ" /> <strong className="text-foreground"><LocalizedText id="s82urGsq4Nv-" /></strong> <LocalizedText id="HQ-i7ObaZR6S" /></span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#7C3AED] shrink-0" />
-            <span><LocalizedText id="hzX8FthTCrHv" /> <strong className="text-foreground"><LocalizedText id="Nuj0ae1yfPk2" /></strong> <LocalizedText id="QcpG5mwlo9K4" /></span>
-          </li>
-        </ul>
-      </div>
-
-      <PageTutorial
-        tutorialKey="fidelizacion_v1"
-        dependsOnKey="general"
-        userEmail={user.email}
-        steps={[
-          {
-            popover: {
-              title: "FIDELIZACIÓN DE CLIENTES",
-              description: "Activa una tarjeta de timbres digital automática. Premia a tus clientes más leales para que siempre vuelvan.",
-            }
-          },
-          {
-            element: "form",
-            popover: {
-              title: "CONFIGURACIÓN DEL PREMIO",
-              description: "Define cuántas visitas se necesitan para ganar un premio y de qué trata el descuento o servicio gratuito.",
-              side: "top",
-              align: "start"
-            }
-          },
-          {
-            element: ".space-y-8 > div:last-child",
-            popover: {
-              title: "AUTOMATIZACIÓN",
-              description: "No tienes que hacer nada manual. El sistema sumará un timbre por cada cita completada y le notificará al cliente.",
-              side: "top",
-              align: "start"
-            }
-          }
-        ]}
+      <LoyaltyConfigForm
+        initialData={{
+          isLoyaltyEnabled: business.isLoyaltyEnabled,
+          stampsRequired: business.stampsRequired,
+          rewardName: business.rewardName ?? "",
+          rewardType: business.loyaltyRewardType,
+          discountValue: business.discountValue ?? 0,
+          rewardServiceId: business.loyaltyRewardServiceId,
+          expirationDays: business.loyaltyRewardExpirationDays,
+          loyaltyCodePrefix: business.loyaltyCodePrefix,
+        }}
+        business={{ name: business.name, logoUrl: business.logoUrl, currencyCode: business.currencyCode }}
+        services={services}
+        clients={clients}
       />
     </div>
   );
