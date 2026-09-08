@@ -60,6 +60,16 @@ function isMissingMarketplaceSchema(error: unknown) {
     && (error.code === "P2021" || error.code === "P2022");
 }
 
+function isTransientPublicInventoryFailure(error: unknown) {
+  if (isMissingMarketplaceSchema(error)) return true;
+  const code = typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : "";
+  if (["P1001", "P1002", "P1017", "P2024"].includes(code)) return true;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /connection terminated|connection closed|ECONNRESET|ETIMEDOUT|timeout expired/i.test(message);
+}
+
 async function loadPublicListingRows(categoryWhere: {
   some: { category: { isActive?: boolean; seoEnabled?: boolean } };
 }) {
@@ -79,7 +89,7 @@ export async function listPublicMarketplaceListings(): Promise<MarketplaceListin
       .flatMap((row) => mapPublishedListingToCandidates(row, { categoryFilter: "isActive" }))
       .filter(isMarketplacePubliclyVisible);
   } catch (error) {
-    if (isMissingMarketplaceSchema(error)) return [];
+    if (isTransientPublicInventoryFailure(error)) return [];
     throw error;
   }
 }
@@ -89,7 +99,7 @@ export async function listSeoMarketplaceListings(): Promise<MarketplaceListingCa
     const rows = await loadPublicListingRows({ some: { category: { seoEnabled: true } } });
     return rows.flatMap((row) => mapPublishedListingToCandidates(row, { categoryFilter: "seoEnabled" }));
   } catch (error) {
-    if (isMissingMarketplaceSchema(error)) return [];
+    if (isTransientPublicInventoryFailure(error)) return [];
     throw error;
   }
 }
@@ -106,7 +116,7 @@ export async function listPublicMarketplaceDirectory(
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
     return buildMarketplaceDirectoryResult(cards, parsed);
   } catch (error) {
-    if (isMissingMarketplaceSchema(error)) {
+    if (isTransientPublicInventoryFailure(error)) {
       return buildMarketplaceDirectoryResult([], parsed);
     }
     throw error;

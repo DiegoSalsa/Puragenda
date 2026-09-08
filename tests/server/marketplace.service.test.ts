@@ -53,6 +53,15 @@ describe("listPublicMarketplaceListings", () => {
     await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
   });
 
+  it("fails closed when the database connection drops", async () => {
+    findMany.mockRejectedValue(new Error("Connection terminated unexpectedly"));
+    await expect(listPublicMarketplaceListings()).resolves.toEqual([]);
+    await expect(listPublicMarketplaceDirectory()).resolves.toMatchObject({
+      cards: [],
+      emptyKind: "no_inventory",
+    });
+  });
+
   it("does not emit unpublished or inactive-category rows as public inventory", async () => {
     findMany.mockResolvedValue([
       {
