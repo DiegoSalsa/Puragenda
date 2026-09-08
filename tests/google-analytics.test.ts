@@ -61,6 +61,9 @@ describe("Google Analytics layout tag", () => {
     const script = getGoogleConsentBootstrapScript();
     expect(script).toContain(ANALYTICS_CONSENT_KEY);
     expect(script).toContain('analytics_storage: granted ? "granted" : "denied"');
+    expect(script).toContain('ad_storage: "denied"');
+    expect(script).toContain('ad_user_data: "denied"');
+    expect(script).toContain('ad_personalization: "denied"');
   });
 });
 
