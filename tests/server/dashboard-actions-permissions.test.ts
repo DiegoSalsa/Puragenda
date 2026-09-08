@@ -30,7 +30,7 @@ vi.mock("@/server/db/prisma", () => ({
     appointment: { findFirst: vi.fn(), update: vi.fn() },
     business: { update: vi.fn() },
     businessHours: { upsert: vi.fn() },
-    service: { count: vi.fn() },
+    service: { count: vi.fn(), findFirst: vi.fn() },
     staff: { count: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     subscription: { findUnique: vi.fn() },
     $transaction: vi.fn(),
@@ -44,6 +44,7 @@ import {
   updateBusinessPoliciesAction,
   updateProductionOrdersEnabledAction,
   updateServiceCategoryGroupingAction,
+  saveLoyaltyConfigAction,
   saveStaffScheduleAction,
   updateStaffServicesAction,
 } from "@/server/actions/dashboard.actions";
@@ -267,5 +268,45 @@ describe("dashboard action permission boundaries", () => {
         minAdvanceBookingMinutes: 0,
       },
     });
+  });
+
+  it("requires loyalty.manage before changing the loyalty program", async () => {
+    vi.mocked(hasBusinessPermission).mockResolvedValue(false);
+
+    const result = await saveLoyaltyConfigAction({
+      isLoyaltyEnabled: true,
+      stampsRequired: 8,
+      rewardName: "20% de descuento",
+      rewardType: "PERCENTAGE",
+      discountValue: 20,
+      rewardServiceId: null,
+      expirationDays: 30,
+      loyaltyCodePrefix: "PREMIO",
+    });
+
+    expect(result).toEqual({ error: "No tienes permisos para configurar la fidelización" });
+    expect(prisma.business.update).not.toHaveBeenCalled();
+  });
+
+  it("does not accept a free service from another business", async () => {
+    vi.mocked(prisma.service.findFirst).mockResolvedValue(null);
+
+    const result = await saveLoyaltyConfigAction({
+      isLoyaltyEnabled: true,
+      stampsRequired: 8,
+      rewardName: "Corte gratis",
+      rewardType: "FREE_SERVICE",
+      discountValue: 0,
+      rewardServiceId: "foreign-service",
+      expirationDays: null,
+      loyaltyCodePrefix: "PREMIO",
+    });
+
+    expect(result).toEqual({ error: "El servicio seleccionado no pertenece a tu negocio" });
+    expect(prisma.service.findFirst).toHaveBeenCalledWith({
+      where: { id: "foreign-service", businessId: business.id, bookingMode: "APPOINTMENT" },
+      select: { id: true, name: true },
+    });
+    expect(prisma.business.update).not.toHaveBeenCalled();
   });
 });
