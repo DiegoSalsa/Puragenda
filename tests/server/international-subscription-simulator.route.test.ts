@@ -25,9 +25,13 @@ vi.mock("@/server/services/platform-discount.service", () => ({
   quotePlatformDiscount: vi.fn(),
   reservePlatformDiscount: vi.fn(),
 }));
-vi.mock("@/server/services/subscription-billing.service", () => ({
-  calculateNextBillingPreview: vi.fn(() => ({ mpAmount: 12990 })),
-}));
+vi.mock("@/server/services/subscription-billing.service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/server/services/subscription-billing.service")>();
+  return {
+    ...actual,
+    calculateNextBillingPreview: vi.fn(() => ({ mpAmount: 12990 })),
+  };
+});
 vi.mock("@/server/lib/mercadopago", () => ({ mpClient: {} }));
 vi.mock("mercadopago", () => ({ PreApproval: class {} }));
 
@@ -54,6 +58,8 @@ describe("international subscription local simulator", () => {
       id: "subscription-ar",
       plan: "INDIVIDUAL",
       status: "TRIALING",
+      isTrial: true,
+      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       billingCycle: "MONTHLY",
       extraStaffCount: 0,
     } as never);
@@ -74,7 +80,7 @@ describe("international subscription local simulator", () => {
     expect(body.init_point).toContain("http://localhost:3000/api/dev/payment-simulator?token=");
     expect(upsertSubscription).toHaveBeenCalledWith(expect.objectContaining({
       where: { businessId: "business-ar" },
-      update: expect.objectContaining({ status: "INACTIVE", isTrial: false }),
+      update: expect.objectContaining({ status: "TRIALING", isTrial: true }),
     }));
   });
 

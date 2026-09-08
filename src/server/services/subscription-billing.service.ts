@@ -5,6 +5,47 @@ import { prisma } from "@/server/db/prisma";
 
 export const MIN_MERCADOPAGO_AMOUNT_CLP = 10;
 
+type BillingStatus = "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
+
+export function pendingCheckoutSubscriptionState(subscription: {
+  status?: BillingStatus | null;
+  isTrial?: boolean | null;
+  trialEndsAt?: Date | string | null;
+} | null): { status: "TRIALING" | "INACTIVE"; isTrial: boolean } {
+  const trialEndsAt = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+  const trialStillValid =
+    subscription?.status === "TRIALING" &&
+    Boolean(subscription.isTrial) &&
+    trialEndsAt !== null &&
+    !Number.isNaN(trialEndsAt.getTime()) &&
+    trialEndsAt.getTime() > Date.now();
+
+  if (trialStillValid) {
+    return { status: "TRIALING", isTrial: true };
+  }
+
+  return { status: "INACTIVE", isTrial: false };
+}
+
+export function stateForCancelledProviderSubscription(subscription: {
+  status: BillingStatus;
+  isTrial: boolean;
+}): {
+  status: "TRIALING" | "INACTIVE" | "CANCELLED";
+  isTrial: boolean;
+  clearProviderIds: boolean;
+} {
+  if (subscription.status === "TRIALING" || subscription.isTrial) {
+    return { status: "TRIALING", isTrial: true, clearProviderIds: true };
+  }
+
+  if (subscription.status === "INACTIVE") {
+    return { status: "INACTIVE", isTrial: false, clearProviderIds: true };
+  }
+
+  return { status: "CANCELLED", isTrial: false, clearProviderIds: false };
+}
+
 type BillingPlan = keyof typeof PRICING;
 type BillingCycle = "MONTHLY" | "ANNUAL";
 

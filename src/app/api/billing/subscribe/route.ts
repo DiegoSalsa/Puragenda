@@ -7,7 +7,10 @@ import { PRICING } from "@/core/constants";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
 import { quotePlatformDiscount, reservePlatformDiscount } from "@/server/services/platform-discount.service";
-import { calculateNextBillingPreview } from "@/server/services/subscription-billing.service";
+import {
+  calculateNextBillingPreview,
+  pendingCheckoutSubscriptionState,
+} from "@/server/services/subscription-billing.service";
 import {
   mapMercadoPagoFailure,
   mercadoPagoNotConfigured,
@@ -116,6 +119,7 @@ export async function POST(request: NextRequest) {
       const extraStaffCount = targetPlan === "EQUIPO"
         ? requestedExtraStaffCount || subscription?.extraStaffCount || 0
         : 0;
+      const pendingState = pendingCheckoutSubscriptionState(subscription);
 
       try {
         const items = getPaddleCheckoutItems(targetPlan, extraStaffCount);
@@ -124,9 +128,9 @@ export async function POST(request: NextRequest) {
           update: {
             plan: targetPlan,
             extraStaffCount,
-            status: "INACTIVE",
-            isTrial: false,
-            trialEndsAt: null,
+            status: pendingState.status,
+            isTrial: pendingState.isTrial,
+            trialEndsAt: pendingState.status === "TRIALING" ? subscription?.trialEndsAt ?? null : null,
           },
           create: {
             businessId: business.id,
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           provider: "paddle",
           items,
-  customer: { email: user.email, countryCode: business.countryCode },
+          customer: { email: user.email, countryCode: business.countryCode },
           customData: {
             puragenda_business_id: business.id,
             puragenda_plan: targetPlan,
@@ -197,6 +201,8 @@ export async function POST(request: NextRequest) {
       transactionAmount = platformDiscount.discountedAmount;
     }
 
+    const pendingState = pendingCheckoutSubscriptionState(subscription);
+
     if (localSimulatorEnabled) {
       const providerId = localProviderId("subscription");
       const savedSubscription = await prisma.subscription.upsert({
@@ -206,8 +212,8 @@ export async function POST(request: NextRequest) {
           mpCustomerId: null,
           plan: targetPlan,
           extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
-          status: "INACTIVE",
-          isTrial: false,
+          status: pendingState.status,
+          isTrial: pendingState.isTrial,
           paymentFailedAt: null,
           gracePeriodEndsAt: null,
           nextPaymentAttemptAt: null,
@@ -290,7 +296,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Upsert subscription in our DB with INACTIVE status (pending payment)
+    // Keep an active trial usable if checkout is abandoned. PaymentWall only
+    // appears for INACTIVE, so flipping TRIALING here used to cancel the month.
     const savedSubscription = await prisma.subscription.upsert({
       where: { businessId: business.id },
       update: {
@@ -298,8 +305,8 @@ export async function POST(request: NextRequest) {
         mpCustomerId: result.payer_id?.toString() ?? null,
         plan: targetPlan,
         extraStaffCount: targetPlan === "EQUIPO" ? requestedExtraStaffCount || subscription?.extraStaffCount || 0 : 0,
-        status: "INACTIVE",
-        isTrial: false,
+        status: pendingState.status,
+        isTrial: pendingState.isTrial,
         paymentFailedAt: null,
         gracePeriodEndsAt: null,
         nextPaymentAttemptAt: null,

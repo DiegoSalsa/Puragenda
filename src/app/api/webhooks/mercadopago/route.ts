@@ -10,6 +10,7 @@ import {
   processMercadoPagoInvoice,
   type MercadoPagoInvoiceSnapshot,
 } from "@/server/services/subscription-dunning.service";
+import { stateForCancelledProviderSubscription } from "@/server/services/subscription-billing.service";
 
 function verifyWebhookSignature(
   xSignature: string | null,
@@ -106,11 +107,18 @@ async function processPreapproval(resourceId: string) {
     mpSubscription.status === "cancelled" ||
     mpSubscription.status === "canceled"
   ) {
+    const nextState = stateForCancelledProviderSubscription(subscription);
     await prisma.subscription.update({
       where: { id: subscription.id },
-      data: { status: "CANCELLED" },
+      data: {
+        status: nextState.status,
+        isTrial: nextState.isTrial,
+        ...(nextState.clearProviderIds
+          ? { mpSubscriptionId: null, mpCustomerId: null }
+          : {}),
+      },
     });
-    return { handled: true, state: "CANCELLED" };
+    return { handled: true, state: nextState.status };
   }
 
   if (mpSubscription.status === "paused") {
