@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
 import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
+import { resolveLoyaltyReward } from "@/server/services/loyalty-reward.service";
 
 /**
  * POST /api/business/[slug]/validate-reward
@@ -18,6 +19,9 @@ export async function POST(
   try {
     const body = await request.json();
     const { code, email } = body;
+    const serviceIds: string[] = Array.isArray(body.serviceIds)
+      ? Array.from(new Set<string>((body.serviceIds as unknown[]).filter((id): id is string => typeof id === "string"))).slice(0, 20)
+      : [];
 
     if (!code || !email) {
       return Response.json(
@@ -40,51 +44,30 @@ export async function POST(
       );
     }
 
-    // Find the loyalty code
-    const loyaltyCode = await prisma.loyaltyCode.findUnique({
-      where: { code: code.trim().toUpperCase() },
-      include: {
-        client: { select: { email: true } },
-      },
+    const services = await prisma.service.findMany({
+      where: { id: { in: serviceIds }, businessId: business.id },
+      select: { id: true, price: true },
     });
+    if (services.length !== serviceIds.length) return Response.json({ error: "Uno o más servicios no son válidos" }, { status: 400 });
+    const serviceBasePrices = new Map(services.map((service) => [service.id, service.price]));
+    const resolution = await resolveLoyaltyReward({
+      code,
+      customerEmail: email,
+      businessId: business.id,
+      subtotal: services.reduce((sum, service) => sum + service.price, 0),
+      serviceBasePrices,
+    });
+    if ("error" in resolution) return Response.json({ error: resolution.error }, { status: 400 });
 
-    if (!loyaltyCode) {
-      return Response.json(
-        { error: "Código de premio no encontrado." },
-        { status: 404 }
-      );
-    }
-
-    // Verify the code belongs to this business
-    if (loyaltyCode.businessId !== business.id) {
-      return Response.json(
-        { error: "Este código no pertenece a este negocio." },
-        { status: 403 }
-      );
-    }
-
-    // Verify the code belongs to the client's email
-    if (loyaltyCode.client.email.toLowerCase() !== email.trim().toLowerCase()) {
-      return Response.json(
-        { error: "Este código no está asociado a tu correo electrónico." },
-        { status: 403 }
-      );
-    }
-
-    // Verify the code hasn't been used
-    if (loyaltyCode.isUsed) {
-      return Response.json(
-        { error: "Este código ya fue utilizado." },
-        { status: 409 }
-      );
-    }
-
-    // Code is valid!
     return Response.json({
       valid: true,
-      discountType: loyaltyCode.discountType,
-      discountValue: loyaltyCode.discountValue,
-      rewardName: loyaltyCode.rewardName,
+      discountType: resolution.reward.rewardType,
+      discountValue: resolution.reward.discountValue,
+      rewardName: resolution.reward.rewardName,
+      freeServiceId: resolution.reward.freeServiceId,
+      freeServiceName: resolution.reward.freeService?.name ?? null,
+      expiresAt: resolution.reward.expiresAt,
+      quote: resolution.quote,
     });
   } catch (error) {
     console.error("[route] Error:", error);

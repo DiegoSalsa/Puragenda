@@ -920,8 +920,10 @@ export async function saveLoyaltyConfigAction(data: {
   isLoyaltyEnabled: boolean;
   stampsRequired: number;
   rewardName: string;
-  discountType: string;
+  rewardType: "PERCENTAGE" | "FIXED" | "FREE_SERVICE" | "CUSTOM";
   discountValue: number;
+  rewardServiceId: string | null;
+  expirationDays: number | null;
   loyaltyCodePrefix: string;
 }) {
   const user = await getCurrentSessionUser();
@@ -932,26 +934,43 @@ export async function saveLoyaltyConfigAction(data: {
     return { error: "No tienes permisos para configurar la fidelización" };
   }
 
-  const stamps = Math.max(1, Math.min(50, Math.floor(data.stampsRequired)));
-  const discountVal = Math.max(0, Math.floor(data.discountValue || 0));
+  const stamps = Math.floor(data.stampsRequired);
+  const discountVal = Math.floor(data.discountValue || 0);
   const loyaltyCodePrefix = normalizeLoyaltyCodePrefix(data.loyaltyCodePrefix);
 
-  if (data.discountType && !["PERCENTAGE", "FIXED"].includes(data.discountType)) {
+  if (stamps < 2 || stamps > 30) return { error: "La meta debe estar entre 2 y 30 visitas" };
+  if (!["PERCENTAGE", "FIXED", "FREE_SERVICE", "CUSTOM"].includes(data.rewardType)) {
     return { error: "Tipo de descuento inválido" };
   }
+  if (data.rewardType === "PERCENTAGE" && (discountVal <= 0 || discountVal > 100)) return { error: "El porcentaje debe estar entre 1 y 100" };
+  if (data.rewardType === "FIXED" && discountVal <= 0) return { error: "El monto debe ser mayor a 0" };
+  if (data.rewardType === "CUSTOM" && data.rewardName.trim().length < 3) return { error: "Describe el premio personalizado" };
+  if (data.expirationDays !== null && ![30, 60, 90].includes(data.expirationDays)) return { error: "Vigencia inválida" };
 
-  if (data.discountType === "PERCENTAGE" && discountVal > 100) {
-    return { error: "El porcentaje no puede ser mayor a 100" };
+  let rewardService = null;
+  if (data.rewardType === "FREE_SERVICE") {
+    if (!data.rewardServiceId) return { error: "Selecciona el servicio gratuito" };
+    rewardService = await prisma.service.findFirst({
+      where: { id: data.rewardServiceId, businessId: business.id, bookingMode: "APPOINTMENT" },
+      select: { id: true, name: true },
+    });
+    if (!rewardService) return { error: "El servicio seleccionado no pertenece a tu negocio" };
   }
+
+  const rewardName = data.rewardName.trim() || (rewardService ? `${rewardService.name} gratis` : "Premio de fidelización");
 
   await prisma.business.update({
     where: { id: business.id },
     data: {
       isLoyaltyEnabled: data.isLoyaltyEnabled,
       stampsRequired: stamps,
-      rewardName: data.rewardName?.trim() || null,
-      discountType: data.discountType || null,
-      discountValue: discountVal || null,
+      rewardName,
+      loyaltyRewardType: data.rewardType,
+      loyaltyRewardServiceId: rewardService?.id ?? null,
+      loyaltyRewardExpirationDays: data.expirationDays,
+      // Keep the legacy columns synchronized for existing readers and codes.
+      discountType: data.rewardType,
+      discountValue: ["PERCENTAGE", "FIXED"].includes(data.rewardType) ? discountVal : null,
       loyaltyCodePrefix,
     },
   });

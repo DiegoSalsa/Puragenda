@@ -110,7 +110,7 @@ export async function createAppointment(data: {
   internalNotes?: string;
   allowPrioritySlots?: boolean;
   storyCampaignId?: string;
-}) {
+}, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }) {
   // Check collision for the specific staff member (or business-wide if no staff)
   const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
     data.businessId,
@@ -151,7 +151,8 @@ export async function createAppointment(data: {
   // Determine initial status based on deposit config
   const initialStatus = data.status ?? (data.depositRequired ? "AWAITING_PAYMENT" : "PENDING");
 
-  const appointment = await prisma.appointment.create({
+  const db = options?.tx ?? prisma;
+  const appointment = await db.appointment.create({
     data: {
       customerName: data.customerName,
       customerEmail: data.customerEmail,
@@ -184,7 +185,7 @@ export async function createAppointment(data: {
     include: { service: true },
   });
 
-  await syncAppointmentToGoogle(appointment.id);
+  if (options?.syncGoogle !== false) await syncAppointmentToGoogle(appointment.id);
 
   return { success: true as const, appointment };
 }

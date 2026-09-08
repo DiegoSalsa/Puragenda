@@ -18,6 +18,34 @@ import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.serv
 import { isServiceAvailableAtTime } from "@/core/service-availability";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
+import { claimLoyaltyReward, releaseLoyaltyReward, resolveLoyaltyReward } from "@/server/services/loyalty-reward.service";
+import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import type { Appointment, Service as PrismaService } from "@prisma/client";
+import { validateLoyaltyNoStacking } from "@/core/loyalty";
+
+class RewardClaimError extends Error {}
+class BookingGroupError extends Error {}
+
+async function createAppointmentWithOptionalReward(
+  data: Parameters<typeof createAppointment>[0],
+  reward: { id: string } | null,
+) {
+  if (!reward) return createAppointment(data);
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const created = await createAppointment(data, { tx, syncGoogle: false });
+      if (!created.success) throw new RewardClaimError(created.error);
+      const claimed = await claimLoyaltyReward(tx, { rewardId: reward.id, appointmentId: created.appointment.id });
+      if (!claimed) throw new RewardClaimError("Este premio acaba de ser utilizado o venció");
+      return created;
+    });
+    await syncAppointmentToGoogle(result.appointment.id);
+    return result;
+  } catch (error) {
+    if (error instanceof RewardClaimError) return { success: false as const, error: error.message };
+    throw error;
+  }
+}
 
 type ScheduleRange = {
   startTime: string;
@@ -274,14 +302,27 @@ export async function POST(
       return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
 
-    if ([promotionId, rewardCode, discountCode].filter(Boolean).length > 1) {
+    const incentiveValidation = validateLoyaltyNoStacking({ promotionId, rewardCode, discountCode });
+    if ("error" in incentiveValidation) {
       return Response.json(
-        { error: "No se pueden combinar promociones, premios ni códigos de descuento" },
+        { error: incentiveValidation.error },
         { status: 400 }
       );
     }
 
     const originalTotalPrice = totalPrice;
+    const rewardResolution = rewardCode
+      ? await resolveLoyaltyReward({
+          code: rewardCode,
+          businessId: business.id,
+          customerEmail,
+          subtotal: originalTotalPrice,
+          serviceBasePrices: new Map(allSelectedServices.map((selected) => [selected.id, selected.price])),
+        })
+      : { reward: null, quote: null };
+    if ("error" in rewardResolution) {
+      return Response.json({ error: rewardResolution.error }, { status: 400 });
+    }
     const bookingDiscountResolution = discountCode
       ? await resolveBookingDiscount({ code: discountCode, businessId: business.id, subtotal: originalTotalPrice })
       : { discount: null, quote: null };
@@ -300,9 +341,10 @@ export async function POST(
     }
     const appliedPromotion = promotionResolution.promotion;
     const appliedBookingDiscount = bookingDiscountResolution.discount;
-    const discountQuote = bookingDiscountResolution.quote ?? promotionResolution.quote;
-    const promotionDiscountAmount = discountQuote?.discountAmount ?? 0;
+    const discountQuote = rewardResolution.quote ?? bookingDiscountResolution.quote ?? promotionResolution.quote;
+    const canonicalDiscountAmount = discountQuote?.discountAmount ?? 0;
     totalPrice = discountQuote?.discountedTotal ?? originalTotalPrice;
+    const appliedReward = rewardResolution.reward;
 
     const requestedStart = new Date(startTime);
     const requestedEnd = new Date(endTime);
@@ -759,21 +801,28 @@ export async function POST(
         }
       }
 
-      const createdAppointments = [];
-      let remainingDiscountedTotal = totalPrice;
-
-      for (const [groupIndex, [assignedStaffId, assignments]] of groupedAppointmentEntries.entries()) {
+      let createdAppointments: Array<Appointment & { service: PrismaService }>;
+      try {
+        createdAppointments = await prisma.$transaction(async (tx) => {
+          const created: Array<Appointment & { service: PrismaService }> = [];
+          let remainingDiscountedTotal = totalPrice;
+          for (const [groupIndex, [assignedStaffId, assignments]] of groupedAppointmentEntries.entries()) {
         const groupServices = assignments
           .map((assignment) => serviceById.get(assignment.serviceId))
           .filter((s): s is NonNullable<typeof s> => Boolean(s));
         const groupDuration = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.duration ?? s.duration), 0);
         const groupPrice = groupServices.reduce((sum, s) => sum + (serviceTotals.get(s.id)?.price ?? s.price), 0);
-        const groupDiscountedPrice = groupIndex === groupedAppointmentEntries.length - 1
-          ? remainingDiscountedTotal
-          : Math.min(
-              remainingDiscountedTotal,
-              Math.round(totalPrice * groupPrice / Math.max(1, originalTotalPrice))
-            );
+        const freeServiceInGroup = appliedReward?.rewardType === "FREE_SERVICE"
+          ? groupServices.find((selected) => selected.id === appliedReward.freeServiceId)
+          : null;
+        const groupDiscountedPrice = appliedReward?.rewardType === "FREE_SERVICE"
+          ? Math.max(0, groupPrice - (freeServiceInGroup?.price ?? 0))
+          : groupIndex === groupedAppointmentEntries.length - 1
+            ? remainingDiscountedTotal
+            : Math.min(
+                remainingDiscountedTotal,
+                Math.round(totalPrice * groupPrice / Math.max(1, originalTotalPrice))
+              );
         remainingDiscountedTotal -= groupDiscountedPrice;
         const groupDeposit = Math.min(
           groupDiscountedPrice,
@@ -808,14 +857,25 @@ export async function POST(
           depositAmount: groupDeposit,
           depositPaymentUrl: manualPaymentUrl,
           storyCampaignId: storyCampaign?.id,
+        }, { tx, syncGoogle: false });
+
+        if (!result.success) throw new BookingGroupError(result.error);
+
+            created.push(result.appointment);
+          }
+          if (appliedReward) {
+            const claimed = await claimLoyaltyReward(tx, { rewardId: appliedReward.id, appointmentId: created[0].id });
+            if (!claimed) throw new BookingGroupError("Este premio acaba de ser utilizado o venció");
+          }
+          return created;
         });
-
-        if (!result.success) {
-          return Response.json({ error: result.error }, { status: 409 });
+      } catch (error) {
+        if (error instanceof BookingGroupError) {
+          return Response.json({ error: error.message }, { status: 409 });
         }
-
-        createdAppointments.push(result.appointment);
+        throw error;
       }
+      await Promise.all(createdAppointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
 
       let paymentUrl: string | null = depositRequired && usesManualPaymentLink
         ? await createManualDepositPageUrl(createdAppointments.map((appointment) => appointment.id))
@@ -871,6 +931,10 @@ export async function POST(
             where: { id: { in: createdAppointments.map((appointment) => appointment.id) } },
             data: { status: "CANCELLED", paymentStatus: "REJECTED" },
           });
+          if (appliedReward) await prisma.$transaction((tx) => releaseLoyaltyReward(tx, {
+            rewardId: appliedReward.id,
+            appointmentId: createdAppointments[0].id,
+          }));
           return Response.json(
             { error: "No se pudo generar el link de pago. Intenta nuevamente." },
             { status: 502 }
@@ -894,29 +958,6 @@ export async function POST(
         }
       }
 
-      if (rewardCode) {
-        try {
-          const loyaltyCode = await prisma.loyaltyCode.findUnique({
-            where: { code: rewardCode },
-            include: { client: { select: { email: true } } },
-          });
-
-          if (
-            loyaltyCode &&
-            !loyaltyCode.isUsed &&
-            loyaltyCode.businessId === business.id &&
-            loyaltyCode.client.email.toLowerCase() === customerEmail.toLowerCase()
-          ) {
-            await prisma.loyaltyCode.update({
-              where: { id: loyaltyCode.id },
-              data: { isUsed: true },
-            });
-          }
-        } catch (err) {
-          console.error("[Book] Error redeeming reward code:", err);
-        }
-      }
-
       return Response.json(
         {
           ...createdAppointments[0],
@@ -929,7 +970,7 @@ export async function POST(
     }
 
     // Create appointment with collision detection
-    const result = await createAppointment({
+    const result = await createAppointmentWithOptionalReward({
       customerName,
       customerEmail,
       customerPhone,
@@ -944,7 +985,7 @@ export async function POST(
       totalDuration,
       totalPrice,
       originalTotalPrice,
-      discountAmount: promotionDiscountAmount,
+      discountAmount: canonicalDiscountAmount,
       bookingDiscountCodeId: appliedBookingDiscount?.id,
       bookingDiscountCodeValue: appliedBookingDiscount?.code,
       promotionId: appliedPromotion?.id,
@@ -955,7 +996,7 @@ export async function POST(
       depositAmount: totalDepositAmount,
       depositPaymentUrl: manualPaymentUrl,
       storyCampaignId: storyCampaign?.id,
-    });
+    }, appliedReward);
 
     if (!result.success) {
       return Response.json({ error: result.error }, { status: 409 });
@@ -1016,6 +1057,10 @@ export async function POST(
           where: { id: result.appointment.id },
           data: { status: "CANCELLED", paymentStatus: "REJECTED" },
         });
+        if (appliedReward) await prisma.$transaction((tx) => releaseLoyaltyReward(tx, {
+          rewardId: appliedReward.id,
+          appointmentId: result.appointment.id,
+        }));
         return Response.json(
           { error: "No se pudo generar el link de pago. Intenta nuevamente." },
           { status: 502 }
@@ -1038,31 +1083,6 @@ export async function POST(
 
       if (appointmentWithRelations) {
         await sendBookingNotifications(appointmentWithRelations);
-      }
-    }
-
-    // ── Redeem reward code if provided ──
-    if (rewardCode) {
-      try {
-        const loyaltyCode = await prisma.loyaltyCode.findUnique({
-          where: { code: rewardCode },
-          include: { client: { select: { email: true } } },
-        });
-
-        if (
-          loyaltyCode &&
-          !loyaltyCode.isUsed &&
-          loyaltyCode.businessId === business.id &&
-          loyaltyCode.client.email.toLowerCase() === customerEmail.toLowerCase()
-        ) {
-          await prisma.loyaltyCode.update({
-            where: { id: loyaltyCode.id },
-            data: { isUsed: true },
-          });
-        }
-      } catch (err) {
-        console.error("[Book] Error redeeming reward code:", err);
-        // Don't block booking if reward redemption fails
       }
     }
 

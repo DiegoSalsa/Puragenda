@@ -125,6 +125,8 @@ export async function PATCH(
         }
       });
 
+      await processLoyaltyStamps(id);
+
       return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
     }
 
@@ -191,7 +193,10 @@ export async function PATCH(
       );
     }
 
-    if (existing.status === status) return Response.json(existing);
+    if (existing.status === status) {
+      if (status === "COMPLETED") await processLoyaltyStamps(id);
+      return Response.json(existing);
+    }
 
     if (status === "CANCELLED") {
       const cancelled = await cancelAppointmentUnlessDepositApproved({
@@ -250,12 +255,8 @@ export async function PATCH(
         }
       }
 
-      // ── Loyalty: Process stamps when appointment is CHECKED_IN ──
-      if (status === "CHECKED_IN") {
-        processLoyaltyStamps(id).catch((err) =>
-          console.error("Error processing loyalty stamps:", err)
-        );
-      }
+      // A stamp represents a finished service, never merely a check-in.
+      if (status === "COMPLETED") await processLoyaltyStamps(id);
     }
 
     // Send confirmation email when status changes to CONFIRMED

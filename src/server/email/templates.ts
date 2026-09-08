@@ -614,16 +614,14 @@ interface LoyaltyStampEmailData {
 /** Email to client when they earn a stamp but haven't reached the goal yet */
 export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject: string; html: string } {
   const remaining = data.stampsRequired - data.currentStamps;
-  const progressPct = Math.round((data.currentStamps / data.stampsRequired) * 100);
-
-  // Build visual stamp dots
+  // Email-safe visual stamps: inline blocks, no CSS grid or animation.
   const dots = Array.from({ length: data.stampsRequired }, (_, i) => {
     const filled = i < data.currentStamps;
-    return `<span style="display:inline-block;width:24px;height:24px;margin:0 3px;border-radius:50%;${
+    return `<span aria-label="Timbre ${i + 1} ${filled ? "obtenido" : "pendiente"}" style="display:inline-block;width:28px;height:28px;line-height:25px;margin:3px;border-radius:8px;border:2px solid #0f172a;text-align:center;font-size:14px;font-weight:800;${
       filled
-        ? `background:${BRAND};box-shadow:0 0 8px ${BRAND}40;`
-        : "background:#e2e8f0;"
-    }"></span>`;
+        ? "background:#bffcc6;"
+        : "background:#fffaf0;border-style:dashed;color:#94a3b8;"
+    }">${filled ? "✓" : i + 1}</span>`;
   }).join("");
 
   return {
@@ -638,9 +636,6 @@ export function loyaltyStampEarnedEmail(data: LoyaltyStampEmailData): { subject:
       <!-- Progress -->
       <div style="margin:20px 0;padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;text-align:center;">
         <div style="margin-bottom:12px;">${dots}</div>
-        <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;margin:0 auto;max-width:300px;">
-          <div style="background:linear-gradient(90deg,${BRAND},${BRAND_DARK});height:100%;width:${progressPct}%;border-radius:8px;"></div>
-        </div>
         <p style="margin:12px 0 0;font-size:22px;font-weight:700;color:#0f172a;">
           ${data.currentStamps} <span style="color:#94a3b8;font-size:14px;font-weight:400;">de</span> ${data.stampsRequired}
         </p>
@@ -672,14 +667,21 @@ interface LoyaltyRewardEmailData {
   discountValue: number;
   businessName: string;
   portalUrl: string;
+  expiresAt?: Date | null;
 }
 
 /** Email to client when they complete their stamp card and win a reward */
 export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: string; html: string } {
-  const discountLabel =
-    data.discountType === "PERCENTAGE"
-      ? `${data.discountValue}% de descuento`
-      : `$${data.discountValue.toLocaleString()} de descuento`;
+  const discountLabel = data.discountType === "PERCENTAGE"
+    ? `${data.discountValue}% de descuento`
+    : data.discountType === "FIXED"
+      ? `$${data.discountValue.toLocaleString()} de descuento`
+      : data.discountType === "FREE_SERVICE"
+        ? "Servicio gratis (opciones y adicionales no incluidos)"
+        : "Beneficio a coordinar con el negocio";
+  const expiryLabel = data.expiresAt
+    ? `Válido hasta el ${data.expiresAt.toLocaleDateString("es-CL")}`
+    : "Sin vencimiento";
 
   return {
     subject: `¡Llegaste a la meta! Aquí tienes tu premio de ${data.businessName} `,
@@ -699,17 +701,18 @@ export function loyaltyRewardWonEmail(data: LoyaltyRewardEmailData): { subject: 
           <p style="margin:0;font-size:28px;font-weight:800;color:#fff;letter-spacing:3px;font-family:monospace;">${data.rewardCode}</p>
         </div>
         <p style="margin:12px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">${discountLabel}</p>
+        <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.75);">${expiryLabel}</p>
       </div>
 
       <div style="margin:16px 0;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
         <p style="margin:0;font-size:13px;color:#166534;">
-          <strong> ¿Cómo canjearlo?</strong> Presenta este código en tu próxima reserva en ${data.businessName}.
+          <strong>¿Cómo canjearlo?</strong> Abre tu tarjeta y aplica el premio al reservar en ${data.businessName}.
         </p>
       </div>
 
       <div style="text-align:center;margin:24px 0;">
         <a href="${data.portalUrl}" style="display:inline-block;background:linear-gradient(135deg,${BRAND},${BRAND_DARK});color:#fff;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;">
-          Ir a mi portal de premios →
+          Usar mi premio →
         </a>
       </div>
       <p style="margin:16px 0 0;font-size:13px;color:#94a3b8;text-align:center;">¡Gracias por tu preferencia! Tu tarjeta se ha reiniciado para seguir acumulando.</p>

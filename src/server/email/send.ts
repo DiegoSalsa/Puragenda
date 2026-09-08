@@ -694,6 +694,7 @@ export async function sendLoyaltyRewardEmail(data: {
   discountValue: number;
   businessName: string;
   clientId: string;
+  expiresAt?: Date | null;
   locale?: AppLocale;
 }) {
   const locale = await resolveEmailLocale({ locale: data.locale, businessName: data.businessName, customerEmail: data.clientEmail });
@@ -709,6 +710,7 @@ export async function sendLoyaltyRewardEmail(data: {
     discountValue: data.discountValue,
     businessName: data.businessName,
     portalUrl,
+    expiresAt: data.expiresAt,
   }), locale);
 
   try {
