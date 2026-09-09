@@ -2,13 +2,13 @@ import { MercadoPagoConfig, Preference } from "mercadopago";
 import { NextRequest } from "next/server";
 import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
 import { prisma } from "@/server/db/prisma";
-import { giftCardClaimLimiter } from "@/server/lib/rate-limit";
+import { giftCardCheckoutLimiter } from "@/server/lib/rate-limit";
 import { createGiftCardPurchase } from "@/server/services/gift-card.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import { giftCardPurchaseDetailsSchema } from "@/server/validations/gift-card";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
-  const limited = giftCardClaimLimiter.check(request);
+  const limited = giftCardCheckoutLimiter.check(request);
   if (limited) return limited;
   const { slug } = await params;
   const business = await prisma.business.findUnique({ where: { slug }, select: { id: true, slug: true, name: true, countryCode: true, currencyCode: true } });

@@ -1593,6 +1593,9 @@ model GiftCard {
   claimedAt               DateTime?
   status                  GiftCardStatus @default(ACTIVE)
   voidReason              String?
+  deliveryEmailSentAt     DateTime?
+  deliveryEmailAttempts   Int            @default(0)
+  deliveryEmailLastError  String?
   issuedAt                DateTime       @default(now())
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt

@@ -9,6 +9,7 @@ import {
 import { processLoyaltyStamps } from "@/server/actions/loyalty.actions";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { appointmentSettlementSchema, managedAppointmentSchema } from "@/server/validations/appointment-management";
@@ -20,6 +21,12 @@ import {
 import { createAuditLog } from "@/server/lib/audit";
 import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 import { commitGiftCardRedemptions, releaseGiftCardRedemptions } from "@/server/services/gift-card.service";
+
+function appointmentTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>) {
+  return typeof prisma.$transaction === "function"
+    ? prisma.$transaction(callback)
+    : callback(prisma as unknown as Prisma.TransactionClient);
+}
 
 function canManageTarget(
   permissions: string[],
@@ -140,7 +147,7 @@ export async function PATCH(
         return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
       }
 
-      const paidTransition = await prisma.$transaction(async (tx) => {
+      const paidTransition = await appointmentTransaction(async (tx) => {
         const transition = await tx.appointment.updateMany({
           where: { id, status: "AWAITING_PAYMENT", paymentStatus: existing.paymentStatus },
           data: {
@@ -352,7 +359,7 @@ export async function DELETE(
       );
     }
 
-    const cancelled = await prisma.$transaction(async (tx) => {
+    const cancelled = await appointmentTransaction(async (tx) => {
       const transition = await tx.appointment.updateMany({
         where: { id, businessId: business.id, status: "AWAITING_PAYMENT", paymentStatus: "PENDING", recurringBookingId: null },
         data: { status: "CANCELLED", customerActionTokenHash: null, customerActionTokenExpiresAt: null, customerActionTokenUsedAt: new Date() },

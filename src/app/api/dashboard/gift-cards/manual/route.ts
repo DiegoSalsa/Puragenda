@@ -15,8 +15,9 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message || "Datos inválidos" }, { status: 400 });
   try {
     const issued = await issueManualGiftCard({ businessId: business.id, ...parsed.data, paymentMethod: "MANUAL", paymentStatus: "MANUAL_PAID", createdById: user.id });
-    await sendGiftCardEmail(issued.giftCard.id);
-    return Response.json({ giftCardId: issued.giftCard.id, publicCode: issued.giftCard.publicCode }, { status: 201 });
+    let emailWarning: string | null = null;
+    try { await sendGiftCardEmail(issued.giftCard.id); } catch { emailWarning = "La Gift Card fue emitida, pero el correo quedó pendiente. Puedes reenviarlo desde Ventas."; }
+    return Response.json({ giftCardId: issued.giftCard.id, publicCode: issued.giftCard.publicCode, emailWarning }, { status: 201 });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "No se pudo emitir la Gift Card" }, { status: 400 });
   }

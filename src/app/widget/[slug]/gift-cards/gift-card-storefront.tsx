@@ -1,5 +1,8 @@
 "use client";
 
+/* Tenant-hosted branding URLs are intentionally rendered without a Next.js host allowlist. */
+/* eslint-disable @next/next/no-img-element */
+
 import { FormEvent, useState } from "react";
 import { Gift, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";

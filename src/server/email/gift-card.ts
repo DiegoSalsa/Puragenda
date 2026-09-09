@@ -47,5 +47,12 @@ export async function sendGiftCardEmail(giftCardId: string) {
     '<p style="text-align:center;margin:24px 0;"><a href="' + claimUrl + '" style="display:inline-block;background:' + escapeHtml(card.business.primaryColor) + ';color:#fff;text-decoration:none;border:3px solid #111;padding:13px 22px;font-weight:900;box-shadow:4px 4px 0 #111;">Agregar a mi cuenta</a></p>' +
     '<p style="margin:24px 0 0;text-align:center;color:#777;font-size:11px;">Gift Card emitida por ' + escapeHtml(card.business.name) + " con Puragenda.</p></div></div>";
 
-  return resend.emails.send({ from: EMAIL_FROM, to: recipientEmail, subject, html }, { idempotencyKey: "gift-card-" + card.id + "-" + Date.now() });
+  try {
+    const result = await resend.emails.send({ from: EMAIL_FROM, to: recipientEmail, subject, html }, { idempotencyKey: "gift-card-" + card.id + "-" + Date.now() });
+    await prisma.giftCard.update({ where: { id: card.id }, data: { deliveryEmailSentAt: new Date(), deliveryEmailAttempts: { increment: 1 }, deliveryEmailLastError: null } });
+    return result;
+  } catch (error) {
+    await prisma.giftCard.update({ where: { id: card.id }, data: { deliveryEmailAttempts: { increment: 1 }, deliveryEmailLastError: (error instanceof Error ? error.message : String(error)).slice(0, 1000) } }).catch(() => {});
+    throw error;
+  }
 }

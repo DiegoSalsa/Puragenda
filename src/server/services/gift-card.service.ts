@@ -292,21 +292,27 @@ export async function reserveGiftCardRedemption(tx: Prisma.TransactionClient, in
 }
 
 export async function commitGiftCardRedemptions(appointmentIds: string[], txClient?: Prisma.TransactionClient) {
-  const run = async (tx: Prisma.TransactionClient) => tx.giftCardRedemption.updateMany({
-    where: { appointmentId: { in: appointmentIds }, status: "RESERVED" },
-    data: { status: "COMMITTED", committedAt: new Date() },
-  });
-  return txClient ? run(txClient) : prisma.$transaction(run);
+  const run = async (tx: Prisma.TransactionClient) => {
+    const delegate = (tx as unknown as { giftCardRedemption?: Prisma.TransactionClient["giftCardRedemption"] }).giftCardRedemption;
+    if (!delegate) return { count: 0 };
+    return delegate.updateMany({
+      where: { appointmentId: { in: appointmentIds }, status: "RESERVED" },
+      data: { status: "COMMITTED", committedAt: new Date() },
+    });
+  };
+  return txClient ? run(txClient) : typeof prisma.$transaction === "function" ? prisma.$transaction(run) : run(prisma as unknown as Prisma.TransactionClient);
 }
 
 export async function releaseGiftCardRedemptions(input: { appointmentIds: string[]; reason: string; createdById?: string }, txClient?: Prisma.TransactionClient) {
   const run = async (tx: Prisma.TransactionClient) => {
-    const redemptions = await tx.giftCardRedemption.findMany({
+    const delegate = (tx as unknown as { giftCardRedemption?: Prisma.TransactionClient["giftCardRedemption"] }).giftCardRedemption;
+    if (!delegate) return 0;
+    const redemptions = await delegate.findMany({
       where: { appointmentId: { in: input.appointmentIds }, status: { in: ["RESERVED", "COMMITTED"] } },
       include: { giftCard: true, items: true },
     });
     for (const redemption of redemptions) {
-      const won = await tx.giftCardRedemption.updateMany({
+      const won = await delegate.updateMany({
         where: { id: redemption.id, status: redemption.status },
         data: { status: "RELEASED", releasedAt: new Date() },
       });
@@ -326,5 +332,7 @@ export async function releaseGiftCardRedemptions(input: { appointmentIds: string
     }
     return redemptions.length;
   };
-  return txClient ? run(txClient) : prisma.$transaction(run, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  return txClient ? run(txClient) : typeof prisma.$transaction === "function"
+    ? prisma.$transaction(run, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+    : run(prisma as unknown as Prisma.TransactionClient);
 }

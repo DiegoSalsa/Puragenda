@@ -537,7 +537,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       return rawTotalPrice;
     }
     return promotionResult?.quote?.discountedTotal ?? rawTotalPrice;
-  }, [bookingDiscount, promotionResult, rawTotalPrice, rewardDiscount]);
+  }, [activeServices, bookingDiscount, promotionResult, rawTotalPrice, rewardDiscount]);
 
   // Compute deposit amount dynamically from selected service(s)
   const depositAmount = useMemo(() => {

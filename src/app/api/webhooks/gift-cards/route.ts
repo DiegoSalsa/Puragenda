@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
         const result = await issueGiftCardForPurchase(purchase.id, tx);
         return { created: result.created, giftCardId: result.giftCard.id };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-      if (issued.created && issued.giftCardId) await sendGiftCardEmail(issued.giftCardId);
+      if (issued.giftCardId) {
+        const delivery = await prisma.giftCard.findUnique({ where: { id: issued.giftCardId }, select: { deliveryEmailSentAt: true } });
+        if (!delivery?.deliveryEmailSentAt) await sendGiftCardEmail(issued.giftCardId);
+      }
     } else if (["rejected", "cancelled"].includes(payment.status || "")) {
       await prisma.giftCardPurchase.updateMany({ where: { id: purchase.id, businessId, paymentStatus: "PENDING" }, data: { paymentStatus: payment.status === "cancelled" ? "CANCELLED" : "FAILED", mpPaymentId: paymentId, mpStatus: payment.status } });
     }

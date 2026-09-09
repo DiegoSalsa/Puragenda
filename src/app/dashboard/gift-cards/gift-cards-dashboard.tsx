@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { Check, Copy, CreditCard, Gift, Mail, Pencil, Plus, Send, ShoppingBag, WalletCards, X } from "lucide-react";
+import { Check, CreditCard, Gift, Mail, Pencil, Plus, Send, ShoppingBag, WalletCards, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 type Service = { id: string; name: string; price: number };
@@ -65,7 +65,9 @@ export function GiftCardsDashboard({ business, metrics, templates: initialTempla
     event.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       const created = await request("/api/dashboard/gift-cards/manual", { method: "POST", body: JSON.stringify(sale) });
-      setSale(blankSale); setNotice(`Gift Card ${created.publicCode} emitida y enviada.`); window.location.reload();
+      setSale(blankSale);
+      setNotice(created.emailWarning || `Gift Card ${created.publicCode} emitida y enviada.`);
+      if (!created.emailWarning) window.location.reload();
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Error"); } finally { setBusy(false); }
   }
 

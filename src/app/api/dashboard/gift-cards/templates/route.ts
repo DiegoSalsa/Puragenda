@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
