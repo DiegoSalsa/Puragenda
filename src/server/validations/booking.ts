@@ -77,6 +77,7 @@ export const bookingSchema = z
     discountCode: z.string().trim().max(50).optional(),
     promotionId: z.string().min(1, "La promoción seleccionada no es válida").optional(),
     storyCampaignToken: z.string().trim().min(8).max(64).optional(),
+    giftCardId: z.string().min(1).max(100).optional(),
 
     customerName: z
       .string({ message: "El nombre es obligatorio" })

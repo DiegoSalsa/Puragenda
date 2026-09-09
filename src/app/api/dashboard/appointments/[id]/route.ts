@@ -19,6 +19,7 @@ import {
 } from "@/server/services/google-calendar.service";
 import { createAuditLog } from "@/server/lib/audit";
 import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
+import { commitGiftCardRedemptions, releaseGiftCardRedemptions } from "@/server/services/gift-card.service";
 
 function canManageTarget(
   permissions: string[],
@@ -139,21 +140,21 @@ export async function PATCH(
         return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
       }
 
-      const paidTransition = await prisma.appointment.updateMany({
-        where: {
-          id,
-          status: "AWAITING_PAYMENT",
-          paymentStatus: existing.paymentStatus,
-        },
-        data: {
-          status: "CONFIRMED",
-          paymentStatus: "APPROVED",
-          ...(existing.depositReceiptStatus === "PENDING" && {
-            depositReceiptStatus: "APPROVED",
-            depositReceiptReviewedAt: new Date(),
-            depositReceiptReviewedById: user.id,
-          }),
-        },
+      const paidTransition = await prisma.$transaction(async (tx) => {
+        const transition = await tx.appointment.updateMany({
+          where: { id, status: "AWAITING_PAYMENT", paymentStatus: existing.paymentStatus },
+          data: {
+            status: "CONFIRMED",
+            paymentStatus: "APPROVED",
+            ...(existing.depositReceiptStatus === "PENDING" && {
+              depositReceiptStatus: "APPROVED",
+              depositReceiptReviewedAt: new Date(),
+              depositReceiptReviewedById: user.id,
+            }),
+          },
+        });
+        if (transition.count === 1) await commitGiftCardRedemptions([id], tx);
+        return transition;
       });
       if (paidTransition.count === 0) {
         return Response.json({ error: "El estado del abono cambió; actualiza la agenda" }, { status: 409 });
@@ -351,20 +352,13 @@ export async function DELETE(
       );
     }
 
-    const cancelled = await prisma.appointment.updateMany({
-      where: {
-        id,
-        businessId: business.id,
-        status: "AWAITING_PAYMENT",
-        paymentStatus: "PENDING",
-        recurringBookingId: null,
-      },
-      data: {
-        status: "CANCELLED",
-        customerActionTokenHash: null,
-        customerActionTokenExpiresAt: null,
-        customerActionTokenUsedAt: new Date(),
-      },
+    const cancelled = await prisma.$transaction(async (tx) => {
+      const transition = await tx.appointment.updateMany({
+        where: { id, businessId: business.id, status: "AWAITING_PAYMENT", paymentStatus: "PENDING", recurringBookingId: null },
+        data: { status: "CANCELLED", customerActionTokenHash: null, customerActionTokenExpiresAt: null, customerActionTokenUsedAt: new Date() },
+      });
+      if (transition.count === 1) await releaseGiftCardRedemptions({ appointmentIds: [id], reason: "Reserva pendiente eliminada", createdById: user.id }, tx);
+      return transition;
     });
 
     if (cancelled.count === 0) {

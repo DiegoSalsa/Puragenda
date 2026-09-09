@@ -17,11 +17,12 @@ import { getLocationForBusiness } from "@/server/services/location.service";
 import { issueDepositReceiptToken } from "@/server/services/deposit-receipt.service";
 import { isServiceAvailableAtTime } from "@/core/service-availability";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
-import { getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
+import { getClientPortalAccountFromRequest, getClientPortalEmailFromRequest, updateClientPortalProfileFromBooking } from "@/server/services/client-portal.service";
 import { claimLoyaltyReward, releaseLoyaltyReward, resolveLoyaltyReward } from "@/server/services/loyalty-reward.service";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import type { Appointment, Service as PrismaService } from "@prisma/client";
 import { validateLoyaltyNoStacking } from "@/core/loyalty";
+import { quoteOwnedGiftCard, releaseGiftCardRedemptions, reserveGiftCardRedemption } from "@/server/services/gift-card.service";
 
 class RewardClaimError extends Error {}
 class BookingGroupError extends Error {}
@@ -29,20 +30,33 @@ class BookingGroupError extends Error {}
 async function createAppointmentWithOptionalReward(
   data: Parameters<typeof createAppointment>[0],
   reward: { id: string } | null,
+  giftCard: { id: string; accountId: string; amountCovered: number; coveredServices: Array<{ serviceId: string; amountCovered: number }>; commitImmediately: boolean } | null = null,
 ) {
-  if (!reward) return createAppointment(data);
+  if (!reward && !giftCard) return createAppointment(data);
   try {
     const result = await prisma.$transaction(async (tx) => {
       const created = await createAppointment(data, { tx, syncGoogle: false });
       if (!created.success) throw new RewardClaimError(created.error);
-      const claimed = await claimLoyaltyReward(tx, { rewardId: reward.id, appointmentId: created.appointment.id });
-      if (!claimed) throw new RewardClaimError("Este premio acaba de ser utilizado o venció");
+      if (reward) {
+        const claimed = await claimLoyaltyReward(tx, { rewardId: reward.id, appointmentId: created.appointment.id });
+        if (!claimed) throw new RewardClaimError("Este premio acaba de ser utilizado o venció");
+      }
+      if (giftCard) await reserveGiftCardRedemption(tx, {
+        giftCardId: giftCard.id,
+        accountId: giftCard.accountId,
+        businessId: data.businessId,
+        appointmentId: created.appointment.id,
+        amountCovered: giftCard.amountCovered,
+        coveredServices: giftCard.coveredServices,
+        commitImmediately: giftCard.commitImmediately,
+      });
       return created;
     });
     await syncAppointmentToGoogle(result.appointment.id);
     return result;
   } catch (error) {
     if (error instanceof RewardClaimError) return { success: false as const, error: error.message };
+    if (giftCard && error instanceof Error) return { success: false as const, error: error.message };
     throw error;
   }
 }
@@ -133,7 +147,7 @@ export async function POST(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, giftCardId } = parsed.data;
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -349,6 +363,30 @@ export async function POST(
     const requestedStart = new Date(startTime);
     const requestedEnd = new Date(endTime);
     const hasStaffAssignments = !!staffAssignments && staffAssignments.length > 0;
+    if (giftCardId && hasStaffAssignments) {
+      return Response.json({ error: "En esta versión la Gift Card requiere una reserva con un solo profesional" }, { status: 409 });
+    }
+    const portalAccount = giftCardId ? await getClientPortalAccountFromRequest(request) : null;
+    if (giftCardId && !portalAccount) {
+      return Response.json({ error: "Debes iniciar sesión en Mi Agenda para usar una Gift Card" }, { status: 401 });
+    }
+    let giftCardQuote: Awaited<ReturnType<typeof quoteOwnedGiftCard>> | null = null;
+    if (giftCardId && portalAccount) {
+      try {
+        giftCardQuote = await quoteOwnedGiftCard({
+          giftCardId,
+          accountId: portalAccount.id,
+          businessId: business.id,
+          totalDue: Math.round(totalPrice),
+          services: allSelectedServices.map((selected) => ({ id: selected.id, basePrice: selected.price })),
+          hasDiscount: canonicalDiscountAmount > 0,
+        });
+      } catch (error) {
+        return Response.json({ error: error instanceof Error ? error.message : "Gift Card no disponible" }, { status: 409 });
+      }
+    }
+    const giftCardPaidAmount = giftCardQuote?.amountCovered ?? 0;
+    const remainingAfterGiftCard = Math.max(0, Math.round(totalPrice) - giftCardPaidAmount);
     const expectedDuration = hasStaffAssignments
       ? Math.max(...allSelectedServices.map((s) => serviceTotals.get(s.id)?.duration ?? s.duration))
       : totalDuration;
@@ -620,7 +658,7 @@ export async function POST(
       (sum, selected) => sum + (selected.depositAmount || 0),
       0,
     );
-    totalDepositAmount = Math.min(totalDepositAmount, totalPrice);
+    totalDepositAmount = Math.min(totalDepositAmount, remainingAfterGiftCard);
     const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
     const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
 
@@ -986,6 +1024,7 @@ export async function POST(
       totalPrice,
       originalTotalPrice,
       discountAmount: canonicalDiscountAmount,
+      giftCardPaidAmount,
       bookingDiscountCodeId: appliedBookingDiscount?.id,
       bookingDiscountCodeValue: appliedBookingDiscount?.code,
       promotionId: appliedPromotion?.id,
@@ -995,8 +1034,15 @@ export async function POST(
       depositRequired,
       depositAmount: totalDepositAmount,
       depositPaymentUrl: manualPaymentUrl,
+      status: giftCardPaidAmount > 0 && remainingAfterGiftCard === 0 ? "CONFIRMED" : undefined,
       storyCampaignId: storyCampaign?.id,
-    }, appliedReward);
+    }, appliedReward, giftCardQuote && portalAccount ? {
+      id: giftCardQuote.card.id,
+      accountId: portalAccount.id,
+      amountCovered: giftCardPaidAmount,
+      coveredServices: giftCardQuote.coveredServices,
+      commitImmediately: !depositRequired,
+    } : null);
 
     if (!result.success) {
       return Response.json({ error: result.error }, { status: 409 });
@@ -1061,6 +1107,7 @@ export async function POST(
           rewardId: appliedReward.id,
           appointmentId: result.appointment.id,
         }));
+        if (giftCardPaidAmount > 0) await releaseGiftCardRedemptions({ appointmentIds: [result.appointment.id], reason: "No se pudo crear la preferencia de pago" });
         return Response.json(
           { error: "No se pudo generar el link de pago. Intenta nuevamente." },
           { status: 502 }

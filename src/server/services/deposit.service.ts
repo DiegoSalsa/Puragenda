@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { sendDepositConfirmedNotifications } from "@/server/email/send";
 import { createAuditLog } from "@/server/lib/audit";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
+import { commitGiftCardRedemptions, releaseGiftCardRedemptions } from "@/server/services/gift-card.service";
 
 export type DepositPaymentSource = "webhook" | "return" | "simulator";
 
@@ -138,6 +139,7 @@ export async function confirmDepositPayment(input: {
     });
 
     if (confirmed.length > 0) {
+      await commitGiftCardRedemptions(confirmed.map((appointment) => appointment.id), tx);
       await tx.depositPaymentDelivery.createMany({
         data: confirmed.map((appointment) => ({
           appointmentId: appointment.id,
@@ -197,16 +199,13 @@ export async function rejectDepositPayment(input: {
   const appointmentIds = uniqueIds(input.appointmentIds);
   if (appointmentIds.length === 0) return { rejectedIds: [] as string[] };
 
-  const rejected = await prisma.appointment.updateManyAndReturn({
-    where: {
-      id: { in: appointmentIds },
-      businessId: input.businessId,
-      paymentStatus: "PENDING",
-    },
-    data: {
-      paymentStatus: "REJECTED",
-      mpPaymentId: input.paymentId,
-    },
+  const rejected = await prisma.$transaction(async (tx) => {
+    const rows = await tx.appointment.updateManyAndReturn({
+      where: { id: { in: appointmentIds }, businessId: input.businessId, paymentStatus: "PENDING" },
+      data: { paymentStatus: "REJECTED", mpPaymentId: input.paymentId },
+    });
+    await releaseGiftCardRedemptions({ appointmentIds: rows.map((row) => row.id), reason: "Pago residual rechazado o cancelado" }, tx);
+    return rows;
   });
 
   return { rejectedIds: rejected.map((row) => row.id) };
@@ -375,12 +374,13 @@ export async function cancelAppointmentUnlessDepositApproved(input: {
     customerActionTokenUsedAt?: Date;
   };
 }): Promise<DashboardCancelResult> {
-  const cancelled = await prisma.appointment.updateMany({
-    where: depositSafeCancellationWhere(input),
-    data: {
-      status: "CANCELLED",
-      ...input.extraData,
-    },
+  const cancelled = await prisma.$transaction(async (tx) => {
+    const result = await tx.appointment.updateMany({
+      where: depositSafeCancellationWhere(input),
+      data: { status: "CANCELLED", ...input.extraData },
+    });
+    if (result.count > 0) await releaseGiftCardRedemptions({ appointmentIds: [input.appointmentId], reason: "Cita cancelada" }, tx);
+    return result;
   });
 
   if (cancelled.count > 0) return { ok: true };

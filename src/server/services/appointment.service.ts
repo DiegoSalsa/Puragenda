@@ -98,6 +98,7 @@ export async function createAppointment(data: {
   totalPrice?: number;
   originalTotalPrice?: number;
   discountAmount?: number;
+  giftCardPaidAmount?: number;
   promotionId?: string;
   promotionTitle?: string;
   bookingDiscountCodeId?: string;
@@ -171,6 +172,7 @@ export async function createAppointment(data: {
       totalPrice: data.totalPrice,
       originalTotalPrice: data.originalTotalPrice,
       discountAmount: data.discountAmount,
+      giftCardPaidAmount: data.giftCardPaidAmount ?? 0,
       promotionId: data.promotionId,
       promotionTitle: data.promotionTitle,
       bookingDiscountCodeId: data.bookingDiscountCodeId,
