@@ -5,14 +5,16 @@ import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { GiftCardsDashboard } from "./gift-cards-dashboard";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function GiftCardsPage() {
+  const t = await getTranslations("giftCardsPage");
   const user = await getCurrentSessionUser();
   const business = user ? await getBusinessForUser(user.id) : null;
-  if (!user || !business) return <div className="py-20 text-center font-bold">Debes iniciar sesión.</div>;
-  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.GIFT_CARDS_MANAGE))) return <div className="py-20 text-center font-bold">No tienes permiso para gestionar Gift Cards.</div>;
+  if (!user || !business) return <div className="py-20 text-center font-bold">{t("signIn")}</div>;
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.GIFT_CARDS_MANAGE))) return <div className="py-20 text-center font-bold">{t("noPermission")}</div>;
 
   const [templates, services, purchases, sold, sales, balances, serviceLiability, used] = await Promise.all([
     prisma.giftCardTemplate.findMany({ where: { businessId: business.id }, include: { services: { include: { service: { select: { id: true, name: true } } } } }, orderBy: [{ position: "asc" }, { createdAt: "desc" }] }),
@@ -27,7 +29,7 @@ export default async function GiftCardsPage() {
 
   const pendingServiceValue = serviceLiability.reduce((sum, item) => sum + item.unitValueSnapshot * item.quantityRemaining, 0);
   return <div className="space-y-7 pb-14">
-    <header><h1 className="flex items-center gap-3 text-3xl font-black"><Gift className="h-8 w-8" /> Gift Cards</h1><p className="mt-2 text-sm font-medium text-muted-foreground">Crea experiencias regalables, emite ventas y sigue cada peso o beneficio consumido.</p></header>
+    <header><h1 className="flex items-center gap-3 text-3xl font-black"><Gift className="h-8 w-8" /> {t("title")}</h1><p className="mt-2 text-sm font-medium text-muted-foreground">{t("description")}</p></header>
     <GiftCardsDashboard
       business={{ name: business.name, currencyCode: business.currencyCode, mercadoPagoConnected: Boolean(business.mpAccessToken), widgetSlug: business.slug }}
       metrics={{ sold, sales: sales._sum.salePrice ?? 0, pending: (balances._sum.remainingBalance ?? 0) + pendingServiceValue, used: Math.abs(used._sum.amount ?? 0) }}
