@@ -4,7 +4,8 @@ import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
 import { getCountryConfig } from "@/core/countries";
-import { getClientPortalEmail } from "@/server/services/client-portal.service";
+import { getClientPortalAccount, getClientPortalEmail } from "@/server/services/client-portal.service";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,11 @@ export default async function WidgetPage({
           scheduleOverrides: { orderBy: { date: "asc" } },
         },
       },
+      giftCardTemplates: {
+        where: { isActive: true, isPublic: true },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
@@ -143,8 +149,8 @@ export default async function WidgetPage({
     );
   }
 
-  const portalEmail = await getClientPortalEmail();
-  const availableRewards = portalEmail ? await prisma.loyaltyCode.findMany({
+  const [portalEmail, portalAccount] = await Promise.all([getClientPortalEmail(), getClientPortalAccount()]);
+  const [availableRewards, availableGiftCards] = await Promise.all([portalEmail ? prisma.loyaltyCode.findMany({
     where: {
       businessId: business.id,
       isUsed: false,
@@ -154,7 +160,11 @@ export default async function WidgetPage({
     orderBy: { createdAt: "desc" },
     take: 5,
     select: { code: true, rewardName: true, rewardType: true, expiresAt: true },
-  }) : [];
+  }) : [], portalAccount ? prisma.giftCard.findMany({
+    where: { businessId: business.id, claimedByAccountId: portalAccount.id, status: "ACTIVE" },
+    select: { id: true, nameSnapshot: true, type: true, remainingBalance: true, currencyCode: true, entitlements: { select: { serviceId: true, serviceNameSnapshot: true, quantityRemaining: true } } },
+    orderBy: { issuedAt: "desc" },
+  }) : []]);
 
   // Color cascade: URL params > DB values > defaults
   const primaryHex = business.primaryColor.replace("#", "");
@@ -196,6 +206,7 @@ export default async function WidgetPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdLocalBusiness) }} />
+      {business.giftCardTemplates.length > 0 && !previewMode && <div className="flex justify-center gap-2 bg-black px-4 pt-4"><span className="rounded-xl border-2 border-white bg-white px-4 py-2 text-sm font-black text-black">Reservar</span><Link href={"/widget/" + business.slug + "/gift-cards"} className="rounded-xl border-2 border-white px-4 py-2 text-sm font-black text-white">Gift Cards</Link></div>}
       <WidgetClient
       business={{
         name: business.name,
@@ -345,6 +356,7 @@ export default async function WidgetPage({
       previewMode={previewMode}
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
       availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}
+      availableGiftCards={availableGiftCards}
     />
     </>
   );

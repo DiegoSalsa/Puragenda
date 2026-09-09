@@ -122,6 +122,7 @@ interface Props {
   previewMode?: boolean;
   useBusinessScheduleOnly?: boolean;
   availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
+  availableGiftCards?: { id: string; nameSnapshot: string; type: "BALANCE" | "SERVICE"; remainingBalance: number | null; currencyCode: string; entitlements: { serviceId: string | null; serviceNameSnapshot: string; quantityRemaining: number }[] }[];
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -253,7 +254,7 @@ function getContrastColor(hex: string): string {
   return yiq >= 150 ? "#000000" : "#FFFFFF";
 }
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [] }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [] }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -342,6 +343,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
 
   // ── Reward / Discount code state ──
   const [rewardCode, setRewardCode] = useState("");
+  const [selectedGiftCardId, setSelectedGiftCardId] = useState("");
   const [rewardStatus, setRewardStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [rewardError, setRewardError] = useState("");
   const [rewardDiscount, setRewardDiscount] = useState<{ type: string; value: number; freeServiceId?: string | null; rewardName?: string | null } | null>(null);
@@ -546,7 +548,15 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     return selectedService?.depositAmount || 0;
   }, [depositRequired, isMultiService, selectedServices, selectedService]);
 
-  const effectiveDepositAmount = Math.min(depositAmount, totalPrice);
+  const selectedGiftCard = availableGiftCards.find((card) => card.id === selectedGiftCardId) ?? null;
+  const hasCanonicalDiscount = totalPrice < rawTotalPrice;
+  const giftCardPreviewAmount = selectedGiftCard?.type === "BALANCE"
+    ? Math.min(totalPrice, selectedGiftCard.remainingBalance ?? 0)
+    : selectedGiftCard && !hasCanonicalDiscount
+      ? Math.min(totalPrice, activeServices.reduce((sum, service) => sum + (selectedGiftCard.entitlements.some((item) => item.serviceId === service.id && item.quantityRemaining > 0) ? service.price : 0), 0))
+      : 0;
+  const remainingAfterGiftCard = Math.max(0, totalPrice - giftCardPreviewAmount);
+  const effectiveDepositAmount = Math.min(depositAmount, remainingAfterGiftCard);
   const showDeposit = depositRequired && effectiveDepositAmount > 0;
 
   // Filter staff who can perform the selected service(s)
@@ -968,6 +978,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           discountCode: discountCodeStatus === "valid" ? discountCode.trim().toUpperCase() : undefined,
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
           storyCampaignToken,
+          giftCardId: selectedGiftCardId || undefined,
         }),
       });
       if (!res.ok) { const p = await res.json(); throw new Error(p.error || "No fue posible confirmar la reserva."); }
@@ -2410,6 +2421,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {discountCodeStatus === "valid" && bookingDiscount && <p className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="h-3 w-3" /> Código aplicado: {bookingDiscount.type === "PERCENTAGE" ? `${bookingDiscount.value}%` : formatPrice(bookingDiscount.value, business.currencyCode)}</p>}
                   {discountCodeStatus === "invalid" && discountCodeError && <p className="text-xs text-red-400">{discountCodeError}</p>}
                 </div>
+                {availableGiftCards.length > 0 && portalAccountActive && (
+                  <div className="space-y-3 rounded-2xl border p-4" style={{ borderColor: `${pc}55`, background: `${pc}0d` }}>
+                    <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: textColor }}><Gift className="h-4 w-4" /> Tienes una Gift Card disponible</label>
+                    <select value={selectedGiftCardId} onChange={(event) => setSelectedGiftCardId(event.target.value)} className="w-full rounded-xl border px-3 py-3 text-sm font-semibold" style={{ borderColor: "var(--wborder)", background: "var(--wbg)", color: textColor }}>
+                      <option value="">No usar Gift Card</option>
+                      {availableGiftCards.map((card) => <option key={card.id} value={card.id}>{card.nameSnapshot}{card.type === "BALANCE" ? ` · ${formatPrice(card.remainingBalance ?? 0, card.currencyCode)}` : " · Beneficios disponibles"}</option>)}
+                    </select>
+                    {selectedGiftCard && selectedGiftCard.type === "SERVICE" && hasCanonicalDiscount && <p className="text-xs font-semibold text-amber-400">Las Gift Cards de servicios no se pueden combinar con promociones, códigos o premios en esta versión.</p>}
+                    {selectedGiftCard && giftCardPreviewAmount > 0 && <div className="space-y-1 text-xs font-semibold" style={{ color: textSecondary }}><p className="flex justify-between"><span>Pagado con Gift Card</span><strong style={{ color: textColor }}>−{formatPrice(giftCardPreviewAmount, business.currencyCode)}</strong></p><p className="flex justify-between"><span>Pendiente</span><strong style={{ color: textColor }}>{formatPrice(remainingAfterGiftCard, business.currencyCode)}</strong></p></div>}
+                  </div>
+                )}
                 {/* Deposit notice */}
                 {showDeposit && !previewMode && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
