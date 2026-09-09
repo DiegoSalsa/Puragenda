@@ -31,7 +31,15 @@ export default async function GiftCardsPage() {
   return <div className="space-y-7 pb-14">
     <header><h1 className="flex items-center gap-3 text-3xl font-black"><Gift className="h-8 w-8" /> {t("title")}</h1><p className="mt-2 text-sm font-medium text-muted-foreground">{t("description")}</p></header>
     <GiftCardsDashboard
-      business={{ name: business.name, currencyCode: business.currencyCode, mercadoPagoConnected: Boolean(business.mpAccessToken), widgetSlug: business.slug }}
+      business={{
+        name: business.name,
+        currencyCode: business.currencyCode,
+        mercadoPagoConnected: Boolean(business.mpAccessToken),
+        widgetSlug: business.slug,
+        logoUrl: business.logoUrl,
+        primaryColor: business.primaryColor,
+        secondaryColor: business.secondaryColor,
+      }}
       metrics={{ sold, sales: sales._sum.salePrice ?? 0, pending: (balances._sum.remainingBalance ?? 0) + pendingServiceValue, used: Math.abs(used._sum.amount ?? 0) }}
       templates={templates.map((template) => ({ ...template, createdAt: template.createdAt.toISOString(), updatedAt: template.updatedAt.toISOString() }))}
       services={services}
