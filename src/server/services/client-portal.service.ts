@@ -365,6 +365,25 @@ export async function resolveClientPortalSessionToken(token: string): Promise<st
   return normalizeClientPortalEmail(session.account.email);
 }
 
+export async function resolveClientPortalAccountToken(token: string) {
+  if (!ACCOUNT_SESSION_PATTERN.test(token)) return null;
+  const now = new Date();
+  const session = await prisma.clientPortalSession.findUnique({
+    where: { tokenHash: hashClientPortalToken(token) },
+    select: {
+      id: true,
+      expiresAt: true,
+      account: { select: { id: true, email: true, name: true, emailVerifiedAt: true } },
+    },
+  });
+  if (!session?.account.emailVerifiedAt || session.expiresAt <= now) return null;
+  await prisma.clientPortalSession.updateMany({
+    where: { id: session.id, expiresAt: { gt: now } },
+    data: { lastUsedAt: now },
+  });
+  return { ...session.account, email: normalizeClientPortalEmail(session.account.email) };
+}
+
 export async function renewClientPortalSessionToken(token: string): Promise<boolean> {
   if (!ACCOUNT_SESSION_PATTERN.test(token)) return false;
   const now = new Date();
@@ -402,6 +421,17 @@ export async function getClientPortalEmail(): Promise<string | null> {
 export async function getClientPortalEmailFromRequest(request: NextRequest): Promise<string | null> {
   const token = request.cookies.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
   return token ? resolveClientPortalSessionToken(token) : null;
+}
+
+export async function getClientPortalAccount() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
+  return token ? resolveClientPortalAccountToken(token) : null;
+}
+
+export async function getClientPortalAccountFromRequest(request: NextRequest) {
+  const token = request.cookies.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
+  return token ? resolveClientPortalAccountToken(token) : null;
 }
 
 function portalEmailWhere(email: string) {

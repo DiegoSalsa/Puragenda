@@ -164,6 +164,20 @@ export const clientPortalLoginLimiter = rateLimit({
   message: "Demasiados intentos de acceso. Espera 15 minutos.",
 });
 
+/** Gift Card claims: codes and tokens are high entropy, with an additional brute-force guard. */
+export const giftCardClaimLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  message: "Demasiados intentos de Gift Card. Espera 15 minutos.",
+});
+
+/** Public Gift Card checkout creation: prevents payment preference spam. */
+export const giftCardCheckoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Demasiados intentos de compra. Espera unos minutos.",
+});
+
 /** Client account activation/reset emails: 4 requests per hour per IP. */
 export const clientPortalAccountEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
