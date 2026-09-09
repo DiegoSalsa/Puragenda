@@ -4,8 +4,9 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { FormEvent, useState } from "react";
-import { Gift, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { GiftCardVisual } from "@/components/gift-cards/gift-card-visual";
 import { formatPrice } from "@/lib/utils";
 
 type Template = {
@@ -83,14 +84,22 @@ export function GiftCardStorefront({ slug, business, templates, paymentEnabled }
 
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
-            <article key={template.id} className="overflow-hidden rounded-3xl border-3 border-black bg-white shadow-[7px_7px_0_#000]">
-              <div className="min-h-48 p-5" style={{ background: template.backgroundColor, color: template.textColor }}>
-                {template.imageUrl
-                  ? <img src={template.imageUrl} alt="" className="mb-4 h-24 w-full rounded-xl border-2 border-black object-cover" />
-                  : <Gift className="h-9 w-9" />}
-                <h2 className="mt-4 text-2xl font-black">{template.name}</h2>
-                <p className="mt-1 text-sm font-bold opacity-75">{template.shortMessage || template.description}</p>
-              </div>
+            <article key={template.id} className="rounded-3xl border-3 border-black bg-white p-4 shadow-[7px_7px_0_#000]">
+              <GiftCardVisual
+                compact
+                businessName={business.name}
+                logoUrl={business.logoUrl}
+                giftCardName={template.name}
+                type={template.type}
+                faceValue={template.faceValue}
+                services={template.services.map((item) => ({ name: item.service.name, quantity: item.quantity }))}
+                shortMessage={template.shortMessage || template.description}
+                background={template.backgroundColor}
+                accent={template.accentColor}
+                text={template.textColor}
+                imageUrl={template.imageUrl}
+                currencyCode={business.currencyCode}
+              />
               <div className="p-5">
                 {template.type === "BALANCE" ? (
                   <>
