@@ -47,6 +47,53 @@ enum LoyaltyStampSource {
   ADJUSTMENT
 }
 
+enum GiftCardType {
+  BALANCE
+  SERVICE
+}
+
+enum GiftCardPaymentMethod {
+  MERCADOPAGO
+  MANUAL
+}
+
+enum GiftCardPurchaseStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+  MANUAL_PAID
+}
+
+enum GiftCardDeliveryMode {
+  SELF
+  GIFT
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  DEPLETED
+  VOIDED
+  REFUNDED
+  EXPIRED
+}
+
+enum GiftCardTransactionType {
+  ISSUED
+  REDEEMED
+  RELEASED
+  ADJUSTMENT
+  VOID
+  REFUND
+}
+
+enum GiftCardRedemptionStatus {
+  RESERVED
+  COMMITTED
+  RELEASED
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -62,20 +109,22 @@ model User {
   deletedAt       DateTime?
   termsAcceptedAt DateTime?
 
-  businesses                Business[]
-  staff                     Staff[]
-  auditLogs                 AuditLog[]
-  adminLoginCodes           AdminLoginCode[]
-  platformDiscountCodes     PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
-  adminInteractiveCampaigns AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
-  googleCalendarConnections GoogleCalendarConnection[]
-  storyCampaigns            StoryCampaign[]
-  storyPresets              StoryPreset[]
-  posPaymentsCreated        PosPayment[]               @relation("PosPaymentCreatedBy")
-  settledAppointments       Appointment[]              @relation("AppointmentSettledBy")
-  marketplaceAuthorizations MarketplaceListing[]       @relation("MarketplaceListingAuthorizedBy")
-  superAdminSessions        SuperAdminSession[]
-  loyaltyStampEventsCreated LoyaltyStampEvent[]        @relation("LoyaltyStampEventCreatedBy")
+  businesses                  Business[]
+  staff                       Staff[]
+  auditLogs                   AuditLog[]
+  adminLoginCodes             AdminLoginCode[]
+  platformDiscountCodes       PlatformDiscountCode[]     @relation("PlatformDiscountCreatedBy")
+  adminInteractiveCampaigns   AdminInteractiveCampaign[] @relation("AdminInteractiveCampaignCreatedBy")
+  googleCalendarConnections   GoogleCalendarConnection[]
+  storyCampaigns              StoryCampaign[]
+  storyPresets                StoryPreset[]
+  posPaymentsCreated          PosPayment[]               @relation("PosPaymentCreatedBy")
+  settledAppointments         Appointment[]              @relation("AppointmentSettledBy")
+  marketplaceAuthorizations   MarketplaceListing[]       @relation("MarketplaceListingAuthorizedBy")
+  superAdminSessions          SuperAdminSession[]
+  loyaltyStampEventsCreated   LoyaltyStampEvent[]        @relation("LoyaltyStampEventCreatedBy")
+  giftCardPurchasesCreated    GiftCardPurchase[]         @relation("GiftCardPurchaseCreatedBy")
+  giftCardTransactionsCreated GiftCardTransaction[]      @relation("GiftCardTransactionCreatedBy")
 }
 
 // ==========================================
@@ -117,7 +166,8 @@ model ClientPortalAccount {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions ClientPortalSession[]
+  sessions  ClientPortalSession[]
+  giftCards GiftCard[]
 
   @@index([emailVerifiedAt])
 }
@@ -375,6 +425,9 @@ model Business {
   storyPresets                StoryPreset[]
   posPayments                 PosPayment[]
   marketplaceListings         MarketplaceListing[]
+  giftCardTemplates           GiftCardTemplate[]
+  giftCardPurchases           GiftCardPurchase[]
+  giftCards                   GiftCard[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -850,17 +903,19 @@ model Service {
   specialStartTime         String?
   specialEndTime           String?
 
-  business                Business                @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category                ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  appointments            Appointment[]
-  staff                   Staff[]
-  recurringPlan           RecurringPlan?
-  recurringBookings       RecurringBooking[]
-  optionCategories        ServiceOptionCategory[]
-  productionOrders        ProductionOrder[]
-  locations               LocationService[]
-  loyaltyRewardBusinesses Business[]              @relation("LoyaltyRewardService")
-  loyaltyCodes            LoyaltyCode[]           @relation("LoyaltyCodeFreeService")
+  business                 Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category                 ServiceCategory?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  appointments             Appointment[]
+  staff                    Staff[]
+  recurringPlan            RecurringPlan?
+  recurringBookings        RecurringBooking[]
+  optionCategories         ServiceOptionCategory[]
+  productionOrders         ProductionOrder[]
+  locations                LocationService[]
+  loyaltyRewardBusinesses  Business[]                   @relation("LoyaltyRewardService")
+  loyaltyCodes             LoyaltyCode[]                @relation("LoyaltyCodeFreeService")
+  giftCardTemplateServices GiftCardTemplateService[]
+  giftCardEntitlements     GiftCardServiceEntitlement[]
 
   @@index([businessId])
   @@index([categoryId])
@@ -1159,6 +1214,7 @@ model Appointment {
   totalPrice                   Float?
   originalTotalPrice           Float?
   discountAmount               Float?
+  giftCardPaidAmount           Int                  @default(0)
   promotionId                  String?
   promotionTitle               String?
   bookingDiscountCodeId        String?
@@ -1215,6 +1271,8 @@ model Appointment {
   depositPaymentDelivery DepositPaymentDelivery?
   posPayments            PosPayment[]
   loyaltyStampEvent      LoyaltyStampEvent?
+  giftCardRedemption     GiftCardRedemption?
+  giftCardTransactions   GiftCardTransaction[]
   redeemedLoyaltyCode    LoyaltyCode?            @relation("LoyaltyCodeRedemption")
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
 
@@ -1429,6 +1487,201 @@ model Client {
 // ==========================================
 // LOYALTY / FIDELIZACIÃƒâ€œN
 // ==========================================
+
+// Gift Cards keep product definitions, purchases, issued instruments and usage ledgers separate.
+model GiftCardTemplate {
+  id              String       @id @default(cuid())
+  businessId      String
+  name            String
+  description     String?
+  type            GiftCardType
+  salePrice       Int
+  faceValue       Int?
+  currencyCode    String
+  isActive        Boolean      @default(true)
+  isPublic        Boolean      @default(true)
+  position        Int          @default(0)
+  designPreset    String       @default("classic")
+  backgroundColor String       @default("#FFF5BA")
+  accentColor     String       @default("#FF8FAB")
+  textColor       String       @default("#111111")
+  imageUrl        String?
+  shortMessage    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  business  Business                  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  services  GiftCardTemplateService[]
+  purchases GiftCardPurchase[]
+  giftCards GiftCard[]
+
+  @@index([businessId, isActive, isPublic, position])
+}
+
+model GiftCardTemplateService {
+  id         String @id @default(cuid())
+  templateId String
+  serviceId  String
+  quantity   Int    @default(1)
+
+  template GiftCardTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  service  Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, serviceId])
+  @@index([serviceId])
+}
+
+model GiftCardPurchase {
+  id                   String                 @id @default(cuid())
+  businessId           String
+  templateId           String?
+  type                 GiftCardType
+  paymentMethod        GiftCardPaymentMethod
+  paymentStatus        GiftCardPurchaseStatus @default(PENDING)
+  salePrice            Int
+  currencyCode         String
+  templateNameSnapshot String
+  templateSnapshot     Json
+  buyerName            String
+  buyerEmail           String
+  deliveryMode         GiftCardDeliveryMode
+  recipientName        String?
+  recipientEmail       String?
+  senderName           String?
+  giftMessage          String?
+  mpPreferenceId       String?
+  mpPaymentId          String?                @unique
+  mpStatus             String?
+  manualPaymentMethod  String?
+  createdById          String?
+  paidAt               DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  business  Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  template  GiftCardTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdBy User?             @relation("GiftCardPurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  giftCard  GiftCard?
+
+  @@index([businessId, paymentStatus, createdAt])
+  @@index([mpPreferenceId])
+  @@index([createdById])
+}
+
+model GiftCard {
+  id                      String         @id @default(cuid())
+  businessId              String
+  purchaseId              String         @unique
+  templateId              String?
+  publicCode              String         @unique
+  claimTokenHash          String         @unique
+  type                    GiftCardType
+  nameSnapshot            String
+  descriptionSnapshot     String?
+  currencyCode            String
+  salePriceSnapshot       Int
+  faceValueSnapshot       Int?
+  designPresetSnapshot    String
+  backgroundColorSnapshot String
+  accentColorSnapshot     String
+  textColorSnapshot       String
+  imageUrlSnapshot        String?
+  shortMessageSnapshot    String?
+  initialBalance          Int?
+  remainingBalance        Int?
+  claimedByAccountId      String?
+  claimedAt               DateTime?
+  status                  GiftCardStatus @default(ACTIVE)
+  voidReason              String?
+  issuedAt                DateTime       @default(now())
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  business         Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  purchase         GiftCardPurchase             @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  template         GiftCardTemplate?            @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  claimedByAccount ClientPortalAccount?         @relation(fields: [claimedByAccountId], references: [id], onDelete: SetNull)
+  entitlements     GiftCardServiceEntitlement[]
+  transactions     GiftCardTransaction[]
+  redemptions      GiftCardRedemption[]
+
+  @@index([businessId, status])
+  @@index([claimedByAccountId, status])
+  @@index([templateId])
+}
+
+model GiftCardServiceEntitlement {
+  id                  String  @id @default(cuid())
+  giftCardId          String
+  serviceId           String?
+  serviceNameSnapshot String
+  quantityInitial     Int
+  quantityRemaining   Int
+
+  giftCard GiftCard                 @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  service  Service?                 @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  items    GiftCardRedemptionItem[]
+
+  @@unique([giftCardId, serviceId])
+  @@index([giftCardId])
+  @@index([serviceId])
+}
+
+model GiftCardRedemption {
+  id            String                   @id @default(cuid())
+  giftCardId    String
+  appointmentId String                   @unique
+  amountCovered Int                      @default(0)
+  status        GiftCardRedemptionStatus
+  createdAt     DateTime                 @default(now())
+  committedAt   DateTime?
+  releasedAt    DateTime?
+
+  giftCard     GiftCard                 @relation(fields: [giftCardId], references: [id], onDelete: Restrict)
+  appointment  Appointment              @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  items        GiftCardRedemptionItem[]
+  transactions GiftCardTransaction[]
+
+  @@index([giftCardId, status])
+  @@index([status, createdAt])
+}
+
+model GiftCardRedemptionItem {
+  id                  String @id @default(cuid())
+  redemptionId        String
+  entitlementId       String
+  quantity            Int
+  amountCovered       Int    @default(0)
+  serviceNameSnapshot String
+
+  redemption  GiftCardRedemption         @relation(fields: [redemptionId], references: [id], onDelete: Cascade)
+  entitlement GiftCardServiceEntitlement @relation(fields: [entitlementId], references: [id], onDelete: Restrict)
+
+  @@unique([redemptionId, entitlementId])
+  @@index([entitlementId])
+}
+
+model GiftCardTransaction {
+  id            String                  @id @default(cuid())
+  giftCardId    String
+  amount        Int
+  type          GiftCardTransactionType
+  appointmentId String?
+  redemptionId  String?
+  reason        String?
+  createdById   String?
+  createdAt     DateTime                @default(now())
+
+  giftCard    GiftCard            @relation(fields: [giftCardId], references: [id], onDelete: Restrict)
+  appointment Appointment?        @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  redemption  GiftCardRedemption? @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
+  createdBy   User?               @relation("GiftCardTransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([giftCardId, createdAt])
+  @@index([appointmentId])
+  @@index([redemptionId])
+  @@index([createdById])
+}
 
 model LoyaltyCode {
   id                    String            @id @default(cuid())
