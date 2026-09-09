@@ -2,6 +2,10 @@ import { z } from "zod";
 
 const email = z.string().trim().email().max(254);
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+const optionalField = <T extends z.ZodTypeAny>(schema: T) => z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  schema.optional(),
+);
 
 export const giftCardTemplateSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -28,10 +32,10 @@ export const giftCardPurchaseDetailsSchema = z.object({
   buyerName: z.string().trim().min(2).max(100),
   buyerEmail: email,
   deliveryMode: z.enum(["SELF", "GIFT"]),
-  recipientName: z.string().trim().min(2).max(100).optional(),
-  recipientEmail: email.optional(),
-  senderName: z.string().trim().min(2).max(100).optional(),
-  giftMessage: z.string().trim().max(500).optional(),
+  recipientName: optionalField(z.string().trim().min(2).max(100)),
+  recipientEmail: optionalField(email),
+  senderName: optionalField(z.string().trim().min(2).max(100)),
+  giftMessage: optionalField(z.string().trim().max(500)),
 }).superRefine((value, ctx) => {
   if (value.deliveryMode === "GIFT") {
     if (!value.recipientName) ctx.addIssue({ code: "custom", path: ["recipientName"], message: "Ingresa el destinatario" });

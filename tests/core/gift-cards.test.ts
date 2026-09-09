@@ -44,6 +44,12 @@ describe("gift card input contracts", () => {
   it("requires at least one entitlement for service cards", () => expect(giftCardTemplateSchema.safeParse({ ...base, type: "SERVICE", faceValue: null }).success).toBe(false));
   it("accepts service packs with progressive quantities", () => expect(giftCardTemplateSchema.safeParse({ ...base, type: "SERVICE", faceValue: null, services: [{ serviceId: "manicure", quantity: 3 }] }).success).toBe(true));
   it("requires gift recipient data", () => expect(giftCardPurchaseDetailsSchema.safeParse({ templateId: "t1", buyerName: "Diego", buyerEmail: "d@example.com", deliveryMode: "GIFT" }).success).toBe(false));
+  it("treats empty gift-only fields as absent for self purchases", () => {
+    const result = giftCardPurchaseDetailsSchema.safeParse({ templateId: "t1", buyerName: "Diego", buyerEmail: "d@example.com", deliveryMode: "SELF", recipientName: "", recipientEmail: "", senderName: "", giftMessage: "" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toMatchObject({ recipientName: undefined, recipientEmail: undefined, senderName: undefined, giftMessage: undefined });
+  });
+  it("still rejects empty gift-only fields for gift purchases", () => expect(giftCardPurchaseDetailsSchema.safeParse({ templateId: "t1", buyerName: "Diego", buyerEmail: "d@example.com", deliveryMode: "GIFT", recipientName: "", recipientEmail: "", senderName: "" }).success).toBe(false));
   it("caps gift messages at 500 characters", () => expect(giftCardPurchaseDetailsSchema.safeParse({ templateId: "t1", buyerName: "Diego", buyerEmail: "d@example.com", deliveryMode: "GIFT", recipientName: "Maria", recipientEmail: "m@example.com", senderName: "Diego", giftMessage: "x".repeat(501) }).success).toBe(false));
   it("manual sales require a declared payment method", () => expect(manualGiftCardSaleSchema.safeParse({ templateId: "t1", buyerName: "Diego", buyerEmail: "d@example.com", deliveryMode: "SELF" }).success).toBe(false));
 });
