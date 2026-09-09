@@ -1615,6 +1615,7 @@ model GiftCardServiceEntitlement {
   giftCardId          String
   serviceId           String?
   serviceNameSnapshot String
+  unitValueSnapshot   Int
   quantityInitial     Int
   quantityRemaining   Int
 

@@ -35,7 +35,7 @@ export function snapshotGiftCardTemplate(template: {
   name: string; description: string | null; type: GiftCardType; salePrice: number; faceValue: number | null;
   currencyCode: string; designPreset: string; backgroundColor: string; accentColor: string; textColor: string;
   imageUrl: string | null; shortMessage: string | null;
-  services: Array<{ quantity: number; service: { id: string; name: string } }>;
+  services: Array<{ quantity: number; service: { id: string; name: string; price: number } }>;
 }): GiftCardTemplateSnapshot {
   return {
     name: template.name,
@@ -50,7 +50,7 @@ export function snapshotGiftCardTemplate(template: {
     textColor: template.textColor,
     imageUrl: template.imageUrl,
     shortMessage: template.shortMessage,
-    services: template.services.map((item) => ({ serviceId: item.service.id, serviceName: item.service.name, quantity: item.quantity })),
+    services: template.services.map((item) => ({ serviceId: item.service.id, serviceName: item.service.name, servicePrice: Math.round(item.service.price), quantity: item.quantity })),
   };
 }
 
@@ -79,7 +79,7 @@ export async function createGiftCardPurchase(input: {
 }) {
   const template = await prisma.giftCardTemplate.findFirst({
     where: { id: input.templateId, businessId: input.businessId, isActive: true },
-    include: { services: { include: { service: { select: { id: true, name: true, businessId: true } } } } },
+    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true } } } } },
   });
   if (!template) throw new Error("Gift Card no disponible");
   if (template.type === "SERVICE" && template.services.length === 0) throw new Error("La Gift Card no tiene servicios configurados");
@@ -148,6 +148,7 @@ export async function issueGiftCardForPurchase(purchaseId: string, client: Prism
             create: snapshot.services.map((item) => ({
               serviceId: item.serviceId,
               serviceNameSnapshot: item.serviceName,
+              unitValueSnapshot: item.servicePrice,
               quantityInitial: item.quantity,
               quantityRemaining: item.quantity,
             })),
@@ -177,7 +178,7 @@ export async function issueManualGiftCard(input: Parameters<typeof createGiftCar
 async function createGiftCardPurchaseWithClient(tx: Prisma.TransactionClient, input: Parameters<typeof createGiftCardPurchase>[0]) {
   const template = await tx.giftCardTemplate.findFirst({
     where: { id: input.templateId, businessId: input.businessId, isActive: true },
-    include: { services: { include: { service: { select: { id: true, name: true, businessId: true } } } } },
+    include: { services: { include: { service: { select: { id: true, name: true, price: true, businessId: true } } } } },
   });
   if (!template) throw new Error("Gift Card no disponible");
   if (template.type === "SERVICE" && template.services.length === 0) throw new Error("La Gift Card no tiene servicios configurados");
@@ -225,7 +226,11 @@ export async function quoteOwnedGiftCard(input: {
     include: { entitlements: true },
   });
   if (!card) throw new Error("Gift Card no disponible para esta reserva");
-  if (card.type === "BALANCE") return { card, amountCovered: quoteBalanceGiftCard(card.remainingBalance ?? 0, input.totalDue), coveredServices: [] };
+  if (card.type === "BALANCE") {
+    const amountCovered = quoteBalanceGiftCard(card.remainingBalance ?? 0, input.totalDue);
+    if (amountCovered <= 0) throw new Error("Esta Gift Card no tiene saldo disponible");
+    return { card, amountCovered, coveredServices: [] };
+  }
   if (input.hasDiscount) throw new Error("Las Gift Cards de servicios no se pueden combinar con promociones o premios en esta versión");
   const quote = quoteServiceGiftCard({ services: input.services, entitlements: card.entitlements, totalDue: input.totalDue });
   if (quote.amountCovered <= 0) throw new Error("Esta Gift Card no incluye los servicios seleccionados");

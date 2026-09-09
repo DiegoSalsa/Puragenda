@@ -116,10 +116,12 @@ CREATE TABLE "GiftCardServiceEntitlement" (
   "giftCardId" TEXT NOT NULL,
   "serviceId" TEXT,
   "serviceNameSnapshot" TEXT NOT NULL,
+  "unitValueSnapshot" INTEGER NOT NULL,
   "quantityInitial" INTEGER NOT NULL,
   "quantityRemaining" INTEGER NOT NULL,
   CONSTRAINT "GiftCardServiceEntitlement_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "GiftCardServiceEntitlement_quantity_check" CHECK ("quantityInitial" > 0 AND "quantityRemaining" >= 0 AND "quantityRemaining" <= "quantityInitial")
+  CONSTRAINT "GiftCardServiceEntitlement_quantity_check" CHECK ("quantityInitial" > 0 AND "quantityRemaining" >= 0 AND "quantityRemaining" <= "quantityInitial"),
+  CONSTRAINT "GiftCardServiceEntitlement_value_check" CHECK ("unitValueSnapshot" >= 0)
 );
 
 CREATE TABLE "GiftCardRedemption" (

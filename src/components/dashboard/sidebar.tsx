@@ -62,6 +62,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/clients", label: "clients", icon: UsersRound },
   { href: "/dashboard/recurring", label: "subscriptions", icon: RefreshCw },
   { href: "/dashboard/loyalty", label: "loyalty", icon: Stamp },
+  { href: "/dashboard/gift-cards", label: "giftCards", icon: Gift },
   { href: "/dashboard/marketing", label: "marketing", icon: Mail },
   { href: "/dashboard/discounts", label: "discounts", icon: Percent },
   { href: "/dashboard/stories", label: "stories", icon: ImagePlus },
@@ -99,6 +100,7 @@ const navSectionDefinitions = [
     itemLabels: [
       "subscriptions",
       "loyalty",
+      "giftCards",
       "marketing",
       "discounts",
       "stories",
@@ -245,6 +247,7 @@ function SidebarContent({
             "/dashboard/clients": [DASHBOARD_PERMISSIONS.CLIENTS_MANAGE],
             "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
             "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
+            "/dashboard/gift-cards": [DASHBOARD_PERMISSIONS.GIFT_CARDS_MANAGE],
             "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
             "/dashboard/discounts": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
             "/dashboard/stories": [

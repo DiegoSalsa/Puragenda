@@ -11,7 +11,7 @@ export type GiftCardTemplateSnapshot = {
   textColor: string;
   imageUrl: string | null;
   shortMessage: string | null;
-  services: Array<{ serviceId: string; serviceName: string; quantity: number }>;
+  services: Array<{ serviceId: string; serviceName: string; servicePrice: number; quantity: number }>;
 };
 
 export function asMoney(value: unknown) {
