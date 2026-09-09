@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CircleDollarSign, ImageIcon, Loader2, Palette, Save, Sparkles, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { CircleDollarSign, ImageIcon, Loader2, Palette, Save, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { GiftCardVisual } from "@/components/gift-cards/gift-card-visual";
 import { formatPrice } from "@/lib/utils";
+import { uploadGiftCardImageAssetAction } from "@/server/actions/gift-card.actions";
 
 export type GiftCardDashboardService = { id: string; name: string; price: number };
 export type GiftCardDashboardTemplate = {
@@ -101,8 +102,13 @@ const copyByLocale = {
     designHint: "Parte de un estilo y personalízalo si lo necesitas.",
     customColors: "Personalizar colores",
     image: "Imagen opcional",
-    imageHint: "Usa una URL de imagen de tu marca, servicio o campaña. La tarjeta funciona igual sin foto.",
-    imagePlaceholder: "https://…/imagen.jpg",
+    imageHint: "Sube una imagen de tu marca, servicio o campaña. PNG, JPG o WebP de hasta 5 MB.",
+    uploadImage: "Subir imagen",
+    replaceImage: "Cambiar imagen",
+    removeImage: "Quitar imagen",
+    uploadingImage: "Subiendo…",
+    invalidImage: "Usa una imagen PNG, JPG o WebP.",
+    imageTooLarge: "La imagen no puede superar 5 MB.",
     availability: "5. Disponibilidad",
     activeTitle: "Gift Card activa",
     activeHint: "Puede venderse y utilizarse.",
@@ -148,8 +154,13 @@ const copyByLocale = {
     designHint: "Start with a style and customize it if needed.",
     customColors: "Customize colors",
     image: "Optional image",
-    imageHint: "Use an image URL from your brand, service, or campaign. The card also works without a photo.",
-    imagePlaceholder: "https://…/image.jpg",
+    imageHint: "Upload an image from your brand, service, or campaign. PNG, JPG or WebP up to 5 MB.",
+    uploadImage: "Upload image",
+    replaceImage: "Replace image",
+    removeImage: "Remove image",
+    uploadingImage: "Uploading…",
+    invalidImage: "Use a PNG, JPG or WebP image.",
+    imageTooLarge: "The image cannot exceed 5 MB.",
     availability: "5. Availability",
     activeTitle: "Active Gift Card",
     activeHint: "It can be sold and redeemed.",
@@ -239,6 +250,9 @@ export function GiftCardBuilder({ business, services, template, onSaved, onClose
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState("");
   const [customColorsOpen, setCustomColorsOpen] = useState(template?.designPreset === "custom");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const dirty = JSON.stringify(form) !== baseline;
 
   const presets = useMemo(() => [
@@ -257,7 +271,7 @@ export function GiftCardBuilder({ business, services, template, onSaved, onClose
 
   const invalidBalance = form.type === "BALANCE" && (form.salePrice <= 0 || form.faceValue <= 0);
   const invalidServices = form.type === "SERVICE" && form.services.length === 0;
-  const canSave = dirty && form.name.trim().length >= 2 && form.salePrice > 0 && !invalidBalance && !invalidServices;
+  const canSave = dirty && !uploadingImage && form.name.trim().length >= 2 && form.salePrice > 0 && !invalidBalance && !invalidServices;
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
   useEffect(() => {
@@ -275,6 +289,39 @@ export function GiftCardBuilder({ business, services, template, onSaved, onClose
     if (dirty && !window.confirm(copy.discard)) return;
     onDirtyChange(false);
     onClose();
+  }
+
+  async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setImageError(copy.invalidImage);
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError(copy.imageTooLarge);
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingImage(true);
+    setImageError("");
+    try {
+      const data = new FormData();
+      data.append("image", file);
+      const result = await uploadGiftCardImageAssetAction(data);
+      if (result.error || !("url" in result) || !result.url) {
+        setImageError(result.error || t("genericError"));
+        return;
+      }
+      update({ imageUrl: result.url });
+    } catch {
+      setImageError(t("genericError"));
+    } finally {
+      setUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   }
 
   async function save(event: FormEvent) {
@@ -346,7 +393,18 @@ export function GiftCardBuilder({ business, services, template, onSaved, onClose
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">{presets.map((preset) => <button key={preset.id} type="button" aria-pressed={form.designPreset === preset.id} onClick={() => { update({ designPreset: preset.id, backgroundColor: preset.background, accentColor: preset.accent, textColor: preset.text }); setCustomColorsOpen(false); }} className={`rounded-xl border-2 border-black p-2 text-left text-xs font-black focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c4b5fd] ${form.designPreset === preset.id ? "shadow-[3px_3px_0_#000]" : "opacity-70"}`} style={{ backgroundColor: preset.background, color: preset.text }}><span className="flex items-center gap-2"><span className="h-5 w-5 rounded-full border-2 border-black" style={{ backgroundColor: preset.accent }} />{preset.label}</span></button>)}</div>
           <button type="button" aria-expanded={customColorsOpen} onClick={() => setCustomColorsOpen((open) => !open)} className="mt-4 w-full rounded-xl border-2 border-black bg-[#c4b5fd]/50 px-4 py-2 text-sm font-black focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c4b5fd]">{copy.customColors} {customColorsOpen ? "−" : "+"}</button>
           {customColorsOpen && <div className="mt-4 grid gap-3 rounded-2xl border-2 border-black bg-[#fffaf0] p-4 sm:grid-cols-3">{([[t("background"), "backgroundColor"], [t("accent"), "accentColor"], [t("text"), "textColor"]] as const).map(([label, key]) => <label key={key} className="text-xs font-black">{label}<span className="mt-1 flex items-center gap-2"><input type="color" value={form[key]} onChange={(event) => update({ [key]: event.target.value, designPreset: "custom" })} className="h-11 w-12 cursor-pointer rounded-lg border-2 border-black bg-white p-1" /><input aria-label={`${label} HEX`} value={form[key].toUpperCase()} maxLength={7} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) update({ [key]: value, designPreset: "custom" }); }} className="h-11 min-w-0 flex-1 rounded-lg border-2 border-black bg-white px-2 font-mono text-xs font-black" /></span></label>)}</div>}
-          <div className="mt-4"><label htmlFor="gift-card-image" className="flex items-center gap-2 text-sm font-black"><ImageIcon className="h-4 w-4" />{copy.image}</label><input id="gift-card-image" type="url" value={form.imageUrl} placeholder={copy.imagePlaceholder} onChange={(event) => update({ imageUrl: event.target.value })} className={fieldClass} /><p className="mt-2 text-xs font-semibold text-black/50">{copy.imageHint}</p></div>
+          <div className="mt-4 rounded-2xl border-2 border-black bg-[#fffaf0] p-4">
+            <div className="flex items-start gap-3"><ImageIcon className="mt-0.5 h-5 w-5 shrink-0" /><div><p className="text-sm font-black">{copy.image}</p><p className="mt-1 text-xs font-semibold text-black/50">{copy.imageHint}</p></div></div>
+            <input ref={imageInputRef} id="gift-card-image" type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage} className="sr-only" />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploadingImage} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-black bg-[#c4b5fd] px-4 text-sm font-black shadow-[2px_2px_0_#000] disabled:cursor-wait disabled:opacity-60">
+                {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploadingImage ? copy.uploadingImage : form.imageUrl ? copy.replaceImage : copy.uploadImage}
+              </button>
+              {form.imageUrl && <button type="button" onClick={() => { update({ imageUrl: "" }); setImageError(""); }} disabled={uploadingImage} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-black bg-white px-4 text-sm font-black disabled:opacity-60"><Trash2 className="h-4 w-4" />{copy.removeImage}</button>}
+            </div>
+            {imageError && <p role="alert" className="mt-3 text-sm font-black text-red-700">{imageError}</p>}
+          </div>
         </section>
 
         <section className={sectionClass}><h3 className="text-lg font-black">{copy.availability}</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><Toggle checked={form.isActive} onChange={() => update({ isActive: !form.isActive })} label={copy.activeTitle} description={copy.activeHint} /><Toggle checked={form.isPublic} onChange={() => update({ isPublic: !form.isPublic })} label={copy.publicTitle} description={copy.publicHint} /></div></section>
