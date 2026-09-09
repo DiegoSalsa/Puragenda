@@ -51,4 +51,12 @@ describe("tracking event privacy controls", () => {
       first_utm_campaign: "reservas_chile",
     });
   });
+
+  it("allows only the selected launch feature on changelog CTA events", () => {
+    expect(isTrackingEvent("changelog_launch_viewed")).toBe(true);
+    expect(sanitizeTrackingProperties("changelog_launch_cta_clicked", {
+      feature: "gift_cards",
+      email: "private@example.com",
+    })).toEqual({ feature: "gift_cards" });
+  });
 });

@@ -34,16 +34,17 @@ export default function ChangelogPage() {
               </span>
             </div>
 
-            <div className="rounded-2xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
+            <div className={`rounded-2xl p-6 transition-shadow hover:shadow-md ${entry.popupVariant === "launch" ? "border-[3px] border-black bg-[#fffaf0] shadow-[5px_5px_0_#000] dark:bg-[#fffaf0] dark:text-black" : "border bg-card shadow-sm"}`}>
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-xl font-bold tracking-tight">{entry.title}</h2>
+                  {entry.popupVariant === "launch" && <span className="inline-flex items-center rounded-full border-2 border-black bg-[#FFB5E8] px-2.5 py-0.5 text-xs font-black text-black">Gran actualización</span>}
                   <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-semibold text-brand-foreground">
                     {entry.version}
                   </span>
                 </div>
                 {/* Date (Mobile) */}
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground sm:hidden">
+                <div className={`flex items-center gap-1.5 text-sm sm:hidden ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {new Date(entry.date).toLocaleDateString("es-ES", {
@@ -55,12 +56,12 @@ export default function ChangelogPage() {
                 </div>
               </div>
 
-              <p className="mb-6 text-sm text-muted-foreground leading-relaxed">
+              <p className={`mb-6 text-sm leading-relaxed ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>
                 {entry.description}
               </p>
 
               {entry.notice && (
-                <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+                <div className={`mb-6 flex items-start gap-3 rounded-xl border p-4 ${entry.popupVariant === "launch" ? "border-black/20 bg-[#FFF5BA] text-black" : "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100"}`}>
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
                   <p className="text-sm font-medium leading-relaxed">{entry.notice}</p>
                 </div>
@@ -69,14 +70,14 @@ export default function ChangelogPage() {
               <div className="space-y-6">
                 {entry.features.length > 0 && (
                   <div>
-                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
+                    <h3 className={`mb-3 text-sm font-semibold uppercase tracking-wider ${entry.popupVariant === "launch" ? "text-black" : "text-foreground"}`}>
                       <LocalizedText id="e_ARYQ91-kY6" />
                     </h3>
                     <ul className="space-y-2.5">
                       {entry.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-2.5">
                           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-foreground" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
+                          <span className={`text-sm ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -85,14 +86,14 @@ export default function ChangelogPage() {
 
                 {entry.fixes && entry.fixes.length > 0 && (
                   <div>
-                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
+                    <h3 className={`mb-3 text-sm font-semibold uppercase tracking-wider ${entry.popupVariant === "launch" ? "text-black" : "text-foreground"}`}>
                       <LocalizedText id="D7f-ur6F_CU0" />
                     </h3>
                     <ul className="space-y-2.5">
                       {entry.fixes.map((fix, i) => (
                         <li key={i} className="flex items-start gap-2.5">
                           <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                          <span className="text-sm text-muted-foreground">{fix}</span>
+                          <span className={`text-sm ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>{fix}</span>
                         </li>
                       ))}
                     </ul>

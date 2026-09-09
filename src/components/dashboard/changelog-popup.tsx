@@ -3,18 +3,22 @@ import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION, type ChangelogSpotlight } from "@/config/changelog";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
+import { ChangelogLaunchPopup } from "@/components/dashboard/changelog-launch-popup";
 import { markChangelogSeenAction } from "@/server/actions/dashboard.actions";
 import { X, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from "@/components/icons/hover-icons";
+import { track } from "@/lib/analytics/client";
 
 export function ChangelogPopup() {
   const legacy = useTranslations("legacy");
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
   const latestUpdate = CHANGELOG_DATA[0];
+  const viewedLaunch = useRef(false);
+  const previousFocus = useRef<HTMLElement | null>(null);
 
   const handleDismiss = useCallback(async () => {
     setChangelogOpen(false);
@@ -25,20 +29,54 @@ export function ChangelogPopup() {
   useEffect(() => {
     if (!isChangelogOpen) return;
 
+    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusFrame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>("[data-changelog-close]")?.focus();
+    });
+
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") void handleDismiss();
+      if (event.key === "Escape" || event.key === "Esc") void handleDismiss();
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus.current?.focus();
+    };
   }, [handleDismiss, isChangelogOpen]);
+
+  useEffect(() => {
+    if (!isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
+    viewedLaunch.current = true;
+    track("changelog_launch_viewed");
+  }, [isChangelogOpen, latestUpdate.popupVariant]);
 
   if (!isChangelogOpen) return null;
 
   async function handleViewDetails() {
+    if (latestUpdate.popupVariant === "launch") track("changelog_launch_cta_clicked", { feature: "changelog" });
     setChangelogOpen(false);
     await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
     router.push("/dashboard/changelog");
+  }
+
+  async function handleSpotlightNavigation(spotlight: ChangelogSpotlight) {
+    track("changelog_launch_cta_clicked", { feature: spotlight.id });
+    setChangelogOpen(false);
+    await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
+    router.push(spotlight.href);
+  }
+
+  if (latestUpdate.popupVariant === "launch") {
+    return (
+      <ChangelogLaunchPopup
+        entry={latestUpdate}
+        onDismiss={() => void handleDismiss()}
+        onNavigate={(spotlight) => void handleSpotlightNavigation(spotlight)}
+        onViewDetails={() => void handleViewDetails()}
+      />
+    );
   }
 
   return (
@@ -57,6 +95,7 @@ export function ChangelogPopup() {
         >
           <div className="relative shrink-0 border-b-4 border-black bg-[#85E3FF] p-5 pt-8 dark:border-white sm:p-6 sm:pt-9 [@media(max-height:620px)]:p-4 [@media(max-height:620px)]:pt-5">
             <button
+              data-changelog-close
               type="button"
               onClick={() => void handleDismiss()}
               aria-label={legacy("oHTC44S-WJHN")}

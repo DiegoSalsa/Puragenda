@@ -1,3 +1,13 @@
+export interface ChangelogSpotlight {
+  id: "gift_cards" | "loyalty" | string;
+  preview: "gift_card" | "loyalty_card";
+  title: string;
+  description: string;
+  bullets: string[];
+  href: string;
+  cta: string;
+}
+
 export interface ChangelogEntry {
   version: string;
   date: string;
@@ -6,9 +16,82 @@ export interface ChangelogEntry {
   features: string[];
   fixes?: string[];
   notice?: string;
+  popupVariant?: "standard" | "launch";
+  popupEyebrow?: string;
+  popupTitle?: string;
+  popupDescription?: string;
+  spotlights?: ChangelogSpotlight[];
 }
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
+  {
+    version: "v2.0.0",
+    date: "2026-09-09",
+    title: "Gift Cards y una nueva forma de fidelizar",
+    description:
+      "Puragenda incorpora dos nuevas herramientas para generar nuevas ventas y hacer que tus clientes vuelvan: Gift Cards vendibles desde tu widget y un sistema de fidelización completamente renovado.",
+    popupVariant: "launch",
+    popupEyebrow: "Nuevo · Puragenda 2.0",
+    popupTitle: "Dos nuevas formas de hacer crecer tu negocio",
+    popupDescription: "Vende Gift Cards desde tu widget y convierte cada visita en una razón para volver.",
+    spotlights: [
+      {
+        id: "gift_cards",
+        preview: "gift_card",
+        title: "Gift Cards",
+        description: "Vende regalos directamente desde tu widget.",
+        bullets: [
+          "Por monto o servicios",
+          "Para regalar con mensaje personalizado",
+          "Cobro automático con Mercado Pago",
+        ],
+        href: "/dashboard/gift-cards",
+        cta: "Crear mi primera Gift Card",
+      },
+      {
+        id: "loyalty",
+        preview: "loyalty_card",
+        title: "Fidelización V2",
+        description: "Convierte cada visita completada en una razón para volver.",
+        bullets: [
+          "Timbres automáticos",
+          "Descuentos, servicios gratis y premios",
+          "Tarjeta e historial para cada cliente",
+        ],
+        href: "/dashboard/loyalty",
+        cta: "Configurar fidelización",
+      },
+    ],
+    features: [
+      "Crea Gift Cards por monto o por servicios y personaliza su diseño con la identidad de tu negocio.",
+      "Puedes vender una Gift Card por un precio diferente a su valor, ideal para campañas como “paga $45.000 y recibe $50.000”.",
+      "Tus clientes pueden comprar Gift Cards directamente desde el widget de reservas y pagar con Mercado Pago conectado al negocio.",
+      "El comprador puede elegir si la Gift Card es para él o enviarla como regalo con destinatario, mensaje personalizado y un correo preparado especialmente para la ocasión.",
+      "Los negocios sin Mercado Pago también pueden emitir Gift Cards manualmente desde el panel para ventas por transferencia, efectivo u otros medios.",
+      "Cada Gift Card puede agregarse a una cuenta cliente de Puragenda para consultar su saldo, servicios disponibles e historial.",
+      "Las Gift Cards de monto pueden utilizarse parcialmente en distintas reservas hasta consumir todo su saldo.",
+      "Las Gift Cards de servicios mantienen las sesiones o beneficios pendientes hasta que sean utilizados.",
+      "Al reservar con sesión iniciada, Puragenda detecta automáticamente las Gift Cards disponibles para ese negocio y permite utilizarlas como medio de pago.",
+      "Si la Gift Card cubre toda la reserva, la cita se confirma sin solicitar un nuevo pago. Si queda un monto pendiente, continúa el flujo normal del negocio.",
+      "Fidelización estrena una nueva tarjeta visual de timbres que los clientes pueden consultar desde Mi Agenda.",
+      "Cada cita completada entrega automáticamente un timbre.",
+      "Los negocios pueden definir cuántas visitas necesita el cliente para obtener un premio.",
+      "Los premios pueden ser descuentos porcentuales, descuentos por monto, servicios gratis o beneficios personalizados.",
+      "Los premios pueden configurarse con vigencia y se almacenan directamente en la cuenta del cliente.",
+      "El nuevo constructor muestra en tiempo real cómo verá el cliente su tarjeta de fidelización.",
+      "El negocio puede consultar clientes participantes, timbres entregados, premios generados y tasa de canje.",
+      "Los timbres pueden ajustarse manualmente cuando sea necesario, siempre registrando el motivo del cambio.",
+      "Mi Agenda ahora presenta el progreso de fidelización de forma visual, con los timbres obtenidos, la meta y los premios disponibles.",
+      "Reservas y Gift Cards ahora comparten una misma experiencia dentro del widget, permitiendo cambiar entre agendar y comprar un regalo sin salir de la página del negocio.",
+    ],
+    fixes: [
+      "Los premios de fidelización ahora se calculan y validan nuevamente en servidor antes de confirmar una reserva.",
+      "Los timbres se entregan únicamente al completar una atención y están protegidos contra duplicados.",
+      "Los saldos y beneficios de Gift Cards se actualizan de forma segura incluso ante reservas o pagos simultáneos.",
+      "Los pagos, descuentos, premios y Gift Cards mantienen registros separados para que los importes de las reservas sean consistentes.",
+    ],
+    notice: "Gift Cards ya está disponible en tu panel. Para venderlas automáticamente desde el widget solo necesitas tener Mercado Pago conectado; también puedes emitirlas manualmente.",
+  },
   {
     version: "v1.9.0",
     date: "2026-08-20",
