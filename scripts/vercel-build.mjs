@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { validateProductionEnv } from "./validate-production-env.mjs";
 
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit", shell: process.platform === "win32" });
@@ -8,6 +9,7 @@ function run(command, args) {
 // Preview deployments may share runtime credentials, but they must never
 // mutate the production schema. Production remains the single migration owner.
 if (process.env.VERCEL_ENV === "production") {
+  validateProductionEnv();
   run("npx", ["prisma", "migrate", "deploy"]);
 } else {
   console.log(`[vercel-build] Skipping database migrations for ${process.env.VERCEL_ENV || "local"}.`);

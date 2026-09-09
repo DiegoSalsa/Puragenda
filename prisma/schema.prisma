@@ -431,6 +431,7 @@ model Business {
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
+  @@index([loyaltyRewardServiceId])
 }
 
 // A business is the commercial account. A location is the physical place where
@@ -1564,6 +1565,7 @@ model GiftCardPurchase {
   giftCard  GiftCard?
 
   @@index([businessId, paymentStatus, createdAt])
+  @@index([templateId])
   @@index([mpPreferenceId])
   @@index([createdById])
 }
@@ -1710,6 +1712,7 @@ model LoyaltyCode {
 
   @@index([clientId])
   @@index([businessId])
+  @@index([freeServiceId])
   @@index([businessId, isUsed, expiresAt])
 }
 

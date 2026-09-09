@@ -13,6 +13,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   const card = await prisma.giftCard.findFirst({ where: { id, businessId: business.id }, select: { id: true } });
   if (!card) return Response.json({ error: "Gift Card no encontrada" }, { status: 404 });
-  await sendGiftCardEmail(card.id);
+  await sendGiftCardEmail(card.id, { resend: true });
   return Response.json({ ok: true });
 }

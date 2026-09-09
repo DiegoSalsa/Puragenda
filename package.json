@@ -31,16 +31,17 @@
     },
     "find-my-way": "9.7.0",
     "postcss": "8.5.23",
-    "sharp": "0.35.0",
+    "sharp": "0.35.4",
+    "mysql2": "3.24.4",
     "valibot": "1.4.2"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
-    "@next/third-parties": "^16.2.12",
+    "@next/third-parties": "^16.3.4",
     "@paddle/paddle-js": "^1.6.4",
     "@paddle/paddle-node-sdk": "^3.8.0",
-    "@prisma/adapter-pg": "^7.9.0",
-    "@prisma/client": "^7.9.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.10.0",
@@ -53,7 +54,7 @@
     "lucide-react": "^1.8.0",
     "mercadopago": "^3.2.1",
     "motion": "^13.1.1",
-    "next": "^16.2.12",
+    "next": "^16.3.4",
     "next-intl": "^4.13.5",
     "next-themes": "^0.4.6",
     "pg": "^8.20.0",
@@ -75,12 +76,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.12",
-    "prisma": "^7.9.0",
+    "eslint-config-next": "^16.3.4",
+    "prisma": "^7.10.0",
     "shadcn": "^4.15.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }

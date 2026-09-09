@@ -10,7 +10,7 @@ function formatMoney(amount: number, currency: string) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
-export async function sendGiftCardEmail(giftCardId: string) {
+export async function sendGiftCardEmail(giftCardId: string, options: { resend?: boolean } = {}) {
   const card = await prisma.giftCard.findUnique({
     where: { id: giftCardId },
     include: {
@@ -20,6 +20,7 @@ export async function sendGiftCardEmail(giftCardId: string) {
     },
   });
   if (!card) throw new Error("Gift Card no encontrada");
+  if (card.deliveryEmailSentAt && !options.resend) return { skipped: true as const };
   const isGift = card.purchase.deliveryMode === "GIFT";
   const recipientEmail = isGift ? card.purchase.recipientEmail : card.purchase.buyerEmail;
   const recipientName = isGift ? card.purchase.recipientName : card.purchase.buyerName;
@@ -48,7 +49,14 @@ export async function sendGiftCardEmail(giftCardId: string) {
     '<p style="margin:24px 0 0;text-align:center;color:#777;font-size:11px;">Gift Card emitida por ' + escapeHtml(card.business.name) + " con Puragenda.</p></div></div>";
 
   try {
-    const result = await resend.emails.send({ from: EMAIL_FROM, to: recipientEmail, subject, html }, { idempotencyKey: "gift-card-" + card.id + "-" + Date.now() });
+    const deliveryAttempt = options.resend ? `resend-${card.deliveryEmailAttempts + 1}` : "initial";
+    const result = await resend.emails.send(
+      { from: EMAIL_FROM, to: recipientEmail, subject, html },
+      { idempotencyKey: `gift-card-${card.id}-${deliveryAttempt}` },
+    );
+    if (result.error) {
+      throw new Error(`Resend rechazó el correo de la Gift Card: ${result.error.message}`);
+    }
     await prisma.giftCard.update({ where: { id: card.id }, data: { deliveryEmailSentAt: new Date(), deliveryEmailAttempts: { increment: 1 }, deliveryEmailLastError: null } });
     return result;
   } catch (error) {
