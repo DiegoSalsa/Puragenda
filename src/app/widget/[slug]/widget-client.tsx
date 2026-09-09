@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { buildSlots } from "@/core/availability";
 import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
 import { track } from "@/lib/analytics/client";
+import { getWidgetContrastColor, WidgetShell } from "@/components/widget/widget-shell";
 
 export { buildSlots } from "@/core/availability";
 
@@ -123,6 +124,7 @@ interface Props {
   useBusinessScheduleOnly?: boolean;
   availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
   availableGiftCards?: { id: string; nameSnapshot: string; type: "BALANCE" | "SERVICE"; remainingBalance: number | null; currencyCode: string; entitlements: { serviceId: string | null; serviceNameSnapshot: string; quantityRemaining: number }[] }[];
+  hasGiftCards?: boolean;
 }
 
 type Step = "location" | "service" | "mode-select" | "options" | "production" | "recurring-config" | "health-form" | "recurring-confirm" | "staff" | "datetime" | "details" | "success" | "payment";
@@ -240,21 +242,10 @@ function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: D
     timeToMinutes(slot.end) <= scheduleTimeToMinutes(entry.endTime);
 }
 
-/**
- * Returns '#000000' or '#FFFFFF' depending on which contrasts better against the given hex color.
- * Uses the YIQ formula for perceptual brightness.
- */
-function getContrastColor(hex: string): string {
-  const clean = hex.replace("#", "");
-  if (clean.length < 6) return "#FFFFFF";
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 150 ? "#000000" : "#FFFFFF";
-}
+/** Returns the shared accessible foreground for the business color. */
+const getContrastColor = getWidgetContrastColor;
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [] }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -1292,12 +1283,6 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     );
   }
 
-  const shellShadow = shadowStyle === "none"
-    ? "none"
-    : shadowStyle === "strong"
-      ? "0 28px 70px rgba(0,0,0,.42)"
-      : "0 18px 45px rgba(0,0,0,.24)";
-
   function renderPromoBlocks(placement: PromoBlock["placement"]) {
     const blocks = promoBlocks
       .filter((block) => block.placement === placement)
@@ -1377,52 +1362,29 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   }
 
   return (
-    <div
-      className="w-full min-h-screen p-3 sm:p-5 flex justify-center items-start"
-      style={{
-        background: bgColor,
-        ["--wp" as string]: pc,
-        ["--wbg" as string]: bgColor,
-        ["--wtext" as string]: textColor,
-        ["--wtext-secondary" as string]: textSecondary,
-        ["--wborder" as string]: business.secondaryColor,
-        ["--wsubtle" as string]: `${textColor}08`,
-        ["--wfont-size" as string]: `${fontSize}px`,
-        fontSize: `${fontSize}px`,
-        color: textColor,
-      }}
+    <WidgetShell
+      business={business}
+      primaryColor={pc}
+      secondaryColor={business.secondaryColor}
+      backgroundColor={bgColor}
+      textColor={textColor}
+      textSecondary={textSecondary}
+      fontSize={fontSize}
+      cornerRadius={cornerRadius}
+      shadowStyle={shadowStyle}
+      headerAlign={headerAlign}
+      eyebrow={t("onlineBooking")}
+      stepBadge={t("stepByStep")}
+      activeMode="booking"
+      showModeTabs={hasGiftCards && !previewMode}
+      reserveLabel={locale.startsWith("es") ? "Reservar" : "Book"}
+      giftCardsLabel="Gift Cards"
+      progressLabels={step !== "success" ? stepLabels : undefined}
+      progressIndex={stepIdx}
+      headerExtra={previewMode ? <div className="mt-3 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: `${pc}35`, background: `${pc}10`, color: textColor }}><span className="font-bold" style={{ color: pc }}>{previewText.badge}:</span> {previewText.notice}</div> : undefined}
+      footerExtra={renderPromoBlocks("FOOTER")}
+      poweredByLabel={<LocalizedText id="_cXS6UEMLYjl" />}
     >
-      <div className="mx-auto flex w-full max-w-2xl flex-col overflow-hidden border transition-all duration-500" style={{ background: bgColor, color: textColor, borderColor: "var(--wborder)", borderRadius: `${cornerRadius}px`, boxShadow: shellShadow }}>
-        {/* Header */}
-        <div className="border-b px-5 py-4 sm:px-6 relative overflow-hidden" style={{ background: `${bgColor}F2`, borderColor: "var(--wborder)", backdropFilter: "blur(12px)" }}>
-          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: `linear-gradient(135deg, ${pc}00 0%, ${pc}40 100%)` }} />
-          <div className="relative flex items-center gap-2" style={{ justifyContent: headerAlign === "center" ? "center" : headerAlign === "right" ? "flex-end" : "space-between" }}>
-            <div className="flex items-center gap-3" style={{ textAlign: headerAlign as "left" | "center" | "right" }}>
-              {business.logoUrl && <img src={business.logoUrl} alt={business.name} className="h-8 w-8 rounded-lg object-cover" />}
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: textSecondary }}>{t("onlineBooking")}</p>
-                <h1 className="text-lg font-bold tracking-tight" style={{ color: textColor }}>{business.name}</h1>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {headerAlign === "left" && <span className="hidden rounded-lg px-2.5 py-1 text-xs font-medium sm:inline-flex" style={{ background: `${pc}20`, color: pc }}>{t("stepByStep")}</span>}
-            </div>
-          </div>
-          {step !== "success" && (
-            <div className="mt-4 grid gap-1.5 text-[9px] sm:gap-2 sm:text-xs" style={{ gridTemplateColumns: `repeat(${stepLabels.length}, minmax(0, 1fr))` }}>
-              {stepLabels.map((label, i) => (
-                <div key={label} className="flex min-w-0 items-center justify-center break-words rounded-full px-1 py-1.5 text-center leading-tight transition-all duration-300 sm:px-2" style={stepIdx >= i ? { background: `${pc}20`, color: pc } : { border: `1px solid ${textSecondary}15`, color: textSecondary }}>
-                  {label}
-                </div>
-              ))}
-            </div>
-          )}
-          {previewMode && (
-            <div className="mt-3 rounded-xl border px-3 py-2.5 text-xs" style={{ borderColor: `${pc}35`, background: `${pc}10`, color: textColor }}>
-              <span className="font-bold" style={{ color: pc }}>{previewText.badge}:</span> {previewText.notice}
-            </div>
-          )}
-        </div>
         {renderPromoBlocks("HEADER")}
 
         {isEmbedded && !portalAccountActive && !previewMode && step !== "success" && (
@@ -2535,15 +2497,6 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           )}
         </div>
 
-        {renderPromoBlocks("FOOTER")}
-        <div className="mt-auto border-t px-5 py-3 flex items-center justify-center gap-1.5 text-xs font-medium" style={{ background: `${bgColor}F2`, color: textSecondary, borderColor: "var(--wborder)" }}>
-          <span><LocalizedText id="_cXS6UEMLYjl" /></span>
-          <a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
-            <span style={{ color: pc, fontWeight: 700, letterSpacing: "-0.02em" }}>Puragenda</span>
-            <Sparkles className="h-3 w-3" style={{ color: pc }} />
-          </a>
-        </div>
-      </div>
-    </div>
+    </WidgetShell>
   );
 }

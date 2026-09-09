@@ -5,7 +5,6 @@ import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
 import { getCountryConfig } from "@/core/countries";
 import { getClientPortalAccount, getClientPortalEmail } from "@/server/services/client-portal.service";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -206,7 +205,6 @@ export default async function WidgetPage({
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdLocalBusiness) }} />
-      {business.giftCardTemplates.length > 0 && !previewMode && <div className="flex justify-center gap-2 bg-black px-4 pt-4"><span className="rounded-xl border-2 border-white bg-white px-4 py-2 text-sm font-black text-black">Reservar</span><Link href={"/widget/" + business.slug + "/gift-cards"} className="rounded-xl border-2 border-white px-4 py-2 text-sm font-black text-white">Gift Cards</Link></div>}
       <WidgetClient
       business={{
         name: business.name,
@@ -357,6 +355,7 @@ export default async function WidgetPage({
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
       availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}
       availableGiftCards={availableGiftCards}
+      hasGiftCards={business.giftCardTemplates.length > 0}
     />
     </>
   );

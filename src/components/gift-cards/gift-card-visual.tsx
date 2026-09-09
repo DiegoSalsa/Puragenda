@@ -22,6 +22,7 @@ type GiftCardVisualProps = {
   text: string;
   imageUrl?: string | null;
   currencyCode: string;
+  formatAmount?: (amount: number) => string;
   compact?: boolean;
   className?: string;
 };
@@ -39,6 +40,7 @@ export function GiftCardVisual({
   text,
   imageUrl,
   currencyCode,
+  formatAmount,
   compact = false,
   className = "",
 }: GiftCardVisualProps) {
@@ -75,7 +77,7 @@ export function GiftCardVisual({
           {shortMessage && <p className={`${compact ? "mt-1 line-clamp-1 text-[9px]" : "mt-2 line-clamp-2 text-xs sm:text-sm"} font-bold opacity-75`}>{shortMessage}</p>}
 
           {type === "BALANCE" ? (
-            <p className={`${compact ? "mt-2 text-xl" : "mt-4 text-3xl sm:text-4xl"} font-black tracking-tight`}>{formatPrice(faceValue || 0, currencyCode)}</p>
+            <p className={`${compact ? "mt-2 text-xl" : "mt-4 text-3xl sm:text-4xl"} font-black tracking-tight`}>{formatAmount ? formatAmount(faceValue || 0) : formatPrice(faceValue || 0, currencyCode)}</p>
           ) : (
             <ul className={`${compact ? "mt-2 space-y-0 text-[10px]" : "mt-4 space-y-1 text-xs sm:text-sm"} font-black`}>
               {visibleServices.length > 0 ? visibleServices.map((service, index) => (
