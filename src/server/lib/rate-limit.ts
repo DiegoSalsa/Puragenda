@@ -226,3 +226,10 @@ export const marketingLimiter = rateLimit({
   max: 3,
   message: "Demasiados envíos de campaña. Espera 1 hora.",
 });
+
+/** Post-booking feedback: rating, optional comment and Google click. */
+export const bookingFeedbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Demasiados envíos de opinión. Espera unos minutos.",
+});

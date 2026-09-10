@@ -23,6 +23,7 @@ import { syncAppointmentToGoogle } from "@/server/services/google-calendar.servi
 import type { Appointment, Service as PrismaService } from "@prisma/client";
 import { validateLoyaltyNoStacking } from "@/core/loyalty";
 import { quoteOwnedGiftCard, releaseGiftCardRedemptions, reserveGiftCardRedemption } from "@/server/services/gift-card.service";
+import { signBookingFeedbackToken } from "@/server/security/booking-feedback-token";
 
 class RewardClaimError extends Error {}
 class BookingGroupError extends Error {}
@@ -1002,6 +1003,10 @@ export async function POST(
           relatedAppointments: createdAppointments,
           depositRequired,
           paymentUrl,
+          feedbackToken: signBookingFeedbackToken({
+            appointmentId: createdAppointments[0].id,
+            businessId: createdAppointments[0].businessId,
+          }),
         },
         { status: 201 }
       );
@@ -1138,6 +1143,10 @@ export async function POST(
         ...result.appointment,
         depositRequired,
         paymentUrl,
+        feedbackToken: signBookingFeedbackToken({
+          appointmentId: result.appointment.id,
+          businessId: result.appointment.businessId,
+        }),
       },
       { status: 201 }
     );

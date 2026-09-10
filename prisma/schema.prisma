@@ -94,6 +94,11 @@ enum GiftCardRedemptionStatus {
   RELEASED
 }
 
+enum BookingFeedbackRating {
+  POSITIVE
+  IMPROVE
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -166,8 +171,9 @@ model ClientPortalAccount {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions  ClientPortalSession[]
-  giftCards GiftCard[]
+  sessions         ClientPortalSession[]
+  giftCards        GiftCard[]
+  bookingFeedbacks BookingFeedback[]
 
   @@index([emailVerifiedAt])
 }
@@ -428,6 +434,7 @@ model Business {
   giftCardTemplates           GiftCardTemplate[]
   giftCardPurchases           GiftCardPurchase[]
   giftCards                   GiftCard[]
+  bookingFeedbacks            BookingFeedback[]
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -1276,6 +1283,7 @@ model Appointment {
   giftCardTransactions   GiftCardTransaction[]
   redeemedLoyaltyCode    LoyaltyCode?            @relation("LoyaltyCodeRedemption")
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
+  bookingFeedback        BookingFeedback?
 
   @@index([businessId])
   @@index([serviceId])
@@ -1288,6 +1296,32 @@ model Appointment {
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
   @@index([settledByUserId])
+}
+
+/// Internal product feedback collected after a widget booking. Superadmin-only.
+model BookingFeedback {
+  id                    String                 @id @default(cuid())
+  appointmentId         String                 @unique
+  businessId            String
+  rating                BookingFeedbackRating
+  comment               String?
+  googleReviewClickedAt DateTime?
+  clientPortalAccountId String?
+  authenticated         Boolean                @default(false)
+  deviceType            String?
+  locale                String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  appointment         Appointment          @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientPortalAccount ClientPortalAccount? @relation(fields: [clientPortalAccountId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([createdAt])
+  @@index([rating])
+  @@index([googleReviewClickedAt])
+  @@index([clientPortalAccountId])
 }
 
 /// Durable delivery record for the non-transactional work triggered by a
