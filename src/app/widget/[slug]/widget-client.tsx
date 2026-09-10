@@ -5,7 +5,7 @@ import { LocalizedText } from "@/components/i18n/localized-text";
 import { useMemo, useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { addDays, addMinutes, addMonths, format } from "date-fns";
 import { de, enUS, es, fr, it, ptBR, zhCN } from "date-fns/locale";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, ExternalLink, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, Star, UserRound, AlertCircle } from "@/components/icons/hover-icons";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3, ExternalLink, Gift, Loader2, Mail, MapPin, Percent, Phone, RefreshCw, Sparkles, UserRound, AlertCircle } from "@/components/icons/hover-icons";
 import { formatPrice, capitalize } from "@/lib/utils";
 import { calculateWidgetPromotion } from "@/core/widget-promotion";
 import { ProductionOrderFlow } from "./production-order-flow";
@@ -16,6 +16,7 @@ import { buildSlots } from "@/core/availability";
 import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
 import { track } from "@/lib/analytics/client";
 import { getWidgetContrastColor, WidgetShell } from "@/components/widget/widget-shell";
+import { BookingFeedbackCard } from "@/components/widget/booking-feedback-card";
 
 export { buildSlots } from "@/core/availability";
 
@@ -325,6 +326,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [activationLoading, setActivationLoading] = useState(false);
   const [activationMessage, setActivationMessage] = useState("");
   const [activationError, setActivationError] = useState("");
+  const [feedbackToken, setFeedbackToken] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false, address: false });
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -986,6 +988,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
         window.location.href = data.paymentUrl;
         return;
       }
+      setFeedbackToken(typeof data.feedbackToken === "string" ? data.feedbackToken : null);
       setStep("success");
     } catch (err) {
       track("booking_failed", { reason: "request_failed", stage: "submit" }, { businessSlug: business.slug });
@@ -1037,6 +1040,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setRecurringMode("single"); setRecurringSelectedDays([]); setRecurringStartDate(""); setRecurringDurationMonths(1);
     setRecurringTimes({});
     setHealthAnswers({}); setHealthExtra(""); setHealthTerms(false); setRut(""); setRecurringError(""); setRecurringSuccess(null);
+    setFeedbackToken(null);
   }
 
   // ── Recurring helpers ──
@@ -2452,6 +2456,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   </div>
                 </>
               )}
+              <BookingFeedbackCard
+                previewMode={previewMode}
+                isRecurringSuccess={Boolean(recurringSuccess)}
+                feedbackToken={feedbackToken}
+                authenticated={portalAccountActive}
+                businessSlug={business.slug}
+                primaryColor={pc}
+                textColor={textColor}
+                textSecondary={textSecondary}
+              />
               {!previewMode && !portalAccountActive && (
                 <div className="mx-auto max-w-md rounded-2xl border p-5 text-left" style={{ background: `${pc}08`, borderColor: `${pc}35` }}>
                   <h3 className="text-base font-semibold" style={{ color: textColor }}>No vuelvas a completar tus datos</h3>
@@ -2471,27 +2485,6 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   )}
                 </div>
               )}
-              {!previewMode && <div
-                className="mx-auto max-w-md rounded-2xl border p-5"
-                style={{ background: `${pc}08`, borderColor: `${pc}25` }}
-              >
-                <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full" style={{ background: `${pc}15` }}>
-                  <Star className="h-4 w-4" style={{ color: pc }} aria-hidden="true" />
-                </div>
-                <h3 className="text-base font-semibold" style={{ color: textColor }}><LocalizedText id="cGBjzON6in3n" /></h3>
-                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed" style={{ color: textSecondary }}><LocalizedText id="Y16ha1zOKL9V" /></p>
-                <a
-                  href="https://g.page/r/CZcC65S2yDolEAI/review"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md active:scale-95"
-                  style={{ background: pc, color: getContrastColor(pc) }}
-                >
-                  <Star className="h-4 w-4" aria-hidden="true" />
-                  <LocalizedText id="JgR2l6kp04YJ" />
-                </a>
-                <p className="mt-2 text-xs" style={{ color: textSecondary }}><LocalizedText id="qF4YalV5_OjH" /></p>
-              </div>}
               <button type="button" onClick={restart} className="rounded-xl border px-6 py-3 text-sm font-medium transition-all hover:opacity-100 hover:shadow-md active:scale-95" style={{ color: textColor, borderColor: "var(--wborder)", background: "var(--wsubtle)" }}>{previewMode ? previewText.restart : t("bookAnother")}</button>
             </div>
           )}
