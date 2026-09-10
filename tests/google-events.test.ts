@@ -79,6 +79,23 @@ describe("googleAnalyticsEventsFor", () => {
     expect(completed[0]?.params).not.toHaveProperty("clientId");
   });
 
+  it("maps booking feedback events without comment text", () => {
+    const events = googleAnalyticsEventsFor(
+      "booking_feedback_comment_submitted",
+      sanitizeTrackingProperties("booking_feedback_comment_submitted", {
+        source: "booking_success",
+        rating: "positive",
+        authenticated: true,
+        comment: "Me costó el calendario",
+        email: "a@b.c",
+      }),
+      { pagePath: "/widget/estetica-bella" },
+    );
+    expect(events[0]?.name).toBe("booking_feedback_comment_submitted");
+    expect(JSON.stringify(events)).not.toContain("Me costó");
+    expect(JSON.stringify(events)).not.toContain("a@b.c");
+  });
+
   it("maps register CTAs to sign_up_cta_clicked with the current public page", () => {
     const events = googleAnalyticsEventsFor(
       "landing_cta_clicked",

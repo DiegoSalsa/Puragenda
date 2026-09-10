@@ -52,6 +52,31 @@ describe("tracking event privacy controls", () => {
     });
   });
 
+  it("allows booking feedback funnel events without PII or comment text", () => {
+    expect(isTrackingEvent("booking_feedback_shown")).toBe(true);
+    expect(isTrackingEvent("booking_feedback_positive")).toBe(true);
+    expect(isTrackingEvent("booking_feedback_improve")).toBe(true);
+    expect(isTrackingEvent("booking_feedback_comment_submitted")).toBe(true);
+    expect(isTrackingEvent("google_review_cta_shown")).toBe(true);
+    expect(isTrackingEvent("google_review_cta_clicked")).toBe(true);
+
+    const properties = sanitizeTrackingProperties("booking_feedback_comment_submitted", {
+      source: "booking_success",
+      rating: "improve",
+      authenticated: false,
+      email: "cliente@example.com",
+      phone: "+56912345678",
+      customerName: "Ana",
+      comment: "Me costó encontrar al profesional",
+    });
+
+    expect(properties).toEqual({
+      source: "booking_success",
+      rating: "improve",
+      authenticated: false,
+    });
+  });
+
   it("allows only the selected launch feature on changelog CTA events", () => {
     expect(isTrackingEvent("changelog_launch_viewed")).toBe(true);
     expect(sanitizeTrackingProperties("changelog_launch_cta_clicked", {
