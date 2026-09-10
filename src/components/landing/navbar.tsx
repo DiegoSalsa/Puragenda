@@ -124,7 +124,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               <>
                 <Link href="/mi-agenda">
                   <button className="rounded-full px-3 py-2 text-sm font-semibold text-[#7C3AED] transition-all duration-200 hover:bg-[#7C3AED]/10 min-[1500px]:px-4 min-[1500px]:text-base">
-                    {t("myAppointments")}
+                    {t("viewMyAppointments")}
                   </button>
                 </Link>
                 <Link href="/login">
