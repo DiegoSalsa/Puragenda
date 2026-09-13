@@ -146,11 +146,14 @@ describe("SEO-008 marketplace visibility and projection", () => {
     expect(card).toEqual({
       name: "Barbería Centro",
       bookingPath: "/widget/visible",
+      profilePath: "/negocios/visible",
       categorySlug: "barberias",
       citySlug: "concepcion",
       cityName: "Concepción",
       logoUrl: "https://res.cloudinary.com/demo/logo.png",
       serviceNames: ["Corte", "Barba", "Cejas"],
+      ratingAverage: null,
+      ratingCount: 0,
     });
     expect(publicCardLeaksForbiddenFields(card)).toBe(false);
     expect(Object.keys(card).sort()).toEqual([...MARKETPLACE_PUBLIC_CARD_KEYS].sort());

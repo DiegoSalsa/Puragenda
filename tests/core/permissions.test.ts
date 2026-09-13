@@ -34,5 +34,11 @@ describe("dashboard permissions", () => {
     expect(LEGACY_ROLE_PERMISSIONS.STAFF).not.toContain(
       DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS,
     );
+    expect(LEGACY_ROLE_PERMISSIONS.STAFF).not.toContain(
+      DASHBOARD_PERMISSIONS.REVIEWS_MANAGE,
+    );
+    expect(LEGACY_ROLE_PERMISSIONS.ADMIN).toContain(
+      DASHBOARD_PERMISSIONS.REVIEWS_MANAGE,
+    );
   });
 });

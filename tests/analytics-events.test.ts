@@ -52,6 +52,27 @@ describe("tracking event privacy controls", () => {
     });
   });
 
+  it("allows verified review funnel events without PII or comment text", () => {
+    expect(isTrackingEvent("review_opened")).toBe(true);
+    expect(isTrackingEvent("review_submitted")).toBe(true);
+    expect(isTrackingEvent("public_review_requested")).toBe(true);
+    expect(isTrackingEvent("review_published")).toBe(true);
+    expect(isTrackingEvent("business_replied")).toBe(true);
+
+    const properties = sanitizeTrackingProperties("review_submitted", {
+      source: "review_invite",
+      visibility: "PUBLIC",
+      authenticated: true,
+      email: "cliente@example.com",
+      comment: "Excelente atención",
+    });
+    expect(properties).toEqual({
+      source: "review_invite",
+      visibility: "PUBLIC",
+      authenticated: true,
+    });
+  });
+
   it("allows booking feedback funnel events without PII or comment text", () => {
     expect(isTrackingEvent("booking_feedback_shown")).toBe(true);
     expect(isTrackingEvent("booking_feedback_positive")).toBe(true);

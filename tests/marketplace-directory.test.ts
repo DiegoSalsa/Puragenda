@@ -42,6 +42,9 @@ function card(overrides: Partial<PublicMarketplaceDirectoryCard> = {}): PublicMa
   return {
     name: "Studio Centro",
     bookingPath: "/widget/studio-centro?location=principal",
+    profilePath: "/negocios/studio-centro",
+    ratingAverage: null,
+    ratingCount: 0,
     categorySlugs: ["manicure"],
     categoryNames: ["Manicure / Nail Studio"],
     citySlug: "concepcion",
@@ -100,7 +103,13 @@ describe("public /negocios directory", () => {
   it("does not create manicure or bienestar SEO routes", () => {
     expect(() => readFileSync(join(process.cwd(), "src/app/manicure/page.tsx"), "utf8")).toThrow();
     expect(() => readFileSync(join(process.cwd(), "src/app/bienestar/page.tsx"), "utf8")).toThrow();
-    expect(() => readFileSync(join(process.cwd(), "src/app/negocios/[slug]/page.tsx"), "utf8")).toThrow();
+  });
+
+  it("keeps public business profiles noindex and out of the sitemap", () => {
+    const source = readFileSync(join(process.cwd(), "src/app/negocios/[slug]/page.tsx"), "utf8");
+    expect(source).toContain("index: false");
+    const urls = sitemap().map((entry) => entry.url);
+    expect(urls.some((url) => url.includes("/negocios/"))).toBe(false);
   });
 
   it("projects a whitelist card with a widget booking path and no private fields", () => {
