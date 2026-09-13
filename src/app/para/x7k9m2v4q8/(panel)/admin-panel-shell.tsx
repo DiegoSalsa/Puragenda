@@ -25,6 +25,7 @@ const NAV_ITEMS = [
   { href: `${ADMIN_SECRET_PATH}/subscriptions`, icon: CreditCard, label: "Suscripciones" },
   { href: `${ADMIN_SECRET_PATH}/tracking`, icon: BarChart3, label: "Tracking" },
   { href: `${ADMIN_SECRET_PATH}/feedback`, icon: Star, label: "Feedback" },
+  { href: `${ADMIN_SECRET_PATH}/reviews`, icon: Star, label: "Reseñas" },
   { href: `${ADMIN_SECRET_PATH}/privacy-requests`, icon: ShieldCheck, label: "Solicitudes de privacidad" },
   { href: `${ADMIN_SECRET_PATH}/discounts`, icon: Tag, label: "Descuentos" },
   { href: `${ADMIN_SECRET_PATH}/communications`, icon: Mail, label: "Comunicaciones" },

@@ -46,6 +46,7 @@ export {
   projectPublicMarketplaceCards,
   projectPublicMarketplaceDirectoryCard,
   publicCardLeaksForbiddenFields,
+  withMarketplaceRating,
   type PublicMarketplaceCard,
   type PublicMarketplaceDirectoryCard,
 } from "./projection";

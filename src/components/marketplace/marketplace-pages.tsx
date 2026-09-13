@@ -177,9 +177,12 @@ function ListingGrid({ cards, heading }: { cards: PublicMarketplaceCard[]; headi
             <MarketplaceListingCard
               name={card.name}
               bookingPath={card.bookingPath}
+              profilePath={card.profilePath}
               cityName={card.cityName}
               logoUrl={card.logoUrl}
               serviceNames={card.serviceNames}
+              ratingAverage={card.ratingAverage}
+              ratingCount={card.ratingCount}
               ctaLabel="Reservar"
             />
           </li>

@@ -8,6 +8,8 @@ import {
   marketplacePublicLocationLabel,
   marketplaceVisibleServices,
 } from "@/lib/marketplace";
+import { formatRatingAverage } from "@/lib/reviews/rating";
+import { RatingStars } from "@/components/reviews/rating-stars";
 
 type MarketplaceListingCardProps = {
   name: string;
@@ -18,6 +20,9 @@ type MarketplaceListingCardProps = {
   locationName?: string;
   logoUrl?: string | null;
   serviceNames: string[];
+  profilePath?: string;
+  ratingAverage?: number | null;
+  ratingCount?: number;
   ctaLabel?: string;
   trackBooking?: boolean;
 };
@@ -44,6 +49,9 @@ export function MarketplaceListingCard({
   locationName,
   logoUrl,
   serviceNames,
+  profilePath,
+  ratingAverage = null,
+  ratingCount = 0,
   ctaLabel = "Reservar",
   trackBooking = false,
 }: MarketplaceListingCardProps) {
@@ -57,15 +65,11 @@ export function MarketplaceListingCard({
     .join(" · ");
   const services = marketplaceVisibleServices(serviceNames, 3);
 
+  const formattedAverage = formatRatingAverage(ratingAverage);
+  const showRating = ratingCount > 0 && formattedAverage != null;
+
   return (
-    <Link
-      href={bookingPath}
-      aria-label={`${ctaLabel} en ${name}`}
-      onClick={() => {
-        if (trackBooking) track("directory_booking_clicked", { placement: "card" });
-      }}
-      className="group flex h-full w-full flex-col rounded-2xl border-2 border-black bg-white p-3.5 text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED]/40 dark:border-white dark:bg-black dark:text-white"
-    >
+    <article className="flex h-full w-full flex-col rounded-2xl border-2 border-black bg-white p-3.5 text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5 dark:border-white dark:bg-black dark:text-white">
       <div className="flex items-start gap-3">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -80,12 +84,25 @@ export function MarketplaceListingCard({
           <LogoFallback name={name} />
         )}
         <div className="min-w-0">
-          <h3 className="text-base font-black leading-snug [text-transform:none]">{name}</h3>
+          <h3 className="text-base font-black leading-snug [text-transform:none]">
+            {profilePath ? (
+              <Link href={profilePath} className="hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED]/40">
+                {name}
+              </Link>
+            ) : name}
+          </h3>
           {rubro ? <p className="mt-0.5 text-sm font-bold text-[#5B21B6] dark:text-[#C4B5FD]">{rubro}</p> : null}
           <p className="mt-0.5 text-sm font-semibold text-black/65 dark:text-white/70">
             {cityName}
             {publicLocation ? ` · ${publicLocation}` : ""}
           </p>
+          {showRating ? (
+            <p className="mt-1 flex items-center gap-1.5 text-sm font-black">
+              <RatingStars value={Math.round(ratingAverage ?? 0)} size="sm" />
+              <span>{formattedAverage}</span>
+              <span className="font-semibold text-black/55 dark:text-white/60">({ratingCount})</span>
+            </p>
+          ) : null}
         </div>
       </div>
       {services.visible.length > 0 ? (
@@ -106,11 +123,18 @@ export function MarketplaceListingCard({
         </ul>
       ) : null}
       <span className="mt-auto pt-3">
-        <span className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-[#7C3AED] px-3 text-sm font-black text-white shadow-[2px_2px_0_#000] group-hover:bg-[#6D28D9] sm:w-fit">
+        <Link
+          href={bookingPath}
+          aria-label={`${ctaLabel} en ${name}`}
+          onClick={() => {
+            if (trackBooking) track("directory_booking_clicked", { placement: "card" });
+          }}
+          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-[#7C3AED] px-3 text-sm font-black text-white shadow-[2px_2px_0_#000] hover:bg-[#6D28D9] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7C3AED]/40 sm:w-fit"
+        >
           {ctaLabel}
           <ArrowRight className="h-4 w-4" />
-        </span>
+        </Link>
       </span>
-    </Link>
+    </article>
   );
 }

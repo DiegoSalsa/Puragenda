@@ -1,7 +1,7 @@
 # Puragenda — Contexto Completo del Proyecto
 
-> **Última actualización:** 2026-05-14  
-> **Versión:** v9 (Billing + Affiliates Roulette + Loyalty + Marketing + Deposits + MP OAuth Marketplace + Audit)  
+> **Última actualización:** 2026-09-13  
+> **Versión:** v9 (Billing + Affiliates Roulette + Loyalty + Marketing + Deposits + MP OAuth Marketplace + Audit + Verified reviews)  
 > **Stack:** Next.js 16 + Prisma 7 + PostgreSQL + TypeScript + Tailwind CSS 4 + MercadoPago  
 > **Repositorio:** https://github.com/DiegoSalsa/Puragenda  
 > **Producción:** https://www.puragenda.cl

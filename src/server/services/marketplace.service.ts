@@ -5,13 +5,16 @@ import {
   mapPublishedListingToCandidates,
   mapPublishedListingToDirectoryCard,
   parseMarketplaceDirectoryQuery,
+  withMarketplaceRating,
   type MarketplaceDirectoryQuery,
   type MarketplaceDirectoryResult,
   type MarketplaceListingCandidate,
   type MarketplaceQualityGateReportRow,
+  type PublicMarketplaceCard,
   type PublicMarketplaceDirectoryCard,
 } from "@/lib/marketplace";
 import { prisma } from "@/server/db/prisma";
+import { getBusinessRatingSummariesBySlug } from "@/server/services/reviews.service";
 
 const publicListingSelect = {
   status: true,
@@ -114,7 +117,8 @@ export async function listPublicMarketplaceDirectory(
       .map(mapPublishedListingToDirectoryCard)
       .filter((card): card is PublicMarketplaceDirectoryCard => card != null)
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
-    return buildMarketplaceDirectoryResult(cards, parsed);
+    const withRatings = await attachDirectoryRatings(cards);
+    return buildMarketplaceDirectoryResult(withRatings, parsed);
   } catch (error) {
     if (isTransientPublicInventoryFailure(error)) {
       return buildMarketplaceDirectoryResult([], parsed);
@@ -126,4 +130,21 @@ export async function listPublicMarketplaceDirectory(
 export async function getMarketplaceQualityGateReport(): Promise<MarketplaceQualityGateReportRow[]> {
   const inventory = await listPublicMarketplaceListings();
   return buildMarketplaceQualityGateReport(inventory);
+}
+
+async function attachDirectoryRatings<T extends { bookingPath: string; ratingAverage: number | null; ratingCount: number }>(
+  cards: T[],
+): Promise<T[]> {
+  const slugs = [...new Set(cards.map((card) => slugFromBookingPath(card.bookingPath)).filter(Boolean))];
+  const stats = await getBusinessRatingSummariesBySlug(slugs);
+  return cards.map((card) => withMarketplaceRating(card, stats.get(slugFromBookingPath(card.bookingPath))));
+}
+
+function slugFromBookingPath(bookingPath: string) {
+  const match = bookingPath.match(/^\/widget\/([^/?]+)/);
+  return match?.[1] ?? "";
+}
+
+export async function attachPublicCardRatings(cards: PublicMarketplaceCard[]): Promise<PublicMarketplaceCard[]> {
+  return attachDirectoryRatings(cards);
 }

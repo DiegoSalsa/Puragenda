@@ -74,6 +74,9 @@ export default async function ClientPortalPage({
   ]);
   if (returnTo && profile) redirect(returnTo);
   const firstName = data.displayName.split(/\s+/)[0];
+  // This dynamic server page intentionally evaluates review eligibility at request time.
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
 
   return (
     <main className="min-h-screen bg-[#fffaf0] text-black">
@@ -183,9 +186,18 @@ export default async function ClientPortalPage({
                       <p className="truncate font-black">{appointment.service.name}</p>
                       <p className="mt-0.5 truncate text-xs font-semibold text-black/50">{appointment.business.name} · <span className="capitalize">{appointmentDate(appointment.startTime, appointment.business.timezone)}</span></p>
                     </div>
-                    <span className={`shrink-0 rounded-full border-2 border-black px-2 py-1 text-[10px] font-black uppercase ${appointment.status === "CANCELLED" || appointment.status === "NO_SHOW" ? "bg-red-100" : "bg-[#bffcc6]"}`}>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className={`rounded-full border-2 border-black px-2 py-1 text-[10px] font-black uppercase ${appointment.status === "CANCELLED" || appointment.status === "NO_SHOW" ? "bg-red-100" : "bg-[#bffcc6]"}`}>
                       {STATUS_LABELS[appointment.status]}
                     </span>
+                    {appointment.verifiedReview ? (
+                      <span className="text-[10px] font-black uppercase text-black/45">Opinión enviada</span>
+                    ) : ["CHECKED_IN", "COMPLETED"].includes(appointment.status) && appointment.endTime.getTime() <= nowMs ? (
+                      <Link href={`/valorar/cita/${appointment.id}`} className="rounded-lg border-2 border-black bg-[#fff5ba] px-2 py-1 text-[10px] font-black">
+                        Dejar opinión
+                      </Link>
+                    ) : null}
+                    </div>
                   </div>
                 ))}
               </div>

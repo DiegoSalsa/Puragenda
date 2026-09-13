@@ -465,6 +465,7 @@ export async function getClientPortalData(email: string) {
   const appointmentInclude = {
     service: { select: { name: true } },
     staff: { select: { name: true } },
+    verifiedReview: { select: { id: true } },
     business: {
       select: {
         id: true,

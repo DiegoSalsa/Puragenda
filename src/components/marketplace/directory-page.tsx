@@ -38,12 +38,15 @@ export function MarketplaceDirectoryView({ result }: { result: MarketplaceDirect
                   <MarketplaceListingCard
                     name={card.name}
                     bookingPath={card.bookingPath}
+                    profilePath={card.profilePath}
                     cityName={card.cityName}
                     categoryNames={card.categoryNames}
                     categorySlugs={card.categorySlugs}
                     locationName={card.locationName}
                     logoUrl={card.logoUrl}
                     serviceNames={card.serviceNames}
+                    ratingAverage={card.ratingAverage}
+                    ratingCount={card.ratingCount}
                     ctaLabel="Ver horas"
                     trackBooking
                   />

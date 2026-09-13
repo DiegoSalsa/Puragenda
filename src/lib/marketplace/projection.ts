@@ -4,16 +4,20 @@ import type { MarketplaceListingCandidate } from "./visibility";
 export const MARKETPLACE_PUBLIC_CARD_KEYS = [
   "name",
   "bookingPath",
+  "profilePath",
   "categorySlug",
   "citySlug",
   "cityName",
   "logoUrl",
   "serviceNames",
+  "ratingAverage",
+  "ratingCount",
 ] as const;
 
 export const MARKETPLACE_DIRECTORY_CARD_KEYS = [
   "name",
   "bookingPath",
+  "profilePath",
   "categorySlugs",
   "categoryNames",
   "citySlug",
@@ -22,21 +26,27 @@ export const MARKETPLACE_DIRECTORY_CARD_KEYS = [
   "locationName",
   "logoUrl",
   "serviceNames",
+  "ratingAverage",
+  "ratingCount",
 ] as const;
 
 export type PublicMarketplaceCard = {
   name: string;
   bookingPath: string;
+  profilePath: string;
   categorySlug: string;
   citySlug: string;
   cityName: string;
   logoUrl: string | null;
   serviceNames: string[];
+  ratingAverage: number | null;
+  ratingCount: number;
 };
 
 export type PublicMarketplaceDirectoryCard = {
   name: string;
   bookingPath: string;
+  profilePath: string;
   categorySlugs: string[];
   categoryNames: string[];
   citySlug: string;
@@ -45,6 +55,8 @@ export type PublicMarketplaceDirectoryCard = {
   locationName: string;
   logoUrl: string | null;
   serviceNames: string[];
+  ratingAverage: number | null;
+  ratingCount: number;
 };
 
 const MAX_SEO_SERVICE_NAMES = 3;
@@ -60,11 +72,14 @@ export function projectPublicMarketplaceCard(
   return {
     name: candidate.name.trim(),
     bookingPath: bookingPathFor(candidate),
+    profilePath: `/negocios/${candidate.slug}`,
     categorySlug: candidate.categorySlug,
     citySlug: candidate.citySlug,
     cityName: cityDisplayName(candidate.citySlug),
     logoUrl: publicLogoUrl(candidate.logoUrl),
     serviceNames: publicServiceNames(candidate.serviceNames, MAX_SEO_SERVICE_NAMES),
+    ratingAverage: null,
+    ratingCount: 0,
   };
 }
 
@@ -108,6 +123,7 @@ export function projectPublicMarketplaceDirectoryCard(
   return {
     name: candidate.name.trim(),
     bookingPath: bookingPathFor(candidate),
+    profilePath: `/negocios/${candidate.slug}`,
     categorySlugs: extras.categorySlugs,
     categoryNames: extras.categoryNames.map((name) => name.trim()).filter(Boolean),
     citySlug: candidate.citySlug,
@@ -116,7 +132,19 @@ export function projectPublicMarketplaceDirectoryCard(
     locationName: extras.locationName.trim(),
     logoUrl: publicLogoUrl(candidate.logoUrl),
     serviceNames: publicServiceNames(candidate.serviceNames, MAX_DIRECTORY_SERVICE_NAMES),
+    ratingAverage: null,
+    ratingCount: 0,
   };
+}
+
+export function withMarketplaceRating<T extends { ratingAverage: number | null; ratingCount: number }>(
+  card: T,
+  stats: { average: number | null; count: number } | undefined,
+): T {
+  if (!stats || stats.count <= 0 || stats.average == null) {
+    return { ...card, ratingAverage: null, ratingCount: 0 };
+  }
+  return { ...card, ratingAverage: stats.average, ratingCount: stats.count };
 }
 
 export function directoryCardLeaksForbiddenFields(card: PublicMarketplaceDirectoryCard): boolean {
