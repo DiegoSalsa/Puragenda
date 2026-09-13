@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/tracking-retention",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/reviews-auto-publish",
+      "schedule": "0 * * * *"
     }
   ]
 }

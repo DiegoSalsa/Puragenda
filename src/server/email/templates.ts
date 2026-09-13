@@ -1564,3 +1564,39 @@ export function subscriptionPaymentRecoveredEmail(
     `),
   };
 }
+
+interface ReviewInvitationEmailData extends LocalizedEmailData {
+  customerName: string;
+  businessName: string;
+  serviceName: string;
+  startTime: Date;
+  timezone?: string;
+  reviewUrl: string;
+}
+
+export function reviewInvitationEmail(data: ReviewInvitationEmailData): { subject: string; html: string } {
+  const timezone = data.timezone || BUSINESS_TZ;
+  const dateStr = formatInTimeZone(data.startTime, timezone, "PPPP", { locale: getDateLocale(data.locale ?? "es") });
+  return {
+    subject: `¿Cómo estuvo tu atención en ${data.businessName}?`,
+    html: layout("Valorar atención", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">¿Cómo estuvo tu atención?</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Hola <strong style="color:#0f172a;">${escapeHtml(data.customerName)}</strong>,
+        ya puedes contar cómo te fue en <strong style="color:${BRAND};">${escapeHtml(data.businessName)}</strong>.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
+        ${detailRow("Servicio", escapeHtml(data.serviceName))}
+        ${detailRow("Fecha", dateStr)}
+      </table>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Puedes dejar un comentario solo para el negocio o publicarlo como opinión verificada en Puragenda.
+      </p>
+      <p style="text-align:center;margin:24px 0;">
+        <a href="${escapeHtml(data.reviewUrl)}" style="display:inline-block;background:${BRAND};color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+          Dejar opinión
+        </a>
+      </p>
+    `),
+  };
+}

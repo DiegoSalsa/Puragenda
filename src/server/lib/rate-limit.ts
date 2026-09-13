@@ -233,3 +233,16 @@ export const bookingFeedbackLimiter = rateLimit({
   max: 30,
   message: "Demasiados envíos de opinión. Espera unos minutos.",
 });
+
+/** Verified business reviews tied to a completed appointment. */
+export const appointmentReviewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Demasiados envíos de reseña. Espera unos minutos.",
+});
+
+export const appointmentReviewInviteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  message: "Demasiadas solicitudes de reseña. Espera un momento.",
+});

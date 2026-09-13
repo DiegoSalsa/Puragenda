@@ -31,6 +31,7 @@ import {
   recurringExpiringClientEmail,
   recurringExpiringBusinessEmail,
   recurringConflictWarningClientEmail,
+  reviewInvitationEmail,
   withClientPortalAccess,
   type EmailTemplate,
 } from "./templates";
@@ -1112,4 +1113,32 @@ export async function sendRecurringConflictWarningClient(data: {
   } catch (err) {
     console.error("[Email] Error sending recurring conflict warning:", err);
   }
+}
+
+export async function sendReviewInvitationEmail(data: {
+  customerEmail: string;
+  customerName: string;
+  businessName: string;
+  serviceName: string;
+  startTime: Date;
+  timezone?: string;
+  locale?: string | null;
+  reviewUrl: string;
+}) {
+  const locale = await resolveEmailLocale({
+    locale: data.locale,
+    customerEmail: data.customerEmail,
+    businessName: data.businessName,
+  });
+  const template = await addClientPortalLinkToEmail(
+    data.customerEmail,
+    reviewInvitationEmail({ ...data, locale }),
+  );
+  const { subject, html } = localizeEmailTemplate(template, locale);
+  return deliverEmail(`review invitation to ${data.customerEmail}`, {
+    from: EMAIL_FROM,
+    to: data.customerEmail,
+    subject,
+    html,
+  });
 }
