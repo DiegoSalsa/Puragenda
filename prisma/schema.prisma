@@ -99,6 +99,41 @@ enum BookingFeedbackRating {
   IMPROVE
 }
 
+enum ReviewVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ReviewModerationStatus {
+  PENDING
+  PUBLISHED
+  REPORTED
+  REMOVED
+}
+
+enum ReviewReportReason {
+  INSULTS
+  THREATS
+  PERSONAL_DATA
+  SPAM
+  SEXUAL_CONTENT
+  DISCRIMINATION
+  NOT_ABOUT_SERVICE
+  EXTORTION
+  OTHER
+}
+
+enum ReviewModerationOutcome {
+  APPROVED
+  REMOVED
+  KEPT_PRIVATE
+}
+
+enum ReviewVerificationSource {
+  BOOKING_TOKEN
+  CLIENT_PORTAL
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -130,6 +165,9 @@ model User {
   loyaltyStampEventsCreated   LoyaltyStampEvent[]        @relation("LoyaltyStampEventCreatedBy")
   giftCardPurchasesCreated    GiftCardPurchase[]         @relation("GiftCardPurchaseCreatedBy")
   giftCardTransactionsCreated GiftCardTransaction[]      @relation("GiftCardTransactionCreatedBy")
+  appointmentReviewsReplied   AppointmentReview[]        @relation("AppointmentReviewRepliedBy")
+  appointmentReviewsReported  AppointmentReview[]        @relation("AppointmentReviewReportedBy")
+  appointmentReviewsModerated AppointmentReview[]        @relation("AppointmentReviewModeratedBy")
 }
 
 // ==========================================
@@ -171,9 +209,10 @@ model ClientPortalAccount {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  sessions         ClientPortalSession[]
-  giftCards        GiftCard[]
-  bookingFeedbacks BookingFeedback[]
+  sessions            ClientPortalSession[]
+  giftCards           GiftCard[]
+  bookingFeedbacks    BookingFeedback[]
+  appointmentReviews  AppointmentReview[]
 
   @@index([emailVerifiedAt])
 }
@@ -435,6 +474,9 @@ model Business {
   giftCardPurchases           GiftCardPurchase[]
   giftCards                   GiftCard[]
   bookingFeedbacks            BookingFeedback[]
+  appointmentReviews          AppointmentReview[]
+  publicReviewCount           Int                @default(0)
+  publicReviewRatingSum       Int                @default(0)
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
@@ -1284,6 +1326,9 @@ model Appointment {
   redeemedLoyaltyCode    LoyaltyCode?            @relation("LoyaltyCodeRedemption")
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
   bookingFeedback        BookingFeedback?
+  verifiedReview         AppointmentReview?
+  reviewInviteSentAt     DateTime?
+  reviewInviteCount      Int                     @default(0)
 
   @@index([businessId])
   @@index([serviceId])
@@ -1296,6 +1341,7 @@ model Appointment {
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
   @@index([settledByUserId])
+  @@index([status, endTime, reviewInviteSentAt])
 }
 
 /// Internal product feedback collected after a widget booking. Superadmin-only.
@@ -1322,6 +1368,58 @@ model BookingFeedback {
   @@index([rating])
   @@index([googleReviewClickedAt])
   @@index([clientPortalAccountId])
+}
+
+/// Verified customer review of a real appointment. Distinct from BookingFeedback
+/// (internal product NPS). Historical private records stay private.
+model AppointmentReview {
+  id                      String                    @id @default(cuid())
+  appointmentId           String                    @unique
+  businessId              String
+  clientId                String?
+  clientPortalAccountId   String?
+  rating                  Int
+  comment                 String?
+  visibility              ReviewVisibility
+  status                  ReviewModerationStatus    @default(PENDING)
+  submittedAt             DateTime                  @default(now())
+  publishedAt             DateTime?
+  autoPublishAt           DateTime?
+  publicReviewerName      String
+  serviceNameSnapshot     String?
+  staffNameSnapshot       String?
+  businessReply           String?
+  businessRepliedAt       DateTime?
+  businessRepliedByUserId String?
+  reportReason            ReviewReportReason?
+  reportDetails           String?
+  reportedAt              DateTime?
+  reportedByUserId        String?
+  moderatedAt             DateTime?
+  moderatedByUserId       String?
+  moderationOutcome       ReviewModerationOutcome?
+  moderationNotes         String?
+  verificationSource      ReviewVerificationSource
+  withdrawnAt             DateTime?
+  lastCustomerEditAt      DateTime?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+
+  appointment           Appointment          @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  business              Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client                Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientPortalAccount   ClientPortalAccount? @relation(fields: [clientPortalAccountId], references: [id], onDelete: SetNull)
+  businessRepliedByUser User?                @relation("AppointmentReviewRepliedBy", fields: [businessRepliedByUserId], references: [id], onDelete: SetNull)
+  reportedByUser        User?                @relation("AppointmentReviewReportedBy", fields: [reportedByUserId], references: [id], onDelete: SetNull)
+  moderatedByUser       User?                @relation("AppointmentReviewModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, visibility, status, publishedAt])
+  @@index([businessId, status, autoPublishAt])
+  @@index([status, visibility, autoPublishAt])
+  @@index([businessId, withdrawnAt])
+  @@index([clientId])
+  @@index([clientPortalAccountId])
+  @@index([reportedAt])
 }
 
 /// Durable delivery record for the non-transactional work triggered by a
@@ -1510,6 +1608,7 @@ model Client {
 
   business           Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointments       Appointment[]
+  appointmentReviews AppointmentReview[]
   loyaltyCodes       LoyaltyCode[]
   loyaltyStampEvents LoyaltyStampEvent[]
   recurringBookings  RecurringBooking[]
