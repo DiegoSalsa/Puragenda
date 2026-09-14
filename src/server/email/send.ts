@@ -740,19 +740,22 @@ export async function sendTrialExpiringEmail(data: {
   plan: string;
   daysLeft: number;
   locale?: AppLocale;
-}) {
+}): Promise<boolean> {
   const { subject, html } = await localized(trialExpiringEmail(data), { locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: data.ownerEmail,
       subject,
       html,
     });
+    if (result.error) throw new Error(result.error.message);
     console.log(`[Email] Trial expiring warning sent to ${data.ownerEmail}`);
+    return true;
   } catch (err) {
     console.error("[Email] Error sending trial expiring email:", err);
+    return false;
   }
 }
 
@@ -765,19 +768,22 @@ export async function sendTrialExpiredEmail(data: {
   businessName: string;
   plan: string;
   locale?: AppLocale;
-}) {
+}): Promise<boolean> {
   const { subject, html } = await localized(trialExpiredEmail(data), { locale: data.locale, ownerEmail: data.ownerEmail, businessName: data.businessName });
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: data.ownerEmail,
       subject,
       html,
     });
+    if (result.error) throw new Error(result.error.message);
     console.log(`[Email] Trial expired notification sent to ${data.ownerEmail}`);
+    return true;
   } catch (err) {
     console.error("[Email] Error sending trial expired email:", err);
+    return false;
   }
 }
 

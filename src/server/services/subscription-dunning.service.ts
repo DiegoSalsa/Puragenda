@@ -10,6 +10,7 @@ import {
   sendSubscriptionPaymentFailedEmail,
   sendSubscriptionPaymentRecoveredEmail,
 } from "@/server/email/send";
+export { hasDunningAccess } from "@/core/subscription-access";
 
 export const DUNNING_GRACE_HOURS = 48;
 export const PROVIDER_RETRY_BUFFER_HOURS = 6;
@@ -51,17 +52,6 @@ export function calculateGracePeriodEnd(
     PROVIDER_RETRY_BUFFER_HOURS
   );
   return providerSafeEnd > rollingGraceEnd ? providerSafeEnd : rollingGraceEnd;
-}
-
-export function hasDunningAccess(
-  subscription: {
-    status: string;
-    gracePeriodEndsAt?: Date | null;
-  },
-  now = new Date()
-) {
-  if (subscription.status !== "PAST_DUE") return true;
-  return !!subscription.gracePeriodEndsAt && subscription.gracePeriodEndsAt > now;
 }
 
 export function nextPaidPeriodEnd(
@@ -474,6 +464,17 @@ export async function runBillingReconciliation(now = new Date()) {
     const owner = subscription.business.owner;
     if (!owner?.email || !subscription.gracePeriodEndsAt) continue;
 
+    const claimed = await prisma.subscription.updateMany({
+      where: {
+        id: subscription.id,
+        status: "PAST_DUE",
+        dunningEmailSentAt: null,
+        gracePeriodEndsAt: { gt: now },
+      },
+      data: { dunningEmailSentAt: now },
+    });
+    if (claimed.count === 0) continue;
+
     const delivered = await sendSubscriptionPaymentFailedEmail({
       ownerEmail: owner.email,
       ownerName: owner.name,
@@ -481,12 +482,13 @@ export async function runBillingReconciliation(now = new Date()) {
       gracePeriodEndsAt: subscription.gracePeriodEndsAt,
       nextPaymentAttemptAt: subscription.nextPaymentAttemptAt,
     });
-    if (!delivered) continue;
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: { dunningEmailSentAt: new Date() },
-    });
+    if (!delivered) {
+      await prisma.subscription.updateMany({
+        where: { id: subscription.id, status: "PAST_DUE", dunningEmailSentAt: now },
+        data: { dunningEmailSentAt: null },
+      });
+      continue;
+    }
     results.notices++;
   }
 
@@ -511,6 +513,17 @@ export async function runBillingReconciliation(now = new Date()) {
     const owner = subscription.business.owner;
     if (!owner?.email || !subscription.gracePeriodEndsAt) continue;
 
+    const claimed = await prisma.subscription.updateMany({
+      where: {
+        id: subscription.id,
+        status: "PAST_DUE",
+        graceExpiryWarningSentAt: null,
+        gracePeriodEndsAt: { gt: now, lte: addHours(now, 6) },
+      },
+      data: { graceExpiryWarningSentAt: now },
+    });
+    if (claimed.count === 0) continue;
+
     const delivered = await sendSubscriptionPaymentFailedEmail({
       ownerEmail: owner.email,
       ownerName: owner.name,
@@ -519,12 +532,13 @@ export async function runBillingReconciliation(now = new Date()) {
       nextPaymentAttemptAt: subscription.nextPaymentAttemptAt,
       finalWarning: true,
     });
-    if (!delivered) continue;
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: { graceExpiryWarningSentAt: new Date() },
-    });
+    if (!delivered) {
+      await prisma.subscription.updateMany({
+        where: { id: subscription.id, status: "PAST_DUE", graceExpiryWarningSentAt: now },
+        data: { graceExpiryWarningSentAt: null },
+      });
+      continue;
+    }
     results.warnings++;
   }
 

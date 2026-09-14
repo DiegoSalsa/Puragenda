@@ -12,6 +12,8 @@ La integracion mantiene un solo evento organizador por cita para evitar duplicad
 - Los periodos ocupados del Google Calendar personal del profesional bloquean disponibilidad en el widget publico.
 - Una tarea horaria reconcilia citas que no pudieron sincronizarse por una falla temporal.
 
+> Estado de despliegue auditado (2026-09-14): el proyecto está en Vercel Hobby, cuyo cron solo admite frecuencia diaria. La ruta `/api/cron/google-calendar-sync` no se añadió a `vercel.json` con una frecuencia inventada; para cumplir esta reconciliación horaria hay que cambiar a un plan compatible o configurar explícitamente un scheduler externo que envíe `Authorization: Bearer $CRON_SECRET`.
+
 ## Configuracion en Google Cloud
 
 1. Crear o seleccionar un proyecto en Google Cloud Console.
