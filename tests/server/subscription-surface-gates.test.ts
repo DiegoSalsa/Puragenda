@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate";
 import { shouldShowWidgetSubscriptionUnavailable } from "@/lib/widget/subscription-gate";
 import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
+import { isMarketplaceSubscriptionActive } from "@/lib/marketplace/publication";
 
 const now = new Date("2026-09-14T12:00:00.000Z");
 const expiredTrial = {
@@ -35,5 +36,14 @@ describe("subscription gates on operational surfaces", () => {
       isTrial: true,
       trialEndsAt: new Date("2026-09-14T12:00:00.001Z"),
     }, now)).toBeNull();
+  });
+
+  it("restores all operational gates immediately after payment activates the same subscription", () => {
+    const reactivated = { ...expiredTrial, status: "ACTIVE", isTrial: false };
+
+    expect(getDashboardPaymentWallReason(reactivated, now)).toBeNull();
+    expect(shouldShowWidgetSubscriptionUnavailable(reactivated, false, now)).toBe(false);
+    expect(operationalSubscriptionDeniedResponse(reactivated, now)).toBeNull();
+    expect(isMarketplaceSubscriptionActive(reactivated, now)).toBe(true);
   });
 });
