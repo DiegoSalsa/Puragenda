@@ -179,7 +179,7 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 
 ### Flujo de Pago
 1. **Registro:** Usuario elige plan → se crea cuenta con estado INACTIVE (si plan directo) o TRIALING (si trial).
-2. **PaymentWall:** Dashboard bloqueado con `<PaymentWall>` si status === INACTIVE.
+2. **Acceso operativo:** `src/core/subscription-access.ts` es la fuente de verdad. Permite `ACTIVE`, `TRIALING` solo con `isTrial=true` y `trialEndsAt > now`, y `PAST_DUE` solo mientras `gracePeriodEndsAt > now`. El dashboard muestra `<PaymentWall>` en los demás casos.
 3. **Subscribe:** `POST /api/billing/subscribe` crea PreApproval en MercadoPago.
 4. **Checkout:** Usuario redirigido a MercadoPago checkout.
 5. **Webhook:** `POST /api/webhooks/mercadopago` recibe notificación de pago.
@@ -189,7 +189,7 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 
 ### Cobro internacional de la plataforma
 - En producción, el cobro recurrente de Puragenda sigue configurado solo para Chile en CLP.
-- Negocios de otros países conservan acceso de prueba, no expiran a `INACTIVE` y no ven botones ni precios CLP mientras se define el proveedor global y su tabla de precios.
+- Los trials expiran por su timestamp absoluto sin excepción por país. Fuera de Chile, el usuario no ve precios CLP y el cobro real permanece deshabilitado mientras se define el proveedor global y su tabla de precios.
 - `npm run dev:payments` habilita un checkout local de dinero ficticio para recorrer suscripciones internacionales y abonos de cualquier país sin credenciales externas.
 - El simulador está bloqueado por código cuando `NODE_ENV=production`, incluso si se configura accidentalmente la variable. Con el simulador apagado, `POST /api/billing/subscribe` responde `INTERNATIONAL_BILLING_NOT_CONFIGURED` fuera de Chile.
 
@@ -309,10 +309,14 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 
 | Ruta | Horario | Descripción |
 |------|---------|-------------|
-| `GET /api/cron/reminders` | Diario 14:00 UTC (10 AM Chile) | Envía recordatorios del día siguiente a clientes |
-| `GET /api/cron/trial-expiry` | Diario 13:00 UTC (09 AM Chile) | Avisa trials que expiran en 3 días + expira trials vencidos |
+| `GET /api/cron/reminders` | Diario 14:00 UTC (ventana flexible de una hora en Hobby; la hora local de Chile varía con DST) | Envía recordatorios del día siguiente a clientes |
+| `GET /api/cron/trial-expiry` | Diario 13:00 UTC (ventana flexible de una hora en Hobby; la hora local de Chile varía con DST) | Avisa trials que expiran en 3 días + expira trials vencidos |
+| `GET /api/cron/tracking-retention` | Diario 03:00 UTC | Aplica la retención documentada del tracking |
 
 - Protegidos con `CRON_SECRET` en el header `Authorization: Bearer ...`.
+- `trial-expiry` ejecuta también `runBillingReconciliation()`; por eso no se registra una segunda ejecución diaria redundante de `/api/cron/billing-reconciliation`.
+- La comparación de `trialEndsAt` usa instantes absolutos UTC (`trialEndsAt <= now`). La autorización de cada request aplica la misma regla, por lo que no depende de la hora de ejecución del cron.
+- `/api/cron/google-calendar-sync` requiere la frecuencia horaria documentada en `docs/google-calendar-setup.md`. Esa frecuencia no está registrada mientras el proyecto permanezca en Vercel Hobby, que solo admite crons diarios; debe habilitarse al cambiar de plan o usar un scheduler autorizado.
 
 ## 📬 Confirmación/Cancelación por Email (Action Tokens)
 

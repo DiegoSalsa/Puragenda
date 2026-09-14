@@ -4,7 +4,7 @@ import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/server/email/se
 import { runBillingReconciliation } from "@/server/services/subscription-dunning.service";
 import { authorizeCronRequest } from "@/server/auth/cron";
 
-// ── Vercel Cron: runs daily at 13:00 UTC (09:00 AM Chile) ──
+// ── Vercel Cron: scheduled daily at 13:00 UTC; local Chile time varies with DST. ──
 // Handles two tasks:
 // 1. Send warning emails to users whose trial expires in 3 days
 // 2. Expire trials that have passed their trialEndsAt date.
@@ -24,19 +24,15 @@ export async function GET(req: Request) {
     // ═══════════════════════════════════════════
     // 1. WARN: trials expiring in 3 days
     // ═══════════════════════════════════════════
-    const threeDaysFromNow = new Date(now);
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-
-    const warningStart = new Date(threeDaysFromNow);
-    warningStart.setHours(0, 0, 0, 0);
-    const warningEnd = new Date(threeDaysFromNow);
-    warningEnd.setHours(23, 59, 59, 999);
+    // Absolute instants avoid depending on the server's local timezone.
+    const warningStart = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+    const warningEnd = new Date(now.getTime() + 96 * 60 * 60 * 1000);
 
     const aboutToExpire = await prisma.subscription.findMany({
       where: {
         status: "TRIALING",
         isTrial: true,
-        trialEndsAt: { gte: warningStart, lte: warningEnd },
+        trialEndsAt: { gte: warningStart, lt: warningEnd },
         trialWarningEmailSent: false,
       },
       include: {
@@ -52,20 +48,35 @@ export async function GET(req: Request) {
     for (const sub of aboutToExpire) {
       try {
         if (sub.business.owner?.email) {
-          await sendTrialExpiringEmail({
+          // Claim the one-shot flag before sending so overlapping cron runs cannot duplicate it.
+          const claimed = await prisma.subscription.updateMany({
+            where: {
+              id: sub.id,
+              status: "TRIALING",
+              isTrial: true,
+              trialEndsAt: { gte: warningStart, lt: warningEnd },
+              trialWarningEmailSent: false,
+            },
+            data: { trialWarningEmailSent: true },
+          });
+          if (claimed.count === 0) continue;
+
+          const sent = await sendTrialExpiringEmail({
             ownerEmail: sub.business.owner.email,
             ownerName: sub.business.owner.name,
             businessName: sub.business.name,
             plan: sub.plan,
             daysLeft: 3,
           });
-
-          await prisma.subscription.update({
-            where: { id: sub.id },
-            data: { trialWarningEmailSent: true },
-          });
-
-          results.warned++;
+          if (sent) {
+            results.warned++;
+          } else {
+            await prisma.subscription.updateMany({
+              where: { id: sub.id, status: "TRIALING", trialWarningEmailSent: true },
+              data: { trialWarningEmailSent: false },
+            });
+            results.errors.push(`warn-${sub.id}: email delivery failed`);
+          }
         }
       } catch (err) {
         results.errors.push(`warn-${sub.id}: ${err instanceof Error ? err.message : String(err)}`);
@@ -79,7 +90,7 @@ export async function GET(req: Request) {
       where: {
         status: "TRIALING",
         isTrial: true,
-        trialEndsAt: { lt: now },
+        trialEndsAt: { lte: now },
       },
       include: {
         business: {
@@ -93,20 +104,22 @@ export async function GET(req: Request) {
 
     for (const sub of expiredTrials) {
       try {
-        // Change status to INACTIVE — PaymentWall will kick in
-        await prisma.subscription.update({
-          where: { id: sub.id },
+        // Conditional transition prevents a stale cron read from overwriting webhook ACTIVE.
+        const transitioned = await prisma.subscription.updateMany({
+          where: { id: sub.id, status: "TRIALING", isTrial: true, trialEndsAt: { lte: now } },
           data: { status: "INACTIVE", isTrial: false },
         });
+        if (transitioned.count === 0) continue;
 
         // Send expiration email
         if (sub.business.owner?.email) {
-          await sendTrialExpiredEmail({
+          const sent = await sendTrialExpiredEmail({
             ownerEmail: sub.business.owner.email,
             ownerName: sub.business.owner.name,
             businessName: sub.business.name,
             plan: sub.plan,
           });
+          if (!sent) results.errors.push(`expire-${sub.id}: email delivery failed`);
         }
 
         results.expired++;
@@ -119,7 +132,7 @@ export async function GET(req: Request) {
       where: {
         status: "ACTIVE",
         mpSubscriptionId: null,
-        currentPeriodEnd: { lt: now },
+        currentPeriodEnd: { lte: now },
         promoName: { not: null },
       },
       include: {
@@ -135,8 +148,14 @@ export async function GET(req: Request) {
     for (const sub of expiredNoCardPromos) {
       try {
         const hasPendingDiscount = (sub.promoDiscountMonthsRemaining ?? 0) > 0;
-        await prisma.subscription.update({
-          where: { id: sub.id },
+        const transitioned = await prisma.subscription.updateMany({
+          where: {
+            id: sub.id,
+            status: "ACTIVE",
+            mpSubscriptionId: null,
+            currentPeriodEnd: { lte: now },
+            promoName: { not: null },
+          },
           data: {
             status: "INACTIVE",
             currentPeriodEnd: null,
@@ -145,14 +164,16 @@ export async function GET(req: Request) {
             promoDiscountMonthsRemaining: hasPendingDiscount ? sub.promoDiscountMonthsRemaining : 0,
           },
         });
+        if (transitioned.count === 0) continue;
 
         if (sub.business.owner?.email) {
-          await sendTrialExpiredEmail({
+          const sent = await sendTrialExpiredEmail({
             ownerEmail: sub.business.owner.email,
             ownerName: sub.business.owner.name,
             businessName: sub.business.name,
             plan: sub.plan,
           });
+          if (!sent) results.errors.push(`promo-expire-${sub.id}: email delivery failed`);
         }
 
         results.promoExpired++;

@@ -22,7 +22,13 @@ export type PublishedListingRecord = {
     logoUrl: string | null;
     deletedAt: Date | null;
     productionOrdersEnabled: boolean;
-    subscription: { plan: "INDIVIDUAL" | "EQUIPO" | "TEST"; status: string } | null;
+    subscription: {
+      plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
+      status: string;
+      isTrial: boolean;
+      trialEndsAt: Date | null;
+      gracePeriodEndsAt: Date | null;
+    } | null;
     services: Array<{
       name: string;
       bookingMode: string;
@@ -65,7 +71,7 @@ function listingBase(record: PublishedListingRecord) {
     directoryPublished: record.publishedAt !== null,
     locationActive: record.location.isActive,
     demo: MARKETPLACE_EXCLUDED_SLUGS.has(record.business.slug),
-    subscriptionActive: isMarketplaceSubscriptionActive(record.business.subscription?.status),
+    subscriptionActive: isMarketplaceSubscriptionActive(record.business.subscription),
     plan,
     hasBookableService,
   };

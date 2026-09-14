@@ -12,6 +12,7 @@ import {
 } from "@/server/services/production-window.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import { getMercadoPagoCurrency, isMercadoPagoCurrencyCompatible } from "@/core/countries";
+import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 
 function dateOnly(value: string) {
   return new Date(`${value}T00:00:00.000Z`);
@@ -44,6 +45,8 @@ export async function POST(
     if (!validateApiKey(business, apiKey)) {
       return Response.json({ error: "API Key invalida" }, { status: 401 });
     }
+    const subscriptionDenied = operationalSubscriptionDeniedResponse(business.subscription);
+    if (subscriptionDenied) return subscriptionDenied;
 
     const data = parsed.data;
     const service = await prisma.service.findFirst({

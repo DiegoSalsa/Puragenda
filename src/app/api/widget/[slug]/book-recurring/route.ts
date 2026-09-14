@@ -2,6 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import { createRecurringBookingAction } from "@/server/actions/recurring.actions";
 import { NextRequest } from "next/server";
 import { recurringBookingRequestSchema } from "@/server/validations/booking";
+import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 
 /**
  * POST /api/widget/[slug]/book-recurring
@@ -20,12 +21,20 @@ export async function POST(
   try {
     const business = await prisma.business.findUnique({
       where: { slug },
-      select: { id: true },
+      select: {
+        id: true,
+        subscription: {
+          select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+        },
+      },
     });
 
     if (!business) {
       return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
     }
+
+    const subscriptionDenied = operationalSubscriptionDeniedResponse(business.subscription);
+    if (subscriptionDenied) return subscriptionDenied;
 
     const parsed = recurringBookingRequestSchema.safeParse(await request.json());
     if (!parsed.success) {

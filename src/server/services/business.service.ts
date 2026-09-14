@@ -10,7 +10,15 @@ export async function getBusinessBySlug(slug: string) {
   return prisma.business.findUnique({
     where: { slug },
     include: {
-      subscription: { select: { plan: true } },
+      subscription: {
+        select: {
+          plan: true,
+          status: true,
+          isTrial: true,
+          trialEndsAt: true,
+          gracePeriodEndsAt: true,
+        },
+      },
     },
   });
 }

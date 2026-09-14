@@ -5,6 +5,7 @@ import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
 import { getCountryConfig } from "@/core/countries";
 import { getClientPortalAccount, getClientPortalEmail } from "@/server/services/client-portal.service";
+import { shouldShowWidgetSubscriptionUnavailable } from "@/lib/widget/subscription-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,15 @@ export default async function WidgetPage({
   const business = await prisma.business.findUnique({
     where: { slug },
     include: {
-      subscription: { select: { plan: true } },
+      subscription: {
+        select: {
+          plan: true,
+          status: true,
+          isTrial: true,
+          trialEndsAt: true,
+          gracePeriodEndsAt: true,
+        },
+      },
       services: {
         orderBy: [{ position: "asc" }, { name: "asc" }],
         include: {
@@ -143,6 +152,24 @@ export default async function WidgetPage({
           </div>
           <p className="text-xl font-bold text-black dark:text-white"><LocalizedText id="dxkajKZltYag" /></p>
           <p className="mt-2 text-sm text-black/60 dark:text-white/60"><LocalizedText id="rbdOSbCcy-U9" /></p>
+        </div>
+      </div>
+    );
+  }
+
+  if (shouldShowWidgetSubscriptionUnavailable(business.subscription, previewMode)) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#FFFAEB] p-5 dark:bg-[#111111]">
+        <div className="w-full max-w-lg rounded-[1.25rem] border border-black/10 bg-white/50 p-10 text-center shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-black/50">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#7C3AED]/10">
+            <span className="text-2xl font-bold text-[#7C3AED]">!</span>
+          </div>
+          <p className="text-xl font-bold text-black dark:text-white">
+            Las reservas online de este negocio no están disponibles temporalmente
+          </p>
+          <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+            Contacta directamente al negocio para más información.
+          </p>
         </div>
       </div>
     );

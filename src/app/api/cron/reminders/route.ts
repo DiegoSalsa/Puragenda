@@ -9,7 +9,7 @@ import { isTomorrowInTimezone } from "@/lib/date";
 import { authorizeCronRequest } from "@/server/auth/cron";
 import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
 
-// ── Vercel Cron: runs daily at 14:00 UTC (10:00 AM Chile) ──
+// ── Vercel Cron: scheduled daily at 14:00 UTC; local Chile time varies with DST. ──
 // Protected via CRON_SECRET to prevent unauthorized access.
 
 export const dynamic = "force-dynamic";

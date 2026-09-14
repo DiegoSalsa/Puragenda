@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
 import { bookingLimiter } from "@/server/lib/rate-limit";
 import { cloudinary } from "@/server/lib/cloudinary";
+import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -23,6 +24,8 @@ export async function POST(
   if (!validateApiKey(business, request.headers.get("x-api-key"))) {
     return Response.json({ error: "API Key invalida" }, { status: 401 });
   }
+  const subscriptionDenied = operationalSubscriptionDeniedResponse(business.subscription);
+  if (subscriptionDenied) return subscriptionDenied;
 
   const formData = await request.formData();
   const file = formData.get("image");

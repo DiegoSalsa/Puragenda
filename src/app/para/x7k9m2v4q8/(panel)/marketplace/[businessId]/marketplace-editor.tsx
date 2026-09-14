@@ -42,6 +42,7 @@ const CHECKLIST: Array<{
   { ok: (input) => input.locationActive, label: "Sucursal activa" },
   { ok: (input) => !input.demo && input.plan !== "TEST", label: "No es demo ni plan TEST" },
   { ok: (input) => input.hasBookableService, label: "Servicio reservable" },
+  { ok: (input) => input.subscriptionActive, label: "Suscripción con acceso operativo" },
 ];
 
 export function MarketplaceEditor({
@@ -56,6 +57,7 @@ export function MarketplaceEditor({
     deleted: boolean;
     plan: string;
     status: string;
+    subscriptionActive: boolean;
     locations: EditorLocation[];
     listings: EditorListing[];
     services: Array<{ name: string; bookingMode: string; locationIds: string[] }>;
@@ -106,6 +108,7 @@ export function MarketplaceEditor({
     plan: business.plan,
     locationActive: Boolean(location?.isActive),
     hasBookableService: serviceNames.length > 0,
+    subscriptionActive: business.subscriptionActive,
   };
   const blockers = marketplacePublishBlockers(readiness);
 

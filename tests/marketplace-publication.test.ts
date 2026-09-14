@@ -17,6 +17,7 @@ const ready = {
   plan: "INDIVIDUAL" as const,
   locationActive: true,
   hasBookableService: true,
+  subscriptionActive: true,
 };
 
 describe("marketplace publish rules", () => {

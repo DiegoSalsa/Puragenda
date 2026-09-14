@@ -25,7 +25,15 @@ const publicListingSelect = {
       logoUrl: true,
       deletedAt: true,
       productionOrdersEnabled: true,
-      subscription: { select: { plan: true, status: true } },
+      subscription: {
+        select: {
+          plan: true,
+          status: true,
+          isTrial: true,
+          trialEndsAt: true,
+          gracePeriodEndsAt: true,
+        },
+      },
       services: {
         select: {
           name: true,

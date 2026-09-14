@@ -65,6 +65,7 @@ export function isMarketplacePubliclyVisible(candidate: MarketplaceListingCandid
   if (MARKETPLACE_EXCLUDED_SLUGS.has(candidate.slug)) return false;
   if (candidate.plan === "TEST") return false;
   if (!candidate.hasBookableService) return false;
+  if (!candidate.subscriptionActive) return false;
   if (!candidate.name.trim()) return false;
   if (!candidate.slug.trim()) return false;
   if (!candidate.categorySlug.trim()) return false;

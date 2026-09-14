@@ -4,6 +4,7 @@ import { ArrowLeft } from "@/components/icons/hover-icons";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { getMarketplaceBusinessEditor } from "@/server/services/marketplace-admin.service";
 import { MarketplaceEditor } from "./marketplace-editor";
+import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function MarketplaceBusinessPage({
           deleted: Boolean(editor.business.deletedAt),
           plan: editor.business.subscription?.plan ?? "SIN PLAN",
           status: editor.business.subscription?.status ?? "SIN SUB",
+          subscriptionActive: hasOperationalSubscriptionAccess(editor.business.subscription),
           locations: editor.business.locations,
           listings: editor.business.marketplaceListings.map((listing) => ({
             locationId: listing.locationId,

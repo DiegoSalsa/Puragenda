@@ -14,7 +14,7 @@ const historicalBusiness = {
   deletedAt: null,
   slug: "barberia-historica",
   plan: "INDIVIDUAL",
-  subscriptionStatus: "ACTIVE",
+  subscription: { status: "ACTIVE", isTrial: false, trialEndsAt: null, gracePeriodEndsAt: null },
   promptDismissedAt: null,
   hasActivePrimaryLocation: true,
   listings: [],
@@ -30,7 +30,7 @@ describe("existing business marketplace prompt eligibility", () => {
     { label: "internal fixture", change: { slug: "estetica-bella" } },
     { label: "TEST", change: { plan: "TEST" } },
     { label: "deleted", change: { deletedAt: new Date() } },
-    { label: "inactive subscription", change: { subscriptionStatus: "CANCELED" } },
+    { label: "inactive subscription", change: { subscription: { status: "CANCELLED" } } },
     { label: "inactive primary location", change: { hasActivePrimaryLocation: false } },
     { label: "new registration flow", change: { createdAt: MARKETPLACE_READY_REGISTRATION_CUTOFF } },
   ])("does not show it to a $label business", ({ change }) => {

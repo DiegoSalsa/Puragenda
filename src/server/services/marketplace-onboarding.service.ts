@@ -191,7 +191,7 @@ async function loadExistingBusinessPromptContext(businessId: string) {
       createdAt: true,
       deletedAt: true,
       marketplacePromptDismissedAt: true,
-      subscription: { select: { plan: true, status: true } },
+      subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
       locations: {
         where: { isPrimary: true },
         orderBy: { createdAt: "asc" },
@@ -222,7 +222,7 @@ async function loadExistingBusinessPromptContext(businessId: string) {
     deletedAt: business.deletedAt,
     slug: business.slug,
     plan: business.subscription?.plan ?? null,
-    subscriptionStatus: business.subscription?.status ?? null,
+    subscription: business.subscription,
     promptDismissedAt: business.marketplacePromptDismissedAt,
     hasActivePrimaryLocation: Boolean(primaryLocation?.isActive),
     listings: business.marketplaceListings,

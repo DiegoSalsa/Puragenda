@@ -11,9 +11,9 @@ import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import type { Metadata } from "next";
 import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
-import { hasDunningAccess } from "@/server/services/subscription-dunning.service";
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 import { RequestIntlProvider } from "@/components/i18n/request-intl-provider";
+import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -34,17 +34,15 @@ export default async function DashboardLayout({
   const business = await getBusinessForUser(user.id);
   const permissions = business ? await getEffectiveBusinessPermissions(user, business) : [];
 
-  // Check subscription status — block access if INACTIVE (pending payment)
+  // Operational access is time-aware: an expired trial is blocked even before cron runs.
   if (business && user.role !== "SUPERADMIN") {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
 
-    const pastDueAccessExpired =
-      subscription?.status === "PAST_DUE" &&
-      !hasDunningAccess(subscription);
+    const paymentWallReason = getDashboardPaymentWallReason(subscription);
 
-    if (subscription?.status === "INACTIVE" || pastDueAccessExpired) {
+    if (paymentWallReason) {
       return (
         <RequestIntlProvider>
         <PaymentWall 
@@ -53,9 +51,9 @@ export default async function DashboardLayout({
           businessId={business.id} 
           businessName={business.name}
           countryCode={business.countryCode}
-          plan={subscription.plan} 
+          plan={subscription?.plan ?? "INDIVIDUAL"}
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
-          reason={pastDueAccessExpired ? "past_due" : "pending"}
+          reason={paymentWallReason}
         />
         </RequestIntlProvider>
       );

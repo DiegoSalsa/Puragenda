@@ -1,5 +1,9 @@
 import { isMarketplaceOperationallyActive, type MarketplaceListingStatus } from "./status";
 import { MARKETPLACE_EXCLUDED_SLUGS } from "./visibility";
+import {
+  hasOperationalSubscriptionAccess,
+  type OperationalSubscription,
+} from "@/core/subscription-access";
 
 export type MarketplacePublishReadinessInput = {
   status: MarketplaceListingStatus;
@@ -12,6 +16,7 @@ export type MarketplacePublishReadinessInput = {
   plan: "INDIVIDUAL" | "EQUIPO" | "TEST" | string;
   locationActive: boolean;
   hasBookableService: boolean;
+  subscriptionActive: boolean;
 };
 
 export const MARKETPLACE_PUBLISH_BLOCKER_LABELS: Record<string, string> = {
@@ -24,6 +29,7 @@ export const MARKETPLACE_PUBLISH_BLOCKER_LABELS: Record<string, string> = {
   test_plan_excluded: "Plan TEST excluido",
   location_inactive: "Sucursal inactiva",
   bookable_service_required: "Sin servicio reservable",
+  subscription_inactive: "Suscripción sin acceso operativo",
 };
 
 export function marketplacePublishBlockerLabel(code: string): string {
@@ -43,6 +49,7 @@ export function marketplacePublishBlockers(
   if (input.plan === "TEST") reasons.push("test_plan_excluded");
   if (!input.locationActive) reasons.push("location_inactive");
   if (!input.hasBookableService) reasons.push("bookable_service_required");
+  if (!input.subscriptionActive) reasons.push("subscription_inactive");
   return reasons;
 }
 
@@ -50,8 +57,11 @@ export function canPublishMarketplaceListing(input: MarketplacePublishReadinessI
   return marketplacePublishBlockers(input).length === 0;
 }
 
-export function isMarketplaceSubscriptionActive(status: string | null | undefined): boolean {
-  return status === "ACTIVE" || status === "TRIALING";
+export function isMarketplaceSubscriptionActive(
+  subscription: OperationalSubscription | null | undefined,
+  now = new Date(),
+): boolean {
+  return hasOperationalSubscriptionAccess(subscription, now);
 }
 
 export function locationHasBookableAppointmentService(input: {
