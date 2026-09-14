@@ -9,7 +9,7 @@ import {
   isValidReviewRating,
   positiveShare,
 } from "@/lib/reviews/rating";
-import { REVIEW_AUTO_PUBLISH_DELAY_MS } from "@/lib/reviews/constants";
+import { REVIEW_AUTO_PUBLISH_DELAY_MS, REVIEW_PUBLIC_LIST_PAGE_SIZE } from "@/lib/reviews/constants";
 
 describe("verified review public identity", () => {
   it("formats a minimal public name without contact data", () => {
@@ -71,6 +71,10 @@ describe("public rating math", () => {
 
   it("centralizes the 72 hour auto-publish delay", () => {
     expect(REVIEW_AUTO_PUBLISH_DELAY_MS).toBe(72 * 60 * 60 * 1000);
+  });
+
+  it("pages public reviews in a small first screen", () => {
+    expect(REVIEW_PUBLIC_LIST_PAGE_SIZE).toBe(6);
   });
 
   it("sanitizes html out of comments", () => {

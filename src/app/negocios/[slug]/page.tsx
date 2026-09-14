@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LandingLayout } from "@/components/landing/landing-layout";
+import { CompactRating } from "@/components/reviews/compact-rating";
+import { PublicReviewList } from "@/components/reviews/public-review-list";
 import { RatingSummary } from "@/components/reviews/rating-summary";
-import { ReviewCard } from "@/components/reviews/review-card";
 import { getPublicBusinessProfile } from "@/server/services/reviews.service";
 import { MARKETPLACE_NOT_FOUND_METADATA } from "@/lib/marketplace";
 
@@ -60,6 +61,9 @@ export default async function NegocioPublicProfilePage({
             {location?.locality?.name ? (
               <p className="mt-1 text-sm font-semibold text-black/65">{location.locality.name}</p>
             ) : null}
+            <div className="mt-2">
+              <CompactRating average={summary.average} count={summary.count} href="#opiniones" suffix="opinions" />
+            </div>
           </div>
         </div>
 
@@ -72,16 +76,23 @@ export default async function NegocioPublicProfilePage({
           </Link>
         </div>
 
-        <section className="mt-10 rounded-2xl border-2 border-black bg-white p-5 shadow-[3px_3px_0_#000]">
+        <section id="opiniones" className="mt-10 scroll-mt-24 rounded-2xl border-2 border-black bg-white p-5 shadow-[3px_3px_0_#000]">
           <h2 className="mb-4 text-xl font-black">Opiniones verificadas</h2>
           <RatingSummary stats={summary} />
         </section>
 
-        <section className="mt-8 space-y-4">
-          {reviews.items.length === 0 ? null : reviews.items.map((review) => (
-            <ReviewCard key={review.id} review={review} businessName={business.name} />
-          ))}
-        </section>
+        <PublicReviewList
+          slug={business.slug}
+          businessName={business.name}
+          total={reviews.total}
+          pageSize={reviews.pageSize}
+          initialItems={reviews.items.map((review) => ({
+            ...review,
+            publishedAt: review.publishedAt?.toISOString() ?? null,
+            submittedAt: review.submittedAt.toISOString(),
+            businessRepliedAt: review.businessRepliedAt?.toISOString() ?? null,
+          }))}
+        />
       </section>
     </LandingLayout>
   );

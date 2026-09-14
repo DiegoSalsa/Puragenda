@@ -43,13 +43,16 @@ El negocio no puede borrar una crítica porque sea negativa.
 
 ## Datos demo de Estética Bella
 
-Estética Bella (`estetica-bella`) es el negocio demo oficial. El catálogo de reseñas de escaparate es idempotente:
+Estética Bella (`estetica-bella`) es la cuenta demo oficial de Puragenda.
 
 ```
 npm run seed:reviews-demo
 ```
 
-Solo actúa sobre `slug = estetica-bella` y el nombre Estética Bella. No crea reseñas para otros negocios. Ejecutarlo dos veces actualiza los mismos 24 registros (`clevrebella*`) en lugar de duplicarlos.
+- Solo modifica Estética Bella. Nunca Soccerbarber, Modern Women, Cinnamon Nails ni otros negocios reales.
+- Es idempotente: IDs `clevrebella*`. Ejecutarlo dos veces no duplica reseñas.
+- Puede dejar el listing marketplace en `ACTIVE` (con autorización vigente) para que el escaparate sea visible en `/negocios`.
+- Puede ejecutarse deliberadamente contra el entorno que use esa cuenta demo, incluida producción.
 
 ## Rutas
 

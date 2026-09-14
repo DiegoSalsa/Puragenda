@@ -8,8 +8,7 @@ import {
   marketplacePublicLocationLabel,
   marketplaceVisibleServices,
 } from "@/lib/marketplace";
-import { formatRatingAverage } from "@/lib/reviews/rating";
-import { RatingStars } from "@/components/reviews/rating-stars";
+import { CompactRating } from "@/components/reviews/compact-rating";
 
 type MarketplaceListingCardProps = {
   name: string;
@@ -65,9 +64,6 @@ export function MarketplaceListingCard({
     .join(" · ");
   const services = marketplaceVisibleServices(serviceNames, 3);
 
-  const formattedAverage = formatRatingAverage(ratingAverage);
-  const showRating = ratingCount > 0 && formattedAverage != null;
-
   return (
     <article className="flex h-full w-full flex-col rounded-2xl border-2 border-black bg-white p-3.5 text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5 dark:border-white dark:bg-black dark:text-white">
       <div className="flex items-start gap-3">
@@ -96,16 +92,10 @@ export function MarketplaceListingCard({
             {cityName}
             {publicLocation ? ` · ${publicLocation}` : ""}
           </p>
-          {showRating ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm font-black">
-              <RatingStars
-                value={Math.round(ratingAverage ?? 0)}
-                size="sm"
-                label={`${formattedAverage} de 5 estrellas`}
-              />
-              <span>{formattedAverage}</span>
-              <span className="font-semibold text-black/55 dark:text-white/60">({ratingCount})</span>
-            </p>
+          {ratingCount > 0 ? (
+            <div className="mt-1.5">
+              <CompactRating average={ratingAverage} count={ratingCount} />
+            </div>
           ) : null}
         </div>
       </div>

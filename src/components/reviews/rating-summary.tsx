@@ -9,11 +9,7 @@ export function RatingSummary({
   emptyLabel?: string;
 }) {
   if (stats.count === 0 || stats.average == null) {
-    return (
-      <div className="rounded-2xl border-2 border-dashed border-black/30 bg-white px-4 py-5 text-sm font-semibold text-black/60">
-        {emptyLabel}
-      </div>
-    );
+    return <p className="text-sm font-semibold text-black/60">{emptyLabel}</p>;
   }
 
   const formatted = formatRatingAverage(stats.average);
@@ -35,9 +31,9 @@ export function RatingSummary({
           const count = stats.distribution[star];
           const width = `${Math.round((count / max) * 100)}%`;
           return (
-            <li key={star} className="flex items-center gap-2 text-sm font-bold">
+            <li key={star} className="flex min-w-0 items-center gap-2 text-sm font-bold">
               <span className="w-8 shrink-0 tabular-nums">{star} ★</span>
-              <div className="h-2.5 flex-1 overflow-hidden rounded-full border border-black/20 bg-black/5">
+              <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full border border-black/20 bg-black/5">
                 <div className="h-full rounded-full bg-[#F59E0B]" style={{ width: count > 0 ? width : "0%" }} />
               </div>
               <span className="w-8 text-right tabular-nums text-black/60">{count}</span>

@@ -246,3 +246,9 @@ export const appointmentReviewInviteLimiter = rateLimit({
   max: 8,
   message: "Demasiadas solicitudes de reseña. Espera un momento.",
 });
+
+export const publicReviewsReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: "Demasiadas consultas. Intenta nuevamente en un momento.",
+});

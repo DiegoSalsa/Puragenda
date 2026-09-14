@@ -39,11 +39,11 @@ export function ReviewCard({
         <p className="mt-1 text-xs font-semibold text-black/55 dark:text-white/60">{review.serviceNameSnapshot}</p>
       ) : null}
       {review.comment ? (
-        <p className="mt-3 text-sm font-medium leading-6">“{review.comment}”</p>
+        <p className="mt-3 max-w-prose text-sm font-medium leading-6">“{review.comment}”</p>
       ) : null}
       {review.businessReply ? (
-        <div className="mt-4 rounded-xl border border-black/15 bg-[#FFFAEB] p-3 dark:border-white/20 dark:bg-white/5">
-          <p className="text-xs font-black uppercase tracking-wide">Respuesta de {businessName}</p>
+        <div className="mt-4 max-w-prose rounded-xl border border-black/15 bg-[#FFFAEB] p-3 dark:border-white/20 dark:bg-white/5">
+          <p className="text-xs font-bold text-black/55 dark:text-white/60">Respuesta de {businessName}</p>
           <p className="mt-1 text-sm font-medium leading-6">{review.businessReply}</p>
         </div>
       ) : null}

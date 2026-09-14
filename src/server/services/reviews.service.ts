@@ -675,6 +675,16 @@ export async function getBusinessRatingSummariesBySlug(slugs: string[]) {
   );
 }
 
+export async function listPublicReviewsBySlug(slug: string, page = 1) {
+  const business = await prisma.business.findFirst({
+    where: { slug, deletedAt: null },
+    select: { id: true },
+  });
+  if (!business) return null;
+  const reviews = await listPublicReviews(business.id, page);
+  return { businessId: business.id, ...reviews };
+}
+
 export async function listPublicReviews(businessId: string, page = 1) {
   const take = REVIEW_PUBLIC_LIST_PAGE_SIZE;
   const skip = Math.max(0, (page - 1) * take);
@@ -721,6 +731,7 @@ export async function getDashboardReputation(businessId: string, now = new Date(
 
   const [
     summary,
+    allCount,
     privateCount,
     pendingCount,
     reportedCount,
@@ -730,6 +741,7 @@ export async function getDashboardReputation(businessId: string, now = new Date(
     rejectedReports,
   ] = await Promise.all([
     getBusinessRatingSummary(businessId),
+    prisma.appointmentReview.count({ where: { businessId, withdrawnAt: null } }),
     prisma.appointmentReview.count({ where: { businessId, visibility: "PRIVATE", withdrawnAt: null } }),
     prisma.appointmentReview.count({ where: { businessId, visibility: "PUBLIC", status: "PENDING", withdrawnAt: null } }),
     prisma.appointmentReview.count({ where: { businessId, status: "REPORTED", withdrawnAt: null } }),
@@ -758,6 +770,7 @@ export async function getDashboardReputation(businessId: string, now = new Date(
 
   return {
     summary,
+    allCount,
     privateCount,
     pendingCount,
     reportedCount,
