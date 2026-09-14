@@ -599,6 +599,67 @@ export function newRegistrationAdminEmail(data: NewRegistrationData): { subject:
 }
 
 // ═══════════════════════════════════════════
+// SUBSCRIPTION PAYMENT ADMIN NOTIFICATION
+// ═══════════════════════════════════════════
+
+export interface SubscriptionPaymentAdminEmailData {
+  businessName: string;
+  ownerName: string;
+  ownerEmail: string;
+  plan: string;
+  billingCycle: string;
+  provider: string;
+  paymentId: string;
+  invoiceId?: string | null;
+  paymentAt: Date;
+  amountLabel?: string | null;
+  paymentType: string;
+  firstPayment: boolean;
+  fromTrial: boolean;
+  recovery: boolean;
+}
+
+/** Email to platform admins after a confirmed subscription payment. */
+export function subscriptionPaymentAdminEmail(data: SubscriptionPaymentAdminEmailData): EmailTemplate {
+  const safe = (value: string) => escapeHtml(value);
+  const paymentAt = data.paymentAt.toLocaleString("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: BUSINESS_TZ,
+  });
+  const subjectPrefix = data.recovery
+    ? "Pago recuperado"
+    : data.firstPayment
+      ? "Nueva suscripción pagada"
+      : "Renovación pagada";
+  const badge = data.recovery ? "Recuperación" : data.firstPayment ? "Primer pago" : "Renovación";
+
+  return {
+    subject: `${subjectPrefix} — ${data.businessName}`,
+    html: layout("Pago de suscripción confirmado", `
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">${safe(subjectPrefix)}</h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
+        Se confirmó y registró un pago de suscripción en Puragenda.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin:16px 0;">
+        ${detailRow("Negocio", safe(data.businessName))}
+        ${detailRow("Dueño", safe(data.ownerName))}
+        ${detailRow("Email", safe(data.ownerEmail))}
+        ${detailRow("Plan", safe(data.plan))}
+        ${detailRow("Ciclo", safe(data.billingCycle))}
+        ${detailRow("Tipo", safe(badge))}
+        ${detailRow("Proveedor", safe(data.provider))}
+        ${detailRow("Monto", safe(data.amountLabel ?? "No informado"))}
+        ${detailRow("Pago", safe(data.paymentId))}
+        ${data.invoiceId ? detailRow("Factura", safe(data.invoiceId)) : ""}
+        ${detailRow("Fecha", safe(paymentAt))}
+        ${data.fromTrial ? detailRow("Origen", "Conversión desde prueba") : ""}
+      </table>
+    `),
+  };
+}
+
+// ═══════════════════════════════════════════
 // LOYALTY — STAMP EARNED (progress)
 // ═══════════════════════════════════════════
 

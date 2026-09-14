@@ -7,6 +7,7 @@ const subscriptionUpdate = vi.hoisted(() => vi.fn());
 const subscriptionUpdateMany = vi.hoisted(() => vi.fn());
 const paymentFailedEmail = vi.hoisted(() => vi.fn());
 const paymentRecoveredEmail = vi.hoisted(() => vi.fn());
+const adminPaymentNotification = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
@@ -35,6 +36,9 @@ vi.mock("@/server/services/subscription-billing.service", () => ({
 vi.mock("@/server/email/send", () => ({
   sendSubscriptionPaymentFailedEmail: paymentFailedEmail,
   sendSubscriptionPaymentRecoveredEmail: paymentRecoveredEmail,
+}));
+vi.mock("@/server/services/subscription-payment-notification.service", () => ({
+  notifySubscriptionPayment: adminPaymentNotification,
 }));
 
 vi.mock("mercadopago", () => ({
@@ -66,8 +70,10 @@ describe("subscription dunning", () => {
     subscriptionUpdateMany.mockReset();
     paymentFailedEmail.mockReset();
     paymentRecoveredEmail.mockReset();
+    adminPaymentNotification.mockReset();
     paymentFailedEmail.mockResolvedValue(true);
     paymentRecoveredEmail.mockResolvedValue(true);
+    adminPaymentNotification.mockResolvedValue({ sent: true, skipped: false });
   });
 
   it("grants 48 rolling hours after a failed attempt", () => {
@@ -239,6 +245,42 @@ describe("subscription dunning", () => {
     );
   });
 
+  it("notifies admins once when an INACTIVE business makes its first approved payment", async () => {
+    subscriptionFindFirst.mockResolvedValue({
+      id: "subscription-1",
+      businessId: "business-1",
+      plan: "EQUIPO",
+      billingCycle: "MONTHLY",
+      status: "INACTIVE",
+      isTrial: false,
+      currentPeriodEnd: null,
+      paymentFailedAt: null,
+      activePrizeId: null,
+      freeMonthsRemaining: 0,
+      hasCountedAsPaidReferral: true,
+      lastPaymentId: null,
+      business: { name: "Cinnamon nails", currencyCode: "CLP", owner: { email: "owner@example.com", name: "Owner" } },
+    });
+    subscriptionUpdate.mockResolvedValue({});
+
+    const result = await processMercadoPagoInvoice({
+      id: "invoice-first",
+      preapproval_id: "mp-subscription-1",
+      transaction_amount: 19990,
+      currency_id: "CLP",
+      last_modified: "2026-08-01T13:00:00.000Z",
+      payment: { id: "payment-first", status: "approved" },
+    });
+
+    expect(result).toMatchObject({ handled: true, state: "ACTIVE", alreadyProcessed: false });
+    expect(adminPaymentNotification).toHaveBeenCalledWith(expect.objectContaining({
+      provider: "mercadopago",
+      paymentId: "payment-first",
+      firstPayment: true,
+      recovery: false,
+    }));
+  });
+
   it("does not let a stale rejection overwrite a recovery committed after its read", async () => {
     subscriptionFindFirst.mockResolvedValue({
       id: "subscription-1",
@@ -347,6 +389,7 @@ describe("subscription dunning", () => {
     expect(first).toMatchObject({ handled: true, state: "ACTIVE" });
     expect(duplicate).toEqual({ handled: false, reason: "stale_or_duplicate_approved_invoice" });
     expect(paymentRecoveredEmail).toHaveBeenCalledTimes(1);
+    expect(adminPaymentNotification).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces a credential mismatch when an invoice search is empty", async () => {

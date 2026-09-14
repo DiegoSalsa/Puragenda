@@ -1,5 +1,11 @@
-import type { CustomerNotification, EventEntity, SubscriptionNotification } from "@paddle/paddle-node-sdk";
+import type {
+  CustomerNotification,
+  EventEntity,
+  SubscriptionNotification,
+  TransactionNotification,
+} from "@paddle/paddle-node-sdk";
 import { prisma } from "@/server/db/prisma";
+import { notifySubscriptionPayment } from "@/server/services/subscription-payment-notification.service";
 
 function subscriptionStatus(status: string) {
   switch (status) {
@@ -79,6 +85,82 @@ async function syncSubscription(event: EventEntity, subscription: SubscriptionNo
   });
 }
 
+function validDate(value: unknown) {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function syncCompletedTransaction(event: EventEntity, transaction: TransactionNotification) {
+  if (transaction.status !== "completed" || !transaction.id || !transaction.subscriptionId) return;
+
+  const localSubscription = await prisma.subscription.findFirst({
+    where: { paddleSubscriptionId: transaction.subscriptionId },
+    include: {
+      business: {
+        select: {
+          name: true,
+          currencyCode: true,
+          countryCode: true,
+          owner: { select: { email: true, name: true } },
+        },
+      },
+    },
+  });
+  if (!localSubscription || localSubscription.business.countryCode === "CL") return;
+
+  const paymentAt = validDate(transaction.billedAt) ?? validDate(transaction.updatedAt) ?? validDate(event.occurredAt);
+  if (!paymentAt) return;
+
+  const periodEnd = validDate(transaction.billingPeriod?.endsAt);
+  await prisma.subscription.update({
+    where: { id: localSubscription.id },
+    data: {
+      status: "ACTIVE",
+      isTrial: false,
+      ...(periodEnd ? { currentPeriodEnd: periodEnd } : {}),
+      paymentFailedAt: null,
+      gracePeriodEndsAt: null,
+      nextPaymentAttemptAt: null,
+    },
+  });
+
+  const recovery = localSubscription.status === "PAST_DUE";
+  const firstPayment = localSubscription.status === "INACTIVE";
+  const fromTrial = localSubscription.status === "TRIALING" && localSubscription.isTrial;
+  const totals = transaction.details?.totals;
+  const amount = totals?.grandTotal ?? totals?.total ?? null;
+  const currency = transaction.currencyCode ?? totals?.currencyCode ?? localSubscription.business.currencyCode;
+
+  try {
+    await notifySubscriptionPayment({
+      subscriptionId: localSubscription.id,
+      provider: "paddle",
+      paymentId: transaction.id,
+      invoiceId: transaction.invoiceId,
+      businessName: localSubscription.business.name,
+      ownerName: localSubscription.business.owner?.name ?? "No informado",
+      ownerEmail: localSubscription.business.owner?.email ?? "No informado",
+      plan: localSubscription.plan,
+      billingCycle: localSubscription.billingCycle === "ANNUAL" ? "Anual" : "Mensual",
+      paymentAt,
+      amount,
+      currency,
+      amountIsMinorUnits: true,
+      paymentType: recovery ? "Recuperación" : firstPayment || fromTrial ? "Primer pago" : "Renovación",
+      firstPayment: firstPayment || fromTrial,
+      fromTrial,
+      recovery,
+    });
+  } catch (error) {
+    console.error("[paddle-webhook] Admin payment notification failed", {
+      subscriptionId: localSubscription.id,
+      paymentId: transaction.id,
+      error,
+    });
+  }
+}
+
 export async function processPaddleWebhook(event: EventEntity) {
   if (event.eventType === "customer.created" || event.eventType === "customer.updated") {
     await syncCustomer(event.data as CustomerNotification);
@@ -87,5 +169,14 @@ export async function processPaddleWebhook(event: EventEntity) {
 
   if (event.eventType.startsWith("subscription.")) {
     await syncSubscription(event, event.data as SubscriptionNotification);
+    return;
+  }
+
+  // `transaction.completed` is the only Paddle event used here as proof of a
+  // completed charge. Other transaction lifecycle events are intentionally
+  // ignored to avoid notifying for created, authorized, pending, or duplicate
+  // payment states.
+  if (event.eventType === "transaction.completed") {
+    await syncCompletedTransaction(event, event.data as TransactionNotification);
   }
 }

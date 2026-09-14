@@ -258,6 +258,12 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum SubscriptionPaymentNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum BillingCycle {
   MONTHLY
   ANNUAL
@@ -334,8 +340,29 @@ model Subscription {
 
   business                    Business                     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   platformDiscountRedemptions PlatformDiscountRedemption[]
+  paymentNotifications       SubscriptionPaymentNotification[]
 
   @@index([status, gracePeriodEndsAt])
+}
+
+model SubscriptionPaymentNotification {
+  id             String                                  @id @default(cuid())
+  subscriptionId String
+  provider       String
+  paymentId      String
+  invoiceId      String?
+  status         SubscriptionPaymentNotificationStatus   @default(PENDING)
+  claimedAt      DateTime                                @default(now())
+  sentAt         DateTime?
+  failedAt       DateTime?
+  createdAt      DateTime                                @default(now())
+  updatedAt      DateTime                                @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, paymentId])
+  @@index([subscriptionId])
+  @@index([status, failedAt])
 }
 
 // ==========================================

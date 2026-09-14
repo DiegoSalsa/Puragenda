@@ -14,6 +14,7 @@ import {
   clientPortalPasswordResetEmail,
   adminLoginCodeEmail,
   newRegistrationAdminEmail,
+  subscriptionPaymentAdminEmail,
   loyaltyStampEarnedEmail,
   loyaltyRewardWonEmail,
   trialExpiringEmail,
@@ -636,6 +637,23 @@ export async function sendNewRegistrationNotification(data: {
 
   await Promise.allSettled(tasks);
   console.log(`[Email] Registration notification sent for ${data.businessName} (${data.ownerEmail})`);
+}
+
+export async function sendSubscriptionPaymentAdminNotification(data: Parameters<typeof subscriptionPaymentAdminEmail>[0]): Promise<boolean> {
+  const { subject, html } = subscriptionPaymentAdminEmail(data);
+  const recipients = ADMIN_NOTIFICATION_EMAILS.filter(Boolean);
+  if (recipients.length === 0) return false;
+  const idempotencyKey = `subscription-payment/${data.provider.toLowerCase().replace(/[^a-z0-9]+/g, "-")}/${data.paymentId}`;
+  return deliverEmail(
+    "subscription payment notification to platform admins",
+    {
+      from: EMAIL_FROM,
+      to: recipients,
+      subject,
+      html,
+    },
+    { idempotencyKey },
+  );
 }
 
 // ═══════════════════════════════════════════

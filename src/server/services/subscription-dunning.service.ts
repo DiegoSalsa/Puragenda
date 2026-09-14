@@ -10,6 +10,7 @@ import {
   sendSubscriptionPaymentFailedEmail,
   sendSubscriptionPaymentRecoveredEmail,
 } from "@/server/email/send";
+import { notifySubscriptionPayment } from "@/server/services/subscription-payment-notification.service";
 export { hasDunningAccess } from "@/core/subscription-access";
 
 export const DUNNING_GRACE_HOURS = 48;
@@ -22,6 +23,7 @@ export type MercadoPagoInvoiceSnapshot = {
   summarized?: string;
   retry_attempt?: number;
   debit_date?: string;
+  currency_id?: string;
   last_modified?: string;
   date_created?: string;
   transaction_amount?: number;
@@ -122,6 +124,7 @@ export async function processMercadoPagoInvoice(
       business: {
         select: {
           name: true,
+          currencyCode: true,
           owner: { select: { email: true, name: true } },
         },
       },
@@ -257,6 +260,37 @@ export async function processMercadoPagoInvoice(
         businessName: subscription.business.name,
         periodEnd,
       });
+    }
+
+    if (!alreadyProcessed) {
+      const fromTrial = subscription.status === "TRIALING" && subscription.isTrial;
+      const firstPayment = fromTrial || subscription.status === "INACTIVE";
+      try {
+        await notifySubscriptionPayment({
+          subscriptionId: subscription.id,
+          provider: "mercadopago",
+          paymentId: paymentId ?? invoice.id,
+          invoiceId: invoice.id,
+          businessName: subscription.business.name,
+          ownerName: subscription.business.owner?.name ?? "No informado",
+          ownerEmail: subscription.business.owner?.email ?? "No informado",
+          plan: subscription.plan,
+          billingCycle: subscription.billingCycle === "ANNUAL" ? "Anual" : "Mensual",
+          paymentAt: activityAt,
+          amount: invoice.transaction_amount,
+          currency: invoice.currency_id ?? subscription.business.currencyCode,
+          paymentType: wasPastDue ? "Recuperación" : firstPayment ? "Primer pago" : "Renovación",
+          firstPayment,
+          fromTrial,
+          recovery: wasPastDue,
+        });
+      } catch (error) {
+        console.error("[subscription-dunning] Admin payment notification failed", {
+          subscriptionId: subscription.id,
+          paymentId: paymentId ?? invoice.id,
+          error,
+        });
+      }
     }
 
     return {
