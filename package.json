@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "db:migrate:deploy": "prisma migrate deploy",
     "seed": "npx prisma db seed",
+    "seed:reviews-demo": "tsx scripts/seed-estetica-bella-reviews.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

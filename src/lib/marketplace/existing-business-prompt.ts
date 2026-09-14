@@ -1,5 +1,5 @@
 import { marketplaceConsentState } from "./authorization";
-import { MARKETPLACE_EXCLUDED_SLUGS } from "./visibility";
+import { PURAGENDA_DEMO_BUSINESS_SLUGS } from "./visibility";
 import { isMarketplaceSubscriptionActive } from "./publication";
 
 // Commit ed3e91f introduced marketplace-ready registration. Newer businesses
@@ -25,7 +25,7 @@ export function shouldShowExistingBusinessMarketplacePrompt(
 ): boolean {
   if (input.createdAt >= MARKETPLACE_READY_REGISTRATION_CUTOFF) return false;
   if (input.deletedAt != null) return false;
-  if (MARKETPLACE_EXCLUDED_SLUGS.has(input.slug)) return false;
+  if (PURAGENDA_DEMO_BUSINESS_SLUGS.has(input.slug)) return false;
   if (input.plan === "TEST") return false;
   if (!isMarketplaceSubscriptionActive(input.subscriptionStatus)) return false;
   if (!input.hasActivePrimaryLocation) return false;

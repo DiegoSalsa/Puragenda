@@ -41,7 +41,7 @@ describe("marketplace publish rules", () => {
 
   it("excludes demo, TEST, deleted, inactive location and missing services", () => {
     expect(marketplacePublishBlockers({ ...ready, slug: "purocode-demo" })).toContain("demo_excluded");
-    expect(marketplacePublishBlockers({ ...ready, slug: "estetica-bella" })).toContain("demo_excluded");
+    expect(marketplacePublishBlockers({ ...ready, slug: "estetica-bella" })).not.toContain("demo_excluded");
     expect(marketplacePublishBlockers({ ...ready, plan: "TEST" })).toContain("test_plan_excluded");
     expect(marketplacePublishBlockers({ ...ready, deleted: true })).toContain("business_deleted");
     expect(marketplacePublishBlockers({ ...ready, locationActive: false })).toContain("location_inactive");

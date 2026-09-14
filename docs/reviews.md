@@ -41,6 +41,16 @@ El negocio no puede borrar una crítica porque sea negativa.
 
 `Business.publicReviewCount` y `Business.publicReviewRatingSum` se actualizan en la misma transacción que el cambio de estado. El marketplace lee esos contadores en un query por lote (no N+1).
 
+## Datos demo de Estética Bella
+
+Estética Bella (`estetica-bella`) es el negocio demo oficial. El catálogo de reseñas de escaparate es idempotente:
+
+```
+npm run seed:reviews-demo
+```
+
+Solo actúa sobre `slug = estetica-bella` y el nombre Estética Bella. No crea reseñas para otros negocios. Ejecutarlo dos veces actualiza los mismos 24 registros (`clevrebella*`) en lugar de duplicarlos.
+
 ## Rutas
 
 - Cliente: `/valorar/[token]`, `/valorar/cita/[appointmentId]`, historial de `/mi-agenda`

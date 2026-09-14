@@ -30,7 +30,9 @@ export {
 } from "./quality-gate";
 
 export {
+  ESTETICA_BELLA_DEMO_SLUG,
   MARKETPLACE_EXCLUDED_SLUGS,
+  PURAGENDA_DEMO_BUSINESS_SLUGS,
   MARKETPLACE_FORBIDDEN_PUBLIC_FIELDS,
   eligibleMarketplaceListings,
   isMarketplaceEligibleListing,

@@ -98,7 +98,11 @@ export function MarketplaceListingCard({
           </p>
           {showRating ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm font-black">
-              <RatingStars value={Math.round(ratingAverage ?? 0)} size="sm" />
+              <RatingStars
+                value={Math.round(ratingAverage ?? 0)}
+                size="sm"
+                label={`${formattedAverage} de 5 estrellas`}
+              />
               <span>{formattedAverage}</span>
               <span className="font-semibold text-black/55 dark:text-white/60">({ratingCount})</span>
             </p>

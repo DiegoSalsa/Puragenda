@@ -24,7 +24,7 @@ export function RatingSummary({
       <div className="text-center sm:pr-6">
         <p className="text-5xl font-black tracking-tight">{formatted}</p>
         <div className="mt-1 flex justify-center">
-          <RatingStars value={Math.round(stats.average)} />
+          <RatingStars value={Math.round(stats.average)} label={`${formatted} de 5 estrellas`} />
         </div>
         <p className="mt-1 text-sm font-bold text-black/60">
           {stats.count} {stats.count === 1 ? "opinión" : "opiniones"}

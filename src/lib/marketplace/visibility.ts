@@ -2,7 +2,9 @@ import { isSupportedMarketplaceCategory } from "./taxonomy";
 import { isCanonicalCitySlug } from "./geo";
 import { isMarketplaceOperationallyActive, type MarketplaceListingStatus } from "./status";
 
-export const MARKETPLACE_EXCLUDED_SLUGS = new Set(["purocode-demo", "estetica-bella"]);
+export const ESTETICA_BELLA_DEMO_SLUG = "estetica-bella";
+export const MARKETPLACE_EXCLUDED_SLUGS = new Set(["purocode-demo"]);
+export const PURAGENDA_DEMO_BUSINESS_SLUGS = new Set(["purocode-demo", ESTETICA_BELLA_DEMO_SLUG]);
 
 export const MARKETPLACE_FORBIDDEN_PUBLIC_FIELDS = [
   "id",

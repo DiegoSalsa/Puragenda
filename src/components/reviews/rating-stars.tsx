@@ -1,7 +1,5 @@
 "use client";
 
-import { Star } from "@/components/icons/hover-icons";
-
 type RatingStarsProps = {
   value: number;
   max?: number;
@@ -10,6 +8,7 @@ type RatingStarsProps = {
   name?: string;
   onChange?: (value: number) => void;
   labelledBy?: string;
+  label?: string;
 };
 
 const SIZE = {
@@ -17,6 +16,20 @@ const SIZE = {
   md: "h-5 w-5",
   lg: "h-8 w-8",
 };
+
+function StarGlyph({ filled, className }: { filled: boolean; className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 3.2 14.7 9l6.3.7-4.7 4.3 1.3 6.3L12 17.4 6.4 20.3 7.7 14 3 9.7 9.3 9 12 3.2Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function RatingStars({
   value,
@@ -26,22 +39,22 @@ export function RatingStars({
   name = "rating",
   onChange,
   labelledBy,
+  label,
 }: RatingStarsProps) {
   const stars = Array.from({ length: max }, (_, index) => index + 1);
-  const label = `${value} de ${max} estrellas`;
+  const accessibleLabel = label ?? `${value} de ${max} estrellas`;
 
   if (!interactive) {
     return (
-      <span className="inline-flex items-center gap-0.5" aria-label={label} title={label}>
+      <span className="inline-flex items-center gap-0.5" aria-label={accessibleLabel} title={accessibleLabel}>
         {stars.map((star) => (
-          <Star
+          <StarGlyph
             key={star}
-            className={`${SIZE[size]} ${star <= value ? "text-[#F59E0B]" : "text-black/20 dark:text-white/25"}`}
-            fill={star <= value ? "currentColor" : "none"}
-            aria-hidden="true"
+            filled={star <= value}
+            className={`${SIZE[size]} ${star <= value ? "text-[#F59E0B]" : "text-black/25 dark:text-white/30"}`}
           />
         ))}
-        <span className="sr-only">{label}</span>
+        <span className="sr-only">{accessibleLabel}</span>
       </span>
     );
   }
@@ -66,10 +79,9 @@ export function RatingStars({
                 checked={checked}
                 onChange={() => onChange?.(star)}
               />
-              <Star
+              <StarGlyph
+                filled={filled}
                 className={`${SIZE[size]} ${filled ? "text-[#F59E0B]" : "text-black/25"}`}
-                fill={filled ? "currentColor" : "none"}
-                aria-hidden="true"
               />
               <span className="sr-only">{star} {star === 1 ? "estrella" : "estrellas"}</span>
             </label>
