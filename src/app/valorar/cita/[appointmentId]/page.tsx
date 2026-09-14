@@ -23,7 +23,8 @@ export default async function PortalReviewPage({
   const email = await getClientPortalEmail();
   const account = await getClientPortalAccount();
   if (!email || !account) {
-    redirect("/mi-agenda");
+    const returnTo = `/valorar/cita/${encodeURIComponent(appointmentId)}`;
+    redirect(`/mi-agenda?returnTo=${encodeURIComponent(returnTo)}`);
   }
 
   const appointment = await prisma.appointment.findUnique({

@@ -49,13 +49,26 @@ export const clientPortalChangePasswordSchema = z.object({
   path: ["newPassword"],
 });
 
+const SAFE_WIDGET_RETURN_TO = /^\/widget\/[a-z0-9-]+\/?$/i;
+const SAFE_REVIEW_RETURN_TO = /^\/valorar\/cita\/[a-z0-9_-]{8,64}\/?$/i;
+
 export function safeClientPortalReturnTo(value: string | null | undefined): string | null {
-  if (!value || value.length > 2048 || !value.startsWith("/")) return null;
+  if (!value || value.length > 2048 || !value.startsWith("/") || value.startsWith("//")) return null;
   try {
     const base = "https://puragenda.local";
     const parsed = new URL(value, base);
-    if (parsed.origin !== base || !/^\/widget\/[^/]+\/?$/.test(parsed.pathname)) return null;
-    return `${parsed.pathname}${parsed.search}`;
+    if (parsed.origin !== base) return null;
+    if (parsed.username || parsed.password) return null;
+    if (parsed.hash) return null;
+    if (parsed.pathname.includes("//") || parsed.pathname.includes("\\") || parsed.pathname.includes("%")) return null;
+
+    if (SAFE_WIDGET_RETURN_TO.test(parsed.pathname)) {
+      return `${parsed.pathname}${parsed.search}`;
+    }
+    if (SAFE_REVIEW_RETURN_TO.test(parsed.pathname) && parsed.search === "") {
+      return parsed.pathname.replace(/\/$/, "") || parsed.pathname;
+    }
+    return null;
   } catch {
     return null;
   }

@@ -33,4 +33,21 @@ describe("activación de cuenta del cliente", () => {
     expect(safeClientPortalReturnTo("//evil.example/widget/demo")).toBeNull();
     expect(safeClientPortalReturnTo("/dashboard")).toBeNull();
   });
+
+  it("permite volver a valorar una cita concreta después del login", () => {
+    expect(safeClientPortalReturnTo("/valorar/cita/clevrebella01apptx")).toBe("/valorar/cita/clevrebella01apptx");
+    expect(safeClientPortalReturnTo("/valorar/cita/clevrebella01apptx/")).toBe("/valorar/cita/clevrebella01apptx");
+  });
+
+  it("rechaza open redirects y rutas de valoración no autorizadas", () => {
+    expect(safeClientPortalReturnTo("https://evil.example/valorar/cita/clevrebella01apptx")).toBeNull();
+    expect(safeClientPortalReturnTo("//evil.example/valorar/cita/clevrebella01apptx")).toBeNull();
+    expect(safeClientPortalReturnTo("/valorar/cita/../dashboard")).toBeNull();
+    expect(safeClientPortalReturnTo("/valorar/cita/clevrebella01apptx?next=https://evil.example")).toBeNull();
+    expect(safeClientPortalReturnTo("/valorar/cita/clevrebella01apptx#https://evil.example")).toBeNull();
+    expect(safeClientPortalReturnTo("/valorar")).toBeNull();
+    expect(safeClientPortalReturnTo("/valorar/cita/short")).toBeNull();
+    expect(safeClientPortalReturnTo("/login")).toBeNull();
+    expect(safeClientPortalReturnTo("/dashboard/reviews")).toBeNull();
+  });
 });
