@@ -186,27 +186,51 @@ export async function processMercadoPagoInvoice(
       ]);
     }
 
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: "ACTIVE",
-        isTrial: false,
-        currentPeriodEnd: periodEnd,
-        paymentFailedAt: null,
-        gracePeriodEndsAt: null,
-        nextPaymentAttemptAt: null,
-        lastInvoiceId: invoice.id,
-        lastInvoiceStatus: invoice.status ?? null,
-        lastPaymentId: paymentId,
-        lastPaymentStatus: paymentStatus,
-        lastPaymentStatusDetail: paymentStatusDetail,
-        lastPaymentAttemptAt: activityAt,
-        paymentRetryCount: retryCount,
-        dunningEmailSentAt: null,
-        graceExpiryWarningSentAt: null,
-        hasCountedAsPaidReferral: true,
-      },
-    });
+    const activeData = {
+      status: "ACTIVE",
+      isTrial: false,
+      currentPeriodEnd: periodEnd,
+      paymentFailedAt: null,
+      gracePeriodEndsAt: null,
+      nextPaymentAttemptAt: null,
+      lastInvoiceId: invoice.id,
+      lastInvoiceStatus: invoice.status ?? null,
+      lastPaymentId: paymentId,
+      lastPaymentStatus: paymentStatus,
+      lastPaymentStatusDetail: paymentStatusDetail,
+      lastPaymentAttemptAt: activityAt,
+      paymentRetryCount: retryCount,
+      dunningEmailSentAt: null,
+      graceExpiryWarningSentAt: null,
+      hasCountedAsPaidReferral: true,
+    } as const;
+
+    if (wasPastDue) {
+      // Only one concurrent recovery may transition PAST_DUE -> ACTIVE and send
+      // the recovery email. A newer failed attempt also wins by timestamp.
+      const activated = await prisma.subscription.updateMany({
+        where: {
+          id: subscription.id,
+          status: "PAST_DUE",
+          OR: [
+            { lastPaymentAttemptAt: null },
+            { lastPaymentAttemptAt: { lt: activityAt } },
+          ],
+        },
+        data: activeData,
+      });
+      if (activated.count === 0) {
+        return {
+          handled: false as const,
+          reason: "stale_or_duplicate_approved_invoice",
+        };
+      }
+    } else {
+      await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: activeData,
+      });
+    }
 
     if (!alreadyProcessed) {
       const billingSync = await advanceBillingBenefitAfterAuthorized(
@@ -263,10 +287,20 @@ export async function processMercadoPagoInvoice(
       ? calculateGracePeriodEnd(activityAt, nextAttemptAt)
       : subscription.gracePeriodEndsAt ??
         calculateGracePeriodEnd(activityAt, nextAttemptAt);
-    const shouldSendFailureEmail = !subscription.dunningEmailSentAt;
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
+    const transitioned = await prisma.subscription.updateMany({
+      where: {
+        id: subscription.id,
+        // Re-evaluate ordering in the write itself: neither a recovery nor a
+        // newer failed attempt committed after our read may be overwritten.
+        OR: [
+          { lastPaymentAttemptAt: null },
+          { lastPaymentAttemptAt: { lt: activityAt } },
+          {
+            lastPaymentAttemptAt: activityAt,
+            paymentRetryCount: { lt: retryCount },
+          },
+        ],
+      },
       data: {
         status: "PAST_DUE",
         paymentFailedAt: subscription.paymentFailedAt ?? activityAt,
@@ -282,24 +316,43 @@ export async function processMercadoPagoInvoice(
         graceExpiryWarningSentAt: isNewAttempt
           ? null
           : subscription.graceExpiryWarningSentAt,
-        dunningEmailSentAt: shouldSendFailureEmail
-          ? now
-          : subscription.dunningEmailSentAt,
       },
     });
+    if (transitioned.count === 0) {
+      return {
+        handled: false as const,
+        reason: "stale_rejected_invoice",
+      };
+    }
 
-    if (shouldSendFailureEmail && subscription.business.owner?.email) {
-      const delivered = await sendSubscriptionPaymentFailedEmail({
-        ownerEmail: subscription.business.owner.email,
-        ownerName: subscription.business.owner.name,
-        businessName: subscription.business.name,
-        gracePeriodEndsAt,
-        nextPaymentAttemptAt: nextAttemptAt,
-        amount: invoice.transaction_amount ?? null,
+    if (subscription.business.owner?.email) {
+      const claimed = await prisma.subscription.updateMany({
+        where: {
+          id: subscription.id,
+          status: "PAST_DUE",
+          lastInvoiceId: invoice.id,
+          dunningEmailSentAt: null,
+        },
+        data: { dunningEmailSentAt: now },
       });
-      if (!delivered) {
+      const delivered =
+        claimed.count === 1 &&
+        (await sendSubscriptionPaymentFailedEmail({
+          ownerEmail: subscription.business.owner.email,
+          ownerName: subscription.business.owner.name,
+          businessName: subscription.business.name,
+          gracePeriodEndsAt,
+          nextPaymentAttemptAt: nextAttemptAt,
+          amount: invoice.transaction_amount ?? null,
+        }));
+      if (claimed.count === 1 && !delivered) {
         await prisma.subscription.updateMany({
-          where: { id: subscription.id, dunningEmailSentAt: now },
+          where: {
+            id: subscription.id,
+            status: "PAST_DUE",
+            lastInvoiceId: invoice.id,
+            dunningEmailSentAt: now,
+          },
           data: { dunningEmailSentAt: null },
         });
       }

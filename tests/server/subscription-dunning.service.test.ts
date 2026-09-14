@@ -4,12 +4,16 @@ const invoiceSearch = vi.hoisted(() => vi.fn());
 const preapprovalGet = vi.hoisted(() => vi.fn());
 const subscriptionFindFirst = vi.hoisted(() => vi.fn());
 const subscriptionUpdate = vi.hoisted(() => vi.fn());
+const subscriptionUpdateMany = vi.hoisted(() => vi.fn());
+const paymentFailedEmail = vi.hoisted(() => vi.fn());
+const paymentRecoveredEmail = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
     subscription: {
       findFirst: subscriptionFindFirst,
       update: subscriptionUpdate,
+      updateMany: subscriptionUpdateMany,
     },
   },
 }));
@@ -29,8 +33,8 @@ vi.mock("@/server/services/subscription-billing.service", () => ({
 }));
 
 vi.mock("@/server/email/send", () => ({
-  sendSubscriptionPaymentFailedEmail: vi.fn(),
-  sendSubscriptionPaymentRecoveredEmail: vi.fn(),
+  sendSubscriptionPaymentFailedEmail: paymentFailedEmail,
+  sendSubscriptionPaymentRecoveredEmail: paymentRecoveredEmail,
 }));
 
 vi.mock("mercadopago", () => ({
@@ -59,6 +63,11 @@ describe("subscription dunning", () => {
     preapprovalGet.mockReset();
     subscriptionFindFirst.mockReset();
     subscriptionUpdate.mockReset();
+    subscriptionUpdateMany.mockReset();
+    paymentFailedEmail.mockReset();
+    paymentRecoveredEmail.mockReset();
+    paymentFailedEmail.mockResolvedValue(true);
+    paymentRecoveredEmail.mockResolvedValue(true);
   });
 
   it("grants 48 rolling hours after a failed attempt", () => {
@@ -202,7 +211,7 @@ describe("subscription dunning", () => {
       hasCountedAsPaidReferral: true,
       business: { name: "Test", owner: null },
     });
-    subscriptionUpdate.mockResolvedValue({});
+    subscriptionUpdateMany.mockResolvedValue({ count: 1 });
 
     const result = await processMercadoPagoInvoice({
       id: "invoice-1",
@@ -217,9 +226,9 @@ describe("subscription dunning", () => {
     });
 
     expect(result).toMatchObject({ handled: true, state: "ACTIVE" });
-    expect(subscriptionUpdate).toHaveBeenCalledWith(
+    expect(subscriptionUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "subscription-1" },
+        where: expect.objectContaining({ id: "subscription-1", status: "PAST_DUE" }),
         data: expect.objectContaining({
           status: "ACTIVE",
           paymentFailedAt: null,
@@ -228,6 +237,116 @@ describe("subscription dunning", () => {
         }),
       })
     );
+  });
+
+  it("does not let a stale rejection overwrite a recovery committed after its read", async () => {
+    subscriptionFindFirst.mockResolvedValue({
+      id: "subscription-1",
+      status: "PAST_DUE",
+      paymentFailedAt: new Date("2026-08-01T12:00:00.000Z"),
+      lastInvoiceId: "invoice-old",
+      lastPaymentId: "123",
+      lastPaymentStatus: "rejected",
+      lastPaymentAttemptAt: new Date("2026-08-01T12:00:00.000Z"),
+      paymentRetryCount: 0,
+      dunningEmailSentAt: null,
+      graceExpiryWarningSentAt: null,
+      business: { name: "Test", owner: null },
+    });
+    // Simulates ACTIVE being committed between findFirst and the guarded write.
+    subscriptionUpdateMany.mockResolvedValue({ count: 0 });
+
+    const result = await processMercadoPagoInvoice({
+      id: "invoice-old",
+      preapproval_id: "mp-subscription-1",
+      last_modified: "2026-08-01T12:30:00.000Z",
+      payment: { id: "123", status: "rejected" },
+    });
+
+    expect(result).toEqual({ handled: false, reason: "stale_rejected_invoice" });
+    expect(subscriptionUpdateMany).toHaveBeenCalledWith({
+      where: {
+        id: "subscription-1",
+        OR: [
+          { lastPaymentAttemptAt: null },
+          { lastPaymentAttemptAt: { lt: new Date("2026-08-01T12:30:00.000Z") } },
+          {
+            lastPaymentAttemptAt: new Date("2026-08-01T12:30:00.000Z"),
+            paymentRetryCount: { lt: 0 },
+          },
+        ],
+      },
+      data: expect.objectContaining({
+        status: "PAST_DUE",
+        lastPaymentAttemptAt: new Date("2026-08-01T12:30:00.000Z"),
+      }),
+    });
+    expect(subscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it("uses an atomic claim before sending a failed-payment email", async () => {
+    subscriptionFindFirst.mockResolvedValue({
+      id: "subscription-1",
+      status: "ACTIVE",
+      paymentFailedAt: null,
+      gracePeriodEndsAt: null,
+      lastInvoiceId: null,
+      lastPaymentId: null,
+      lastPaymentStatus: "approved",
+      lastPaymentAttemptAt: new Date("2026-08-01T12:00:00.000Z"),
+      paymentRetryCount: 0,
+      dunningEmailSentAt: null,
+      graceExpiryWarningSentAt: null,
+      business: { name: "Test", owner: { email: "owner@example.com", name: "Owner" } },
+    });
+    subscriptionUpdateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    await processMercadoPagoInvoice({
+      id: "invoice-new",
+      preapproval_id: "mp-subscription-1",
+      last_modified: "2026-08-01T13:00:00.000Z",
+      payment: { id: "789", status: "rejected" },
+    });
+
+    expect(paymentFailedEmail).not.toHaveBeenCalled();
+  });
+
+  it("sends a recovered-payment email only for the winning PAST_DUE transition", async () => {
+    const stalePastDueRead = {
+      id: "subscription-1",
+      businessId: "business-1",
+      billingCycle: "MONTHLY",
+      status: "PAST_DUE",
+      currentPeriodEnd: new Date("2026-08-01T12:00:00.000Z"),
+      paymentFailedAt: new Date("2026-08-01T12:00:00.000Z"),
+      lastInvoiceId: "invoice-1",
+      lastPaymentStatus: "rejected",
+      lastPaymentAttemptAt: new Date("2026-08-01T12:00:00.000Z"),
+      activePrizeId: null,
+      freeMonthsRemaining: 0,
+      hasCountedAsPaidReferral: true,
+      business: { name: "Test", owner: { email: "owner@example.com", name: "Owner" } },
+    };
+    subscriptionFindFirst.mockResolvedValue(stalePastDueRead);
+    subscriptionUpdateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const approved = {
+      id: "invoice-1",
+      preapproval_id: "mp-subscription-1",
+      debit_date: "2026-08-01T12:00:00.000Z",
+      last_modified: "2026-08-01T13:00:00.000Z",
+      payment: { id: "456", status: "approved" },
+    };
+
+    const first = await processMercadoPagoInvoice(approved);
+    const duplicate = await processMercadoPagoInvoice(approved);
+
+    expect(first).toMatchObject({ handled: true, state: "ACTIVE" });
+    expect(duplicate).toEqual({ handled: false, reason: "stale_or_duplicate_approved_invoice" });
+    expect(paymentRecoveredEmail).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces a credential mismatch when an invoice search is empty", async () => {
