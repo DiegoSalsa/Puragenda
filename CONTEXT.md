@@ -309,8 +309,8 @@ c:\Users\lucas\Downloads\ProyectosInteresantes\Puragenda\
 
 | Ruta | Horario | Descripción |
 |------|---------|-------------|
-| `GET /api/cron/reminders` | Diario 14:00 UTC (10 AM Chile) | Envía recordatorios del día siguiente a clientes |
-| `GET /api/cron/trial-expiry` | Diario 13:00 UTC (09 AM Chile) | Avisa trials que expiran en 3 días + expira trials vencidos |
+| `GET /api/cron/reminders` | Diario 14:00 UTC (ventana flexible de una hora en Hobby; la hora local de Chile varía con DST) | Envía recordatorios del día siguiente a clientes |
+| `GET /api/cron/trial-expiry` | Diario 13:00 UTC (ventana flexible de una hora en Hobby; la hora local de Chile varía con DST) | Avisa trials que expiran en 3 días + expira trials vencidos |
 | `GET /api/cron/tracking-retention` | Diario 03:00 UTC | Aplica la retención documentada del tracking |
 
 - Protegidos con `CRON_SECRET` en el header `Authorization: Bearer ...`.

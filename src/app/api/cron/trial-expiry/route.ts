@@ -4,7 +4,7 @@ import { sendTrialExpiringEmail, sendTrialExpiredEmail } from "@/server/email/se
 import { runBillingReconciliation } from "@/server/services/subscription-dunning.service";
 import { authorizeCronRequest } from "@/server/auth/cron";
 
-// ── Vercel Cron: runs daily at 13:00 UTC (09:00 AM Chile) ──
+// ── Vercel Cron: scheduled daily at 13:00 UTC; local Chile time varies with DST. ──
 // Handles two tasks:
 // 1. Send warning emails to users whose trial expires in 3 days
 // 2. Expire trials that have passed their trialEndsAt date.
