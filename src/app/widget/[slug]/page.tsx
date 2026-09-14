@@ -165,7 +165,7 @@ export default async function WidgetPage({
             <span className="text-2xl font-bold text-[#7C3AED]">!</span>
           </div>
           <p className="text-xl font-bold text-black dark:text-white">
-            Las reservas online no están disponibles temporalmente
+            Las reservas online de este negocio no están disponibles temporalmente
           </p>
           <p className="mt-2 text-sm text-black/60 dark:text-white/60">
             Contacta directamente al negocio para más información.
