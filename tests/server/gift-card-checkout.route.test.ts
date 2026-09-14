@@ -59,6 +59,7 @@ describe("Gift Card public checkout route", () => {
       name: "Bella",
       countryCode: "CL",
       currencyCode: "CLP",
+      subscription: { status: "ACTIVE", isTrial: false, trialEndsAt: null, gracePeriodEndsAt: null },
     });
     db.giftCardTemplate.findFirst.mockResolvedValue({ id: "template-1" });
     accessToken.mockResolvedValue("seller-token");
@@ -84,6 +85,28 @@ describe("Gift Card public checkout route", () => {
       params: Promise.resolve({ slug: "bella" }),
     });
     expect(response.status).toBe(404);
+    expect(createPurchase).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired trial before creating a public purchase", async () => {
+    db.business.findUnique.mockResolvedValue({
+      id: "business-1",
+      slug: "bella",
+      name: "Bella",
+      countryCode: "CL",
+      currencyCode: "CLP",
+      subscription: {
+        status: "TRIALING",
+        isTrial: true,
+        trialEndsAt: new Date("2000-01-01T00:00:00.000Z"),
+        gracePeriodEndsAt: null,
+      },
+    });
+
+    const response = await POST(request(), { params: Promise.resolve({ slug: "bella" }) });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ code: "SUBSCRIPTION_INACTIVE" });
     expect(createPurchase).not.toHaveBeenCalled();
   });
 

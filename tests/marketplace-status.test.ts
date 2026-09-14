@@ -3,6 +3,7 @@ import {
   canPublishMarketplaceListing,
   isMarketplaceEligibleListing,
   isMarketplacePubliclyVisible,
+  isMarketplaceSubscriptionActive,
   marketplacePublishBlockers,
   resolveMarketplacePublishedAt,
   type MarketplaceListingCandidate,
@@ -42,6 +43,7 @@ const ready = {
   plan: "INDIVIDUAL" as const,
   locationActive: true,
   hasBookableService: true,
+  subscriptionActive: true,
 };
 
 describe("marketplace operational status", () => {
@@ -124,8 +126,22 @@ describe("marketplace operational status", () => {
     })).toEqual(now);
   });
 
-  it("does not treat subscription inactivity as marketplace operational status", () => {
-    expect(isMarketplacePubliclyVisible(candidate({ subscriptionActive: false }))).toBe(true);
-    expect(marketplacePublishBlockers(ready)).not.toContain("subscription_inactive");
+  it("blocks public visibility and publication when subscription access is inactive", () => {
+    expect(isMarketplacePubliclyVisible(candidate({ subscriptionActive: false }))).toBe(false);
+    expect(marketplacePublishBlockers({ ...ready, subscriptionActive: false })).toContain("subscription_inactive");
+  });
+
+  it("treats an expired TRIALING record as inactive without waiting for cron", () => {
+    const now = new Date("2026-09-14T12:00:00.000Z");
+    expect(isMarketplaceSubscriptionActive({
+      status: "TRIALING",
+      isTrial: true,
+      trialEndsAt: new Date("2026-09-14T12:00:00.000Z"),
+    }, now)).toBe(false);
+    expect(isMarketplaceSubscriptionActive({
+      status: "TRIALING",
+      isTrial: true,
+      trialEndsAt: new Date("2026-09-14T12:00:00.001Z"),
+    }, now)).toBe(true);
   });
 });

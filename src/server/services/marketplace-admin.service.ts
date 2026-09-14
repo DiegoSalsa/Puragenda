@@ -6,6 +6,7 @@ import {
   isMarketplaceListingStatus,
   locationHasBookableAppointmentService,
   marketplacePublishBlockers,
+  isMarketplaceSubscriptionActive,
   resolveMarketplacePublishedAt,
   type MarketplaceListingStatus,
 } from "@/lib/marketplace";
@@ -32,6 +33,7 @@ function listingReadiness(input: {
   hasActiveCategory: boolean;
   hasCanonicalLocality: boolean;
   hasBookableService: boolean;
+  subscriptionActive: boolean;
 }) {
   return {
     status: input.status,
@@ -44,6 +46,7 @@ function listingReadiness(input: {
     plan: input.plan ?? "INDIVIDUAL",
     locationActive: input.locationActive,
     hasBookableService: input.hasBookableService,
+    subscriptionActive: input.subscriptionActive,
   };
 }
 
@@ -67,7 +70,7 @@ export async function listMarketplaceAdminRows() {
       slug: true,
       deletedAt: true,
       marketplacePromptDismissedAt: true,
-      subscription: { select: { plan: true, status: true } },
+      subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
       marketplaceListings: {
         select: {
           status: true,
@@ -97,7 +100,7 @@ export async function getMarketplaceBusinessEditor(businessId: string) {
       slug: true,
       deletedAt: true,
       productionOrdersEnabled: true,
-      subscription: { select: { plan: true, status: true } },
+      subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
       locations: {
         orderBy: [{ isPrimary: "desc" }, { position: "asc" }, { name: "asc" }],
         select: { id: true, name: true, slug: true, isActive: true, isPrimary: true },
@@ -152,7 +155,7 @@ export async function saveMarketplaceListing(
         slug: true,
         deletedAt: true,
         productionOrdersEnabled: true,
-        subscription: { select: { plan: true, status: true } },
+        subscription: { select: { plan: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } },
         services: {
           select: {
             name: true,
@@ -207,6 +210,7 @@ export async function saveMarketplaceListing(
     hasActiveCategory: activeCategoryIds.length > 0,
     hasCanonicalLocality: Boolean(locality?.id),
     hasBookableService,
+    subscriptionActive: isMarketplaceSubscriptionActive(business.subscription),
   });
 
   const wantsPublicVisibility = input.published && input.status === "ACTIVE";

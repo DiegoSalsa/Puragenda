@@ -2,6 +2,7 @@ import { PreApproval } from "mercadopago";
 import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER } from "@/core/constants";
 import { mpClient } from "@/server/lib/mercadopago";
 import { prisma } from "@/server/db/prisma";
+import { isTrialCurrentlyActive } from "@/core/subscription-access";
 
 export const MIN_MERCADOPAGO_AMOUNT_CLP = 10;
 
@@ -12,15 +13,7 @@ export function pendingCheckoutSubscriptionState(subscription: {
   isTrial?: boolean | null;
   trialEndsAt?: Date | string | null;
 } | null): { status: "TRIALING" | "INACTIVE"; isTrial: boolean } {
-  const trialEndsAt = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
-  const trialStillValid =
-    subscription?.status === "TRIALING" &&
-    Boolean(subscription.isTrial) &&
-    trialEndsAt !== null &&
-    !Number.isNaN(trialEndsAt.getTime()) &&
-    trialEndsAt.getTime() > Date.now();
-
-  if (trialStillValid) {
+  if (isTrialCurrentlyActive(subscription)) {
     return { status: "TRIALING", isTrial: true };
   }
 

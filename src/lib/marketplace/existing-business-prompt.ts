@@ -1,6 +1,7 @@
 import { marketplaceConsentState } from "./authorization";
 import { MARKETPLACE_EXCLUDED_SLUGS } from "./visibility";
 import { isMarketplaceSubscriptionActive } from "./publication";
+import type { OperationalSubscription } from "@/core/subscription-access";
 
 // Commit ed3e91f introduced marketplace-ready registration. Newer businesses
 // already saw that decision in registration and must not receive this legacy prompt.
@@ -11,7 +12,7 @@ export type ExistingBusinessMarketplacePromptEligibility = {
   deletedAt: Date | null;
   slug: string;
   plan: string | null;
-  subscriptionStatus: string | null;
+  subscription: OperationalSubscription | null;
   promptDismissedAt: Date | null;
   hasActivePrimaryLocation: boolean;
   listings: ReadonlyArray<{
@@ -27,7 +28,7 @@ export function shouldShowExistingBusinessMarketplacePrompt(
   if (input.deletedAt != null) return false;
   if (MARKETPLACE_EXCLUDED_SLUGS.has(input.slug)) return false;
   if (input.plan === "TEST") return false;
-  if (!isMarketplaceSubscriptionActive(input.subscriptionStatus)) return false;
+  if (!isMarketplaceSubscriptionActive(input.subscription)) return false;
   if (!input.hasActivePrimaryLocation) return false;
   return marketplaceConsentState({
     promptDismissedAt: input.promptDismissedAt,

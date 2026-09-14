@@ -20,7 +20,13 @@ function record(overrides: Partial<PublishedListingRecord> = {}): PublishedListi
       logoUrl: "https://res.cloudinary.com/demo/logo.png",
       deletedAt: null,
       productionOrdersEnabled: false,
-      subscription: { plan: "INDIVIDUAL", status: "ACTIVE" },
+      subscription: {
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        isTrial: false,
+        trialEndsAt: null,
+        gracePeriodEndsAt: null,
+      },
       services: [
         { name: "Corte", bookingMode: "APPOINTMENT", locations: [] },
         { name: "Barba", bookingMode: "APPOINTMENT", locations: [] },

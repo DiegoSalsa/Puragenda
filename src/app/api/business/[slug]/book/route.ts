@@ -24,6 +24,7 @@ import type { Appointment, Service as PrismaService } from "@prisma/client";
 import { validateLoyaltyNoStacking } from "@/core/loyalty";
 import { quoteOwnedGiftCard, releaseGiftCardRedemptions, reserveGiftCardRedemption } from "@/server/services/gift-card.service";
 import { signBookingFeedbackToken } from "@/server/security/booking-feedback-token";
+import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 
 class RewardClaimError extends Error {}
 class BookingGroupError extends Error {}
@@ -164,6 +165,9 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    const subscriptionDenied = operationalSubscriptionDeniedResponse(business.subscription);
+    if (subscriptionDenied) return subscriptionDenied;
     const storyCampaign = storyCampaignToken
       ? await prisma.storyCampaign.findFirst({
           where: { token: storyCampaignToken, businessId: business.id },

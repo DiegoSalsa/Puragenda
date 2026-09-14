@@ -6,13 +6,28 @@ import { giftCardCheckoutLimiter } from "@/server/lib/rate-limit";
 import { createGiftCardPurchase } from "@/server/services/gift-card.service";
 import { getValidMercadoPagoAccessToken } from "@/server/services/mercadopago-oauth.service";
 import { giftCardPurchaseDetailsSchema } from "@/server/validations/gift-card";
+import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const limited = giftCardCheckoutLimiter.check(request);
   if (limited) return limited;
   const { slug } = await params;
-  const business = await prisma.business.findUnique({ where: { slug }, select: { id: true, slug: true, name: true, countryCode: true, currencyCode: true } });
+  const business = await prisma.business.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      countryCode: true,
+      currencyCode: true,
+      subscription: {
+        select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+      },
+    },
+  });
   if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+  const subscriptionDenied = operationalSubscriptionDeniedResponse(business.subscription);
+  if (subscriptionDenied) return subscriptionDenied;
   const parsed = giftCardPurchaseDetailsSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message || "Datos inválidos" }, { status: 400 });
   const template = await prisma.giftCardTemplate.findFirst({ where: { id: parsed.data.templateId, businessId: business.id, isActive: true, isPublic: true }, select: { id: true } });
