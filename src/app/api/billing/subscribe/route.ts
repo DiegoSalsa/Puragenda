@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
     let requestedPlan: ValidPlan | undefined;
     let discountCode: string | undefined;
+    let mercadoPagoEmail = user.email;
     let requestedExtraStaffCount = 0;
     try {
       const body = await request.json();
@@ -65,8 +66,18 @@ export async function POST(request: NextRequest) {
       if (typeof body.discountCode === "string") {
         discountCode = body.discountCode;
       }
+      if (typeof body.mercadoPagoEmail === "string" && body.mercadoPagoEmail.trim()) {
+        mercadoPagoEmail = body.mercadoPagoEmail.trim().toLowerCase();
+      }
     } catch {
       // No body or invalid JSON — default to EQUIPO
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mercadoPagoEmail)) {
+      return NextResponse.json(
+        { error: "Ingresa un correo válido de Mercado Pago." },
+        { status: 400 },
+      );
     }
 
     // 4. Check existing subscription
@@ -290,7 +301,7 @@ export async function POST(request: NextRequest) {
           transaction_amount: transactionAmount,
           currency_id: "CLP",
         },
-        payer_email: user.email,
+        payer_email: mercadoPagoEmail,
         back_url: backUrl,
         status: "pending",
       },

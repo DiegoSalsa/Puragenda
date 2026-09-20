@@ -47,6 +47,7 @@ export function PaymentWall({
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [discountCode, setDiscountCode] = useState("");
+  const [mercadoPagoEmail, setMercadoPagoEmail] = useState(userEmail);
   const isPastDue = reason === "past_due";
   const isInternational = countryCode !== "CL";
   const planName =
@@ -93,6 +94,7 @@ export function PaymentWall({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan,
+          mercadoPagoEmail: mercadoPagoEmail.trim(),
           discountCode: !isInternational && discountCode.trim()
             ? discountCode.trim().toUpperCase()
             : undefined,
@@ -201,6 +203,26 @@ export function PaymentWall({
               {userEmail}
             </p>
           </div>
+
+          {!isInternational && !isPastDue && (
+            <label className="mb-4 block space-y-1.5">
+              <span className="text-sm text-muted-foreground">
+                Correo de Mercado Pago
+              </span>
+              <input
+                type="email"
+                value={mercadoPagoEmail}
+                onChange={(event) => setMercadoPagoEmail(event.target.value)}
+                autoComplete="email"
+                required
+                disabled={loading || cancelling}
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand-foreground/50 disabled:opacity-60"
+              />
+              <p className="text-xs text-muted-foreground">
+                Puede ser distinto al correo de tu cuenta Puragenda.
+              </p>
+            </label>
+          )}
 
           <div className="mb-6 flex items-center justify-between rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-4">
             <span className="text-sm font-medium"><LocalizedText id="-o7Qvavda8sc" /> {planName}</span>
