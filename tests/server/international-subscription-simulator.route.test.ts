@@ -94,4 +94,23 @@ describe("international subscription local simulator", () => {
     });
     expect(upsertSubscription).not.toHaveBeenCalled();
   });
+
+  it("keeps an existing Equipo subscription on the Equipo checkout price", async () => {
+    findSubscription.mockResolvedValue({
+      id: "subscription-equipo",
+      plan: "EQUIPO",
+      status: "INACTIVE",
+      isTrial: false,
+      trialEndsAt: null,
+      billingCycle: "MONTHLY",
+      extraStaffCount: 0,
+    } as never);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(upsertSubscription).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({ plan: "EQUIPO" }),
+    }));
+  });
 });

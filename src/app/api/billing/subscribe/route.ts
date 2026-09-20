@@ -51,13 +51,13 @@ export async function POST(request: NextRequest) {
     const localSimulatorEnabled = isLocalPaymentSimulatorEnabled();
 
     // 3. Determine which plan to subscribe to (default: EQUIPO for backwards compat)
-    let targetPlan: ValidPlan = "EQUIPO";
+    let requestedPlan: ValidPlan | undefined;
     let discountCode: string | undefined;
     let requestedExtraStaffCount = 0;
     try {
       const body = await request.json();
       if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
-        targetPlan = body.plan;
+        requestedPlan = body.plan;
       }
       if (typeof body.extraStaffCount === "number") {
         requestedExtraStaffCount = Math.max(0, Math.min(20, Math.floor(body.extraStaffCount)));
@@ -73,6 +73,14 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+
+    // The persisted Equipo plan is authoritative for activation. A stale or
+    // tampered client payload must not silently downgrade its checkout to
+    // Individual; an explicit Equipo request still supports upgrades.
+    const targetPlan: ValidPlan =
+      subscription?.plan === "EQUIPO" && requestedPlan !== "EQUIPO"
+        ? "EQUIPO"
+        : requestedPlan ?? "EQUIPO";
 
     if (subscription?.status === "PAST_DUE" && (subscription.mpSubscriptionId || subscription.paddleSubscriptionId)) {
       return NextResponse.json(
