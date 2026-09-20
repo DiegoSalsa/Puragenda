@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { addMonths, addYears } from "date-fns";
 import { Invoice, PreApproval } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,46 +10,7 @@ import {
   type MercadoPagoInvoiceSnapshot,
 } from "@/server/services/subscription-dunning.service";
 import { stateForCancelledProviderSubscription } from "@/server/services/subscription-billing.service";
-
-function verifyWebhookSignature(
-  xSignature: string | null,
-  xRequestId: string | null,
-  dataId: string | undefined
-) {
-  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-
-  if (!secret) {
-    console.error("[webhook/mp] MERCADOPAGO_WEBHOOK_SECRET is not configured");
-    return false;
-  }
-
-  if (!xSignature || !xRequestId) return false;
-
-  const parts: Record<string, string> = {};
-  for (const part of xSignature.split(",")) {
-    const [key, ...valueParts] = part.trim().split("=");
-    if (key && valueParts.length > 0) {
-      parts[key] = valueParts.join("=");
-    }
-  }
-
-  const ts = parts.ts;
-  const v1 = parts.v1;
-  if (!ts || !v1) return false;
-
-  const manifest = `id:${dataId || ""};request-id:${xRequestId};ts:${ts};`;
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(manifest)
-    .digest("hex");
-
-  const expectedBuffer = Buffer.from(expected);
-  const receivedBuffer = Buffer.from(v1);
-  return (
-    expectedBuffer.length === receivedBuffer.length &&
-    crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
-  );
-}
+import { verifyMercadoPagoWebhookSignature } from "@/server/lib/mercadopago-webhook";
 
 function dateOrNull(value?: string | null) {
   if (!value) return null;
@@ -159,23 +119,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const dataId = (body.data as Record<string, unknown> | undefined)?.id;
+    const bodyDataId = (body.data as Record<string, unknown> | undefined)?.id;
+    const queryDataId =
+      request.nextUrl.searchParams.get("data.id") ??
+      request.nextUrl.searchParams.get("data_id");
     const resourceId =
-      typeof dataId === "string" || typeof dataId === "number"
-        ? String(dataId)
-        : undefined;
+      queryDataId ??
+      (typeof bodyDataId === "string" || typeof bodyDataId === "number"
+        ? String(bodyDataId)
+        : undefined);
 
-    if (
-      !verifyWebhookSignature(
-        request.headers.get("x-signature"),
-        request.headers.get("x-request-id"),
-        resourceId
-      )
-    ) {
+    const signature = verifyMercadoPagoWebhookSignature({
+      xSignature: request.headers.get("x-signature"),
+      xRequestId: request.headers.get("x-request-id"),
+      dataId: queryDataId ?? resourceId ?? null,
+      secret: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+    });
+
+    if (!signature.valid) {
+      console.error("[webhook/mp] Invalid webhook signature", {
+        reason: signature.reason,
+      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    const notificationType = body.type as string | undefined;
+    const notificationType =
+      request.nextUrl.searchParams.get("type") ??
+      (body.type as string | undefined);
     if (!notificationType || !resourceId) {
       return NextResponse.json({ received: true });
     }
