@@ -94,6 +94,36 @@ describe("platform discount eligibility", () => {
     expect(result.discount?.discountedAmount).toBe(24_592);
   });
 
+  it("allows VIVACHILE18 after prior trials or free months when no paid payment exists", async () => {
+    findDiscount.mockResolvedValue(discount({
+      code: "VIVACHILE18",
+      trialEndsAtFrom: null,
+      trialEndsAtTo: null,
+    }) as never);
+    findSubscription.mockResolvedValue(firstPaymentSubscription({
+      status: "INACTIVE",
+      trialEndsAt: null,
+      freeMonthsRemaining: 0,
+      promoFreeMonthsRemaining: 2,
+      hasCountedAsPaidReferral: false,
+      lastPaymentId: null,
+    }) as never);
+
+    const result = await quotePlatformDiscount({
+      code: "VIVA Chile 18",
+      plan: "EQUIPO",
+      businessId: "business-with-free-months",
+      amount: 29_990,
+    });
+
+    expect(result.discount).toMatchObject({
+      code: "VIVACHILE18",
+      originalAmount: 29_990,
+      discountedAmount: 24_592,
+      savings: 5_398,
+    });
+  });
+
   it("rejects users whose trial ends outside the configured month", async () => {
     findSubscription.mockResolvedValue(firstPaymentSubscription({
       trialEndsAt: new Date("2026-10-01T04:00:00.000Z"),
