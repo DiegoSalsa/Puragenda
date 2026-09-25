@@ -1,0 +1,5 @@
+**/node_modules/
+**/.cache/
+**/.hyperframes/
+remotion/out/qa-*.png
+hyperframes-intro/snapshots/frame-*.png
