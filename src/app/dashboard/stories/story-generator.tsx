@@ -254,12 +254,20 @@ export function StoryGenerator({
   options,
   brand,
   insights,
+  initialFocus = null,
   currencyCode,
 }: {
   businessSlug: string;
   options: StoryOptions;
   brand: StoryBrand;
   insights: StoryInsights | null;
+  initialFocus?: {
+    locationId: string;
+    staffId: string | null;
+    serviceId: string | null;
+    date: string;
+    objective: StoryObjective;
+  } | null;
   currencyCode: string;
 }) {
   const t = useTranslations("dashboard.stories");
@@ -273,23 +281,25 @@ export function StoryGenerator({
   const [studioMode, setStudioMode] = useState<StudioMode>("QUICK");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("CONTENT");
   const [locationId, setLocationId] = useState(
-    defaultPreset?.locationId ?? options.locations[0]?.id ?? "",
+    initialFocus?.locationId ?? defaultPreset?.locationId ?? options.locations[0]?.id ?? "",
   );
   const [staffId, setStaffId] = useState<string | null>(
-    defaultPreset?.staffId ??
-      (options.canChooseStaff ? null : options.ownStaffId),
+    initialFocus
+      ? initialFocus.staffId
+      : defaultPreset?.staffId ??
+        (options.canChooseStaff ? null : options.ownStaffId),
   );
   const [allServices, setAllServices] = useState(
-    defaultPreset?.allServices ?? true,
+    initialFocus ? false : defaultPreset?.allServices ?? true,
   );
   const [serviceIds, setServiceIds] = useState<string[]>(
-    defaultPreset?.serviceIds ?? [],
+    initialFocus?.serviceId ? [initialFocus.serviceId] : defaultPreset?.serviceIds ?? [],
   );
   const [range, setRange] = useState<AvailabilityStoryRequest["range"]>(
-    defaultPreset?.range ?? "NEXT_AVAILABLE",
+    initialFocus ? "CUSTOM" : defaultPreset?.range ?? "NEXT_AVAILABLE",
   );
-  const [targetDate, setTargetDate] = useState(defaultPreset?.targetDate ?? "");
-  const [endDate, setEndDate] = useState(defaultPreset?.endDate ?? "");
+  const [targetDate, setTargetDate] = useState(initialFocus?.date ?? defaultPreset?.targetDate ?? "");
+  const [endDate, setEndDate] = useState(initialFocus?.date ?? defaultPreset?.endDate ?? "");
   const [excludedDates, setExcludedDates] = useState<string[]>(
     defaultPreset?.excludedDates ?? [],
   );
@@ -298,7 +308,7 @@ export function StoryGenerator({
     AvailabilityStoryRequest["selectedSlots"]
   >(defaultPreset?.selectedSlots ?? []);
   const [objective, setObjective] = useState<StoryObjective>(
-    defaultPreset?.objective ?? "FILL_SLOTS",
+    initialFocus?.objective ?? defaultPreset?.objective ?? "FILL_SLOTS",
   );
   const [template, setTemplate] = useState<StoryTemplate>(
     defaultPreset?.template ?? "AURORA",

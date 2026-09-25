@@ -2,20 +2,18 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { addDays, addWeeks, subWeeks, format, isSameDay, parseISO, startOfWeek } from "date-fns";
-import { X, Check, UserCheck, UserX, Loader2, Clock, Mail, Phone, User, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, FileText, Link2, Plus, Pencil, Crown, Banknote, Trash2 } from "@/components/icons/hover-icons";
+import { addDays, addWeeks, subWeeks, format, parseISO, startOfWeek } from "date-fns";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { ChevronLeft, ChevronRight, Crown, FileText, Phone, Plus, RefreshCw } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import { getDateLocale } from "@/i18n/date-locale";
-import { formatPrice } from "@/lib/utils";
 import {
   AppointmentEditor,
   type AppointmentEditorClient,
   type AppointmentEditorService,
   type AppointmentEditorStaff,
-  type EditableAppointment,
 } from "./appointment-editor";
-import { PosPaymentDialog } from "./pos-payment-dialog";
-import { AppointmentSettlementDialog } from "./appointment-settlement-dialog";
+import { APPOINTMENT_STATUS_COLORS as STATUS_COLORS, AppointmentDetailDialog } from "./appointment-detail-dialog";
 
 interface CalendarAppointment {
   id: string; customerName: string; customerEmail: string;
@@ -64,6 +62,7 @@ function buildVisibleHours(
   businessHours: CalendarBusinessHour[],
   appointments: CalendarAppointment[],
   priorityBlocks: CalendarPriorityBlock[],
+  timeZone?: string,
 ) {
   const openHours = businessHours.filter((h) => h.isOpen);
   // Keep the previous dashboard range as a floor, then expand it with configured
@@ -81,15 +80,15 @@ function buildVisibleHours(
   }
 
   for (const apt of appointments) {
-    const start = parseISO(apt.startTime);
-    const end = parseISO(apt.endTime);
+    const start = zonedDate(apt.startTime, timeZone);
+    const end = zonedDate(apt.endTime, timeZone);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
     minMinutes = Math.min(minMinutes, start.getHours() * 60 + start.getMinutes());
     maxMinutes = Math.max(maxMinutes, end.getHours() * 60 + end.getMinutes());
   }
   for (const block of priorityBlocks) {
-    const start = parseISO(block.startTime);
-    const end = parseISO(block.endTime);
+    const start = zonedDate(block.startTime, timeZone);
+    const end = zonedDate(block.endTime, timeZone);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) continue;
     minMinutes = Math.min(minMinutes, start.getHours() * 60 + start.getMinutes());
     maxMinutes = Math.max(maxMinutes, end.getHours() * 60 + end.getMinutes());
@@ -105,19 +104,17 @@ function formatHour(hour: number) {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
-const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  PENDING:          { bg: "bg-muted/50", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
-  AWAITING_PAYMENT: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-300", dot: "bg-orange-400" },
-  CONFIRMED:        { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-300", dot: "bg-emerald-400" },
-  CANCELLED:        { bg: "bg-red-500/8", border: "border-red-500/20", text: "text-red-500 dark:text-red-300", dot: "bg-red-400" },
-  CHECKED_IN:       { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-300", dot: "bg-blue-400" },
-  NO_SHOW:          { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-300", dot: "bg-amber-400" },
-};
+function zonedDate(iso: string, timeZone?: string) {
+  const date = parseISO(iso);
+  return timeZone ? toZonedTime(date, timeZone) : date;
+}
 
 export function WeeklyCalendar({
   appointments,
   priorityBlocks = [],
   weekStartISO,
+  todayKey,
+  locationSlug,
   agendaMode,
   businessHours = [],
   services = [],
@@ -131,6 +128,8 @@ export function WeeklyCalendar({
   appointments: CalendarAppointment[];
   priorityBlocks?: CalendarPriorityBlock[];
   weekStartISO: string;
+  todayKey?: string;
+  locationSlug?: string;
   agendaMode?: "mine";
   businessHours?: CalendarBusinessHour[];
   services?: AppointmentEditorService[];
@@ -146,16 +145,12 @@ export function WeeklyCalendar({
   const dateLocale = getDateLocale(locale);
   const router = useRouter();
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
-  const [loading, setLoading] = useState<string | null>(null);
-  const [cancellingSession, setCancellingSession] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDayIdx, setSelectedDayIdx] = useState<number>(0);
   const [editor, setEditor] = useState<{
-    appointment?: EditableAppointment;
     initialStart?: Date;
     initialStaffId?: string;
   } | null>(null);
-  const [settlementAppointment, setSettlementAppointment] = useState<CalendarAppointment | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   const weekStart = useMemo(() => {
@@ -164,16 +159,24 @@ export function WeeklyCalendar({
     return new Date(y, m - 1, d);
   }, [weekStartISO]);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
-  const today = new Date();
+  const now = new Date();
+
+  function agendaPath(date?: string) {
+    const query = new URLSearchParams();
+    if (date) query.set("date", date);
+    if (agendaMode === "mine") query.set("agenda", "mine");
+    if (locationSlug) query.set("location", locationSlug);
+    const value = query.toString();
+    return value ? `/dashboard/agenda?${value}` : "/dashboard/agenda";
+  }
 
   function navigateWeek(direction: "prev" | "next") {
     const target = direction === "next" ? addWeeks(weekStart, 1) : subWeeks(weekStart, 1);
-    const dateStr = format(target, "yyyy-MM-dd");
-    router.push(`/dashboard?date=${dateStr}${agendaMode === "mine" ? "&agenda=mine" : ""}`);
+    router.push(agendaPath(format(target, "yyyy-MM-dd")));
   }
 
   function goToday() {
-    router.push(agendaMode === "mine" ? "/dashboard?agenda=mine" : "/dashboard");
+    router.push(agendaPath(todayKey));
   }
 
   function prevDay() {
@@ -208,115 +211,28 @@ export function WeeklyCalendar({
     touchStartX.current = null;
   }
 
-  async function handleStatus(status: string) {
-    if (!selected) return;
-    setLoading(status);
-    try {
-      await fetch(`/api/dashboard/appointments/${selected.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      setSelected(null);
-      router.refresh();
-    } catch (e) { console.error(e); }
-    finally { setLoading(null); }
-  }
-
-  async function handleDeleteAwaitingPayment() {
-    if (!selected || selected.status !== "AWAITING_PAYMENT" || selected.paymentStatus !== "PENDING") return;
-    if (!window.confirm("¿Cancelar esta reserva que está esperando pago? La hora quedará libre y la reserva permanecerá registrada para poder auditarla o recuperarla.")) return;
-    setLoading("DELETE");
-    try {
-      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, { method: "DELETE" });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No se pudo eliminar la reserva.");
-      setSelected(null);
-      router.refresh();
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo eliminar la reserva.");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handleMarkDepositPaid() {
-    if (!selected) return;
-    if (!window.confirm("Confirma solo después de verificar que el abono fue recibido en la cuenta del negocio.")) return;
-    setLoading("DEPOSIT_PAID");
-    try {
-      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markDepositPaid: true }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No se pudo confirmar el abono.");
-      setSelected(null);
-      router.refresh();
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo confirmar el abono.");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handleRejectDepositReceipt() {
-    if (!selected) return;
-    if (!window.confirm("¿Rechazar este comprobante? La clienta podrá subir uno nuevo desde su reserva.")) return;
-    setLoading("RECEIPT_REJECTED");
-    try {
-      const response = await fetch(`/api/dashboard/appointments/${selected.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rejectDepositReceipt: true }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "No se pudo rechazar el comprobante.");
-      setSelected(null);
-      router.refresh();
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo rechazar el comprobante.");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handleCancelRecurringSession(mode: "single" | "future") {
-    if (!selected) return;
-    setCancellingSession(true);
-    try {
-      await fetch(`/api/dashboard/appointments/${selected.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "CANCELLED" }),
-      });
-      // If cancelling all future, cancel them via the recurring service
-      if (mode === "future" && selected.recurringBookingId) {
-        await fetch(`/api/dashboard/recurring/${selected.recurringBookingId}/cancel-future`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fromDate: selected.startTime }),
-        });
-      }
-      setSelected(null);
-      router.refresh();
-    } catch (e) { console.error(e); }
-    finally { setCancellingSession(false); }
+  function sameAgendaDay(iso: string, day: Date) {
+    return format(zonedDate(iso, timeZone), "yyyy-MM-dd") === format(day, "yyyy-MM-dd");
   }
 
   function getAptsForDayHour(day: Date, hour: number) {
-    return appointments.filter((a) => {
-      const start = parseISO(a.startTime);
-      return isSameDay(start, day) && start.getHours() === hour;
+    return appointments.filter((appointment) => {
+      const start = zonedDate(appointment.startTime, timeZone);
+      return sameAgendaDay(appointment.startTime, day) && start.getHours() === hour;
     });
   }
 
   function getPriorityBlocksForDayHour(day: Date, hour: number) {
     return priorityBlocks.filter((block) => {
-      const start = parseISO(block.startTime);
-      return isSameDay(start, day) && start.getHours() === hour;
+      const start = zonedDate(block.startTime, timeZone);
+      return sameAgendaDay(block.startTime, day) && start.getHours() === hour;
     });
+  }
+
+  function slotInstant(day: Date, hour: number) {
+    const key = format(day, "yyyy-MM-dd");
+    const hours = String(hour).padStart(2, "0");
+    return timeZone ? fromZonedTime(`${key}T${hours}:00:00`, timeZone) : new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, 0, 0, 0);
   }
 
   function openNewAppointment(start?: Date, preferredStaffId?: string) {
@@ -330,31 +246,17 @@ export function WeeklyCalendar({
     });
   }
 
-  function openEditAppointment(appointment: CalendarAppointment) {
-    if (!canManageAppointments || appointment.recurringBookingId) return;
-    setSelected(null);
-    setEditor({
-      appointment: {
-        id: appointment.id,
-        customerName: appointment.customerName,
-        customerEmail: appointment.customerEmail,
-        customerPhone: appointment.customerPhone,
-        clientId: appointment.clientId,
-        serviceId: appointment.serviceId,
-        staffId: appointment.staffId,
-        startTime: appointment.startTime,
-        internalNotes: appointment.internalNotes ?? null,
-        selectedOptions: appointment.selectedOptions ?? [],
-      },
-    });
-  }
-
-  const isCurrentWeek = isSameDay(startOfWeek(today, { weekStartsOn: 1 }), weekStart);
+  const locationToday = useMemo(() => {
+    const key = todayKey && /^\d{4}-\d{2}-\d{2}$/.test(todayKey) ? todayKey : format(new Date(), "yyyy-MM-dd");
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0, 0);
+  }, [todayKey]);
+  const isCurrentWeek = format(startOfWeek(locationToday, { weekStartsOn: 1 }), "yyyy-MM-dd") === format(weekStart, "yyyy-MM-dd");
   const selectedDay = days[selectedDayIdx] ?? days[0];
-  const isDayToday = isSameDay(selectedDay, today);
+  const isDayToday = format(selectedDay, "yyyy-MM-dd") === format(locationToday, "yyyy-MM-dd");
   const visibleHours = useMemo(
-    () => buildVisibleHours(businessHours, appointments, priorityBlocks),
-    [businessHours, appointments, priorityBlocks],
+    () => buildVisibleHours(businessHours, appointments, priorityBlocks, timeZone),
+    [businessHours, appointments, priorityBlocks, timeZone],
   );
 
   return (
@@ -435,7 +337,7 @@ export function WeeklyCalendar({
               <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
                 <div className="p-2" />
                 {days.map((day) => {
-                  const isToday = isSameDay(day, today);
+                  const isToday = format(day, "yyyy-MM-dd") === format(locationToday, "yyyy-MM-dd");
                   return (
                     <div key={day.toISOString()} className={`border-l border-border p-3 text-center ${isToday ? "bg-[#7C3AED]/5" : ""}`}>
                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{format(day, "EEE", { locale: dateLocale })}</p>
@@ -452,29 +354,28 @@ export function WeeklyCalendar({
                   </div>
                   {days.map((day) => {
                     const apts = getAptsForDayHour(day, hour);
-                    const isToday = isSameDay(day, today);
+                    const isToday = format(day, "yyyy-MM-dd") === format(locationToday, "yyyy-MM-dd");
                     return (
                       <div
                         key={day.toISOString()}
                         onClick={() => {
-                          const start = new Date(day);
-                          start.setHours(hour, 0, 0, 0);
+                          const start = slotInstant(day, hour);
                           if (start > new Date()) openNewAppointment(start);
                         }}
                         className={`border-l border-border min-h-[52px] p-1 min-w-0 overflow-hidden ${isToday ? "bg-[#7C3AED]/[0.02]" : ""} ${canManageAppointments ? "cursor-pointer hover:bg-[#7C3AED]/5" : ""}`}
                       >
                         {getPriorityBlocksForDayHour(day, hour).map((block) => {
-                          const start = parseISO(block.startTime);
-                          const released = !!block.releaseAt && parseISO(block.releaseAt) <= today;
+                          const start = zonedDate(block.startTime, timeZone);
+                          const released = !!block.releaseAt && parseISO(block.releaseAt) <= now;
                           return (
                             <button
                               key={block.id}
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                openNewAppointment(start, block.staffId);
+                                openNewAppointment(parseISO(block.startTime), block.staffId);
                               }}
-                              disabled={!canManageAppointments || start <= today}
+                              disabled={!canManageAppointments || parseISO(block.startTime) <= now}
                               className={`mb-1 w-full rounded-lg border p-1.5 text-left transition-colors disabled:cursor-default ${
                                 released
                                   ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
@@ -504,7 +405,7 @@ export function WeeklyCalendar({
                                 {apt.recurringBookingId && <RefreshCw className="h-2.5 w-2.5 shrink-0 text-brand-foreground opacity-70" />}
                                 {apt.depositReceiptStatus === "PENDING" && <FileText className="ml-auto h-3 w-3 shrink-0 text-sky-400" />}
                               </div>
-                              <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(parseISO(apt.startTime), "HH:mm")} · {apt.serviceName}</p>
+                              <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{format(zonedDate(apt.startTime, timeZone), "HH:mm")} · {apt.serviceName}</p>
                               {apt.customerPhone && (
                                 <p className="mt-0.5 flex items-center gap-1 truncate text-[9px] text-muted-foreground">
                                   <Phone className="h-2.5 w-2.5 shrink-0" />
@@ -531,24 +432,23 @@ export function WeeklyCalendar({
                 </div>
                 <div
                   onClick={() => {
-                    const start = new Date(selectedDay);
-                    start.setHours(hour, 0, 0, 0);
+                    const start = slotInstant(selectedDay, hour);
                     if (start > new Date()) openNewAppointment(start);
                   }}
                   className={`border-l border-border min-h-[56px] p-1.5 ${isDayToday ? "bg-[#7C3AED]/[0.02]" : ""} ${canManageAppointments ? "cursor-pointer hover:bg-[#7C3AED]/5" : ""}`}
                 >
                   {getPriorityBlocksForDayHour(selectedDay, hour).map((block) => {
-                    const start = parseISO(block.startTime);
-                    const released = !!block.releaseAt && parseISO(block.releaseAt) <= today;
+                    const start = zonedDate(block.startTime, timeZone);
+                    const released = !!block.releaseAt && parseISO(block.releaseAt) <= now;
                     return (
                       <button
                         key={block.id}
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          openNewAppointment(start, block.staffId);
+                          openNewAppointment(parseISO(block.startTime), block.staffId);
                         }}
-                        disabled={!canManageAppointments || start <= today}
+                        disabled={!canManageAppointments || parseISO(block.startTime) <= now}
                         className={`mb-1.5 w-full rounded-lg border p-2 text-left transition-colors disabled:cursor-default ${
                           released
                             ? "border-amber-500/10 bg-amber-500/[0.03] text-amber-500/60"
@@ -578,7 +478,7 @@ export function WeeklyCalendar({
                           <p className={`text-xs font-medium ${sc.text}`}>{apt.customerName}</p>
                           {apt.recurringBookingId && <RefreshCw className="h-3 w-3 shrink-0 text-brand-foreground opacity-70" />}
                           {apt.depositReceiptStatus === "PENDING" && <FileText className="h-3 w-3 shrink-0 text-sky-400" />}
-                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(parseISO(apt.startTime), "HH:mm")}</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground shrink-0">{format(zonedDate(apt.startTime, timeZone), "HH:mm")}</span>
                         </div>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{apt.serviceName} · {apt.staffName}</p>
                         {apt.customerPhone && (
@@ -597,256 +497,21 @@ export function WeeklyCalendar({
         )}
       </div>
 
-      {/* Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-black/60 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:justify-center" onClick={() => setSelected(null)}>
-          <div className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md animate-scale-in overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
-              <h3 className="min-w-0 text-lg font-semibold">{t("appointmentDetails")}</h3>
-              <button onClick={() => setSelected(null)} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-4 p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-              <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${(STATUS_COLORS[selected.status] || STATUS_COLORS.PENDING).dot}`} />
-                <span className="text-sm font-medium">{{
-                  PENDING: t("status.pending"),
-                  AWAITING_PAYMENT: t("status.awaitingPayment"),
-                  CONFIRMED: t("status.confirmed"),
-                  CANCELLED: t("status.cancelled"),
-                  CHECKED_IN: t("status.checkedIn"),
-                  NO_SHOW: t("status.noShow"),
-                }[selected.status] || selected.status}</span>
-                {selected.recurringBookingId && (
-                  <span className="ml-auto flex items-center gap-1 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 px-2 py-0.5 text-[10px] font-medium text-[#A78BFA]">
-                    <RefreshCw className="h-2.5 w-2.5" /> {t("recurring")}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-3 rounded-xl border border-border bg-muted/50 p-4 text-sm">
-                <div className="flex min-w-0 items-start gap-2"><User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("customer")}</span><span className="min-w-0 break-words font-medium">{selected.customerName}</span></div>
-                <div className="flex min-w-0 items-start gap-2"><Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("email")}</span><span className="min-w-0 break-all">{selected.customerEmail}</span></div>
-                {selected.customerPhone && (
-                  <div className="flex min-w-0 items-start gap-2">
-                    <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="shrink-0 text-muted-foreground">{t("phone")}</span>
-                    <a
-                      href={`tel:${selected.customerPhone.replace(/[^\d+]/g, "")}`}
-                      className="min-w-0 break-all font-medium text-[#A78BFA] hover:underline"
-                    >
-                      {selected.customerPhone}
-                    </a>
-                  </div>
-                )}
-                <div className="flex min-w-0 items-start gap-2"><Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("time")}</span><span className="min-w-0 break-words">{format(parseISO(selected.startTime), "HH:mm")} - {format(parseISO(selected.endTime), "HH:mm")}</span></div>
-                <div className="flex min-w-0 items-start gap-2"><CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("service")}</span><span className="min-w-0 break-words">{selected.serviceName}</span></div>
-                <div className="flex min-w-0 items-start gap-2"><User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /><span className="shrink-0 text-muted-foreground">{t("professional")}</span><span className="min-w-0 break-words">{selected.staffName}</span></div>
-                {(selected.selectedOptions?.length ?? 0) > 0 && (
-                  <div className="space-y-1 border-t border-border pt-3">
-                    {selected.selectedOptions!.map((option) => (
-                      <div key={`${option.categoryName}-${option.alternativeName}`} className="flex min-w-0 items-start justify-between gap-3">
-                        <span className="min-w-0 break-words text-muted-foreground">{option.categoryName}:</span>
-                        <span className="min-w-0 break-words text-right font-medium">{option.alternativeName}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {selected.status === "AWAITING_PAYMENT" && selected.depositAmount && selected.depositAmount > 0 && (
-                <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Banknote className="h-4 w-4 text-amber-400" /> Abono pendiente
-                    </span>
-                    <span className="font-bold text-amber-400">{formatPrice(selected.depositAmount, currencyCode)}</span>
-                  </div>
-                  {selected.depositPaymentUrl && (
-                    <a
-                      href={selected.depositPaymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-full items-center justify-center rounded-lg border border-border bg-background py-2 text-xs font-medium"
-                    >
-                      Abrir link enviado a la clienta
-                    </a>
-                  )}
-                  {selected.depositReceiptStatus === "PENDING" && (
-                    <div className="space-y-2 rounded-lg border border-sky-500/20 bg-sky-500/10 p-3">
-                      <div className="flex items-start gap-2">
-                        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-sky-300">Comprobante por revisar</p>
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            {selected.depositReceiptOriginalName || "Archivo adjunto"}
-                          </p>
-                        </div>
-                      </div>
-                      <a
-                        href={`/api/dashboard/appointments/${selected.id}/deposit-receipt`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex w-full items-center justify-center rounded-lg border border-sky-500/20 bg-background py-2 text-xs font-semibold text-sky-300"
-                      >
-                        Ver comprobante
-                      </a>
-                    </div>
-                  )}
-                  {selected.depositReceiptStatus === "REJECTED" && (
-                    <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
-                      Comprobante rechazado. La clienta puede subir uno nuevo desde su reserva.
-                    </p>
-                  )}
-                  {selected.depositReceiptStatus === "PENDING" && (
-                    <button
-                      type="button"
-                      onClick={handleRejectDepositReceipt}
-                      disabled={loading !== null}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-                    >
-                      {loading === "RECEIPT_REJECTED" ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                      Rechazar comprobante
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleMarkDepositPaid}
-                    disabled={loading !== null}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-                  >
-                    {loading === "DEPOSIT_PAID" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    {selected.depositReceiptStatus === "PENDING" ? "Confirmar comprobante y abono" : "Marcar abono recibido"}
-                  </button>
-                  <p className="text-[11px] text-muted-foreground">Esta acción confirma la cita y envía el correo de confirmación.</p>
-                  {canManageAppointments && selected.paymentStatus === "PENDING" && (
-                    <button
-                      type="button"
-                      onClick={handleDeleteAwaitingPayment}
-                      disabled={loading !== null}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-                    >
-                      {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      Cancelar reserva y liberar hora
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {canManageAppointments &&
-                selected.status === "AWAITING_PAYMENT" &&
-                selected.paymentStatus === "PENDING" &&
-                (!selected.depositAmount || selected.depositAmount <= 0) && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteAwaitingPayment}
-                    disabled={loading !== null}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-                  >
-                    {loading === "DELETE" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    Cancelar reserva y liberar hora
-                  </button>
-                )}
-
-              {posEnabled &&
-                canManageAppointments &&
-                selected.paymentStatus === "APPROVED" &&
-                ["CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(selected.status) &&
-                selected.totalPrice - (selected.depositAmount ?? 0) - selected.posPaidAmount > 0 && (
-                  <PosPaymentDialog
-                    appointmentId={selected.id}
-                    balance={selected.totalPrice - (selected.depositAmount ?? 0) - selected.posPaidAmount}
-                    currencyCode={currencyCode}
-                    onPaid={() => router.refresh()}
-                  />
-                )}
-
-              {/* Client private notes (CRM Light) */}
-              {selected.clientNotes && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <FileText className="h-3 w-3 text-amber-400" />
-                    <span className="text-[11px] font-medium text-amber-400">{t("customerNote")}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{selected.clientNotes}</p>
-                </div>
-              )}
-
-              {selected.internalNotes && (
-                <div className="rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 p-3">
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <FileText className="h-3 w-3 text-[#A78BFA]" />
-                    <span className="text-[11px] font-medium text-[#A78BFA]">{t("appointmentNote")}</span>
-                  </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{selected.internalNotes}</p>
-                </div>
-              )}
-
-              {/* Recurring-specific section */}
-              {selected.recurringBookingId && (
-                <div className="space-y-2">
-                  <a href="/dashboard/recurring" className="flex items-center gap-1.5 text-xs font-medium text-[#A78BFA] hover:text-[#C4B5FD] transition-colors">
-                    <Link2 className="h-3 w-3" /> {t("viewPlanSessions")}
-                  </a>
-                  {!["CANCELLED", "NO_SHOW"].includes(selected.status) && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleCancelRecurringSession("single")}
-                        disabled={cancellingSession}
-                        className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
-                      >
-                        {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                        {t("cancelSession")}
-                      </button>
-                      <button
-                        onClick={() => handleCancelRecurringSession("future")}
-                        disabled={cancellingSession}
-                        className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2 text-xs font-medium text-red-400 disabled:opacity-50 transition-all"
-                      >
-                        {cancellingSession ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                        {t("cancelFollowing")}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!["CANCELLED", "CHECKED_IN", "NO_SHOW"].includes(selected.status) && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">{t("changeStatus")}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selected.status === "PENDING" && (<>
-                      <button onClick={() => handleStatus("CONFIRMED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-2.5 text-sm font-medium text-emerald-400 disabled:opacity-50">{loading === "CONFIRMED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {t("confirm")}</button>
-                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} {t("cancel")}</button>
-                    </>)}
-                    {selected.status === "CONFIRMED" && (<>
-                      <button onClick={() => handleStatus("CHECKED_IN")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 py-2.5 text-sm font-medium text-blue-400 disabled:opacity-50">{loading === "CHECKED_IN" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} {t("attended")}</button>
-                      <button onClick={() => handleStatus("NO_SHOW")} disabled={loading !== null} className="flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 py-2.5 text-sm font-medium text-amber-400 disabled:opacity-50">{loading === "NO_SHOW" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />} {t("noShow")}</button>
-                      <button onClick={() => handleStatus("CANCELLED")} disabled={loading !== null} className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-sm font-medium text-red-400 disabled:opacity-50">{loading === "CANCELLED" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} {t("cancelAppointment")}</button>
-                    </>)}
-                  </div>
-                </div>
-              )}
-
-              {canManageAppointments && !selected.recurringBookingId && !["CANCELLED", "COMPLETED", "NO_SHOW"].includes(selected.status) && (
-                <button
-                  type="button"
-                  onClick={() => openEditAppointment(selected)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#7C3AED]/30 bg-[#7C3AED]/10 py-2.5 text-sm font-medium text-[#A78BFA]"
-                >
-                  <Pencil className="h-4 w-4" /> {t("editOrReschedule")}
-                </button>
-              )}
-              {canManageAppointments && ["CHECKED_IN", "COMPLETED"].includes(selected.status) && (
-                <button type="button" onClick={() => setSettlementAppointment(selected)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 text-sm font-medium text-emerald-400">
-                  <Banknote className="h-4 w-4" /> {selected.settledAt ? "Editar cierre de sesión" : "Cerrar sesión y registrar cobro"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <AppointmentDetailDialog
+          appointment={selected}
+          onClose={() => setSelected(null)}
+          canManageAppointments={canManageAppointments}
+          posEnabled={posEnabled}
+          services={services}
+          staff={staff}
+          clients={clients}
+          currencyCode={currencyCode}
+          timeZone={timeZone}
+        />
       )}
       {editor && (
         <AppointmentEditor
-          appointment={editor.appointment}
           initialStart={editor.initialStart}
           initialStaffId={editor.initialStaffId}
           timeZone={timeZone}
@@ -855,14 +520,6 @@ export function WeeklyCalendar({
           clients={clients}
           currencyCode={currencyCode}
           onClose={() => setEditor(null)}
-        />
-      )}
-      {settlementAppointment && (
-        <AppointmentSettlementDialog
-          appointment={settlementAppointment}
-          currencyCode={currencyCode}
-          onClose={() => setSettlementAppointment(null)}
-          onSaved={() => { setSettlementAppointment(null); setSelected(null); router.refresh(); }}
         />
       )}
     </>

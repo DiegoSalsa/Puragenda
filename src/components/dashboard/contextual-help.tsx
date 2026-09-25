@@ -22,6 +22,7 @@ type TourDefinition = {
 
 export const PRIMARY_HELP_ROUTES = [
   "/dashboard",
+  "/dashboard/agenda",
   "/dashboard/google-calendar",
   "/dashboard/orders",
   "/dashboard/analytics",
@@ -48,7 +49,25 @@ const pageHeading = (title: string, description: string): TourStepSpec => ({
 
 const TOURS: Record<string, TourDefinition> & Record<PrimaryHelpRoute, TourDefinition> = {
   "/dashboard": {
-    title: "Ayuda de Citas",
+    title: "Ayuda de Hoy",
+    steps: [
+      pageHeading(
+        "Qué pasa hoy",
+        "Esta es la pantalla operacional del día: la próxima cita, lo que necesita atención y el resumen de cobros reales."
+      ),
+      {
+        selectors: ["#tutorial-nav"],
+        popover: {
+          title: "Agenda completa",
+          description: "La vista semanal sigue disponible en Agenda, dentro de esta misma sección.",
+          side: "right",
+          align: "start",
+        },
+      },
+    ],
+  },
+  "/dashboard/agenda": {
+    title: "Ayuda de la agenda",
     steps: [
       pageHeading(
         "Agenda de citas",

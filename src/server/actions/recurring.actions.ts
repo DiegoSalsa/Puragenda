@@ -557,6 +557,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
 
   revalidatePath("/dashboard/recurring");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -593,6 +594,7 @@ export async function rejectRecurringBookingAction(recurringBookingId: string, r
 
   revalidatePath("/dashboard/recurring");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -633,6 +635,7 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
 
   revalidatePath("/dashboard/recurring");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 

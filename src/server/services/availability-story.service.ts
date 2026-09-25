@@ -241,6 +241,16 @@ function localDateKey(date: Date) {
   return format(date, "yyyy-MM-dd");
 }
 
+function datesForStoryKey(localNow: Date, dateKey: string, allowSameDay: boolean) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return [];
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const requested = new Date(year, month - 1, day, 12, 0, 0, 0);
+  if (localDateKey(requested) !== dateKey) return [];
+  const todayKey = localDateKey(localNow);
+  if (dateKey < todayKey || (dateKey === todayKey && !allowSameDay)) return [];
+  return [requested];
+}
+
 function mapBusinessOverride(entry: {
   date: Date;
   isOpen: boolean;
@@ -385,6 +395,7 @@ export async function getAvailabilityStoryOpportunities(
   business: StoryBusiness,
   horizonDays = 90,
   limit = 6,
+  filters?: { locationId?: string; staffId?: string | null; dateKey?: string },
 ): Promise<AvailabilityStoryOpportunity[]> {
   const access = await getAvailabilityStoryAccess(user, business);
   if (!access.allowed) return [];
@@ -451,15 +462,20 @@ export async function getAvailabilityStoryOpportunities(
   const now = new Date();
 
   for (const location of locations) {
+    if (filters?.locationId && location.id !== filters.locationId) continue;
     const localNow = toZonedTime(now, location.timezone);
     const startOffset = fullBusiness.allowSameDayBookings ? 0 : 1;
-    const dates = Array.from({ length: horizonDays }, (_, index) => addDays(localNow, startOffset + index));
+    const dates = filters?.dateKey
+      ? datesForStoryKey(localNow, filters.dateKey, fullBusiness.allowSameDayBookings)
+      : Array.from({ length: horizonDays }, (_, index) => addDays(localNow, startOffset + index));
+    if (dates.length === 0) continue;
     const firstDateKey = localDateKey(dates[0]);
     const lastDateKey = localDateKey(addDays(dates[dates.length - 1], 1));
     const rangeStart = fromZonedTime(`${firstDateKey}T00:00:00`, location.timezone);
     const rangeEnd = fromZonedTime(`${lastDateKey}T00:00:00`, location.timezone);
     const locationStaff = staffMembers.filter((staff) =>
-      staff.locations.some((assignment) => assignment.locationId === location.id),
+      staff.locations.some((assignment) => assignment.locationId === location.id)
+      && (!filters?.staffId || staff.id === filters.staffId),
     );
     const blockedByStaff = new Map<string, Awaited<ReturnType<typeof getBlockedSlots>>>();
     await Promise.all(locationStaff.map(async (staff) => {

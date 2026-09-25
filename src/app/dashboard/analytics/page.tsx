@@ -160,7 +160,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     if (params.date) query.set("date", params.date);
     if (agenda) query.set("agenda", agenda);
     const queryString = query.toString();
-    return queryString ? `/dashboard?${queryString}` : "/dashboard";
+    return queryString ? `/dashboard/agenda?${queryString}` : "/dashboard/agenda";
   }
 
   let targetDate = new Date();

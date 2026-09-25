@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   BarChart3,
+  CalendarCheck,
   CalendarDays,
   ChevronDown,
   ExternalLink,
@@ -18,7 +19,6 @@ import {
   GripVertical,
   ImagePlus,
   Layers,
-  LayoutDashboard,
   Mail,
   Menu,
   Package,
@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Settings,
   Stamp,
+  Sun,
   Trophy,
   Users,
   UsersRound,
@@ -53,7 +54,8 @@ type NavItem =
     };
 
 const navItems: NavItem[] = [
-  { href: "/dashboard", label: "appointments", icon: LayoutDashboard },
+  { href: "/dashboard", label: "today", icon: Sun },
+  { href: "/dashboard/agenda", label: "agenda", icon: CalendarCheck },
   { href: "/dashboard/google-calendar", label: "calendar", icon: CalendarDays },
   { href: "/dashboard/orders", label: "orders", icon: Package },
   { href: "/dashboard/analytics", label: "analytics", icon: BarChart3 },
@@ -87,7 +89,7 @@ const navSectionDefinitions = [
   {
     id: "agenda",
     label: "sectionAgenda",
-    itemLabels: ["appointments", "calendar", "orders"],
+    itemLabels: ["today", "agenda", "calendar", "orders"],
   },
   {
     id: "management",
@@ -232,6 +234,10 @@ function SidebarContent({
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
             ],
+            "/dashboard/agenda": [
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
+              DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
+            ],
             "/dashboard/google-calendar": [
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN,
               DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL,
@@ -268,6 +274,7 @@ function SidebarContent({
         if (
           userRole === "STAFF" &&
           href !== "/dashboard" &&
+          href !== "/dashboard/agenda" &&
           href !== "/dashboard/analytics"
         )
           return false;

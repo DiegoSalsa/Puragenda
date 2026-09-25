@@ -92,6 +92,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
     if (!cancelled.ok) return { error: cancelled.error };
     if (cancelled.alreadyCancelled) {
       revalidatePath("/dashboard");
+      revalidatePath("/dashboard/agenda");
       return { success: true };
     }
   } else {
@@ -99,6 +100,7 @@ export async function updateAppointmentStatusAction(appointmentId: string, statu
   }
   await syncAppointmentToGoogle(appointmentId);
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -484,6 +486,7 @@ export async function updateBusinessNameAction(name: string) {
 
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -554,6 +557,7 @@ export async function updateStaffRoleAction(staffId: string, role: "ADMIN" | "RE
 
   revalidatePath("/dashboard/staff");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -615,6 +619,7 @@ export async function updateBusinessLogoAction(formData: FormData) {
 
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/agenda");
     return { success: true, url: result.secure_url };
   } catch (err) {
     console.error("Cloudinary upload error:", err);
@@ -638,6 +643,7 @@ export async function removeBusinessLogoAction() {
 
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -753,6 +759,7 @@ export async function createScheduleBlockAction(data: {
   reason?: string;
   type?: "UNAVAILABLE" | "PRIORITY";
   releaseHoursBefore?: number | null;
+  locationId?: string;
 }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -766,11 +773,25 @@ export async function createScheduleBlockAction(data: {
   const staff = await prisma.staff.findFirst({ where: { id: data.staffId, businessId: business.id } });
   if (!staff) return { error: "Profesional no encontrado" };
 
-  // Build DateTimes from the business timezone (Vercel runs in UTC).
-  // Instead of new Date(`${date}T${time}:00`) which parses as UTC on Vercel
+  // Build DateTimes from the location timezone when the block is created for one
+  // branch. Otherwise keep the business timezone (Vercel runs in UTC).
+  let timeZone = business.timezone;
+  if (data.locationId) {
+    const location = await prisma.businessLocation.findFirst({
+      where: { id: data.locationId, businessId: business.id, isActive: true },
+      select: { timezone: true },
+    });
+    if (!location) return { error: "Sucursal no encontrada" };
+    const assignment = await prisma.staffLocation.findFirst({
+      where: { staffId: staff.id, locationId: data.locationId, isActive: true },
+      select: { id: true },
+    });
+    if (!assignment) return { error: "El profesional no atiende en esta sucursal" };
+    timeZone = location.timezone;
+  }
   const { fromZonedTime } = await import("date-fns-tz");
-  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, business.timezone);
-  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, business.timezone);
+  const start = fromZonedTime(`${data.date}T${data.startTime}:00`, timeZone);
+  const end = fromZonedTime(`${data.date}T${data.endTime}:00`, timeZone);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return { error: "Fecha u hora inválida" };
   if (end <= start) return { error: "La hora de fin debe ser posterior a la de inicio" };
@@ -889,6 +910,7 @@ export async function createScheduleBlockAction(data: {
 
   revalidatePath("/dashboard/staff");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
@@ -911,6 +933,7 @@ export async function deleteScheduleBlockAction(blockId: string) {
   await prisma.scheduleBlock.delete({ where: { id: blockId } });
   revalidatePath("/dashboard/staff");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/agenda");
   return { success: true };
 }
 
