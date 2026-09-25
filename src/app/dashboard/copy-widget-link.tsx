@@ -27,7 +27,7 @@ export function CopyWidgetLink({ slug, variant = "bar" }: { slug: string; varian
 
   if (variant === "button") {
     return (
-      <button type="button" onClick={handleCopy} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      <button type="button" onClick={handleCopy} className="inline-flex min-h-10 items-center justify-center rounded-lg border-2 border-black bg-background px-3 py-2 text-sm font-bold text-foreground shadow-[2px_2px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[2px_2px_0_#fff] dark:hover:shadow-[1px_1px_0_#fff]">
         {copied ? t("copied") : t("copy")}
       </button>
     );

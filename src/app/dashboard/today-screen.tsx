@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
@@ -15,8 +15,9 @@ import { CopyWidgetLink } from "./copy-widget-link";
 import { ScheduleBlockForm } from "./schedule-block-form";
 
 const surface = "rounded-2xl border border-black/10 dark:border-white/10 bg-card text-card-foreground shadow-sm";
-const primaryBtn = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
-const secondaryBtn = "inline-flex min-h-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const heroSurface = "rounded-2xl border-2 border-black bg-white text-black shadow-[5px_5px_0_#000] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#fff]";
+const primaryBtn = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border-2 border-black bg-primary px-3.5 py-2 text-sm font-black text-primary-foreground shadow-[3px_3px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[3px_3px_0_#fff] dark:hover:shadow-[2px_2px_0_#fff] disabled:pointer-events-none disabled:opacity-50";
+const secondaryBtn = "inline-flex min-h-10 items-center justify-center rounded-lg border-2 border-black bg-background px-3 py-2 text-sm font-bold text-foreground shadow-[2px_2px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[2px_2px_0_#fff] dark:hover:shadow-[1px_1px_0_#fff]";
 
 function agendaHref(data: TodayDashboardData) {
   const query = new URLSearchParams();
@@ -53,12 +54,12 @@ function durationMinutes(start: string, end: string) {
 }
 
 function statusChip(status: string) {
-  if (status === "CONFIRMED" || status === "COMPLETED") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (status === "CHECKED_IN") return "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300";
-  if (status === "AWAITING_PAYMENT") return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  if (status === "NO_SHOW") return "border-destructive/20 bg-destructive/10 text-destructive";
-  if (status === "CANCELLED") return "border-black/10 dark:border-white/10 bg-muted text-muted-foreground";
-  return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "CONFIRMED" || status === "COMPLETED") return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (status === "CHECKED_IN") return "bg-sky-500/10 text-sky-700 dark:text-sky-300";
+  if (status === "AWAITING_PAYMENT") return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "NO_SHOW") return "bg-destructive/10 text-destructive";
+  if (status === "CANCELLED") return "bg-muted text-muted-foreground";
+  return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
 }
 
 export function TodayScreen({ data }: { data: TodayDashboardData }) {
@@ -66,7 +67,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
   const homeT = useTranslations("dashboard.home");
   const calendarT = useTranslations("dashboard.calendar");
   const locale = useLocale();
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [blocking, setBlocking] = useState(false);
@@ -76,6 +77,11 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
   const rest = data.appointments.filter((appointment) => appointment.id !== spotlight?.id);
   const storyTarget = data.story ? storyHref(data.story) : "/dashboard/stories";
   const freed = data.attention.find((item) => item.id === "freed-availability");
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const currentTime = format(toZonedTime(new Date(now), data.timeZone), "HH:mm");
   const dateLabel = useMemo(() => {
     const [year, month, day] = data.dateKey.split("-").map(Number);
     const formatted = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long" }).format(new Date(year, month - 1, day));
@@ -127,16 +133,23 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
     <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] lg:items-start lg:gap-5">
       <header className="order-1 flex flex-col gap-5 lg:col-span-2 lg:order-none lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-foreground">{t("yourDay")}</p>
-          <h1 className="mt-1 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">{t("title")}</h1>
-          <p className="mt-2 text-base font-medium text-foreground/80">{dateLabel}</p>
-          {context && <p className="mt-1 text-sm text-muted-foreground">{context}</p>}
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-foreground">{t("yourDay")}</p>
+          <h1 className="mt-1 text-5xl font-black tracking-[-0.06em] text-foreground sm:text-6xl">{t("title")}</h1>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-foreground/80">
+            <span>{dateLabel}</span>
+            <span className="text-brand-foreground" aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-[#FFF5BA] px-2 py-1 text-xs font-black text-black dark:bg-[#FFF5BA]" aria-live="polite">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" aria-hidden="true" />
+              {currentTime}
+            </span>
+          </div>
+          {context && <p className="mt-2 text-sm font-medium text-muted-foreground">{context}</p>}
         </div>
         <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
           {data.canToggleOwnAgenda && (
-            <div className="inline-grid w-full grid-cols-2 rounded-xl border border-black/10 dark:border-white/10 bg-muted/50 p-1 shadow-sm sm:w-auto">
-              <Link href={scopeHref(data, undefined, data.selectedLocationSlug ?? undefined)} className={`rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors ${!data.showingOwnAgenda ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} aria-current={!data.showingOwnAgenda ? "page" : undefined}>{homeT("wholeBusiness")}</Link>
-              <Link href={scopeHref(data, "mine", data.selectedLocationSlug ?? undefined)} className={`rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors ${data.showingOwnAgenda ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} aria-current={data.showingOwnAgenda ? "page" : undefined}>{homeT("mySchedule")}</Link>
+            <div className="inline-grid w-full grid-cols-2 rounded-lg border-2 border-black bg-[#FFF5BA] p-1 shadow-[2px_2px_0_#000] sm:w-auto dark:border-white dark:bg-[#FFF5BA] dark:shadow-[2px_2px_0_#fff]">
+              <Link href={scopeHref(data, undefined, data.selectedLocationSlug ?? undefined)} className={`rounded-md px-3 py-2 text-center text-sm font-black transition-colors ${!data.showingOwnAgenda ? "bg-white text-black shadow-sm" : "text-black/60 hover:text-black"}`} aria-current={!data.showingOwnAgenda ? "page" : undefined}>{homeT("wholeBusiness")}</Link>
+              <Link href={scopeHref(data, "mine", data.selectedLocationSlug ?? undefined)} className={`rounded-md px-3 py-2 text-center text-sm font-black transition-colors ${data.showingOwnAgenda ? "bg-white text-black shadow-sm" : "text-black/60 hover:text-black"}`} aria-current={data.showingOwnAgenda ? "page" : undefined}>{homeT("mySchedule")}</Link>
             </div>
           )}
           <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -168,7 +181,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       )}
 
       {data.kpis.appointments > 0 && (
-        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-card shadow-sm sm:grid-cols-4 lg:col-span-2 lg:order-none">
+        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] text-black shadow-[4px_4px_0_#000] sm:grid-cols-4 lg:col-span-2 lg:order-none dark:border-white dark:bg-[#FFF5BA] dark:shadow-[4px_4px_0_#fff]">
           <Kpi label={t("appointments")} value={String(data.kpis.appointments)} />
           {data.canSeeMoney && <Kpi label={t("collected")} value={formatPrice(Math.round(data.kpis.collected), data.currencyCode)} />}
           {data.canSeeMoney && <Kpi label={t("pending")} value={formatPrice(Math.round(data.kpis.pending), data.currencyCode)} hint={data.kpis.projected > data.kpis.collected ? t("projected", { amount: formatPrice(Math.round(data.kpis.projected), data.currencyCode) }) : undefined} />}
@@ -176,25 +189,25 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
         </div>
       )}
 
-      <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-5">
+      <div className={`contents lg:col-start-1 lg:flex lg:flex-col lg:gap-5 ${data.dayState === "empty" ? "lg:col-span-2" : ""}`}>
       <section className="order-2 lg:order-none">
         {spotlight && (
-          <article className="relative overflow-hidden rounded-2xl border border-primary/25 bg-card p-5 text-card-foreground shadow-sm sm:p-6">
-            <span className="absolute inset-y-0 left-0 w-1 bg-primary" aria-hidden="true" />
+          <article className={`relative overflow-hidden p-5 sm:p-6 ${heroSurface}`}>
+            <span className="absolute inset-y-0 left-0 w-2 bg-primary" aria-hidden="true" />
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-foreground">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
-              <span className="text-sm font-medium text-brand-foreground">{relativeLabel(spotlight)}</span>
+              <span className="border-2 border-black bg-[#FFF5BA] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[2px_2px_0_#000] dark:border-white dark:shadow-[2px_2px_0_#fff]">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
+              <span className="border-2 border-black bg-[#E9D8FF] px-2.5 py-1 text-sm font-black text-[#5B21B6] dark:border-white dark:bg-[#E9D8FF]">{relativeLabel(spotlight)}</span>
             </div>
             <button type="button" onClick={() => setSelectedId(spotlight.id)} className="mt-4 block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-              <p className="text-3xl font-semibold tracking-tight sm:text-4xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-foreground/40">·</span> <span>{spotlight.customerName}</span></p>
-              <p className="mt-3 text-sm font-medium text-muted-foreground">
+              <p className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-6xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-black/35 dark:text-foreground/35">·</span> <span className="uppercase">{spotlight.customerName}</span></p>
+              <p className="mt-4 text-sm font-bold text-black/70 dark:text-foreground/70">
                 {spotlight.serviceName} · {t("durationMinutes", { count: durationMinutes(spotlight.startTime, spotlight.endTime) })}
                 {data.showStaff ? ` · ${spotlight.staffName || homeT("unassigned")}` : ""}
               </p>
               {paymentLabel(spotlight.paymentLabel) && (
-                <p className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-                  <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusChip(spotlight.status)}`}>{statusLabel(spotlight.status)}</span>
-                  <span className="rounded-full border border-black/10 dark:border-white/10 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground">{paymentLabel(spotlight.paymentLabel)}{data.canSeeMoney && spotlight.paymentLabel !== "collected" && spotlight.pending > 0 ? ` · ${formatPrice(Math.round(spotlight.pending), data.currencyCode)}` : data.canSeeMoney && spotlight.paymentLabel === "collected" && spotlight.collected > 0 ? ` · ${formatPrice(Math.round(spotlight.collected), data.currencyCode)}` : ""}</span>
+                <p className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+                  <span className={`border-2 border-black px-2.5 py-1 text-xs font-black uppercase dark:border-white ${statusChip(spotlight.status)}`}>{statusLabel(spotlight.status)}</span>
+                  <span className="border-2 border-black bg-white px-2.5 py-1 text-xs font-black uppercase text-black shadow-[2px_2px_0_#000] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[2px_2px_0_#fff]">{paymentLabel(spotlight.paymentLabel)}{data.canSeeMoney && spotlight.paymentLabel !== "collected" && spotlight.pending > 0 ? ` · ${formatPrice(Math.round(spotlight.pending), data.currencyCode)}` : data.canSeeMoney && spotlight.paymentLabel === "collected" && spotlight.collected > 0 ? ` · ${formatPrice(Math.round(spotlight.collected), data.currencyCode)}` : ""}</span>
                 </p>
               )}
             </button>
@@ -211,9 +224,17 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
           </p>
         )}
         {data.dayState === "empty" ? (
-          <div className={`${surface} p-5`}>
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-foreground">{t("emptyTitle")}</span>
-            <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">{t("emptyBody")}</p>
+          <div className="relative overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] p-5 text-black shadow-[4px_4px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[4px_4px_0_#fff] sm:p-6">
+            <span className="absolute inset-y-0 left-0 w-2 bg-primary" aria-hidden="true" />
+            <span className="border-2 border-black bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] shadow-[2px_2px_0_#000]">{t("emptyTitle")}</span>
+            {data.story ? (
+              <>
+                <p className="mt-5 text-6xl font-black leading-none tracking-[-0.07em]">{data.story.opportunityCount}</p>
+                <p className="mt-1 text-sm font-black uppercase tracking-[0.1em]">{data.story.when === "afternoon" ? t("slotsAfternoon") : t("slotsToday")}</p>
+                {data.story.times.length > 0 && <p className="mt-3 text-sm font-black text-[#5B21B6]">{data.story.times.join(" · ")}{data.story.opportunityCount > data.story.times.length ? ` · ${t("moreTimes", { count: data.story.opportunityCount - data.story.times.length })}` : ""}</p>}
+              </>
+            ) : null}
+            <p className="mt-4 max-w-md text-sm font-medium leading-6 text-black/70">{t("emptyBody")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.canManageAppointments && <button type="button" onClick={() => setCreating(true)} className={primaryBtn}>{t("newAppointment")}</button>}
               <CopyWidgetLink slug={data.businessSlug} variant="button" />
@@ -222,23 +243,25 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
           </div>
         ) : rest.length > 0 && (
           <div className={`${surface} overflow-hidden`}>
-            <h2 className="border-b border-black/10 dark:border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("restOfDay")}</h2>
-            <ol>
+            <h2 className="border-b border-black/10 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground dark:border-white/10">{t("restOfDay")}</h2>
+            <ol className="relative p-2 sm:p-3">
+              <span className="pointer-events-none absolute bottom-7 left-[4.65rem] top-7 w-px bg-black/15 dark:bg-white/15" aria-hidden="true" />
               {rest.map((appointment) => {
                 const quiet = appointment.phase === "past" || appointment.phase === "inactive";
                 return (
-                  <li key={appointment.id} className="border-b border-black/10 dark:border-white/10 last:border-b-0">
-                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none ${quiet ? "opacity-55" : ""}`}>
-                      <span className="w-12 shrink-0 text-sm font-medium tabular-nums text-muted-foreground group-hover:text-foreground">{wallTime(appointment.startTime, data.timeZone)}</span>
+                  <li key={appointment.id} className="relative border-b border-black/10 last:border-b-0 dark:border-white/10">
+                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`group flex w-full items-start gap-3 px-2 py-3.5 text-left transition-colors hover:bg-[#FFF5BA]/45 focus-visible:bg-[#FFF5BA]/45 focus-visible:outline-none sm:px-3 ${quiet ? "opacity-55" : ""}`}>
+                      <span className="w-14 shrink-0 pt-0.5 text-sm font-black tabular-nums text-muted-foreground group-hover:text-foreground">{wallTime(appointment.startTime, data.timeZone)}</span>
+                      <span className={`relative mt-1.5 h-3 w-3 shrink-0 rounded-full border-2 border-black ${appointment.phase === "next" ? "bg-[#7C3AED]" : quiet ? "bg-black/20" : "bg-black"}`} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">{appointment.customerName}</span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        <span className={`block truncate text-sm font-black text-foreground ${quiet ? "line-through decoration-1" : ""}`}>{appointment.customerName}</span>
+                        <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">
                           {appointment.serviceName} · {t("durationMinutes", { count: durationMinutes(appointment.startTime, appointment.endTime) })}
                           {data.showStaff ? ` · ${appointment.staffName || homeT("unassigned")}` : ""}
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium ${statusChip(appointment.status)}`}>{statusLabel(appointment.status)}</span>
+                        <span className={`inline-block rounded-sm border border-black/20 px-2 py-0.5 text-[10px] font-black uppercase ${statusChip(appointment.status)}`}>{statusLabel(appointment.status)}</span>
                         {paymentLabel(appointment.paymentLabel) && <span className="mt-1 block text-[11px] text-muted-foreground">{paymentLabel(appointment.paymentLabel)}</span>}
                       </span>
                     </button>
@@ -251,22 +274,22 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </section>
       </div>
 
-      <div className="contents lg:col-start-2 lg:flex lg:flex-col lg:gap-5">
+      <div className={data.dayState === "empty" ? "hidden" : "contents lg:col-start-2 lg:flex lg:flex-col lg:gap-5"}>
       <aside className="order-3 lg:order-none">
         {data.attention.length === 0 ? (
           data.dayState === "empty" ? null : <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3"><p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">✓ {t("allClearShort")}</p><p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-200/80">{t("allClear")}</p></div>
         ) : (
-          <div className={`${surface} overflow-hidden`}>
-            <h2 className="border-b border-black/10 dark:border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("needsAttention")}</h2>
+          <div className="overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] text-black shadow-[3px_3px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[3px_3px_0_#fff]">
+            <h2 className="border-b-2 border-black/20 px-4 py-3 text-xs font-black uppercase tracking-[0.14em]">{t("needsAttention")}</h2>
             <ul>
               {data.attention.map((item) => {
                 const href = item.href ?? null;
                 return (
-                  <li key={item.id} className="flex items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 px-4 py-3.5 last:border-b-0">
+                  <li key={item.id} className="flex items-center justify-between gap-3 border-b border-black/20 px-4 py-3.5 last:border-b-0">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{attentionCopy(item)}</p>
+                      <p className="text-sm font-black">{attentionCopy(item)}</p>
                       {item.id === "pending-payments" && item.amount != null && item.amount > 0 && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">{t("pendingAmount", { amount: formatPrice(Math.round(item.amount), data.currencyCode) })}</p>
+                        <p className="mt-0.5 text-xs font-bold text-black/65">{t("pendingAmount", { amount: formatPrice(Math.round(item.amount), data.currencyCode) })}</p>
                       )}
                     </div>
                     {href ? (
@@ -283,13 +306,14 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </aside>
       <aside className="order-5 lg:order-none">
         {data.story && data.canGenerateStory && (
-          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-foreground">{t("opportunities")}</p>
-            <h2 className="mt-2 text-lg font-semibold leading-tight text-foreground">
-              {(data.story.when === "afternoon" ? t("freeAfternoon", { count: data.story.opportunityCount }) : t("freeToday", { count: data.story.opportunityCount }))}
+          <div className="rounded-2xl border-2 border-black bg-[#E9D8FF] p-5 text-black shadow-[4px_4px_0_#000] dark:border-white dark:bg-[#E9D8FF] dark:shadow-[4px_4px_0_#fff]">
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#5B21B6]">{t("opportunities")}</p>
+            <p className="mt-2 text-6xl font-black leading-none tracking-[-0.07em] text-[#5B21B6]">{data.story.opportunityCount}</p>
+            <h2 className="mt-1 text-sm font-black uppercase tracking-[0.08em]">
+              {data.story.when === "afternoon" ? t("slotsAfternoon") : t("slotsToday")}
             </h2>
             {data.story.times.length > 0 && (
-              <p className="mt-2 text-sm font-medium text-brand-foreground">
+              <p className="mt-3 border-t-2 border-black/20 pt-3 text-sm font-black text-[#5B21B6]">
                 {data.story.times.join(" · ")}
                 {data.story.opportunityCount > data.story.times.length ? ` · ${t("moreTimes", { count: data.story.opportunityCount - data.story.times.length })}` : ""}
               </p>
@@ -360,10 +384,10 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="min-w-0 border-b border-black/10 dark:border-white/10 px-4 py-3.5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
-      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-xl font-semibold leading-tight tabular-nums text-foreground">{value}</p>
-      {hint && <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{hint}</p>}
+    <div className="min-w-0 border-b-2 border-black/20 px-4 py-3.5 text-black last:border-b-0 sm:border-b-0 sm:border-r-2 sm:last:border-r-0">
+      <p className="truncate text-[10px] font-black uppercase tracking-[0.12em]">{label}</p>
+      <p className="mt-1 truncate text-2xl font-black leading-tight tabular-nums">{value}</p>
+      {hint && <p className="mt-0.5 truncate text-[10px] font-bold text-black/60">{hint}</p>}
     </div>
   );
 }
