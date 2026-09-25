@@ -73,7 +73,7 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <SubscriptionBanner businessId={business.id} timezone={business.timezone} countryCode={business.countryCode} />
+      <SubscriptionBanner businessId={business.id} timezone={business.timezone} countryCode={business.countryCode} hideHealthyStatus />
       {marketplacePrompt ? <MarketplaceConsentPrompt prompt={marketplacePrompt} /> : null}
       <TodayScreen data={data} />
     </div>

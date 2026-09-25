@@ -12,10 +12,12 @@ export async function SubscriptionBanner({
   businessId,
   timezone,
   countryCode,
+  hideHealthyStatus = false,
 }: {
   businessId: string;
   timezone: string;
   countryCode: string;
+  hideHealthyStatus?: boolean;
 }) {
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
   if (!subscription) return null;
@@ -157,8 +159,9 @@ export async function SubscriptionBanner({
     );
   }
 
-  // EQUIPO active badge
+  // A healthy Equipo plan is not an alert. Hoy hides it so the day stays first.
   if (plan === "EQUIPO" && status === "ACTIVE") {
+    if (hideHealthyStatus) return null;
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5">
         <Crown className="h-4 w-4 text-[#A78BFA]" />

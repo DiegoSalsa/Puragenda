@@ -53,6 +53,7 @@ export type TodayAttentionItem = {
   appointmentId?: string;
   when?: "afternoon" | "today";
   href?: string;
+  amount?: number;
 };
 
 export type TodayStoryCue = {
@@ -61,6 +62,8 @@ export type TodayStoryCue = {
   serviceId: string;
   date: string;
   slotCount: number;
+  opportunityCount: number;
+  times: string[];
   when: "afternoon" | "today";
   objective: "LAST_MINUTE" | "CANCELLATION";
 };
@@ -251,7 +254,12 @@ export function buildTodayModel(input: {
 
   const attention: TodayAttentionItem[] = [];
   if (paymentRows.length > 0) {
-    attention.push({ id: "pending-payments", count: paymentRows.length, appointmentId: paymentRows[0].id });
+    attention.push({
+      id: "pending-payments",
+      count: paymentRows.length,
+      appointmentId: paymentRows[0].id,
+      amount: paymentRows.reduce((sum, row) => sum + row.pending, 0),
+    });
   }
   if (input.canReviewRecurring && input.pendingRecurring > 0) {
     attention.push({ id: "pending-recurring", count: input.pendingRecurring, href: "/dashboard/recurring" });
@@ -280,6 +288,8 @@ export function buildTodayModel(input: {
     serviceId: best.serviceId,
     date: best.date,
     slotCount: openSlots,
+    opportunityCount: best.slotCount,
+    times: best.times.slice(0, 4),
     when: availabilityWhen(best.times),
     objective: freedOpportunity ? "CANCELLATION" : "LAST_MINUTE",
   } : null;

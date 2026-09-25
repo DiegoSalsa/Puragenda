@@ -227,7 +227,7 @@ export async function loadTodayDashboard(input: {
       noShow: model.counts.noShow,
       pendingActions: model.counts.pendingActions,
     },
-    attention: model.attention,
+    attention: showMoney ? model.attention : model.attention.map((item) => ({ ...item, amount: undefined })),
     story: model.story,
     appointments: appointments.map((appointment) => {
       const row = byId.get(appointment.id);
@@ -263,6 +263,8 @@ export async function loadTodayDashboard(input: {
         settledAt: appointment.settledAt?.toISOString() ?? null,
         phase: row?.phase ?? "past",
         paymentLabel: row?.label ?? "none",
+        collected: showMoney ? row?.collected ?? 0 : 0,
+        pending: showMoney ? row?.pending ?? 0 : 0,
       };
     }),
     blockStaff: (showingOwnAgenda || !agendaScope.canSeeAllAgendas

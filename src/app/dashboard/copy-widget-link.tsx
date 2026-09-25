@@ -5,7 +5,7 @@ import { Link as LinkIcon, Check, Copy } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 import { track } from "@/lib/analytics/client";
 
-export function CopyWidgetLink({ slug }: { slug: string }) {
+export function CopyWidgetLink({ slug, variant = "bar" }: { slug: string; variant?: "bar" | "button" }) {
   const t = useTranslations("dashboard.widgetLink");
   const [copied, setCopied] = useState(false);
   const origin = useSyncExternalStore(
@@ -24,6 +24,14 @@ export function CopyWidgetLink({ slug }: { slug: string }) {
   }
 
   if (!url) return null;
+
+  if (variant === "button") {
+    return (
+      <button type="button" onClick={handleCopy} className="inline-flex min-h-11 items-center border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black shadow-[3px_3px_0_#000] hover:translate-x-px hover:translate-y-px hover:shadow-none dark:border-white dark:bg-card dark:text-foreground dark:shadow-[3px_3px_0_#fff]">
+        {copied ? t("copied") : t("copy")}
+      </button>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2 sm:pl-4 shadow-sm">
