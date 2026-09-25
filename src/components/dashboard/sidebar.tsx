@@ -578,6 +578,11 @@ export function DashboardSidebar({
   }, [persist, sidebarState]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle("dashboard-menu-open", mobileOpen);
+    return () => document.documentElement.classList.remove("dashboard-menu-open");
+  }, [mobileOpen]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "b") {
         event.preventDefault();
@@ -649,7 +654,7 @@ export function DashboardSidebar({
       <div className="h-[calc(52px+env(safe-area-inset-top))] shrink-0 md:hidden" />
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="dashboard-mobile-drawer fixed inset-0 z-50 md:hidden">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}

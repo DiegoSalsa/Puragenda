@@ -38,12 +38,12 @@ function verifiedCards(evidence: Evidence[], context: PuriContext): PuriCard[] {
       cards.push({ type: "metric", label: t.pending, value: Number(data.pending ?? 0), unit: "money", currencyCode: context.business.currencyCode });
     }
     if (name === "getAvailability") {
-      const times = Array.isArray(data.times) ? data.times as string[] : [];
-      cards.push({ type: "availability", label: String(data.date ?? ""), value: String(data.availableTimesCount ?? times.length), detail: times.slice(0, 8).join(" · ") });
+      const times = Array.isArray(data.times) ? data.times as Array<{ localTime: string }> : [];
+      cards.push({ type: "availability", label: String(data.date ?? ""), value: String(data.availableTimesCount ?? times.length), detail: times.slice(0, 8).map((time) => time.localTime).join(" · ") });
     }
     if (name === "getClientActivity") {
-      const clients = Array.isArray(data.clients) ? data.clients as Array<{ name: string; count: number; lastVisit: string | null }> : [];
-      for (const client of clients.slice(0, 5)) cards.push({ type: "client", label: client.name, value: String(client.count), detail: client.lastVisit ?? undefined });
+      const clients = Array.isArray(data.clients) ? data.clients as Array<{ name: string; count: number; lastVisit: { localDate: string; localTime: string } | null }> : [];
+      for (const client of clients.slice(0, 5)) cards.push({ type: "client", label: client.name, value: String(client.count), detail: client.lastVisit ? `${client.lastVisit.localDate} · ${client.lastVisit.localTime}` : undefined });
     }
   }
   return cards.slice(0, 8);

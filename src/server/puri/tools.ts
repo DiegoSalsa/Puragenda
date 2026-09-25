@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { appointmentMoney } from "@/lib/today-dashboard";
+import { zonedAppointmentTime } from "@/lib/zoned-appointment-time";
 import { loadTodayDashboard } from "@/server/services/today-dashboard.service";
 import { getDashboardAvailability } from "@/server/services/dashboard-availability.service";
 import { dashboardAvailabilityRequestSchema } from "@/server/validations/dashboard-availability";
@@ -36,12 +37,12 @@ function appointmentWhere(context: PuriContext, start: Date, end: Date): Prisma.
 function safeAppointment(row: {
   id: string; customerName: string; startTime: Date; endTime: Date; status: string;
   totalPrice: number | null; service: { name: string; price: number }; staff: { name: string } | null;
-}) {
+}, timezone: string) {
   return {
     id: row.id,
     customerName: row.customerName,
-    startTime: row.startTime.toISOString(),
-    endTime: row.endTime.toISOString(),
+    start: zonedAppointmentTime(row.startTime, timezone),
+    end: zonedAppointmentTime(row.endTime, timezone),
     status: row.status,
     serviceName: row.service.name,
     staffName: row.staff?.name ?? null,
@@ -63,7 +64,9 @@ export async function getTodayOverview(context: PuriContext) {
     timezone: data.timeZone,
     appointments: data.appointments.slice(0, MAX_ROWS).map((item) => ({
       id: item.id, customerName: item.customerName, serviceName: item.serviceName,
-      startTime: item.startTime, endTime: item.endTime, status: item.status, phase: item.phase,
+      start: zonedAppointmentTime(item.startTime, data.timeZone),
+      end: zonedAppointmentTime(item.endTime, data.timeZone),
+      status: item.status, phase: item.phase,
       paymentLabel: data.canSeeMoney ? item.paymentLabel : "hidden",
     })),
     counts: {
@@ -74,7 +77,7 @@ export async function getTodayOverview(context: PuriContext) {
     availability: {
       totalOpeningsAcrossStaff: data.kpis.openSlots,
       featuredOpportunityTimes: data.story?.opportunityCount ?? 0,
-      featuredTimes: data.story?.times ?? [],
+      featuredTimes: (data.story?.times ?? []).map((localTime) => ({ localDate: data.dateKey, localTime, timezone: data.timeZone })),
     },
     finished: data.finished,
     attention: data.attention.map(({ id, count, when }) => ({ id, count, when })),
@@ -95,8 +98,9 @@ export async function getAppointments(context: PuriContext, args: { period: Puri
   const canSeeMoney = context.ownAgenda
     ? hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN) || hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS)
     : hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS);
-  return { period: args.period, dateStart: window.dateKey, dateEnd: window.endKey, timezone: context.location?.timezone ?? context.business.timezone, hasMore: rows.length > MAX_ROWS, appointments: rows.slice(0, MAX_ROWS).map((row) => {
-    const item = safeAppointment(row);
+  const timezone = context.location?.timezone ?? context.business.timezone;
+  return { period: args.period, dateStart: window.dateKey, dateEnd: window.endKey, timezone, hasMore: rows.length > MAX_ROWS, appointments: rows.slice(0, MAX_ROWS).map((row) => {
+    const item = safeAppointment(row, timezone);
     return canSeeMoney ? item : { ...item, totalPrice: undefined };
   }) };
 }
@@ -115,7 +119,7 @@ export async function getAvailability(context: PuriContext, args: { date: string
   });
   const result = await getDashboardAvailability(context.user, context.business, parsed);
   const slots = result.days[0]?.slots ?? [];
-  return { date: args.date, timezone: result.timezone, serviceNames: result.serviceNames, availableTimesCount: slots.length, times: slots.slice(0, 20).map(({ time }) => time) };
+  return { date: args.date, timezone: result.timezone, serviceNames: result.serviceNames, availableTimesCount: slots.length, times: slots.slice(0, 20).map(({ startTime }) => zonedAppointmentTime(startTime, result.timezone)) };
 }
 
 export async function searchClients(context: PuriContext, args: { query: string }) {
@@ -149,7 +153,7 @@ export async function getClientActivity(context: PuriContext, args: { sort: "fre
   const clients = await prisma.client.findMany({ where: { businessId: context.business.id, id: { in: ids } }, select: { id: true, name: true } });
   const names = new Map(clients.map((client) => [client.id, client.name]));
   return { sort: args.sort, clients: rows.filter((row) => row.clientId && names.has(row.clientId)).map((row) => ({
-    id: row.clientId, name: names.get(row.clientId!), count: row._count._all, lastVisit: row._max.startTime?.toISOString() ?? null,
+    id: row.clientId, name: names.get(row.clientId!), count: row._count._all, lastVisit: row._max.startTime ? zonedAppointmentTime(row._max.startTime, context.location?.timezone ?? context.business.timezone) : null,
   })) };
 }
 
@@ -170,7 +174,8 @@ export async function getClientSummary(context: PuriContext, args: { clientId: s
   ]);
   return {
     id: client.id, name: client.name, email: client.email, visits,
-    lastVisit: client.appointments[0]?.startTime.toISOString() ?? null, nextAppointment: nextAppointment ? { startTime: nextAppointment.startTime.toISOString(), serviceName: nextAppointment.service.name } : null, noShowCount: client.noShowCount,
+    lastVisit: client.appointments[0]?.startTime ? zonedAppointmentTime(client.appointments[0].startTime, context.location?.timezone ?? context.business.timezone) : null,
+    nextAppointment: nextAppointment ? { start: zonedAppointmentTime(nextAppointment.startTime, context.location?.timezone ?? context.business.timezone), serviceName: nextAppointment.service.name } : null, noShowCount: client.noShowCount,
     currentStamps: client.currentStamps, totalSpent: hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS) ? client.totalSpent : undefined,
     recurring: client.recurringBookings.map((item) => ({ status: item.status, serviceName: item.service.name })),
   };
@@ -261,7 +266,7 @@ export async function getStoryInsights(context: PuriContext) {
   requirePermission(context, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL);
   requirePermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS);
   const result = await getAvailabilityStoryInsights(context.user, context.business);
-  return result ? { totals: result.totals, recent: result.recent.slice(0, 10).map((item) => ({ headline: item.headline, status: item.status, createdAt: item.createdAt, bookings: item.bookings, visits: item.visits, revenue: item.revenue })) } : { totals: null, recent: [] };
+  return result ? { totals: result.totals, recent: result.recent.slice(0, 10).map((item) => ({ headline: item.headline, status: item.status, createdAt: zonedAppointmentTime(item.createdAt, context.location?.timezone ?? context.business.timezone), bookings: item.bookings, visits: item.visits, revenue: item.revenue })) } : { totals: null, recent: [] };
 }
 
 export type PuriToolName = "getTodayOverview" | "getAppointments" | "getAvailability" | "searchClients" | "getClientSummary" | "getClientActivity" | "getRevenueSummary" | "comparePeriods" | "getServicesSummary" | "getStaffSummary" | "getLoyaltySummary" | "getGiftCardsSummary" | "getRecurringSummary" | "getStoryInsights";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Cookie } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -28,6 +28,23 @@ export function CookieBanner() {
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("cookie-banner-open", visible);
+    return () => document.documentElement.classList.remove("cookie-banner-open");
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible || !bannerRef.current) return;
+    const banner = bannerRef.current;
+    const root = document.documentElement;
+    const updateClearance = () => root.style.setProperty("--floating-cookie-clearance", `calc(max(0.75rem, env(safe-area-inset-bottom)) + ${banner.getBoundingClientRect().height}px)`);
+    const observer = new ResizeObserver(updateClearance);
+    observer.observe(banner);
+    updateClearance();
+    return () => { observer.disconnect(); root.style.removeProperty("--floating-cookie-clearance"); };
+  }, [visible, view]);
 
   function readStoredConsent() {
     const consent = getAnalyticsConsent();
@@ -105,6 +122,7 @@ export function CookieBanner() {
     <>
       {visible && (
         <div
+          ref={bannerRef}
           role="region"
           aria-labelledby={titleId}
           className={bannerShellClassName}
@@ -216,8 +234,8 @@ export function CookieBanner() {
           aria-label={t("configure")}
           title={t("configure")}
           onClick={() => window.dispatchEvent(new Event("puragenda:open-cookie-settings"))}
-          className="fixed right-4 z-[9997] flex h-11 w-11 items-center justify-center rounded-full border-2 border-black bg-white text-black shadow-[2px_2px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0_#fff]"
-          style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          className="cookie-launcher fixed z-[9997] flex h-11 w-11 items-center justify-center rounded-full border-2 border-black bg-white text-black shadow-[2px_2px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0_#fff]"
+          style={{ bottom: "var(--floating-cookie-bottom)", right: "var(--floating-edge-right)" }}
         >
           <Cookie className="h-4 w-4" />
         </button>

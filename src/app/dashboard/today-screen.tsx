@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { MoreHorizontal, Plus } from "@/components/icons/hover-icons";
 import { buildStoryStudioHref } from "@/lib/today-dashboard";
 import { formatPrice } from "@/lib/utils";
+import { formatTodayAppointmentTime } from "@/lib/zoned-appointment-time";
 import type { TodayDashboardData } from "@/server/services/today-dashboard.service";
 import { AppointmentEditor } from "./appointment-editor";
 import { AppointmentDetailDialog, type DashboardAppointment } from "./appointment-detail-dialog";
@@ -47,7 +48,7 @@ function storyHref(cue: NonNullable<TodayDashboardData["story"]>, objective: "LA
 }
 
 function wallTime(iso: string, timeZone: string) {
-  return format(toZonedTime(parseISO(iso), timeZone), "HH:mm");
+  return formatTodayAppointmentTime(iso, timeZone);
 }
 
 function durationMinutes(start: string, end: string) {
@@ -63,11 +64,12 @@ function statusChip(status: string) {
   return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
 }
 
-export function TodayScreen({ data }: { data: TodayDashboardData }) {
+export function TodayScreen({ data, userName }: { data: TodayDashboardData; userName: string }) {
   const t = useTranslations("dashboard.today");
   const homeT = useTranslations("dashboard.home");
   const calendarT = useTranslations("dashboard.calendar");
   const locale = useLocale();
+  const firstName = userName.trim().split(/\s+/)[0] || "";
   const [now, setNow] = useState(() => Date.now());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -131,14 +133,14 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
   }
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-7 pb-[calc(6rem+env(safe-area-inset-bottom))] 2xl:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1.68fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-6">
+    <div className="today-screen mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 2xl:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1.68fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-6">
       <header className="relative order-1 overflow-hidden rounded-[2rem] border-[3px] border-[#171717] bg-[#E9D8FF] p-5 text-[#171717] shadow-[8px_8px_0_#171717] sm:p-8 lg:col-span-2 lg:order-none lg:p-10">
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border-[34px] border-[#FF5C8A]/60" aria-hidden="true" />
         <div className="pointer-events-none absolute bottom-5 right-[31%] hidden h-4 w-4 rounded-full bg-[#FFD84D] ring-2 ring-[#171717] lg:block" aria-hidden="true" />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="inline-flex rounded-full border-2 border-[#171717] bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">{t("yourDay")}</p>
-          <h1 className="mt-5 max-w-3xl text-[3.25rem] font-black leading-[0.88] tracking-[-0.075em] sm:text-7xl">{t("title")}</h1>
+          <h1 className="mt-5 max-w-3xl break-words text-[clamp(2.6rem,8vw,4.5rem)] font-black leading-[0.98] tracking-[-0.06em]">{firstName ? t("greeting", { name: firstName }) : t("title")}</h1>
           <div className="mt-5 flex flex-wrap items-center gap-2 text-sm font-bold text-[#393442]">
             <span>{dateLabel}</span>
             <span className="text-brand-foreground" aria-hidden="true">·</span>
@@ -176,7 +178,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </header>
 
       <div className="order-1 lg:col-span-2 lg:order-none">
-        <PuriTodayPrompt />
+        <PuriTodayPrompt name={firstName} />
       </div>
 
       {data.locations.length > 1 && (
@@ -208,9 +210,9 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
               <span className="border-2 border-black bg-[#FFD84D] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[2px_2px_0_#000] dark:border-white dark:shadow-[2px_2px_0_#fff]">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
               <span className="border-2 border-black bg-[#FFD8E6] px-2.5 py-1 text-sm font-black text-[#9D174D] dark:border-white dark:bg-[#FFD8E6]">{relativeLabel(spotlight)}</span>
             </div>
-            <button type="button" onClick={() => setSelectedId(spotlight.id)} className="mt-4 block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-              <p className="text-5xl font-black leading-[0.88] tracking-[-0.07em] sm:text-7xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-black/25 dark:text-foreground/35">·</span> <span className="uppercase">{spotlight.customerName}</span></p>
-              <p className="mt-5 text-sm font-bold text-black/70 dark:text-foreground/70 sm:text-base">
+            <button type="button" onClick={() => setSelectedId(spotlight.id)} className="relative mt-4 block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <p className="max-w-[min(100%,38rem)] break-words text-[clamp(2.2rem,7vw,4.5rem)] font-black leading-[0.98] tracking-[-0.07em]"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-black/25 dark:text-foreground/35">·</span> <span className={`block uppercase sm:inline ${spotlight.customerName.trim().length > 28 ? "text-[clamp(1.5rem,5vw,3.25rem)] tracking-normal [word-spacing:0.12em]" : ""}`}>{spotlight.customerName}</span></p>
+              <p className="mt-5 max-w-[min(100%,38rem)] break-words text-sm font-bold leading-relaxed text-black/70 dark:text-foreground/70 sm:text-base">
                 {spotlight.serviceName} · {t("durationMinutes", { count: durationMinutes(spotlight.startTime, spotlight.endTime) })}
                 {data.showStaff ? ` · ${spotlight.staffName || homeT("unassigned")}` : ""}
               </p>

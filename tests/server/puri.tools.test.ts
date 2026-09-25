@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { format } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { DASHBOARD_PERMISSIONS as P } from "@/core/permissions";
+import { formatTodayAppointmentTime } from "@/lib/zoned-appointment-time";
 import type { PuriContext } from "@/server/puri/types";
 
 const mocks = vi.hoisted(() => ({ today: vi.fn(), availability: vi.fn(), clients: vi.fn(), appointments: vi.fn() }));
@@ -34,6 +35,14 @@ describe("Puri controlled tools", () => {
     expect(JSON.stringify(result)).not.toContain("collected");
   });
 
+  it("gives Puri exactly the local appointment hour used by Hoy", async () => {
+    const startTime = "2026-09-25T15:00:00.000Z";
+    mocks.today.mockResolvedValue({ dateKey: "2026-09-25", timeZone: "America/Santiago", canSeeMoney: false, kpis: { appointments: 1, cancelled: 0, openSlots: 0 }, appointments: [{ id: "appointment-1", customerName: "Matías", serviceName: "Corte", startTime, endTime: "2026-09-25T16:00:00.000Z", status: "CONFIRMED", phase: "next", paymentLabel: "due" }], finished: {}, attention: [], story: null });
+    const result = await getTodayOverview(context());
+    expect(result.appointments[0].start).toEqual({ utc: startTime, timezone: "America/Santiago", localDate: "2026-09-25", localTime: "12:00" });
+    expect(result.appointments[0].start.localTime).toBe(formatTodayAppointmentTime(startTime, "America/Santiago"));
+  });
+
   it("denies revenue without the matching analytics permission before querying", async () => {
     await expect(getRevenueSummary(context(), { period: "today" })).rejects.toThrow("FORBIDDEN");
     expect(mocks.appointments).not.toHaveBeenCalled();
@@ -48,11 +57,12 @@ describe("Puri controlled tools", () => {
   });
 
   it("uses the real availability engine in the own agenda and sends only times", async () => {
-    mocks.availability.mockResolvedValue({ timezone: "America/Santiago", serviceNames: ["Corte"], days: [{ slots: [{ time: "10:00", bookingOptions: [{ assignments: [{ staffId: "staff-1" }] }] }] }] });
     const date = format(toZonedTime(new Date(), "America/Santiago"), "yyyy-MM-dd");
+    const startTime = fromZonedTime(`${date}T10:00:00`, "America/Santiago").toISOString();
+    mocks.availability.mockResolvedValue({ timezone: "America/Santiago", serviceNames: ["Corte"], days: [{ slots: [{ time: "10:00", startTime, bookingOptions: [{ assignments: [{ staffId: "staff-1" }] }] }] }] });
     const result = await getAvailability(context(), { date });
     expect(mocks.availability).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ staffId: "staff-1", locationId: "location-1" }));
-    expect(result).toMatchObject({ availableTimesCount: 1, times: ["10:00"] });
+    expect(result).toMatchObject({ availableTimesCount: 1, times: [{ utc: startTime, localDate: date, localTime: "10:00" }] });
     expect(JSON.stringify(result)).not.toContain("assignments");
   });
 

@@ -54,6 +54,10 @@
    ═══════════════════════════════════════════ */
 
 :root {
+  --floating-edge-right: max(1rem, env(safe-area-inset-right));
+  --floating-cookie-bottom: max(1rem, env(safe-area-inset-bottom));
+  --floating-cookie-clearance: calc(var(--floating-cookie-bottom) + 2.75rem);
+  --floating-puri-bottom: calc(var(--floating-cookie-clearance) + 0.75rem);
   --brand: #7C3AED;
   --brand-light: #A78BFA;
   --brand-dark: #5B21B6;
@@ -275,6 +279,46 @@
 /* Cookie banner slide-up */
 .landing-translated {
   display: none;
+}
+
+.puri-launcher {
+  right: var(--floating-edge-right);
+  bottom: var(--floating-puri-bottom);
+}
+
+.cookie-banner-open .puri-launcher {
+  display: none;
+}
+
+.dashboard-content {
+  padding-bottom: calc(var(--floating-puri-bottom) + 4.5rem);
+}
+
+@media (max-width: 1279px) {
+  .puri-launcher--above-rail {
+    bottom: calc(var(--floating-puri-bottom) + 5rem);
+  }
+}
+
+@media (max-width: 639px) {
+  .puri-launcher.puri-launcher--hide-on-mobile-today {
+    display: none;
+  }
+  .dashboard-content:has(.today-screen) {
+    padding-bottom: calc(var(--floating-cookie-clearance) + 1rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-menu-open .puri-launcher,
+  .dashboard-menu-open .cookie-launcher {
+    display: none;
+  }
+}
+
+@keyframes puri-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 html:not([lang="es"]) .landing-es {

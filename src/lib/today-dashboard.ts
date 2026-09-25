@@ -1,7 +1,6 @@
-import { addDays, format } from "date-fns";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { dateKeyInTimezone } from "@/lib/date";
+import { startOfLocalDay } from "@/lib/zoned-appointment-time";
 
 const REVENUE_EXCLUDED = new Set(["CANCELLED", "NO_SHOW"]);
 const OPEN_STATUSES = new Set(["PENDING", "AWAITING_PAYMENT", "CONFIRMED", "CHECKED_IN"]);
@@ -76,12 +75,13 @@ export type AgendaScope = {
 
 export function locationDayWindow(now: Date, timeZone: string) {
   const dateKey = dateKeyInTimezone(now, timeZone);
-  const zonedNow = toZonedTime(now, timeZone);
-  const nextKey = format(addDays(zonedNow, 1), "yyyy-MM-dd");
+  const next = new Date(`${dateKey}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const nextKey = next.toISOString().slice(0, 10);
   return {
     dateKey,
-    start: fromZonedTime(`${dateKey}T00:00:00`, timeZone),
-    end: fromZonedTime(`${nextKey}T00:00:00`, timeZone),
+    start: startOfLocalDay(dateKey, timeZone),
+    end: startOfLocalDay(nextKey, timeZone),
   };
 }
 
