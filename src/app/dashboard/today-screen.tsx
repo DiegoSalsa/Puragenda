@@ -13,6 +13,7 @@ import { AppointmentEditor } from "./appointment-editor";
 import { AppointmentDetailDialog, type DashboardAppointment } from "./appointment-detail-dialog";
 import { CopyWidgetLink } from "./copy-widget-link";
 import { ScheduleBlockForm } from "./schedule-block-form";
+import { PuriTodayPrompt } from "@/components/dashboard/puri-assistant";
 
 const surface = "rounded-[1.5rem] border-2 border-[#171717] bg-white text-[#171717] shadow-[4px_4px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[4px_4px_0_#fff]";
 const heroSurface = "rounded-[1.75rem] border-[3px] border-[#171717] bg-white text-[#171717] shadow-[7px_7px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[7px_7px_0_#fff]";
@@ -173,6 +174,10 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
         </div>
         </div>
       </header>
+
+      <div className="order-1 lg:col-span-2 lg:order-none">
+        <PuriTodayPrompt />
+      </div>
 
       {data.locations.length > 1 && (
         <div className="order-1 flex flex-wrap gap-2 lg:col-span-2 lg:order-none">

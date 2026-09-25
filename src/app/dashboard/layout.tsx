@@ -15,6 +15,7 @@ import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-
 import { RequestIntlProvider } from "@/components/i18n/request-intl-provider";
 import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate";
 import { isDemoAccountEmail } from "@/server/auth/demo-session";
+import { PuriAssistant } from "@/components/dashboard/puri-assistant";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -88,6 +89,7 @@ export default async function DashboardLayout({
         <div className="md:hidden">
           <ContextualHelpButton />
         </div>
+        {business ? <PuriAssistant /> : null}
         <ChangelogPopup />
       </div>
     </DashboardOverlayProvider>
