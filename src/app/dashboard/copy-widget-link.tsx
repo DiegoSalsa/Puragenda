@@ -27,14 +27,14 @@ export function CopyWidgetLink({ slug, variant = "bar" }: { slug: string; varian
 
   if (variant === "button") {
     return (
-      <button type="button" onClick={handleCopy} className="inline-flex min-h-11 items-center border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black shadow-[3px_3px_0_#000] hover:translate-x-px hover:translate-y-px hover:shadow-none dark:border-white dark:bg-card dark:text-foreground dark:shadow-[3px_3px_0_#fff]">
+      <button type="button" onClick={handleCopy} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
         {copied ? t("copied") : t("copy")}
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-2 sm:pl-4 shadow-sm">
+    <div className="flex items-center gap-2 rounded-xl border border-black/10 dark:border-white/10 bg-card p-2 sm:pl-4 shadow-sm">
       <div className="hidden sm:flex items-center gap-2 mr-2">
         <LinkIcon className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">{t("label")}</span>

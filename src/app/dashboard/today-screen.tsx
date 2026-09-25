@@ -14,10 +14,9 @@ import { AppointmentDetailDialog, type DashboardAppointment } from "./appointmen
 import { CopyWidgetLink } from "./copy-widget-link";
 import { ScheduleBlockForm } from "./schedule-block-form";
 
-const surface = "border-2 border-black bg-white text-black shadow-[3px_3px_0_#000] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[3px_3px_0_#fff]";
-const press = "hover:translate-x-px hover:translate-y-px hover:shadow-none";
-const primaryBtn = `inline-flex min-h-11 items-center justify-center gap-1.5 border-2 border-black bg-[#7C3AED] px-3.5 py-2 text-sm font-black text-white shadow-[3px_3px_0_#000] ${press} dark:border-white dark:shadow-[3px_3px_0_#fff]`;
-const secondaryBtn = `inline-flex min-h-11 items-center justify-center border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black shadow-[3px_3px_0_#000] ${press} dark:border-white dark:bg-card dark:text-foreground dark:shadow-[3px_3px_0_#fff]`;
+const surface = "rounded-2xl border border-black/10 dark:border-white/10 bg-card text-card-foreground shadow-sm";
+const primaryBtn = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+const secondaryBtn = "inline-flex min-h-10 items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 function agendaHref(data: TodayDashboardData) {
   const query = new URLSearchParams();
@@ -54,11 +53,12 @@ function durationMinutes(start: string, end: string) {
 }
 
 function statusChip(status: string) {
-  if (status === "CONFIRMED" || status === "COMPLETED") return "bg-[#BFFCC6]";
-  if (status === "CHECKED_IN") return "bg-[#85E3FF]";
-  if (status === "AWAITING_PAYMENT" || status === "NO_SHOW") return "bg-[#FFB5E8]";
-  if (status === "CANCELLED") return "bg-white";
-  return "bg-[#FFF5BA]";
+  if (status === "CONFIRMED" || status === "COMPLETED") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (status === "CHECKED_IN") return "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+  if (status === "AWAITING_PAYMENT") return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (status === "NO_SHOW") return "border-destructive/20 bg-destructive/10 text-destructive";
+  if (status === "CANCELLED") return "border-black/10 dark:border-white/10 bg-muted text-muted-foreground";
+  return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300";
 }
 
 export function TodayScreen({ data }: { data: TodayDashboardData }) {
@@ -124,21 +124,22 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(17rem,1fr)] lg:items-start lg:gap-5">
-      <header className="order-1 flex flex-col gap-4 lg:col-span-2 lg:order-none lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] lg:items-start lg:gap-5">
+      <header className="order-1 flex flex-col gap-5 lg:col-span-2 lg:order-none lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-4xl font-black tracking-tight text-black dark:text-foreground">{t("title")}</h1>
-          <p className="mt-1 text-lg font-bold text-black dark:text-foreground">{dateLabel}</p>
-          {context && <p className="mt-1 text-sm font-medium text-black/70 dark:text-foreground/70">{context}</p>}
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-foreground">{t("yourDay")}</p>
+          <h1 className="mt-1 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">{t("title")}</h1>
+          <p className="mt-2 text-base font-medium text-foreground/80">{dateLabel}</p>
+          {context && <p className="mt-1 text-sm text-muted-foreground">{context}</p>}
         </div>
-        <div className="flex flex-col gap-2 sm:items-end">
+        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
           {data.canToggleOwnAgenda && (
-            <div className="grid grid-cols-2 border-2 border-black bg-white shadow-[3px_3px_0_#000] dark:border-white dark:bg-card dark:shadow-[3px_3px_0_#fff] sm:inline-grid">
-              <Link href={scopeHref(data, undefined, data.selectedLocationSlug ?? undefined)} className={`px-3 py-2 text-center text-sm font-black ${!data.showingOwnAgenda ? "bg-[#7C3AED] text-white" : "bg-[#FFF5BA] text-black"}`} aria-current={!data.showingOwnAgenda ? "page" : undefined}>{homeT("wholeBusiness")}</Link>
-              <Link href={scopeHref(data, "mine", data.selectedLocationSlug ?? undefined)} className={`border-l-2 border-black px-3 py-2 text-center text-sm font-black dark:border-white ${data.showingOwnAgenda ? "bg-[#7C3AED] text-white" : "bg-[#FFF5BA] text-black"}`} aria-current={data.showingOwnAgenda ? "page" : undefined}>{homeT("mySchedule")}</Link>
+            <div className="inline-grid w-full grid-cols-2 rounded-xl border border-black/10 dark:border-white/10 bg-muted/50 p-1 shadow-sm sm:w-auto">
+              <Link href={scopeHref(data, undefined, data.selectedLocationSlug ?? undefined)} className={`rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors ${!data.showingOwnAgenda ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} aria-current={!data.showingOwnAgenda ? "page" : undefined}>{homeT("wholeBusiness")}</Link>
+              <Link href={scopeHref(data, "mine", data.selectedLocationSlug ?? undefined)} className={`rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors ${data.showingOwnAgenda ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`} aria-current={data.showingOwnAgenda ? "page" : undefined}>{homeT("mySchedule")}</Link>
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             {data.canManageAppointments && (
               <button type="button" onClick={() => setCreating(true)} className={primaryBtn}><Plus className="h-4 w-4" /> {t("newAppointment")}</button>
             )}
@@ -148,7 +149,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
               <details className="relative">
                 <summary className={`${secondaryBtn} cursor-pointer list-none [&::-webkit-details-marker]:hidden`} aria-label={t("moreActions")}><MoreHorizontal className="h-4 w-4" /></summary>
                 <div className={`absolute right-0 z-20 mt-2 w-56 p-1 ${surface}`}>
-                  <button type="button" onClick={() => setBlocking(true)} className="w-full px-3 py-2 text-left text-sm font-bold hover:bg-[#FFF5BA]">{t("blockTime")}</button>
+                  <button type="button" onClick={() => setBlocking(true)} className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-muted">{t("blockTime")}</button>
                 </div>
               </details>
             )}
@@ -159,7 +160,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       {data.locations.length > 1 && (
         <div className="order-1 flex flex-wrap gap-2 lg:col-span-2 lg:order-none">
           {data.locations.map((location) => (
-            <Link key={location.id} href={scopeHref(data, data.showingOwnAgenda ? "mine" : undefined, location.slug)} className={`border-2 border-black px-3 py-1.5 text-sm font-bold dark:border-white ${data.selectedLocationSlug === location.slug ? "bg-[#7C3AED] text-white shadow-[2px_2px_0_#000]" : "bg-white text-black dark:bg-card dark:text-foreground"}`}>
+            <Link key={location.id} href={scopeHref(data, data.showingOwnAgenda ? "mine" : undefined, location.slug)} className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${data.selectedLocationSlug === location.slug ? "border-primary/30 bg-primary/10 text-brand-foreground" : "border-black/10 dark:border-white/10 bg-background text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               {location.name}
             </Link>
           ))}
@@ -167,7 +168,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       )}
 
       {data.kpis.appointments > 0 && (
-        <div className="order-6 flex flex-wrap border-2 border-black bg-[#FFF5BA] text-black shadow-[3px_3px_0_#000] dark:border-white dark:shadow-[3px_3px_0_#fff] lg:col-span-2 lg:order-none">
+        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-card shadow-sm sm:grid-cols-4 lg:col-span-2 lg:order-none">
           <Kpi label={t("appointments")} value={String(data.kpis.appointments)} />
           {data.canSeeMoney && <Kpi label={t("collected")} value={formatPrice(Math.round(data.kpis.collected), data.currencyCode)} />}
           {data.canSeeMoney && <Kpi label={t("pending")} value={formatPrice(Math.round(data.kpis.pending), data.currencyCode)} hint={data.kpis.projected > data.kpis.collected ? t("projected", { amount: formatPrice(Math.round(data.kpis.projected), data.currencyCode) }) : undefined} />}
@@ -175,25 +176,25 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
         </div>
       )}
 
-      <div className="contents lg:flex lg:flex-col lg:gap-4">
+      <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-5">
       <section className="order-2 lg:order-none">
         {spotlight && (
-          <article className="border-2 border-black bg-white p-4 text-black shadow-[4px_4px_0_#7C3AED] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[4px_4px_0_#A78BFA]">
+          <article className="relative overflow-hidden rounded-2xl border border-primary/25 bg-card p-5 text-card-foreground shadow-sm sm:p-6">
+            <span className="absolute inset-y-0 left-0 w-1 bg-primary" aria-hidden="true" />
             <div className="flex flex-wrap items-center gap-2">
-              <span className="border-2 border-black bg-[#FFF5BA] px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-black shadow-[2px_2px_0_#000] dark:border-white">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
-              <span className="text-sm font-black text-[#7C3AED] dark:text-[#C4B5FD]">{relativeLabel(spotlight)}</span>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-foreground">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
+              <span className="text-sm font-medium text-brand-foreground">{relativeLabel(spotlight)}</span>
             </div>
-            <button type="button" onClick={() => setSelectedId(spotlight.id)} className="mt-3 block w-full text-left">
-              <p className="text-3xl font-black leading-none sm:text-4xl">{wallTime(spotlight.startTime, data.timeZone)} <span className="text-2xl font-bold">— {spotlight.customerName}</span></p>
-              <p className="mt-2 text-sm font-bold">
+            <button type="button" onClick={() => setSelectedId(spotlight.id)} className="mt-4 block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <p className="text-3xl font-semibold tracking-tight sm:text-4xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-foreground/40">·</span> <span>{spotlight.customerName}</span></p>
+              <p className="mt-3 text-sm font-medium text-muted-foreground">
                 {spotlight.serviceName} · {t("durationMinutes", { count: durationMinutes(spotlight.startTime, spotlight.endTime) })}
                 {data.showStaff ? ` · ${spotlight.staffName || homeT("unassigned")}` : ""}
               </p>
               {paymentLabel(spotlight.paymentLabel) && (
-                <p className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold">
-                  <span className={`border-2 border-black px-2 py-0.5 text-black dark:border-white ${statusChip(spotlight.status)}`}>{paymentLabel(spotlight.paymentLabel)}</span>
-                  {data.canSeeMoney && spotlight.paymentLabel !== "collected" && spotlight.pending > 0 && <span>{formatPrice(Math.round(spotlight.pending), data.currencyCode)}</span>}
-                  {data.canSeeMoney && spotlight.paymentLabel === "collected" && spotlight.collected > 0 && <span>{formatPrice(Math.round(spotlight.collected), data.currencyCode)}</span>}
+                <p className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                  <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${statusChip(spotlight.status)}`}>{statusLabel(spotlight.status)}</span>
+                  <span className="rounded-full border border-black/10 dark:border-white/10 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground">{paymentLabel(spotlight.paymentLabel)}{data.canSeeMoney && spotlight.paymentLabel !== "collected" && spotlight.pending > 0 ? ` · ${formatPrice(Math.round(spotlight.pending), data.currencyCode)}` : data.canSeeMoney && spotlight.paymentLabel === "collected" && spotlight.collected > 0 ? ` · ${formatPrice(Math.round(spotlight.collected), data.currencyCode)}` : ""}</span>
                 </p>
               )}
             </button>
@@ -202,7 +203,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </section>
       <section className="order-4 space-y-3 lg:order-none">
         {data.dayState === "finished" && (
-          <p className="border-2 border-black bg-[#BFFCC6] px-3 py-2 text-sm font-black text-black shadow-[3px_3px_0_#000] dark:border-white dark:shadow-[3px_3px_0_#fff]">
+          <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-sm font-medium text-emerald-800 dark:text-emerald-200">
             {t("finishedTitle")}
             {data.finished.completed > 0 ? ` · ${t("attendedShort", { count: data.finished.completed })}` : ""}
             {data.canSeeMoney ? ` · ${formatPrice(Math.round(data.kpis.collected), data.currencyCode)} ${t("paymentCollected").toLowerCase()}` : ""}
@@ -211,8 +212,8 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
         )}
         {data.dayState === "empty" ? (
           <div className={`${surface} p-5`}>
-            <span className="border-2 border-black bg-[#FFF5BA] px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-black shadow-[2px_2px_0_#000]">{t("emptyTitle")}</span>
-            <p className="mt-3 max-w-md text-sm font-medium">{t("emptyBody")}</p>
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-foreground">{t("emptyTitle")}</span>
+            <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">{t("emptyBody")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.canManageAppointments && <button type="button" onClick={() => setCreating(true)} className={primaryBtn}>{t("newAppointment")}</button>}
               <CopyWidgetLink slug={data.businessSlug} variant="button" />
@@ -220,25 +221,25 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
             </div>
           </div>
         ) : rest.length > 0 && (
-          <div className={surface}>
-            <h2 className="border-b-2 border-black px-3 py-2 text-xs font-black uppercase tracking-wide dark:border-white">{t("restOfDay")}</h2>
+          <div className={`${surface} overflow-hidden`}>
+            <h2 className="border-b border-black/10 dark:border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("restOfDay")}</h2>
             <ol>
               {rest.map((appointment) => {
                 const quiet = appointment.phase === "past" || appointment.phase === "inactive";
                 return (
-                  <li key={appointment.id} className="border-b-2 border-black/15 last:border-b-0 dark:border-white/15">
-                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-left ${quiet ? "opacity-55" : ""}`}>
-                      <span className="w-12 shrink-0 border-l-2 border-black pl-2 text-sm font-black tabular-nums dark:border-white">{wallTime(appointment.startTime, data.timeZone)}</span>
+                  <li key={appointment.id} className="border-b border-black/10 dark:border-white/10 last:border-b-0">
+                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none ${quiet ? "opacity-55" : ""}`}>
+                      <span className="w-12 shrink-0 text-sm font-medium tabular-nums text-muted-foreground group-hover:text-foreground">{wallTime(appointment.startTime, data.timeZone)}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-black">{appointment.customerName}</span>
-                        <span className="block truncate text-xs font-medium text-black/70 dark:text-foreground/70">
+                        <span className="block truncate text-sm font-medium text-foreground">{appointment.customerName}</span>
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                           {appointment.serviceName} · {t("durationMinutes", { count: durationMinutes(appointment.startTime, appointment.endTime) })}
                           {data.showStaff ? ` · ${appointment.staffName || homeT("unassigned")}` : ""}
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className={`inline-block border-2 border-black px-1.5 py-0.5 text-[10px] font-black uppercase text-black dark:border-white ${statusChip(appointment.status)}`}>{statusLabel(appointment.status)}</span>
-                        {paymentLabel(appointment.paymentLabel) && <span className="mt-1 block text-[11px] font-bold">{paymentLabel(appointment.paymentLabel)}</span>}
+                        <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium ${statusChip(appointment.status)}`}>{statusLabel(appointment.status)}</span>
+                        {paymentLabel(appointment.paymentLabel) && <span className="mt-1 block text-[11px] text-muted-foreground">{paymentLabel(appointment.paymentLabel)}</span>}
                       </span>
                     </button>
                   </li>
@@ -250,28 +251,28 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </section>
       </div>
 
-      <div className="contents lg:flex lg:flex-col lg:gap-4">
+      <div className="contents lg:col-start-2 lg:flex lg:flex-col lg:gap-5">
       <aside className="order-3 lg:order-none">
         {data.attention.length === 0 ? (
-          data.dayState === "empty" ? null : <p className="text-sm font-black text-black dark:text-foreground">✓ {t("allClearShort")}</p>
+          data.dayState === "empty" ? null : <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3"><p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">✓ {t("allClearShort")}</p><p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-200/80">{t("allClear")}</p></div>
         ) : (
-          <div className={surface}>
-            <h2 className="border-b-2 border-black px-3 py-2 text-xs font-black uppercase tracking-wide dark:border-white">{t("needsAttention")}</h2>
+          <div className={`${surface} overflow-hidden`}>
+            <h2 className="border-b border-black/10 dark:border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("needsAttention")}</h2>
             <ul>
               {data.attention.map((item) => {
                 const href = item.href ?? null;
                 return (
-                  <li key={item.id} className="flex items-center justify-between gap-3 border-b-2 border-black px-3 py-3 last:border-b-0 dark:border-white">
+                  <li key={item.id} className="flex items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 px-4 py-3.5 last:border-b-0">
                     <div className="min-w-0">
-                      <p className="text-sm font-black">{attentionCopy(item)}</p>
+                      <p className="text-sm font-medium text-foreground">{attentionCopy(item)}</p>
                       {item.id === "pending-payments" && item.amount != null && item.amount > 0 && (
-                        <p className="text-xs font-bold text-black/70 dark:text-foreground/70">{t("pendingAmount", { amount: formatPrice(Math.round(item.amount), data.currencyCode) })}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{t("pendingAmount", { amount: formatPrice(Math.round(item.amount), data.currencyCode) })}</p>
                       )}
                     </div>
                     {href ? (
-                      <Link href={href} className="shrink-0 text-sm font-black text-[#7C3AED] underline decoration-2 underline-offset-2 dark:text-[#C4B5FD]">{item.id === "freed-availability" ? t("generateStory") : t("review")}</Link>
+                      <Link href={href} className="shrink-0 rounded-lg px-2 py-1 text-sm font-medium text-brand-foreground transition-colors hover:bg-primary/10">{item.id === "freed-availability" ? t("generateStory") : t("review")}</Link>
                     ) : (
-                      <button type="button" onClick={() => item.appointmentId && setSelectedId(item.appointmentId)} className="shrink-0 text-sm font-black text-[#7C3AED] underline decoration-2 underline-offset-2 dark:text-[#C4B5FD]">{t("review")}</button>
+                      <button type="button" onClick={() => item.appointmentId && setSelectedId(item.appointmentId)} className="shrink-0 rounded-lg px-2 py-1 text-sm font-medium text-brand-foreground transition-colors hover:bg-primary/10">{t("review")}</button>
                     )}
                   </li>
                 );
@@ -282,18 +283,18 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </aside>
       <aside className="order-5 lg:order-none">
         {data.story && data.canGenerateStory && (
-          <div className="border-2 border-black bg-[#BFFCC6] p-4 text-black shadow-[3px_3px_0_#000] dark:border-white dark:shadow-[3px_3px_0_#fff]">
-            <p className="text-[11px] font-black uppercase tracking-wide">{t("opportunities")}</p>
-            <h2 className="mt-1 text-lg font-black leading-tight">
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-5 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-foreground">{t("opportunities")}</p>
+            <h2 className="mt-2 text-lg font-semibold leading-tight text-foreground">
               {(data.story.when === "afternoon" ? t("freeAfternoon", { count: data.story.opportunityCount }) : t("freeToday", { count: data.story.opportunityCount }))}
             </h2>
             {data.story.times.length > 0 && (
-              <p className="mt-2 text-sm font-black">
+              <p className="mt-2 text-sm font-medium text-brand-foreground">
                 {data.story.times.join(" · ")}
                 {data.story.opportunityCount > data.story.times.length ? ` · ${t("moreTimes", { count: data.story.opportunityCount - data.story.times.length })}` : ""}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Link href={storyHref(data.story, freed ? "CANCELLATION" : data.story.objective)} className={primaryBtn}>{t("generateStory")}</Link>
               <CopyWidgetLink slug={data.businessSlug} variant="button" />
             </div>
@@ -336,7 +337,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
             {data.blockStaff.length > 1 && (
               <label className="mb-3 block text-sm font-bold">
                 <span className="mb-1 block text-xs">{t("blockStaff")}</span>
-                <select value={blockStaffId} onChange={(event) => setBlockStaffId(event.target.value)} className="w-full border-2 border-black bg-white px-3 py-2 text-sm dark:border-white dark:bg-card">
+                <select value={blockStaffId} onChange={(event) => setBlockStaffId(event.target.value)} className="w-full rounded-xl border border-black/10 dark:border-white/10 bg-background px-3 py-2.5 text-sm">
                   {data.blockStaff.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
                 </select>
               </label>
@@ -359,10 +360,10 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="min-w-[8.5rem] flex-1 border-b-2 border-black px-3 py-2 last:border-b-0 sm:border-b-0 sm:border-r-2 sm:last:border-r-0 dark:border-white">
-      <p className="text-[10px] font-black uppercase tracking-wide">{label}</p>
-      <p className="text-base font-black leading-tight">{value}</p>
-      {hint && <p className="text-[10px] font-bold">{hint}</p>}
+    <div className="min-w-0 border-b border-black/10 dark:border-white/10 px-4 py-3.5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-xl font-semibold leading-tight tabular-nums text-foreground">{value}</p>
+      {hint && <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }
