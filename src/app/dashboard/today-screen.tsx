@@ -14,10 +14,10 @@ import { AppointmentDetailDialog, type DashboardAppointment } from "./appointmen
 import { CopyWidgetLink } from "./copy-widget-link";
 import { ScheduleBlockForm } from "./schedule-block-form";
 
-const surface = "rounded-2xl border border-black/10 dark:border-white/10 bg-card text-card-foreground shadow-sm";
-const heroSurface = "rounded-2xl border-2 border-black bg-white text-black shadow-[5px_5px_0_#000] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#fff]";
-const primaryBtn = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border-2 border-black bg-primary px-3.5 py-2 text-sm font-black text-primary-foreground shadow-[3px_3px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[3px_3px_0_#fff] dark:hover:shadow-[2px_2px_0_#fff] disabled:pointer-events-none disabled:opacity-50";
-const secondaryBtn = "inline-flex min-h-10 items-center justify-center rounded-lg border-2 border-black bg-background px-3 py-2 text-sm font-bold text-foreground shadow-[2px_2px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[2px_2px_0_#fff] dark:hover:shadow-[1px_1px_0_#fff]";
+const surface = "rounded-[1.5rem] border-2 border-[#171717] bg-white text-[#171717] shadow-[4px_4px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[4px_4px_0_#fff]";
+const heroSurface = "rounded-[1.75rem] border-[3px] border-[#171717] bg-white text-[#171717] shadow-[7px_7px_0_#171717] dark:border-white dark:bg-card dark:text-foreground dark:shadow-[7px_7px_0_#fff]";
+const primaryBtn = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-black bg-primary px-4 py-2.5 text-sm font-black text-primary-foreground shadow-[4px_4px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:shadow-[4px_4px_0_#fff] dark:hover:shadow-[2px_2px_0_#fff] disabled:pointer-events-none disabled:opacity-50";
+const secondaryBtn = "inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-black bg-white px-3.5 py-2.5 text-sm font-bold text-black shadow-[3px_3px_0_#000] transition-[transform,box-shadow] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0_#000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:border-white dark:bg-card dark:text-foreground dark:shadow-[3px_3px_0_#fff] dark:hover:shadow-[1px_1px_0_#fff]";
 
 function agendaHref(data: TodayDashboardData) {
   const query = new URLSearchParams();
@@ -130,12 +130,15 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.75fr)] lg:items-start lg:gap-5">
-      <header className="order-1 flex flex-col gap-5 lg:col-span-2 lg:order-none lg:flex-row lg:items-end lg:justify-between">
+    <div className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-7 pb-[calc(6rem+env(safe-area-inset-bottom))] 2xl:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1.68fr)_minmax(22rem,0.78fr)] lg:items-start lg:gap-6">
+      <header className="relative order-1 overflow-hidden rounded-[2rem] border-[3px] border-[#171717] bg-[#E9D8FF] p-5 text-[#171717] shadow-[8px_8px_0_#171717] sm:p-8 lg:col-span-2 lg:order-none lg:p-10">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border-[34px] border-[#FF5C8A]/60" aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-5 right-[31%] hidden h-4 w-4 rounded-full bg-[#FFD84D] ring-2 ring-[#171717] lg:block" aria-hidden="true" />
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-foreground">{t("yourDay")}</p>
-          <h1 className="mt-1 text-5xl font-black tracking-[-0.06em] text-foreground sm:text-6xl">{t("title")}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold text-foreground/80">
+          <p className="inline-flex rounded-full border-2 border-[#171717] bg-[#FFD84D] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em]">{t("yourDay")}</p>
+          <h1 className="mt-5 max-w-3xl text-[3.25rem] font-black leading-[0.88] tracking-[-0.075em] sm:text-7xl">{t("title")}</h1>
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-sm font-bold text-[#393442]">
             <span>{dateLabel}</span>
             <span className="text-brand-foreground" aria-hidden="true">·</span>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-[#FFF5BA] px-2 py-1 text-xs font-black text-black dark:bg-[#FFF5BA]" aria-live="polite">
@@ -143,11 +146,11 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
               {currentTime}
             </span>
           </div>
-          {context && <p className="mt-2 text-sm font-medium text-muted-foreground">{context}</p>}
+          {context && <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-[#393442]">{context}</p>}
         </div>
-        <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+        <div className="relative flex w-full max-w-md flex-col gap-3 lg:w-[22rem] lg:items-stretch">
           {data.canToggleOwnAgenda && (
-            <div className="inline-grid w-full grid-cols-2 rounded-lg border-2 border-black bg-[#FFF5BA] p-1 shadow-[2px_2px_0_#000] sm:w-auto dark:border-white dark:bg-[#FFF5BA] dark:shadow-[2px_2px_0_#fff]">
+            <div className="inline-grid w-full grid-cols-2 rounded-xl border-2 border-black bg-[#FFF5BA] p-1 shadow-[3px_3px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[3px_3px_0_#fff]">
               <Link href={scopeHref(data, undefined, data.selectedLocationSlug ?? undefined)} className={`rounded-md px-3 py-2 text-center text-sm font-black transition-colors ${!data.showingOwnAgenda ? "bg-white text-black shadow-sm" : "text-black/60 hover:text-black"}`} aria-current={!data.showingOwnAgenda ? "page" : undefined}>{homeT("wholeBusiness")}</Link>
               <Link href={scopeHref(data, "mine", data.selectedLocationSlug ?? undefined)} className={`rounded-md px-3 py-2 text-center text-sm font-black transition-colors ${data.showingOwnAgenda ? "bg-white text-black shadow-sm" : "text-black/60 hover:text-black"}`} aria-current={data.showingOwnAgenda ? "page" : undefined}>{homeT("mySchedule")}</Link>
             </div>
@@ -168,6 +171,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
             )}
           </div>
         </div>
+        </div>
       </header>
 
       {data.locations.length > 1 && (
@@ -181,7 +185,7 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       )}
 
       {data.kpis.appointments > 0 && (
-        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] text-black shadow-[4px_4px_0_#000] sm:grid-cols-4 lg:col-span-2 lg:order-none dark:border-white dark:bg-[#FFF5BA] dark:shadow-[4px_4px_0_#fff]">
+        <div className="order-6 grid grid-cols-2 overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[6px_6px_0_#000] sm:grid-cols-4 lg:col-span-2 lg:order-none dark:border-white dark:bg-[#FFF5BA] dark:shadow-[6px_6px_0_#fff]">
           <Kpi label={t("appointments")} value={String(data.kpis.appointments)} />
           {data.canSeeMoney && <Kpi label={t("collected")} value={formatPrice(Math.round(data.kpis.collected), data.currencyCode)} />}
           {data.canSeeMoney && <Kpi label={t("pending")} value={formatPrice(Math.round(data.kpis.pending), data.currencyCode)} hint={data.kpis.projected > data.kpis.collected ? t("projected", { amount: formatPrice(Math.round(data.kpis.projected), data.currencyCode) }) : undefined} />}
@@ -192,15 +196,16 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       <div className={`contents lg:col-start-1 lg:flex lg:flex-col lg:gap-5 ${data.dayState === "empty" ? "lg:col-span-2" : ""}`}>
       <section className="order-2 lg:order-none">
         {spotlight && (
-          <article className={`relative overflow-hidden p-5 sm:p-6 ${heroSurface}`}>
-            <span className="absolute inset-y-0 left-0 w-2 bg-primary" aria-hidden="true" />
+          <article className={`relative min-h-[18rem] overflow-hidden p-6 sm:p-8 lg:p-10 ${heroSurface}`}>
+            <span className="absolute inset-y-0 left-0 w-3 bg-primary" aria-hidden="true" />
+            <span className="pointer-events-none absolute -bottom-16 -right-10 h-44 w-44 rounded-full border-[22px] border-[#FFD84D]" aria-hidden="true" />
             <div className="flex flex-wrap items-center gap-2">
-              <span className="border-2 border-black bg-[#FFF5BA] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[2px_2px_0_#000] dark:border-white dark:shadow-[2px_2px_0_#fff]">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
-              <span className="border-2 border-black bg-[#E9D8FF] px-2.5 py-1 text-sm font-black text-[#5B21B6] dark:border-white dark:bg-[#E9D8FF]">{relativeLabel(spotlight)}</span>
+              <span className="border-2 border-black bg-[#FFD84D] px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-black shadow-[2px_2px_0_#000] dark:border-white dark:shadow-[2px_2px_0_#fff]">{spotlight.phase === "current" ? t("inProgressEyebrow") : t("nextEyebrow")}</span>
+              <span className="border-2 border-black bg-[#FFD8E6] px-2.5 py-1 text-sm font-black text-[#9D174D] dark:border-white dark:bg-[#FFD8E6]">{relativeLabel(spotlight)}</span>
             </div>
             <button type="button" onClick={() => setSelectedId(spotlight.id)} className="mt-4 block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-              <p className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-6xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-black/35 dark:text-foreground/35">·</span> <span className="uppercase">{spotlight.customerName}</span></p>
-              <p className="mt-4 text-sm font-bold text-black/70 dark:text-foreground/70">
+              <p className="text-5xl font-black leading-[0.88] tracking-[-0.07em] sm:text-7xl"><span className="tabular-nums">{wallTime(spotlight.startTime, data.timeZone)}</span> <span className="text-black/25 dark:text-foreground/35">·</span> <span className="uppercase">{spotlight.customerName}</span></p>
+              <p className="mt-5 text-sm font-bold text-black/70 dark:text-foreground/70 sm:text-base">
                 {spotlight.serviceName} · {t("durationMinutes", { count: durationMinutes(spotlight.startTime, spotlight.endTime) })}
                 {data.showStaff ? ` · ${spotlight.staffName || homeT("unassigned")}` : ""}
               </p>
@@ -224,12 +229,13 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
           </p>
         )}
         {data.dayState === "empty" ? (
-          <div className="relative overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] p-5 text-black shadow-[4px_4px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[4px_4px_0_#fff] sm:p-6">
-            <span className="absolute inset-y-0 left-0 w-2 bg-primary" aria-hidden="true" />
-            <span className="border-2 border-black bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] shadow-[2px_2px_0_#000]">{t("emptyTitle")}</span>
+          <div className="relative min-h-[20rem] overflow-hidden rounded-[1.75rem] border-[3px] border-black bg-[#FFF5BA] p-6 text-black shadow-[7px_7px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[7px_7px_0_#fff] sm:p-9">
+            <span className="absolute inset-y-0 left-0 w-3 bg-[#FF5C8A]" aria-hidden="true" />
+            <span className="pointer-events-none absolute -bottom-16 -right-10 h-44 w-44 rounded-full border-[22px] border-[#E9D8FF]" aria-hidden="true" />
+            <span className="relative border-2 border-black bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] shadow-[2px_2px_0_#000]">{t("emptyTitle")}</span>
             {data.story ? (
               <>
-                <p className="mt-5 text-6xl font-black leading-none tracking-[-0.07em]">{data.story.opportunityCount}</p>
+                <p className="relative mt-6 text-7xl font-black leading-none tracking-[-0.08em]">{data.story.opportunityCount}</p>
                 <p className="mt-1 text-sm font-black uppercase tracking-[0.1em]">{data.story.when === "afternoon" ? t("slotsAfternoon") : t("slotsToday")}</p>
                 {data.story.times.length > 0 && <p className="mt-3 text-sm font-black text-[#5B21B6]">{data.story.times.join(" · ")}{data.story.opportunityCount > data.story.times.length ? ` · ${t("moreTimes", { count: data.story.opportunityCount - data.story.times.length })}` : ""}</p>}
               </>
@@ -243,15 +249,18 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
           </div>
         ) : rest.length > 0 && (
           <div className={`${surface} overflow-hidden`}>
-            <h2 className="border-b border-black/10 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground dark:border-white/10">{t("restOfDay")}</h2>
-            <ol className="relative p-2 sm:p-3">
-              <span className="pointer-events-none absolute bottom-7 left-[4.65rem] top-7 w-px bg-black/15 dark:bg-white/15" aria-hidden="true" />
+            <div className="flex items-center justify-between border-b-2 border-black/10 px-5 py-4 dark:border-white/10">
+              <h2 className="text-xs font-black uppercase tracking-[0.16em] text-[#5B21B6] dark:text-brand-foreground">{t("restOfDay")}</h2>
+              <span className="text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground">{rest.length}</span>
+            </div>
+            <ol className="relative p-2 sm:p-4">
+              <span className="pointer-events-none absolute bottom-8 left-[5.4rem] top-8 w-0.5 bg-[#171717]/15 dark:bg-white/15" aria-hidden="true" />
               {rest.map((appointment) => {
                 const quiet = appointment.phase === "past" || appointment.phase === "inactive";
                 return (
                   <li key={appointment.id} className="relative border-b border-black/10 last:border-b-0 dark:border-white/10">
-                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`group flex w-full items-start gap-3 px-2 py-3.5 text-left transition-colors hover:bg-[#FFF5BA]/45 focus-visible:bg-[#FFF5BA]/45 focus-visible:outline-none sm:px-3 ${quiet ? "opacity-55" : ""}`}>
-                      <span className="w-14 shrink-0 pt-0.5 text-sm font-black tabular-nums text-muted-foreground group-hover:text-foreground">{wallTime(appointment.startTime, data.timeZone)}</span>
+                    <button type="button" onClick={() => setSelectedId(appointment.id)} className={`group flex w-full items-start gap-4 rounded-xl px-3 py-4 text-left transition-colors hover:bg-[#FFF5BA]/55 focus-visible:bg-[#FFF5BA]/55 focus-visible:outline-none sm:px-4 ${quiet ? "opacity-55" : ""}`}>
+                      <span className="w-16 shrink-0 pt-0.5 text-sm font-black tabular-nums text-muted-foreground group-hover:text-foreground">{wallTime(appointment.startTime, data.timeZone)}</span>
                       <span className={`relative mt-1.5 h-3 w-3 shrink-0 rounded-full border-2 border-black ${appointment.phase === "next" ? "bg-[#7C3AED]" : quiet ? "bg-black/20" : "bg-black"}`} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
                         <span className={`block truncate text-sm font-black text-foreground ${quiet ? "line-through decoration-1" : ""}`}>{appointment.customerName}</span>
@@ -277,15 +286,15 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       <div className={data.dayState === "empty" ? "hidden" : "contents lg:col-start-2 lg:flex lg:flex-col lg:gap-5"}>
       <aside className="order-3 lg:order-none">
         {data.attention.length === 0 ? (
-          data.dayState === "empty" ? null : <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3"><p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">✓ {t("allClearShort")}</p><p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-200/80">{t("allClear")}</p></div>
+          data.dayState === "empty" ? null : <div className="rounded-[1.5rem] border-[3px] border-black bg-[#BFFCC6] px-5 py-5 text-black shadow-[4px_4px_0_#171717]"><p className="text-sm font-black">✓ {t("allClearShort")}</p><p className="mt-1 text-xs font-semibold text-black/65">{t("allClear")}</p></div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border-2 border-black bg-[#FFF5BA] text-black shadow-[3px_3px_0_#000] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[3px_3px_0_#fff]">
-            <h2 className="border-b-2 border-black/20 px-4 py-3 text-xs font-black uppercase tracking-[0.14em]">{t("needsAttention")}</h2>
+          <div className="overflow-hidden rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] text-black shadow-[5px_5px_0_#171717] dark:border-white dark:bg-[#FFF5BA] dark:shadow-[5px_5px_0_#fff]">
+            <h2 className="border-b-2 border-black/20 px-5 py-4 text-xs font-black uppercase tracking-[0.16em]">{t("needsAttention")}</h2>
             <ul>
               {data.attention.map((item) => {
                 const href = item.href ?? null;
                 return (
-                  <li key={item.id} className="flex items-center justify-between gap-3 border-b border-black/20 px-4 py-3.5 last:border-b-0">
+                <li key={item.id} className="flex items-center justify-between gap-3 border-b-2 border-black/15 px-5 py-4 last:border-b-0">
                     <div className="min-w-0">
                       <p className="text-sm font-black">{attentionCopy(item)}</p>
                       {item.id === "pending-payments" && item.amount != null && item.amount > 0 && (
@@ -306,14 +315,14 @@ export function TodayScreen({ data }: { data: TodayDashboardData }) {
       </aside>
       <aside className="order-5 lg:order-none">
         {data.story && data.canGenerateStory && (
-          <div className="rounded-2xl border-2 border-black bg-[#E9D8FF] p-5 text-black shadow-[4px_4px_0_#000] dark:border-white dark:bg-[#E9D8FF] dark:shadow-[4px_4px_0_#fff]">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#5B21B6]">{t("opportunities")}</p>
-            <p className="mt-2 text-6xl font-black leading-none tracking-[-0.07em] text-[#5B21B6]">{data.story.opportunityCount}</p>
+          <div className="rounded-[1.5rem] border-[3px] border-black bg-[#FFD8E6] p-6 text-black shadow-[6px_6px_0_#171717] dark:border-white dark:bg-[#FFD8E6] dark:shadow-[6px_6px_0_#fff]">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#9D174D]">{t("opportunities")}</p>
+            <p className="mt-3 text-7xl font-black leading-none tracking-[-0.08em] text-[#9D174D]">{data.story.opportunityCount}</p>
             <h2 className="mt-1 text-sm font-black uppercase tracking-[0.08em]">
               {data.story.when === "afternoon" ? t("slotsAfternoon") : t("slotsToday")}
             </h2>
             {data.story.times.length > 0 && (
-              <p className="mt-3 border-t-2 border-black/20 pt-3 text-sm font-black text-[#5B21B6]">
+              <p className="mt-4 border-t-2 border-black/20 pt-4 text-sm font-black text-[#9D174D]">
                 {data.story.times.join(" · ")}
                 {data.story.opportunityCount > data.story.times.length ? ` · ${t("moreTimes", { count: data.story.opportunityCount - data.story.times.length })}` : ""}
               </p>
