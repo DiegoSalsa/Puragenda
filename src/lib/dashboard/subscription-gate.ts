@@ -8,7 +8,9 @@ export type DashboardPaymentWallReason = "pending" | "past_due";
 export function getDashboardPaymentWallReason(
   subscription: OperationalSubscription | null | undefined,
   now = new Date(),
+  options?: { demoAccount?: boolean },
 ): DashboardPaymentWallReason | null {
+  if (options?.demoAccount) return null;
   const state = getSubscriptionAccessState(subscription, now);
   if (state === "ACTIVE" || state === "TRIAL_ACTIVE" || state === "PAST_DUE_GRACE") {
     return null;

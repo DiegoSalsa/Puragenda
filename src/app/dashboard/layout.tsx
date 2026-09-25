@@ -14,6 +14,7 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 import { RequestIntlProvider } from "@/components/i18n/request-intl-provider";
 import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate";
+import { isDemoAccountEmail } from "@/server/auth/demo-session";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -40,7 +41,9 @@ export default async function DashboardLayout({
       where: { businessId: business.id },
     });
 
-    const paymentWallReason = getDashboardPaymentWallReason(subscription);
+    const paymentWallReason = getDashboardPaymentWallReason(subscription, new Date(), {
+      demoAccount: isDemoAccountEmail(user.email),
+    });
 
     if (paymentWallReason) {
       return (

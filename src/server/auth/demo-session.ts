@@ -3,6 +3,10 @@ import { createSessionToken } from "@/server/auth/session";
 
 const DEMO_EMAIL = "vale@esteticabella.cl";
 
+export function isDemoAccountEmail(email: string | null | undefined) {
+  return email?.trim().toLowerCase() === DEMO_EMAIL;
+}
+
 export async function issueDemoSessionToken() {
   const user = await prisma.user.findUnique({
     where: { email: DEMO_EMAIL },

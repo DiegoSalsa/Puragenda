@@ -16,6 +16,11 @@ describe("subscription gates on operational surfaces", () => {
     expect(getDashboardPaymentWallReason(expiredTrial, now)).toBe("pending");
   });
 
+  it("keeps the public demo account inside the dashboard even when its trial lapsed", () => {
+    expect(getDashboardPaymentWallReason(expiredTrial, now, { demoAccount: true })).toBeNull();
+    expect(getDashboardPaymentWallReason({ status: "TRIALING", isTrial: false, trialEndsAt: expiredTrial.trialEndsAt }, now, { demoAccount: true })).toBeNull();
+  });
+
   it("blocks the public widget but permits its simulation-only preview", () => {
     expect(shouldShowWidgetSubscriptionUnavailable(expiredTrial, false, now)).toBe(true);
     expect(shouldShowWidgetSubscriptionUnavailable(expiredTrial, true, now)).toBe(false);
