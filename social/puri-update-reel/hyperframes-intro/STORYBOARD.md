@@ -1,9 +1,8 @@
-# Four-second opening
+# Three-second opening
 
 | Time | Visual beat |
 | --- | --- |
-| 0.0–0.5 | Puragenda brand and yellow NEW badge land on cream. |
-| 0.5–1.3 | “Te presentamos a” and yellow halo introduce Puri. |
-| 0.7–1.8 | Official greeting Puri pops in and gently bobs. |
-| 1.35–2.2 | Purple PURI title lands below the mascot. |
-| 2.1–4.0 | Supporting line appears; branded final frame holds. |
+| 0.0–0.5 | Official logo and Puri appear immediately. |
+| 0.2–1.0 | “Te presentamos a” and the yellow halo establish the introduction. |
+| 0.7–1.5 | PURI lands as the hero wordmark. |
+| 1.3–3.0 | “Tu asistente de siempre en Puragenda” holds as the handoff into Hoy. |

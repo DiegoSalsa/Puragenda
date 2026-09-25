@@ -10,54 +10,45 @@
     body { background: #fffaf0; font-family: Arial, Helvetica, sans-serif; }
     #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #fffaf0; color: #171717; }
     .clip { position: absolute; }
-    .orb { position: absolute; width: 1280px; height: 1280px; border: 7px solid #171717; border-radius: 50%; background: #c5a5ff; top: -620px; right: -600px; }
-    .orb-small { position: absolute; width: 720px; height: 720px; border: 6px solid #171717; border-radius: 50%; background: #ffdb55; left: -440px; bottom: 155px; }
-    .grain { position: absolute; inset: 0; background-image: radial-gradient(#171717 0.5px, transparent 0.5px); background-size: 18px 18px; opacity: .055; }
-    .brand { top: 90px; left: 76px; height: 72px; display: flex; align-items: center; gap: 12px; font-size: 41px; font-weight: 900; letter-spacing: -2px; }
-    .brand-mark { width: 46px; height: 46px; border: 5px solid #171717; border-radius: 13px; background: #7c3aed; box-shadow: 6px 6px 0 #ffd84d; transform: rotate(-8deg); }
-    .brand-dot { color: #7c3aed; }
-    .tag { top: 205px; left: 76px; padding: 21px 28px 18px; border: 5px solid #171717; border-radius: 100px; background: #ffdf5d; box-shadow: 8px 8px 0 #171717; font-weight: 900; letter-spacing: 5px; font-size: 25px; }
-    .intro { top: 350px; left: 78px; width: 920px; font-size: 70px; font-weight: 800; letter-spacing: -3px; line-height: 1; }
-    .halo { top: 495px; left: 173px; width: 740px; height: 740px; border-radius: 50%; border: 30px solid #ffdb55; }
-    .halo:after { content: ''; position: absolute; inset: 42px; border: 3px dashed rgba(23,23,23,.25); border-radius: 50%; }
-    .puri-wrap { top: 535px; left: 160px; width: 765px; height: 765px; filter: drop-shadow(0 25px 0 rgba(93, 45, 164, .2)); }
-    .puri-wrap { object-fit: contain; }
+    .orb { position: absolute; width: 1250px; height: 1250px; border: 7px solid #171717; border-radius: 50%; background: #c5a5ff; top: -610px; right: -560px; }
+    .orb-small { position: absolute; width: 720px; height: 720px; border: 6px solid #171717; border-radius: 50%; background: #ffdb55; left: -455px; bottom: 130px; }
+    .brand { top: 86px; left: 76px; width: 330px; height: 82px; object-fit: contain; object-position: left center; }
+    .tag { top: 210px; left: 76px; padding: 19px 28px 17px; border: 5px solid #171717; border-radius: 100px; background: #ffdf5d; box-shadow: 8px 8px 0 #171717; font-weight: 900; letter-spacing: 4px; font-size: 25px; }
+    .intro { top: 350px; left: 78px; width: 920px; font-size: 74px; font-weight: 900; letter-spacing: -3px; line-height: .99; }
+    .halo { top: 510px; left: 173px; width: 740px; height: 740px; border-radius: 50%; border: 30px solid #ffdb55; }
+    .halo:after { content: ''; position: absolute; inset: 42px; border: 3px dashed rgba(23,23,23,.22); border-radius: 50%; }
+    .puri-wrap { top: 540px; left: 160px; width: 765px; height: 765px; object-fit: contain; filter: drop-shadow(0 25px 0 rgba(93, 45, 164, .2)); }
     .spark { width: 24px; height: 105px; border-radius: 20px; background: #7c3aed; border: 4px solid #171717; }
-    .spark.one { top: 495px; left: 850px; transform: rotate(30deg); }
+    .spark.one { top: 500px; left: 855px; transform: rotate(30deg); }
     .spark.two { top: 680px; left: 112px; transform: rotate(-42deg); background: #ffdb55; }
-    .spark.three { top: 1080px; left: 920px; transform: rotate(60deg); height: 80px; }
-    .word { top: 1280px; left: 76px; width: 930px; height: 257px; display: flex; align-items: center; justify-content: center; border: 7px solid #171717; border-radius: 50px; background: #7c3aed; box-shadow: 18px 18px 0 #171717; color: #fff; font-size: 217px; font-weight: 900; letter-spacing: -17px; line-height: 1; }
-    .tagline { top: 1590px; left: 120px; width: 840px; text-align: center; font-size: 56px; font-weight: 800; line-height: 1.13; letter-spacing: -2.8px; }
+    .word { top: 1285px; left: 76px; width: 930px; height: 245px; display: flex; align-items: center; justify-content: center; border: 7px solid #171717; border-radius: 50px; background: #7c3aed; box-shadow: 18px 18px 0 #171717; color: #fff; font-size: 217px; font-weight: 900; letter-spacing: -17px; line-height: 1; }
+    .tagline { top: 1585px; left: 120px; width: 840px; text-align: center; font-size: 56px; font-weight: 800; line-height: 1.13; letter-spacing: -2.8px; }
     .tagline span { color: #7c3aed; display: block; }
-    .footer { bottom: 79px; left: 76px; right: 76px; display: flex; align-items: center; justify-content: space-between; border-top: 4px solid #171717; padding-top: 27px; font-size: 26px; font-weight: 800; letter-spacing: 2px; }
-    .footer strong { font-size: 38px; letter-spacing: -2px; color: #7c3aed; }
   </style>
 </head>
 <body>
-  <div id="root" data-composition-id="main" data-start="0" data-duration="4" data-width="1080" data-height="1920">
-    <div class="orb" data-layout-allow-overflow></div><div class="orb-small" data-layout-allow-overflow></div><div class="grain"></div>
-    <div id="brand" class="brand clip" data-start="0" data-duration="4" data-track-index="0"><span class="brand-mark"></span><span>puragenda<span class="brand-dot">.</span></span></div>
-    <div id="tag" class="tag clip" data-start="0" data-duration="4" data-track-index="1">NUEVO EN PURAGENDA</div>
-    <div id="intro" class="intro clip" data-start="0" data-duration="4" data-track-index="2">Te presentamos a</div>
-    <div id="halo" class="halo clip" data-start="0" data-duration="4" data-track-index="3"></div>
-    <img id="puri" class="puri-wrap clip" data-start="0" data-duration="4" data-track-index="4" src="assets/puri-greeting.svg" alt="Puri, mascota de Puragenda" />
-    <div id="spark1" class="spark one clip" data-start="0" data-duration="4" data-track-index="5"></div>
-    <div id="spark2" class="spark two clip" data-start="0" data-duration="4" data-track-index="5"></div>
-    <div id="spark3" class="spark three clip" data-start="0" data-duration="4" data-track-index="5"></div>
-    <div id="word" class="word clip" data-start="0" data-duration="4" data-track-index="6">PURI</div>
-    <div id="tagline" class="tagline clip" data-start="0" data-duration="4" data-track-index="7">Tu asistente de siempre<span>en Puragenda</span></div>
-    <div id="footer" class="footer clip" data-start="0" data-duration="4" data-track-index="8"><span>UNA NUEVA FORMA DE VIVIR TU DÍA</span><strong>P</strong></div>
+  <div id="root" data-composition-id="main" data-start="0" data-duration="3" data-width="1080" data-height="1920">
+    <div class="orb" data-layout-allow-overflow></div><div class="orb-small" data-layout-allow-overflow></div>
+    <img id="brand" class="brand clip" data-start="0" data-duration="3" data-track-index="0" src="assets/puragenda-logo.svg" alt="puragenda" />
+    <div id="tag" class="tag clip" data-start="0" data-duration="3" data-track-index="1">NUEVO EN PURAGENDA</div>
+    <div id="intro" class="intro clip" data-start="0" data-duration="3" data-track-index="2">Te presentamos a</div>
+    <div id="halo" class="halo clip" data-start="0" data-duration="3" data-track-index="3"></div>
+    <img id="puri" class="puri-wrap clip" data-start="0" data-duration="3" data-track-index="4" src="assets/puri-greeting.svg" alt="Puri, mascota de Puragenda" />
+    <div id="spark1" class="spark one clip" data-start="0" data-duration="3" data-track-index="5"></div>
+    <div id="spark2" class="spark two clip" data-start="0" data-duration="3" data-track-index="5"></div>
+    <div id="word" class="word clip" data-start="0" data-duration="3" data-track-index="6">PURI</div>
+    <div id="tagline" class="tagline clip" data-start="0" data-duration="3" data-track-index="7">Tu asistente de siempre<span>en Puragenda</span></div>
   </div>
   <script>
     const tl = gsap.timeline({ paused: true });
-    tl.fromTo('#tag', { opacity: 0, y: -50, rotation: -5 }, { opacity: 1, y: 0, rotation: 0, duration: .48, ease: 'back.out(1.7)' }, .08);
-    tl.fromTo('#intro', { opacity: 0, y: 45 }, { opacity: 1, y: 0, duration: .48, ease: 'power3.out' }, .36);
-    tl.fromTo('#halo', { opacity: 0, scale: .3, rotation: -30 }, { opacity: 1, scale: 1, rotation: 0, duration: .67, ease: 'back.out(1.45)' }, .52);
-    tl.fromTo('#puri', { opacity: 0, y: 280, scale: .4, rotation: -17 }, { opacity: 1, y: 0, scale: 1, rotation: 0, duration: .78, ease: 'back.out(1.28)' }, .70);
-    tl.fromTo('#puri', { y: 0, rotation: 0 }, { y: -20, rotation: 3, duration: .38, ease: 'power1.inOut', yoyo: true, repeat: 1, immediateRender: false }, 1.52);
-    tl.fromTo('#word', { opacity: 0, y: 180, scale: .78 }, { opacity: 1, y: 0, scale: 1, duration: .62, ease: 'back.out(1.7)' }, 1.35);
-    tl.fromTo('#tagline', { opacity: 0, y: 65 }, { opacity: 1, y: 0, duration: .54, ease: 'power3.out' }, 2.08);
-    ['#spark1','#spark2','#spark3'].forEach((s, i) => tl.fromTo(s, { opacity: 0, scale: .15 }, { opacity: 1, scale: 1, duration: .35, ease: 'back.out(2)' }, 1.12 + i * .16));
+    tl.fromTo('#brand', { opacity: 0, x: -35 }, { opacity: 1, x: 0, duration: .2, ease: 'power2.out' }, 0);
+    tl.fromTo('#puri', { opacity: 0, y: 85, scale: .86, rotation: -7 }, { opacity: 1, y: 0, scale: 1, rotation: 0, duration: .62, ease: 'back.out(1.35)' }, .04);
+    tl.fromTo('#tag', { opacity: 0, y: -28 }, { opacity: 1, y: 0, duration: .28, ease: 'power2.out' }, .10);
+    tl.fromTo('#intro', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .34, ease: 'power3.out' }, .22);
+    tl.fromTo('#halo', { opacity: 0, scale: .75, rotation: -14 }, { opacity: 1, scale: 1, rotation: 0, duration: .42, ease: 'power2.out' }, .20);
+    tl.fromTo('#word', { opacity: 0, y: 90, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .42, ease: 'back.out(1.6)' }, .72);
+    tl.fromTo('#tagline', { opacity: 0, y: 35 }, { opacity: 1, y: 0, duration: .34, ease: 'power3.out' }, 1.32);
+    ['#spark1','#spark2'].forEach((s, i) => tl.fromTo(s, { opacity: 0, scale: .2 }, { opacity: 1, scale: 1, duration: .25, ease: 'back.out(2)' }, .75 + i * .12));
     window.__timelines = window.__timelines || {};
     window.__timelines.main = tl;
   </script>

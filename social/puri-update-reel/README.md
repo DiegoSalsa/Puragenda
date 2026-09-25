@@ -8,10 +8,10 @@ Video vertical de 20 segundos (1080 × 1920, 30 fps) para anunciar la nueva inte
 
 ## Cómo se hizo
 
-- `hyperframes-intro/`: apertura de cuatro segundos animada en HyperFrames. Su render es `hyperframes-intro/out/intro.mp4`.
+- `hyperframes-intro/`: apertura de tres segundos animada en HyperFrames. Su render es `hyperframes-intro/out/intro.mp4`.
 - `remotion/`: montaje de las escenas de Hoy, el panel de Puri, las respuestas con contexto, el cierre y una pista musical original generada por `scripts/make-soundtrack.mjs`.
 
-Para repetir el render, instala las dependencias en ambas carpetas, renderiza primero `hyperframes-intro`, copia `out/intro.mp4` a `remotion/public/intro.mp4` y ejecuta `npm run render` desde `remotion/`.
+Para repetir el render, instala las dependencias en ambas carpetas, renderiza primero `hyperframes-intro`, copia `out/intro.mp4` a `remotion/public/intro.mp4` y ejecuta `npm run render` desde `remotion/`. La narrativa final dura 20 segundos: presentación, Hoy, pregunta, respuesta y cierre.
 
 ## Texto sugerido para publicar
 
