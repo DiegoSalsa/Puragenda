@@ -38,8 +38,8 @@ function verifiedCards(evidence: Evidence[], context: PuriContext): PuriCard[] {
       cards.push({ type: "metric", label: t.pending, value: Number(data.pending ?? 0), unit: "money", currencyCode: context.business.currencyCode });
     }
     if (name === "getAvailability") {
-      const slots = Array.isArray(data.slots) ? data.slots as Array<{ time: string }> : [];
-      cards.push({ type: "availability", label: String(data.date ?? ""), value: String(data.slotCount ?? slots.length), detail: slots.slice(0, 8).map((slot) => slot.time).join(" · ") });
+      const times = Array.isArray(data.times) ? data.times as string[] : [];
+      cards.push({ type: "availability", label: String(data.date ?? ""), value: String(data.availableTimesCount ?? times.length), detail: times.slice(0, 8).join(" · ") });
     }
     if (name === "getClientActivity") {
       const clients = Array.isArray(data.clients) ? data.clients as Array<{ name: string; count: number; lastVisit: string | null }> : [];

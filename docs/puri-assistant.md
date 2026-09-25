@@ -72,6 +72,8 @@ La locale efectiva se obtiene server-side. El frontend sólo aporta el pathname 
 
 Las herramientas no aceptan SQL ni expresiones Prisma del modelo. Cada una limita filas, periodo y campos. Las notas privadas y respuestas de salud de clientes se excluyen.
 
+En Hoy, `totalOpeningsAcrossStaff` suma el máximo de cupos por profesional, mientras `featuredOpportunityTimes` describe sólo la oportunidad destacada de la pantalla. `getAvailability.availableTimesCount` cuenta horas distintas para la consulta. Puri recibe estos campos separados para no presentar los tres recuentos como equivalentes.
+
 ## Respuesta estructurada
 
 El modelo devuelve sólo `{ message }` mediante JSON Schema. El servidor genera `cards` y `actions` exclusivamente desde la evidencia de las tools:

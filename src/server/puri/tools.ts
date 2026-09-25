@@ -66,10 +66,15 @@ export async function getTodayOverview(context: PuriContext) {
       startTime: item.startTime, endTime: item.endTime, status: item.status, phase: item.phase,
       paymentLabel: data.canSeeMoney ? item.paymentLabel : "hidden",
     })),
-    counts: data.canSeeMoney ? data.kpis : {
+    counts: {
       appointments: data.kpis.appointments,
       cancelled: data.kpis.cancelled,
-      openSlots: data.kpis.openSlots,
+      ...(data.canSeeMoney ? { collected: data.kpis.collected, pending: data.kpis.pending, projected: data.kpis.projected } : {}),
+    },
+    availability: {
+      totalOpeningsAcrossStaff: data.kpis.openSlots,
+      featuredOpportunityTimes: data.story?.opportunityCount ?? 0,
+      featuredTimes: data.story?.times ?? [],
     },
     finished: data.finished,
     attention: data.attention.map(({ id, count, when }) => ({ id, count, when })),
@@ -110,7 +115,7 @@ export async function getAvailability(context: PuriContext, args: { date: string
   });
   const result = await getDashboardAvailability(context.user, context.business, parsed);
   const slots = result.days[0]?.slots ?? [];
-  return { date: args.date, timezone: result.timezone, serviceNames: result.serviceNames, slotCount: slots.length, slots: slots.slice(0, 20).map(({ time }) => ({ time })) };
+  return { date: args.date, timezone: result.timezone, serviceNames: result.serviceNames, availableTimesCount: slots.length, times: slots.slice(0, 20).map(({ time }) => time) };
 }
 
 export async function searchClients(context: PuriContext, args: { query: string }) {

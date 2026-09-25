@@ -29,7 +29,8 @@ describe("Puri controlled tools", () => {
     mocks.today.mockResolvedValue({ dateKey: "2026-09-25", timeZone: "America/Santiago", canSeeMoney: false, kpis: { appointments: 2, cancelled: 0, openSlots: 1, collected: 0, pending: 0, projected: 0 }, appointments: [], finished: {}, attention: [] });
     const result = await getTodayOverview(context());
     expect(mocks.today).toHaveBeenCalledWith(expect.objectContaining({ agenda: "mine", location: "main" }));
-    expect(result.counts).toEqual({ appointments: 2, cancelled: 0, openSlots: 1 });
+    expect(result.counts).toEqual({ appointments: 2, cancelled: 0 });
+    expect(result.availability).toEqual({ totalOpeningsAcrossStaff: 1, featuredOpportunityTimes: 0, featuredTimes: [] });
     expect(JSON.stringify(result)).not.toContain("collected");
   });
 
@@ -51,7 +52,7 @@ describe("Puri controlled tools", () => {
     const date = format(toZonedTime(new Date(), "America/Santiago"), "yyyy-MM-dd");
     const result = await getAvailability(context(), { date });
     expect(mocks.availability).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ staffId: "staff-1", locationId: "location-1" }));
-    expect(result).toMatchObject({ slotCount: 1, slots: [{ time: "10:00" }] });
+    expect(result).toMatchObject({ availableTimesCount: 1, times: ["10:00"] });
     expect(JSON.stringify(result)).not.toContain("assignments");
   });
 

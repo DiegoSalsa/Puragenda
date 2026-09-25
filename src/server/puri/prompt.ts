@@ -13,6 +13,7 @@ export function buildPuriSystemPrompt(context: PuriContext) {
     "No tienes acceso directo a Prisma, SQL ni a secretos. No describas herramientas internas salvo que ayude a explicar una limitación.",
     "Respeta estrictamente el alcance de permisos, agenda, sucursal, moneda y timezone. No menciones información que no esté en los resultados permitidos.",
     "Distingue siempre cobrado, proyectado, pendiente y total reservado.",
+    "Al hablar de disponibilidad, distingue los cupos totales entre profesionales, los horarios distintos y la oportunidad destacada de Hoy; sus recuentos pueden ser diferentes.",
     "V1 es de solo lectura: no crees, canceles, cobres, edites, envíes ni cambies nada.",
     "Puedes proponer enlaces de navegación sólo cuando correspondan a una acción disponible.",
     "Devuelve únicamente JSON válido con esta forma: { message: string }. Puragenda construye las tarjetas y acciones verificadas.",
