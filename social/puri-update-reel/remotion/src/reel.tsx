@@ -107,13 +107,13 @@ const OutroScene = () => {
 };
 
 export const PuriCover = () => <AbsoluteFill style={{ background: C.purple, fontFamily: FONT, color: C.white, overflow: "hidden" }}>
-  <div style={{ position: "absolute", width: 880, height: 880, left: 100, top: 330, borderRadius: "50%", background: C.lavender, border: `16px solid ${C.ink}` }} />
-  <div style={{ position: "absolute", width: 620, height: 620, left: -350, bottom: -210, borderRadius: "50%", background: C.yellow, border: `10px solid ${C.ink}` }} />
-  <div style={{ position: "absolute", top: 58, left: 68 }}><BrandLogo dark /></div>
-  <div style={{ position: "absolute", top: 270, left: 80, background: C.yellow, color: C.ink, border: `5px solid ${C.ink}`, borderRadius: 999, padding: "18px 26px 16px", boxShadow: `8px 8px 0 ${C.ink}`, fontSize: 25, fontWeight: 950, letterSpacing: 2.3 }}>NUEVO EN PURAGENDA</div>
-  <Puri variant="success" frame={30} style={{ position: "absolute", left: 205, top: 430, width: 670, height: 670 }} />
-  <div style={{ position: "absolute", left: 80, right: 80, top: 1250, textAlign: "center", fontSize: 108, lineHeight: .99, fontWeight: 950, letterSpacing: -4 }}>Puri llegó<br /><span style={{ color: C.yellow }}>a Puragenda.</span></div>
-  <div style={{ position: "absolute", left: 120, right: 120, top: 1570, textAlign: "center", fontSize: 35, lineHeight: 1.1, fontWeight: 800 }}>Tu asistente para organizar mejor tu día.</div>
+  <div style={{ position: "absolute", width: 880, height: 880, left: 100, top: 390, borderRadius: "50%", background: C.lavender, border: `16px solid ${C.ink}` }} />
+  <div style={{ position: "absolute", width: 620, height: 620, left: -470, bottom: -330, borderRadius: "50%", background: C.yellow, border: `10px solid ${C.ink}` }} />
+  <div style={{ position: "absolute", top: 48, left: "50%", transform: "translateX(-50%)" }}><BrandLogo dark /></div>
+  <div style={{ position: "absolute", top: 275, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: C.yellow, color: C.ink, border: `5px solid ${C.ink}`, borderRadius: 999, padding: "18px 26px 16px", boxShadow: `8px 8px 0 ${C.ink}`, fontSize: 25, fontWeight: 950, letterSpacing: 2.3 }}>NUEVO EN PURAGENDA</div>
+  <Puri variant="success" frame={30} style={{ position: "absolute", left: 205, top: 490, width: 670, height: 670 }} />
+  <div style={{ position: "absolute", left: 80, right: 80, top: 1320, textAlign: "center", fontSize: 106, lineHeight: .99, fontWeight: 950, letterSpacing: -4 }}>Puri llegó<br /><span style={{ color: C.yellow }}>a Puragenda.</span></div>
+  <div style={{ position: "absolute", left: 80, right: 80, top: 1650, textAlign: "center", fontSize: 35, lineHeight: 1.1, fontWeight: 800 }}>Tu asistente para organizar mejor tu día.</div>
 </AbsoluteFill>;
 
 export const PuriUpdateReel = () => <AbsoluteFill style={{ background: C.cream }}>
