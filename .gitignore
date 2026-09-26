@@ -51,6 +51,7 @@ next-env.d.ts
 # local QA and marketing artifacts
 /scratch/
 /marketing/
+/social/puri-update-reel/
 /carruseles/
 /carruseles-instagram-septiembre-2026/
 /semrush-puragenda/
