@@ -10,7 +10,7 @@ import {
 } from "@/lib/json-ld";
 
 const homeTitle = "Sistema de reservas online en Chile | Puragenda";
-const homeDescription = "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos y organiza clientes, horarios y profesionales. Prueba 30 días gratis.";
+const homeDescription = "Agenda online para negocios en Chile: recibe reservas 24/7, cobra abonos, organiza tu negocio y consulta agenda, cobros y disponibilidad con Puri.";
 
 export const metadata: Metadata = {
   ...createPageMetadata({ title: homeTitle, description: homeDescription, path: "/" }),

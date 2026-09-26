@@ -10,3 +10,13 @@ When writing or modifying code that integrates with Paddle:
 - Read API keys and webhook secrets from environment variables only. Never commit, inline, log, or return credentials. Keep server-only variables unprefixed (never `NEXT_PUBLIC_`).
 - Before any destructive account change, including updating prices, archiving products, or cancelling subscriptions, ask for explicit confirmation. State the target environment and affected resource(s) before calling `paddle-sandbox` or `paddle-live`.
 - For any live operation, confirm the exact account/environment and use narrowly scoped API keys. Prefer a sandbox dry run first whenever possible.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

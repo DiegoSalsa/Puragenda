@@ -31,6 +31,7 @@ export function Footer() {
             <p className="text-sm font-semibold">{footer("product")}</p>
             <nav className="flex flex-col gap-1.5">
               <Link href="/caracteristicas" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("features")}</Link>
+              <Link href="/puri" className="text-xs font-semibold text-[#7C3AED] transition-colors hover:text-[#5B21B6]">Puri</Link>
               <Link href="/sistema-de-agendamiento-online" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Sistema de agendamiento online</Link>
               <Link href="/software-agenda-barberias" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Software de agenda para barberías</Link>
               <Link href="/pricing" className="text-xs text-muted-foreground transition-colors hover:text-foreground">{navigation("pricing")}</Link>

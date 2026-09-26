@@ -220,18 +220,24 @@ export async function recordAnalyticsConsent(
   identifiers = typeof window === "undefined" ? undefined : getTrackingIdentifiers(),
 ) {
   if (typeof window === "undefined") throw new Error("Consentimiento disponible solo en el navegador");
-  const response = await fetch("/api/analytics/consent", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    keepalive: true,
-    body: JSON.stringify({
-      decision,
-      policyVersion: ANALYTICS_POLICY_VERSION,
-      visitorId: identifiers?.visitorId,
-      sessionId: identifiers?.sessionId,
-    }),
-  });
-  if (!response.ok) throw new Error("No se pudo guardar la preferencia");
-  return response.json() as Promise<{ ok: true; occurredAt: string }>;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch("/api/analytics/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      signal: controller.signal,
+      body: JSON.stringify({
+        decision,
+        policyVersion: ANALYTICS_POLICY_VERSION,
+        visitorId: identifiers?.visitorId,
+        sessionId: identifiers?.sessionId,
+      }),
+    });
+    if (!response.ok) throw new Error("No se pudo guardar la preferencia");
+    return response.json() as Promise<{ ok: true; occurredAt: string }>;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }

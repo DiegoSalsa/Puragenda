@@ -89,33 +89,21 @@ export function CookieBanner() {
   async function persistDecision(decision: "accepted" | "rejected") {
     setSaving(true);
     setError("");
-    try {
-      if (decision === "rejected") {
-        const identifiers = getTrackingIdentifiers();
-        setAnalyticsConsent("rejected");
-        setHasSavedChoice(true);
-        setAnalyticsEnabled(false);
-        try {
-          await recordAnalyticsConsent("rejected", identifiers);
-          setView("prompt");
-          setVisible(false);
-        } catch {
-          setError("El rechazo ya se aplicó en este navegador, pero no pudimos guardar el comprobante. Intenta nuevamente.");
-        }
-        return;
-      }
+    setAnalyticsConsent(decision);
+    setHasSavedChoice(true);
+    setAnalyticsEnabled(decision === "accepted");
+    setView("prompt");
+    setVisible(false);
+    setSaving(false);
 
-      await recordAnalyticsConsent("accepted");
-      setAnalyticsConsent("accepted");
-      setHasSavedChoice(true);
-      setAnalyticsEnabled(true);
-      setView("prompt");
-      setVisible(false);
+    // The browser decision is immediate; the server receipt is best effort.
+    let identifiers;
+    try {
+      identifiers = decision === "rejected" ? getTrackingIdentifiers() : undefined;
     } catch {
-      setError("No pudimos guardar tu preferencia. Intenta nuevamente.");
-    } finally {
-      setSaving(false);
+      identifiers = undefined;
     }
+    void recordAnalyticsConsent(decision, identifiers).catch(() => undefined);
   }
 
   return (

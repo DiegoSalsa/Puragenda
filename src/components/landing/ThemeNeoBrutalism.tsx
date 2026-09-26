@@ -8,6 +8,8 @@ import { LandingText, LocalizedWordCarousel } from "@/components/landing/landing
 import type { LandingIdentityProps } from "@/components/landing/types";
 import { TrackedCtaAnchor, TrackedLink } from "@/components/analytics/tracked-link";
 import { customerTestimonials } from "@/lib/data/testimonials";
+import { PuriPublicSection } from "@/components/landing/puri-public-section";
+import { useTranslations } from "next-intl";
 
 const Footer = dynamic(() => import("@/components/landing/footer").then((module) => module.Footer), { ssr: true });
 
@@ -24,6 +26,7 @@ const neoVars: React.CSSProperties & Record<string, string> = {
 };
 
 export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
+  const puriT = useTranslations("puri");
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#FFFAEB] text-black dark:bg-[#111111] dark:text-white font-sans selection:bg-[#B28DFF] dark:selection:text-black transition-colors duration-300" style={neoVars}>
       <Navbar user={user} business={business} />
@@ -51,6 +54,9 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
               <span className="bg-[#FFF5BA] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] rotate-1 tracking-wide">✓ <LandingText id="freeTrial" /></span>
               <span className="bg-[#FFB5E8] border-[3px] border-black text-black text-sm font-black uppercase px-4 py-1.5 shadow-[3px_3px_0_#000] -rotate-1 tracking-wide">✓ <LandingText id="noContract" /></span>
             </div>
+            <TrackedCtaAnchor href="#puri" cta="puri" placement="hero_badge" className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-black bg-[#E9D8FF] px-4 py-2 text-xs font-black uppercase tracking-wide text-black shadow-[3px_3px_0_#000] transition-transform hover:-translate-y-0.5">
+              <span className="h-2 w-2 rounded-full bg-[#7C3AED]" aria-hidden="true" /> {puriT("newBadge")}
+            </TrackedCtaAnchor>
             <h1 className="landing-hero-title text-4xl font-black uppercase tracking-tighter sm:text-7xl lg:text-8xl" aria-label="Sistema de reservas online para negocios en Chile, disponible 24/7">
               <span className="block drop-shadow-[4px_4px_0_rgba(0,0,0,1)] dark:drop-shadow-[4px_4px_0_#FFFFFF]">
                 <span className="landing-es">Tu agenda</span>
@@ -326,6 +332,8 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
             </div>
           </div>
         </section>
+
+        <PuriPublicSection />
 
         {/* Compact Google Calendar disclosure */}
         <section id="google-calendar" className="mx-auto w-full max-w-6xl scroll-mt-32 px-6 pb-10">

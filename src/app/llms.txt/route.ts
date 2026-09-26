@@ -30,7 +30,7 @@ export function GET() {
 
   const body = `# Puragenda
 
-> Puragenda es un sistema de reservas online para negocios de servicios en Chile. Permite gestionar citas, profesionales, clientes, abonos, recordatorios, encargos y disponibilidad desde un panel web.
+> Puragenda es un sistema de reservas online para negocios de servicios en Chile. Permite gestionar citas, profesionales, clientes, abonos, recordatorios, encargos y disponibilidad desde un panel web. Puri es el asistente integrado que consulta la información disponible del negocio según los permisos de cada cuenta.
 
 Last-updated: 2026-09-04
 
@@ -38,6 +38,7 @@ Este archivo ayuda a agentes a encontrar páginas públicas. No sustituye a [rob
 
 ## Información principal
 - [Producto](${absoluteUrl("/")})
+- [Puri, asistente dentro de Puragenda](${absoluteUrl("/puri")})
 - [Sistema de agendamiento online](${absoluteUrl("/sistema-de-agendamiento-online")})
 - [Software de agenda para barberías](${absoluteUrl("/software-agenda-barberias")})
 - [Software de agenda para peluquerías](${absoluteUrl("/software-agenda-peluquerias")})
