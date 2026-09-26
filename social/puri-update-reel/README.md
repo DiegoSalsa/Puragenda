@@ -1,6 +1,6 @@
 # Reel: Puri llega a Puragenda
 
-Video vertical de 20 segundos (1080 × 1920, 30 fps) para anunciar la nueva integración de Puri con Hoy. La mascota oficial es la protagonista; las escenas de producto usan capturas reales de la actualización.
+Video vertical de 20 segundos (1080 × 1920, 30 fps) para anunciar la nueva integración de Puri con Hoy. La mascota oficial es la protagonista; las escenas de producto son mockups diseñados para el reel, sin capturas del dashboard.
 
 ## Archivo final
 
