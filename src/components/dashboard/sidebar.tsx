@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CalendarDays as AgendaCalendarIcon } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -11,7 +12,6 @@ import {
 } from "react";
 import {
   BarChart3,
-  CalendarCheck,
   CalendarDays,
   ChevronDown,
   ExternalLink,
@@ -55,7 +55,7 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "today", icon: Sun },
-  { href: "/dashboard/agenda", label: "agenda", icon: CalendarCheck },
+  { href: "/dashboard/agenda", label: "agenda", icon: AgendaCalendarIcon },
   { href: "/dashboard/google-calendar", label: "calendar", icon: CalendarDays },
   { href: "/dashboard/orders", label: "orders", icon: Package },
   { href: "/dashboard/analytics", label: "analytics", icon: BarChart3 },
