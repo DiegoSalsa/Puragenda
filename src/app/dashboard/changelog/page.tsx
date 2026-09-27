@@ -1,109 +1,137 @@
+import { CHANGELOG_DATA, type ChangelogEntry } from "@/config/changelog";
+import { Calendar, CheckCircle2, ChevronDown, ShieldCheck, Sparkles } from "@/components/icons/hover-icons";
 
-import { LocalizedText } from "@/components/i18n/localized-text";
-import { CHANGELOG_DATA } from "@/config/changelog";
-import { Sparkles, Calendar, CheckCircle2, ShieldCheck } from "@/components/icons/hover-icons";
+function formatDate(date: string, options: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat("es-CL", options).format(new Date(`${date}T12:00:00`));
+}
+
+function EntryDate({ entry, compact = false }: { entry: ChangelogEntry; compact?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black/55">
+      <Calendar className="h-4 w-4" />
+      {formatDate(entry.date, compact ? { month: "short", year: "numeric" } : { day: "numeric", month: "long", year: "numeric" })}
+    </span>
+  );
+}
+
+function FeatureList({ items, muted = false }: { items: string[]; muted?: boolean }) {
+  return (
+    <ul className="space-y-3">
+      {items.map((item) => (
+        <li key={item} className="flex items-start gap-3">
+          <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${muted ? "text-black/35" : "text-[#7C3AED]"}`} />
+          <span className={`text-sm leading-6 ${muted ? "text-black/60" : "text-black/70"}`}>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LatestEntry({ entry }: { entry: ChangelogEntry }) {
+  return (
+    <section className="overflow-hidden rounded-[2rem] border-[3px] border-black bg-[#E9D8FF] text-black shadow-[8px_8px_0_#171717]">
+      <div className="relative overflow-hidden border-b-[3px] border-black p-6 sm:p-8 lg:p-10">
+        <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full border-[28px] border-[#FF5C8A]/60" aria-hidden="true" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-black bg-[#FFD84D] px-3 py-1 text-xs font-black uppercase tracking-[0.14em] shadow-[2px_2px_0_#000]">
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={3} /> Última actualización
+              </span>
+              <span className="rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black shadow-[2px_2px_0_#000]">{entry.version}</span>
+            </div>
+            <h2 className="mt-5 max-w-3xl text-[clamp(2rem,5vw,3.8rem)] font-black leading-[0.98] tracking-[-0.06em]">{entry.title}</h2>
+            <p className="mt-5 max-w-2xl text-base font-semibold leading-7 text-black/70">{entry.description}</p>
+          </div>
+          <div className="shrink-0 rounded-2xl border-2 border-black bg-[#FFF5BA] px-4 py-3 shadow-[4px_4px_0_#000]">
+            <EntryDate entry={entry} />
+            <p className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-black/45">Lo que cambió</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6 bg-[#FFFAF0] p-5 sm:p-8 lg:p-10">
+        {entry.notice && (
+          <div className="flex items-start gap-3 rounded-2xl border-2 border-black bg-[#FFF5BA] p-4 shadow-[3px_3px_0_#000]">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.5} />
+            <p className="text-sm font-bold leading-6">{entry.notice}</p>
+          </div>
+        )}
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-2xl border-2 border-black bg-white p-5 shadow-[4px_4px_0_#000] sm:p-6">
+            <h3 className="mb-5 text-sm font-black uppercase tracking-[0.14em]">Nuevas funcionalidades</h3>
+            <FeatureList items={entry.features} />
+          </div>
+          {entry.fixes && entry.fixes.length > 0 && (
+            <div className="rounded-2xl border-2 border-black bg-[#FFB5E8] p-5 shadow-[4px_4px_0_#000] sm:p-6">
+              <h3 className="mb-5 text-sm font-black uppercase tracking-[0.14em]">Mejoras y correcciones</h3>
+              <FeatureList items={entry.fixes} muted />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HistoricalEntry({ entry }: { entry: ChangelogEntry }) {
+  return (
+    <details className="group rounded-2xl border-2 border-black bg-white shadow-[4px_4px_0_#000] open:bg-[#FFF5BA]">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[#E9D8FF] px-2.5 py-1 text-xs font-black text-black">{entry.version}</span>
+            <EntryDate entry={entry} compact />
+          </span>
+          <span className="mt-3 block text-lg font-black leading-tight">{entry.title}</span>
+          <span className="mt-2 block text-sm leading-6 text-black/60">{entry.description}</span>
+        </span>
+        <ChevronDown className="mt-1 h-5 w-5 shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-5 border-t-2 border-black/15 px-5 pb-5 pt-5 sm:grid-cols-2">
+        <div>
+          <h3 className="mb-3 text-xs font-black uppercase tracking-[0.14em]">Nuevas funcionalidades</h3>
+          <FeatureList items={entry.features} />
+        </div>
+        {entry.fixes && entry.fixes.length > 0 && (
+          <div>
+            <h3 className="mb-3 text-xs font-black uppercase tracking-[0.14em]">Mejoras y correcciones</h3>
+            <FeatureList items={entry.fixes} muted />
+          </div>
+        )}
+      </div>
+    </details>
+  );
+}
 
 export default function ChangelogPage() {
+  const [latest, ...history] = CHANGELOG_DATA;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="LPKEuQgC4a6c" /></h1>
-        <p className="text-muted-foreground mt-2"><LocalizedText id="Hu__nLwfZD5k" /></p>
-      </div>
+    <div className="mx-auto w-full max-w-6xl space-y-10 pb-16">
+      <header className="max-w-3xl">
+        <p className="inline-flex items-center gap-2 rounded-full border-2 border-black bg-[#FFB5E8] px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-black shadow-[2px_2px_0_#000]">
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={3} /> Producto en movimiento
+        </p>
+        <h1 className="mt-5 text-[clamp(2.8rem,7vw,5rem)] font-black leading-[0.92] tracking-[-0.07em] text-black">Novedades que te ayudan a trabajar mejor.</h1>
+        <p className="mt-5 max-w-2xl text-base font-semibold leading-7 text-muted-foreground">Descubre las últimas mejoras, correcciones y nuevas funcionalidades de Puragenda.</p>
+      </header>
 
-      <div className="max-w-3xl space-y-12 pb-12 mt-6">
-        {CHANGELOG_DATA.map((entry, idx) => (
-          <div key={entry.version} className="relative pl-8 sm:pl-32">
-            {/* Timeline line */}
-            {idx !== CHANGELOG_DATA.length - 1 && (
-              <div className="absolute left-[11px] sm:left-[107px] top-8 bottom-[-48px] w-px bg-border" />
-            )}
+      <LatestEntry entry={latest} />
 
-            {/* Timeline dot */}
-            <div className="absolute left-0 sm:left-[96px] top-2 flex h-6 w-6 items-center justify-center rounded-full border bg-background shadow-sm">
-              <Sparkles className="h-3 w-3 text-brand-foreground" />
-            </div>
-
-            {/* Date (Desktop) */}
-            <div className="hidden sm:block absolute left-0 top-2 w-20 text-right">
-              <span className="text-sm font-medium text-muted-foreground">
-                {new Date(entry.date).toLocaleDateString("es-ES", {
-                  month: "short",
-                  year: "numeric"
-                })}
-              </span>
-            </div>
-
-            <div className={`rounded-2xl p-6 transition-shadow hover:shadow-md ${entry.popupVariant === "launch" ? "border-[3px] border-black bg-[#fffaf0] shadow-[5px_5px_0_#000] dark:bg-[#fffaf0] dark:text-black" : "border bg-card shadow-sm"}`}>
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-bold tracking-tight">{entry.title}</h2>
-                  {entry.popupVariant === "launch" && <span className="inline-flex items-center rounded-full border-2 border-black bg-[#FFB5E8] px-2.5 py-0.5 text-xs font-black text-black">Gran actualización</span>}
-                  <span className="inline-flex items-center rounded-full bg-[#7C3AED]/10 px-2.5 py-0.5 text-xs font-semibold text-brand-foreground">
-                    {entry.version}
-                  </span>
-                </div>
-                {/* Date (Mobile) */}
-                <div className={`flex items-center gap-1.5 text-sm sm:hidden ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>
-                    {new Date(entry.date).toLocaleDateString("es-ES", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric"
-                    })}
-                  </span>
-                </div>
-              </div>
-
-              <p className={`mb-6 text-sm leading-relaxed ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>
-                {entry.description}
-              </p>
-
-              {entry.notice && (
-                <div className={`mb-6 flex items-start gap-3 rounded-xl border p-4 ${entry.popupVariant === "launch" ? "border-black/20 bg-[#FFF5BA] text-black" : "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100"}`}>
-                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
-                  <p className="text-sm font-medium leading-relaxed">{entry.notice}</p>
-                </div>
-              )}
-
-              <div className="space-y-6">
-                {entry.features.length > 0 && (
-                  <div>
-                    <h3 className={`mb-3 text-sm font-semibold uppercase tracking-wider ${entry.popupVariant === "launch" ? "text-black" : "text-foreground"}`}>
-                      <LocalizedText id="e_ARYQ91-kY6" />
-                    </h3>
-                    <ul className="space-y-2.5">
-                      {entry.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-foreground" />
-                          <span className={`text-sm ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {entry.fixes && entry.fixes.length > 0 && (
-                  <div>
-                    <h3 className={`mb-3 text-sm font-semibold uppercase tracking-wider ${entry.popupVariant === "launch" ? "text-black" : "text-foreground"}`}>
-                      <LocalizedText id="D7f-ur6F_CU0" />
-                    </h3>
-                    <ul className="space-y-2.5">
-                      {entry.fixes.map((fix, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                          <span className={`text-sm ${entry.popupVariant === "launch" ? "text-black/65" : "text-muted-foreground"}`}>{fix}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
+      <section className="space-y-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">Archivo del producto</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-black">Versiones anteriores</h2>
           </div>
-        ))}
-      </div>
+          <p className="text-sm font-semibold text-muted-foreground">Abre una versión para ver el detalle completo.</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {history.map((entry) => <HistoricalEntry key={entry.version} entry={entry} />)}
+        </div>
+      </section>
     </div>
   );
 }

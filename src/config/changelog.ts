@@ -25,6 +25,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v2.1.0",
+    date: "2026-09-26",
+    title: "Conoce a Puri y organiza tu día desde Hoy",
+    description:
+      "Puri responde preguntas sobre tu negocio con los datos a los que tienes acceso. La nueva vista Hoy reúne tus próximas citas, cobros y pendientes para ayudarte a decidir qué hacer primero.",
+    features: [
+      "Pregúntale a Puri por citas, disponibilidad, clientes, ingresos y servicios. Sus respuestas respetan los permisos de tu perfil.",
+      "Hoy es la nueva portada del panel: destaca la atención en curso o la próxima cita, y muestra las demás reservas del día en orden.",
+      "Consulta de un vistazo las citas, los cobros y los cupos libres. Los importes solo aparecen si tu perfil tiene permiso para verlos.",
+      "Revisa tareas que requieren atención, como cobros pendientes, reservas recurrentes por aprobar y sesiones por cerrar.",
+      "Crea una cita, bloquea tiempo, abre la agenda o prepara una historia de disponibilidad directamente desde Hoy, según los permisos de tu perfil.",
+      "Cambia entre tu agenda y la de todo el negocio, o filtra por sucursal, sin perder el contexto de trabajo.",
+    ],
+    fixes: [
+      "Puri distingue los cupos totales de las horas disponibles para evitar respuestas ambiguas sobre la disponibilidad.",
+      "Se reforzó la validación del acceso al terminar el periodo de prueba y al reactivar una suscripción, para que el panel y el widget reflejen el estado correcto.",
+      "Se corrigieron casos del primer pago después de la prueba y de la selección del plan Equipo durante el pago.",
+    ],
+    notice: "Puri consulta información y orienta; por ahora no modifica citas, clientes ni configuraciones.",
+  },
+  {
     version: "v2.0.0",
     date: "2026-09-09",
     title: "Gift Cards y una nueva forma de fidelizar",
