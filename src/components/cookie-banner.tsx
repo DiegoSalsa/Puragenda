@@ -223,7 +223,7 @@ export function CookieBanner() {
           title={t("configure")}
           onClick={() => window.dispatchEvent(new Event("puragenda:open-cookie-settings"))}
           className="cookie-launcher fixed z-[9997] flex h-11 w-11 items-center justify-center rounded-full border-2 border-black bg-white text-black shadow-[2px_2px_0_#000] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED] focus-visible:ring-offset-2 dark:border-white dark:bg-black dark:text-white dark:shadow-[2px_2px_0_#fff]"
-          style={{ bottom: "var(--floating-cookie-bottom)", right: "var(--floating-edge-right)" }}
+          style={{ position: "fixed", bottom: "max(1rem, env(safe-area-inset-bottom))", right: "max(1rem, env(safe-area-inset-right))" }}
         >
           <Cookie className="h-4 w-4" />
         </button>
