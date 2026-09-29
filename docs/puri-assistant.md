@@ -1,5 +1,7 @@
 # Puri: asistente operativo de Puragenda
 
+El monitoreo interno de uso, calidad y costos se describe en [puri-monitoring.md](./puri-monitoring.md).
+
 ## Arquitectura
 
 Puri V1 es una función de lectura y análisis. El panel cliente llama `POST /api/dashboard/puri`; la route obtiene la sesión desde la cookie, resuelve el negocio con `getBusinessForUser`, calcula permisos efectivos y valida la sucursal solicitada. El modelo nunca recibe `businessId`, `staffId` o `locationId` como autoridad.

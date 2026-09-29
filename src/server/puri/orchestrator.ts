@@ -5,6 +5,7 @@ import { buildPuriSystemPrompt } from "./prompt";
 import { getPuriOpenAI, PURI_MODEL } from "./openai-client";
 import { executePuriTool, puriToolNames } from "./tools";
 import { PuriAccessError, type PuriAnswer, type PuriCard, type PuriContext, type PuriHistoryItem } from "./types";
+import { toolFailureStatus, toolResultCount, type PuriTelemetry } from "./telemetry";
 
 const MAX_HISTORY = 12;
 const MAX_TOOL_ROUNDS = 4;
@@ -67,7 +68,7 @@ function parseModelMessage(text: string, locale: string) {
   catch { return labels(locale).unavailable; }
 }
 
-export async function answerWithPuri(input: { context: PuriContext; message: string; history: PuriHistoryItem[] }): Promise<PuriAnswer> {
+export async function answerWithPuri(input: { context: PuriContext; message: string; history: PuriHistoryItem[]; telemetry?: PuriTelemetry }): Promise<PuriAnswer> {
   const openai = getPuriOpenAI();
   const toolsUsed: string[] = [];
   const evidence: Evidence[] = [];
@@ -78,6 +79,7 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
     { role: "user", content: input.message.slice(0, 2_000) },
   ];
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
+    const modelStarted = performance.now();
     const response = await openai.responses.create({
       model: PURI_MODEL,
       instructions: buildPuriSystemPrompt(input.context),
@@ -90,17 +92,33 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
       reasoning: { effort: "low" },
       store: false,
     });
+    if (input.telemetry) {
+      input.telemetry.modelDurationMs += Math.round(performance.now() - modelStarted);
+      input.telemetry.model = response.model ?? PURI_MODEL;
+      input.telemetry.promptTokens += response.usage?.input_tokens ?? 0;
+      input.telemetry.completionTokens += response.usage?.output_tokens ?? 0;
+      input.telemetry.cachedTokens += response.usage?.input_tokens_details?.cached_tokens ?? 0;
+    }
     const calls = (response.output as unknown[]).filter((item): item is { type: "function_call"; name: string; arguments: string; call_id: string } => (item as { type?: string }).type === "function_call");
     if (calls.length === 0) return { message: evidence.length ? parseModelMessage(response.output_text ?? "", input.context.locale) : failures.includes("FORBIDDEN") ? labels(input.context.locale).forbidden : labels(input.context.locale).unavailable, cards: verifiedCards(evidence, input.context), actions: verifiedActions(evidence, input.context), toolsUsed };
     modelInput.push(...(response.output as unknown as Array<Record<string, unknown>>));
     for (const call of calls) {
       if (puriToolNames.includes(call.name as (typeof puriToolNames)[number])) toolsUsed.push(call.name);
       let result: unknown;
+      const toolStarted = performance.now();
+      let errorCode: string | undefined;
       try {
         result = calls.indexOf(call) < 4 ? await executePuriTool(call.name, JSON.parse(call.arguments), input.context) : { verified: false, error: "TOOL_LIMIT" };
+        if (result && typeof result === "object" && "verified" in result && result.verified === false) errorCode = String("error" in result ? result.error : "TOOL_FAILED");
         if (result && typeof result === "object" && !("verified" in result && result.verified === false)) evidence.push({ name: call.name, data: result as Record<string, unknown> });
       }
-      catch (error) { const code = error instanceof PuriAccessError ? error.code : "TOOL_FAILED"; failures.push(code); result = { verified: false, error: code }; }
+      catch (error) { const code = error instanceof PuriAccessError ? error.code : "TOOL_FAILED"; errorCode = code; failures.push(code); result = { verified: false, error: code }; }
+      if (input.telemetry) {
+        const durationMs = Math.round(performance.now() - toolStarted);
+        input.telemetry.toolsDurationMs += durationMs;
+        const resultCount = errorCode ? undefined : toolResultCount(call.name, result);
+        input.telemetry.toolCalls.push({ toolName: call.name, status: errorCode ? toolFailureStatus(errorCode) : resultCount === 0 ? "NO_DATA" : "SUCCESS", errorCode, resultCount, durationMs });
+      }
       modelInput.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result) });
     }
   }

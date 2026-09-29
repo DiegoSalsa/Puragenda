@@ -7,6 +7,7 @@ vi.mock("@/server/puri/openai-client", () => ({ getPuriOpenAI: () => ({ response
 vi.mock("@/server/puri/tools", () => ({ executePuriTool: mocks.execute, puriToolNames: ["getTodayOverview", "getRevenueSummary"] }));
 
 import { answerWithPuri } from "@/server/puri/orchestrator";
+import { emptyPuriTelemetry } from "@/server/puri/telemetry";
 
 const context = {
   user: { id: "user-1", role: "STAFF" },
@@ -42,5 +43,22 @@ describe("Puri orchestration", () => {
     mocks.create.mockResolvedValue({ output: [], output_text: '{"message":"Invented fact"}' });
     const answer = await answerWithPuri({ context, message: "Ingresos", history: [] });
     expect(answer.message).not.toContain("Invented fact");
+  });
+
+  it("records the returned model and actual provider usage across tool rounds", async () => {
+    mocks.create.mockResolvedValueOnce({
+      model: "provider-qa-model", usage: { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 30 } },
+      output: [{ type: "function_call", name: "getTodayOverview", arguments: "{}", call_id: "call-1" }],
+    });
+    mocks.create.mockResolvedValueOnce({
+      model: "provider-qa-model", usage: { input_tokens: 150, output_tokens: 35, input_tokens_details: { cached_tokens: 60 } },
+      output: [], output_text: '{"message":"Listo"}',
+    });
+    mocks.execute.mockResolvedValue({ counts: { appointments: 2 }, canSeeMoney: false });
+    const telemetry = emptyPuriTelemetry("configured-model");
+    await answerWithPuri({ context, message: "Hoy", history: [], telemetry });
+    expect(telemetry).toMatchObject({ model: "provider-qa-model", promptTokens: 250, completionTokens: 55, cachedTokens: 90 });
+    expect(telemetry.modelDurationMs).toBeGreaterThanOrEqual(0);
+    expect(telemetry.toolCalls).toEqual([expect.objectContaining({ toolName: "getTodayOverview", status: "SUCCESS" })]);
   });
 });

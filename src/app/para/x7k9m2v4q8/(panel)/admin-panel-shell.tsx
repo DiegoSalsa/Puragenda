@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { href: `${ADMIN_SECRET_PATH}/users`, icon: Users, label: "Usuarios internos" },
   { href: `${ADMIN_SECRET_PATH}/subscriptions`, icon: CreditCard, label: "Suscripciones" },
   { href: `${ADMIN_SECRET_PATH}/tracking`, icon: BarChart3, label: "Tracking" },
+  { href: `${ADMIN_SECRET_PATH}/puri`, icon: BarChart3, label: "Puri" },
   { href: `${ADMIN_SECRET_PATH}/feedback`, icon: Star, label: "Feedback" },
   { href: `${ADMIN_SECRET_PATH}/privacy-requests`, icon: ShieldCheck, label: "Solicitudes de privacidad" },
   { href: `${ADMIN_SECRET_PATH}/discounts`, icon: Tag, label: "Descuentos" },

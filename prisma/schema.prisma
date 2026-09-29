@@ -1889,6 +1889,85 @@ model SystemError {
   @@index([source])
 }
 
+// Operational Puri telemetry. Never store prompts, tool arguments, tool results,
+// response text, or clinical/customer data here.
+model PuriRequest {
+  id                String   @id @default(cuid())
+  sessionId         String
+  businessId        String
+  businessLocationId String?
+  userId            String
+  role              String
+  model             String?
+  intent            String   @default("unknown")
+  status            String   @default("PENDING")
+  errorCode         String?
+  totalDurationMs   Int?
+  modelDurationMs   Int?
+  toolsDurationMs   Int?
+  promptTokens      Int      @default(0)
+  completionTokens  Int      @default(0)
+  cachedTokens      Int      @default(0)
+  estimatedCostUsd  Float?
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+  toolCalls         PuriToolCall[]
+  feedback          PuriFeedback?
+
+  @@index([createdAt])
+  @@index([businessId, createdAt])
+  @@index([userId, businessId, createdAt])
+  @@index([businessLocationId, createdAt])
+  @@index([intent, createdAt])
+  @@index([status, createdAt])
+}
+
+model PuriToolCall {
+  id          String   @id @default(cuid())
+  requestId   String
+  businessId  String
+  userId      String
+  toolName    String
+  status      String
+  errorCode   String?
+  resultCount Int?
+  durationMs  Int
+  createdAt   DateTime @default(now())
+  request     PuriRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([toolName, requestId])
+  @@index([requestId])
+}
+
+model PuriFeedback {
+  id         String   @id @default(cuid())
+  requestId  String   @unique
+  businessId String
+  userId     String
+  rating     String
+  reason     String?
+  createdAt  DateTime @default(now())
+  request    PuriRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+}
+
+model PuriUiEvent {
+  id                 String   @id @default(cuid())
+  event              String
+  sessionId          String
+  businessId         String
+  businessLocationId String?
+  userId             String
+  role               String
+  errorCode          String?
+  actionId           String?
+  createdAt          DateTime @default(now())
+
+  @@index([event, createdAt])
+  @@index([businessId, event, createdAt])
+}
+
 // ==========================================
 // PRIVACY-SAFE PRODUCT ANALYTICS
 // ==========================================
