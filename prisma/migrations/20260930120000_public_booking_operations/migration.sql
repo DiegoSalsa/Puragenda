@@ -18,6 +18,20 @@ CREATE UNIQUE INDEX "BookingOperation_businessId_keyHash_key" ON "BookingOperati
 CREATE UNIQUE INDEX "BookingOperation_appointmentId_key" ON "BookingOperation"("appointmentId");
 CREATE INDEX "BookingOperation_expiresAt_idx" ON "BookingOperation"("expiresAt");
 
+-- Server-only operation snapshots must not be exposed by Supabase's Data API.
+ALTER TABLE "BookingOperation" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE "BookingOperation" FROM PUBLIC;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON TABLE "BookingOperation" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON TABLE "BookingOperation" FROM authenticated;
+  END IF;
+END
+$$;
+
 -- All appointment writers (dashboard, widget, recurring, external API) share this
 -- final guard. No network calls under the lock, and no validation of old rows.
 CREATE OR REPLACE FUNCTION puragenda_guard_appointment_capacity() RETURNS trigger

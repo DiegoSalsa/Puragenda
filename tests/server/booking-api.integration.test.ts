@@ -58,6 +58,12 @@ describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
   afterAll(async () => { await prisma.$disconnect(); });
 
   it("reserves through the existing service and replays after a lost HTTP response without effects", async () => {
+    const permissions = await prisma.$queryRaw<Array<{ enabled: boolean; publicAccess: boolean }>>`
+      SELECT c.relrowsecurity AS enabled,
+        EXISTS (SELECT 1 FROM aclexplode(COALESCE(c.relacl, acldefault('r', c.relowner))) a WHERE a.grantee = 0) AS "publicAccess"
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE c.relname = 'BookingOperation' AND n.nspname = current_schema()`;
+    expect(permissions).toEqual([{ enabled: true, publicAccess: false }]);
     const first = await POST(post(), ctx);
     expect(first.status).toBe(201);
     const result = await first.json();
