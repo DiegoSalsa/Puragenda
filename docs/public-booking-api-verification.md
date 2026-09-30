@@ -1,7 +1,9 @@
 # Verificación local de la API de reservas
 
 Fecha: 30-09-2026. Base auditada: `6f0ab22`. Rama: `feature/public-booking-api`.
-No se escribió en producción ni se cambió el repositorio consumidor.
+Durante esta verificación local no se escribió en producción ni se cambió el
+repositorio consumidor. El despliegue autorizado posterior se registra en
+`public-booking-api-production.md`.
 
 ## Navegador
 

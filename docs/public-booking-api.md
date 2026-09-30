@@ -413,10 +413,11 @@ Validación ejecutada el 30-09-2026:
 - `npm run lint`: falla por regla de hooks en `.agents/skills/media-use/scripts/recipe.mjs:83`, archivo ajeno que ya estaba sin seguimiento al iniciar; 34 warnings. Lint de archivos de esta ampliación se verifica por separado, sin corregir cambios ajenos.
 - Verificación de navegador y detalles finales: ver `public-booking-api-verification.md`.
 
-No se aplicó migración a producción, ni se modificó el catálogo de Estética Bella,
-ni se enviaron pagos/correos reales. No hubo push, merge, deploy ni cambios en PuroCode.
+Durante la entrega local inicial no se aplicó migración a producción, ni se modificó
+el catálogo de Estética Bella, ni se enviaron pagos/correos reales. No hubo push,
+merge, deploy ni cambios en PuroCode en esa entrega.
 
-Para habilitar posteriormente: revisar y aplicar la migración con autorización en
+Procedimiento de habilitación: revisar y aplicar la migración con autorización en
 el entorno elegido (`prisma migrate deploy`), generar cliente Prisma, desplegar
 la rama con autorización, configurar gateway si hay varias instancias y asignar
 la clave de reservas al servidor consumidor. Revisar solapamientos existentes
@@ -426,3 +427,12 @@ deben tener un procedimiento para 202 de recuperación de efectos inciertos.
 Integrar y probar PuroCode en otra tarea; solo entonces ejecutar con autorización
 la aceptación de una cita real del negocio de prueba visible en dashboard.
 La demo sigue sin declararse conectada.
+
+## Estado de producción
+
+El 30-09-2026, tras autorización explícita posterior a la entrega local, se aplicó
+la migración y se publicó la revisión `891bb56` en `https://www.puragenda.cl`.
+El catálogo y la disponibilidad de `estetica-bella` se verificaron mediante lecturas
+autenticadas, sin crear citas ni ejecutar pagos. Ver `public-booking-api-production.md`
+para el despliegue, controles de seguridad y resultados. La integración del
+formulario propio de PuroCode sigue pendiente en su repositorio.
