@@ -12,6 +12,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:booking:local": "node scripts/test-booking-api-local.mjs",
     "test:payments:local": "vitest run tests/server/local-payment-simulator.service.test.ts tests/server/local-payment-simulator.route.test.ts tests/server/international-subscription-simulator.route.test.ts tests/server/mercadopago-oauth.service.test.ts tests/server/mercadopago-deposit.route.test.ts tests/server/mercadopago-deposit-return.route.test.ts tests/server/mercadopago-deposit-webhook.route.test.ts",
     "test:watch": "vitest",
     "db:migrate:deploy": "prisma migrate deploy",

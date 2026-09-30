@@ -42,6 +42,10 @@ export function proxy(request: NextRequest) {
 
   // ─── Handle CORS for public API ───
   if (pathname.startsWith(PUBLIC_API_PREFIX)) {
+    // Headless reads are server-to-server; retain the legacy widget CORS policy.
+    if (/\/api\/business\/[^/]+\/(booking-catalog|availability)\/?$/.test(pathname)) {
+      return request.method === "OPTIONS" ? new NextResponse(null, { status: 204 }) : NextResponse.next();
+    }
     return handleCorsResponse(request);
   }
 
@@ -91,7 +95,7 @@ function handleCorsResponse(request: NextRequest): NextResponse {
       response.headers.set("Access-Control-Allow-Origin", origin);
     }
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, x-api-key, Idempotency-Key, Puragenda-Booking-Version");
     response.headers.set("Access-Control-Max-Age", "86400");
     return response;
   }
@@ -100,7 +104,7 @@ function handleCorsResponse(request: NextRequest): NextResponse {
   if (origin) {
     response.headers.set("Access-Control-Allow-Origin", origin);
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    response.headers.set("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, x-api-key, Idempotency-Key, Puragenda-Booking-Version");
   }
   return response;
 }

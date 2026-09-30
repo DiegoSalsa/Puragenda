@@ -3,6 +3,10 @@ import { getBlockedSlots } from "@/server/services/appointment.service";
 import { fromZonedTime } from "date-fns-tz";
 import { NextRequest } from "next/server";
 import { getLocationForBusiness } from "@/server/services/location.service";
+import { prisma } from "@/server/db/prisma";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
+import { bookingDayQueryBounds } from "@/core/booking-availability";
+import { z } from "zod";
 
 /**
  * GET /api/business/[slug]/appointments?date=2026-04-25
@@ -42,7 +46,7 @@ export async function GET(
       );
     }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+    if (!z.string().date().safeParse(dateParam).success) {
       return Response.json(
         { error: "Formato de fecha invÃ¡lido" },
         { status: 400 }
@@ -51,8 +55,11 @@ export async function GET(
 
     // Parse the business-local day. Slots are generated in the business timezone,
     // so blocked ranges must use the same day boundary before converting to UTC.
-    const dateStart = fromZonedTime(`${dateParam}T00:00:00.000`, business.timezone);
-    const dateEnd = fromZonedTime(`${dateParam}T23:59:59.999`, business.timezone);
+    const location = await getLocationForBusiness(business.id, url.searchParams.get("locationId"));
+    if (!location) return Response.json({ error: "Sucursal no encontrada" }, { status: 400 });
+    const timezone = location.timezone || business.timezone;
+    const dateStart = fromZonedTime(`${dateParam}T00:00:00.000`, timezone);
+    const dateEnd = fromZonedTime(`${dateParam}T23:59:59.999`, timezone);
 
     if (isNaN(dateStart.getTime())) {
       return Response.json(
@@ -62,14 +69,18 @@ export async function GET(
     }
 
     const staffId = url.searchParams.get("staffId") || undefined;
-    const location = await getLocationForBusiness(business.id, url.searchParams.get("locationId"));
-    if (!location) return Response.json({ error: "Sucursal no encontrada" }, { status: 400 });
+    if (staffId && !await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id, isActive: true, locations: { some: { locationId: location.id, isActive: true } } }, select: { id: true } })) return Response.json({ error: "Profesional no disponible" }, { status: 400 });
+    const blockedDate = await prisma.blockedDate.findUnique({ where: { businessId_date: { businessId: business.id, date: new Date(`${dateParam}T00:00:00Z`) } }, select: { id: true } });
+    if (blockedDate) {
+      const bounds = bookingDayQueryBounds(dateParam, timezone);
+      return Response.json([{ startTime: bounds.start.toISOString(), endTime: bounds.end.toISOString() }], { headers: { "Cache-Control": "private, no-store" } });
+    }
 
     const blocked = await getBlockedSlots(
       business.id,
       dateStart,
       dateEnd,
-      staffId,
+      usesBusinessScheduleOnly(business.subscription?.plan) ? undefined : staffId,
       location.id,
     );
 
@@ -77,7 +88,8 @@ export async function GET(
       blocked.map((slot) => ({
         startTime: slot.startTime.toISOString(),
         endTime: slot.endTime.toISOString(),
-      }))
+      })),
+      { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (error) {
     console.error("[route] Error:", error);

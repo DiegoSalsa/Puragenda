@@ -11,8 +11,8 @@ export const resend = apiKey
   ? new Resend(apiKey)
   : ({
       emails: {
-        send: async (params: Record<string, unknown>) => {
-          console.log("[Email Mock] Would send email:", JSON.stringify(params, null, 2));
+        send: async () => {
+          console.log("[Email Mock] Email delivery suppressed");
           return { data: { id: "mock-id" }, error: null };
         },
       },

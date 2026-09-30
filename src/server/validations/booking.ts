@@ -57,20 +57,20 @@ export const bookingSchema = z
   .object({
     serviceId: z
       .string({ message: "El ID del servicio es obligatorio" })
-      .min(1, "El ID del servicio no puede estar vacio"),
+      .min(1, "El ID del servicio no puede estar vacio").max(100),
 
-    serviceIds: z.array(z.string()).optional(),
-    locationId: z.string().min(1).optional(),
+    serviceIds: z.array(z.string().min(1).max(100)).max(50).optional(),
+    locationId: z.string().min(1).max(100).optional(),
 
-    selectedOptionAlternativeIds: z.array(z.string()).optional().default([]),
+    selectedOptionAlternativeIds: z.array(z.string().min(1).max(100)).max(2000).optional().default([]),
 
-    staffId: z.string().optional(),
+    staffId: z.string().max(100).optional(),
 
     staffAssignments: z
       .array(z.object({
         serviceId: z.string().min(1, "El servicio de la asignacion es obligatorio"),
         staffId: z.string().min(1, "El profesional de la asignacion es obligatorio"),
-      }))
+      })).max(50)
       .optional(),
 
     rewardCode: z.string().optional(),

@@ -6,6 +6,27 @@ datasource db {
   provider = "postgresql"
 }
 
+// Public booking keys are scoped by business; hashes contain no customer data.
+model BookingOperation {
+  id            String   @id @default(cuid())
+  businessId    String
+  keyHash       String
+  payloadHash   String
+  ownerToken    String
+  leaseUntil    DateTime
+  expiresAt     DateTime
+  appointmentId String?  @unique
+  response      Json?
+  httpStatus    Int?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, keyHash])
+  @@index([expiresAt])
+}
+
 // ==========================================
 // AUTH & USERS
 // ==========================================
@@ -438,6 +459,7 @@ model Business {
   appointments                Appointment[]
   clients                     Client[]
   subscription                Subscription?
+  bookingOperations           BookingOperation[]
   businessHours               BusinessHours[]
   blockedDates                BlockedDate[]
   loyaltyCodes                LoyaltyCode[]

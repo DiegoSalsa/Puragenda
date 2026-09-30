@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
+    subscription: { findUnique: vi.fn(async () => ({ plan: "EQUIPO" })) },
     appointment: {
       findFirst: mocks.appointmentFindFirst,
       findUnique: mocks.appointmentFindUnique,

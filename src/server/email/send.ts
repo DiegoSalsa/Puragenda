@@ -114,18 +114,19 @@ async function deliverEmail(
   params: Parameters<typeof resend.emails.send>[0],
   options?: Parameters<typeof resend.emails.send>[1],
 ) {
+  const logContext = context.replace(/\S+@\S+/g, "[recipient]");
   try {
     const result = options
       ? await resend.emails.send(params, options)
       : await resend.emails.send(params);
     if (result.error) {
-      console.error(`[Email] Resend rejected ${context}:`, result.error);
+      console.error(`[Email] Resend rejected ${logContext}`);
       return false;
     }
-    console.log(`[Email] Sent ${context}: ${result.data?.id ?? "no-id"}`);
+    console.log(`[Email] Sent ${logContext}: ${result.data?.id ?? "no-id"}`);
     return true;
-  } catch (err) {
-    console.error(`[Email] Error sending ${context}:`, err);
+  } catch {
+    console.error(`[Email] Error sending ${logContext}`);
     return false;
   }
 }
