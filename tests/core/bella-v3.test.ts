@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bellaConfigSchema, emptyBellaConfig } from "@/websites/config";
-import { assignCategory, categoryId, categoryIdsForImage, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
+import { assignCategory, categoryId, categoryIdsForImage, migrateBellaCategories, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
 import { contrastRatio, validatePalette } from "@/websites/palettes";
 import { bellaCopy } from "@/websites/templates/bella/copy";
 import { resolveBellaGallery } from "@/websites/templates/bella/gallery";
@@ -40,5 +40,11 @@ describe("Bella V3 copy, categories and controlled palettes", () => {
     expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }, { id: "cat-b", label: "cejas", order: 1 }] })).toThrow();
     expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }, { id: "cat-a", label: "Uñas", order: 1 }] })).toThrow();
     expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }], gallery: [{ image: "/foto.webp", categoryIds: ["cat-missing"] }] })).toThrow();
+  });
+  it("migrates legacy filters to stable IDs without losing image associations", () => {
+    const migrated = migrateBellaCategories({ galleryFilters: ["Cejas"], gallery: [{ image: "/foto.webp", name: "Trabajo", category: "Cejas", filters: ["Cejas"] }] });
+    expect(migrated.galleryFilters).toEqual([]);
+    expect(migrated.galleryCategories[0]).toMatchObject({ id: "cat-cejas", label: "Cejas" });
+    expect(migrated.gallery[0].categoryIds).toEqual(["cat-cejas"]);
   });
 });
