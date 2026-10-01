@@ -15,7 +15,9 @@ export const bellaCopySchema = z.object({
     previous: copyText(80, "Trabajos anteriores"), next: copyText(80, "Trabajos siguientes"), expand: copyText(80, "Mirar de cerca"),
     countSingular: copyText(50, "composición"), countPlural: copyText(50, "composiciones"), note: copyText(120, "Desliza. El detalle sigue."),
     countSuffix: copyText(60, "portfolio"), pause: copyText(80, "Pausar movimiento"), resume: copyText(80, "Reanudar movimiento"), dialogLabel: copyText(120, "Imagen ampliada del portfolio"),
-    closeDialog: copyText(80, "Cerrar imagen"), marquee: z.array(copyText(120, "COLOR. FORMA. DETALLE.")).max(8).default(["COLOR. FORMA. DETALLE."]),
+    closeDialog: copyText(80, "Cerrar imagen"),
+    marqueeEnabled: z.boolean().default(true),
+    marquee: z.array(copyText(120, "COLOR. FORMA. DETALLE.")).max(8).default(["COLOR. FORMA. DETALLE."]),
   }).strict()),
   services: z.preprocess(value => value ?? {}, z.object({
     title: copyText(160, "Tu próximo\ndetalle."), subtitle: copyText(160, "Duración, precio y elección."), aria: copyText(100, "Explorar tratamientos"),
@@ -43,8 +45,12 @@ export const defaultBellaCopy = (): BellaCopy => bellaCopySchema.parse({});
 /** Fills a legacy V1 copy object without replacing intentionally empty custom text. */
 export function bellaCopy(config: { copy?: Partial<BellaCopy> }, businessName?: string): BellaCopy {
   const configuredMarquee = (config.copy as { gallery?: { marquee?: string[] } } | undefined)?.gallery?.marquee;
+  const configuredMarqueeEnabled = (config.copy as { gallery?: { marqueeEnabled?: boolean } } | undefined)?.gallery?.marqueeEnabled;
   const parsed = bellaCopySchema.parse(config.copy ?? {});
-  if (configuredMarquee === undefined) parsed.gallery.marquee = [`COLOR. FORMA. DETALLE. ${(businessName || "").trim().toUpperCase()}.`].filter(Boolean);
+  parsed.gallery.marqueeEnabled = configuredMarqueeEnabled !== false;
+  if (parsed.gallery.marqueeEnabled && (!Array.isArray(configuredMarquee) || configuredMarquee.length === 0)) {
+    parsed.gallery.marquee = [`COLOR. FORMA. DETALLE. ${(businessName || "").trim().toUpperCase()}.`].filter(Boolean);
+  }
   return parsed;
 }
 

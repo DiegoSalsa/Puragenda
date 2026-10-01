@@ -38,7 +38,7 @@ export default function Portfolio() {
       {expanded ? <div className={styles.expandedPhoto}><Image src={expanded.image} alt={expanded.alt} fill sizes="90vw" /></div> : null}
       <p className={styles.dialogCaption}>{business.name}</p>
     </dialog>
-    {copy.gallery.marquee.length ? <div className={styles.marquee} data-paused={paused}>
+    {copy.gallery.marqueeEnabled && copy.gallery.marquee.length ? <div className={styles.marquee} data-paused={paused}>
       <div className={styles.marqueeTrack} aria-hidden="true">{[0, 1].map(index => <span key={index}>{copy.gallery.marquee.join(" · ")}</span>)}</div>
       <button type="button" aria-pressed={paused} onClick={() => setPaused(!paused)}>{paused ? copy.gallery.resume : copy.gallery.pause}</button>
     </div> : null}
