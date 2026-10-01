@@ -25,6 +25,22 @@ await client.end();
 const localPassword = await bcrypt.hash("Bella-local-qa-2026!", 10);
 const pool = new pg.Pool({ connectionString });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+const demoUser = await prisma.user.upsert({
+  where: { email: "vale@esteticabella.cl" },
+  create: { id: "website-qa-demo-user", email: "vale@esteticabella.cl", name: "Valentina López", password: localPassword, role: "ADMIN" },
+  update: { password: localPassword, deletedAt: null },
+});
+for (const [id, email, name] of [
+  ["website-qa-platform-admin", "contacto@purocode.com", "PuroCode Admin"],
+  ["website-qa-diego-admin", "diego.guzman@purocode.com", "Diego PuroCode"],
+  ["website-qa-admin", "admin@purocode.cl", "PuroCode Admin"],
+] as const) {
+  await prisma.user.upsert({
+    where: { email },
+    create: { id, email, name, password: localPassword, role: "SUPERADMIN", isSuperAdmin: true },
+    update: { password: localPassword, role: "SUPERADMIN", isSuperAdmin: true, deletedAt: null },
+  });
+}
 for (const key of ["a", "b"] as const) {
   const view = fixtureView(key), prefix = `website-qa-${key}`;
   await prisma.user.upsert({ where: { id: `${prefix}-owner` }, create: { id: `${prefix}-owner`, email: `${prefix}@example.test`, name: `${view.business.name} Owner`, password: localPassword, role: "ADMIN" }, update: { password: localPassword } });
@@ -50,6 +66,11 @@ for (const key of ["a", "b"] as const) {
   const fixtureRevision = existingWebsite ? existingWebsite.revision + 1 : 0;
   await prisma.businessWebsite.upsert({ where: { businessId: prefix }, create: { businessId: prefix, subdomain: `bella-${key}`, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), publishedRevision: 0 }, update: { draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), revision: fixtureRevision, publishedRevision: fixtureRevision } });
 }
+await prisma.staff.upsert({
+  where: { id: "website-qa-a-demo-staff" },
+  create: { id: "website-qa-a-demo-staff", businessId: "website-qa-a", userId: demoUser.id, email: "vale@esteticabella.cl", name: "Valentina López", isActive: true },
+  update: { userId: demoUser.id, isActive: true },
+});
 console.log("Migración y fixtures A/B preparados exclusivamente en PostgreSQL local 127.0.0.1:55439/websiteqa");
 await prisma.$disconnect();
 await pool.end();

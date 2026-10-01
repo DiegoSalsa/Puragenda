@@ -7,7 +7,9 @@ const env = {
   AUTH_SECRET: 'local-website-qa-auth-secret-isolated-2026',
   WEBSITE_QA: '1', WEBSITE_MEDIA_MOCK: '1', WEBSITE_DOMAIN_PROVIDER: 'mock', WEBSITE_VERCEL_WRITES_ENABLED: '', VERCEL_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '', WEBSITE_ROOT_DOMAIN: 'localhost',
   WEBSITE_BUILD_QA: build ? '1' : '',
-  RESEND_API_KEY: '', GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '',
+  // Keep the project's mail configuration. The previous QA override forced
+  // RESEND_API_KEY to empty, which made admin OTP delivery look broken.
+  GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '',
   MERCADOPAGO_ACCESS_TOKEN: '', PADDLE_API_KEY: '', PADDLE_SANDBOX_API_KEY: '',
   PADDLE_LIVE_API_KEY: '', PADDLE_NOTIFICATION_WEBHOOK_SECRET: '', PADDLE_WEBSITE_PRICE_ID: '',
   NEXT_PUBLIC_PADDLE_ENV: 'sandbox', NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: '',
