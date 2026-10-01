@@ -17,6 +17,7 @@ import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
 import { fixtureView } from "@/websites/fixtures/views";
 import { BELLA_PALETTES } from "@/websites/palettes";
+import { Prisma } from "@prisma/client";
 
 describe("website draft, publication and ownership",()=>{
 
@@ -64,4 +65,5 @@ describe("template switching",()=>{
  it("rejects stale switch revisions before writing",async()=>{expect(await switchWebsiteTemplate("matchday",1,1)).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
  it("rejects unsupported versions before the transaction",async()=>{expect(await switchWebsiteTemplate("matchday",2,2)).toHaveProperty("error");expect(m.website).not.toHaveBeenCalled();});
  it("rejects a stale editor saving a different template",async()=>{m.ensure.mockResolvedValue({templateKey:"matchday",templateVersion:1});expect(await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a","bella")).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
+ it("explains a missing migration without changing the draft",async()=>{m.website.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("Missing column",{code:"P2022",clientVersion:"7"}));expect(await switchWebsiteTemplate("matchday",1,2)).toEqual({error:"La base de datos necesita la migración de diseños web. No se aplicó el cambio."});expect(m.save).not.toHaveBeenCalled();});
 });

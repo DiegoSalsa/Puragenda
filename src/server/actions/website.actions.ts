@@ -92,6 +92,8 @@ async function safeAction<T>(operation: () => Promise<T>): Promise<T | { error: 
     if (error instanceof WebsiteError) return { error: error.message };
     if (error instanceof z.ZodError) return { error: "Revisa los campos: " + error.issues.slice(0, 3).map(issue => issue.path.join(".")).join(", ") };
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return { error: "Ese subdominio o dominio ya está ocupado" };
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") return { error: "La base de datos necesita la migración de diseños web. No se aplicó el cambio." };
+    if (error instanceof Prisma.PrismaClientValidationError) return { error: "El servidor necesita reiniciarse con el cliente de base de datos actualizado. No se aplicó el cambio." };
     return { error: "No pudimos completar el cambio. Intenta nuevamente." };
   }
 }

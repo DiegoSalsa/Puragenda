@@ -18,14 +18,11 @@ import Motion from "./_components/Motion";
 import { dateKey } from "./_lib/puragenda/validation";
 import styles from "./studio.module.css";
 import { effectiveWebsiteHeadline } from "../../publishing";
-import { resolveBellaGallery } from "./gallery";
+import { bellaDisplayConfig } from "./display-config";
 export default function BellaContent({ view: initial, fontClass }: { view: BellaView; fontClass: string }) {
   const liveView = useLivePreview(initial);
   const view = useMemo(() => {
-    const services = liveView.catalog.services.filter((service) => service.image).slice(0, 30);
-    const gallery = resolveBellaGallery(liveView.config, services);
-    const heroImage = liveView.config.heroImage || services[0]?.image || "";
-    return { ...liveView, config: { ...liveView.config, heroImage, gallery } };
+    return { ...liveView, config: bellaDisplayConfig(liveView.config, liveView.catalog.services, liveView.preview) };
   }, [liveView]);
   const { config, business, catalog } = view;
   const brand = bellaBrand(config, business.name);

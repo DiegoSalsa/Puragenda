@@ -42,7 +42,7 @@ function Page({ view, fontClass }: { view: View; fontClass: string }) {
   const [marqueePaused, setMarqueePaused] = useState(false);
   const [filter, setFilter] = useState("all"), [photo, setPhoto] = useState<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null), lastTrigger = useRef<HTMLElement | null>(null);
-  const gallery = matchdayGallery(c, catalog);
+  const gallery = matchdayGallery(c, catalog, view.preview);
   const visibleGallery = filter === "all" ? gallery : gallery.filter(item => item.categoryIds?.includes(filter));
   const staff = catalog.staff.filter(person => c.staffEditorial[person.id]?.visible !== false);
   const reserve = (id?: string) => { setBookingService(id); setBookingOpen(true); requestAnimationFrame(() => document.getElementById("booking")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })); };

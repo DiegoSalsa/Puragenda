@@ -16,7 +16,7 @@ export const bellaConfigBaseSchema = z.object({
   galleryFilters: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
   galleryCategories: z.array(galleryCategorySchema).max(20).default([]),
   copy: bellaCopySchema.default(defaultBellaCopy()),
-  process: z.array(galleryImageSchema.extend({ title: text(80) }).strict()).max(6).default([]),
+  process: z.array(galleryImageSchema.extend({ image: media, title: text(80) }).strict()).max(6).default([]),
   accent: z.enum(["coral", "plum", "forest"]).default("coral"),
   paletteMode: z.enum(["preset", "custom"]).default("preset"), customPalette: customPaletteSchema.optional(),
   contactEmail: z.union([z.literal(""), z.email()]).default(""), phone: text(30),

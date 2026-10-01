@@ -7,7 +7,7 @@ import { bellaCopy } from "../copy";
 import { normalizeGalleryCategories, categoryIdsForImage } from "../categories";
 import styles from "../studio.module.css";
 export default function Portfolio() {
-  const { config, business } = useBella(); const copy = bellaCopy(config, business.name);
+  const { config, business, preview } = useBella(); const copy = bellaCopy(config, business.name);
   const categories = normalizeGalleryCategories(config);
   const works = useMemo(() => config.gallery.map((work, index) => { const ids = work.categoryIds?.length ? work.categoryIds : categoryIdsForImage(work, categories); const labels = categories.filter(item => ids.includes(item.id)).map(item => item.label); return { ...work, id: String(index), filters: ["Todo", ...labels].filter(Boolean) }; }), [config.gallery, categories]);
   const filters = useMemo(() => { const available = works.flatMap(work => work.filters).filter(item => item !== "Todo"); return ["Todo", ...new Set([...config.galleryFilters.filter(item => available.includes(item)), ...available])]; }, [works, config.galleryFilters]);
@@ -22,6 +22,7 @@ export default function Portfolio() {
   const navigate = (direction: number) => { const element = rail.current; if (element) element.scrollBy({ left: direction * element.clientWidth * .65, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); };
   return <section data-website-field="gallery" id="trabajos" className={styles.portfolio} aria-labelledby="portfolio-title">
     <div className={styles.sectionHeading}><h2 id="portfolio-title" data-website-field="galleryTitle" style={{ whiteSpace: "pre-line" }}>{copy.gallery.title}</h2><p data-website-field="gallerySubtitle">{copy.gallery.subtitle}</p></div>
+    {preview && config.gallery.every(item => !item.image) ? <p>Tu galería aparecerá aquí. Añade tus fotos en Galería.</p> : null}
     <div className={styles.portfolioTools}>
       <div className={styles.filters} aria-label={copy.gallery.filterLabel}>{filters.map((item) => <button key={item} type="button" aria-pressed={filter === item} onClick={() => { setFilter(item); rail.current?.scrollTo({ left: 0 }); }}>{item}</button>)}</div>
       <div className={styles.railControls}><button type="button" aria-label={copy.gallery.previous} onClick={() => navigate(-1)}><span className={styles.reverse} aria-hidden="true"><ArrowNarrowRightIcon /></span></button><button type="button" aria-label={copy.gallery.next} onClick={() => navigate(1)}><span aria-hidden="true"><ArrowNarrowRightIcon /></span></button></div>
