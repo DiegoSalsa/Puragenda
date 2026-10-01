@@ -1,0 +1,58 @@
+import { WebsiteError } from "@/server/websites/errors";
+import { randomUUID } from "node:crypto";
+import { prisma } from "@/server/db/prisma";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { emptyBellaConfig } from "@/websites/config";
+import { normalizeHostname, validSubdomain, websiteIsVisible, websiteSubdomain } from "@/websites/policy";
+import { resolveTemplate } from "@/websites/registry";
+import { loadBookingContext, toBookingCatalog } from "@/server/booking/read.service";
+import { websiteCatalog } from "@/websites/catalog";
+import type { WebsiteView } from "@/websites/types";
+import type { Prisma } from "@prisma/client";
+
+export const websiteRootDomain = () => normalizeHostname(process.env.WEBSITE_ROOT_DOMAIN || "puragenda.cl");
+export async function requireWebsiteManager(ownerOnly = false) {
+  const user = await getCurrentSessionUser();
+  if (!user) throw new WebsiteError("No autenticado");
+  const business = await getBusinessForUser(user.id);
+  if (!business || business.deletedAt || (ownerOnly ? business.ownerId !== user.id : !await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.WEBSITE_MANAGE))) throw new WebsiteError("No autorizado");
+  return { user, business };
+}
+export async function getManagedWebsite() {
+  const { business } = await requireWebsiteManager();
+  return prisma.businessWebsite.findUnique({ where: { businessId: business.id }, include: { domains: true, domainRequests: true } });
+}
+export async function ensureWebsite(businessId: string, slug: string) {
+  const existing = await prisma.businessWebsite.findUnique({ where: { businessId } });
+  if (existing) return existing;
+  const subdomain = validSubdomain(slug) ? slug : `sitio-${randomUUID().slice(0, 8)}`;
+  return prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: emptyBellaConfig() }, update: {} });
+}
+const includeBusiness = { business: { include: { subscription: true, websiteAddon: true } }, domains: { where: { status: "ACTIVE" as const } } } satisfies Prisma.BusinessWebsiteInclude;
+export async function resolveWebsiteHost(raw: string) {
+  const hostname = normalizeHostname(raw);
+  const slug = websiteSubdomain(hostname, websiteRootDomain());
+  const site = slug
+    ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
+    : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE" } } }, include: includeBusiness });
+  if (!site || !websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt)) return null;
+  resolveTemplate(site.templateKey, site.templateVersion);
+  return site;
+}
+export type PublicWebsite = NonNullable<Awaited<ReturnType<typeof resolveWebsiteHost>>>;
+export async function websiteView(site: { businessId: string; templateKey: string; templateVersion: number; draftConfig: unknown; publishedConfig: unknown }, preview: boolean): Promise<WebsiteView> {
+  const template = resolveTemplate(site.templateKey, site.templateVersion);
+  const config = template.configSchema.parse(preview ? site.draftConfig : site.publishedConfig);
+  const [business, context] = await Promise.all([
+    prisma.business.findUniqueOrThrow({ where: { id: site.businessId }, select: { id: true, name: true, logoUrl: true, address: true, mapsUrl: true } }),
+    loadBookingContext(site.businessId),
+  ]);
+  return { config, catalog: websiteCatalog(toBookingCatalog(context), preview), business: { id: business.id, name: business.name, logo: business.logoUrl, address: business.address, mapsUrl: business.mapsUrl }, preview };
+}
+export function canonicalWebsiteUrl(site: PublicWebsite) {
+  const primary = site.domains.find(domain => domain.isPrimary);
+  return `https://${primary?.hostname || `${site.subdomain}.${websiteRootDomain()}`}`;
+}

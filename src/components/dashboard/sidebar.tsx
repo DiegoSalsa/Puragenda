@@ -83,6 +83,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/referrals", label: "referrals", icon: Gift },
   { href: "/dashboard/rewards", label: "rewards", icon: Trophy },
   { href: "/dashboard/settings", label: "settings", icon: Settings },
+  { href: "/dashboard/website", label: "website", icon: Palette },
 ];
 
 const navSectionDefinitions = [
@@ -113,7 +114,7 @@ const navSectionDefinitions = [
   {
     id: "configuration",
     label: "sectionConfiguration",
-    itemLabels: ["appearance", "settings"],
+    itemLabels: ["appearance", "website", "settings"],
   },
 ] as const;
 
@@ -266,6 +267,7 @@ function SidebarContent({
             "/dashboard/referrals": [DASHBOARD_PERMISSIONS.REFERRALS_VIEW],
             "/dashboard/rewards": [DASHBOARD_PERMISSIONS.REWARDS_VIEW],
             "/dashboard/settings": [DASHBOARD_PERMISSIONS.SETTINGS_MANAGE],
+            "/dashboard/website": [DASHBOARD_PERMISSIONS.WEBSITE_MANAGE],
           };
           return (required[href] || []).some((permission) =>
             permissions.includes(permission),

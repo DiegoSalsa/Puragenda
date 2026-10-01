@@ -27,6 +27,99 @@ model BookingOperation {
   @@index([expiresAt])
 }
 
+enum WebsiteStatus {
+  DRAFT
+  PUBLISHED
+  SUSPENDED
+}
+
+enum WebsiteDomainStatus {
+  PENDING
+  VERIFIED
+  ACTIVE
+  FAILED
+}
+
+enum DomainRequestStatus {
+  REQUESTED
+  REVIEWING
+  QUOTED
+  COMPLETED
+  CANCELLED
+}
+
+model BusinessWebsite {
+  id               String        @id @default(cuid())
+  businessId       String        @unique
+  templateKey      String        @default("bella")
+  templateVersion  Int           @default(1)
+  status           WebsiteStatus @default(DRAFT)
+  subdomain        String        @unique
+  draftConfig      Json
+  publishedConfig  Json?
+  revision         Int           @default(0)
+  publishedRevision Int?
+  publishedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  domains          WebsiteDomain[]
+  domainRequests   DomainRequest[]
+}
+
+model WebsiteDomain {
+  id               String              @id @default(cuid())
+  websiteId        String
+  hostname         String              @unique
+  status           WebsiteDomainStatus @default(PENDING)
+  verificationToken String
+  isPrimary        Boolean             @default(false)
+  verifiedAt       DateTime?
+  activatedAt      DateTime?
+  lastError        String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  website          BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, status])
+}
+
+model DomainRequest {
+  id          String              @id @default(cuid())
+  websiteId   String
+  hostname    String
+  notes       String              @default("")
+  status      DomainRequestStatus @default(REQUESTED)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  website     BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, status])
+}
+
+// Independent recurring item: supports Chilean MP base plans and annual base plans
+// without replacing or cancelling any existing subscription.
+model WebsiteAddon {
+  id                    String             @id @default(cuid())
+  businessId            String             @unique
+  status                SubscriptionStatus @default(INACTIVE)
+  provider              String             @default("paddle")
+  paddleSubscriptionId  String?            @unique
+  paddleCustomerId      String?
+  paddlePriceId         String?
+  checkoutTransactionId String?
+  validUntil            DateTime?
+  cancelAt              DateTime?
+  lastEventAt           DateTime?
+  lastEventId           String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  business              Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model WebsiteBillingEvent {
+  eventId   String   @id
+  createdAt DateTime @default(now())
+}
+
 // ==========================================
 // AUTH & USERS
 // ==========================================
@@ -460,6 +553,8 @@ model Business {
   clients                     Client[]
   subscription                Subscription?
   bookingOperations           BookingOperation[]
+  website                     BusinessWebsite?
+  websiteAddon                WebsiteAddon?
   businessHours               BusinessHours[]
   blockedDates                BlockedDate[]
   loyaltyCodes                LoyaltyCode[]

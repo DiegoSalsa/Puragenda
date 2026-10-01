@@ -6,6 +6,7 @@ import type {
 } from "@paddle/paddle-node-sdk";
 import { prisma } from "@/server/db/prisma";
 import { notifySubscriptionPayment } from "@/server/services/subscription-payment-notification.service";
+import { syncWebsiteAddon } from "@/server/websites/billing";
 
 function subscriptionStatus(status: string) {
   switch (status) {
@@ -162,6 +163,7 @@ async function syncCompletedTransaction(event: EventEntity, transaction: Transac
 }
 
 export async function processPaddleWebhook(event: EventEntity) {
+  if (await syncWebsiteAddon(event)) return;
   if (event.eventType === "customer.created" || event.eventType === "customer.updated") {
     await syncCustomer(event.data as CustomerNotification);
     return;

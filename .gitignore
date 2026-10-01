@@ -50,6 +50,8 @@ next-env.d.ts
 
 # local QA and marketing artifacts
 /scratch/
+/.next-websites-qa/
+/.next-websites-build/
 /marketing/
 /social/puri-update-reel/
 /carruseles/

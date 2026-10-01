@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegisterSW } from "@/components/pwa/register-sw";
@@ -18,6 +19,7 @@ import esMessages from "../../messages/es.json";
 import esLegacyMessages from "../../messages/legacy/es.json";
 import esDashboardMessages from "../../messages/dashboard/es.json";
 import "./globals.css";
+import { RuntimeChrome } from "@/websites/RuntimeChrome";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -126,35 +128,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${plusJakarta.variable} overflow-x-hidden`} suppressHydrationWarning>
-      <head>
-        {googleAnalyticsId ? (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `${getGoogleConsentBootstrapScript()}
-gtag("js", new Date());
-gtag("config", ${JSON.stringify(googleAnalyticsId)});`,
-              }}
-            />
-          </>
-        ) : null}
-      </head>
+      <head />
       <body
         className={`${plusJakarta.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
       >
         <MarketingIntlProvider initialMessages={initialMarketingMessages}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="puragenda-theme">
+            <RuntimeChrome>
+            {googleAnalyticsId ? <><Script id="puragenda-consent-bootstrap" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `${getGoogleConsentBootstrapScript()}
+gtag("js", new Date());
+gtag("config", ${JSON.stringify(googleAnalyticsId)});` }} /><Script id="puragenda-gtag" strategy="afterInteractive" src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`} /></> : null}
             <RegisterSW />
             <Suspense fallback={null}>
               <AnalyticsProvider />
             </Suspense>
             {googleAnalyticsId ? <GoogleAnalyticsConsent /> : null}
+            </RuntimeChrome>
             {children}
-            <CookieBanner />
+            <RuntimeChrome><CookieBanner /></RuntimeChrome>
           </ThemeProvider>
         </MarketingIntlProvider>
       </body>

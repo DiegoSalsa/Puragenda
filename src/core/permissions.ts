@@ -16,6 +16,7 @@ export const DASHBOARD_PERMISSIONS = {
   REFERRALS_VIEW: "referrals.view",
   REWARDS_VIEW: "rewards.view",
   SETTINGS_MANAGE: "settings.manage",
+  WEBSITE_MANAGE: "website.manage",
 } as const;
 
 export type DashboardPermission = typeof DASHBOARD_PERMISSIONS[keyof typeof DASHBOARD_PERMISSIONS];
@@ -27,6 +28,7 @@ export const PERMISSION_CATALOG: {
   description: string;
   critical?: boolean;
 }[] = [
+  { code: DASHBOARD_PERMISSIONS.WEBSITE_MANAGE, group: "Marca", label: "Administrar sitio web", description: "Editar, previsualizar y publicar el sitio web.", critical: true },
   { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN, group: "Agenda", label: "Ver sus propias citas", description: "Acceso a la agenda asignada a esta persona." },
   { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL, group: "Agenda", label: "Ver todas las agendas", description: "Puede consultar las citas de todo el equipo.", critical: true },
   { code: DASHBOARD_PERMISSIONS.APPOINTMENTS_MANAGE_OWN, group: "Agenda", label: "Gestionar sus propias citas", description: "Puede crear, editar y reagendar citas en su propia agenda." },
@@ -48,6 +50,7 @@ export const PERMISSION_CATALOG: {
 
 const ALL = PERMISSION_CATALOG.map((permission) => permission.code);
 const RECEPTIONIST_EXCLUDED = new Set<DashboardPermission>([
+  DASHBOARD_PERMISSIONS.WEBSITE_MANAGE,
   DASHBOARD_PERMISSIONS.SETTINGS_MANAGE,
   DASHBOARD_PERMISSIONS.REFERRALS_VIEW,
   DASHBOARD_PERMISSIONS.REWARDS_VIEW,
