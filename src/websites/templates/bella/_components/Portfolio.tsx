@@ -9,8 +9,8 @@ import styles from "../studio.module.css";
 export default function Portfolio() {
   const { config, business } = useBella(); const copy = bellaCopy(config, business.name);
   const categories = normalizeGalleryCategories(config);
-  const works = config.gallery.map((work, index) => { const ids = work.categoryIds?.length ? work.categoryIds : categoryIdsForImage(work, categories); const labels = categories.filter(item => ids.includes(item.id)).map(item => item.label); return { ...work, id: String(index), filters: ["Todo", ...labels].filter(Boolean) }; });
-  const filters = useMemo(() => { const available = works.flatMap(work => work.filters).filter(item => item !== "Todo"); return ["Todo", ...new Set([...config.galleryFilters.filter(item => available.includes(item)), ...available])]; }, [config.gallery, config.galleryFilters, config.galleryCategories]);
+  const works = useMemo(() => config.gallery.map((work, index) => { const ids = work.categoryIds?.length ? work.categoryIds : categoryIdsForImage(work, categories); const labels = categories.filter(item => ids.includes(item.id)).map(item => item.label); return { ...work, id: String(index), filters: ["Todo", ...labels].filter(Boolean) }; }), [config.gallery, categories]);
+  const filters = useMemo(() => { const available = works.flatMap(work => work.filters).filter(item => item !== "Todo"); return ["Todo", ...new Set([...config.galleryFilters.filter(item => available.includes(item)), ...available])]; }, [works, config.galleryFilters]);
   const [filter, setFilter] = useState<string>("Todo");
   const [expanded, setExpanded] = useState<(typeof works)[number] | null>(null);
   const [paused, setPaused] = useState(false);
@@ -32,15 +32,15 @@ export default function Portfolio() {
         </button><figcaption><span>{String(index + 1).padStart(2, "0")} / {work.name}</span><span>{work.category}</span></figcaption>
       </figure>)}
     </div>
-    <div className={styles.galleryNote}><span role="status">{visible.length} {visible.length === 1 ? copy.gallery.countSingular : copy.gallery.countPlural} · portfolio</span><span>{copy.gallery.note}</span></div>
+    <div className={styles.galleryNote}><span role="status">{visible.length} {visible.length === 1 ? copy.gallery.countSingular : copy.gallery.countPlural}{copy.gallery.countSuffix ? ` · ${copy.gallery.countSuffix}` : ""}</span><span>{copy.gallery.note}</span></div>
     <dialog aria-label={copy.gallery.dialogLabel} className={styles.photoDialog} ref={dialog} onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
       <div className={styles.dialogBar}><p>{expanded?.name}</p><button type="button" onClick={() => dialog.current?.close()}>{copy.gallery.closeDialog}</button></div>
       {expanded ? <div className={styles.expandedPhoto}><Image src={expanded.image} alt={expanded.alt} fill sizes="90vw" /></div> : null}
       <p className={styles.dialogCaption}>{business.name}</p>
     </dialog>
-    <div className={styles.marquee} data-paused={paused}>
+    {copy.gallery.marquee.length ? <div className={styles.marquee} data-paused={paused}>
       <div className={styles.marqueeTrack} aria-hidden="true">{[0, 1].map(index => <span key={index}>{copy.gallery.marquee[index % copy.gallery.marquee.length]}</span>)}</div>
       <button type="button" aria-pressed={paused} onClick={() => setPaused(!paused)}>{paused ? copy.gallery.resume : copy.gallery.pause}</button>
-    </div>
+    </div> : null}
   </section>;
 }

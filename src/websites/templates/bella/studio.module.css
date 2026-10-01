@@ -19,7 +19,8 @@
 .root :where(img) { object-fit: cover; }
 .root :where(section) { scroll-margin-top: 100px; }
 .root :where(h3[tabindex="-1"]):focus { outline: none; }
-.bookingPanel { scroll-margin-top: 100px; }
+.bookingPanel { scroll-margin-top: 100px; min-width: 0; max-width: 100%; }
+.bookingLayout > * { min-width: 0; max-width: 100%; }
 .skip { position: fixed; left: 20px; top: -100px; padding: 12px 24px; background: var(--ink); color: white; z-index: 100; }
 .skip:focus { top: 12px; }
 .header { height: 86px; padding: 0 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; position: sticky; top: 0; z-index: 30; background: white; border-bottom: 1px solid transparent; }
@@ -226,11 +227,12 @@
 .success { animation: stepReveal 360ms var(--ease); padding-top: 22px; }
 .successIcon { display: grid; width: 78px; height: 78px; place-items: center; margin-bottom: 24px; border: 1px solid var(--ink); border-radius: 50%; }
 .success > p { font-size: 16px; }
-.footer { padding: 65px 48px 26px; display: grid; grid-template-columns: 2fr 1fr; gap: 42px; }
+.footer { padding: 65px 48px 26px; display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: 42px; min-width: 0; }
 .footerWordmark { font-size: var(--footer-brand-size, clamp(88px,13vw,200px)); font-family: var(--bella-display),sans-serif; letter-spacing: -.075em; font-weight: 800; line-height: .86; }
-.footerLinks { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; font-size: 14px; }
-.footerLinks > a { min-height: 44px; padding-top: 8px; }
-.footerBottom { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr auto; gap: 26px; border-top: 1px solid var(--line); margin-top: 15px; padding-top: 22px; font-size: 11px; color: #59595b; }
+.footerLinks { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; font-size: 14px; min-width: 0; max-width: 100%; }
+.footerLinks > a { min-height: 44px; padding-top: 8px; overflow-wrap: anywhere; max-width: 100%; }
+.footerBottom { grid-column: 1/-1; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,auto); gap: 26px; border-top: 1px solid var(--line); margin-top: 15px; padding-top: 22px; font-size: 11px; color: #59595b; min-width: 0; }
+.footerBottom > * { min-width: 0; overflow-wrap: anywhere; }
 .fineprint { font-size: 12px; color: #59595b; }
 [data-revealed="true"].processPhoto,[data-revealed="true"].spacePhoto { animation: shutter 650ms var(--ease); }
 @keyframes masthead { from { clip-path: inset(100% 0 0); transform: translateY(14px) scaleX(var(--stretch,1)); } to { clip-path: inset(0); transform: scaleX(var(--stretch,1)); } }
@@ -291,7 +293,7 @@
 .root *, .root *::before, .root *::after { box-sizing: border-box; }
 .wordmark strong { overflow-wrap: anywhere; max-width: 100%; }
 .footerWordmark { overflow-wrap: anywhere; }
-.root .footerWordmark { font-size: var(--footer-brand-size, clamp(88px,13vw,200px)); }
+.root .footerWordmark { font-size: var(--footer-brand-size, clamp(88px,13vw,200px)); min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 @media (max-width:700px) { .root .footerWordmark { font-size: var(--footer-brand-size, 25vw); } }
 .heroCopy h2 { overflow-wrap: anywhere; }
 .brand { max-width: 45%; white-space: normal; overflow-wrap: anywhere; }

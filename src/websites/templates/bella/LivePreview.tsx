@@ -18,7 +18,8 @@ export function useLivePreview(initial: WebsiteView) {
         document.querySelectorAll("[data-website-highlight]").forEach(element => element.removeAttribute("data-website-highlight"));
         const target = document.querySelector<HTMLElement>(`[data-website-field="${parsed.data.focus}"]`);
         if (!target) return;
-        target.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+        // scrollIntoView also scrolls ancestors outside this iframe, shifting the builder.
+        window.scrollTo({ top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - (window.innerHeight - Math.min(target.offsetHeight, window.innerHeight)) / 2), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
         target.setAttribute("data-website-highlight", "true");
         clearTimeout(highlight); highlight = setTimeout(() => target.removeAttribute("data-website-highlight"), 1200);
       });

@@ -21,6 +21,7 @@ export default function BellaContent({ view: initial, fontClass }: { view: Websi
   const { config, business, catalog } = view;
   const brand = bellaBrand(config, business.name);
   const copy = bellaCopy(config, business.name);
+  const headline = config.headline || copy.hero.fallbackHeadline;
   const colors = paletteTokens(config.accent, config.customPalette, config.paletteMode);
   const longName = brand.title.length > 7;
   const style = { "--red": colors.primary, "--red-text": colors.text, "--gray": colors.background, "--ink": colors.ink, ...(longName ? { "--brand-size": `clamp(44px, ${Math.min(20, 110 / brand.title.length)}vw, 230px)`, "--footer-brand-size": `clamp(38px, ${Math.min(9, 55 / brand.title.length)}vw, 140px)`, "--brand-stretch": 1 } : {}) } as CSSProperties;
@@ -30,7 +31,7 @@ export default function BellaContent({ view: initial, fontClass }: { view: Websi
       <section id="inicio" className={styles.hero} aria-labelledby="bella-title">
         <h1 id="bella-title" className={styles.wordmark} data-website-field="brandTitle">{brand.eyebrow ? <span data-website-field="brandEyebrow">{brand.eyebrow.toUpperCase()}</span> : null}<strong>{brand.title.toUpperCase()}<span>.</span></strong></h1>
         <div className={styles.heroGrid}><figure><div className={styles.heroPhoto} data-website-field="heroImage"><Media src={config.heroImage} alt={config.heroCaption || business.name} fill preload sizes="(max-width: 700px) 100vw, 73vw" /></div>{config.heroCaption ? <figcaption data-website-field="heroCaption">{config.heroCaption}</figcaption> : null}</figure>
-          <div className={styles.heroCopy}><h2 data-website-field="headline" style={{ whiteSpace: "pre-line" }}>{config.headline || copy.hero.fallbackHeadline}<span>.</span></h2>{config.intro ? <p data-website-field="intro">{config.intro}</p> : null}<Action booking>{copy.hero.reserve}</Action>{config.gallery.length ? <Action href="#trabajos" quiet>{copy.hero.gallery}</Action> : null}</div></div>
+          <div className={styles.heroCopy}><h2 data-website-field="headline" style={{ whiteSpace: "pre-line" }}>{headline}{/[.!?…]$/.test(headline.trim()) ? null : "."}</h2>{config.intro ? <p data-website-field="intro">{config.intro}</p> : null}<Action booking>{copy.hero.reserve}</Action>{config.gallery.length ? <Action href="#trabajos" quiet>{copy.hero.gallery}</Action> : null}</div></div>
       </section>
       {config.gallery.length ? <Portfolio /> : null}
       <Services catalog={catalog} error={null} />

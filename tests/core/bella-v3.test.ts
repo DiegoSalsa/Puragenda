@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bellaConfigSchema, emptyBellaConfig } from "@/websites/config";
 import { assignCategory, categoryId, categoryIdsForImage, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
 import { contrastRatio, validatePalette } from "@/websites/palettes";
+import { bellaCopy } from "@/websites/templates/bella/copy";
 describe("Bella V3 copy, categories and controlled palettes", () => {
   it("keeps V1 config compatible and supplies typed copy defaults", () => {
     const config = bellaConfigSchema.parse({ schemaVersion: 1, headline: "Título muy largo" });
@@ -20,5 +21,9 @@ describe("Bella V3 copy, categories and controlled palettes", () => {
   it("accepts adversarial copy lengths within controlled limits", () => {
     const config = bellaConfigSchema.parse({ copy: { gallery: { marquee: ["x".repeat(120)] } }, displayName: "Centro Integral de Estética y Belleza Carolina Fernández" });
     expect(config.copy.gallery.marquee[0]).toHaveLength(120);
+  });
+  it("keeps marquee ownership explicit: legacy defaults get a business phrase, empty stays hidden", () => {
+    expect(bellaCopy({}, "Carolina").gallery.marquee).toEqual(["COLOR. FORMA. DETALLE. CAROLINA."]);
+    expect(bellaCopy({ copy: { gallery: { marquee: [] } } as never }, "Carolina").gallery.marquee).toEqual([]);
   });
 });
