@@ -1,5 +1,7 @@
 # Add-on Sitio Web Puragenda
 
+Estado de esta rama: billing sigue preparado para sandbox/mock. Esta auditoría no llama Paddle LIVE ni modifica productos, precios o suscripciones.
+
 Precio comercial objetivo: **$9.990 CLP/mes**, adicional al plan base. No se crearon productos ni precios Paddle LIVE, ni se llamó una API autenticada de Paddle durante la implementación. La UI muestra el precio real del catálogo sandbox cuando esté configurado, y un aviso de catálogo pendiente mientras no lo esté.
 
 ## Integración preparada

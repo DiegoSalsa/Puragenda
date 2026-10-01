@@ -1,6 +1,6 @@
-# Entrega · Sitio Web Puragenda V1
+# Entrega · Sitio Web Puragenda — rama `webs`
 
-Bella se convirtió en template multi-tenant dentro de Puragenda, con editor controlado, preview privado, publicación por snapshots y booking canónico. La referencia original permanece intacta. Rama: `feature/websites-addon-v1`. No se hizo merge, deploy, compra de dominio, DNS, configuración Vercel Production ni Paddle LIVE.
+Bella se mantiene como template multi-tenant dentro de Puragenda, con editor controlado, preview privado, publicación por snapshots y booking canónico. La referencia original permanece intacta. Rama: `webs`. No se hizo merge, deploy, compra de dominio, DNS, configuración Vercel Production ni Paddle LIVE.
 
 ## Matriz de los 35 puntos solicitados
 
@@ -12,7 +12,7 @@ Bella se convirtió en template multi-tenant dentro de Puragenda, con editor con
 | 4 | Arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md): infraestructura separada del diseño/datos |
 | 5 | Registry | Tipado; únicamente Bella key bella/version 1 |
 | 6 | Modelos Prisma | BusinessWebsite, WebsiteDomain, DomainRequest, WebsiteAddon, WebsiteBillingEvent |
-| 7 | Migración | `20260930160000_websites_addon_v1`, aplicada/prueba solo local; RLS/constraints incluidos |
+| 7 | Migraciones | V1 (`20260930160000_websites_addon_v1`) + V2 (`20260930210000_website_visual_builder_v2`), aplicadas/prueba solo local; RLS/constraints incluidos |
 | 8 | Editor | Mi sitio web: contenido, fotos, galería, about, contacto, redes, paleta y SEO |
 | 9 | Preview | `/dashboard/website/preview`, demo/datos reales, móvil, privado/noindex |
 | 10 | Draft/published | Guardar, previsualizar, publicar; revisión optimista; público solo snapshot publicado |
@@ -24,7 +24,7 @@ Bella se convirtió en template multi-tenant dentro de Puragenda, con editor con
 | 16 | Booking | UI Bella → disponibilidad/quote/escritor Puragenda; reserva local comprobada |
 | 17 | Runtime multi-tenant | Host → website → business → registry → renderer; no headers/client IDs como autoridad |
 | 18 | Subdominios | Unicidad, validación/reservados, localhost A/B; DNS wildcard real pendiente |
-| 19 | Dominios propios | Registro, TXT, adapter y principal; activación proveedor/TLS pendiente |
+| 19 | Dominios propios | Registro y challenge TXT tenant-specific; provider/TLS solo después de challenge y sujeto a infraestructura externa |
 | 20 | Domain requests | Persistencia y solicitud de cotización, diagnóstico superadmin; sin compra |
 | 21 | Entitlement | Vigencia + estados + acceso base; expiración/suspensión conserva snapshots |
 | 22 | Billing preparado | SDK sandbox, checkout separado, webhook, cancelación/reactivación/recuperación; [límites](BILLING.md) |
@@ -35,10 +35,10 @@ Bella se convirtió en template multi-tenant dentro de Puragenda, con editor con
 | 27 | Lint | Aprobado: 0 errores; 32 advertencias existentes |
 | 28 | Typecheck | Aprobado |
 | 29 | Prisma validate | Aprobado; generate también |
-| 30 | Tests | 949 aprobados, 21 omitidos; 19 pruebas HTTP/DB; 30 tests websites |
+| 30 | Tests | Reejecutar en esta rama; los números históricos de V1 no son evidencia de la auditoría final |
 | 31 | Build | Aprobado en entorno local aislado; no deploy |
 | 32 | Documentación | Auditoría/manifest, ARCHITECTURE, BELLA, DOMAINS, BILLING, QA y esta entrega |
-| 33 | Rama | feature/websites-addon-v1; checkout base feature/public-booking-api |
+| 33 | Rama | `webs`; sin merge ni rebase peligroso |
 | 34 | Commits | Implementación: `0915c42`; evidencia/documentación en commit posterior; consultar `git log -2 --oneline` |
 | 35 | Pasos manuales | Staging/migración, Cloudinary real, Paddle sandbox E2E, adapter/TLS/DNS; autorizaciones externas posteriores |
 

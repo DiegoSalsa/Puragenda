@@ -70,3 +70,9 @@ next-env.d.ts
 /check2.ts
 /check3.ts
 /migrate_locations.ts
+
+# local agent tooling
+/.agents/
+
+# local visual QA artifacts
+/artifacts/

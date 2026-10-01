@@ -48,7 +48,7 @@ export function bellaCopy(config: { copy?: Partial<BellaCopy> }, businessName?: 
   const configuredMarqueeEnabled = (config.copy as { gallery?: { marqueeEnabled?: boolean } } | undefined)?.gallery?.marqueeEnabled;
   const parsed = bellaCopySchema.parse(config.copy ?? {});
   parsed.gallery.marqueeEnabled = configuredMarqueeEnabled !== false;
-  if (parsed.gallery.marqueeEnabled && (!Array.isArray(configuredMarquee) || configuredMarquee.length === 0)) {
+  if (parsed.gallery.marqueeEnabled && configuredMarquee === undefined) {
     parsed.gallery.marquee = [`COLOR. FORMA. DETALLE. ${(businessName || "").trim().toUpperCase()}.`].filter(Boolean);
   }
   return parsed;

@@ -18,6 +18,7 @@ export default function Portfolio() {
   const dialog = useRef<HTMLDialogElement>(null);
   const visible = works.filter((work) => (work.filters as readonly string[]).includes(filter));
   useEffect(() => { const receive = (event: Event) => { const value = (event as CustomEvent<string>).detail; if (typeof value === "string" && filters.includes(value)) { setFilter(value); rail.current?.scrollTo({ left: 0 }); } }; window.addEventListener("bella:gallery-filter", receive); return () => window.removeEventListener("bella:gallery-filter", receive); }, [filters]);
+  if (config.gallery.length === 0) return null;
   const navigate = (direction: number) => { const element = rail.current; if (element) element.scrollBy({ left: direction * element.clientWidth * .65, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); };
   return <section data-website-field="gallery" id="trabajos" className={styles.portfolio} aria-labelledby="portfolio-title">
     <div className={styles.sectionHeading}><h2 id="portfolio-title" data-website-field="galleryTitle" style={{ whiteSpace: "pre-line" }}>{copy.gallery.title}</h2><p data-website-field="gallerySubtitle">{copy.gallery.subtitle}</p></div>

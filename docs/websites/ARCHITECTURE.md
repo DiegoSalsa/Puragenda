@@ -1,4 +1,4 @@
-# Sitio Web Puragenda · V1
+# Sitio Web Puragenda · Auditoría final de `webs`
 
 Único template disponible: Bella v1. Implementación en Puragenda; `purocode-demos` es referencia de solo lectura. No se realizó merge, deploy ni cambios de DNS o infraestructura remota.
 
@@ -31,7 +31,15 @@ El registry tipado declara `key`, nombre, versión, industrias, capacidades, esq
 
 ## Prisma y migración
 
-`20260930160000_websites_addon_v1` agrega:
+`20260930160000_websites_addon_v1` agrega la base de websites y
+`20260930210000_website_visual_builder_v2` añade:
+
+- `WebsiteMedia` con ownership por `BusinessWebsite`, borrado lógico, checks, índice y RLS.
+- `WebsiteDomain.provider`, `dnsRecords` y `checkedAt`.
+
+La segunda migración es incremental; no se reescribe V1.
+
+La migración base agrega:
 
 - BusinessWebsite: relación única con Business, subdominio único, snapshots y revisiones.
 - WebsiteDomain: hostname único, token de propiedad, estados y dominio principal.
@@ -41,18 +49,18 @@ El registry tipado declara `key`, nombre, versión, industrias, capacidades, esq
 
 No altera los campos canónicos de servicios, staff, reservas o suscripción base. Incluye claves foráneas, índices, CHECK de snapshot publicado y subdominio, un único dominio principal por sitio y RLS en las cinco tablas. Revoca acceso de los roles Supabase `anon` y `authenticated` si existen. No hay políticas de lectura desde el navegador: Prisma requiere conexión privilegiada del servidor.
 
-La migración se probó exclusivamente en PostgreSQL local aislado. La preparación desde cero de QA genera el esquema actual y aplica las restricciones de la migración; no sustituye la historia de migraciones de un entorno existente.
+La migración se prueba exclusivamente en PostgreSQL local aislado. El resultado de `prisma migrate diff` y la suite ejecutada deben conservarse como evidencia de esta rama; `prisma validate` por sí solo no se considera prueba de ausencia de drift.
 
 ## Seguridad
 
 El manager procede de sesión firmada, negocio del usuario y permiso `website.manage`; dominio y billing requieren propietario. Todas las mutaciones y consultas privadas se limitan a ese negocio. Nunca se acepta businessId del cliente para elegir tenant. El proxy sobrescribe `x-puragenda-website-host` desde Host validado, ignora `x-forwarded-host` y protege el acceso directo a `/sites/otro-host`.
 
-Preview exige autorización en cada carga, devuelve noindex/no-store y no crea citas. Sus consultas de disponibilidad usan el negocio autenticado. El iframe móvil permite framing únicamente del mismo origen en esta ruta privada; el resto conserva DENY. Las URLs de imágenes admiten recursos locales seguros o Cloudinary HTTPS; se rechazan esquemas peligrosos, traversal codificado y credenciales. Los uploads validan tamaño/formato, decodifican con límite de píxeles y normalizan a WebP sin metadatos.
+Preview exige autorización en cada carga, devuelve noindex/no-store y no crea citas. Sus consultas de disponibilidad usan el negocio autenticado. El iframe móvil permite framing únicamente del mismo origen en esta ruta privada; el resto conserva DENY. Las URLs de imágenes admiten recursos locales seguros o Cloudinary HTTPS; se rechazan esquemas peligrosos, traversal codificado y credenciales. Los uploads validan tamaño/formato, decodifican con límite de píxeles y normalizan a WebP sin metadatos. La galería pública prioriza fotos manuales, luego imágenes de servicios del mismo catálogo, y se oculta si no hay ninguna; nunca inyecta assets demo de Bella en un tenant real.
 
 El runtime conserva los providers compartidos de idioma y tema. `RuntimeChrome` excluye banners de cookies, PWA, analytics y scripts de marketing cuando está presente Bella. Esta base conserva algo de carga compartida; no se presenta como una optimización completa de bundles/CWV.
 
 ## Reservas
 
-Bella conserva la UI original de cinco pasos y su reducer. La disponibilidad real llama `getBookingAvailability`; los precios y duraciones llaman `quoteBookingSelection`. El adaptador de escritura delega **en proceso** al POST canónico `/api/business/[slug]/book`, reutilizando validación, locks de colisión, idempotencia, abonos, notificaciones y creación de Appointment. No contiene un segundo motor de disponibilidad ni hace loopback HTTP.
+Bella conserva la UI original de cinco pasos y su reducer. Los contratos de catálogo y booking viven en `src/websites/booking/types.ts`; Bella los reexporta por compatibilidad. La disponibilidad real llama `getBookingAvailability`; los precios y duraciones llaman `quoteBookingSelection`. El adaptador de escritura delega **en proceso** al POST canónico `/api/business/[slug]/book`, reutilizando validación, locks de colisión, idempotencia, abonos, notificaciones y creación de Appointment. No contiene un segundo motor de disponibilidad ni hace loopback HTTP.
 
 El navegador envía selección y datos del cliente; no recibe API keys ni decide precio/duración/endTime. La escritura exige origen del mismo host y clave de idempotencia. El resultado distingue cita recibida, confirmada, abono y recuperación pendiente. Un resultado incierto no invita a repetir/pagar otra vez. Los fixtures generan disponibilidad demostrativa; preview real consulta disponibilidad canónica pero termina la simulación sin POST.

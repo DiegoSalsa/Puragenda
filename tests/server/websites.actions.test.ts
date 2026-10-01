@@ -13,6 +13,7 @@ vi.mock("@/server/websites/domains",()=>({addWebsiteDomain:vi.fn(),customHostnam
 vi.mock("@/server/db/prisma",()=>{const tx={$queryRaw:m.lock,business:{findUniqueOrThrow:m.business},businessWebsite:{updateMany:(args: {data: {publishedConfig?: unknown}})=> args.data.publishedConfig ? m.publish(args) : m.save(args)},websiteDomain:{findFirst:m.domain,updateMany:m.deactivate,update:m.primary}};return{prisma:{...tx,businessWebsite:{updateMany:m.save,findUnique:m.availability},$transaction:(work:(tx:unknown)=>unknown)=>work(tx)}};});
 
 import { saveWebsiteDraft,publishWebsite,setPrimaryWebsiteDomain,websiteSubdomainAvailability } from "@/server/actions/website.actions";
+import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
 import { fixtureView } from "@/websites/fixtures/views";
 
@@ -25,6 +26,7 @@ describe("website draft, publication and ownership",()=>{
  it("publishes one validated saved snapshot and rejects stale versions",async()=>{await publishWebsite(2);expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",revision:2},data:expect.objectContaining({status:"PUBLISHED",publishedRevision:2,publishedConfig:fixtureView("a").config})}));await expect(publishWebsite(1)).resolves.toEqual({error:"Recarga el borrador antes de publicar"});});
 
  it("refuses publication without paid access or a complete hero",async()=>{m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:null});await expect(publishWebsite(2)).resolves.toEqual({error:"Activa el add-on y regulariza tu suscripción para publicar"});expect(m.publish).not.toHaveBeenCalled();});
+ it("uses the effective fallback headline for publication requirements",()=>{expect(effectiveWebsiteHeadline({headline:" Título " ,copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Título");expect(effectiveWebsiteHeadline({headline:"   ",copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Fallback");expect(effectiveWebsiteHeadline({headline:"\t",copy:{hero:{fallbackHeadline:"  "}}})).toBe("");});
 
  it("cannot make another tenant domain primary",async()=>{m.domain.mockResolvedValue(null);await expect(setPrimaryWebsiteDomain("domain-b")).resolves.toEqual({error:"Dominio no activo"});expect(m.domain).toHaveBeenCalledWith({where:{id:"domain-b",status:"ACTIVE",website:{businessId:"tenant-a"}}});expect(m.primary).not.toHaveBeenCalled();});
 

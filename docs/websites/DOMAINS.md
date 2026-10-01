@@ -14,7 +14,9 @@ Para servir `negocio.puragenda.cl` posteriormente hacen falta DNS wildcard, rout
 
 WebsiteDomain almacena hostname único, token aleatorio, estado PENDING/VERIFIED/ACTIVE/FAILED y principal. El propietario registra el dominio y recibe un TXT en `_puragenda.<dominio>`. `WebsiteDomainAdapter` separa verificación de propiedad de activación del proveedor.
 
-El adapter incluido comprueba TXT mediante lectura DNS y puede marcar VERIFIED. **Nunca marca ACTIVE automáticamente**: no tiene permiso ni implementación de mutación Vercel. Un adapter futuro debe comprobar propiedad, destino y TLS antes de activar. Solo ACTIVE se resuelve públicamente. Un índice parcial permite un principal por website. SEO usa ese dominio cuando está activo y es principal; en caso contrario usa el subdominio.
+El alta solo crea el challenge y no adopta nombres en Vercel. La activación verifica primero el TXT tenant-specific; después reconcilia/agrega el hostname en el provider y exige que el proyecto y el DNS correspondan. Un mismo `projectId` de Vercel nunca se considera prueba de que dos tenants sean el mismo propietario.
+
+El adapter incluido comprueba TXT mediante lectura DNS. Solo después de esa prueba el provider puede devolver VERIFIED/ACTIVE; si el challenge no coincide, no se asocia ni se adopta el dominio. Solo ACTIVE se resuelve públicamente. Un índice parcial permite un principal por website. SEO usa ese dominio cuando está activo y es principal; en caso contrario usa el subdominio.
 
 No se usaron tokens Vercel ni se escribieron registros DNS. La UI incluye registro, verificación y selección de principal. El panel de superadmin permite inspeccionar sitios y solicitudes; la activación de infraestructura sigue siendo tarea posterior explícita.
 

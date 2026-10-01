@@ -1,22 +1,24 @@
 # QA de Sitio Web Puragenda
 
-Validación realizada entre el 30 de septiembre y el 1 de octubre de 2026, exclusivamente con datos demostrativos/locales. Referencia congelada: `purocode-demos /studio`. Puragenda: demo, preview autenticado y runtime por hostname.
+Validación final de la rama `webs`, 1 de octubre de 2026, exclusivamente con datos demostrativos/locales. Referencia congelada: `purocode-demos /studio`. Puragenda: demo, preview autenticado y runtime por hostname.
 
 ## Resultados
 
 | Comprobación | Resultado |
 | --- | --- |
-| Suite completa Vitest | 168 archivos aprobados, 2 omitidos; 949 tests aprobados, 21 omitidos |
-| Website unitarios | 5 archivos, 30 tests aprobados |
-| Lint | 0 errores, 32 advertencias existentes |
+| Suite completa Vitest | **173 archivos aprobados, 2 omitidos; 997 tests aprobados, 21 omitidos** |
+| Website unitarios focalizados | **5 archivos, 49 tests aprobados** |
+| Lint | **0 errores, 32 advertencias existentes** |
 | Typecheck | Aprobado |
-| Prisma validate / generate | Aprobados; SQL exacto aplicado sobre baseline local, sin drift ([evidencia](qa/prisma-migration.txt)) |
-| Build Next.js local aislado | Aprobado, rutas nuevas incluidas |
+| Prisma validate / generate | Aprobados; `migrate diff --from-config-datasource --to-schema` sin diferencias sobre PostgreSQL local |
+| Build Next.js local aislado | Aprobado, 133 páginas generadas y rutas de websites incluidas |
 | HTTP/DB multi-tenant local | 19 comprobaciones aprobadas; [evidencia](qa/http-tests.json) |
 | Integridad referencia | 58 hashes y estado/commit iguales al congelado |
 | Assets | 10 WebP portados con SHA-256 idéntico |
 
-Las últimas modificaciones posteriores a la suite completa tuvieron validación focalizada y typecheck/lint adicionales. No se ocultaron tests fallidos ni se cambiaron expectativas de tests existentes para acomodar el feature.
+La suite se ejecutó después de los cambios finales. No se ocultaron tests fallidos ni se cambiaron expectativas para acomodar el feature.
+
+La reproducción completa desde todas las migraciones históricas no es una baseline válida en este repositorio: `20260505_add_marketing_campaigns` referencia `Client` antes de que exista en esa historia. La preparación local usa el schema baseline y aplica las migraciones de websites incrementales; sobre esa base el diff contra el schema actual es limpio. Esto queda como deuda de historia de migraciones, no como drift del schema actual.
 
 ## QA visual
 
@@ -56,7 +58,7 @@ No se detectó degradación visual evidente en las vistas inspeccionadas. Las di
 | Galería | 6 trabajos | 2 trabajos diferentes |
 | Runtime | bella-a.localhost:3005 | bella-b.localhost:3005 |
 
-Los registros canónicos en PostgreSQL tienen IDs distintos y asignaciones propias. La suite HTTP prueba que IDs de A no pueden reservarse desde B; también modifica un precio canónico y verifica que la web lo refleja sin publicar de nuevo. Las fotos de prueba provienen del conjunto autorizado de referencia, con selección distinta; no se hicieron pasar por fotografías de un negocio real.
+Los registros canónicos en PostgreSQL tienen IDs distintos y asignaciones propias. La suite HTTP prueba que IDs de A no pueden reservarse desde B; también modifica un precio canónico y verifica que la web lo refleja sin publicar de nuevo. La prueba de galería cubre la prioridad manual → imágenes de servicios → ocultar sección; los assets demo de Bella solo aparecen en fixtures explícitos y no se inyectan en tenants reales.
 
 ## Ejecutar localmente
 

@@ -1,5 +1,7 @@
 # Template Bella
 
+La galería de producción no usa fotografías demo como fallback: prioriza `config.gallery`, luego imágenes del catálogo canónico de servicios del mismo negocio, y oculta Portfolio si ambas fuentes están vacías. Las fotografías demo permanecen disponibles únicamente para fixtures, demos y QA explícitos.
+
 La auditoría exacta y los 58 hashes de referencia están en [bella-source-audit.md](bella-source-audit.md) y [bella-source-manifest.json](bella-source-manifest.json). El original no se editó. Para QA se ejecutó una copia congelada en `scratch/bella-reference`, con salida de compilación propia.
 
 ## Portado y reutilizado

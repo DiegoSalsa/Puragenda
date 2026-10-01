@@ -3,6 +3,7 @@ import { bellaConfigSchema, emptyBellaConfig } from "@/websites/config";
 import { assignCategory, categoryId, categoryIdsForImage, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
 import { contrastRatio, validatePalette } from "@/websites/palettes";
 import { bellaCopy } from "@/websites/templates/bella/copy";
+import { resolveBellaGallery } from "@/websites/templates/bella/gallery";
 describe("Bella V3 copy, categories and controlled palettes", () => {
   it("keeps V1 config compatible and supplies typed copy defaults", () => {
     const config = bellaConfigSchema.parse({ schemaVersion: 1, headline: "Título muy largo" });
@@ -25,5 +26,19 @@ describe("Bella V3 copy, categories and controlled palettes", () => {
   it("keeps marquee ownership explicit: legacy defaults get a business phrase, empty stays hidden", () => {
     expect(bellaCopy({}, "Carolina").gallery.marquee).toEqual(["COLOR. FORMA. DETALLE. CAROLINA."]);
     expect(bellaCopy({ copy: { gallery: { marquee: [] } } as never }, "Carolina").gallery.marquee).toEqual([]);
+  });
+  it("resolves gallery in tenant-owned priority order and never injects Bella demo assets", () => {
+    const base = emptyBellaConfig();
+    const services = [{ image: "https://res.cloudinary.com/demo/service.webp", name: "Manicure", category: "Manos" }, { image: "", name: "Sin foto", category: "" }];
+    expect(resolveBellaGallery({ gallery: [{ image: "https://res.cloudinary.com/demo/manual.webp", name: "Propia", alt: "", category: "" }] }, services as never)[0].name).toBe("Propia");
+    expect(resolveBellaGallery(base, services as never).map(item => item.name)).toEqual(["Manicure"]);
+    expect(resolveBellaGallery(base, [] as never)).toEqual([]);
+    expect(JSON.stringify(resolveBellaGallery(base, services as never))).not.toContain("/websites/bella/portfolio/");
+  });
+  it("rejects invalid category labels, duplicate names/ids and dangling image references", () => {
+    expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "", order: 0 }] })).toThrow();
+    expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }, { id: "cat-b", label: "cejas", order: 1 }] })).toThrow();
+    expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }, { id: "cat-a", label: "Uñas", order: 1 }] })).toThrow();
+    expect(() => bellaConfigSchema.parse({ galleryCategories: [{ id: "cat-a", label: "Cejas", order: 0 }], gallery: [{ image: "/foto.webp", categoryIds: ["cat-missing"] }] })).toThrow();
   });
 });

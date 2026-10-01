@@ -1,5 +1,5 @@
 import type { BookingCatalogDto } from "@/server/booking/contracts";
-import type { Catalog } from "./templates/bella/_lib/puragenda/types";
+import type { Catalog } from "./booking/types";
 export function websiteCatalog(data: BookingCatalogDto, preview = false): Catalog {
   return {
     mode: preview ? "preview" : "connected", business: data.business,

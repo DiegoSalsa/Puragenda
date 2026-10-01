@@ -1,4 +1,4 @@
-import type { AvailabilityQuery, BookingProvider, Catalog, StudioService } from "../templates/bella/_lib/puragenda/types";
+import type { AvailabilityQuery, BookingProvider, Catalog, StudioService } from "../booking/types";
 import { addDays, dateKey, quoteService, validateSelection } from "../templates/bella/_lib/puragenda/validation";
 import { BookingError } from "../templates/bella/_lib/puragenda/errors";
 

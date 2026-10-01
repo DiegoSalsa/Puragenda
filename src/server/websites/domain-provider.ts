@@ -29,9 +29,12 @@ export class VercelDomainProvider implements DomainProvider {
   }
   private projectPath(hostname?: string, version = 9) { return `/v${version}/projects/${encodeURIComponent(this.projectId)}/domains${hostname ? `/${encodeURIComponent(hostname)}` : ""}`; }
   async addDomain(hostname: string) {
-    // A retry after an ambiguous response can reconcile only this exact project.
     try { await this.request(this.projectPath(undefined, 10), "POST", { name: hostname }); }
-    catch (error) { try { const current = projectSchema.parse(await this.request(this.projectPath(hostname))); if (current.projectId !== this.projectId) throw error; } catch { throw error; } }
+    catch {
+      // A same-project response is not tenant ownership. The caller must have
+      // completed the Puragenda TXT challenge before retrying/adopting it.
+      throw new WebsiteError("El dominio ya existe o necesita verificación de propiedad antes de conectarse.");
+    }
     return this.getDomainStatus(hostname);
   }
   async getDomainStatus(hostname: string): Promise<DomainResult> {

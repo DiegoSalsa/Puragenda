@@ -15,6 +15,7 @@ import { storeWebsiteImage, deleteWebsiteAsset, validateWebsiteAssets } from "@/
 import { mediaUrls } from "@/websites/editor-utils";
 import { websiteAssetSchema } from "@/websites/media";
 import { paletteTokens, validatePalette } from "@/websites/palettes";
+import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -45,7 +46,7 @@ async function publishWebsiteImpl(revision: number) {
     const config = template.configSchema.parse(site.draftConfig);
     if (config.paletteMode === "custom" && config.customPalette && !validatePalette(paletteTokens(config.accent, config.customPalette, config.paletteMode)).valid) throw new WebsiteError("La paleta personalizada necesita más contraste antes de publicar");
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
-    if (!config.heroImage || !config.headline) throw new WebsiteError("Agrega una portada y un titular antes de publicar");
+    if (!config.heroImage || !effectiveWebsiteHeadline(config)) throw new WebsiteError("Agrega una portada y un titular antes de publicar");
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });
     if (published.count !== 1) throw new WebsiteError("El borrador cambió. Revisa y publica nuevamente.");
   });
