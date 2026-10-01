@@ -10,6 +10,7 @@ export { bookingJson } from "./response";
 const limiter = rateLimit({ windowMs: 60000, max: 120 });
 export const availabilityQuerySchema = z.object({
   date: z.string().date(), serviceId: z.string().min(1).max(100), locationId: z.string().min(1).max(100).optional(),
+  serviceIds: z.array(z.string().min(1).max(100)).max(10).optional(),
   staffId: z.string().min(1).max(100).optional(), firstAvailable: z.enum(["true", "false"]).optional().transform((value) => value === "true"),
   selectedOptionAlternativeIds: z.array(z.string().min(1).max(100)).max(50).default([]),
 });

@@ -65,6 +65,17 @@ describe("public booking reads", () => {
     expect(result.slots[0].staffId).toBe("staff-b");
     expect(result.slots.find((slot) => slot.startTime === "2026-10-01T13:00:00.000Z")?.staffId).toBe("staff-a");
   });
+  it("preserves a business multi-service limit in the shared availability catalog", async () => {
+    const data = bookingFixture();
+    data.maxServicesPerBooking = 2;
+    data.services.push({ ...data.services[0], id: "service-2", name: "Extra", price: 10000 });
+    data.staff.forEach((member) => member.services.push({ id: "service-2" }));
+    const catalogDto = toBookingCatalog(data);
+    expect(catalogDto.rules.maxServicesPerBooking).toBe(2);
+    const result = await getBookingAvailability(data, { date: "2026-10-01", serviceId: "service-1", serviceIds: ["service-1", "service-2"], staffId: "staff-a", selectedOptionAlternativeIds: ["option-1"] }, now);
+    expect(result.selection).toMatchObject({ duration: 120, price: 30000 });
+    expect(result.slots[0].endTime).toBe("2026-10-01T14:00:00.000Z");
+  });
   it("returns empty on blocked days without disclosing private reason", async () => {
     mocks.blockedDate.mockResolvedValue({ id: "blocked", reason: "private" });
     const result = await getBookingAvailability(bookingFixture(), { date: "2026-10-01", serviceId: "service-1", staffId: "staff-a", selectedOptionAlternativeIds: ["option-1"] }, now);

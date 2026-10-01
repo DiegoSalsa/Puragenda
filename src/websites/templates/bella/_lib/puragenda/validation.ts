@@ -30,7 +30,10 @@ export function parseQuery(value: unknown): AvailabilityQuery {
   if (!Array.isArray(data.optionIds) || data.optionIds.length > 50) fail("Las opciones no son válidas.");
   const optionIds = data.optionIds.map(identifier);
   if (new Set(optionIds).size !== optionIds.length) fail("Hay opciones repetidas.");
-  return { serviceId: identifier(data.serviceId), staffId: data.staffId === "" ? "" : identifier(data.staffId), locationId: identifier(data.locationId), optionIds, date: data.date };
+  const serviceId = identifier(data.serviceId);
+  const serviceIds = data.serviceIds === undefined ? undefined : Array.isArray(data.serviceIds) && data.serviceIds.length <= 10 ? data.serviceIds.map(identifier) : fail("Los servicios seleccionados no son válidos.");
+  if (serviceIds && (!serviceIds.includes(serviceId) || new Set(serviceIds).size !== serviceIds.length)) fail("Los servicios seleccionados no son válidos.");
+  return { serviceId, serviceIds, staffId: data.staffId === "" ? "" : identifier(data.staffId), locationId: identifier(data.locationId), optionIds, date: data.date };
 }
 export function parseBooking(value: unknown): BookingRequest {
   const data = record(value);
@@ -52,7 +55,11 @@ export function parseBooking(value: unknown): BookingRequest {
     customerAddress = data.customerAddress.trim() || undefined;
   }
   // Client price, duration and endTime are intentionally discarded.
-  return { ...query, customerName, customerEmail, customerPhone, customerAddress, startTime: data.startTime };
+  const staffAssignments = data.staffAssignments === undefined ? undefined : Array.isArray(data.staffAssignments) ? data.staffAssignments.map((item) => {
+    const value = record(item);
+    return { serviceId: identifier(value.serviceId), staffId: identifier(value.staffId) };
+  }) : fail("La asignación de profesionales no es válida.");
+  return { ...query, customerName, customerEmail, customerPhone, customerAddress, startTime: data.startTime, staffAssignments };
 }
 export function quoteService(service: StudioService, optionIds: string[]) {
   const { duration, price, requiresAddress } = quoteBookingSelection([service], optionIds);

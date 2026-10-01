@@ -16,7 +16,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
     select: {
       id: true, slug: true, name: true, timezone: true, currencyCode: true,
       slotInterval: true, minAdvanceBookingMinutes: true, allowSameDayBookings: true,
-      depositRequired: true, depositPaymentMode: true, mpAccessToken: true,
+      depositRequired: true, depositPaymentMode: true, mpAccessToken: true, maxServicesPerBooking: true,
       subscription: { select: { plan: true } },
       businessHours: { select: { ...hoursSelect, isOpen: true } },
       scheduleOverrides: { select: { ...overridesSelect, isOpen: true } },
@@ -26,7 +26,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
         select: {
           id: true, name: true, description: true, imageUrl: true, price: true, duration: true, depositAmount: true,
           availabilityType: true, specialWeekDays: true, specialStartDate: true, specialEndDate: true, specialStartTime: true, specialEndTime: true,
-          category: { select: { id: true, name: true, businessId: true } },
+          category: { select: { id: true, name: true, businessId: true, position: true } },
           locations: { where: { location: { businessId, isActive: true } }, select: { locationId: true } },
           optionCategories: { orderBy: { position: "asc" }, select: { id: true, name: true, isRequired: true, maxSelections: true,
             alternatives: { orderBy: { position: "asc" }, select: { id: true, name: true, priceDelta: true, durationDelta: true, isHomeService: true } } } },
@@ -54,7 +54,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
   return data;
 }
 type BookingContext = Awaited<ReturnType<typeof loadBookingContext>>;
-export type AvailabilityQuery = { date: string; serviceId: string; locationId?: string; staffId?: string; firstAvailable?: boolean; selectedOptionAlternativeIds: string[] };
+export type AvailabilityQuery = { date: string; serviceId: string; serviceIds?: string[]; locationId?: string; staffId?: string; firstAvailable?: boolean; selectedOptionAlternativeIds: string[] };
 
 export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
   const businessOnly = usesBusinessScheduleOnly(data.subscription?.plan);
@@ -63,7 +63,7 @@ export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
     version: "1", business: { id: data.id, slug: data.slug, name: data.name, timezone: data.timezone, currency: data.currencyCode },
     services: data.services.map((service) => ({
       id: service.id, name: service.name, description: service.description, imageUrl: service.imageUrl,
-      category: service.category?.businessId === data.id ? { id: service.category.id, name: service.category.name } : null,
+      category: service.category?.businessId === data.id ? { id: service.category.id, name: service.category.name, position: service.category.position } : null,
       price: service.price, duration: service.duration, depositAmount: service.depositAmount,
       locationIds: service.locations.map((assignment) => assignment.locationId),
       optionCategories: service.optionCategories.map((category) => ({ id: category.id, name: category.name, isRequired: category.isRequired, maxSelections: category.maxSelections,
@@ -79,6 +79,7 @@ export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
     rules: { scheduleMode: businessOnly ? "BUSINESS" : "STAFF", staffSelection: businessOnly ? "NONE" : "REQUIRED",
       slotInterval: data.slotInterval, minAdvanceBookingMinutes: data.minAdvanceBookingMinutes, advanceAppliesTo: "SAME_DAY",
       allowSameDayBookings: data.allowSameDayBookings, depositEnabled: data.depositRequired && (data.depositPaymentMode === "MANUAL_LINK" || !!data.mpAccessToken),
+      maxServicesPerBooking: data.maxServicesPerBooking,
       customerFields: { name: true, email: true, phone: true, address: "HOME_OPTIONS_ONLY" },
     },
   };
@@ -87,9 +88,11 @@ export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
 export async function getBookingAvailability(data: BookingContext, query: AvailabilityQuery, now = new Date(), internal: { db?: Prisma.TransactionClient; skipBusy?: boolean } = {}): Promise<BookingAvailabilityDto> {
   const location = query.locationId ? data.locations.find((item) => item.id === query.locationId) : data.locations[0];
   if (!location) throw new BookingSelectionError("La sucursal seleccionada no está disponible");
-  const service = data.services.find((item) => item.id === query.serviceId);
-  if (!service || !service.locations.some((assignment) => assignment.locationId === location.id)) throw new BookingSelectionError("El servicio no está disponible en esta sucursal");
-  const quote = quoteBookingSelection([service], query.selectedOptionAlternativeIds);
+  const requestedServiceIds = [...new Set(query.serviceIds?.length ? query.serviceIds : [query.serviceId])];
+  if (!requestedServiceIds.includes(query.serviceId)) throw new BookingSelectionError("La lista de servicios no es válida");
+  const services = requestedServiceIds.map((id) => data.services.find((item) => item.id === id)).filter((item): item is BookingContext["services"][number] => Boolean(item));
+  if (services.length !== requestedServiceIds.length || services.some((service) => !service.locations.some((assignment) => assignment.locationId === location.id))) throw new BookingSelectionError("Uno o más servicios no están disponibles en esta sucursal");
+  const quote = quoteBookingSelection(services, query.selectedOptionAlternativeIds);
   const timezone = location.timezone || data.timezone;
   // Compare civil days, independently of the machine timezone and DST day length.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
@@ -99,11 +102,11 @@ export async function getBookingAvailability(data: BookingContext, query: Availa
   if (businessOnly && (query.staffId || query.firstAvailable)) throw new BookingSelectionError("Esta agenda no requiere profesional");
   if (query.staffId && query.firstAvailable) throw new BookingSelectionError("Selecciona profesional o primera disponible");
   const eligible = data.staff.filter((staff) => staff.locations.some((assignment) => assignment.locationId === location.id)
-    && (staff.services.length === 0 || staff.services.some((assignment) => assignment.id === service.id)));
+    && (staff.services.length === 0 || requestedServiceIds.every((serviceId) => staff.services.some((assignment) => assignment.id === serviceId))));
   if (!businessOnly && !query.firstAvailable && !eligible.some((staff) => staff.id === query.staffId)) throw new BookingSelectionError("Selecciona un profesional habilitado");
   const staffList = businessOnly ? [null] : query.firstAvailable ? eligible : eligible.filter((staff) => staff.id === query.staffId);
   const result: BookingAvailabilityDto = { version: "1", date: query.date, timezone, locationId: location.id,
-    selection: { serviceId: service.id, selectedOptionAlternativeIds: [...query.selectedOptionAlternativeIds].sort(), duration: quote.duration, price: quote.price, currency: data.currencyCode, requiresAddress: quote.requiresAddress }, slots: [] };
+    selection: { serviceId: query.serviceId, selectedOptionAlternativeIds: [...query.selectedOptionAlternativeIds].sort(), duration: quote.duration, price: quote.price, currency: data.currencyCode, requiresAddress: quote.requiresAddress }, slots: [] };
   const blockedDay = await (internal.db ?? prisma).blockedDate.findUnique({ where: { businessId_date: { businessId: data.id, date: new Date(`${query.date}T00:00:00Z`) } }, select: { id: true } });
   if (blockedDay) return result;
   const bounds = bookingDayQueryBounds(query.date, timezone);
@@ -118,7 +121,7 @@ export async function getBookingAvailability(data: BookingContext, query: Availa
       staffSchedule: staff ? staff.locations.find((assignment) => assignment.locationId === location.id)?.schedule ?? staff.schedule : undefined,
       staffScheduleOverrides: staff?.scheduleOverrides.map((override) => ({ ...override, date: override.date.toISOString().slice(0, 10), isOpen: override.isWorking })),
       slotInterval: data.slotInterval, allowSameDayBookings: data.allowSameDayBookings, minAdvanceBookingMinutes: data.minAdvanceBookingMinutes,
-      services: [{ ...service, specialStartDate: service.specialStartDate?.toISOString().slice(0, 10), specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) }], blocked, now,
+      services: services.map((service) => ({ ...service, specialStartDate: service.specialStartDate?.toISOString().slice(0, 10), specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) })), blocked, now,
     });
     for (const slot of slots) {
       const utc = slotToUtc(slot, timezone, quote.duration)!;

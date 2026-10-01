@@ -90,7 +90,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
     if (!validateApiKey(business, request.headers.get("x-api-key"))) return bookingJson({ error: "API Key inválida o no proporcionada", code: "UNAUTHORIZED" }, 401);
     // A completed operation can be read even if the subscription subsequently expires.
     const data = parsed.data;
-    if ((data.serviceIds?.length ?? 0) > 1 || data.staffAssignments?.length || data.rewardCode || data.discountCode || data.promotionId || data.giftCardId) return bookingJson({ error: "La idempotencia v1 admite una cita simple con opciones, sin incentivos", code: "UNSUPPORTED_CAPABILITY" }, 400);
+    if (data.staffAssignments?.length || data.rewardCode || data.discountCode || data.promotionId || data.giftCardId) return bookingJson({ error: "La idempotencia v1 admite servicios consecutivos con opciones, sin incentivos ni profesionales separados", code: "UNSUPPORTED_CAPABILITY" }, 400);
     const claimed = await claimBookingOperation(business.id, key, bookingPayloadHash(data));
     if (claimed.kind === "replay") {
       const response = bookingJson(claimed.operation.response, claimed.operation.httpStatus ?? 201);
@@ -477,9 +477,9 @@ async function handleBooking(
     }
 
     if (isBookingV1(request)) {
-      if (allServiceIds.length !== 1 || hasStaffAssignments) throw new BookingSelectionError("El contrato v1 admite una cita simple", "UNSUPPORTED_CAPABILITY");
+      if (hasStaffAssignments) throw new BookingSelectionError("El contrato v1 no admite profesionales separados por servicio", "UNSUPPORTED_CAPABILITY");
       const availability = await getBookingAvailability(await loadBookingContext(business.id), {
-        date: bookingDateKey, serviceId, locationId: location.id,
+        date: bookingDateKey, serviceId, serviceIds: allServiceIds, locationId: location.id,
         staffId, selectedOptionAlternativeIds,
       });
       if (!availability.slots.some((slot) => slot.startTime === requestedStart.toISOString() && slot.endTime === expectedEnd.toISOString())) {

@@ -3,7 +3,7 @@ import { addDays, dateKey, quoteService, validateSelection } from "../templates/
 import { BookingError } from "../templates/bella/_lib/puragenda/errors";
 
 const locationIds = ["bella-demo"];
-const service = (id: string, name: string, duration: number, price: number, description: string, image: string, category = "Uñas"): StudioService => ({ id, name, duration, price, description, image, category, locationIds, optionCategories: [] });
+const service = (id: string, name: string, duration: number, price: number, description: string, image: string, category = "Uñas"): StudioService => ({ id, name, duration, price, description, image, category, categoryId: category.toLowerCase(), categoryPosition: 0, locationIds, optionCategories: [] });
 export const demoCatalog: Catalog = {
   mode: "demo", business: { name: "Estética Bella", timezone: "America/Santiago", currency: "CLP" },
   supportsAnyStaff: true, locations: [{ id: "bella-demo", name: "Estudio Bella · sede de muestra", timezone: "America/Santiago" }],

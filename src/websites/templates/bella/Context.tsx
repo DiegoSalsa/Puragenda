@@ -20,7 +20,8 @@ export function createWebsiteApi(catalog: Catalog, preview: boolean, demonstrati
     availability: async (query: AvailabilityQuery, signal?: AbortSignal): Promise<Availability> => {
       // Synthetic slots exist only for explicitly identified demonstration data.
       if (preview && demonstration) return demoAvailability(query, new Date(), catalog);
-      const params = new URLSearchParams({ ...query, optionIds: query.optionIds.join(",") });
+      const params = new URLSearchParams({ date: query.date, serviceId: query.serviceId, locationId: query.locationId, staffId: query.staffId, optionIds: query.optionIds.join(",") });
+      for (const serviceId of query.serviceIds ?? []) params.append("serviceIds", serviceId);
       if (preview) params.set("preview", "1");
       return request<Availability>(`availability?${params}`, { signal });
     },

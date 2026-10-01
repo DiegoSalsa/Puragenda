@@ -2,7 +2,7 @@ import type { BookingOptionCategory } from "@/core/booking-selection";
 
 export type BookingServiceDto = {
   id: string; name: string; description: string | null; imageUrl: string | null;
-  category: { id: string; name: string } | null; price: number; duration: number;
+  category: { id: string; name: string; position?: number } | null; price: number; duration: number;
   locationIds: string[]; optionCategories: BookingOptionCategory[];
   depositAmount: number;
 };
@@ -17,6 +17,7 @@ export type BookingCatalogDto = {
     scheduleMode: "BUSINESS" | "STAFF"; staffSelection: "NONE" | "REQUIRED";
     slotInterval: number; minAdvanceBookingMinutes: number; advanceAppliesTo: "SAME_DAY";
     allowSameDayBookings: boolean; depositEnabled: boolean;
+    maxServicesPerBooking: number;
     customerFields: { name: true; email: true; phone: true; address: "HOME_OPTIONS_ONLY" };
   };
 };

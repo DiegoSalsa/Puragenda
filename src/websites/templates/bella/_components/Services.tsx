@@ -1,6 +1,6 @@
 "use client";
 import Image from "../Media";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Catalog, StudioService } from "../_lib/puragenda/types";
 import { money, quoteService } from "../_lib/puragenda/validation";
 import { useBella } from "../Context";
@@ -13,12 +13,21 @@ export default function Services({ catalog: initial, error: initialError }: { ca
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState(initial?.services[0]?.id ?? "");
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const service = catalog?.services.find((item) => item.id === selectedId) ?? catalog?.services[0];
+  const serviceGroups = useMemo(() => (catalog?.services ?? []).reduce<Array<{ id: string; name: string; position: number; services: StudioService[] }>>((groups, item) => {
+    const id = item.categoryId || "__uncategorized";
+    const name = item.category || "Otros servicios";
+    const existing = groups.find((group) => group.id === id);
+    if (existing) existing.services.push(item);
+    else groups.push({ id, name, position: item.categoryPosition, services: [item] });
+    return groups;
+  }, []).sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "es")), [catalog?.services]);
   async function retry() { setLoading(true); try { const next = await studioApi.catalog(); setCatalog(next); setError(null); setSelectedId(next.services[0]?.id ?? ""); } catch (cause) { setError(cause instanceof Error ? cause.message : "No pudimos consultar los tratamientos."); } finally { setLoading(false); } }
   return <section id="tratamientos" className={styles.services} aria-labelledby="services-title">
     <div className={styles.serviceHeading}><h2 id="services-title" data-website-field="servicesTitle" style={{ whiteSpace: "pre-line" }}>{copy.services.title}</h2><p>{copy.services.subtitle}</p></div>
     {error ? <div className={styles.errorPanel} role="alert"><p>{error}</p><button className={styles.outlineButton} type="button" onClick={retry} disabled={loading}>{loading ? copy.services.loading : copy.services.retry}</button></div> : catalog && service ? <>
-      <div className={styles.serviceList} aria-label={copy.services.aria}>{catalog.services.map((item) => <button key={item.id} type="button" aria-pressed={service.id === item.id} onClick={() => setSelectedId(item.id)}><span className={styles.selectionDot} aria-hidden="true" />{item.name}</button>)}</div>
+      <div className={styles.serviceList} aria-label={copy.services.aria}>{serviceGroups.map((group) => <div key={group.id} className={styles.serviceGroup}><button type="button" className={styles.serviceGroupHeader} aria-expanded={expandedCategories.includes(group.id)} onClick={() => setExpandedCategories((current) => current.includes(group.id) ? current.filter((id) => id !== group.id) : [...current, group.id])}><span><strong>{group.name}</strong><small>{group.services.length} {group.services.length === 1 ? "servicio" : "servicios"}</small></span><span aria-hidden="true">{expandedCategories.includes(group.id) ? "⌃" : "⌄"}</span></button>{expandedCategories.includes(group.id) ? group.services.map((item) => <button key={item.id} type="button" aria-pressed={service.id === item.id} onClick={() => { setSelectedId(item.id); setExpandedCategories((current) => current.includes(group.id) ? current : [...current, group.id]); }}><span className={styles.selectionDot} aria-hidden="true" />{item.name}</button>) : null}</div>)}</div>
       <ServiceDetail key={service.id} service={service} catalog={catalog} />
     </> : <p>{copy.services.unavailable}</p>}
   </section>;
