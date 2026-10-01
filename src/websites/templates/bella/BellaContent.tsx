@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import type { WebsiteView } from "../../types";
 import { BellaProvider } from "./Context";
 import { useLivePreview } from "./LivePreview";
-import { BELLA_PALETTES } from "../../palettes";
+import { paletteTokens } from "../../palettes";
+import { bellaCopy } from "./copy";
 import { bellaBrand } from "./brand";
 import Media from "./Media";
 import Header from "./_components/Header";
@@ -19,24 +20,25 @@ export default function BellaContent({ view: initial, fontClass }: { view: Websi
   const view = useLivePreview(initial);
   const { config, business, catalog } = view;
   const brand = bellaBrand(config, business.name);
-  const colors = BELLA_PALETTES.find(palette => palette.key === config.accent)!.colors;
+  const copy = bellaCopy(config, business.name);
+  const colors = paletteTokens(config.accent, config.customPalette, config.paletteMode);
   const longName = brand.title.length > 7;
-  const style = { "--red": colors[0], "--red-text": colors[1], ...(longName ? { "--brand-size": `clamp(44px, ${Math.min(20, 110 / brand.title.length)}vw, 230px)`, "--footer-brand-size": `clamp(38px, ${Math.min(9, 55 / brand.title.length)}vw, 140px)`, "--brand-stretch": 1 } : {}) } as CSSProperties;
+  const style = { "--red": colors.primary, "--red-text": colors.text, "--gray": colors.background, "--ink": colors.ink, ...(longName ? { "--brand-size": `clamp(44px, ${Math.min(20, 110 / brand.title.length)}vw, 230px)`, "--footer-brand-size": `clamp(38px, ${Math.min(9, 55 / brand.title.length)}vw, 140px)`, "--brand-stretch": 1 } : {}) } as CSSProperties;
   return <BellaProvider view={view}><div id="studio-root" className={`${styles.root} ${fontClass}`} style={style}>
     <a href="#contenido-studio" className={styles.skip}>Saltar al contenido</a><Header />
     <main id="contenido-studio">
       <section id="inicio" className={styles.hero} aria-labelledby="bella-title">
         <h1 id="bella-title" className={styles.wordmark} data-website-field="brandTitle">{brand.eyebrow ? <span data-website-field="brandEyebrow">{brand.eyebrow.toUpperCase()}</span> : null}<strong>{brand.title.toUpperCase()}<span>.</span></strong></h1>
         <div className={styles.heroGrid}><figure><div className={styles.heroPhoto} data-website-field="heroImage"><Media src={config.heroImage} alt={config.heroCaption || business.name} fill preload sizes="(max-width: 700px) 100vw, 73vw" /></div>{config.heroCaption ? <figcaption data-website-field="heroCaption">{config.heroCaption}</figcaption> : null}</figure>
-          <div className={styles.heroCopy}><h2 data-website-field="headline" style={{ whiteSpace: "pre-line" }}>{config.headline || "Tu próximo\nmomento"}<span>.</span></h2>{config.intro ? <p data-website-field="intro">{config.intro}</p> : null}<Action booking>Reservar mi momento</Action>{config.gallery.length ? <Action href="#trabajos" quiet>Ver trabajos</Action> : null}</div></div>
+          <div className={styles.heroCopy}><h2 data-website-field="headline" style={{ whiteSpace: "pre-line" }}>{config.headline || copy.hero.fallbackHeadline}<span>.</span></h2>{config.intro ? <p data-website-field="intro">{config.intro}</p> : null}<Action booking>{copy.hero.reserve}</Action>{config.gallery.length ? <Action href="#trabajos" quiet>{copy.hero.gallery}</Action> : null}</div></div>
       </section>
       {config.gallery.length ? <Portfolio /> : null}
       <Services catalog={catalog} error={null} />
       {config.about || config.process.length ? <Studio /> : null}
       <BookingSection catalog={catalog} error={null} today={dateKey(new Date(), catalog.business.timezone)} fallbackUrl={null} />
     </main>
-    <footer data-website-field="contact" className={styles.footer}><a className={styles.footerWordmark} href="#inicio">{brand.title.toUpperCase()}<span>.</span></a><div className={styles.footerLinks}>{config.gallery.length ? <a href="#trabajos">Mira los detalles</a> : null}<Action booking quiet>Reserva tu momento</Action>{config.instagram ? <a href={config.instagram} target="_blank" rel="noopener noreferrer">Instagram</a> : null}{config.facebook ? <a href={config.facebook} target="_blank" rel="noopener noreferrer">Facebook</a> : null}{config.whatsapp ? <a href={`https://wa.me/${config.whatsapp.replace("+", "")}`}>WhatsApp</a> : null}</div>
-      <div className={styles.footerBottom}><p>{business.address}{config.phone ? <><br />{config.phone}</> : null}{config.contactEmail ? <><br /><a href={`mailto:${config.contactEmail}`}>{config.contactEmail}</a></> : null}</p>{view.preview ? <p>Vista previa. No se crean reservas.</p> : null}<a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer">Reservas con Puragenda</a></div>
+    <footer data-website-field="contact" className={styles.footer}><a className={styles.footerWordmark} href="#inicio">{brand.title.toUpperCase()}<span>.</span></a><div className={styles.footerLinks}>{config.gallery.length ? <a href="#trabajos">{copy.footer.gallery}</a> : null}<Action booking quiet>{copy.footer.reserve}</Action>{config.instagram ? <a href={config.instagram} target="_blank" rel="noopener noreferrer">Instagram</a> : null}{config.facebook ? <a href={config.facebook} target="_blank" rel="noopener noreferrer">Facebook</a> : null}{config.whatsapp ? <a href={`https://wa.me/${config.whatsapp.replace("+", "")}`}>WhatsApp</a> : null}</div>
+      <div className={styles.footerBottom}><p>{business.address}{config.phone ? <><br />{config.phone}</> : null}{config.contactEmail ? <><br /><a href={`mailto:${config.contactEmail}`}>{config.contactEmail}</a></> : null}</p>{view.preview ? <p>{copy.footer.preview}</p> : null}<a href="https://www.puragenda.cl" target="_blank" rel="noopener noreferrer">{copy.footer.credit}</a></div>
     </footer><Motion />
   </div></BellaProvider>;
 }

@@ -6,16 +6,17 @@ import type { AnimatedIconHandle } from "../icons/types";
 import type { Availability, BookingResult, Catalog, Customer } from "../_lib/puragenda/types";
 import { BookingError } from "../_lib/puragenda/errors";
 import { useBella } from "../Context";
+import { bellaCopy } from "../copy";
 import { addDays, money, parseBooking, quoteService } from "../_lib/puragenda/validation";
 import { bookingReducer } from "../_lib/booking-state";
 import styles from "../studio.module.css";
 const formatDay = (key: string, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("es-CL", { ...options, timeZone: "UTC" }).format(new Date(`${key}T12:00:00Z`));
 
 export default function BookingFlow({ catalog, today, initialServiceId }: { catalog: Catalog; today: string; initialServiceId?: string }) {
-  const { api: studioApi } = useBella();
+  const { api: studioApi, config, business } = useBella(); const copy = bellaCopy(config, business.name);
   const noStaff = catalog.rules?.staffSelection === "NONE";
-  const stepNames = ["Tratamiento", noStaff ? "Agenda" : "Profesional", "Momento", "Datos", "Revisar"];
-  const titles = ["¿Qué te harás?", noStaff ? "La agenda del estudio." : "¿Con quién?", "¿Cuándo te vemos?", "Ahora, tus datos.", "Tu momento, listo."];
+  const stepNames = [...copy.booking.steps]; stepNames[1] = noStaff ? "Agenda" : stepNames[1];
+  const titles = [...copy.booking.flowTitles]; titles[1] = noStaff ? "La agenda del estudio." : titles[1];
   const firstDay = catalog.rules?.allowSameDayBookings ? 0 : 1;
   const lastDay = addDays(today, catalog.rules?.maxDaysAhead ?? 90);
   const initialService = catalog.services.find((item) => item.id === initialServiceId);
@@ -88,7 +89,7 @@ export default function BookingFlow({ catalog, today, initialServiceId }: { cata
   }
   const currentSlot = availability?.slots.find((slot) => slot.startTime === state.slot?.startTime);
   return <div className={styles.bookingLayout}>
-    <aside className={styles.bookingAside}><p className={styles.bookingMode}>{catalog.mode === "demo" ? "Agenda de muestra" : "Agenda · Puragenda"}</p><h2 id="booking-title">Hagamos<br />espacio<span>.</span></h2>
+    <aside className={styles.bookingAside}><p className={styles.bookingMode}>{catalog.mode === "demo" ? copy.booking.demoMode : copy.booking.mode}</p><h2 id="booking-title" style={{ whiteSpace: "pre-line" }}>{copy.booking.title}<span>.</span></h2>
       {service ? <><div className={styles.bookingPreview}><Image src={service.image} alt={`${service.image.startsWith("/demos/") ? "Detalle conceptual" : "Imagen"} de ${service.name}`} fill sizes="(max-width: 700px) 35vw, 25vw" /></div><h3>{service.name}</h3><p>{quote ? `${quote.duration} min / ${money(quote.price, catalog.business.currency)}` : "Elige tus opciones para ver el total."}{deposit > 0 ? <span className={styles.depositInline}>Abono {money(deposit, catalog.business.currency)}</span> : null}</p><div className={styles.summaryDetails}><span>{catalog.locations.find((item) => item.id === state.locationId)?.name}</span>{selectedStaff ? <span>{selectedStaff.name}</span> : state.staffId === "any" ? <span>Primera disponible</span> : null}{state.slot ? <span>{formatDay(state.date, { day: "numeric", month: "long" })} · {state.slot.label}</span> : null}</div></> : <p>Una elección a la vez.<br />El contacto, al final.</p>}
       <p className={styles.bookingDisclaimer}>{catalog.mode === "demo" ? "Disponibilidad demostrativa. No se crea una reserva." : "Reserva gestionada por Puragenda."}</p>
     </aside>

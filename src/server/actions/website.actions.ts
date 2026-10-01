@@ -14,6 +14,7 @@ import { Prisma } from "@prisma/client";
 import { storeWebsiteImage, deleteWebsiteAsset, validateWebsiteAssets } from "@/server/websites/media";
 import { mediaUrls } from "@/websites/editor-utils";
 import { websiteAssetSchema } from "@/websites/media";
+import { paletteTokens, validatePalette } from "@/websites/palettes";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -42,6 +43,7 @@ async function publishWebsiteImpl(revision: number) {
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
     const config = template.configSchema.parse(site.draftConfig);
+    if (config.paletteMode === "custom" && config.customPalette && !validatePalette(paletteTokens(config.accent, config.customPalette, config.paletteMode)).valid) throw new WebsiteError("La paleta personalizada necesita más contraste antes de publicar");
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     if (!config.heroImage || !config.headline) throw new WebsiteError("Agrega una portada y un titular antes de publicar");
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });

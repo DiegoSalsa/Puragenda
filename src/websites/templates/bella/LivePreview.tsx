@@ -13,6 +13,7 @@ export function useLivePreview(initial: WebsiteView) {
       const parsed = parsePreviewMessage(event.data, window.location.origin);
       if (!parsed.success || parsed.data.sequence < sequence.current) return;
       sequence.current = parsed.data.sequence; setConfig(parsed.data.config);
+      if (parsed.data.galleryFilter) window.dispatchEvent(new CustomEvent("bella:gallery-filter", { detail: parsed.data.galleryFilter }));
       if (parsed.data.focus) requestAnimationFrame(() => {
         document.querySelectorAll("[data-website-highlight]").forEach(element => element.removeAttribute("data-website-highlight"));
         const target = document.querySelector<HTMLElement>(`[data-website-field="${parsed.data.focus}"]`);
