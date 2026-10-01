@@ -55,6 +55,8 @@ next-env.d.ts
 /public/website-media-qa/
 /marketing/
 /social/puri-update-reel/
+/social/puragenda-update-story/
+/prompt-hotfix-vivachile18-terapias-sec.txt
 /carruseles/
 /carruseles-instagram-septiembre-2026/
 /semrush-puragenda/
@@ -63,6 +65,7 @@ next-env.d.ts
 # local SEO audit cache and generated lighthouse dumps
 /.seo-cache/
 /seo-audit-puragenda/*.json
+/seo-audit-puragenda/screenshots/
 
 # local one-off browser automation / scratch scripts
 /docs/seo/_seo014-browser/
