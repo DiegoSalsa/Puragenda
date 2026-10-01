@@ -24,6 +24,8 @@ const hasMedia = await client.query("SELECT to_regclass('public.\"WebsiteMedia\"
 if (!hasMedia.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20260930210000_website_visual_builder_v2/migration.sql", "utf8"));
 const hasOwnership = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='WebsiteDomain' AND column_name='tenantVerifiedAt'");
 if (!hasOwnership.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261001120000_website_domain_tenant_ownership/migration.sql", "utf8"));
+const hasTemplateSnapshots = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='BusinessWebsite' AND column_name='templateConfigs'");
+if (!hasTemplateSnapshots.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261001190000_matchday_template_snapshots/migration.sql", "utf8"));
 await client.end();
 fs.mkdirSync("public/website-media-qa/website-qa-c", { recursive: true });
 await sharp({ create: { width: 640, height: 480, channels: 3, background: "#947867" } }).webp().toFile("public/website-media-qa/website-qa-c/service.webp");

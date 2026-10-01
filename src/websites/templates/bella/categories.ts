@@ -1,12 +1,8 @@
 import { bellaConfigBaseSchema, bellaConfigSchema, type BellaConfig } from "../../config";
 
 export type BellaCategory = BellaConfig["galleryCategories"][number];
-const slug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "categoria";
-export const categoryId = (label: string, used: Iterable<string> = []) => {
-  const existing = new Set(used); const base = `cat-${slug(label)}`; let next = base; let index = 2;
-  while (existing.has(next)) next = `${base}-${index++}`;
-  return next;
-};
+import { categoryId } from "../../gallery-categories";
+export { categoryId } from "../../gallery-categories";
 
 export function normalizeGalleryCategories(config: Pick<BellaConfig, "galleryCategories" | "galleryFilters" | "gallery">) {
   const categories: BellaCategory[] = [];

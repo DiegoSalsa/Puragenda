@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { bellaConfigSchema, galleryImageSchema } from "./config";
-export const PREVIEW_PROTOCOL = "puragenda.website.v2";
+import { PREVIEW_PROTOCOL } from "./preview-transport";
+export { PREVIEW_PROTOCOL, trustedPreviewSender } from "./preview-transport";
 export const previewFields = ["brandEyebrow", "brandTitle", "displayName", "headline", "intro", "heroImage", "heroCaption", "logo", "gallery", "galleryTitle", "gallerySubtitle", "about", "aboutImage", "studioTitle", "servicesTitle", "booking", "contact", "accent"] as const;
 export type PreviewField = typeof previewFields[number];
-export function trustedPreviewSender(event: Pick<MessageEvent, "origin" | "source">, parent: MessageEventSource, origin: string) { return event.origin === origin && event.source === parent; }
 export function parsePreviewMessage(data: unknown, origin: string) {
   const visualMedia = z.string().max(2000).refine(value => {
     if (value.startsWith("blob:")) { try { return new URL(value.slice(5)).origin === origin; } catch { return false; } }

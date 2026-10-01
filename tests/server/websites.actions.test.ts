@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const m=vi.hoisted(()=>({manager:vi.fn(),ensure:vi.fn(),save:vi.fn(),business:vi.fn(),publish:vi.fn(),lock:vi.fn(),domain:vi.fn(),primary:vi.fn(),deactivate:vi.fn(),availability:vi.fn(),media:vi.fn()}));
+const m=vi.hoisted(()=>({manager:vi.fn(),ensure:vi.fn(),save:vi.fn(),business:vi.fn(),publish:vi.fn(),lock:vi.fn(),domain:vi.fn(),primary:vi.fn(),deactivate:vi.fn(),availability:vi.fn(),media:vi.fn(),website:vi.fn()}));
 
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 
@@ -10,9 +10,9 @@ vi.mock("@/server/websites/billing",()=>({startWebsiteCheckout:vi.fn(),changeWeb
 
 vi.mock("@/server/websites/domains",()=>({addWebsiteDomain:vi.fn(),customHostname:vi.fn(),verifyWebsiteDomain:vi.fn()}));
 
-vi.mock("@/server/db/prisma",()=>{const tx={websiteMedia:{findMany:m.media},$queryRaw:m.lock,business:{findUniqueOrThrow:m.business},businessWebsite:{updateMany:(args: {data: {publishedConfig?: unknown}})=> args.data.publishedConfig ? m.publish(args) : m.save(args)},websiteDomain:{findFirst:m.domain,updateMany:m.deactivate,update:m.primary}};return{prisma:{...tx,businessWebsite:{updateMany:m.save,findUnique:m.availability},$transaction:(work:(tx:unknown)=>unknown)=>work(tx)}};});
+vi.mock("@/server/db/prisma",()=>{const tx={websiteMedia:{findMany:m.media},$queryRaw:m.lock,business:{findUniqueOrThrow:m.business},businessWebsite:{findUniqueOrThrow:m.website,updateMany:(args: {data: {publishedConfig?: unknown}})=> args.data.publishedConfig ? m.publish(args) : m.save(args)},websiteDomain:{findFirst:m.domain,updateMany:m.deactivate,update:m.primary}};return{prisma:{...tx,businessWebsite:{updateMany:m.save,findUnique:m.availability},$transaction:(work:(tx:unknown)=>unknown)=>work(tx)}};});
 
-import { saveWebsiteDraft,publishWebsite,setPrimaryWebsiteDomain,websiteSubdomainAvailability } from "@/server/actions/website.actions";
+import { switchWebsiteTemplate,saveWebsiteDraft,publishWebsite,setPrimaryWebsiteDomain,websiteSubdomainAvailability } from "@/server/actions/website.actions";
 import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
 import { fixtureView } from "@/websites/fixtures/views";
@@ -56,4 +56,12 @@ describe("website draft, publication and ownership",()=>{
 
  it("checks subdomain uniqueness against the authenticated business",async()=>{m.availability.mockResolvedValue({businessId:"tenant-b"});await expect(websiteSubdomainAvailability("tenant-b")).resolves.toMatchObject({available:false});m.availability.mockResolvedValue({businessId:"tenant-a"});await expect(websiteSubdomainAvailability("tenant-a")).resolves.toMatchObject({available:true});await expect(websiteSubdomainAvailability("www")).resolves.toMatchObject({available:false});});
 
+});
+
+describe("template switching",()=>{
+ beforeEach(()=>{vi.resetAllMocks();m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.website.mockResolvedValue({id:"website-a",businessId:"tenant-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config,templateConfigs:{}});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});});
+ it("saves the prior draft without modifying published identity or business data",async()=>{expect(await switchWebsiteTemplate("matchday",1,2)).toEqual({revision:3});expect(m.save).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",businessId:"tenant-a",revision:2},data:expect.objectContaining({templateKey:"matchday",templateConfigs:expect.objectContaining({"bella@1":expect.anything()})})}));expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedConfig");expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedTemplateKey");});
+ it("rejects stale switch revisions before writing",async()=>{expect(await switchWebsiteTemplate("matchday",1,1)).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
+ it("rejects unsupported versions before the transaction",async()=>{expect(await switchWebsiteTemplate("matchday",2,2)).toHaveProperty("error");expect(m.website).not.toHaveBeenCalled();});
+ it("rejects a stale editor saving a different template",async()=>{m.ensure.mockResolvedValue({templateKey:"matchday",templateVersion:1});expect(await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a","bella")).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
 });

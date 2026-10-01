@@ -1,3 +1,4 @@
+"use client";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import type { BellaView } from "./types";
 import BellaContent from "./BellaContent";

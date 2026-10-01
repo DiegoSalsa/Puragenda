@@ -1,7 +1,7 @@
 import { requireWebsiteManager, ensureWebsite, websiteRootDomain, websiteView } from "@/server/websites/service";
 import { prisma } from "@/server/db/prisma";
 import { resolveTemplate } from "@/websites/registry";
-import WebsiteEditor from "./website-editor";
+
 import { websitePrice } from "@/server/websites/billing";
 import { headers } from "next/headers";
 import { z } from "zod";
@@ -20,5 +20,7 @@ export default async function WebsitePage() {
   const host = (await headers()).get("host") ?? "localhost:3005";
   const port = local && /^localhost:\d+$/.test(host) ? `:${host.split(":")[1]}` : "";
   const primary = domains.find(domain => domain.isPrimary && domain.status === "ACTIVE");
-  return <WebsiteEditor initial={resolveTemplate(site.templateKey, site.templateVersion).readConfig(site.draftConfig)} view={await websiteView(site, true)} revision={site.revision} publishedRevision={site.publishedRevision} subdomain={site.subdomain} rootDomain={root} publicUrl={local ? `http://${site.subdomain}.localhost${port}` : `https://${primary?.hostname || `${site.subdomain}.${root}`}`} status={site.status} canManageDomains={business.ownerId === user.id} addon={addon ? { status: addon.status, cancelAt: addon.cancelAt?.toISOString() ?? null, validUntil: addon.validUntil?.toISOString() ?? null } : null} price={price} domains={domains.map(item => ({ id: item.id, hostname: item.hostname, status: item.status, provider: item.provider, records: dnsRecords.parse(item.dnsRecords), message: item.lastError, primary: item.isPrimary }))} requests={requests.map(item => ({ id: item.id, hostname: item.hostname, status: item.status }))} />;
+  const template = resolveTemplate(site.templateKey, site.templateVersion);
+  const WebsiteEditor = await template.loadEditor();
+  return <WebsiteEditor key={`${site.templateKey}:${site.revision}`} templateKey={site.templateKey} templateVersion={site.templateVersion} initial={resolveTemplate(site.templateKey, site.templateVersion).readConfig(site.draftConfig)} view={await websiteView(site, true)} revision={site.revision} publishedRevision={site.publishedRevision} subdomain={site.subdomain} rootDomain={root} publicUrl={local ? `http://${site.subdomain}.localhost${port}` : `https://${primary?.hostname || `${site.subdomain}.${root}`}`} status={site.status} canManageDomains={business.ownerId === user.id} addon={addon ? { status: addon.status, cancelAt: addon.cancelAt?.toISOString() ?? null, validUntil: addon.validUntil?.toISOString() ?? null } : null} price={price} domains={domains.map(item => ({ id: item.id, hostname: item.hostname, status: item.status, provider: item.provider, records: dnsRecords.parse(item.dnsRecords), message: item.lastError, primary: item.isPrimary }))} requests={requests.map(item => ({ id: item.id, hostname: item.hostname, status: item.status }))} />;
 }

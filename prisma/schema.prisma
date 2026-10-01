@@ -57,6 +57,9 @@ model BusinessWebsite {
   subdomain        String        @unique
   draftConfig      Json
   publishedConfig  Json?
+  templateConfigs  Json          @default("{}")
+  publishedTemplateKey String?
+  publishedTemplateVersion Int?
   revision         Int           @default(0)
   publishedRevision Int?
   publishedAt      DateTime?

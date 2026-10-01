@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from
 import { useRouter } from "next/navigation";
 import { Check, CheckCircle2, ExternalLink, Globe, Heart, Images, LayoutTemplate, LoaderCircle, Monitor, Palette, Phone, Smartphone, Sparkles } from "lucide-react";
 import { bellaConfigSchema, type BellaConfig } from "@/websites/config";
-import type { BellaView } from "@/websites/templates/bella/types";
+import type { WebsiteEditorProps } from "@/websites/editor-types";
+import TemplateSelector from "./template-selector";
 import type { WebsiteAsset } from "@/websites/media";
 import { BELLA_PALETTES, paletteTokens, validatePalette } from "@/websites/palettes";
 import { PREVIEW_PROTOCOL, type PreviewField } from "@/websites/preview-protocol";
@@ -17,10 +18,10 @@ import MediaPicker from "./media-picker";
 import GalleryPanel from "./gallery-panel";
 import LivePreviewFrame from "./live-preview-frame";
 import MediaLibrary from "./media-library";
-import DomainPanel, { type EditorDomain } from "./domain-panel";
-import BillingPanel, { type EditorAddon, type EditorPrice } from "./billing-panel";
+import DomainPanel from "./domain-panel";
+import BillingPanel from "./billing-panel";
 import styles from "./website-builder.module.css";
-type Props = { initial: BellaConfig; view: BellaView; revision: number; publishedRevision: number | null; subdomain: string; rootDomain: string; publicUrl: string; status: string; addon: EditorAddon; price: EditorPrice; domains: EditorDomain[]; requests: { id: string; hostname: string; status: string }[]; canManageDomains: boolean };
+type Props = WebsiteEditorProps<BellaConfig>;
 const sections = [
   { key: "design", name: "Diseño", icon: Palette }, { key: "hero", name: "Portada", icon: LayoutTemplate },
   { key: "gallery", name: "Galería", icon: Images }, { key: "business", name: "Mi negocio", icon: Heart },
@@ -40,7 +41,7 @@ export default function WebsiteEditor(props: Props) {
   const [autosave] = useState(() => new DraftAutosave<Draft>({ config: props.initial, subdomain: props.subdomain }, props.revision, async (draft, revision) => {
     const result = bellaConfigSchema.safeParse({ ...draft.config, ...(draft.config.mediaAssets ? { mediaAssets: referencedAssets(draft.config) } : {}) });
     if (!result.success) return { error: "Revisa los datos de contacto o espera a que termine la foto." };
-    return saveWebsiteDraft(result.data, revision, draft.subdomain);
+    return saveWebsiteDraft(result.data, revision, draft.subdomain, "bella");
   }));
   const save = useSyncExternalStore(autosave.subscribe, autosave.getSnapshot, autosave.getSnapshot);
   const frame = useRef<HTMLIFrameElement>(null), sequence = useRef(0), focus = useRef<PreviewField | undefined>(undefined), payload = useRef<unknown>(null);
@@ -108,7 +109,7 @@ export default function WebsiteEditor(props: Props) {
           <div className={styles.panelHeading}><h2>Diseño</h2><p className={styles.helper}>Una página cuidada, lista para hacerla tuya.</p></div>
           <div className={styles.designCard}><div className={styles.designImage}>{config.heroImage ? <img src={config.heroImage} alt="" /> : null}<small>ESTÉTICA</small><strong>BELLA.</strong></div><div className={styles.designInfo}><strong>Bella</strong><span><Check size={12} />Tu diseño</span></div></div>
           <p className={styles.helper}>Belleza · Uñas · Cejas · Pestañas<br />Fotografía protagonista, tipografía y movimiento.</p>
-          <details className={styles.googleSettings}><summary>Cambiar diseño</summary><div><p className={styles.helper}>Bella es el diseño disponible. Pronto podrás descubrir nuevas opciones.</p></div></details>
+          <TemplateSelector active={props.templateKey} flush={async () => { await autosave.flush(); }} revision={() => autosave.getSnapshot().revision} disabled={pending || uploadCount > 0} />
           <div className={styles.divider}><h3>Los colores de tu sitio</h3>{BELLA_PALETTES.map(palette => <button key={palette.key} className={styles.palette} aria-pressed={config.paletteMode === "preset" && config.accent === palette.key} onClick={() => { update(previous => ({ ...previous, paletteMode: "preset", accent: palette.key })); highlight("brandTitle"); }}><span className={styles.swatches}>{palette.colors.map(color => <i key={color} style={{ background: color }} />)}</span><span className={styles.paletteName}>{palette.name}<small>{palette.description}</small></span>{config.paletteMode === "preset" && config.accent === palette.key ? <Check size={16} color="#39786b" /> : null}</button>)}<details className={styles.googleSettings} open={config.paletteMode === "custom"}><summary>Crear mis colores</summary><div>{(["primary", "text", "background", "ink"] as const).map(token => <label className={styles.field} key={token}>{({ primary: "Color principal", text: "Color de acento", background: "Fondo", ink: "Texto" } as const)[token]}<span className={styles.row}><input type="color" value={paletteTokens(config.accent, config.customPalette, config.paletteMode)[token]} onChange={event => update(previous => ({ ...previous, paletteMode: "custom", customPalette: { ...paletteTokens(previous.accent, previous.customPalette, previous.paletteMode), [token]: event.target.value } }))} /><input className={styles.textInput} value={paletteTokens(config.accent, config.customPalette, config.paletteMode)[token]} maxLength={7} onChange={event => update(previous => ({ ...previous, paletteMode: "custom", customPalette: { ...paletteTokens(previous.accent, previous.customPalette, previous.paletteMode), [token]: event.target.value } }))} /></span></label>)}{config.customPalette && !validatePalette(config.customPalette).valid ? <p className={styles.helper} role="alert">Este color hace que algunos textos sean difíciles de leer. Elige una combinación con más contraste antes de publicar.</p> : null}</div></details></div>
           <p className={styles.helper}>Cada combinación conserva el estilo Bella y la legibilidad de tus textos.</p>
         </section>

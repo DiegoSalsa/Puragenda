@@ -2,13 +2,44 @@ import { bellaConfigSchema, emptyBellaConfig, type BellaConfig } from "./config"
 import { migrateBellaCategories, readBellaConfig } from "./templates/bella/categories";
 import { effectiveWebsiteHeadline } from "./publishing";
 import { paletteTokens, validatePalette } from "./palettes";
+import { BELLA_PALETTES } from "./palettes";
+import { emptyMatchdayConfig, matchdayConfigSchema, type MatchdayConfig } from "./templates/matchday/config";
+import { MATCHDAY_PALETTES, matchdayTokens, validMatchdayPalette } from "./templates/matchday/palettes";
+import { createElement, type ComponentType } from "react";
+import type { WebsiteView } from "./types";
+import type { WebsiteEditorProps } from "./editor-types";
+export type WebsiteConfig = BellaConfig | MatchdayConfig;
+function defineTemplate<C extends WebsiteConfig>(definition: {
+  key: string; name: string; version: number; industries: string[];
+  capabilities: { gallery: boolean; nativeBooking: boolean; multiLocation: boolean; controlledTheme: boolean; staffEditorial: boolean; process: boolean };
+  editor: { category: string; sections: readonly string[]; palettes: readonly unknown[]; customControls: readonly string[] };
+  preview: { thumbnail: string; desktop: string; mobile: string };
+  configSchema: { parse: (input: unknown) => C }; defaultConfig: () => C; readConfig: (input: unknown) => C; parseDraft: (input: unknown) => C;
+  publicationError: (config: C) => string | null;
+  loadComponent: () => Promise<ComponentType<{ view: WebsiteView<C> }>>;
+  loadEditor: () => Promise<ComponentType<WebsiteEditorProps<C>>>;
+}) {
+  return { ...definition,
+    publicationError: (input: unknown) => definition.publicationError(definition.readConfig(input)),
+    loadComponent: async () => {
+      const Component = await definition.loadComponent();
+      return function TemplateRenderer({ view }: { view: WebsiteView<WebsiteConfig> }) { return createElement(Component, { view: { ...view, config: definition.readConfig(view.config) } }); };
+    },
+    loadEditor: async () => {
+      const Editor = await definition.loadEditor();
+      return function TemplateEditor(props: WebsiteEditorProps<WebsiteConfig>) { return createElement(Editor, { ...props, initial: definition.readConfig(props.initial), view: { ...props.view, config: definition.readConfig(props.view.config) } }); };
+    },
+  };
+}
 
 // Visual settings belong to each template. Infrastructure does not prescribe layout.
 export const templateRegistry = {
-  bella: {
+  bella: defineTemplate<BellaConfig>({
     key: "bella", name: "Bella", version: 1,
     industries: ["belleza", "uñas", "cejas", "pestañas", "estética", "peluquería"],
-    capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true },
+    capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: false, process: true },
+    editor: { category: "Beauty / Estética", sections: ["design", "hero", "gallery", "business", "contact", "domain"], palettes: BELLA_PALETTES, customControls: ["process"] },
+    preview: { thumbnail: "/websites/previews/bella.svg", desktop: "/website-preview?template=bella", mobile: "/website-preview?template=bella&viewport=mobile" },
     configSchema: bellaConfigSchema,
     defaultConfig: emptyBellaConfig,
     readConfig: readBellaConfig,
@@ -17,8 +48,20 @@ export const templateRegistry = {
       if (config.paletteMode === "custom" && config.customPalette && !validatePalette(paletteTokens(config.accent, config.customPalette, config.paletteMode)).valid) return "La paleta personalizada necesita más contraste antes de publicar";
       return !config.heroImage || !effectiveWebsiteHeadline(config) ? "Agrega una portada y un titular antes de publicar" : null;
     },
-    loadComponent: () => import("./templates/bella/Bella").then(module => module.default),
-  },
+    loadComponent: () => import("./templates/bella/Lazy").then(module => module.default),
+    loadEditor: () => import("@/app/dashboard/website/website-editor").then(module => module.default),
+  }),
+  matchday: defineTemplate<MatchdayConfig>({
+    key: "matchday", name: "Matchday", version: 1,
+    industries: ["barbería", "peluquería masculina", "grooming", "barber studio", "cabello", "barba"],
+    capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: true, process: false },
+    editor: { category: "Barbería / Grooming", sections: ["design", "hero", "services", "staff", "gallery", "business", "contact", "domain"], palettes: MATCHDAY_PALETTES, customControls: ["marquee", "staffEditorial", "graphicPhrase"] },
+    preview: { thumbnail: "/websites/previews/matchday.svg", desktop: "/website-preview?template=matchday", mobile: "/website-preview?template=matchday&viewport=mobile" },
+    configSchema: matchdayConfigSchema, defaultConfig: emptyMatchdayConfig, readConfig: matchdayConfigSchema.parse, parseDraft: matchdayConfigSchema.parse,
+    publicationError: config => !validMatchdayPalette(matchdayTokens(config)) ? "La paleta necesita más contraste antes de publicar" : !config.heroImage || !config.headline ? "Agrega una portada y un titular antes de publicar" : null,
+    loadComponent: () => import("./templates/matchday/Lazy").then(module => module.default),
+    loadEditor: () => import("@/app/dashboard/website/matchday-editor").then(module => module.default),
+  }),
 } as const;
 export type TemplateKey = keyof typeof templateRegistry;
 export function resolveTemplate(key: string, version: number) {

@@ -69,7 +69,7 @@ export async function deleteWebsiteAsset(id: string) {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     const item = await tx.websiteMedia.findFirst({ where: { id, deletedAt: null, website: { businessId: business.id } }, include: { website: true } });
     if (!item) throw new WebsiteError("Imagen no encontrada");
-    const referenced = [item.website.draftConfig, item.website.publishedConfig].some(value => storedMediaUrls(value).includes(item.secureUrl));
+    const referenced = [item.website.draftConfig, item.website.publishedConfig, item.website.templateConfigs].some(value => storedMediaUrls(value).includes(item.secureUrl));
     if (referenced) throw new WebsiteError("Esta foto sigue en tu borrador o sitio publicado. Retírala y publica antes de eliminarla.");
     return tx.websiteMedia.update({ where: { id }, data: { deletedAt: new Date() } });
   });
