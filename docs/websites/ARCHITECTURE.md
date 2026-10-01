@@ -14,9 +14,10 @@ No existen WebsiteService ni WebsiteStaff. `loadBookingContext` y `toBookingCata
 
 | Responsabilidad | Archivos |
 | --- | --- |
-| Configuración estricta, DTO, políticas, registry | `src/websites/{config,types,policy,registry,catalog}.ts` |
+| DTO genérico, políticas, registry, catálogo | `src/websites/{types,policy,registry,catalog}.ts` |
+| Configuración propia de Bella | `src/websites/templates/bella/config.ts`; `src/websites/config.ts` conserva el import anterior |
 | Composición y diseño propios | `src/websites/templates/bella/` |
-| Fixtures explícitos A/B | `src/websites/fixtures/` |
+| Fixtures explícitos A/B/C | `src/websites/fixtures/` |
 | Autorización, resolución, dominios, billing, booking | `src/server/websites/` |
 | Mutaciones autenticadas y errores seguros | `src/server/actions/website.actions.ts` |
 | Editor controlado | `src/app/dashboard/website/` |
@@ -27,7 +28,9 @@ No existen WebsiteService ni WebsiteStaff. `loadBookingContext` y `toBookingCata
 
 ## Registry y futuras versiones
 
-El registry tipado declara `key`, nombre, versión, industrias, capacidades, esquema Zod y carga del componente. Solo resuelve `bella:1`; rechaza cualquier otra combinación. La configuración es propia del template y no prescribe componentes del dashboard. Un futuro template debe aportar su esquema y renderer y definir una migración explícita de configuración/versiones. No se implementaron templates adicionales.
+El registry tipado declara `key`, nombre, versión, industrias, capacidades, esquema Zod, defaults, lectura/migración, validación de escritura, reglas de publicación y carga del componente. Solo resuelve `bella:1`; rechaza cualquier otra combinación. `WebsiteView<TConfig>` y `WebsiteBusiness` son neutrales; Bella consume `BellaView`. Catálogo y contratos de booking viven en `src/websites/booking/types.ts`. El schema de Bella pertenece a su directorio; el archivo anterior lo reexporta para compatibilidad del builder. Un futuro template aporta su esquema y renderer sin importar tipos de Bella. No se implementaron templates adicionales.
+
+El editor, preview protocol, paletas y helpers de edición actuales siguen siendo específicos de Bella. El registry conoce Bella porque la registra; metadata consume campos SEO estructurales. La unión de templates resueltos se infiere del registry, hoy con un único miembro. Una segunda UI de edición necesitará su propia configuración, sin duplicar el motor de booking.
 
 ## Prisma y migración
 
@@ -37,7 +40,7 @@ El registry tipado declara `key`, nombre, versión, industrias, capacidades, esq
 - `WebsiteMedia` con ownership por `BusinessWebsite`, borrado lógico, checks, índice y RLS.
 - `WebsiteDomain.provider`, `dnsRecords` y `checkedAt`.
 
-La segunda migración es incremental; no se reescribe V1.
+La segunda migración es incremental; no se reescribe V1. `20261001120000_website_domain_tenant_ownership` agrega `tenantVerifiedAt` y exige volver a probar TXT en reservas antiguas. `20261001121000_booking_operation_fk_update` corrige el `ON UPDATE CASCADE` que faltaba en la FK de BookingOperation. Ambas diferencias fueron detectadas/revisadas contra la baseline real de `main`.
 
 La migración base agrega:
 
@@ -49,7 +52,7 @@ La migración base agrega:
 
 No altera los campos canónicos de servicios, staff, reservas o suscripción base. Incluye claves foráneas, índices, CHECK de snapshot publicado y subdominio, un único dominio principal por sitio y RLS en las cinco tablas. Revoca acceso de los roles Supabase `anon` y `authenticated` si existen. No hay políticas de lectura desde el navegador: Prisma requiere conexión privilegiada del servidor.
 
-La migración se prueba exclusivamente en PostgreSQL local aislado. El resultado de `prisma migrate diff` y la suite ejecutada deben conservarse como evidencia de esta rama; `prisma validate` por sí solo no se considera prueba de ausencia de drift.
+`scripts/test-website-migrations.mjs` crea una base nueva en 127.0.0.1:55439, genera solamente la baseline del schema de `main`, aplica las cinco migraciones nuevas en orden y comprueba V1 → V2, la reparación de un dominio antiguo ACTIVE y RLS. `prisma migrate diff --exit-code` termina con `No difference detected`. No se usa el schema actual como baseline de esta comprobación. El historial anterior de main no reproduce una base vacía sin baseline (una migración histórica referencia Client antes de crearlo); no se reescribió esa historia.
 
 ## Seguridad
 

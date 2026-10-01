@@ -1,101 +1,95 @@
-# QA de Sitio Web Puragenda
+# QA final de webs — 1 de octubre de 2026
 
-Validación final de la rama `webs`, 1 de octubre de 2026, exclusivamente con datos demostrativos/locales. Referencia congelada: `purocode-demos /studio`. Puragenda: demo, preview autenticado y runtime por hostname.
+La evidencia de esta página corresponde a la auditoría actual. Los screenshots y números de entregas anteriores se conservan como historia, sin usarlos como resultados finales.
 
-## Resultados
-
-| Comprobación | Resultado |
+| Comprobación actual | Resultado |
 | --- | --- |
-| Suite completa Vitest | **173 archivos aprobados, 2 omitidos; 997 tests aprobados, 21 omitidos** |
-| Website unitarios focalizados | **5 archivos, 49 tests aprobados** |
-| Lint | **0 errores, 32 advertencias existentes** |
-| Typecheck | Aprobado |
-| Prisma validate / generate | Aprobados; `migrate diff --from-config-datasource --to-schema` sin diferencias sobre PostgreSQL local |
-| Build Next.js local aislado | Aprobado, 133 páginas generadas y rutas de websites incluidas |
-| HTTP/DB multi-tenant local | **20 comprobaciones aprobadas**; ejecución final sobre PostgreSQL local aislado |
-| Integridad referencia | 58 hashes y estado/commit iguales al congelado |
-| Assets | 10 WebP portados con SHA-256 idéntico |
+| npm test | 174 archivos PASS, 2 omitidos; 1.022 tests PASS, 21 omitidos por falta de opt-in de PostgreSQL |
+| Suite completa con PostgreSQL aislado | **176 archivos PASS; 1.043 tests PASS; 0 FAIL; 0 skipped** |
+| Foco websites/Bella/builder/booking | 23 archivos PASS, 178 tests PASS y 19 de integración omitidos en modo normal; los 19 también PASS en la ejecución completa con PostgreSQL |
+| Lint | 0 errores, 32 advertencias de código existente |
+| Typecheck | PASS |
+| Prisma validate / generate | PASS / PASS |
+| Build aislado de producción | PASS; 133 páginas generadas |
+| MAIN baseline → migraciones incrementales | PASS; V1 → V2, ownership legacy y cinco migraciones aplicadas |
+| Prisma diff | **No difference detected**, exit 0 |
+| RLS | Habilitado en seis tablas; rol no propietario no lee drafts ni medios incluso con SELECT |
+| HTTP público/DB | 29 PASS |
+| HTTP autenticado/acciones | 18 PASS |
+| Overflow builder | **48/48 PASS**: 6 paneles × 4 tamaños × escritorio/móvil; documento, contenedor e iframe |
+| Nombres largos B/C | 8/8 PASS: header, hero, footer y documento en cuatro tamaños |
+| Referencia y assets | 58 archivos originales intactos; 10 assets portados idénticos (verificador reejecutado) |
 
-La suite se ejecutó después de los cambios finales. No se ocultaron tests fallidos ni se cambiaron expectativas para acomodar el feature.
+Los resultados focalizados son subconjuntos de la suite completa; no se suman al total de 1.043. Los 47 checks HTTP y los escenarios de navegador son evidencia adicional. La corrida con PostgreSQL incluye las carreras de booking, idempotencia y confirmación de abonos que están omitidas por defecto. No se conectó a una base remota.
 
-La reproducción completa desde todas las migraciones históricas no es una baseline válida en este repositorio: `20260505_add_marketing_campaigns` referencia `Client` antes de que exista en esa historia. La preparación local usa el schema baseline y aplica las migraciones de websites incrementales; sobre esa base el diff contra el schema actual es limpio. Esto queda como deuda de historia de migraciones, no como drift del schema actual.
+El harness de booking tenía reloj real frente a slots de octubre fijos y activaba globalmente el simulador de pagos. Se corrigió la fecha de fixtures y el ámbito del simulador, conservando las expectativas y el motor canónico. Advertencias de Vite y pg son avisos de tooling, sin FAIL.
 
-## QA visual
+## Migraciones verificadas
 
-Se utilizó navegador real, con la referencia ejecutada desde una copia para no escribir en el original. Tamaños: **1440×900, 1280×900, 390×844 y 360×800**. A y B comparten el mismo renderer. Las capturas están en [qa/](qa/); las mediciones verificables en [viewport-metrics.json](qa/viewport-metrics.json).
+El runner genera DDL desde el schema de **main**, en una base nueva del cluster local, y luego aplica:
 
-| Elemento | Verificación |
+1. 20260930120000_public_booking_operations.
+2. 20260930160000_websites_addon_v1.
+3. 20260930210000_website_visual_builder_v2.
+4. 20261001120000_website_domain_tenant_ownership.
+5. 20261001121000_booking_operation_fk_update.
+
+Se verifica que V1 todavía no tiene WebsiteMedia y que V2 incorpora esa tabla y provider/dnsRecords/checkedAt. Un dominio legacy ACTIVE queda PENDING, sin principal y con un nuevo TXT; su hostname reservado se conserva. El diff final no tiene drift. RLS se comprueba aparte: Prisma diff no verifica políticas, triggers ni todos los CHECKs. No se modificó V1/V2.
+
+El historial de main anterior a esta feature requiere una baseline: su migración 20260505 referencia Client antes de su creación. No se presenta una reproducción desde vacío de esa historia como exitosa ni se reescribe. La prueba solicitada desde baseline MAIN sí pasa.
+
+## Navegador y builder actual
+
+Mediciones: [final-layout-20261001.json](qa/final-layout-20261001.json). Builder a 1440×900, 1280×900, 390×844 y 360×844. La captura de Contacto móvil se hizo además a 360×800. Tolerancia: 2 px; los contenedores ocultos no se cuentan como preview verificado. Se muestra el preview antes de medir en móvil.
+
+[Contacto escritorio](qa/final-contact-1440.jpg) y [Contacto móvil](qa/final-contact-360.jpg) conservan la distribución aprobada. No se editaron CSS, sidebar, layout ni iconos por esta auditoría.
+
+Se recorrieron Diseño, Portada, Galería, Mi negocio, Contacto y Dominio. Se comprobó Coral/Lila/Bosque en el preview. Contraste válido/ crítico y publicación se verificaron también invocando la acción real con mocks. En Galería se probaron alta, Chrome → Efecto Chrome manteniendo cat-chrome, multi-category, reorder de fotos/categorías, borrado de categoría conservando las siete fotos y upload procesado con Sharp/provider local. El draft migrado conserva IDs y el published original no cambia hasta publicar. Los fixtures se restauraron al finalizar.
+
+| Fixture | Propósito |
 | --- | --- |
-| Hero, marca, fotografía | Comparación de original/A en los cuatro tamaños; B con nombre largo e imagen distinta |
-| Tipografía | Bricolage Grotesque y DM Sans observadas en estilos computados |
-| Proporciones | Alto de fotografía original/A: 374.39 px a 1440, 332.80 a 1280, 300 a 390/360 |
-| Responsive | En los 12 casos medidos, scrollWidth igual a clientWidth; sin overflow horizontal del documento |
-| Portfolio | Composición, filtros, rail; Chrome deja una imagen; lightbox abre/cierra |
-| Motion | Entrance y reveal visibles; pausa comprobada con animationPlayState=paused; reanuda |
-| Servicios | Detalle/imagen/precio, selección y vista móvil; precios reales también comprobados por HTTP |
-| Estudio | Fotografía/proporciones y selector de proceso en ambas versiones |
-| Navegación | Menú móvil abre/cierra, enlaces ancla y CTA inician booking |
-| Booking | Calendario original/Bella en desktop y móvil, navegación de pasos, profesionales y opciones |
-| Booking real | Flujo de cinco pasos completado en host público A; Appointment guardado por el escritor canónico |
-| Footer | Composición original/Bella en desktop; crédito y contenido dinámicos intencionales |
-| Preview | Autenticado sin dashboard/marketing; iframe móvil cargado y noindex verificado |
-| Editor | Guardar → preview → publicar; borrador no cambia público; URL insegura muestra error de campo; restauración guardada/publicada |
+| A: Estética Bella | Contenido demo explícito, galería propia, Coral, catálogo de siete servicios |
+| B: Aura Beauty Atelier | Otra marca, fotos, profesionales y precios; Lila |
+| C: Centro Integral de Belleza y Estética María Fernanda | Galería manual vacía, dos imágenes de servicios propias de QA, cero assets Bella |
 
-El ejemplo de reserva real terminó en **cita recibida (PENDING)** según la configuración canónica, y Bella lo mostró correctamente. [Captura](qa/bella-booking-received.jpg). No se confundió con confirmación automática.
+En C, quitar las imágenes de servicios elimina Portfolio; HTTP y render real del componente lo comprueban. El nombre largo cabe en header/hero/footer a 1440, 1280, 390 y 360. No se realiza una certificación pixel-perfect, CWV, pentest ni accesibilidad exhaustiva. La comparación visual histórica con /studio está en la evidencia anterior; aquí se verifica conservación del código/CSS y las vistas actuales.
 
-No se detectó degradación visual evidente en las vistas inspeccionadas. Las diferencias intencionales están en [BELLA.md](BELLA.md). No se realizó comparación automatizada pixel-perfect, emulación de reduced-motion del sistema, medición CWV ni auditoría de accesibilidad exhaustiva. El soporte reduced-motion/foco/Escape se conserva en código; no se afirma una certificación adicional.
+## Aislamiento y seguridad comprobados
 
-## Dos negocios
+HTTP valida hosts A/B/C, booking canónico, replay, conflictos de slot, rechazo de IDs/precios comerciales ajenos, CSRF, actualización de precio y staff, drafts privados, snapshots publicados, suspensión, preview A/B autenticado y noindex, y rechazo de embedding ajeno. Next dev devuelve no-cache/must-revalidate en preview; no se afirma no-store en ese entorno.
 
-| | A | B |
-| --- | --- | --- |
-| Nombre | Estética Bella | Aura Beauty Atelier |
-| Paleta | Coral | Ciruela |
-| Portada | Manicure rojo | Pestañas |
-| Servicios | 7 tratamientos del catálogo de referencia | Diseño de cejas / Lifting premium |
-| Precios iniciales | Desde $8.000; permanente $18.000 | $19.500 / $32.500 |
-| Profesionales | Antonia / Camila | Valentina |
-| Galería | 6 trabajos | 2 trabajos diferentes |
-| Runtime | bella-a.localhost:3005 | bella-b.localhost:3005 |
+HTTP autenticado sube una foto de A en provider local, rechaza guardarla/borrarla desde B y evita borrarla si la usa draft o published. Valida hostname único y verify/disconnect/primary de A desde B. Los transport mocks cubren TXT exacto, error de challenge, dominio Vercel preexistente, DNS pendiente/activo y errores seguros del proveedor. No hay DNS ni Vercel writes en QA. No existe un endpoint HTTP mock que conceda ownership.
 
-Los registros canónicos en PostgreSQL tienen IDs distintos y asignaciones propias. La suite HTTP prueba que IDs de A no pueden reservarse desde B; también modifica un precio canónico y verifica que la web lo refleja sin publicar de nuevo. La prueba de galería cubre la prioridad manual → imágenes de servicios → ocultar sección; los assets demo de Bella solo aparecen en fixtures explícitos y no se inyectan en tenants reales.
+Medios: 5 MB, MIME real, decode, límite de píxeles, EXIF rotate, resize, metadata stripping, WebP, ownership registrado incluso en snapshots legacy y rollback cuando DB/provider falla. La búsqueda de referencias no depende de que un viejo config pase todo Zod. Upload/biblioteca guardan metadata; no se usa un formulario de URLs manuales.
 
-## Ejecutar localmente
+Los límites de booking siguen en el motor compartido. Server Actions exigen sesión, scope y origen, y las revisiones optimistas impiden sobrescrituras. Upload tiene límite de body y biblioteca; domains tiene máximo cinco reservas por negocio. No se añadió otro motor de booking ni un rate limiter paralelo.
 
-Requiere Node/dependencias y PostgreSQL 17. Desde la raíz de Puragenda:
+## Reproducir exclusivamente local
 
-```powershell
+PostgreSQL 17 en 127.0.0.1:55439; fixtures en websiteqa. El runner de migraciones retiene una base desechable con nombre website_migration_<timestamp>; booking crea un schema temporal validado que elimina al terminar. No usar estos seeds en staging/producción.
+
+~~~powershell
 ./scripts/start-websites-local.ps1
-```
-
-Solo inicializa `scratch/website-pg`, escucha en `127.0.0.1:55439` y usa la base `websiteqa`. Nunca utiliza DATABASE_URL remota. El seed es repetible sobre los IDs `website-qa-*`, conserva las reservas de prueba y restaura contenido de fixtures. No ejecutar ese seed como una migración de un entorno existente.
-
-- [Negocio A](http://bella-a.localhost:3005/)
-- [Negocio B](http://bella-b.localhost:3005/)
-- [Editor](http://localhost:3005/dashboard/website)
-- [Preview real](http://localhost:3005/dashboard/website/preview)
-- [Preview móvil](http://localhost:3005/dashboard/website/preview?viewport=mobile)
-
-Usuarios locales: `website-qa-a@example.test` y `website-qa-b@example.test`. Contraseña de fixtures: `Bella-local-qa-2026!` (solo base local de QA). El launcher elimina credenciales de correo, pagos y analytics de su proceso. El entitlement mock expira el 31 de diciembre de 2026; ajustar únicamente fixtures locales para QA posterior.
-
-```powershell
+node scripts/test-website-migrations.mjs
 node scripts/test-websites-local.mjs
-node scripts/audit-bella-source.mjs --verify
+node scripts/test-website-actions-local.mjs
 npm test
+$env:PURAGENDA_BOOKING_TEST_DATABASE_URL='postgresql://websiteqa@127.0.0.1:55439/puragenda_booking_api_test'
+node scripts/test-booking-api-local.mjs --all
 npm run lint
 npm run typecheck
 npx prisma validate
+npx prisma generate
 node scripts/dev-websites-local.mjs --build
-```
+node scripts/audit-bella-source.mjs --verify
+~~~
 
-Build usa `.next-websites-build`; dev usa `.next-websites-qa`. Son ignorados por Git y no equivalen a deploy. Para detener PostgreSQL:
+Para el navegador, ejecutar auditWebsiteBuilderLayout(tab, viewport) de scripts/qa-website-layout.mjs con el tab autenticado activo y la capacidad viewport de Codex; restaurar viewport después. La evidencia de esta rama se generó con la misma secuencia de mediciones.
 
-```powershell
-& 'C:\Program Files\PostgreSQL\17\bin\pg_ctl.exe' -D './scratch/website-pg' -m fast -w stop
-```
+[Negocio A](http://bella-a.localhost:3005/), [B](http://bella-b.localhost:3005/), [C](http://bella-c.localhost:3005/), [editor](http://localhost:3005/dashboard/website), [preview](http://localhost:3005/website-preview).
 
-Detener primero el proceso dev de esta sesión. Si Windows deja el hijo Next escuchando al interrumpir el launcher, identificar el PID de **3005**, comprobar que corresponde a este checkout y detener únicamente ese proceso. No detener el PostgreSQL global ni otros servidores del usuario.
+Usuarios de fixtures: website-qa-a@example.test / website-qa-b@example.test / website-qa-c@example.test. Contraseña exclusiva de la base local: Bella-local-qa-2026! Entitlement mock hasta 31 de diciembre de 2026.
 
-## Pendientes de infraestructura autorizables después
+Incidencia de aislamiento de QA: el launcher inicial conservaba Resend y una corrida previa registró dos notificaciones enviadas. Se bloqueó RESEND_API_KEY/SMTP para las ejecuciones siguientes, junto con credenciales de pagos, Cloudinary y analytics. No se emitieron nuevas notificaciones externas en la QA final. Billing se probó con mocks; no se efectuó un checkout Paddle ni upload Cloudinary remoto.
 
-Aplicar migración en un entorno de staging aprobado; configurar Cloudinary y comprobar upload real; configurar catálogo/checkout/webhooks Paddle sandbox y probar pagos reales de sandbox; implementar adapter del proveedor con routing/TLS; después configurar DNS y producción solo con autorización. No se ejecutó ninguno de esos cambios externos en esta fase.
+Los logs y archivos de runtime permanecen ignorados en scratch/artifacts/.next-* y no forman parte de los commits. Esta página y sus capturas/mediciones son documentación deliberada de la auditoría.

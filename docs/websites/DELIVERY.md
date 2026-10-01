@@ -1,53 +1,62 @@
-# Entrega · Sitio Web Puragenda — rama `webs`
+# Entrega final de la auditoría — webs
 
-Bella se mantiene como template multi-tenant dentro de Puragenda, con editor controlado, preview privado, publicación por snapshots y booking canónico. La referencia original permanece intacta. Rama: `webs`. No se hizo merge, deploy, compra de dominio, DNS, configuración Vercel Production ni Paddle LIVE.
+Estado: hardening completado y validado localmente; listo para revisión de merge. No se realizó merge, push ni deploy. Bella y la distribución del constructor permanecen aprobadas; no se creó Template 02.
 
-## Matriz de los 35 puntos solicitados
-
-| # | Entrega | Resultado / evidencia |
+| # | Punto solicitado | Resultado final |
 | ---: | --- | --- |
-| 1 | Auditoría exacta /studio | 58 archivos, arquitectura/imports y hashes en [auditoría](bella-source-audit.md) |
-| 2 | Archivos reutilizados | CSS, componentes, reducer, iconos y 10 assets; [inventario](BELLA.md) |
-| 3 | Archivos portados | `src/websites/templates/bella` y `public/websites/bella`; inventario Git del commit |
-| 4 | Arquitectura | [ARCHITECTURE.md](ARCHITECTURE.md): infraestructura separada del diseño/datos |
-| 5 | Registry | Tipado; únicamente Bella key bella/version 1 |
-| 6 | Modelos Prisma | BusinessWebsite, WebsiteDomain, DomainRequest, WebsiteAddon, WebsiteBillingEvent |
-| 7 | Migraciones | V1 (`20260930160000_websites_addon_v1`) + V2 (`20260930210000_website_visual_builder_v2`), aplicadas/prueba solo local; RLS/constraints incluidos |
-| 8 | Editor | Mi sitio web: contenido, fotos, galería, about, contacto, redes, paleta y SEO |
-| 9 | Preview | `/dashboard/website/preview`, demo/datos reales, móvil, privado/noindex |
-| 10 | Draft/published | Guardar, previsualizar, publicar; revisión optimista; público solo snapshot publicado |
-| 11 | Template Bella | Hero, fuentes, spacing, portfolio, servicios, estudio y booking conservados |
-| 12 | Diferencias visuales | Dinamismo, footer Puragenda y estados reales; [detalle](BELLA.md) |
-| 13 | Parametrización | Config Zod estricta y DTO canónico; contenido vacío no inventa valores comerciales |
-| 14 | Servicios dinámicos | Service/opciones/precios/duración/ubicaciones actuales; test de actualización en runtime |
-| 15 | Staff dinámico | Staff/fotos/compatibilidad y sucursales desde la agenda canónica |
-| 16 | Booking | UI Bella → disponibilidad/quote/escritor Puragenda; reserva local comprobada |
-| 17 | Runtime multi-tenant | Host → website → business → registry → renderer; no headers/client IDs como autoridad |
-| 18 | Subdominios | Unicidad, validación/reservados, localhost A/B; DNS wildcard real pendiente |
-| 19 | Dominios propios | Registro y challenge TXT tenant-specific; provider/TLS solo después de challenge y sujeto a infraestructura externa |
-| 20 | Domain requests | Persistencia y solicitud de cotización, diagnóstico superadmin; sin compra |
-| 21 | Entitlement | Vigencia + estados + acceso base; expiración/suspensión conserva snapshots |
-| 22 | Billing preparado | SDK sandbox, checkout separado, webhook, cancelación/reactivación/recuperación; [límites](BILLING.md) |
-| 23 | Seguridad | Autorización por negocio, propietario para billing/dominios, RLS, IDOR/Host/CSRF/idempotencia |
-| 24 | Tests A/B | Estética Bella / Aura Beauty Atelier: misma Bella, marca/fotos/precios/staff distintos |
-| 25 | QA desktop | 1440×900 / 1280×900 original/A/B y secciones; capturas en qa/ |
-| 26 | QA móvil | 390×844 / 360×800; menú, servicios, booking e iframe privado; sin overflow del documento |
-| 27 | Lint | Aprobado: 0 errores; 32 advertencias existentes |
-| 28 | Typecheck | Aprobado |
-| 29 | Prisma validate | Aprobado; generate también |
-| 30 | Tests | Reejecutar en esta rama; los números históricos de V1 no son evidencia de la auditoría final |
-| 31 | Build | Aprobado en entorno local aislado; no deploy |
-| 32 | Documentación | Auditoría/manifest, ARCHITECTURE, BELLA, DOMAINS, BILLING, QA y esta entrega |
-| 33 | Rama | `webs`; sin merge ni rebase peligroso |
-| 34 | Commits | Implementación: `0915c42`; evidencia/documentación en commit posterior; consultar `git log -2 --oneline` |
-| 35 | Pasos manuales | Staging/migración, Cloudinary real, Paddle sandbox E2E, adapter/TLS/DNS; autorizaciones externas posteriores |
+| 1 | Estado inicial | webs limpia en 2c81c3fc, coincidente con origin/webs; trabajo directo sobre esa rama |
+| 2 | .agents eliminados | **485 archivos retirados del índice**, conservados localmente; 0 actualmente trackeados |
+| 3 | .gitignore | /.agents/ y /artifacts/; se conservan reglas de scratch, .next-* y medios locales de QA |
+| 4 | Diff vs main | 266 archivos: 108 producto, 5 migraciones, 70 docs, 18 tests, 11 scripts, 16 configuración/traducciones y 38 eliminaciones de tooling. [Inventario exacto](final-diff-inventory.json) |
+| 5 | Fallback galería | Manual → imágenes de servicios canónicos del mismo negocio → [] y Portfolio oculto; sin mezclar fuentes |
+| 6 | Tests galería | A/B/C/D/E: manual, servicios, render vacío, ausencia de demo y fixture demo explícito; unitarios/render/HTTP |
+| 7 | Headline | Hero y publicación usan headline.trim() o fallbackHeadline.trim(); cinco casos de publicación real cubiertos |
+| 8 | Validación categorías | Label 1–80 trim, ID y nombre case-insensitive únicos, order entero único en rango, categoryIds referenciados |
+| 9 | Legacy categorías | Reparación al leer; escritura estricta; galleryFilters vacíos al guardar; IDs estables y campos de compatibilidad sincronizados |
+| 10 | CRUD categorías | Renombrar mantiene ID/asociaciones; eliminar conserva fotos y quita relaciones; multi-category y reorder probados |
+| 11 | Ownership dominios | Same projectId no prueba tenant; se bloqueó adopción antes del challenge |
+| 12 | Prueba específica | TXT _puragenda.hostname con puragenda-verify=token aleatorio y tenantVerifiedAt; coincidencia exacta |
+| 13 | Reconciliación Vercel | Solo posterior al TXT; validar nombre/proyecto, provider verified y DNS; refresh no salta ownership |
+| 14 | Tests domains | Mocks TXT/transport + HTTP A/B: hostname único, verify, disconnect y primary; runtime A nunca como B |
+| 15 | WebsiteMedia migración | V2 existente incluye tabla, FK, unicidad, índices, CHECK y RLS; verificada tras V1 |
+| 16 | Campos WebsiteDomain | V2: provider/dnsRecords/checkedAt; nueva incremental: tenantVerifiedAt y revalidación segura de legacy |
+| 17 | Desde baseline | Schema MAIN → cinco migraciones nuevas, checkpoint V1 → V2 y dominio legacy ACTIVE probado |
+| 18 | Drift | No difference detected, exit 0; RLS verificado por separado |
+| 19 | Abstracción template | WebsiteView<TConfig>, WebsiteBusiness y booking/types neutrales; BellaView y schema propios; registry con callbacks |
+| 20 | Dependencias Bella restantes | Renderer/editor/preview protocol/paletas/copy son propios de Bella; registry la registra; metadata usa campos SEO estructurales. Sin otro motor |
+| 21 | Media security | Scope DB, rechazo de asset B incluso en legacy, protección draft/published inválido, MIME/decode/EXIF/resize/WebP/rollback |
+| 22 | Hardcodes | Copy editorial en config.copy; sistema/validación/booking/units/redes/accessibility permanecen fijos; detalle en BELLA.md |
+| 23 | Overflow | 48/48 escenarios PASS de seis paneles × cuatro tamaños × ambos previews; documento, contenedor, iframe; tolerancia 2 px |
+| 24 | Tests completos | npm test + ejecución completa con PostgreSQL opt-in; focales de websites/Bella/builder/booking también ejecutados |
+| 25 | Total PASS | **1.043 tests, 176 archivos** en ejecución completa aislada |
+| 26 | Skipped | **0** en suite con PostgreSQL; npm test normal: 1.022 PASS y 21 opt-in omitidos; no sumar ambas corridas |
+| 27 | Lint | 0 errores, 32 advertencias existentes |
+| 28 | Typecheck | PASS |
+| 29 | Prisma validate | PASS |
+| 30 | Prisma generate | PASS |
+| 31 | Build | PASS, 133 páginas; salida aislada de producción |
+| 32 | HTTP multi-tenant | **47 PASS**: 29 público/DB + 18 acciones autenticadas; medios/domains/draft/preview/suspensión/booking/catálogo |
+| 33 | QA desktop | Builder 1440/1280, ambos previews; A y nombres B/C, panel Contacto capturado |
+| 34 | QA mobile | Builder 390/360, preview visible y escalado, nombres B/C y header/hero/footer; Contacto 360×800 capturado |
+| 35 | Documentación | ARCHITECTURE, BELLA, DOMAINS, BILLING, QA y DELIVERY actualizados; medidas/capturas actuales separadas de historia |
+| 36 | Archivos | [Inventario completo](final-diff-inventory.json); producto, migraciones/config, tests, scripts y documentación identificados |
+| 37 | Commits | 705d53c4, 8619cae9, d8985ec, 95e60f4, 951df3d, e983386, 6b48972 + commit final de esta evidencia; git log 2c81c3f..webs |
+| 38 | Externo pendiente | Aplicar en staging, revalidar TXT legacy, wildcard/routing/TLS, Cloudinary remoto y Paddle sandbox E2E; sin activar infraestructura desde esta auditoría |
+| 39 | Sin merge | Confirmado; main no se modificó |
+| 40 | Sin deploy | Confirmado; sin compra de dominio, DNS writes, Vercel writes production ni Paddle LIVE |
 
-## Estado práctico
+## Limpieza y límites del diff
 
-El entorno local sirve dos sitios públicos y permite revisar el editor/preview con propietarios de prueba. [QA.md](QA.md) contiene URLs, credenciales exclusivamente de fixtures locales y comandos repetibles. Ninguna foto, servicio ni entitlement demostrativo se inyecta como default de un negocio real.
+La petición de retirar .agents mediante un commit normal y sin reescribir historia deja una diferencia inevitable: main ya contenía 38 archivos Supabase de .agents. En main...webs aparecen **solo sus eliminaciones**, sin contenido nuevo de skills/Hyperframes/audio/assets de herramientas. Las 447 adiciones exclusivas de webs desaparecen del diff. El árbol final no trackea ningún .agents. Evitar también esas 38 líneas de eliminación requeriría conservar tooling en el árbol o alterar historia; no se hizo ninguna de esas dos cosas.
 
-Los tests de billing son mock: no se afirma que el pago sandbox E2E esté realizado. El adapter de dominios incluido verifica propiedad por lectura TXT, pero no conecta ni activa Vercel/TLS. RLS está preparado en SQL y probado con un rol local no propietario; aún no se aplicó la migración a Supabase remoto. El upload valida/normaliza imágenes y está implementado, pero no se subió un archivo a Cloudinary remoto durante QA.
+También se retiraron del índice 35 archivos de artifacts, 17 de la historia Remotion local social/puragenda-update-story, cinco capturas SEO ajenas a websites y un prompt local de hotfix, manteniéndolos todos localmente y añadiendo reglas de ignore. skills-lock.json se restauró al contenido de main. Los 12 archivos scratch y las capturas SEO que main ya tenía no son cambios de esta rama. No hay nuevos .next, runtime QA, credenciales ni .env; .env.example es documentación de variables sin secretos. Las imágenes/mediciones en docs/websites/qa son evidencia de producto deliberada, no outputs temporales de runtime.
 
-La comparación visual es inspección real y métricas DOM, no diff automatizado pixel-perfect. Se conserva la carga de providers compartidos del root; no se presenta como optimización CWV. La revisión no sustituye una prueba de carga ni un pentest.
+## Riesgos operativos restantes
 
-Los cambios ajenos encontrados inicialmente (skills-lock, layout de dashboard y archivos de marketing/skills/artifacts) se conservaron fuera de los commits del feature.
+Aplicar la migración de ownership devuelve dominios anteriores a PENDING y rota el TXT: sus propietarios deben verificar de nuevo. No se pierde la reserva de hostname ni los snapshots del sitio. WebsiteMedia y campos de V2 ya tenían migración; la única corrección adicional de drift fue ON UPDATE CASCADE de BookingOperation, aplicada incrementalmente.
+
+La baseline requerida por el historial anterior de main está documentada; no se afirma éxito de un replay desde vacío de migraciones preexistentes. La secuencia desde schema MAIN sí tiene cero drift. Los tests no sustituyen staging, prueba de carga, sandbox E2E de Paddle/Cloudinary/Vercel ni comparación visual pixel-perfect. No se efectuaron esas operaciones externas.
+
+Incidencia de correo de QA: el launcher inicial conservaba Resend y una ejecución previa registró dos notificaciones enviadas. Se corrigió el aislamiento del launcher; las ejecuciones finales tienen correo/proveedores reales deshabilitados. Detalle y comandos reproducibles en [QA.md](QA.md).
+
+![Contacto móvil actual](qa/final-contact-360.jpg)

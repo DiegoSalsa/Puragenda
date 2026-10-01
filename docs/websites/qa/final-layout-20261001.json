@@ -1,0 +1,1102 @@
+{
+  "builder": [
+    {
+      "width": 1440,
+      "panel": "Diseño",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Diseño",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Portada",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Portada",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Galería",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Galería",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Mi negocio",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Mi negocio",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Contacto",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Contacto",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Dominio",
+      "mode": "Escritorio",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "panel": "Dominio",
+      "mode": "Móvil",
+      "document": [
+        1440,
+        1440
+      ],
+      "area": [
+        872,
+        872
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Diseño",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Diseño",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Portada",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Portada",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Galería",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Galería",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Mi negocio",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Mi negocio",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Contacto",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Contacto",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Dominio",
+      "mode": "Escritorio",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 1280,
+      "panel": "Dominio",
+      "mode": "Móvil",
+      "document": [
+        1280,
+        1280
+      ],
+      "area": [
+        712,
+        712
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Diseño",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Diseño",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Portada",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Portada",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Galería",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Galería",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Mi negocio",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Mi negocio",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Contacto",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Contacto",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Dominio",
+      "mode": "Escritorio",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "panel": "Dominio",
+      "mode": "Móvil",
+      "document": [
+        390,
+        390
+      ],
+      "area": [
+        390,
+        390
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Diseño",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Diseño",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Portada",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Portada",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Galería",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Galería",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Mi negocio",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Mi negocio",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Contacto",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Contacto",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Dominio",
+      "mode": "Escritorio",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        1009,
+        1009
+      ],
+      "pass": true
+    },
+    {
+      "width": 360,
+      "panel": "Dominio",
+      "mode": "Móvil",
+      "document": [
+        360,
+        360
+      ],
+      "area": [
+        360,
+        360
+      ],
+      "frame": [
+        375,
+        375
+      ],
+      "pass": true
+    }
+  ],
+  "public": [
+    {
+      "tenant": "b",
+      "width": 1440,
+      "document": [
+        1425,
+        1425
+      ],
+      "regions": [
+        {
+          "client": 1425,
+          "scroll": 1425,
+          "selector": "header",
+          "width": 1425
+        },
+        {
+          "client": 1329,
+          "scroll": 1329,
+          "selector": "#bella-title",
+          "width": 1329
+        },
+        {
+          "client": 1425,
+          "scroll": 1425,
+          "selector": "footer",
+          "width": 1425
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "b",
+      "width": 1280,
+      "document": [
+        1265,
+        1265
+      ],
+      "regions": [
+        {
+          "client": 1265,
+          "scroll": 1265,
+          "selector": "header",
+          "width": 1265
+        },
+        {
+          "client": 1169,
+          "scroll": 1169,
+          "selector": "#bella-title",
+          "width": 1169
+        },
+        {
+          "client": 1265,
+          "scroll": 1265,
+          "selector": "footer",
+          "width": 1265
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "b",
+      "width": 390,
+      "document": [
+        375,
+        375
+      ],
+      "regions": [
+        {
+          "client": 375,
+          "scroll": 375,
+          "selector": "header",
+          "width": 375
+        },
+        {
+          "client": 335,
+          "scroll": 335,
+          "selector": "#bella-title",
+          "width": 335
+        },
+        {
+          "client": 375,
+          "scroll": 375,
+          "selector": "footer",
+          "width": 375
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "b",
+      "width": 360,
+      "document": [
+        345,
+        345
+      ],
+      "regions": [
+        {
+          "client": 345,
+          "scroll": 345,
+          "selector": "header",
+          "width": 345
+        },
+        {
+          "client": 305,
+          "scroll": 305,
+          "selector": "#bella-title",
+          "width": 305
+        },
+        {
+          "client": 345,
+          "scroll": 345,
+          "selector": "footer",
+          "width": 345
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "c",
+      "width": 1440,
+      "document": [
+        1425,
+        1425
+      ],
+      "regions": [
+        {
+          "client": 1425,
+          "scroll": 1425,
+          "selector": "header",
+          "width": 1425
+        },
+        {
+          "client": 1329,
+          "scroll": 1329,
+          "selector": "#bella-title",
+          "width": 1329
+        },
+        {
+          "client": 1425,
+          "scroll": 1425,
+          "selector": "footer",
+          "width": 1425
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "c",
+      "width": 1280,
+      "document": [
+        1265,
+        1265
+      ],
+      "regions": [
+        {
+          "client": 1265,
+          "scroll": 1265,
+          "selector": "header",
+          "width": 1265
+        },
+        {
+          "client": 1169,
+          "scroll": 1169,
+          "selector": "#bella-title",
+          "width": 1169
+        },
+        {
+          "client": 1265,
+          "scroll": 1265,
+          "selector": "footer",
+          "width": 1265
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "c",
+      "width": 390,
+      "document": [
+        375,
+        375
+      ],
+      "regions": [
+        {
+          "client": 375,
+          "scroll": 375,
+          "selector": "header",
+          "width": 375
+        },
+        {
+          "client": 335,
+          "scroll": 335,
+          "selector": "#bella-title",
+          "width": 335
+        },
+        {
+          "client": 375,
+          "scroll": 375,
+          "selector": "footer",
+          "width": 375
+        }
+      ],
+      "pass": true
+    },
+    {
+      "tenant": "c",
+      "width": 360,
+      "document": [
+        345,
+        345
+      ],
+      "regions": [
+        {
+          "client": 345,
+          "scroll": 345,
+          "selector": "header",
+          "width": 345
+        },
+        {
+          "client": 305,
+          "scroll": 305,
+          "selector": "#bella-title",
+          "width": 305
+        },
+        {
+          "client": 345,
+          "scroll": 345,
+          "selector": "footer",
+          "width": 345
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

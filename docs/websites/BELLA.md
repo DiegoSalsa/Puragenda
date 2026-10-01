@@ -28,9 +28,15 @@ Los nombres largos adaptan la escala tipográfica sin recortarse. Una imagen aus
 
 ## Editor y preview
 
-`/dashboard/website` permite editar marca/logo, portada, titular, introducción, galería (máximo 30), about, contacto, redes, una de tres paletas y SEO/favicons. Permite subir imágenes o usar URLs aceptadas. Servicios y profesionales se editan donde ya se administran. No admite CSS, drag-and-drop ni layout libre.
+`/dashboard/website` conserva sidebar, preview en vivo, modos escritorio/móvil, autosave, copy editable, marca/logo, portada, galería (máximo 30), categorías, about/procesos, contacto, redes, paletas preset/custom y SEO/favicons. Las fotos se suben desde el picker; no hay un flujo de URLs manuales. La galería permite reordenar fotos. Servicios y profesionales se editan donde ya se administran. No admite CSS ni layout libre.
 
-Guardar actualiza el draft; previsualizar abre el borrador guardado; publicar exige guardar y reemplaza el snapshot público. `/dashboard/website/preview` usa el negocio autenticado. `?mode=demo` utiliza datos de muestra, y `?viewport=mobile` presenta el mismo renderer en un iframe de 390×844. Ninguna modalidad requiere publicación ni crea reservas.
+Guardar actualiza el draft; previsualizar abre el borrador guardado; publicar exige guardar y reemplaza el snapshot público. `/website-preview` usa el negocio autenticado. `?mode=demo` utiliza datos de muestra, y `?viewport=mobile` presenta el mismo renderer en un iframe de 390×844. Ninguna modalidad requiere publicación ni crea reservas.
+
+La publicación y el hero usan el titular efectivo: `headline.trim() || copy.hero.fallbackHeadline.trim()`. Si ambos están vacíos, o falta portada, la publicación se bloquea. Las paletas custom con contraste crítico también se bloquean; no se cambian los colores silenciosamente.
+
+Las categorías validan label trim de 1–80, IDs/nombres case-insensitive únicos, orden entero único dentro del rango y referencias existentes. La lectura repara filas legacy y migra labels/filtros; guardar usa IDs estables, vacía galleryFilters y sincroniza captions antiguos como campos de compatibilidad. Renombrar conserva IDs y relaciones; eliminar retira asociaciones, también de procesos, sin borrar fotos. Un categoryIds vacío es una decisión explícita: sus labels anteriores no vuelven a crear categorías.
+
+Auditoría de strings públicos: headings, navegación, slogans, marquee y CTA editoriales usan `config.copy`. Permanecen fijos los nombres de redes, skip link, controles/etiquetas transaccionales de reserva, estados de carga, errores, validaciones, unidades/precio/abono y mensajes de simulación. No se volvió configurable toda la UI técnica. Lucide del dashboard y el lenguaje visual público se conservan.
 
 ## Diferencias visuales intencionales
 

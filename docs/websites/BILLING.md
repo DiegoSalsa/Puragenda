@@ -20,10 +20,10 @@ Las operaciones del add-on rechazan entorno live y claves sin marcador sandbox. 
 
 Variables existentes: `NEXT_PUBLIC_PADDLE_ENV=sandbox`, `PADDLE_API_KEY` o `PADDLE_SANDBOX_API_KEY`, `PADDLE_NOTIFICATION_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` (test…), `NEXT_PUBLIC_APP_URL`. Nueva variable: `PADDLE_WEBSITE_PRICE_ID`. Las claves y secretos permanecen en servidor y fuera del repositorio. `WEBSITE_ROOT_DOMAIN` controla runtime por host.
 
-El MCP `paddle-docs` solicitado en AGENTS no estaba disponible en la sesión. Se consultó documentación oficial vigente de Paddle y los tipos del SDK instalado como alternativa; no se usó entrenamiento como única referencia.
+La documentación oficial y los tipos del SDK se revisaron durante la implementación original. Esta auditoría final no modifica integración Paddle ni consulta/realiza operaciones autenticadas de cuenta.
 
 ## Validación y pasos manuales
 
-Los tests mock cubren checkout, reintentos, ownership/binding, aislamiento respecto del plan base, duplicados/eventos desordenados, cancelación/reactivación y recuperación de pago. No se afirma que se haya efectuado un pago sandbox de extremo a extremo.
+Los tests mock reejecutados cubren checkout, reintentos, ownership/binding, aislamiento respecto del plan base, duplicados/eventos desordenados, cancelación/reactivación y recuperación de pago. Las políticas de vigencia/expiración/suspensión se volvieron a probar; HTTP verifica que un sitio suspendido deja de servirse. No se afirma que se haya efectuado un pago sandbox de extremo a extremo.
 
 Para validar con Paddle después: configurar credenciales sandbox y precio mensual aprobado, suscribir eventos al webhook firmado, ejecutar checkout de prueba, verificar renovación, cancelación programada, reactivación, fallo/recuperación de pago y replay. Para cualquier modificación destructiva de cuenta, confirmar entorno y recursos antes de llamar al proveedor. La moneda/precio final dependen del catálogo y de la disponibilidad comercial de Paddle; no se inventa un price ID ni una conversión CLP.

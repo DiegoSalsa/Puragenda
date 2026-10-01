@@ -12,11 +12,15 @@ Para servir `negocio.puragenda.cl` posteriormente hacen falta DNS wildcard, rout
 
 ## Dominio propio
 
-WebsiteDomain almacena hostname único, token aleatorio, estado PENDING/VERIFIED/ACTIVE/FAILED y principal. El propietario registra el dominio y recibe un TXT en `_puragenda.<dominio>`. `WebsiteDomainAdapter` separa verificación de propiedad de activación del proveedor.
+WebsiteDomain almacena hostname único, token aleatorio de 192 bits, `tenantVerifiedAt`, estado PENDING/VERIFIED/ACTIVE/FAILED y principal. El propietario registra el dominio y recibe un TXT `puragenda-verify=<token>` en `_puragenda.<dominio>`. La coincidencia es exacta y soporta registros TXT divididos en chunks. `WebsiteDomainAdapter` separa verificación de propiedad de activación del proveedor.
 
 El alta solo crea el challenge y no adopta nombres en Vercel. La activación verifica primero el TXT tenant-specific; después reconcilia/agrega el hostname en el provider y exige que el proyecto y el DNS correspondan. Un mismo `projectId` de Vercel nunca se considera prueba de que dos tenants sean el mismo propietario.
 
-El adapter incluido comprueba TXT mediante lectura DNS. Solo después de esa prueba el provider puede devolver VERIFIED/ACTIVE; si el challenge no coincide, no se asocia ni se adopta el dominio. Solo ACTIVE se resuelve públicamente. Un índice parcial permite un principal por website. SEO usa ese dominio cuando está activo y es principal; en caso contrario usa el subdominio.
+El adapter incluido comprueba TXT mediante lectura DNS. Solo después de esa prueba el provider puede devolver VERIFIED/ACTIVE; si el challenge no coincide, no se adopta el dominio y se limpian las marcas de verificación/activación. Solo ACTIVE con tenantVerifiedAt se resuelve públicamente o puede convertirse en principal. Refresh sigue el mismo flujo y no permite saltarse el challenge. La UI conserva el TXT Puragenda junto con los registros del proveedor: debe permanecer publicado para nuevas verificaciones.
+
+Vercel verifica nombre/projectId antes de cualquier POST de verificación; la conexión requiere dominio verificado y DNS correctamente configurado. SSL se provisiona por Vercel, sin emisión manual en Puragenda. Un fallo del provider se guarda como FAILED con mensaje seguro y sin principal. Desconectar una reserva antigua sin tenantVerifiedAt nunca borra el registro compartido en Vercel. Los tests usan DNS/transport mocks; HTTP local prueba reservas únicas y verify/disconnect/primary de A frente a B sin invocar DNS/Vercel real.
+
+La migración incremental de ownership conserva los hostnames reservados y devuelve dominios previos a PENDING, rota el TXT y retira el principal; los propietarios deben verificar nuevamente antes de que vuelvan a enrutar. Esta consecuencia operativa se debe considerar al aplicar migraciones en staging. Un índice parcial permite un principal por website. SEO usa el principal probado; en caso contrario usa el subdominio.
 
 No se usaron tokens Vercel ni se escribieron registros DNS. La UI incluye registro, verificación y selección de principal. El panel de superadmin permite inspeccionar sitios y solicitudes; la activación de infraestructura sigue siendo tarea posterior explícita.
 
