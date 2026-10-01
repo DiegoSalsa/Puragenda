@@ -12,7 +12,7 @@ Validación final de la rama `webs`, 1 de octubre de 2026, exclusivamente con da
 | Typecheck | Aprobado |
 | Prisma validate / generate | Aprobados; `migrate diff --from-config-datasource --to-schema` sin diferencias sobre PostgreSQL local |
 | Build Next.js local aislado | Aprobado, 133 páginas generadas y rutas de websites incluidas |
-| HTTP/DB multi-tenant local | 19 comprobaciones aprobadas; [evidencia](qa/http-tests.json) |
+| HTTP/DB multi-tenant local | **20 comprobaciones aprobadas**; ejecución final sobre PostgreSQL local aislado |
 | Integridad referencia | 58 hashes y estado/commit iguales al congelado |
 | Assets | 10 WebP portados con SHA-256 idéntico |
 
