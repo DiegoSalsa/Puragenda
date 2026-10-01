@@ -1,0 +1,81 @@
+{
+  "database": "local websiteqa only",
+  "reports": [
+    {
+      "name": "public tenant a",
+      "result": "PASS"
+    },
+    {
+      "name": "no private API key a",
+      "result": "PASS"
+    },
+    {
+      "name": "public tenant b",
+      "result": "PASS"
+    },
+    {
+      "name": "no private API key b",
+      "result": "PASS"
+    },
+    {
+      "name": "direct cross-host path denied",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical availability",
+      "result": "PASS"
+    },
+    {
+      "name": "other tenant service denied",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical booking",
+      "result": "PASS"
+    },
+    {
+      "name": "idempotent replay",
+      "result": "PASS"
+    },
+    {
+      "name": "appointment isolated to tenant A",
+      "result": "PASS"
+    },
+    {
+      "name": "cross-tenant booking denied",
+      "result": "PASS"
+    },
+    {
+      "name": "cross-origin mutation denied",
+      "result": "PASS"
+    },
+    {
+      "name": "client commercial values rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "slot collision rejected by canonical writer",
+      "result": "PASS"
+    },
+    {
+      "name": "draft never leaks publicly",
+      "result": "PASS"
+    },
+    {
+      "name": "suspension denies public website",
+      "result": "PASS"
+    },
+    {
+      "name": "RLS enabled on all website tables",
+      "result": "PASS"
+    },
+    {
+      "name": "browser role cannot read drafts even with SELECT grant",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical service update reflects on website",
+      "result": "PASS"
+    }
+  ]
+}

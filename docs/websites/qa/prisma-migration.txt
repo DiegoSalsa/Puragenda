@@ -1,0 +1,3 @@
+Baseline + exact website migration: PASS (isolated websiteqa_migration)
+Final schema diff:
+-- This is an empty migration.
