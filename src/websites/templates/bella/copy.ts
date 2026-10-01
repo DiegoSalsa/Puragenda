@@ -53,4 +53,3 @@ export function bellaCopy(config: { copy?: Partial<BellaCopy> }, businessName?: 
   }
   return parsed;
 }
-

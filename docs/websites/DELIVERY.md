@@ -40,7 +40,7 @@ Estado: hardening completado y validado localmente; listo para revisión de merg
 | 34 | QA mobile | Builder 390/360, preview visible y escalado, nombres B/C y header/hero/footer; Contacto 360×800 capturado |
 | 35 | Documentación | ARCHITECTURE, BELLA, DOMAINS, BILLING, QA y DELIVERY actualizados; medidas/capturas actuales separadas de historia |
 | 36 | Archivos | [Inventario completo](final-diff-inventory.json); producto, migraciones/config, tests, scripts y documentación identificados |
-| 37 | Commits | 705d53c4, 8619cae9, d8985ec, 95e60f4, 951df3d, e983386, 6b48972 + commit final de esta evidencia; git log 2c81c3f..webs |
+| 37 | Commits | 705d53c4, 8619cae9, d8985ec, 95e60f4, 951df3d, e983386, 6b48972, 92e0ef0 + cierre de whitespace/documentación; lista exacta: git log 2c81c3f..webs |
 | 38 | Externo pendiente | Aplicar en staging, revalidar TXT legacy, wildcard/routing/TLS, Cloudinary remoto y Paddle sandbox E2E; sin activar infraestructura desde esta auditoría |
 | 39 | Sin merge | Confirmado; main no se modificó |
 | 40 | Sin deploy | Confirmado; sin compra de dominio, DNS writes, Vercel writes production ni Paddle LIVE |
