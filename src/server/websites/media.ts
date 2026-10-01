@@ -4,9 +4,9 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { requireWebsiteManager, ensureWebsite } from "./service";
 import { WebsiteError } from "./errors";
-import { bellaConfigSchema, type BellaConfig } from "@/websites/config";
+
 import { MEDIA_PROFILES, MAX_WEBSITE_IMAGE_BYTES, type MediaUsage, type WebsiteAsset } from "@/websites/media";
-import { mediaUrls } from "@/websites/editor-utils";
+import { storedMediaUrls } from "@/websites/stored-media";
 
 export async function normalizeWebsiteImage(file: File, usage: MediaUsage) {
   if (!file.size || file.size > MAX_WEBSITE_IMAGE_BYTES || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new WebsiteError("Usa JPG, PNG o WebP de hasta 5 MB");
@@ -52,15 +52,15 @@ export async function storeWebsiteImage(form: FormData): Promise<WebsiteAsset> {
   }
 }
 type MediaDb = Pick<Prisma.TransactionClient, "websiteMedia">;
-export async function validateWebsiteAssets(db: MediaDb, websiteId: string, config: BellaConfig, previous: unknown) {
-  const legacy = bellaConfigSchema.safeParse(previous);
-  const allowedLegacy = new Set(legacy.success ? mediaUrls(legacy.data) : []);
-  const urls = [...new Set(mediaUrls(config))];
+export async function validateWebsiteAssets(db: MediaDb, websiteId: string, config: { mediaAssets?: WebsiteAsset[] }, previous: unknown) {
+  const allowedLegacy = new Set(storedMediaUrls(previous));
+  const urls = [...new Set(storedMediaUrls(config))];
   const refs = config.mediaAssets ?? [];
   const fresh = urls.filter(url => !allowedLegacy.has(url));
-  if (!fresh.length && !refs.length) return;
-  const assets = await db.websiteMedia.findMany({ where: { websiteId, deletedAt: null, OR: [{ secureUrl: { in: urls } }, { id: { in: refs.map(asset => asset.id) } }] } });
-  const owns = new Map(assets.map(asset => [asset.secureUrl, asset]));
+  if (!urls.length && !refs.length) return;
+  const assets = await db.websiteMedia.findMany({ where: { OR: [{ secureUrl: { in: urls } }, { id: { in: refs.map(asset => asset.id) } }] } });
+  const owns = new Map(assets.filter(asset => asset.websiteId === websiteId && !asset.deletedAt).map(asset => [asset.secureUrl, asset]));
+  if (assets.some(asset => asset.websiteId !== websiteId || asset.deletedAt)) throw new WebsiteError("Esta imagen no pertenece a tu negocio. Sube tu propia foto.");
   if (fresh.some(url => !owns.has(url)) || refs.some(ref => { const owned = owns.get(ref.secureUrl); return !owned || owned.id !== ref.id || owned.publicId !== ref.publicId || owned.width !== ref.width || owned.height !== ref.height || owned.bytes !== ref.bytes || owned.format !== ref.format; })) throw new WebsiteError("Esta imagen no pertenece a tu negocio. Sube tu propia foto.");
 }
 export async function deleteWebsiteAsset(id: string) {
@@ -69,7 +69,7 @@ export async function deleteWebsiteAsset(id: string) {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     const item = await tx.websiteMedia.findFirst({ where: { id, deletedAt: null, website: { businessId: business.id } }, include: { website: true } });
     if (!item) throw new WebsiteError("Imagen no encontrada");
-    const referenced = [item.website.draftConfig, item.website.publishedConfig].some(value => { const parsed = bellaConfigSchema.safeParse(value); return parsed.success && mediaUrls(parsed.data).includes(item.secureUrl); });
+    const referenced = [item.website.draftConfig, item.website.publishedConfig].some(value => storedMediaUrls(value).includes(item.secureUrl));
     if (referenced) throw new WebsiteError("Esta foto sigue en tu borrador o sitio publicado. Retírala y publica antes de eliminarla.");
     return tx.websiteMedia.update({ where: { id }, data: { deletedAt: new Date() } });
   });

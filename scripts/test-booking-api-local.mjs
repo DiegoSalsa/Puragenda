@@ -20,7 +20,10 @@ url.searchParams.set("schema", schema);
 // option qualifies ORM queries only. Keep both pointed at our isolated fixture.
 url.searchParams.set("options", `-csearch_path=${schema},public`);
 const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toString(), PURAGENDA_BOOKING_TEST_DATABASE_URL: url.toString(),
-  RESEND_API_KEY: "", AUTH_SECRET: "local-booking-test-only", NEXT_PUBLIC_APP_URL: "http://localhost:3107", LOCAL_PAYMENT_SIMULATOR: "true" };
+  ...(process.argv.includes("--all") ? { TEST_DATABASE_URL: url.toString() } : {}),
+  RESEND_API_KEY: "", AUTH_SECRET: "local-booking-test-only",
+  NEXT_PUBLIC_APP_URL: process.argv.includes("--all") ? "http://localhost:3000" : "http://localhost:3107",
+  LOCAL_PAYMENT_SIMULATOR: process.argv.includes("--preview") || process.argv.includes("--build") ? "true" : "" };
 function run(args) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { stdio: "inherit", env });
@@ -44,6 +47,7 @@ try {
     // with the exact migration, including FKs and the database concurrency guard.
     await client.query('DROP TABLE "BookingOperation"');
     await client.query(fs.readFileSync(new URL("../prisma/migrations/20260930120000_public_booking_operations/migration.sql", import.meta.url), "utf8"));
+    await client.query(fs.readFileSync(new URL("../prisma/migrations/20261001121000_booking_operation_fk_update/migration.sql", import.meta.url), "utf8"));
     if (process.argv.includes("--preview") || process.argv.includes("--build")) {
       const { PrismaClient } = await import("@prisma/client");
       const { PrismaPg } = await import("@prisma/adapter-pg");
@@ -66,7 +70,8 @@ try {
         code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", "3107"]);
       }
     } else {
-      code = await run([vitestBin, "run", "tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"]);
+      const files = process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      code = await run([vitestBin, "run", ...files]);
     }
   }
 } finally {

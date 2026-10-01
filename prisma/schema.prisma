@@ -91,6 +91,7 @@ model WebsiteDomain {
   hostname         String              @unique
   status           WebsiteDomainStatus @default(PENDING)
   verificationToken String
+    tenantVerifiedAt DateTime?
   isPrimary        Boolean             @default(false)
   verifiedAt       DateTime?
   activatedAt      DateTime?

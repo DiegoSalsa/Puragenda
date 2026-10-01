@@ -2,7 +2,6 @@
 import { WebsiteError } from "@/server/websites/errors";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
-import { bellaConfigSchema } from "@/websites/config";
 import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
@@ -12,11 +11,8 @@ import { resolveTemplate } from "@/websites/registry";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { storeWebsiteImage, deleteWebsiteAsset, validateWebsiteAssets } from "@/server/websites/media";
-import { mediaUrls } from "@/websites/editor-utils";
+import { storedMediaUrls } from "@/websites/stored-media";
 import { websiteAssetSchema } from "@/websites/media";
-import { paletteTokens, validatePalette } from "@/websites/palettes";
-import { effectiveWebsiteHeadline } from "@/websites/publishing";
-import { migrateBellaCategories } from "@/websites/templates/bella/categories";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -24,9 +20,9 @@ async function uploadWebsiteImageImpl(formData: FormData) {
 
 async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain: string) {
   const { business } = await requireWebsiteManager();
-  const config = migrateBellaCategories(input);
   if (!Number.isSafeInteger(revision) || revision < 0 || !validSubdomain(subdomain)) throw new WebsiteError("Configuración inválida");
   const site = await ensureWebsite(business.id, business.slug);
+  const config = resolveTemplate(site.templateKey ?? "bella", site.templateVersion ?? 1).parseDraft(input);
   const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
@@ -44,10 +40,10 @@ async function publishWebsiteImpl(revision: number) {
     const site = current.website;
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
-    const config = migrateBellaCategories(site.draftConfig);
-    if (config.paletteMode === "custom" && config.customPalette && !validatePalette(paletteTokens(config.accent, config.customPalette, config.paletteMode)).valid) throw new WebsiteError("La paleta personalizada necesita más contraste antes de publicar");
+    const config = template.readConfig(site.draftConfig);
+    const publicationError = template.publicationError(config);
+    if (publicationError) throw new WebsiteError(publicationError);
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
-    if (!config.heroImage || !effectiveWebsiteHeadline(config)) throw new WebsiteError("Agrega una portada y un titular antes de publicar");
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });
     if (published.count !== 1) throw new WebsiteError("El borrador cambió. Revisa y publica nuevamente.");
   });
@@ -76,7 +72,7 @@ async function setPrimaryWebsiteDomainImpl(id: string) {
   const { business } = await requireWebsiteManager(true);
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
-    const domain = await tx.websiteDomain.findFirst({ where: { id, status: "ACTIVE", website: { businessId: business.id } } });
+    const domain = await tx.websiteDomain.findFirst({ where: { id, status: "ACTIVE", tenantVerifiedAt: { not: null }, website: { businessId: business.id } } });
     if (!domain) throw new WebsiteError("Dominio no activo");
     await tx.websiteDomain.updateMany({ where: { websiteId: domain.websiteId }, data: { isPrimary: false } });
     await tx.websiteDomain.update({ where: { id: domain.id }, data: { isPrimary: true } });
@@ -116,7 +112,7 @@ export async function listWebsiteImages() {
     const { business } = await requireWebsiteManager();
     const site = await ensureWebsite(business.id, business.slug);
     const assets = await prisma.websiteMedia.findMany({ where: { websiteId: site.id, deletedAt: null }, orderBy: { createdAt: "desc" }, take: 150 });
-    const inUse = new Set([site.draftConfig, site.publishedConfig].flatMap(value => { const parsed = bellaConfigSchema.safeParse(value); return parsed.success ? mediaUrls(parsed.data) : []; }));
+    const inUse = new Set([site.draftConfig, site.publishedConfig].flatMap(storedMediaUrls));
     return assets.map(asset => ({ ...websiteAssetSchema.parse({ id: asset.id, publicId: asset.publicId, secureUrl: asset.secureUrl, width: asset.width, height: asset.height, format: asset.format, bytes: asset.bytes }), inUse: inUse.has(asset.secureUrl) }));
   });
 }

@@ -7,8 +7,8 @@ const env = {
   AUTH_SECRET: 'local-website-qa-auth-secret-isolated-2026',
   WEBSITE_QA: '1', WEBSITE_MEDIA_MOCK: '1', WEBSITE_DOMAIN_PROVIDER: 'mock', WEBSITE_VERCEL_WRITES_ENABLED: '', VERCEL_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '', WEBSITE_ROOT_DOMAIN: 'localhost',
   WEBSITE_BUILD_QA: build ? '1' : '',
-  // Keep the project's mail configuration. The previous QA override forced
-  // RESEND_API_KEY to empty, which made admin OTP delivery look broken.
+  // QA must never deliver real mail, including booking notifications and OTP.
+  RESEND_API_KEY: '', SMTP_HOST: '', SMTP_USER: '', SMTP_PASS: '',
   GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '',
   MERCADOPAGO_ACCESS_TOKEN: '', PADDLE_API_KEY: '', PADDLE_SANDBOX_API_KEY: '',
   PADDLE_LIVE_API_KEY: '', PADDLE_NOTIFICATION_WEBHOOK_SECRET: '', PADDLE_WEBSITE_PRICE_ID: '',

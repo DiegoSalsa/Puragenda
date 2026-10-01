@@ -5,7 +5,6 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
-import { emptyBellaConfig } from "@/websites/config";
 import { normalizeHostname, validSubdomain, websiteIsVisible, websiteSubdomain } from "@/websites/policy";
 import { resolveTemplate } from "@/websites/registry";
 import { loadBookingContext, toBookingCatalog } from "@/server/booking/read.service";
@@ -29,23 +28,23 @@ export async function ensureWebsite(businessId: string, slug: string) {
   const existing = await prisma.businessWebsite.findUnique({ where: { businessId } });
   if (existing) return existing;
   const subdomain = validSubdomain(slug) ? slug : `sitio-${randomUUID().slice(0, 8)}`;
-  return prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: emptyBellaConfig() }, update: {} });
+  return prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: resolveTemplate("bella", 1).defaultConfig() }, update: {} });
 }
-const includeBusiness = { business: { include: { subscription: true, websiteAddon: true } }, domains: { where: { status: "ACTIVE" as const } } } satisfies Prisma.BusinessWebsiteInclude;
+const includeBusiness = { business: { include: { subscription: true, websiteAddon: true } }, domains: { where: { status: "ACTIVE" as const, tenantVerifiedAt: { not: null } } } } satisfies Prisma.BusinessWebsiteInclude;
 export async function resolveWebsiteHost(raw: string) {
   const hostname = normalizeHostname(raw);
   const slug = websiteSubdomain(hostname, websiteRootDomain());
   const site = slug
     ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
-    : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE" } } }, include: includeBusiness });
+    : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE", tenantVerifiedAt: { not: null } } } }, include: includeBusiness });
   if (!site || !websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt)) return null;
   resolveTemplate(site.templateKey, site.templateVersion);
   return site;
 }
 export type PublicWebsite = NonNullable<Awaited<ReturnType<typeof resolveWebsiteHost>>>;
-export async function websiteView(site: { businessId: string; templateKey: string; templateVersion: number; draftConfig: unknown; publishedConfig: unknown }, preview: boolean): Promise<WebsiteView> {
+export async function websiteView(site: { businessId: string; templateKey: string; templateVersion: number; draftConfig: unknown; publishedConfig: unknown }, preview: boolean): Promise<WebsiteView<ReturnType<ReturnType<typeof resolveTemplate>["readConfig"]>>> {
   const template = resolveTemplate(site.templateKey, site.templateVersion);
-  const config = template.configSchema.parse(preview ? site.draftConfig : site.publishedConfig);
+  const config = template.readConfig(preview ? site.draftConfig : site.publishedConfig);
   const [business, context] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: site.businessId }, select: { id: true, name: true, logoUrl: true, address: true, mapsUrl: true } }),
     loadBookingContext(site.businessId),

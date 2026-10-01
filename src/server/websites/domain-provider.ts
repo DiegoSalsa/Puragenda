@@ -53,6 +53,7 @@ export class VercelDomainProvider implements DomainProvider {
   }
   async verifyDomain(hostname: string) {
     const current = projectSchema.parse(await this.request(this.projectPath(hostname)));
+    if (current.projectId !== this.projectId || current.name !== hostname) throw new WebsiteError("El dominio no está conectado al proyecto esperado");
     if (!current.verified) await this.request(`${this.projectPath(hostname)}/verify`, "POST");
     return this.getDomainStatus(hostname);
   }

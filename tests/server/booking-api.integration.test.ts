@@ -38,7 +38,8 @@ function read(query = "") {
 
 describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
   beforeEach(async () => {
-    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date());
+    // The fixture slots are fixed on October 1; keep them in the future on any run date.
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-09-30T12:00:00.000Z"));
     mocks.notify.mockResolvedValue(undefined); mocks.sync.mockResolvedValue({ synced: true }); mocks.busy.mockResolvedValue([]);
     mocks.oauth.mockResolvedValue(null); mocks.preference.mockResolvedValue({ id: "preference-fixture", init_point: "https://payments.example.invalid/fixture" });
     await prisma.business.deleteMany({ where: { id: { in: ["local-business", "foreign-business"] } } });

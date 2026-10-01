@@ -10,8 +10,7 @@ import { websiteDomainProvider, type DomainProvider, type DomainResult } from ".
 export interface WebsiteDomainAdapter {
   check(hostname: string, token: string): Promise<{ verified: boolean; active: boolean; message: string }>;
 }
-// DNS proves ownership; provider activation is a separate operation. No automatic
-// Vercel mutations. An adapter must verify TLS and target deployment before ACTIVE.
+// DNS proves ownership; provider activation is a separate, ownership-gated step.
 export const pendingDomainAdapter: WebsiteDomainAdapter = {
   async check(hostname, token) {
     let verified = false;
@@ -27,7 +26,7 @@ export function customHostname(raw: string) {
 }
 type DomainDb = Pick<Prisma.TransactionClient, "websiteDomain">;
 async function saveDomainResult(id: string, result: DomainResult, db: DomainDb) {
-  return db.websiteDomain.update({ where: { id }, data: { status: result.active && result.verified ? "ACTIVE" : result.verified ? "VERIFIED" : "PENDING", verifiedAt: result.verified ? new Date() : null, activatedAt: result.active && result.verified ? new Date() : null, lastError: result.message, dnsRecords: result.records, checkedAt: new Date(), ...(!result.active ? { isPrimary: false } : {}) } });
+  return db.websiteDomain.update({ where: { id }, data: { status: result.active && result.verified ? "ACTIVE" : result.verified ? "VERIFIED" : "PENDING", verifiedAt: result.verified ? new Date() : null, activatedAt: result.active && result.verified ? new Date() : null, lastError: result.message, dnsRecords: result.records, checkedAt: new Date(), ...(!(result.active && result.verified) ? { isPrimary: false } : {}) } });
 }
 function ownershipRecords(hostname: string, token: string) {
   return [{ type: "TXT" as const, name: `_puragenda.${hostname}`, value: token }];
@@ -41,17 +40,15 @@ export async function addWebsiteDomain(raw: string, provider?: DomainProvider) {
   const hostname = customHostname(raw);
   // The provider is intentionally not called until TXT ownership is verified.
   void provider;
-  const outcome = await prisma.$transaction(async tx => {
+  return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     if (await tx.websiteDomain.count({ where: { websiteId: site.id } }) >= 5) throw new WebsiteError("Máximo 5 dominios");
     const verificationToken = `puragenda-verify=${randomBytes(24).toString("hex")}`;
     const domain = await tx.websiteDomain.create({ data: { websiteId: site.id, hostname, provider: "pending", verificationToken, dnsRecords: ownershipRecords(hostname, verificationToken) } });
     // Never adopt or reconcile a provider-owned hostname before this tenant has
     // proven control of it with the Puragenda TXT challenge.
-    return { value: domain };
+    return domain;
   }, { timeout: 30000 });
-  if ("error" in outcome) throw outcome.error;
-  return outcome.value;
 }
 async function managedDomain<T>(id: string, work: (domain: WebsiteDomain, tx: Prisma.TransactionClient) => Promise<T>) {
   const { business } = await requireWebsiteManager(true);
@@ -65,26 +62,26 @@ async function managedDomain<T>(id: string, work: (domain: WebsiteDomain, tx: Pr
   if ("error" in outcome) throw outcome.error;
   return outcome.value;
 }
-export async function verifyWebsiteDomain(id: string, adapter?: WebsiteDomainAdapter) {
+export async function verifyWebsiteDomain(id: string, adapter?: WebsiteDomainAdapter, suppliedProvider?: DomainProvider) {
   return managedDomain(id, async (domain, tx) => {
     const ownership = await (adapter ?? pendingDomainAdapter).check(domain.hostname, domain.verificationToken);
     if (!ownership.verified) {
-      await tx.websiteDomain.update({ where: { id: domain.id }, data: { status: "PENDING", isPrimary: false, dnsRecords: ownershipRecords(domain.hostname, domain.verificationToken), checkedAt: new Date(), lastError: ownership.message } });
+      await tx.websiteDomain.update({ where: { id: domain.id }, data: { status: "PENDING", isPrimary: false, tenantVerifiedAt: null, verifiedAt: null, activatedAt: null, dnsRecords: ownershipRecords(domain.hostname, domain.verificationToken), checkedAt: new Date(), lastError: ownership.message } });
       return ownership.message;
     }
     let result: DomainResult;
     let providerKey = domain.provider;
-    if (adapter) result = { ...ownership, records: [] };
+    if (adapter && !suppliedProvider) result = { ...ownership, records: [] };
     else {
-      const provider = websiteDomainProvider();
+      const provider = suppliedProvider ?? websiteDomainProvider();
       providerKey = provider.key;
       // The TXT challenge is checked first. Only then may we add or reconcile
       // a hostname that could already exist in the shared provider project.
       try { await provider.addDomain(domain.hostname); } catch { /* existing provider record is reconciled below */ }
       result = await provider.verifyDomain(domain.hostname);
     }
-    await saveDomainResult(domain.id, { ...result, verified: ownership.verified && result.verified }, tx);
-    if (providerKey !== domain.provider) await tx.websiteDomain.update({ where: { id: domain.id }, data: { provider: providerKey } });
+    await saveDomainResult(domain.id, { ...result, verified: ownership.verified && result.verified, records: [...ownershipRecords(domain.hostname, domain.verificationToken), ...result.records] }, tx);
+    await tx.websiteDomain.update({ where: { id: domain.id }, data: { provider: providerKey, tenantVerifiedAt: new Date() } });
     return result.message;
   });
 }
@@ -95,7 +92,7 @@ export async function refreshWebsiteDomain(id: string) {
 }
 export async function removeWebsiteDomain(id: string) {
   return managedDomain(id, async (domain, tx) => {
-    if (domain.provider !== "pending") await websiteDomainProvider().removeDomain(domain.hostname);
+    if (domain.provider !== "pending" && domain.tenantVerifiedAt) await websiteDomainProvider().removeDomain(domain.hostname);
     await tx.websiteDomain.delete({ where: { id } });
   });
 }

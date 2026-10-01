@@ -1,3 +1,3 @@
-import type { BellaConfig } from "./config";
 import type { Catalog } from "./booking/types";
-export type WebsiteView = { config: BellaConfig; catalog: Catalog; business: { id: string; name: string; logo: string | null; address: string | null; mapsUrl: string | null }; preview: boolean };
+export type WebsiteBusiness = { id: string; name: string; logo: string | null; address: string | null; mapsUrl: string | null };
+export type WebsiteView<TConfig> = { config: TConfig; catalog: Catalog; business: WebsiteBusiness; preview: boolean };

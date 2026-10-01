@@ -1,10 +1,10 @@
 "use client";
 import { createContext, useContext, useMemo } from "react";
-import type { WebsiteView } from "../../types";
+import type { BellaView } from "./types";
 import type { Availability, AvailabilityQuery, BookingRequest, BookingResult, Catalog } from "./_lib/puragenda/types";
 import { BookingError } from "./_lib/puragenda/errors";
 import { demoAvailability } from "../../fixtures/catalog";
-const Context = createContext<(WebsiteView & { api: ReturnType<typeof createWebsiteApi> }) | null>(null);
+const Context = createContext<(BellaView & { api: ReturnType<typeof createWebsiteApi> }) | null>(null);
 export function createWebsiteApi(catalog: Catalog, preview: boolean, demonstration = false) {
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let response: Response;
@@ -28,7 +28,7 @@ export function createWebsiteApi(catalog: Catalog, preview: boolean, demonstrati
     book: (input: BookingRequest, key: string) => preview ? Promise.reject(new BookingError("VALIDATION", "La vista previa no crea reservas")) : request<BookingResult>("book", { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(input) }),
   };
 }
-export function BellaProvider({ view, children }: { view: WebsiteView; children: React.ReactNode }) {
+export function BellaProvider({ view, children }: { view: BellaView; children?: React.ReactNode }) {
   const api = useMemo(() => createWebsiteApi(view.catalog, view.preview, view.business.id.startsWith("fixture-")), [view.catalog, view.preview, view.business.id]);
   return <Context.Provider value={{ ...view, api }}>{children}</Context.Provider>;
 }

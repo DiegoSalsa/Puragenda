@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from
 import { useRouter } from "next/navigation";
 import { Check, CheckCircle2, ExternalLink, Globe, Heart, Images, LayoutTemplate, LoaderCircle, Monitor, Palette, Phone, Smartphone, Sparkles } from "lucide-react";
 import { bellaConfigSchema, type BellaConfig } from "@/websites/config";
-import type { WebsiteView } from "@/websites/types";
+import type { BellaView } from "@/websites/templates/bella/types";
 import type { WebsiteAsset } from "@/websites/media";
 import { BELLA_PALETTES, paletteTokens, validatePalette } from "@/websites/palettes";
 import { PREVIEW_PROTOCOL, type PreviewField } from "@/websites/preview-protocol";
@@ -20,7 +20,7 @@ import MediaLibrary from "./media-library";
 import DomainPanel, { type EditorDomain } from "./domain-panel";
 import BillingPanel, { type EditorAddon, type EditorPrice } from "./billing-panel";
 import styles from "./website-builder.module.css";
-type Props = { initial: BellaConfig; view: WebsiteView; revision: number; publishedRevision: number | null; subdomain: string; rootDomain: string; publicUrl: string; status: string; addon: EditorAddon; price: EditorPrice; domains: EditorDomain[]; requests: { id: string; hostname: string; status: string }[]; canManageDomains: boolean };
+type Props = { initial: BellaConfig; view: BellaView; revision: number; publishedRevision: number | null; subdomain: string; rootDomain: string; publicUrl: string; status: string; addon: EditorAddon; price: EditorPrice; domains: EditorDomain[]; requests: { id: string; hostname: string; status: string }[]; canManageDomains: boolean };
 const sections = [
   { key: "design", name: "Diseño", icon: Palette }, { key: "hero", name: "Portada", icon: LayoutTemplate },
   { key: "gallery", name: "Galería", icon: Images }, { key: "business", name: "Mi negocio", icon: Heart },

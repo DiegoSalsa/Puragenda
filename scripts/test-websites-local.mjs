@@ -6,7 +6,7 @@ const base = 'http://127.0.0.1:3005';
 const client = new pg.Client({connectionString:'postgresql://websiteqa@127.0.0.1:55439/websiteqa'});
 await client.connect();
 const reports=[];
-let restoreSite, restorePrice;
+let restoreSite, restorePrice, restoreC, restoreStaff;
 function check(name, value) { assert.ok(value,name); reports.push({name,result:'PASS'}); }
 async function call(path, tenant='a', init={}) {
  const host=`bella-${tenant}.localhost:3005`;
@@ -22,6 +22,29 @@ try {
   check(`public tenant ${tenant}`,response.status===200 && html.includes(tenant==='a'?'ESTÉTICA':'BEAUTY ATELIER'));
   check(`no private API key ${tenant}`,!html.includes(`website-qa-${tenant}-local-only-key`));
  }
+ const responseC=await call('/','c');const htmlC=await responseC.text();
+ check('tenant C service gallery without demo',responseC.status===200&&htmlC.includes('id="trabajos"')&&htmlC.includes('website-qa-c/service.webp')&&!htmlC.includes('/websites/bella/'));
+ const cServices=(await client.query('SELECT id,"imageUrl" FROM "Service" WHERE "businessId"=$1',['website-qa-c'])).rows;restoreC=cServices;
+ await client.query('UPDATE "Service" SET "imageUrl"=NULL WHERE "businessId"=$1',['website-qa-c']);
+ const noGallery=await call('/','c');check('tenant C hides Portfolio without manual or service photos',!(await noGallery.text()).includes('id="trabajos"'));
+ for(const service of cServices)await client.query('UPDATE "Service" SET "imageUrl"=$1 WHERE id=$2',[service.imageUrl,service.id]);
+ const privatePreview=await call('/website-preview');check('preview requires authentication',privatePreview.status===307||privatePreview.status===302||privatePreview.status===401||privatePreview.status===404);
+ const upload=await call('/api/website/media','a',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=qa'},body:'--qa--'});check('unauthenticated media upload denied',upload.status===401||upload.status===403);
+ const badMediaOrigin=await call('/api/website/media','a',{method:'POST',headers:{origin:'https://evil.test'},body:'invalid'});check('cross-origin media mutation denied',badMediaOrigin.status===403);
+ const staffRecord=(await client.query('SELECT id,name FROM "Staff" WHERE "businessId"=$1 AND "isActive"=true LIMIT 1',['website-qa-a'])).rows[0];restoreStaff=staffRecord;
+ await client.query('UPDATE "Staff" SET name=$1 WHERE id=$2',['Profesional actualizada QA',staffRecord.id]);
+ check('canonical staff update reflects on website',(await(await call('/')).text()).includes('Profesional actualizada QA'));
+ await client.query('UPDATE "Staff" SET name=$1 WHERE id=$2',[staffRecord.name,staffRecord.id]);
+ const siteA=(await client.query('SELECT id FROM "BusinessWebsite" WHERE "businessId"=$1',['website-qa-a'])).rows[0];
+ const domainId='qa-domain-'+randomUUID();
+ try {
+   await client.query('INSERT INTO "WebsiteDomain" (id,"websiteId",hostname,status,"verificationToken","tenantVerifiedAt","updatedAt") VALUES ($1,$2,$3,$4,$5,NOW(),NOW())',[domainId,siteA.id,'tenant-a.qa-example.cl','ACTIVE','puragenda-verify=local-only']);
+   const custom=await new Promise((resolve,reject)=>{const req=http.request(base+'/',{headers:{host:'tenant-a.qa-example.cl'}},res=>{const chunks=[];res.on('data',chunk=>chunks.push(chunk));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(chunks).toString()}));});req.on('error',reject);req.end();});
+   check('active custom hostname resolves exclusively to A',custom.status===200&&custom.body.includes('ESTÉTICA')&&!custom.body.includes('BEAUTY ATELIER'));
+   let duplicateDenied=false;try{await client.query('INSERT INTO "WebsiteDomain" (id,"websiteId",hostname,"verificationToken","updatedAt") VALUES ($1,$2,$3,$4,NOW())',['qa-duplicate-'+randomUUID(),siteA.id,'tenant-a.qa-example.cl','other']);}catch(error){duplicateDenied=error.code==='23505';}check('database globally rejects duplicate hostname',duplicateDenied);
+   await client.query('UPDATE "WebsiteDomain" SET "tenantVerifiedAt"=NULL WHERE id=$1',[domainId]);
+   const unproven=await new Promise((resolve,reject)=>{const req=http.request(base+'/',{headers:{host:'tenant-a.qa-example.cl'}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end();});check('legacy ACTIVE without tenant proof does not route',unproven===404);
+ } finally {await client.query('DELETE FROM "WebsiteDomain" WHERE id=$1',[domainId]);}
  const spoof=await fetch(base+'/sites/bella-a.localhost'); check('direct cross-host path denied',spoof.status===404);
  const date=new Date(Date.now()+2*86400000).toISOString().slice(0,10);
  const input={serviceId:'website-qa-a-permanente',locationId:'website-qa-a-location',staffId:'any',optionIds:[],date};
@@ -70,6 +93,8 @@ try {
  console.log(JSON.stringify({database:'local websiteqa only',reports},null,2));
 } finally {
  if(restoreSite) await client.query('UPDATE "BusinessWebsite" SET "draftConfig"=$1,status=$2 WHERE id=$3',[restoreSite.draftConfig,restoreSite.status,restoreSite.id]);
+ if(restoreC)for(const service of restoreC)await client.query('UPDATE "Service" SET "imageUrl"=$1 WHERE id=$2',[service.imageUrl,service.id]);
+ if(restoreStaff)await client.query('UPDATE "Staff" SET name=$1 WHERE id=$2',[restoreStaff.name,restoreStaff.id]);
  if(restorePrice) await client.query('UPDATE "Service" SET price=$1 WHERE id=$2',[restorePrice.price,restorePrice.id]);
  await client.end();
 }

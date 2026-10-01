@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { WebsiteView } from "../../types";
+import type { BellaView } from "./types";
 import { PREVIEW_PROTOCOL, parsePreviewMessage, trustedPreviewSender } from "../../preview-protocol";
-export function useLivePreview(initial: WebsiteView) {
+export function useLivePreview(initial: BellaView) {
   const [config, setConfig] = useState(initial.config);
   const sequence = useRef(-1);
   useEffect(() => {

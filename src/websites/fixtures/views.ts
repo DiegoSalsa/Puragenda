@@ -1,10 +1,10 @@
 import { bellaConfigSchema } from "../config";
-import type { WebsiteView } from "../types";
+import type { BellaView } from "../templates/bella/types";
 import { demoCatalog } from "./catalog";
 import { works, filters } from "./portfolio";
 const image = (file: string) => `/websites/bella/${file}.webp`;
-export function fixtureView(tenant: "a" | "b"): WebsiteView {
-  const view: WebsiteView = {
+export function fixtureView(tenant: "a" | "b" | "c"): BellaView {
+  const view: BellaView = {
     business: { id: "fixture-a", name: "Estética Bella", logo: null, address: null, mapsUrl: null },
     preview: true, catalog: structuredClone(demoCatalog),
     config: bellaConfigSchema.parse({ brandEyebrow: "Estética", brandTitle: "Bella", heroImage: image("hero/red-chrome"), heroCaption: "Primer plano / Color rojo.", headline: "El detalle\nlo cambia\ntodo", intro: "Manicure, cejas y pestañas.", about: "Preparar. Dar forma. Terminar.\nUna mesa lista. Herramientas preparadas.\nUn acabado que se mira de cerca.", aboutImage: image("studio/space"),
@@ -18,7 +18,13 @@ export function fixtureView(tenant: "a" | "b"): WebsiteView {
     view.catalog.business.name = view.business.name;
     view.catalog.locations = [{ id: "aura-location", name: "Aura Atelier", timezone: "America/Santiago" }];
     view.catalog.services = [{ id: "aura-cejas", name: "Diseño personalizado de cejas", duration: 45, price: 19500, description: "Diseño que acompaña tu expresión.", category: "Mirada", categoryId: "mirada", categoryPosition: 0, image: image("services/brows"), optionCategories: [], locationIds: ["aura-location"] }, { id: "aura-lashes", name: "Lifting premium", duration: 75, price: 32500, description: "Curva natural y definición.", category: "Mirada", categoryId: "mirada", categoryPosition: 0, image: image("services/lashes"), optionCategories: [], locationIds: ["aura-location"] }];
-    view.catalog.staff = [{ id: "aura-valentina", name: "Valentina", image: null, serviceIds: ["aura-cejas", "aura-lashes"], locationIds: ["aura-location"] }];
+    view.catalog.staff = [{ id: "aura-valentina", name: "Valentina", image: "", serviceIds: ["aura-cejas", "aura-lashes"], locationIds: ["aura-location"] }];
+  }
+  if (tenant === "c") {
+    view.business = { ...view.business, id: "fixture-c", name: "Centro Integral de Belleza y Estética María Fernanda" };
+    view.config = bellaConfigSchema.parse({ displayName: view.business.name, heroImage: "/website-media-qa/website-qa-c/service.webp", headline: "Tu espacio de bienestar", gallery: [] });
+    view.catalog.business.name = view.business.name;
+    view.catalog.services = view.catalog.services.map((service, index) => ({ ...service, image: index < 2 ? "/website-media-qa/website-qa-c/service.webp" : "" }));
   }
   return view;
 }

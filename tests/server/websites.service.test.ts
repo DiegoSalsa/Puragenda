@@ -5,7 +5,7 @@ vi.mock("@/server/auth/user-session", () => ({ getCurrentSessionUser: mocks.user
 vi.mock("@/server/services/business.service", () => ({ getBusinessForUser: mocks.business }));
 vi.mock("@/server/services/permissions.service", () => ({ hasBusinessPermission: mocks.permission }));
 import { resolveWebsiteHost, requireWebsiteManager } from "@/server/websites/service";
-const website = (id: string) => ({ businessId: id, status: "PUBLISHED", publishedConfig: {}, templateKey: "bella", templateVersion: 1, business: { deletedAt: null, subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) } } });
+const website = (id: string) => ({ businessId: id, status: "PUBLISHED", publishedConfig: {}, templateKey: "bella", templateVersion: 1, business: { deletedAt: null, subscription: { status: "ACTIVE", tenantVerifiedAt: { not: null } }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) } } });
 describe("website server tenant boundaries", () => {
   beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("WEBSITE_ROOT_DOMAIN", "puragenda.cl"); });
   it("looks up each hostname by its own unique tenant key", async () => {
@@ -17,7 +17,7 @@ describe("website server tenant boundaries", () => {
   it("only resolves active custom domains and denies unpublished sites", async () => {
     mocks.custom.mockResolvedValue(website("b"));
     expect((await resolveWebsiteHost("studio-b.cl"))?.businessId).toBe("b");
-    expect(mocks.custom).toHaveBeenCalledWith(expect.objectContaining({ where: { domains: { some: { hostname: "studio-b.cl", status: "ACTIVE" } } } }));
+    expect(mocks.custom).toHaveBeenCalledWith(expect.objectContaining({ where: { domains: { some: { hostname: "studio-b.cl", status: "ACTIVE", tenantVerifiedAt: { not: null } } } } }));
     mocks.custom.mockResolvedValue({ ...website("b"), status: "DRAFT" });
     expect(await resolveWebsiteHost("studio-b.cl")).toBeNull();
   });

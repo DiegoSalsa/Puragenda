@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bellaConfigSchema, emptyBellaConfig } from "@/websites/config";
-import { assignCategory, categoryId, categoryIdsForImage, migrateBellaCategories, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
+import { assignCategory, categoryId, categoryIdsForImage, migrateBellaCategories, readBellaConfig, normalizeGalleryCategories, removeCategoryFromConfig } from "@/websites/templates/bella/categories";
 import { contrastRatio, validatePalette } from "@/websites/palettes";
 import { bellaCopy } from "@/websites/templates/bella/copy";
 import { resolveBellaGallery } from "@/websites/templates/bella/gallery";
@@ -46,5 +46,20 @@ describe("Bella V3 copy, categories and controlled palettes", () => {
     expect(migrated.galleryFilters).toEqual([]);
     expect(migrated.galleryCategories[0]).toMatchObject({ id: "cat-cejas", label: "Cejas" });
     expect(migrated.gallery[0].categoryIds).toEqual(["cat-cejas"]);
+  });
+  it("keeps identity on rename and does not resurrect labels after removing all assignments", () => {
+    const config=migrateBellaCategories({ galleryFilters:["Chrome"], gallery:[{image:"/photo.webp",category:"Chrome"}] });
+    const renamed=migrateBellaCategories({...config,galleryCategories:[{...config.galleryCategories[0],label:"Efecto Chrome"}]});
+    expect(renamed.gallery[0].categoryIds).toEqual(config.gallery[0].categoryIds);
+    expect(renamed.galleryCategories).toHaveLength(1);
+    const cleared=migrateBellaCategories({...renamed,gallery:[{...renamed.gallery[0],categoryIds:[]}]});
+    expect(cleared.gallery[0].category).toBe(""); expect(cleared.gallery[0].categoryIds).toEqual([]);
+    const removed=migrateBellaCategories(removeCategoryFromConfig(renamed, renamed.galleryCategories[0].id));
+    expect(removed.galleryCategories).toEqual([]);expect(removed.gallery).toHaveLength(1);
+  });
+  it("repairs stored legacy duplicate names and order without relaxing new-write validation", () => {
+    const raw={galleryCategories:[{id:"cat-a",label:"Chrome",order:0},{id:"cat-b",label:"chrome",order:0},{id:"cat-empty",label:" ",order:0}],gallery:[{image:"/photo.webp",categoryIds:["cat-b"]}]};
+    expect(bellaConfigSchema.safeParse(raw).success).toBe(false);
+    const read=readBellaConfig(raw);expect(read.galleryCategories).toEqual([{id:"cat-a",label:"Chrome",order:0}]);expect(read.gallery[0].categoryIds).toEqual(["cat-a"]);
   });
 });

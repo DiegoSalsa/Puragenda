@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import bcrypt from "bcrypt";
 import fs from "node:fs";
+import sharp from "sharp";
 import { execFileSync } from "node:child_process";
 import { fixtureView } from "../src/websites/fixtures/views";
 const connectionString = "postgresql://websiteqa@127.0.0.1:55439/websiteqa";
@@ -21,7 +22,11 @@ if (!hasBusiness.rows[0].table) {
 }
 const hasMedia = await client.query("SELECT to_regclass('public.\"WebsiteMedia\"') as table");
 if (!hasMedia.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20260930210000_website_visual_builder_v2/migration.sql", "utf8"));
+const hasOwnership = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='WebsiteDomain' AND column_name='tenantVerifiedAt'");
+if (!hasOwnership.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261001120000_website_domain_tenant_ownership/migration.sql", "utf8"));
 await client.end();
+fs.mkdirSync("public/website-media-qa/website-qa-c", { recursive: true });
+await sharp({ create: { width: 640, height: 480, channels: 3, background: "#947867" } }).webp().toFile("public/website-media-qa/website-qa-c/service.webp");
 const localPassword = await bcrypt.hash("Bella-local-qa-2026!", 10);
 const pool = new pg.Pool({ connectionString });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -41,7 +46,7 @@ for (const [id, email, name] of [
     update: { password: localPassword, role: "SUPERADMIN", isSuperAdmin: true, deletedAt: null },
   });
 }
-for (const key of ["a", "b"] as const) {
+for (const key of ["a", "b", "c"] as const) {
   const view = fixtureView(key), prefix = `website-qa-${key}`;
   await prisma.user.upsert({ where: { id: `${prefix}-owner` }, create: { id: `${prefix}-owner`, email: `${prefix}@example.test`, name: `${view.business.name} Owner`, password: localPassword, role: "ADMIN" }, update: { password: localPassword } });
   await prisma.business.upsert({ where: { id: prefix }, create: { id: prefix, name: view.business.name, slug: prefix, apiKey: `${prefix}-local-only-key`, ownerId: `${prefix}-owner`, timezone: "America/Santiago", allowSameDayBookings: false }, update: {} });
@@ -71,7 +76,7 @@ await prisma.staff.upsert({
   create: { id: "website-qa-a-demo-staff", businessId: "website-qa-a", userId: demoUser.id, email: "vale@esteticabella.cl", name: "Valentina López", isActive: true },
   update: { userId: demoUser.id, isActive: true },
 });
-console.log("Migración y fixtures A/B preparados exclusivamente en PostgreSQL local 127.0.0.1:55439/websiteqa");
+console.log("Migración y fixtures A/B/C preparados exclusivamente en PostgreSQL local 127.0.0.1:55439/websiteqa");
 await prisma.$disconnect();
 await pool.end();
 }

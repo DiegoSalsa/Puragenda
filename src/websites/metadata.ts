@@ -1,7 +1,7 @@
 import type { WebsiteView } from "./types";
 const clean = (text: string) => text.replace(/\s+/g, " ").trim();
 function truncate(text: string, limit: number) { const value = clean(text); return value.length <= limit ? value : value.slice(0, limit - 1).replace(/\s+\S*$/, "") + "…"; }
-export function websiteMetadata(view: WebsiteView) {
+export function websiteMetadata(view: WebsiteView<{ displayName: string; seoTitle: string; seoDescription: string; intro: string; socialImage: string; heroImage: string }>) {
   const { config, business, catalog } = view;
   const name = clean(config.displayName || business.name);
   const services = [...new Set(catalog.services.map(service => clean(service.name)).filter(Boolean))].slice(0, 2);

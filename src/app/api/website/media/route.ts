@@ -16,5 +16,9 @@ export async function POST(request: Request) {
     const form = await new Response(Buffer.concat(chunks), { headers: { "Content-Type": request.headers.get("content-type") ?? "" } }).formData();
     const asset = await storeWebsiteImage(form);
     return Response.json({ asset }, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) { return Response.json({ error: error instanceof WebsiteError ? error.message : "No pudimos subir la foto. Intenta nuevamente." }, { status: 400 }); }
+  } catch (error) {
+    const message = error instanceof WebsiteError ? error.message : "No pudimos subir la foto. Intenta nuevamente.";
+    const status = message === "No autenticado" ? 401 : message === "No autorizado" ? 403 : 400;
+    return Response.json({ error: message }, { status });
+  }
 }
