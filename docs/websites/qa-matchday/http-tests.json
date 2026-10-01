@@ -1,0 +1,86 @@
+{
+  "environment": "isolated local websiteqa",
+  "appointmentId": "cmuq20dml000p2gtc1elzfksy",
+  "reports": [
+    {
+      "name": "public Matchday soccerbarber",
+      "result": "PASS"
+    },
+    {
+      "name": "no private key soccerbarber",
+      "result": "PASS"
+    },
+    {
+      "name": "no Bella demo media soccerbarber",
+      "result": "PASS"
+    },
+    {
+      "name": "tenant content isolation soccerbarber",
+      "result": "PASS"
+    },
+    {
+      "name": "public Matchday distrito",
+      "result": "PASS"
+    },
+    {
+      "name": "no private key distrito",
+      "result": "PASS"
+    },
+    {
+      "name": "no Bella demo media distrito",
+      "result": "PASS"
+    },
+    {
+      "name": "tenant content isolation distrito",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical availability",
+      "result": "PASS"
+    },
+    {
+      "name": "staff schedule changes availability",
+      "result": "PASS"
+    },
+    {
+      "name": "staff service restriction enforced",
+      "result": "PASS"
+    },
+    {
+      "name": "cross-tenant availability denied",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical writer creates appointment",
+      "result": "PASS"
+    },
+    {
+      "name": "appointment belongs to selected tenant and staff",
+      "result": "PASS"
+    },
+    {
+      "name": "idempotent replay",
+      "result": "PASS"
+    },
+    {
+      "name": "canonical collision lock",
+      "result": "PASS"
+    },
+    {
+      "name": "cross-tenant writer denied",
+      "result": "PASS"
+    },
+    {
+      "name": "cross-origin write denied",
+      "result": "PASS"
+    },
+    {
+      "name": "client price rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "published identity stays Matchday while draft changes",
+      "result": "PASS"
+    }
+  ]
+}

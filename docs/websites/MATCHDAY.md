@@ -14,8 +14,10 @@ Selected: **Campaign Cut**. Reference 1 contributes graphic darkness, contrast a
 
 Original composition: full-width brand field behind an offset portrait, contrasting horizontal statement panel, numbered service index with changing photo, oversized staff contact sheets and asymmetric highlights. No copied logo, photo, typeface, navigation, text or proportions. No invented proof metrics. Football language is fixture/editor content only.
 
-Independent `MatchdayConfig`, shared media primitives, registry-declared editor sections/capabilities/palettes/previews, template-local Oswald and Manrope fonts. Canonical service/staff/location/availability data remain authoritative. Editor staff numbers and captions never change staff records.
+Independent `MatchdayConfig`, shared media primitives, registry-declared editor sections/capabilities/palettes/previews, template-local Oswald and Manrope fonts. Client/lazy boundaries isolate template CSS and font declarations in production (server dynamic imports alone eagerly emitted both templates' CSS). Canonical service/staff/location/availability data remain authoritative. Editor staff numbers and captions never change staff records.
 
 Snapshots: `templateConfigs` stores version-keyed drafts. `publishedTemplateKey` and `publishedTemplateVersion` stay attached to the published config until explicit publication. Switching is tenant-scoped, revision-checked and preserves universal contact/media fields on first use, or restores the previous template draft on return. Retained snapshots protect media from deletion. Incremental migration backfills existing published identities.
 
 QA fixtures are isolated local businesses, never production records. Synthetic demo routes are development-only and cannot write appointments. Real local tenant routes use canonical API/writer.
+
+Complete delivery report and validation evidence: [MATCHDAY-DELIVERY.md](MATCHDAY-DELIVERY.md).

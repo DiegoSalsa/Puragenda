@@ -1,0 +1,226 @@
+[
+  {
+    "width": 390,
+    "panel": "Diseño",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Diseño",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Portada",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Portada",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Servicios",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Servicios",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Equipo",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Equipo",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Galería",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Galería",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Mi negocio",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Mi negocio",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Contacto",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Contacto",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Dominio",
+    "mode": "Escritorio",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 390,
+    "panel": "Dominio",
+    "mode": "Móvil",
+    "document": [
+      390,
+      390
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  }
+]
