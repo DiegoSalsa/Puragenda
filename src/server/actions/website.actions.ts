@@ -16,6 +16,7 @@ import { mediaUrls } from "@/websites/editor-utils";
 import { websiteAssetSchema } from "@/websites/media";
 import { paletteTokens, validatePalette } from "@/websites/palettes";
 import { effectiveWebsiteHeadline } from "@/websites/publishing";
+import { migrateBellaCategories } from "@/websites/templates/bella/categories";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -23,7 +24,7 @@ async function uploadWebsiteImageImpl(formData: FormData) {
 
 async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain: string) {
   const { business } = await requireWebsiteManager();
-  const config = bellaConfigSchema.parse(input);
+  const config = migrateBellaCategories(input);
   if (!Number.isSafeInteger(revision) || revision < 0 || !validSubdomain(subdomain)) throw new WebsiteError("Configuración inválida");
   const site = await ensureWebsite(business.id, business.slug);
   const result = await prisma.$transaction(async tx => {
@@ -43,7 +44,7 @@ async function publishWebsiteImpl(revision: number) {
     const site = current.website;
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
-    const config = template.configSchema.parse(site.draftConfig);
+    const config = migrateBellaCategories(site.draftConfig);
     if (config.paletteMode === "custom" && config.customPalette && !validatePalette(paletteTokens(config.accent, config.customPalette, config.paletteMode)).valid) throw new WebsiteError("La paleta personalizada necesita más contraste antes de publicar");
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     if (!config.heroImage || !effectiveWebsiteHeadline(config)) throw new WebsiteError("Agrega una portada y un titular antes de publicar");

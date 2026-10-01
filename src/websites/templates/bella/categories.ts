@@ -1,4 +1,4 @@
-import type { BellaConfig } from "../../config";
+import { bellaConfigSchema, type BellaConfig } from "../../config";
 
 export type BellaCategory = BellaConfig["galleryCategories"][number];
 const slug = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "categoria";
@@ -36,4 +36,12 @@ export function removeCategoryFromConfig(config: BellaConfig, id: string) {
   const categories = config.galleryCategories.filter(item => item.id !== id).map((item, order) => ({ ...item, order }));
   const gallery = config.gallery.map(image => assignCategory(image, (image.categoryIds ?? categoryIdsForImage(image, config.galleryCategories)).filter(value => value !== id), categories));
   return { ...config, galleryCategories: categories, gallery };
+}
+
+/** Convert V1 label/filter data to the stable-ID representation before persistence. */
+export function migrateBellaCategories(input: unknown): BellaConfig {
+  const config = bellaConfigSchema.parse(input);
+  const categories = normalizeGalleryCategories(config);
+  const gallery = config.gallery.map(image => assignCategory(image, image.categoryIds?.length ? image.categoryIds : categoryIdsForImage(image, categories), categories));
+  return { ...config, galleryCategories: categories, galleryFilters: [], gallery };
 }
