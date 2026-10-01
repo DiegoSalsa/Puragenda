@@ -20,10 +20,9 @@ import styles from "./studio.module.css";
 export default function BellaContent({ view: initial, fontClass }: { view: WebsiteView; fontClass: string }) {
   const liveView = useLivePreview(initial);
   const view = useMemo(() => {
-    if (liveView.config.gallery.length > 0) return liveView;
     const services = liveView.catalog.services.filter((service) => service.image).slice(0, 30);
     const fallbackImages = [liveView.config.heroImage, liveView.config.aboutImage, "/websites/bella/portfolio/french.webp", "/websites/bella/portfolio/chrome.webp"].filter(Boolean);
-    const gallery = (services.length ? services.map((service) => ({
+    const gallery = liveView.config.gallery.length > 0 ? liveView.config.gallery : (services.length ? services.map((service) => ({
       image: service.image,
       name: service.name,
       alt: `Trabajo de ${service.name}`,
@@ -34,7 +33,8 @@ export default function BellaContent({ view: initial, fontClass }: { view: Websi
       alt: `Detalle de ${liveView.business.name}`,
       category: "Estudio",
     }))).slice(0, 30);
-    return { ...liveView, config: { ...liveView.config, gallery } };
+    const heroImage = liveView.config.heroImage || services[0]?.image || fallbackImages[0] || "";
+    return { ...liveView, config: { ...liveView.config, heroImage, gallery } };
   }, [liveView]);
   const { config, business, catalog } = view;
   const brand = bellaBrand(config, business.name);
