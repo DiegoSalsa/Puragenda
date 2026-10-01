@@ -52,6 +52,7 @@ next-env.d.ts
 /scratch/
 /.next-websites-qa/
 /.next-websites-build/
+/public/website-media-qa/
 /marketing/
 /social/puri-update-reel/
 /carruseles/

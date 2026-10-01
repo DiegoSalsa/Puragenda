@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { websiteAssetSchema } from "./media";
 
 // Website media uses the same local/Cloudinary delivery as the rest of Puragenda.
 export function safeMediaUrl(value: string) {
@@ -31,6 +32,7 @@ export const bellaConfigSchema = z.object({
   whatsapp: text(20).refine(v => !v || /^\+?\d{8,15}$/.test(v), "WhatsApp inválido"),
   instagram: text(2000).refine(safeLink), facebook: text(2000).refine(safeLink),
   seoTitle: text(160), seoDescription: text(300), socialImage: media,
+  mediaAssets: z.array(websiteAssetSchema).max(100).optional(),
 }).strict();
 export type BellaConfig = z.infer<typeof bellaConfigSchema>;
 export const emptyBellaConfig = () => bellaConfigSchema.parse({});

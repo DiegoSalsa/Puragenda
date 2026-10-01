@@ -5,7 +5,7 @@ const env = {
   DATABASE_URL: 'postgresql://websiteqa@127.0.0.1:55439/websiteqa',
   DIRECT_URL: 'postgresql://websiteqa@127.0.0.1:55439/websiteqa',
   AUTH_SECRET: 'local-website-qa-auth-secret-isolated-2026',
-  WEBSITE_QA: '1', WEBSITE_ROOT_DOMAIN: 'localhost',
+  WEBSITE_QA: '1', WEBSITE_MEDIA_MOCK: '1', WEBSITE_DOMAIN_PROVIDER: 'mock', WEBSITE_VERCEL_WRITES_ENABLED: '', VERCEL_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', CLOUDINARY_API_KEY: '', CLOUDINARY_API_SECRET: '', WEBSITE_ROOT_DOMAIN: 'localhost',
   WEBSITE_BUILD_QA: build ? '1' : '',
   RESEND_API_KEY: '', GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '',
   MERCADOPAGO_ACCESS_TOKEN: '', PADDLE_API_KEY: '', PADDLE_SANDBOX_API_KEY: '',

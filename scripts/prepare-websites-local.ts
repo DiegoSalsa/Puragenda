@@ -17,7 +17,10 @@ if (!hasBusiness.rows[0].table) {
   const security = fs.readFileSync("prisma/migrations/20260930160000_websites_addon_v1/migration.sql", "utf8").split("-- Server-only persistence.")[1];
   if (!security) throw new Error("Faltan las restricciones server-only de websites");
   await client.query("-- Server-only persistence." + security);
+  await client.query('ALTER TABLE "WebsiteMedia" ENABLE ROW LEVEL SECURITY');
 }
+const hasMedia = await client.query("SELECT to_regclass('public.\"WebsiteMedia\"') as table");
+if (!hasMedia.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20260930210000_website_visual_builder_v2/migration.sql", "utf8"));
 await client.end();
 const localPassword = await bcrypt.hash("Bella-local-qa-2026!", 10);
 const pool = new pg.Pool({ connectionString });
@@ -43,7 +46,9 @@ for (const key of ["a", "b"] as const) {
     for (let day = 1; day <= 6; day++) await prisma.staffSchedule.upsert({ where: { staffId_dayOfWeek: { staffId: staff.id, dayOfWeek: day } }, create: { staffId: staff.id, dayOfWeek: day, startTime: "09:00", endTime: "19:00", isWorking: true }, update: {} });
   }
   await prisma.websiteAddon.upsert({ where: { businessId: prefix }, create: { businessId: prefix, provider: "mock", status: "ACTIVE", validUntil: new Date("2026-12-31T00:00:00Z") }, update: {} });
-  await prisma.businessWebsite.upsert({ where: { businessId: prefix }, create: { businessId: prefix, subdomain: `bella-${key}`, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), publishedRevision: 0 }, update: { draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date() } });
+  const existingWebsite = await prisma.businessWebsite.findUnique({ where: { businessId: prefix }, select: { revision: true } });
+  const fixtureRevision = existingWebsite ? existingWebsite.revision + 1 : 0;
+  await prisma.businessWebsite.upsert({ where: { businessId: prefix }, create: { businessId: prefix, subdomain: `bella-${key}`, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), publishedRevision: 0 }, update: { draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), revision: fixtureRevision, publishedRevision: fixtureRevision } });
 }
 console.log("Migración y fixtures A/B preparados exclusivamente en PostgreSQL local 127.0.0.1:55439/websiteqa");
 await prisma.$disconnect();

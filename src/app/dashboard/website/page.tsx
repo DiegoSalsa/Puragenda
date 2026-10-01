@@ -1,10 +1,13 @@
-import { requireWebsiteManager, ensureWebsite, websiteRootDomain } from "@/server/websites/service";
+import { requireWebsiteManager, ensureWebsite, websiteRootDomain, websiteView } from "@/server/websites/service";
 import { prisma } from "@/server/db/prisma";
 import { bellaConfigSchema } from "@/websites/config";
 import WebsiteEditor from "./website-editor";
 import { websitePrice } from "@/server/websites/billing";
+import { headers } from "next/headers";
+import { z } from "zod";
+const dnsRecords = z.array(z.object({ type: z.enum(["A", "CNAME", "TXT"]), name: z.string(), value: z.string() }));
 export default async function WebsitePage() {
-  const { business } = await requireWebsiteManager();
+  const { business, user } = await requireWebsiteManager();
   const site = await ensureWebsite(business.id, business.slug);
   const [addon, domains, requests, price] = await Promise.all([
     prisma.websiteAddon.findUnique({ where: { businessId: business.id } }),
@@ -12,5 +15,10 @@ export default async function WebsitePage() {
     prisma.domainRequest.findMany({ where: { websiteId: site.id }, orderBy: { createdAt: "desc" } }),
     websitePrice().catch(() => null),
   ]);
-  return <WebsiteEditor initial={bellaConfigSchema.parse(site.draftConfig)} revision={site.revision} subdomain={site.subdomain} rootDomain={websiteRootDomain()} status={site.status} addon={addon ? { status: addon.status, cancelAt: addon.cancelAt?.toISOString() ?? null, validUntil: addon.validUntil?.toISOString() ?? null } : null} price={price} domains={domains.map(item => ({ id: item.id, hostname: item.hostname, status: item.status, token: item.verificationToken, primary: item.isPrimary }))} requests={requests.map(item => ({ id: item.id, hostname: item.hostname, status: item.status }))} />;
+  const root = websiteRootDomain();
+  const local = root === "localhost";
+  const host = (await headers()).get("host") ?? "localhost:3005";
+  const port = local && /^localhost:\d+$/.test(host) ? `:${host.split(":")[1]}` : "";
+  const primary = domains.find(domain => domain.isPrimary && domain.status === "ACTIVE");
+  return <WebsiteEditor initial={bellaConfigSchema.parse(site.draftConfig)} view={await websiteView(site, true)} revision={site.revision} publishedRevision={site.publishedRevision} subdomain={site.subdomain} rootDomain={root} publicUrl={local ? `http://${site.subdomain}.localhost${port}` : `https://${primary?.hostname || `${site.subdomain}.${root}`}`} status={site.status} canManageDomains={business.ownerId === user.id} addon={addon ? { status: addon.status, cancelAt: addon.cancelAt?.toISOString() ?? null, validUntil: addon.validUntil?.toISOString() ?? null } : null} price={price} domains={domains.map(item => ({ id: item.id, hostname: item.hostname, status: item.status, provider: item.provider, records: dnsRecords.parse(item.dnsRecords), message: item.lastError, primary: item.isPrimary }))} requests={requests.map(item => ({ id: item.id, hostname: item.hostname, status: item.status }))} />;
 }

@@ -6,27 +6,17 @@ import { bellaConfigSchema } from "@/websites/config";
 import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
-import { addWebsiteDomain, customHostname, verifyWebsiteDomain } from "@/server/websites/domains";
+import { addWebsiteDomain, customHostname, verifyWebsiteDomain, refreshWebsiteDomain, removeWebsiteDomain } from "@/server/websites/domains";
 import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment } from "@/server/websites/billing";
 import { resolveTemplate } from "@/websites/registry";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { randomUUID } from "node:crypto";
+import { storeWebsiteImage, deleteWebsiteAsset, validateWebsiteAssets } from "@/server/websites/media";
+import { mediaUrls } from "@/websites/editor-utils";
+import { websiteAssetSchema } from "@/websites/media";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
-  const { business } = await requireWebsiteManager();
-  const file = formData.get("image");
-  if (!(file instanceof File) || !file.size || file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new WebsiteError("Usa JPG, PNG o WebP de hasta 5 MB");
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const { default: sharp } = await import("sharp");
-  const image = sharp(bytes, { limitInputPixels: 32000000 });
-  const metadata = await image.metadata();
-  if (!["jpeg", "png", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1) throw new WebsiteError("Imagen no compatible");
-  // Decode/normalize before upload; never preserve embedded scripts or metadata.
-  const normalized = await image.rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).webp({ quality: 90 }).toBuffer();
-  const { cloudinary } = await import("@/server/lib/cloudinary");
-  const asset = await cloudinary.uploader.upload(`data:image/webp;base64,${normalized.toString("base64")}`, { resource_type: "image", folder: "puragenda_websites", public_id: `${business.id}_${randomUUID()}` });
-  return asset.secure_url;
+  return storeWebsiteImage(formData);
 }
 
 async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain: string) {
@@ -34,10 +24,12 @@ async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain:
   const config = bellaConfigSchema.parse(input);
   if (!Number.isSafeInteger(revision) || revision < 0 || !validSubdomain(subdomain)) throw new WebsiteError("Configuración inválida");
   const site = await ensureWebsite(business.id, business.slug);
-  if (site.status === "PUBLISHED" && site.subdomain !== subdomain) throw new WebsiteError("Despublica antes de cambiar el subdominio");
-  const result = await prisma.businessWebsite.updateMany({ where: { id: site.id, businessId: business.id, revision }, data: { draftConfig: config, subdomain, revision: { increment: 1 } } });
+  const result = await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
+    return tx.businessWebsite.updateMany({ where: { id: site.id, businessId: business.id, revision }, data: { draftConfig: config, subdomain, revision: { increment: 1 } } });
+  });
   if (result.count !== 1) throw new WebsiteError("El borrador cambió en otra sesión. Recarga antes de guardar.");
-  revalidatePath("/dashboard/website");
   return { revision: revision + 1 };
 }
 async function publishWebsiteImpl(revision: number) {
@@ -50,6 +42,7 @@ async function publishWebsiteImpl(revision: number) {
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
     const config = template.configSchema.parse(site.draftConfig);
+    await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     if (!config.heroImage || !config.headline) throw new WebsiteError("Agrega una portada y un titular antes de publicar");
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });
     if (published.count !== 1) throw new WebsiteError("El borrador cambió. Revisa y publica nuevamente.");
@@ -112,3 +105,24 @@ export async function activateWebsiteAddon() { return safeAction(() => activateW
 export async function regularizeWebsiteAddon() { return safeAction(() => regularizeWebsiteAddonImpl()); }
 export async function cancelWebsiteAddon(confirmed: boolean) { return safeAction(() => cancelWebsiteAddonImpl(confirmed)); }
 export async function reactivateWebsiteAddon(confirmed: boolean) { return safeAction(() => reactivateWebsiteAddonImpl(confirmed)); }
+
+export async function removeWebsiteImage(id: string) { return safeAction(() => deleteWebsiteAsset(id)); }
+export async function listWebsiteImages() {
+  return safeAction(async () => {
+    const { business } = await requireWebsiteManager();
+    const site = await ensureWebsite(business.id, business.slug);
+    const assets = await prisma.websiteMedia.findMany({ where: { websiteId: site.id, deletedAt: null }, orderBy: { createdAt: "desc" }, take: 150 });
+    const inUse = new Set([site.draftConfig, site.publishedConfig].flatMap(value => { const parsed = bellaConfigSchema.safeParse(value); return parsed.success ? mediaUrls(parsed.data) : []; }));
+    return assets.map(asset => ({ ...websiteAssetSchema.parse({ id: asset.id, publicId: asset.publicId, secureUrl: asset.secureUrl, width: asset.width, height: asset.height, format: asset.format, bytes: asset.bytes }), inUse: inUse.has(asset.secureUrl) }));
+  });
+}
+export async function refreshWebsiteDomainStatus(id: string) { return safeAction(async () => { await refreshWebsiteDomain(id); revalidatePath("/dashboard/website"); }); }
+export async function disconnectWebsiteDomain(id: string) { return safeAction(async () => { await removeWebsiteDomain(id); revalidatePath("/dashboard/website"); }); }
+export async function websiteSubdomainAvailability(value: string) {
+  return safeAction(async () => {
+    const { business } = await requireWebsiteManager();
+    if (!validSubdomain(value)) return { available: false, message: "Usa letras, números y guiones; entre 3 y 63 caracteres." };
+    const site = await prisma.businessWebsite.findUnique({ where: { subdomain: value }, select: { businessId: true } });
+    return { available: !site || site.businessId === business.id, message: !site || site.businessId === business.id ? "Esta dirección está disponible" : "Esta dirección ya está ocupada" };
+  });
+}

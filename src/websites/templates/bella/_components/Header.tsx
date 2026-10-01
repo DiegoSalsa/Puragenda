@@ -16,8 +16,8 @@ export default function Header() {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [open]);
-  return <header className={styles.header}>
-    <a href="#inicio" className={styles.brand} aria-label={`${business.name}, inicio`}>{config.logo || business.logo ? <Image src={config.logo || business.logo || ""} alt={business.name} width={150} height={48} style={{ objectFit: "contain" }} /> : <>{brand.eyebrow.toUpperCase()} <strong>{brand.title.toUpperCase()}<span>.</span></strong></>}</a>
+  return <header className={styles.header} data-website-field="logo">
+    <a href="#inicio" className={styles.brand} data-website-field="displayName" aria-label={`${config.displayName || business.name}, inicio`}>{config.logo || business.logo ? <Image src={config.logo || business.logo || ""} alt={config.displayName || business.name} width={150} height={48} style={{ objectFit: "contain" }} /> : <>{brand.eyebrow.toUpperCase()} <strong>{brand.title.toUpperCase()}<span>.</span></strong></>}</a>
     <nav id="bella-nav" className={styles.nav} aria-label="Navegación principal" data-open={open} onClick={() => setOpen(false)}>
       {config.gallery.length ? <a href="#trabajos">Trabajos</a> : null}<a href="#tratamientos">Tratamientos</a>{config.about || config.process.length ? <a href="#estudio">El estudio</a> : null}
     </nav>

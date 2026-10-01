@@ -65,6 +65,24 @@ model BusinessWebsite {
   business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   domains          WebsiteDomain[]
   domainRequests   DomainRequest[]
+  media            WebsiteMedia[]
+}
+
+model WebsiteMedia {
+  id          String   @id @default(cuid())
+  websiteId   String
+  publicId    String   @unique
+  secureUrl   String   @unique
+  width       Int
+  height      Int
+  format      String
+  bytes       Int
+  usage       String
+  provider    String   @default("cloudinary")
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  website     BusinessWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, deletedAt])
 }
 
 model WebsiteDomain {
@@ -77,6 +95,9 @@ model WebsiteDomain {
   verifiedAt       DateTime?
   activatedAt      DateTime?
   lastError        String?
+  provider         String              @default("pending")
+  dnsRecords       Json                @default("[]")
+  checkedAt        DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
   website          BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)

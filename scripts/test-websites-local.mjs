@@ -50,15 +50,17 @@ try {
  await client.query('UPDATE "BusinessWebsite" SET status=$1 WHERE id=$2',['SUSPENDED',record.id]);
  const suspended=await call('/');check('suspension denies public website',suspended.status===404);
  await client.query('UPDATE "BusinessWebsite" SET status=$1 WHERE id=$2',[record.status,record.id]);
- const rowSecurity=await client.query(`SELECT relname,relrowsecurity FROM pg_class WHERE relname=ANY($1)`,[['BusinessWebsite','WebsiteAddon','WebsiteDomain','DomainRequest','WebsiteBillingEvent']]);
- check('RLS enabled on all website tables',rowSecurity.rows.length===5&&rowSecurity.rows.every(row=>row.relrowsecurity));
+ const rowSecurity=await client.query(`SELECT relname,relrowsecurity FROM pg_class WHERE relname=ANY($1)`,[['BusinessWebsite','WebsiteAddon','WebsiteDomain','DomainRequest','WebsiteBillingEvent','WebsiteMedia']]);
+ check('RLS enabled on all website tables',rowSecurity.rows.length===6&&rowSecurity.rows.every(row=>row.relrowsecurity));
  const role='websiteqa_browser_'+randomUUID().replaceAll('-','');
  await client.query('BEGIN');
  try {
   await client.query(`CREATE ROLE "${role}" NOLOGIN`);
-  await client.query(`GRANT SELECT ON "BusinessWebsite","WebsiteAddon","WebsiteDomain","DomainRequest","WebsiteBillingEvent" TO "${role}"`);
+  await client.query(`GRANT SELECT ON "BusinessWebsite","WebsiteAddon","WebsiteDomain","DomainRequest","WebsiteBillingEvent","WebsiteMedia" TO "${role}"`);
   await client.query(`SET LOCAL ROLE "${role}"`);
   const hidden=await client.query('SELECT count(*)::int AS count FROM "BusinessWebsite"');
+  const hiddenMedia=await client.query('SELECT count(*)::int AS count FROM "WebsiteMedia"');
+  check('browser role cannot read tenant assets even with SELECT grant',hiddenMedia.rows[0].count===0);
   check('browser role cannot read drafts even with SELECT grant',hidden.rows[0].count===0);
  } finally { await client.query('RESET ROLE');await client.query('ROLLBACK'); }
  const before=(await client.query('SELECT price FROM "Service" WHERE id=$1',[input.serviceId])).rows[0].price;restorePrice={id:input.serviceId,price:before};

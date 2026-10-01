@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { resolveWebsiteHost, websiteView, canonicalWebsiteUrl } from "@/server/websites/service";
 import { normalizeHostname } from "@/websites/policy";
 import { resolveTemplate } from "@/websites/registry";
+import { websiteMetadata } from "@/websites/metadata";
 import { bellaConfigSchema } from "@/websites/config";
 import { cache } from "react";
 export const dynamic = "force-dynamic";
@@ -15,8 +16,7 @@ const load = cache(async (hostname: string) => {
 });
 export async function generateMetadata({ params }: { params: Promise<{ hostname: string }> }): Promise<Metadata> {
   const site = await load((await params).hostname), config = bellaConfigSchema.parse(site.publishedConfig);
-  const title = config.seoTitle || config.displayName || site.business.name;
-  const description = config.seoDescription || config.intro;
+  const { title, description } = websiteMetadata(await websiteView(site, false));
   const url = canonicalWebsiteUrl(site);
   return { title: { absolute: title }, description, metadataBase: new URL(url), alternates: { canonical: url }, robots: { index: true, follow: true }, keywords: null, authors: [{ name: site.business.name }], creator: site.business.name, publisher: site.business.name, manifest: null, appleWebApp: null, openGraph: { title, description, url, siteName: site.business.name, images: config.socialImage || config.heroImage ? [{ url: config.socialImage || config.heroImage }] : [] }, twitter: { card: "summary_large_image", title, description, images: config.socialImage || config.heroImage ? [config.socialImage || config.heroImage] : [] }, icons: { icon: config.favicon ? [config.favicon] : [], apple: [] } };
 }
