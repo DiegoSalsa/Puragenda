@@ -12,7 +12,7 @@ Las variables del checkout que apuntan a producción se usaron para diagnóstico
 | --- | --- | --- | --- | --- | --- |
 | MercadoPago webhook secret | Vercel: presente en Production+Preview; valor no revelado | Mantener Secret en Production; URL `/api/webhooks/mercadopago`; topics `subscription_preapproval`, `subscription_authorized_payment`, `payment` | Configurado por nombre/ámbito; provider test NOT_RUN | Separar Preview con secret/test token y probar firma oficial | Sí |
 | Auth secret | Vercel: `AUTH_SECRET` presente; `NEXTAUTH_SECRET` ausente; valor/longitud no revelados | Usar único `AUTH_SECRET` ≥32 bytes; validator corregido para no aceptar `GIFT_CARD_SECRET` | `NOT_VERIFIABLE` estructuralmente sin revelar | Confirmar valor válido en ventana sin imprimirlo | Sí |
-| Production migrations | Preflight `BEGIN READ ONLY`: exactamente 2 pendientes; 0 waiting/strong locks | Backup + ventana; `npm run db:migrate:deploy`; post-check tablas/RLS/drift | READY_TO_RUN, NOT_EXECUTED | Backup y ventana autorizada | Sí |
+| Production migrations | `npm run db:migrate:deploy` aplicó exactamente las 2 pendientes; post-check sin pendientes, tablas MP/RLS presentes y 0 locks | Mantener feature-off; conservar evidencia y monitorear | PASS REAL production | Ninguno para schema; recovery forward-fix si aparece incidente | No |
 | MP official deferred billing | Sin vendedor/comprador test ni Preview/DB aislada | Crear cuentas oficiales test del mismo país y PreApproval 5990 con `start_date` futuro | NOT_RUN | Credenciales/entorno test aislado | Sí |
 | MP real webhook | Route/HMAC local PASS; callback provider real no ejecutado | Conectar URL test y validar firma→GET→binding→add-on | NOT_RUN | Test application/secret y endpoint aislado | Sí |
 | Website/base isolation | 30 integration + 7 route local PASS; BASE intacta en simulador | Repetir con provider test y DB aislada | PASS REAL local / provider NOT_RUN | Fixture provider test | Sí |
@@ -24,7 +24,7 @@ La UI de Vercel mostró que las credenciales MP actuales tienen alcance Preview 
 
 ## A. VEREDICTO
 
-**NO-GO PARA PRODUCCIÓN CHILE.** La presencia de secretos P0 en Vercel quedó comprobada sin revelar valores; siguen bloqueando el release las migraciones no ejecutadas, provider E2E, webhook provider real, fecha de lanzamiento y snapshot deliberadamente no creado. No habilitar adquisición/comunicación.
+**NO-GO PARA PRODUCCIÓN CHILE.** Las migraciones P0 ya están aplicadas y verificadas en producción. Siguen bloqueando el release la paridad local de secretos de auth/webhook, provider E2E, webhook provider real, fecha de lanzamiento y snapshot deliberadamente no creado. No habilitar adquisición/comunicación.
 
 ## B. P0
 
@@ -32,7 +32,7 @@ La UI de Vercel mostró que las credenciales MP actuales tienen alcance Preview 
 | --- | --- | --- |
 | MERCADOPAGO_WEBHOOK_SECRET local ausente | Vercel presente Production+Preview; local checkout no representa Vercel | Separar Preview y verificar firma con aplicación test |
 | AUTH_SECRET local ausente | Vercel `AUTH_SECRET` presente; longitud no revelada | Confirmar estructuralmente en ventana sin exponer; validator exige la variable real |
-| Schema de producción incompleto | FAIL; faltan launch offers y Mercado Pago | Backup, migrate deploy y verificación de DDL/RLS/drift |
+| Schema de producción incompleto | PASS REAL production; dos migraciones aplicadas, schema al día, tablas MP/RLS presentes | Mantener feature-off y monitorear; no ejecutar `db push` |
 | Primer débito diferido y ciclo MP oficial | NOT_RUN; solo simulador y SDK mock | Vendedor/comprador de prueba compatibles; probar start_date, aprobación, rechazo, cancelación y recovery |
 | Corte/snapshot fundador no preparado en producción | NOT_RUN; WEBSITE_LAUNCH_AT ausente | Fijar corte aprobado, doble dry run estable y sellado en release autorizado |
 
@@ -151,16 +151,16 @@ Lint 0 errores /47 warnings en el workspace (32 del producto +15 Remotion no tra
 
 ## S. MIGRATIONS
 
-PASS REAL local: baseline MAIN, 8 incrementales, checkpoints V1→V2, legacy-domain ownership, sin drift; RLS en 10 tablas Website. Historia aplicada no reescrita en esta pasada; nueva migración `20261002190000_website_mercadopago` aditiva. Producción read-only detectó pendientes:
+PASS REAL local: baseline MAIN, 8 incrementales, checkpoints V1→V2, legacy-domain ownership, sin drift; RLS en 10 tablas Website. Historia aplicada no reescrita en esta pasada; nueva migración `20261002190000_website_mercadopago` aditiva. Producción aplicó ambas migraciones con `npm run db:migrate:deploy` y el post-check read-only confirmó schema al día:
 
-- `20261001120000_website_launch_offers`
-- `20261002190000_website_mercadopago`
+- `20261001120000_website_launch_offers` — applied
+- `20261002190000_website_mercadopago` — applied
 
-No se ejecutó migrate deploy ni db push remoto. Fallo de migración/recuperación previstos en runbook.
+No se ejecutó `db push` remoto. La evidencia sanitizada está en [production-migration-postcheck.json](qa-preproduction/production-migration-postcheck.json); no hay down migration automática segura, por lo que cualquier incidente requiere forward-fix/recovery supervisado.
 
 ## T. ENV
 
-[PRODUCTION-READINESS](PRODUCTION-READINESS.md), [production-readonly.json](qa-preproduction/production-readonly.json), [production-preflight-readonly.json](qa-preproduction/production-preflight-readonly.json) y [vercel-readonly.json](qa-preproduction/vercel-readonly.json): DB conectada dentro de BEGIN READ ONLY/ROLLBACK, exactamente dos migraciones pendientes, cero locks de espera, MP GET200/MLC, y Vercel muestra MP token/webhook, AUTH_SECRET, DB y URL presentes. Secretos nunca guardados. Checkout/launch flags ausentes → apagados; root no explícito → fallback puragenda.cl; launchAt ausente. Preview comparte credenciales MP Production y debe aislarse antes de provider test. .env reales y .agents no trackeados; .env.example contiene placeholders y defaults feature-off.
+[PRODUCTION-READINESS](PRODUCTION-READINESS.md), [production-readonly.json](qa-preproduction/production-readonly.json), [production-preflight-readonly.json](qa-preproduction/production-preflight-readonly.json), [production-migration-postcheck.json](qa-preproduction/production-migration-postcheck.json), [production-server-local.json](qa-preproduction/production-server-local.json) y [vercel-readonly.json](qa-preproduction/vercel-readonly.json): preflight read-only encontró dos pendientes y cero locks; `migrate deploy` las aplicó y el post-check confirmó cero pendientes, tablas MP/RLS y columnas MP. Vercel muestra MP token/webhook, AUTH_SECRET, DB y URL presentes. Secretos nunca guardados. Checkout/launch flags ausentes → apagados; root no explícito → fallback puragenda.cl; launchAt ausente. Preview comparte credenciales MP Production y debe aislarse antes de provider test. El servidor local en `127.0.0.1:3006` usa DB/token disponibles, pero no tiene los secretos Vercel-only de auth/webhook.
 
 ## U. RELEASE RUNBOOK
 

@@ -17,7 +17,7 @@
   },
   "finalHead": "See final response and scratch/PREPRODUCTION_HEAD_FINAL.json after docs commit; self-referential SHA cannot be stored in its own commit",
   "status": "NO-GO",
-  "production": "READ_ONLY; no writes/deploy/payments/DNS/email/snapshot apply",
+  "production": "Two website migrations applied; post-check read-only; no Vercel deploy/payments/DNS/email/snapshot apply",
   "tests": {
     "normal": {
       "filesPassed": 181,
@@ -70,6 +70,20 @@
       "waitingLocks": 0,
       "strongGrantedLocks": 0,
       "executed": false
+    },
+    "productionMigrations": {
+      "status": "PASS REAL production",
+      "applied": ["20261001120000_website_launch_offers", "20261002190000_website_mercadopago"],
+      "pending": [],
+      "postCheck": "prisma migrate status up to date; MP tables/RLS/columns present; 0 locks"
+    },
+    "productionServer": {
+      "status": "RUNNING_LOCAL_ONLY",
+      "bind": "127.0.0.1:3006",
+      "featureFlags": "checkout/launch off",
+      "root": 200,
+      "dashboard": 307,
+      "authAndWebhookSecrets": "NOT_AVAILABLE_IN_CHECKOUT_ENV"
     }
   },
   "billing": {
@@ -93,7 +107,7 @@
     "trackedAgentsDirectories": 0,
     "productionSecretMatches": 0,
     "unexpectedUntrackedPaths": 0,
-    "localDBURLs": "Only explicit guarded QA scripts/docs; never production credentials",
+    "localDBURLs": "Checkout .env contains production DB/MP token but is untracked; no values committed or logged; local server bound loopback with feature-off",
     "temporaryArtifacts": "scratch ignored; screenshots under allowed docs/websites only"
   },
   "browser": {
@@ -139,7 +153,11 @@
     "node scripts/test-website-actions-local.mjs",
     "npx tsx scripts/grant-website-beta-founder.ts (two local dry runs, no --apply)",
     "node scripts/audit-websites-production.mjs <sanitized evidence path>",
-    "PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <sanitized evidence path>"
+    "PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <sanitized evidence path>",
+    "npm run db:migrate:deploy",
+    "PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <post-migrate evidence path>",
+    "npm run build with NODE_ENV=production, VERCEL_ENV=production, WEBSITE_BUILD_QA=1",
+    "npm run start -- -p 3006 -H 127.0.0.1 with checkout/launch flags disabled"
   ],
   "screenshots": [
     {

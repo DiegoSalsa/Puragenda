@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-02T20:26:30.082Z",
+  "operation": "npm run db:migrate:deploy",
+  "target": "configured production DIRECT_URL; connection details redacted",
+  "applied": [
+    "20261001120000_website_launch_offers",
+    "20261002190000_website_mercadopago"
+  ],
+  "postCheck": {
+    "prismaMigrateStatus": "Database schema is up to date",
+    "pending": [],
+    "readOnlyTransaction": true,
+    "serverVersion": "17.6",
+    "waitingLocks": 0,
+    "strongGrantedLocks": 0,
+    "tables": [
+      { "name": "WebsiteCheckoutOperation", "rls": true },
+      { "name": "WebsiteCommercialEvent", "rls": true },
+      { "name": "WebsiteLaunchSnapshot", "rls": true },
+      { "name": "WebsiteOfferEligibility", "rls": true }
+    ],
+    "websiteAddonMpColumns": ["mpCustomerId", "mpSubscriptionId"]
+  },
+  "payments": false,
+  "snapshotApplied": false,
+  "deploy": false
+}

@@ -2,7 +2,7 @@
 
 **NO-GO para producción Chile.** [Informe A–X](PREPRODUCTION-REPORT.md), [evidencia actual](qa-preproduction/validation.json), [env](PRODUCTION-READINESS.md) y [runbook](RELEASE-RUNBOOK.md). Código final auditado: `84c9df516c55044fae70edeaa68ff977a5f8c139`; commit de evidencia posterior solo docs. HEAD final se registra después del commit en la entrega y `scratch/PREPRODUCTION_HEAD_FINAL.json`.
 
-P0 segunda pasada: Vercel Production+Preview muestra MP access token, webhook secret, `AUTH_SECRET`, DB y URL presentes sin revelar valores; `WEBSITE_*` no definidos → adquisición/comunicación off. Preflight remoto read-only confirmó exactamente las dos migraciones pendientes y cero locks conflictivos. Provider MP oficial, webhook real, backup/migrate deploy y fecha/snapshot founder siguen **NOT_RUN/READY_TO_RUN**, según la [tabla operacional](PREPRODUCTION-REPORT.md#cierre-operacional-p0--segunda-pasada).
+P0 segunda pasada: Vercel Production+Preview muestra MP access token, webhook secret, `AUTH_SECRET`, DB y URL presentes sin revelar valores; `WEBSITE_*` no definidos → adquisición/comunicación off. Las dos migraciones ya fueron aplicadas con post-check read-only sin pendientes ni locks. Provider MP oficial, webhook real, paridad local de secretos y fecha/snapshot founder siguen **NOT_RUN/READY_TO_RUN**, según la [tabla operacional](PREPRODUCTION-REPORT.md#cierre-operacional-p0--segunda-pasada).
 
 | Comprobación de esta pasada | Resultado |
 | --- | --- |
@@ -15,11 +15,11 @@ P0 segunda pasada: Vercel Production+Preview muestra MP access token, webhook se
 | Booking navegador Ritual | Appointment count=1, PENDING; datos ficticios, email apagado |
 | Quality | Lint 0 errores /47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck/Prisma PASS, build aislado 135 páginas |
 | Migraciones | Baseline MAIN +8 incrementales, sin drift; RLS 10 tablas PASS REAL local |
-| Producción | Env/DB BEGIN READ ONLY +ROLLBACK y MP GET200/MLC; no escrituras |
-| Bloqueadores | Secretos webhook/sesión presentes en Vercel pero longitud/firma no verificables sin revelar, 2 migraciones pendientes, corte/snapshot sin preparar, MP oficial no probado |
+| Producción | Migraciones aplicadas; post-check read-only sin pendientes/locks; server local 3006 feature-off |
+| Bloqueadores | Secretos webhook/sesión presentes en Vercel pero no disponibles localmente, provider MP oficial no probado, corte/snapshot sin preparar |
 | Externos | Cloudinary/Vercel/DNS/TLS/email/Paddle internacional NOT_RUN |
 
-El kill switch de adquisición deja vigentes los sitios pagados. Capturas de trial/early conversion usan fechas del fixture y reloj avanzado local, no un débito aceptado por MP. [Extractos de ejecución](qa-preproduction/test-output.txt) y [diff clasificado](qa-preproduction/final-diff-inventory.json). Nada de merge/deploy ni pagos reales.
+El kill switch de adquisición deja vigentes los sitios pagados. Capturas de trial/early conversion usan fechas del fixture y reloj avanzado local, no un débito aceptado por MP. [Extractos de ejecución](qa-preproduction/test-output.txt), [post-check de migración](qa-preproduction/production-migration-postcheck.json) y [server local](qa-preproduction/production-server-local.json). Nada de merge/deploy Vercel ni pagos reales.
 
 ## Historia: pasada Ritual anterior
 

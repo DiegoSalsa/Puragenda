@@ -38,14 +38,14 @@ Vercel aplica cambios de variables solo a nuevos deployments; no se debe asumir 
 
 ## Preflight de migraciones
 
-`PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs docs/websites/qa-preproduction/production-preflight-readonly.json` terminó con `BEGIN READ ONLY`, **exactamente** estas dos pendientes, cero locks esperando y cero `AccessExclusiveLock`/`ShareRowExclusiveLock` concedidos por otra sesión:
+El preflight inicial (`PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs docs/websites/qa-preproduction/production-preflight-readonly.json`) terminó con `BEGIN READ ONLY`, **exactamente** estas dos pendientes y cero locks. Después, `npm run db:migrate:deploy` aplicó ambas; el post-check read-only está en [production-migration-postcheck.json](qa-preproduction/production-migration-postcheck.json), con cero pendientes, tablas MP/RLS y columnas MP presentes.
 
 - `20261001120000_website_launch_offers`
 - `20261002190000_website_mercadopago`
 
 El SQL es aditivo: crea enum/tablas/índices, añade columnas MP y habilita RLS/revoca acceso público; no contiene `DROP`, `TRUNCATE` ni reemplazo de tablas existentes. La nueva operación tiene FK a `WebsiteAddon` con cascade al borrar el add-on y debe revisarse en backup/recovery. `CREATE UNIQUE INDEX` y `ALTER TABLE` requieren una ventana corta sin locks conflictivos.
 
-Comando preparado, **no ejecutado**:
+Comando ejecutado contra la conexión aprobada del checkout:
 
 ```powershell
 $env:DIRECT_URL = '<secret connection string from the approved release environment>'
@@ -53,9 +53,9 @@ $env:DATABASE_URL = '<runtime connection string from the approved release enviro
 npm run db:migrate:deploy
 ```
 
-Después comprobar `prisma migrate status`, `SELECT ... FROM "_prisma_migrations"`, tablas/columnas MP, `relrowsecurity` para Website y `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code`. Si falla, detener adquisición, conservar el backup y hacer un forward-fix aprobado; no usar `db push` ni marcar una migración parcialmente aplicada como resuelta. No existe rollback SQL automático seguro para estas migraciones.
+`prisma migrate status` quedó al día; el post-check read-only confirmó `WebsiteCheckoutOperation`, `WebsiteCommercialEvent`, `WebsiteLaunchSnapshot`, `WebsiteOfferEligibility`, RLS y columnas `mpCustomerId`/`mpSubscriptionId`. Si aparece una incidencia, detener adquisición, conservar cualquier backup operativo y hacer un forward-fix aprobado; no usar `db push` ni marcar una migración parcialmente aplicada como resuelta. No existe rollback SQL automático seguro para estas migraciones.
 
-Auditoría 2026-10-02: **NO-GO**. Se inspeccionó `.env` del checkout y DB remota con BEGIN READ ONLY/ROLLBACK. No se verificaron variables del panel del hosting ni se migró, desplegó, cobró, envió correo o modificó DNS.
+Auditoría 2026-10-02: **NO-GO**. Se inspeccionó `.env` del checkout y DB remota con BEGIN READ ONLY/ROLLBACK; luego se aplicaron las dos migraciones y se verificó el schema en lectura. No hubo deploy Vercel, cobro, correo, snapshot ni DNS. El servidor local 3006 no dispone de los secretos Vercel-only de auth/webhook.
 
 | Variable | Uso | Observación del checkout |
 | --- | --- | --- |

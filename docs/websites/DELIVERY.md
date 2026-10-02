@@ -2,7 +2,7 @@
 
 **NO-GO PARA PRODUCCIÓN CHILE.** Trabajo terminado en `webs` para revisión, sin merge/deploy/DNS/pagos reales. [Informe completo A–X](PREPRODUCTION-REPORT.md).
 
-Segunda pasada P0: la env de Vercel fue verificada por nombre/ámbito en lectura; MP webhook y `AUTH_SECRET` están presentes, pero los valores permanecen ocultos. El preflight read-only confirmó dos migraciones exactas pendientes y cero locks conflictivos. MP oficial/deferred billing y webhook provider continúan NOT_RUN porque Preview comparte credenciales de producción y no hay vendedor/comprador/DB de test aislados. `WEBSITE_LAUNCH_AT` no se inventa; no hay snapshot real.
+Segunda pasada P0: la env de Vercel fue verificada por nombre/ámbito en lectura; MP webhook y `AUTH_SECRET` están presentes, pero los valores permanecen ocultos. Las dos migraciones fueron aplicadas y el post-check read-only confirmó schema al día, tablas MP/RLS y cero locks. MP oficial/deferred billing y webhook provider continúan NOT_RUN porque Preview comparte credenciales de producción y no hay vendedor/comprador/DB de test aislados. `WEBSITE_LAUNCH_AT` no se inventa; no hay snapshot real.
 
 HEAD inicial: `ae6e735602f206125df765d99dc8fe06aa6102f6`. Código final: `84c9df516c55044fae70edeaa68ff977a5f8c139`. HEAD final incluye un commit posterior exclusivo de docs/evidencia y se entrega con SHA exacto después del commit; object IDs en [validation.json](qa-preproduction/validation.json) prueban equivalencia del producto.
 
@@ -12,7 +12,7 @@ Se implementó MP Website CL separado de BASE, precio canónico, operaciones dur
 - 52 comprobaciones comerciales +29 públicas +18 acciones HTTP PASS. Proveedor MP PASS SIMULATED; oficial E2E/primer débito diferido NOT_RUN.
 - Lint 0 errores/47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck/Prisma PASS; build aislado 135 páginas. Migraciones baseline MAIN+8, sin drift y RLS 10 tablas.
 - 36 capturas y 25 muestras de layout; templates/builders a 1440/390/360. Reserva navegador persistida una vez, PENDING.
-- Producción inspeccionada en solo lectura: Vercel muestra webhook secret/sesión presentes sin revelar valores; DB con 2 migraciones pendientes y launchAt ausente. No se cambiaron env remotas ni snapshot.
+- Producción: `migrate deploy` aplicó las 2 migraciones; post-check read-only sin pendientes/locks y launchAt ausente. Vercel muestra webhook secret/sesión presentes sin revelar valores. Servidor local 3006 iniciado feature-off; no hubo deploy Vercel ni snapshot.
 - [Readiness](PRODUCTION-READINESS.md), [release/rollback](RELEASE-RUNBOOK.md), [state machine](PREPRODUCTION-STATES.md), [copy/emails sin envío](LAUNCH-COPY.md), [evidencia](qa-preproduction/).
 
 La subida a origin/webs sigue la autorización del usuario; los bloqueadores deben resolverse antes de considerar merge o producción. Paddle internacional conservado y NOT_RUN, no bloquea Chile.
