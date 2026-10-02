@@ -1,0 +1,269 @@
+{
+  "date": "2026-10-02",
+  "initialHead": "ae6e735602f206125df765d99dc8fe06aa6102f6",
+  "productHead": "b0044c764defd89393ffc3bd26b80f8dff8bb07e",
+  "runtimeObjects": {
+    "src": "674b6c085b23f8a83d6d0a292a3fa0d0893662aa",
+    "prisma": "dfdc550dcd5f06fe0236c9838767d2ec73e5a861",
+    "tests": "f983a4a180c6b80d6613b905fce89cdd39567b6b",
+    "scripts": "82ceadce8c3f1a70e26c715fc39131e568360b99",
+    "package.json": "ee6afdcd70023b277bb69a046c53099b050e5cb0",
+    "package-lock.json": "04b2e307c2048da518574b146d96762eebb98641",
+    "next.config.ts": "e3c0b8b3d40e82d0fc2ea959bfcc2a01734dc6b9",
+    "prisma.config.ts": "c169ccef5eb3bc5d4e929e2ac1df7fef79174b4f",
+    "vitest.config.ts": "93b6d70f680c76605af90d18a64cb063d2aaeb9b",
+    ".env.example": "5966e0a34b0acb5ceaf9cd44143914c239fb7659",
+    "AGENTS.md": "d067decb2dda543eacf2aed72e5570cb1841c30c"
+  },
+  "finalHead": "See final response and scratch/PREPRODUCTION_HEAD_FINAL.json after docs commit; self-referential SHA cannot be stored in its own commit",
+  "status": "NO-GO",
+  "production": "READ_ONLY; no writes/deploy/payments/DNS/email/snapshot apply",
+  "tests": {
+    "normal": {
+      "filesPassed": 181,
+      "filesSkipped": 3,
+      "filesFailed": 0,
+      "passed": 1076,
+      "skipped": 51,
+      "failed": 0
+    },
+    "postgres": {
+      "filesPassed": 184,
+      "filesSkipped": 0,
+      "filesFailed": 0,
+      "passed": 1127,
+      "skipped": 0,
+      "failed": 0
+    },
+    "http": {
+      "commercial": 52,
+      "public": 29,
+      "actions": 18
+    }
+  },
+  "quality": {
+    "lintErrors": 0,
+    "lintWarnings": 32,
+    "typecheck": "PASS REAL local",
+    "prismaValidate": "PASS REAL local",
+    "prismaGenerate": "PASS REAL local",
+    "productionBuild": {
+      "status": "PASS REAL isolated",
+      "pages": 135
+    },
+    "migrations": "PASS REAL local; 8 incrementals, no drift, RLS 10 tables"
+  },
+  "billing": {
+    "mpIntegrationCases": 30,
+    "mpWebhookRouteCases": 7,
+    "provider": "PASS SIMULATED",
+    "providerOfficialE2E": "NOT_RUN",
+    "deferredDebitOfficial": "NOT_RUN"
+  },
+  "founderDryRun": {
+    "environment": "isolated local",
+    "runs": 2,
+    "candidates": 3,
+    "alreadyMarked": 1,
+    "new": 2,
+    "applied": false,
+    "production": "NOT_RUN: missing approved launch timestamp"
+  },
+  "security": {
+    "trackedRealEnvs": 0,
+    "trackedAgentsDirectories": 0,
+    "productionSecretMatches": 0,
+    "unexpectedUntrackedPaths": 0,
+    "localDBURLs": "Only explicit guarded QA scripts/docs; never production credentials",
+    "temporaryArtifacts": "scratch ignored; screenshots under allowed docs/websites only"
+  },
+  "browser": {
+    "engine": "Codex in-app browser",
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 360,
+        "height": 844
+      }
+    ],
+    "layoutSamples": 25,
+    "horizontalOverflow": "none within 2px tolerance",
+    "physicalTouch": "NOT_RUN",
+    "booking": {
+      "environment": "local",
+      "appointmentCount": 1,
+      "status": "PENDING"
+    },
+    "paidPopup": "unit PASS REAL; browser NOT_RUN",
+    "palette": "6 HEX fields changed; autosave/DB/reload/publish PASS REAL local"
+  },
+  "commands": [
+    "npm test",
+    "PURAGENDA_BOOKING_TEST_DATABASE_URL=<isolated loopback booking DB> WEBSITE_BILLING_TEST_DATABASE_URL=<isolated loopback website DB> node scripts/test-booking-api-local.mjs --all",
+    "npm run lint",
+    "npm run typecheck",
+    "npx prisma validate",
+    "npx prisma generate",
+    "node scripts/dev-websites-local.mjs --build",
+    "node scripts/test-website-migrations.mjs",
+    "node scripts/prepare-website-commercial-local.mjs expired; node scripts/test-website-commercial-local.mjs (requires local founder checkout and paid B fixture)",
+    "npx tsx scripts/prepare-websites-local.ts",
+    "node scripts/test-websites-local.mjs",
+    "node scripts/test-website-actions-local.mjs",
+    "npx tsx scripts/grant-website-beta-founder.ts (two local dry runs, no --apply)",
+    "node scripts/audit-websites-production.mjs <sanitized evidence path>"
+  ],
+  "screenshots": [
+    {
+      "file": "bella-builder-1440.jpg",
+      "sha256": "43a1db11f81d0326ee36d08b7bcfdf65c2d1e2ed0bcfb2c9c4617e0755e4f53b"
+    },
+    {
+      "file": "bella-builder-360.jpg",
+      "sha256": "7fef7798668e082ab1c3765d1b3a75734670a38cd6225ca306e9f2a1b21e911a"
+    },
+    {
+      "file": "bella-builder-390.jpg",
+      "sha256": "54f1021b7c9696b3104b9f67359af719e050638579125a0814a8ff1a3d56c7ba"
+    },
+    {
+      "file": "bella-public-1440.jpg",
+      "sha256": "4037c9f48919310f5359818fee7732108ec15d299044b57017f9bed005ab590f"
+    },
+    {
+      "file": "bella-public-360.jpg",
+      "sha256": "f2ec823b5c92789acfc07e7cf6fff73986cfcf3c8e90ff965a149e3deccd4eee"
+    },
+    {
+      "file": "bella-public-390.jpg",
+      "sha256": "4b6f8ddf8e5b0967e8963395463e7f46c43dfe698fd83cd45f01d6b883fe991c"
+    },
+    {
+      "file": "changelog-1440.jpg",
+      "sha256": "d1073fd5c027b0d77da43e70c37ed880ec28d6dd082745a53504c3a9a17450cd"
+    },
+    {
+      "file": "changelog-390.jpg",
+      "sha256": "626ee328efba2bca797cdc215b96f24ff8bc800e2f8778e19f04c49e4ddefe1e"
+    },
+    {
+      "file": "early-charge-blocked-390.jpg",
+      "sha256": "29c883c2116be99ab21b0bf4ca1dff39d66944f4bca876368f97000baf95ae58"
+    },
+    {
+      "file": "founder-expired-390.jpg",
+      "sha256": "aa51012fb30c1b1effcfff57205a6793dbc0b0346f33716e20cd7bc696c9274c"
+    },
+    {
+      "file": "founder-launch-1440.jpg",
+      "sha256": "c65b07f1315ace460cba8ad844b4c7c9b40986a5ea8ef0d7372c5afad48b209e"
+    },
+    {
+      "file": "founder-launch-390.jpg",
+      "sha256": "7ab82f9a1d5ab324c31619a07a7d44839e9c38766be9a9c909becfd6bcedc584"
+    },
+    {
+      "file": "founder-trial-390.jpg",
+      "sha256": "f9c651a366c23459a40b531fce5f0b2b5234e474b544cea8e2f721d0c5280995"
+    },
+    {
+      "file": "matchday-builder-1440.jpg",
+      "sha256": "950bec5041260c9b1ffde0f3e2c46dc54bce376909a5a59a2c2b1818c50e6c02"
+    },
+    {
+      "file": "matchday-builder-360.jpg",
+      "sha256": "002d5ade81e2e34b58a309b8085734f86122aa25a526de7de14dee78c474b6e5"
+    },
+    {
+      "file": "matchday-builder-390.jpg",
+      "sha256": "19d0692c8b786d7662411e04f10cc5592ef5ef5e3c0425165059c9a8670d28c1"
+    },
+    {
+      "file": "matchday-public-1440.jpg",
+      "sha256": "9ba8ddbed4848a529b7683ea516be7b6ec9f0a6ee41102b025c84452374f2c81"
+    },
+    {
+      "file": "matchday-public-360.jpg",
+      "sha256": "a5ac49dd6d8f14d0aa50fc237584acb86eb2cc2897a86e2e994cb1e024b114f1"
+    },
+    {
+      "file": "matchday-public-390.jpg",
+      "sha256": "0acdab50463fa041ead920d9ecd173d119bd40d75066dd807a676df665e7406f"
+    },
+    {
+      "file": "ritual-browser-booking-360.jpg",
+      "sha256": "6e2cfa54b82d25b537e5630b921d332c5c24857add1bd98115dce770af83928b"
+    },
+    {
+      "file": "ritual-builder-1440.jpg",
+      "sha256": "b81c12d0ae1efa409cb210c4df48b66eaa4b41b6daf26578e7a3726dade0c2b3"
+    },
+    {
+      "file": "ritual-builder-360.jpg",
+      "sha256": "5620ee76d3a42d9cfc4d567bf9403cb09349941daeb2b63e812bf09375ab21e1"
+    },
+    {
+      "file": "ritual-builder-390.jpg",
+      "sha256": "9e470551888522dd3f87e392fcbc9a403530f6b15321988b4d78bc68487ebecb"
+    },
+    {
+      "file": "ritual-custom-builder-1440.jpg",
+      "sha256": "dfc9b01abfa802d6ee7f5625164de8419a409da8a2c9519c9ddaab99ed788792"
+    },
+    {
+      "file": "ritual-public-1440.jpg",
+      "sha256": "35dccbd327e95808dcae60ac4a2bdae59cec7b90f30050fd7df2a0f13cff490d"
+    },
+    {
+      "file": "ritual-public-360.jpg",
+      "sha256": "15d6790f684f3b6736293ad0773a6ef0d18f722763bd49b7d0175e63282eb435"
+    },
+    {
+      "file": "ritual-public-390.jpg",
+      "sha256": "d0680030275bfb8fa6316cfac4a236a86771aef1df79670f316b886146cac513"
+    },
+    {
+      "file": "ritual-realistic-1440.jpg",
+      "sha256": "ddb8ab1ec4c4699c6221d51ddc16d58610a02f99e349e4277a81bd381abb2975"
+    },
+    {
+      "file": "ritual-realistic-360.jpg",
+      "sha256": "7723bc5ff14166bd12be08becdcebebacfcd724851efff2e40b4c935a69c45ed"
+    },
+    {
+      "file": "ritual-realistic-390.jpg",
+      "sha256": "b28d5b51b6ad4961728ecd0bae80e810e2551efaa59a832d55cb4619f20d58e5"
+    },
+    {
+      "file": "ritual-stress-1440.jpg",
+      "sha256": "82da382505b996739e4e43f6d445ecde8e7003eed65355c78c33a5d05ce9ae9c"
+    },
+    {
+      "file": "ritual-stress-360.jpg",
+      "sha256": "4f2fbe72ef4623e01e2ac0b172a23db71de129824e4d929cbaf836ecb5136fe2"
+    },
+    {
+      "file": "ritual-stress-390.jpg",
+      "sha256": "dd947cc2c811150b59f063283f536359f075d4550037ead1e01eb4ad505555c4"
+    },
+    {
+      "file": "ritual-stress-lightbox-360.jpg",
+      "sha256": "35320e743d3579d89f20c9fe2f3985baaf9653db3a65ca808a97909429f34144"
+    },
+    {
+      "file": "standard-launch-390.jpg",
+      "sha256": "5457a7ce1dbc7e01b46618fcab89da70c0d47d5efa9436f93943ed2ff50f6a89"
+    },
+    {
+      "file": "standard-offer-390.jpg",
+      "sha256": "3159dac5edeb88579da2b9cfad057cf126f49eb95fd9355ca0f113463b0872d8"
+    }
+  ]
+}

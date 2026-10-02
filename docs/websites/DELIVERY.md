@@ -1,4 +1,23 @@
-# Entrega actual — webs / Ritual
+# Entrega actual — auditoría final de preproducción Chile
+
+**NO-GO PARA PRODUCCIÓN CHILE.** Trabajo terminado en `webs` para revisión, sin merge/deploy/DNS/pagos reales. [Informe completo A–X](PREPRODUCTION-REPORT.md).
+
+HEAD inicial: `ae6e735602f206125df765d99dc8fe06aa6102f6`. Código final: `b0044c764defd89393ffc3bd26b80f8dff8bb07e`. HEAD final incluye un commit posterior exclusivo de docs/evidencia y se entrega con SHA exacto después del commit; object IDs en [validation.json](qa-preproduction/validation.json) prueban equivalencia del producto.
+
+Se implementó MP Website CL separado de BASE, precio canónico, operaciones durables, webhook/invoice verificados, trial completo y recovery/cancelación que preservan solo períodos pagados. Se completaron popup/changelog segmentados, soporte admin, JSON-LD, controles HEX Ritual y QA real en navegador/HTTP/DB local.
+
+- Final PostgreSQL: 184 archivos /1127 tests PASS, 0 skipped/fail. Normal: 181 archivos /1076 tests PASS, 3 archivos /51 tests skipped, 0 fail.
+- 52 comprobaciones comerciales +29 públicas +18 acciones HTTP PASS. Proveedor MP PASS SIMULATED; oficial E2E/primer débito diferido NOT_RUN.
+- Lint 0 errores/32 warnings; typecheck/Prisma PASS; build aislado 135 páginas. Migraciones baseline MAIN+8, sin drift y RLS 10 tablas.
+- 36 capturas y 25 muestras de layout; templates/builders a 1440/390/360. Reserva navegador persistida una vez, PENDING.
+- Producción inspeccionada en solo lectura: webhook secret/sesión faltantes, 2 migraciones pendientes, launchAt ausente. No se cambiaron env remotas ni snapshot.
+- [Readiness](PRODUCTION-READINESS.md), [release/rollback](RELEASE-RUNBOOK.md), [state machine](PREPRODUCTION-STATES.md), [copy/emails sin envío](LAUNCH-COPY.md), [evidencia](qa-preproduction/).
+
+La subida a origin/webs sigue la autorización del usuario; los bloqueadores deben resolverse antes de considerar merge o producción. Paddle internacional conservado y NOT_RUN, no bloquea Chile.
+
+## Historia: entrega Ritual anterior
+
+# Entrega histórica — webs / Ritual
 
 HEAD inicial de la pasada: 3f7f85adfc47e7abb68ab66ffd88b24610ea7a80.
 HEAD final de producto auditado: ce613981829a049b33a381b2b9fe8553dbc715d5.

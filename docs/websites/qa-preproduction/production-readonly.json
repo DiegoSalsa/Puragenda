@@ -1,0 +1,514 @@
+{
+  "at": "2026-10-02T19:27:12.642Z",
+  "mode": "READ_ONLY",
+  "env": [
+    {
+      "key": "DATABASE_URL",
+      "present": true
+    },
+    {
+      "key": "DIRECT_URL",
+      "present": true
+    },
+    {
+      "key": "AUTH_SECRET",
+      "present": false
+    },
+    {
+      "key": "NEXT_PUBLIC_APP_URL",
+      "present": true
+    },
+    {
+      "key": "WEBSITE_ROOT_DOMAIN",
+      "present": false
+    },
+    {
+      "key": "WEBSITE_CHECKOUT_ENABLED",
+      "present": false
+    },
+    {
+      "key": "WEBSITE_LAUNCH_ENABLED",
+      "present": false
+    },
+    {
+      "key": "WEBSITE_LAUNCH_AT",
+      "present": false
+    },
+    {
+      "key": "MERCADOPAGO_ACCESS_TOKEN",
+      "present": true
+    },
+    {
+      "key": "MERCADOPAGO_WEBHOOK_SECRET",
+      "present": false
+    },
+    {
+      "key": "CLOUDINARY_CLOUD_NAME",
+      "present": true
+    },
+    {
+      "key": "CLOUDINARY_API_KEY",
+      "present": true
+    },
+    {
+      "key": "CLOUDINARY_API_SECRET",
+      "present": true
+    }
+  ],
+  "database": {
+    "connected": true,
+    "readOnly": true,
+    "tables": [
+      {
+        "name": "BusinessWebsite",
+        "rls": true
+      },
+      {
+        "name": "WebsiteAddon",
+        "rls": true
+      },
+      {
+        "name": "WebsiteBillingEvent",
+        "rls": true
+      }
+    ],
+    "addonColumns": [
+      "id",
+      "businessId",
+      "status",
+      "provider",
+      "paddleSubscriptionId",
+      "paddleCustomerId",
+      "paddlePriceId",
+      "checkoutTransactionId",
+      "validUntil",
+      "cancelAt",
+      "lastEventAt",
+      "lastEventId",
+      "createdAt",
+      "updatedAt"
+    ],
+    "migrations": [
+      {
+        "migration_name": "20260424200148_v4_plans_calendar_whitelabel",
+        "finished": false,
+        "rolled_back": true
+      },
+      {
+        "migration_name": "20260424200148_v4_plans_calendar_whitelabel",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260424202523_v5_staff_schedule_appearance",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260426014616_v6_multiservice_affiliates",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260430_rename_roles",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260430_staff_services_m2m",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260504_pivot_plans_equipo",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260504_reminder_sent",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260505_add_marketing_campaigns",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260515_move_deposit_to_service",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260515_recurring_bookings_crm",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260516_add_service_deposit_amount",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260516_add_service_deposit_amount",
+        "finished": false,
+        "rolled_back": true
+      },
+      {
+        "migration_name": "20260630190000_add_last_seen_changelog_version",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260701120000_platform_discount_codes",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260701130000_admin_interactive_emails",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260716000000_service_options",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260716010000_staff_service_images",
+        "finished": false,
+        "rolled_back": true
+      },
+      {
+        "migration_name": "20260716010000_staff_service_images",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260716030000_subscription_benefits",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260718212244_home_services",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260719002943_option_category_max_selections",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260719183024_admin_login_codes",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260722203000_widget_studio_access_profiles",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260723223050_production_order_services",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260723224151_production_order_mercadopago",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260723231107_configurable_production_windows",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260724020934_enable_production_order_rls",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260725150000_service_categories",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260726202429_secure_widget_studio_tables",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260726223029_widget_promo_real_discounts",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260728021839_appointment_management_and_customer_email_actions",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260728035500_priority_schedule_blocks",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260730190000_subscription_dunning",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260801151540_feedback_customization",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260801162002_google_calendar_integration",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260801203000_client_portal_magic_access",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260801213000_secure_google_calendar_tables",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260803223000_business_country_currency",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260804162000_add_paddle_subscription_fields",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260805143000_add_business_locations",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260806124500_add_business_locale",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260808185003_story_campaign_tracking",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260808210919_story_studio_growth",
+        "finished": false,
+        "rolled_back": true
+      },
+      {
+        "migration_name": "20260808210919_story_studio_growth",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260809204313_secure_remaining_public_tables",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260813002754_manual_deposit_payment_links",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260813014500_deposit_receipt_upload",
+        "finished": false,
+        "rolled_back": true
+      },
+      {
+        "migration_name": "20260813014500_deposit_receipt_upload",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260815160027_add_pos_qr_payments",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260817000000_booking_discount_codes",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260820120000_client_accounts_special_services_and_session_settlement",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260820144405_client_portal_persistent_sessions",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260828003000_deposit_payment_deliveries",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260828013000_split_deposit_payment_email_deliveries",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260829010000_add_deposit_delivery_lease",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260829020000_add_tracking_events",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260829040000_add_privacy_compliance",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260829050000_add_privacy_request_extension_evidence",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260829060000_harden_tracking_privacy",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260831180000_platform_discount_trial_window",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260903230000_marketplace_curated_inventory",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260904013000_marketplace_category_classification",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260906120000_marketplace_registration_onboarding",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260906183000_marketplace_existing_business_prompt",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260906203000_marketplace_all_chile_communes",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260907120000_marketplace_listing_operational_status",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260907220000_superadmin_device_sessions",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260908120000_loyalty_v2",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260908213000_add_gift_cards",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260909170000_gift_card_loyalty_merge_hardening",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260909200000_add_booking_feedback",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260913120000_add_verified_appointment_reviews",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260914160000_subscription_payment_notifications",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260920100000_vivachile18_first_payment_trial_agnostic",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260929180000_puri_operational_telemetry",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260930120000_public_booking_operations",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260930160000_websites_addon_v1",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20260930210000_website_visual_builder_v2",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20261001120000_website_domain_tenant_ownership",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20261001121000_booking_operation_fk_update",
+        "finished": true,
+        "rolled_back": false
+      },
+      {
+        "migration_name": "20261001190000_matchday_template_snapshots",
+        "finished": true,
+        "rolled_back": false
+      }
+    ],
+    "businessCount": 8,
+    "founderDryRun": {
+      "status": "NOT_RUN",
+      "reason": "WEBSITE_LAUNCH_AT missing/invalid"
+    }
+  },
+  "mercadoPago": {
+    "httpStatus": 200,
+    "siteId": "MLC"
+  },
+  "authConfigured": false
+}

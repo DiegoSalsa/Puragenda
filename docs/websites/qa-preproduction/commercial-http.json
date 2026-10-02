@@ -1,0 +1,214 @@
+{
+  "at": "2026-10-02T19:29:11.033Z",
+  "provider": "PASS_SIMULATED",
+  "cases": [
+    {
+      "name": "trial expiry audit deduplicates repeated managed visits",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "founder permanent eligibility retained after expiry",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "expired unpaid founder public runtime stops",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "verified simulator invoice activates founder",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "activation preserves draft and publication snapshots",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "base MP subscription unaffected by website activation",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: actual autosave revision",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: second-tab stale revision rejected",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: actual authenticated publish",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: public runtime uses published snapshot",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: SEO canonical and description",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: JSON-LD tenant isolation",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: canonical availability",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: real Appointment persisted (HTTP 201)",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: booking retry has same Appointment",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: competing booking loses",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "bella: foreign service cannot book tenant B",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: actual authenticated template selection",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: switching draft preserves published template",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: actual autosave revision",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: second-tab stale revision rejected",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: actual authenticated publish",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: public runtime uses published snapshot",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: SEO canonical and description",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: JSON-LD tenant isolation",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: canonical availability",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: real Appointment persisted (HTTP 201)",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: booking retry has same Appointment",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: competing booking loses",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "matchday: foreign service cannot book tenant B",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: actual authenticated template selection",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: switching draft preserves published template",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: actual autosave revision",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: second-tab stale revision rejected",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: actual authenticated publish",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: public runtime uses published snapshot",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: SEO canonical and description",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: JSON-LD tenant isolation",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: canonical availability",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: real Appointment persisted (HTTP 201)",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: booking retry has same Appointment",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: competing booking loses",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "ritual: foreign service cannot book tenant B",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "three independent template draft snapshots retained",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard changelog never offers founder price",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard cannot publish without entitlement",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard actual checkout ignores tampered client fields",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard server-derived monthly price is 9990",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard pending cannot serve public site",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard confirmed invoice allows actual publication",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "standard paid public site serves",
+      "status": "PASS_REAL_LOCAL"
+    },
+    {
+      "name": "simulator operation ownership enforced",
+      "status": "PASS_REAL_LOCAL"
+    }
+  ]
+}
