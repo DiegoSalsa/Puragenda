@@ -1,12 +1,15 @@
 export function validateProductionEnv(env = process.env) {
   const problems = [];
-  const authSecret = env.GIFT_CARD_SECRET || env.AUTH_SECRET || env.NEXTAUTH_SECRET;
+  // Session verification uses AUTH_SECRET (with NEXTAUTH_SECRET as its
+  // documented fallback). A different token secret must never make a
+  // production build look valid while sessions fail at runtime.
+  const authSecret = env.AUTH_SECRET || env.NEXTAUTH_SECRET;
 
   if (!authSecret || authSecret.length < 32) {
-    problems.push("GIFT_CARD_SECRET, AUTH_SECRET or NEXTAUTH_SECRET must contain at least 32 characters");
+    problems.push("AUTH_SECRET or NEXTAUTH_SECRET must contain at least 32 characters");
   }
 
-  for (const name of ["DATABASE_URL", "MERCADOPAGO_WEBHOOK_SECRET", "RESEND_API_KEY", "EMAIL_FROM"]) {
+  for (const name of ["DATABASE_URL", "MERCADOPAGO_ACCESS_TOKEN", "MERCADOPAGO_WEBHOOK_SECRET", "RESEND_API_KEY", "EMAIL_FROM"]) {
     if (!env[name]?.trim()) problems.push(`${name} is required`);
   }
 
