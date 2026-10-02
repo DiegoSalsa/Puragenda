@@ -13,7 +13,8 @@ import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { buildSlots } from "@/core/availability";
-import { isServiceAvailableAtTime, isServiceAvailableOnDate } from "@/core/service-availability";
+import { buildBookingSlots, isBookingSlotBlocked } from "@/core/booking-availability";
+import { isServiceAvailableOnDate } from "@/core/service-availability";
 import { track } from "@/lib/analytics/client";
 import { getWidgetContrastColor, WidgetShell } from "@/components/widget/widget-shell";
 import { BookingFeedbackCard } from "@/components/widget/booking-feedback-card";
@@ -188,13 +189,7 @@ function buildDays(
 }
 
 function isBlocked(slot: { start: Date; end: Date }, blocked: BlockedSlot[], timezone: string) {
-  const slotStart = fromZonedTime(slot.start, timezone);
-  const slotEnd = fromZonedTime(slot.end, timezone);
-  for (const b of blocked) {
-    const bs = new Date(b.startTime), be = new Date(b.endTime);
-    if (slotStart < be && slotEnd > bs) return true;
-  }
-  return false;
+  return isBookingSlotBlocked(slot, blocked, timezone);
 }
 
 function isStaffWorkingOnDay(staff: StaffMember, date: Date, schedule = staff.schedule): boolean {
@@ -583,45 +578,16 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       : [...availableDays, linkedDate].sort((left, right) => left.getTime() - right.getTime());
   }, [effectiveTimezone, effectiveHours, allowSameDayBookings, effectiveOverrides, initialDate, activeServices]);
   const slots = useMemo(() => {
-    const dur = isMultiService ? totalDuration : selectedService?.duration;
+    const dur = totalDuration;
     if (!selectedDate || !dur) return [];
     const staffSched = useBusinessScheduleOnly ? undefined : selectedStaffSchedule;
     const staffOverrides = useBusinessScheduleOnly ? undefined : selectedStaff?.scheduleOverrides;
-    // The API returns appointment timestamps in UTC. Convert their end to the
-    // business timezone before using it as a wall-clock start candidate.
-    const appointmentEndStarts = blockedSlots.map((blocked) =>
-      toZonedTime(new Date(blocked.endTime), effectiveTimezone),
-    );
-    let generated = buildSlots(
-      selectedDate,
-      dur,
-      effectiveHours,
-      staffSched,
-      slotInterval,
-      effectiveOverrides,
-      appointmentEndStarts,
-      staffOverrides,
-    );
-
-    // Same-day filtering logic
-    const now = toZonedTime(new Date(), effectiveTimezone);
-    const isToday = selectedDate.getFullYear() === now.getFullYear() &&
-      selectedDate.getMonth() === now.getMonth() &&
-      selectedDate.getDate() === now.getDate();
-
-    if (isToday) {
-      if (!allowSameDayBookings) return [];
-      // Filter slots that are at least minAdvanceBookingMinutes in the future
-      const cutoff = addMinutes(now, minAdvanceBookingMinutes);
-      generated = generated.filter((slot) => slot.start > cutoff);
-    }
-
-    generated = generated.filter((slot) =>
-      activeServices.every((service) => isServiceAvailableAtTime(service, slot.start, slot.end)),
-    );
-
-    return generated;
-  }, [selectedDate, selectedService, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, isMultiService, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone, activeServices, useBusinessScheduleOnly]);
+    return buildBookingSlots({ date: selectedDate, duration: dur, timezone: effectiveTimezone,
+      businessHours: effectiveHours, staffSchedule: staffSched, slotInterval,
+      scheduleOverrides: effectiveOverrides, staffScheduleOverrides: staffOverrides,
+      allowSameDayBookings, minAdvanceBookingMinutes, services: activeServices, blocked: blockedSlots,
+    }, false);
+  }, [selectedDate, effectiveHours, selectedStaffSchedule, selectedStaff?.scheduleOverrides, totalDuration, slotInterval, allowSameDayBookings, minAdvanceBookingMinutes, effectiveOverrides, blockedSlots, effectiveTimezone, activeServices, useBusinessScheduleOnly]);
 
   const requiresHomeAddress = selectedOptionDetails.some((item) => item.alternative.isHomeService);
   const validation = { name: form.name.trim().length >= 3, email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email), phone: /^\+?[0-9\s()-]{8,18}$/.test(form.phone.trim()), address: !requiresHomeAddress || form.address.trim().length >= 5 };
@@ -635,11 +601,12 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     && (!selectedService?.recurringPlan?.requiresRut || Boolean(rut.trim()));
 
   const assignedStaffIds = useMemo(() => {
+    if (useBusinessScheduleOnly) return [];
     if (splitStaffMode) {
       return Array.from(new Set(splitStaffAssignments.map((assignment) => assignment.staffId)));
     }
     return selectedStaff?.id ? [selectedStaff.id] : [];
-  }, [splitStaffMode, splitStaffAssignments, selectedStaff]);
+  }, [splitStaffMode, splitStaffAssignments, selectedStaff, useBusinessScheduleOnly]);
 
   const fetchBlocked = useCallback(async (date: Date, staffIds: string[] = []) => {
     const requestId = blockedRequestRef.current + 1;

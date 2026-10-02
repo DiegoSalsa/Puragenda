@@ -1,0 +1,32 @@
+{
+  "codeCommit": "0915c42245741bb7403584384e604b12125dbe61",
+  "branch": "feature/websites-addon-v1",
+  "fullVitest": {
+    "passedFiles": 168,
+    "skippedFiles": 2,
+    "passedTests": 949,
+    "skippedTests": 21
+  },
+  "websiteVitest": {
+    "passedFiles": 5,
+    "passedTests": 30
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 32
+  },
+  "typecheck": "PASS",
+  "prismaValidate": "PASS",
+  "prismaGenerate": "PASS",
+  "exactMigrationOverLocalBaseline": "PASS",
+  "finalSchemaDrift": "none",
+  "isolatedNextBuild": "PASS",
+  "httpLocalChecks": 19,
+  "originalHashesUnchanged": 58,
+  "portedAssetHashesIdentical": 10,
+  "viewportCases": 12,
+  "database": "isolated loopback PostgreSQL only",
+  "externalProviderWrites": false,
+  "deploy": false,
+  "merge": false
+}

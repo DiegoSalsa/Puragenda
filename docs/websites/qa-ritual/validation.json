@@ -1,0 +1,485 @@
+{
+  "head": "ce613981829a049b33a381b2b9fe8553dbc715d5",
+  "date": "2026-10-02",
+  "branch": "webs",
+  "fixture": "ritualTerapiasSecRealisticFixture",
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "width": 768,
+      "height": 900
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 360,
+      "height": 844
+    }
+  ],
+  "browserScenarios": {
+    "realisticFullpage": "PASS",
+    "galleryCounts": {
+      "2": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "3": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "6": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "7": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "12": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "30": {
+        "360": "PASS",
+        "390": "PASS"
+      }
+    },
+    "staffCounts": {
+      "1": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "2": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "3": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "5": {
+        "360": "PASS",
+        "390": "PASS"
+      },
+      "10": {
+        "360": "PASS",
+        "390": "PASS"
+      }
+    },
+    "galleryScrollAndSnap": "PASS",
+    "galleryKeyboardAndArrows": "PASS",
+    "galleryTouchSwipe": "NOT_RUN",
+    "galleryAllItemsReachable": {
+      "status": "PASS",
+      "evidence": "30 photos individually opened in lightbox and closed at both 390 and 360; every caption matched its index. Smaller datasets reached Home/End. Arrows and counters were observed after smooth scroll settled."
+    },
+    "lightboxOpenNextPrevious": "PASS",
+    "lightboxEscape": "PASS",
+    "lightboxCloseButton": "PASS",
+    "lightboxClickOutside": "PASS",
+    "lightboxFocusRestore": "PASS",
+    "services25InitialSix": "PASS",
+    "services25AddSix": "PASS",
+    "servicesCategoryReset": "PASS",
+    "paletteEarth": "PASS",
+    "paletteSage": "PASS",
+    "paletteStone": "PASS",
+    "paletteEmber": "PASS",
+    "customPaletteInstantPreview": "PASS",
+    "customPaletteAccentContrast": "PASS",
+    "galleryEmptyCategoryLocalError": "PASS",
+    "galleryDuplicateCategoryLocalError": "PASS",
+    "copyImmediatePreview": "PASS",
+    "copyAutosaveReload": "PASS",
+    "builderDesktop1440": "PASS",
+    "builderMobile390": "PASS",
+    "builderMobile360": "PASS",
+    "templateSwitchRitualMatchdayRitual": "PASS",
+    "bellaRegressionSmoke": {
+      "status": "PASS",
+      "builderScenarios": 12,
+      "widths": [
+        1440,
+        390
+      ],
+      "gallery": "Open and close image",
+      "booking": "Demo flow opened and treatment step observed; canonical booking covered by HTTP/PG runners",
+      "previewPublish": "Local tenant restored to Bella and published successfully"
+    },
+    "matchdayRegressionSmoke": {
+      "status": "PASS",
+      "builderScenarios": 16,
+      "widths": [
+        1440,
+        390
+      ],
+      "services": "Fade selected; heading changed",
+      "gallery": "Lightbox opened and closed",
+      "staff": "Three fixture professionals rendered",
+      "booking": "Five-step booking opened; canonical booking covered by shared HTTP/PG runners"
+    },
+    "lightboxTouchSwipe": "NOT_RUN",
+    "staffTouchSwipe": "NOT_RUN",
+    "servicesCounts": {
+      "2": "PASS: 2 visible",
+      "6": "PASS: 6 visible",
+      "12": "PASS: 6 initially",
+      "25": "PASS: 6 initially, next batch 12, category reset 6"
+    },
+    "palettesDesktopMobile": {
+      "status": "PASS",
+      "widths": [
+        1440,
+        390
+      ],
+      "business": "website-qa-a / Estética Bella local QA, Ritual draft",
+      "note": "All five palette screenshots use the same tenant, copy and catalog. The separate realistic fixture screenshots use Terapias SEC."
+    },
+    "builderViewportMatrix": {
+      "status": "PASS",
+      "count": 50,
+      "widths": [
+        1440,
+        1280,
+        768,
+        390,
+        360
+      ],
+      "panels": [
+        "Diseño",
+        "Portada",
+        "Terapias",
+        "Equipo",
+        "Galería",
+        "Preguntas",
+        "El espacio",
+        "Reserva",
+        "Contacto",
+        "Dominio"
+      ]
+    }
+  },
+  "overflow": {
+    "assertion": "document.scrollWidth <= document.clientWidth + 2",
+    "renderer": {
+      "360": "PASS",
+      "390": "PASS",
+      "768": "PASS",
+      "1280": "PASS",
+      "1440": "PASS"
+    },
+    "builder": {
+      "360": "PASS",
+      "390": "PASS",
+      "768": "PASS",
+      "1280": "PASS",
+      "1440": "PASS"
+    },
+    "builderScope": "Top-level builder document; iframe overflow not independently measured in this pass. Public Ritual renderer is measured separately."
+  },
+  "screenshots": [
+    "comparison-a-1440.jpg",
+    "comparison-a-390.jpg",
+    "comparison-matchday-1440.jpg",
+    "comparison-matchday-390.jpg",
+    "comparison-ritual-terapias-sec-realistic-1440.jpg",
+    "comparison-ritual-terapias-sec-realistic-390.jpg",
+    "ritual-booking-390.jpg",
+    "ritual-builder-1440.jpg",
+    "ritual-builder-360.jpg",
+    "ritual-builder-390.jpg",
+    "ritual-custom-390.jpg",
+    "ritual-custom.jpg",
+    "ritual-earth-390.jpg",
+    "ritual-earth.jpg",
+    "ritual-ember-390.jpg",
+    "ritual-ember.jpg",
+    "ritual-gallery-390.jpg",
+    "ritual-lightbox-390.jpg",
+    "ritual-realistic-1440.jpg",
+    "ritual-realistic-360.jpg",
+    "ritual-realistic-390.jpg",
+    "ritual-sage-390.jpg",
+    "ritual-sage.jpg",
+    "ritual-services-1440.jpg",
+    "ritual-staff-390.jpg",
+    "ritual-stone-390.jpg",
+    "ritual-stone.jpg"
+  ],
+  "externalProviders": "NOT_RUN",
+  "merge": "NOT_RUN",
+  "deploy": "NOT_RUN",
+  "headScope": "Exact final product commit audited. The subsequent evidence commit changes docs only; these Git object IDs identify the same executable content at the branch final HEAD.",
+  "productObjects": {
+    "src": "13e2f104415f70c67abd3169ec7ff92baab1a01e",
+    "tests": "fa90d794eca19e6fe2587b6ca9a5d9c659e8bf6e",
+    "prisma": "01c6212131c5042301209f6da3f5ab8069ee7298",
+    "scripts": "9d18280a17a116eae52ccabad16a1b26a7bdf679",
+    "public": "f044ffe3ed4f6901cec0c65f3c28d60379ae4d3b",
+    "package.json": "ee6afdcd70023b277bb69a046c53099b050e5cb0",
+    "package-lock.json": "04b2e307c2048da518574b146d96762eebb98641",
+    "next.config.ts": "e3c0b8b3d40e82d0fc2ea959bfcc2a01734dc6b9",
+    "prisma.config.ts": "c169ccef5eb3bc5d4e929e2ac1df7fef79174b4f",
+    "tsconfig.json": "0f49452943a77be41c47f68b661f24e7488d5383"
+  },
+  "browser": "Codex In-app Browser; viewport emulation, no physical mobile device certification",
+  "tests": {
+    "normal": {
+      "command": "npm test",
+      "filesPassed": 178,
+      "filesSkipped": 2,
+      "testsPassed": 1060,
+      "testsSkipped": 21,
+      "failed": 0,
+      "runAt": "2026-10-02 15:04:40 America/Santiago"
+    },
+    "postgres": {
+      "command": "node scripts/test-booking-api-local.mjs --all",
+      "optIn": "PURAGENDA_BOOKING_TEST_DATABASE_URL (local isolated PostgreSQL)",
+      "filesPassed": 180,
+      "filesSkipped": 0,
+      "testsPassed": 1081,
+      "testsSkipped": 0,
+      "failed": 0,
+      "runAt": "2026-10-02 15:05:13 America/Santiago"
+    },
+    "ritualFocused": {
+      "filesPassed": 1,
+      "testsPassed": 15,
+      "failed": 0
+    },
+    "http": {
+      "publicAndDatabasePassed": 29,
+      "authenticatedActionsPassed": 18,
+      "failed": 0
+    },
+    "migrations": "PASS: MAIN baseline, incremental migrations, V1/V2, ownership, launch offers, no drift, RLS"
+  },
+  "quality": {
+    "lint": {
+      "status": "PASS",
+      "errors": 0,
+      "warnings": 32
+    },
+    "typecheck": "PASS",
+    "prismaValidate": "PASS",
+    "prismaGenerate": "PASS",
+    "productionBuild": {
+      "status": "PASS",
+      "generatedPages": 133
+    },
+    "diffCheck": "PASS"
+  },
+  "screenshotCapture": "Fullpage captures traverse section headings before capture so reveal animations have made all sections visible. Lightbox and booking captures use the viewport.",
+  "notRun": [
+    "Physical touch swipe in gallery/staff/lightbox",
+    "CWV audit",
+    "Full pentest",
+    "Remote providers and production operations"
+  ],
+  "screenshotManifest": [
+    {
+      "name": "comparison-a-1440.jpg",
+      "width": 1425,
+      "height": 6046,
+      "bytes": 600741,
+      "sha256": "b4d872ca2370266d78d9b1099c7b95241f2470395b98178665a5fcf05cfea3be"
+    },
+    {
+      "name": "comparison-a-390.jpg",
+      "width": 375,
+      "height": 5709,
+      "bytes": 261277,
+      "sha256": "52d4c958ce439a62c639ed01205c7c4b6568c6276a98b433dcb4962b2f61b260"
+    },
+    {
+      "name": "comparison-matchday-1440.jpg",
+      "width": 1425,
+      "height": 5301,
+      "bytes": 530538,
+      "sha256": "548ba27dc123f2964288a073dd72689a30d711d43818d23416e5b0a479ec44df"
+    },
+    {
+      "name": "comparison-matchday-390.jpg",
+      "width": 375,
+      "height": 4950,
+      "bytes": 228526,
+      "sha256": "c2fcf7883e6049e2a5784269ffeef742f641622b53c370f01f73b0ae3d1a4999"
+    },
+    {
+      "name": "comparison-ritual-terapias-sec-realistic-1440.jpg",
+      "width": 1425,
+      "height": 7961,
+      "bytes": 607310,
+      "sha256": "41bf73851c1887754b1ab199d974895c548841e9499293240ae66f51225f4031"
+    },
+    {
+      "name": "comparison-ritual-terapias-sec-realistic-390.jpg",
+      "width": 375,
+      "height": 8171,
+      "bytes": 299851,
+      "sha256": "f05256573b35dc35e19348f77e676087ecd3c947012c967747846386549d7480"
+    },
+    {
+      "name": "ritual-booking-390.jpg",
+      "width": 375,
+      "height": 812,
+      "bytes": 31588,
+      "sha256": "f5ed4d4963815ae247c12e885541013be41bd63d3197b2911f6e32f7c7d45e95"
+    },
+    {
+      "name": "ritual-builder-1440.jpg",
+      "width": 1440,
+      "height": 900,
+      "bytes": 101815,
+      "sha256": "040e5ba9829d9ff69e0acdbdf5bab942cc6e5e94186246fa61053eee829c40f5"
+    },
+    {
+      "name": "ritual-builder-360.jpg",
+      "width": 360,
+      "height": 844,
+      "bytes": 35649,
+      "sha256": "225fb65bab5be2904975a6db896aeb25c3412b93218809caa19ab9c5b7672f77"
+    },
+    {
+      "name": "ritual-builder-390.jpg",
+      "width": 390,
+      "height": 844,
+      "bytes": 30348,
+      "sha256": "cc8b77a80afe8951581b8c79bda84874e79a1aa64e21030fb045c099d5992538"
+    },
+    {
+      "name": "ritual-custom-390.jpg",
+      "width": 375,
+      "height": 7320,
+      "bytes": 282421,
+      "sha256": "859d3e81d2d30b1adae042bc91a4783c0c4a65b86c711402f8f00335b131d59b"
+    },
+    {
+      "name": "ritual-custom.jpg",
+      "width": 1425,
+      "height": 6953,
+      "bytes": 621004,
+      "sha256": "40f24a0ef2d43bb483e18d640177f93eac0e37cc400b2ed401a8facc91ea2b3c"
+    },
+    {
+      "name": "ritual-earth-390.jpg",
+      "width": 375,
+      "height": 7320,
+      "bytes": 285569,
+      "sha256": "bb3fa5d5b69d3e44ef1845a23d485b85476e1d73fb8f74cdf7ec774c822410a0"
+    },
+    {
+      "name": "ritual-earth.jpg",
+      "width": 1425,
+      "height": 6953,
+      "bytes": 625715,
+      "sha256": "52385d3c73d4353970d81e991a72cb33d548a279ce1c0fc305f7379c92298144"
+    },
+    {
+      "name": "ritual-ember-390.jpg",
+      "width": 375,
+      "height": 7320,
+      "bytes": 289674,
+      "sha256": "293d9d98d4e6abf26beaca0f3a46dd3d35bca61a441ac3abdc7b693afe5a61ea"
+    },
+    {
+      "name": "ritual-ember.jpg",
+      "width": 1425,
+      "height": 6953,
+      "bytes": 640078,
+      "sha256": "3b16668b0b0a661b92d748f25f5804b4539272ffd4518b1b6c802fd4faba4a16"
+    },
+    {
+      "name": "ritual-gallery-390.jpg",
+      "width": 375,
+      "height": 7951,
+      "bytes": 277071,
+      "sha256": "d725c850fba7fb1c86182f8a4bef330dd83d03482e723a24007aceec69e9b381"
+    },
+    {
+      "name": "ritual-lightbox-390.jpg",
+      "width": 375,
+      "height": 812,
+      "bytes": 14191,
+      "sha256": "04e047990bef19994103b6e115c1f45908f5a5d5b42ed85e0576924cca6eb9b8"
+    },
+    {
+      "name": "ritual-realistic-1440.jpg",
+      "width": 1425,
+      "height": 7961,
+      "bytes": 607310,
+      "sha256": "41bf73851c1887754b1ab199d974895c548841e9499293240ae66f51225f4031"
+    },
+    {
+      "name": "ritual-realistic-360.jpg",
+      "width": 345,
+      "height": 8216,
+      "bytes": 289532,
+      "sha256": "d95c6e7fe4a3e6880fef3e6f205a4f7909e9b1d27b8896a6684fd62e2c05885b"
+    },
+    {
+      "name": "ritual-realistic-390.jpg",
+      "width": 375,
+      "height": 8171,
+      "bytes": 299851,
+      "sha256": "f05256573b35dc35e19348f77e676087ecd3c947012c967747846386549d7480"
+    },
+    {
+      "name": "ritual-sage-390.jpg",
+      "width": 375,
+      "height": 7320,
+      "bytes": 283355,
+      "sha256": "fcafbf6ed74f72f028e5ec948aa3408994b54f05b87c8d3c2d022ee78a98c41d"
+    },
+    {
+      "name": "ritual-sage.jpg",
+      "width": 1425,
+      "height": 6953,
+      "bytes": 622189,
+      "sha256": "8350d66d8d40537f37f2eb2ee62f80dd915bac7894e0009d9f9ca098b47aee02"
+    },
+    {
+      "name": "ritual-services-1440.jpg",
+      "width": 1425,
+      "height": 8335,
+      "bytes": 596244,
+      "sha256": "085403c2f6b3c57e47960fa57b44cdb404c5562d021a6399213aa6d182f74bd3"
+    },
+    {
+      "name": "ritual-staff-390.jpg",
+      "width": 390,
+      "height": 7913,
+      "bytes": 279360,
+      "sha256": "443574bb7ea59f59b391d9b3c74529bbf6cd6caf076c0377a75d964debcc0749"
+    },
+    {
+      "name": "ritual-stone-390.jpg",
+      "width": 375,
+      "height": 7320,
+      "bytes": 278624,
+      "sha256": "6f5924ad2c86e7f7e8e1865d315b6ee181c7b5f7a353f9f76981f4307871d76d"
+    },
+    {
+      "name": "ritual-stone.jpg",
+      "width": 1425,
+      "height": 6953,
+      "bytes": 610921,
+      "sha256": "edab97111234b117d711350bfd3ea9249cd633d95a287fa949033344dab5b1d2"
+    }
+  ],
+  "localEnvironmentNotes": [
+    "Reused local cluster: applied existing website_launch_offers migration before publish QA. Fresh schema already includes it.",
+    "Sunday business and staff hours were enabled only for website-qa-a/b/c because the HTTP runner uses today + 2 days.",
+    "Final local QA state: Bella published; Ritual can remain the editable draft after screenshots. No real tenant changed."
+  ]
+}

@@ -1,0 +1,226 @@
+[
+  {
+    "width": 1280,
+    "panel": "Diseño",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Diseño",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Portada",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Portada",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Servicios",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Servicios",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Equipo",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Equipo",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Galería",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Galería",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Mi negocio",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Mi negocio",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Contacto",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Contacto",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Dominio",
+    "mode": "Escritorio",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      1009,
+      1009
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "panel": "Dominio",
+    "mode": "Móvil",
+    "document": [
+      1280,
+      1280
+    ],
+    "frame": [
+      375,
+      375
+    ],
+    "pass": true
+  }
+]

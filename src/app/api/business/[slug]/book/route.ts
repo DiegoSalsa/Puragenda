@@ -1,6 +1,6 @@
 import { getBusinessBySlug, validateApiKey } from "@/server/services/business.service";
 import { getServiceByIdAndBusiness } from "@/server/services/service.service";
-import { checkAppointmentCollision, createAppointment } from "@/server/services/appointment.service";
+import { checkAppointmentCollision, createAppointment, isAppointmentCapacityConflict } from "@/server/services/appointment.service";
 import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
@@ -25,6 +25,102 @@ import { validateLoyaltyNoStacking } from "@/core/loyalty";
 import { quoteOwnedGiftCard, releaseGiftCardRedemptions, reserveGiftCardRedemption } from "@/server/services/gift-card.service";
 import { signBookingFeedbackToken } from "@/server/security/booking-feedback-token";
 import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
+import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
+import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
+import { bookingJson } from "@/server/booking/response";
+import { bookingContractContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
+
+function isBookingV1(request: NextRequest) {
+  return request.headers.get("Puragenda-Booking-Version") === "1" || request.headers.has("Idempotency-Key");
+}
+
+async function bookingV1Response(response: Response) {
+  if (response.ok) return response;
+  const body = await response.clone().json();
+  const codes: Record<number, string> = { 400: "INVALID_REQUEST", 401: "UNAUTHORIZED", 403: "BOOKING_FORBIDDEN", 404: "RESOURCE_NOT_FOUND", 409: "BOOKING_CONFLICT", 429: "RATE_LIMITED", 500: "INTERNAL_ERROR", 502: "PAYMENT_LINK_FAILED" };
+  const result = bookingJson({ ...body, code: body.code ?? codes[response.status] ?? "BOOKING_FAILED" }, response.status);
+  if (response.headers.has("Retry-After")) result.headers.set("Retry-After", response.headers.get("Retry-After")!);
+  return result;
+}
+
+async function readBookingBody(request: NextRequest): Promise<Record<string, unknown>> {
+  const reader = request.body?.getReader();
+  if (!reader) throw new BookingSelectionError("Cuerpo JSON requerido", "INVALID_JSON");
+  const decoder = new TextDecoder();
+  let size = 0;
+  let text = "";
+  const maxBytes = isBookingV1(request) ? 32768 : 262144;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) { await reader.cancel(); throw new BookingSelectionError("Solicitud demasiado grande", "REQUEST_TOO_LARGE", 413); }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+    const value = JSON.parse(text);
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("object required");
+    return value;
+  } catch (error) {
+    if (error instanceof BookingSelectionError) throw error;
+    throw new BookingSelectionError("Cuerpo JSON inválido", "INVALID_JSON");
+  } finally { reader.releaseLock(); }
+}
+
+export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
+  try {
+    const version = request.headers.get("Puragenda-Booking-Version");
+    if (version !== null && version !== "1") return bookingJson({ error: "Versión de reserva no soportada", code: "UNSUPPORTED_VERSION" }, 400);
+    if (request.headers.has("Idempotency-Key") && !request.headers.get("Idempotency-Key")) return bookingJson({ error: "Idempotency-Key no puede estar vacía", code: "INVALID_IDEMPOTENCY_KEY" }, 400);
+    if ((await context.params).slug.length > 100 || request.url.length > 8192) return bookingJson({ error: "Solicitud demasiado grande", code: "REQUEST_TOO_LARGE" }, 413);
+    const limited = bookingLimiter.check(request);
+    if (limited) return isBookingV1(request) ? bookingV1Response(limited) : limited;
+    const body = await readBookingBody(request);
+    const key = request.headers.get("Idempotency-Key");
+    if (!key) {
+      const response = await bookingContractContext.run(isBookingV1(request), () => handleBooking(request, context, body));
+      return isBookingV1(request) ? bookingV1Response(response) : response;
+    }
+    const parsed = bookingSchema.safeParse(body);
+    if (!parsed.success) return bookingJson({ error: "Errores de validación", code: "INVALID_REQUEST" }, 400);
+    if (parsed.data.selectedOptionAlternativeIds.length > 50) return bookingJson({ error: "Máximo 50 opciones por selección v1", code: "INVALID_REQUEST" }, 400);
+    const business = await getBusinessBySlug((await context.params).slug);
+    if (!business) return bookingJson({ error: "Negocio no encontrado", code: "BUSINESS_NOT_FOUND" }, 404);
+    if (!validateApiKey(business, request.headers.get("x-api-key"))) return bookingJson({ error: "API Key inválida o no proporcionada", code: "UNAUTHORIZED" }, 401);
+    // A completed operation can be read even if the subscription subsequently expires.
+    const data = parsed.data;
+    if (data.staffAssignments?.length || data.rewardCode || data.discountCode || data.promotionId || data.giftCardId) return bookingJson({ error: "La idempotencia v1 admite servicios consecutivos con opciones, sin incentivos ni profesionales separados", code: "UNSUPPORTED_CAPABILITY" }, 400);
+    const claimed = await claimBookingOperation(business.id, key, bookingPayloadHash(data));
+    if (claimed.kind === "replay") {
+      const response = bookingJson(claimed.operation.response, claimed.operation.httpStatus ?? 201);
+      response.headers.set("Idempotency-Replayed", "true");
+      return response;
+    }
+    if (claimed.kind === "recover") {
+      // Appointment and checkpoint commit atomically. Never replay uncertain remote effects.
+      const response = bookingJson({ ...(claimed.operation.response as object), operationStatus: "RECOVERY_REQUIRED", code: "BOOKING_RECOVERY_REQUIRED" }, 202);
+      response.headers.set("Idempotency-Replayed", "true");
+      return response;
+    }
+    return await bookingOperationContext.run({ id: claimed.operation.id, ownerToken: claimed.operation.ownerToken, currency: business.currencyCode }, async () => {
+      const response = await bookingV1Response(await bookingContractContext.run(true, () => handleBooking(request, context, body)));
+      // Don't turn a post-commit interruption into a replayable generic 500.
+      const operation = await prisma.bookingOperation.findUnique({ where: { id: claimed.operation.id } });
+      const checkpoint = operation?.response as { booking?: { state?: string } } | null;
+      if (response.status < 500 || checkpoint?.booking?.state === "cancelled") await completeBookingOperation(response);
+      else if (!operation?.appointmentId) await prisma.bookingOperation.updateMany({ where: { id: claimed.operation.id, ownerToken: claimed.operation.ownerToken }, data: { leaseUntil: new Date() } });
+      return response;
+    });
+  } catch (error) {
+    if (error instanceof BookingSelectionError) {
+      const response = bookingJson({ error: error.message, code: error.code }, error.status);
+      if (error.code === "BOOKING_IN_PROGRESS") response.headers.set("Retry-After", "2");
+      return response;
+    }
+    return bookingJson({ error: "Error interno del servidor", code: "INTERNAL_ERROR" }, 500);
+  }
+}
 
 class RewardClaimError extends Error {}
 class BookingGroupError extends Error {}
@@ -35,6 +131,8 @@ async function createAppointmentWithOptionalReward(
   giftCard: { id: string; accountId: string; amountCovered: number; coveredServices: Array<{ serviceId: string; amountCovered: number }>; commitImmediately: boolean } | null = null,
 ) {
   if (!reward && !giftCard) return createAppointment(data);
+  const collision = await checkAppointmentCollision(data.businessId, data.startTime, data.endTime, data.staffId, undefined, data.locationId);
+  if (collision.hasCollision) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
   try {
     const result = await prisma.$transaction(async (tx) => {
       const created = await createAppointment(data, { tx, syncGoogle: false });
@@ -127,19 +225,14 @@ async function createManualDepositPageUrl(appointmentIds: string[]) {
   return paymentPageUrl.toString();
 }
 
-export async function POST(
+async function handleBooking(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
+  body: Record<string, unknown>,
 ) {
   const { slug } = await params;
 
   try {
-    // Rate limiting
-    const blocked = bookingLimiter.check(request);
-    if (blocked) return blocked;
-
-    const body = await request.json();
-
     const parsed = bookingSchema.safeParse(body);
     if (!parsed.success) {
       const errors = parsed.error.issues.map((i) => i.message);
@@ -150,6 +243,8 @@ export async function POST(
     }
 
     const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, giftCardId } = parsed.data;
+    if (isBookingV1(request) && selectedOptionAlternativeIds.length > 50) return bookingJson({ error: "Máximo 50 opciones por selección v1", code: "INVALID_REQUEST" }, 400);
+    if (isBookingV1(request) && (rewardCode || discountCode || promotionId || giftCardId)) return bookingJson({ error: "El contrato v1 no admite incentivos", code: "UNSUPPORTED_CAPABILITY" }, 400);
 
     const business = await getBusinessBySlug(slug);
     if (!business) {
@@ -158,7 +253,7 @@ export async function POST(
     const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
 
     // Validate API Key
-    const apiKey = request.headers.get("x-api-key") || body.apiKey;
+    const apiKey = request.headers.get("x-api-key") || (typeof body.apiKey === "string" ? body.apiKey : null);
     if (!validateApiKey(business, apiKey)) {
       return Response.json(
         { error: "API Key inválida o no proporcionada" },
@@ -206,6 +301,7 @@ export async function POST(
 
     // Handle multi-service: validate all serviceIds
     const allServiceIds = serviceIds && serviceIds.length > 0 ? serviceIds : [serviceId];
+    if (new Set(allServiceIds).size !== allServiceIds.length || !allServiceIds.includes(serviceId)) return Response.json({ error: "La lista de servicios no es válida" }, { status: 400 });
     const additionalIds = allServiceIds.filter((id) => id !== serviceId);
     const availableServiceCount = await prisma.locationService.count({ where: { locationId: location.id, serviceId: { in: allServiceIds } } });
     if (availableServiceCount !== allServiceIds.length) return Response.json({ error: "Uno o más servicios no se ofrecen en esta sucursal" }, { status: 400 });
@@ -218,103 +314,20 @@ export async function POST(
       );
     }
 
-    // Calculate totals from canonical service data, including configurable options.
-    let totalDuration = service.duration;
-    let totalPrice = service.price;
-    const selectedOptionIdSet = new Set(selectedOptionAlternativeIds);
-    const matchedOptionIds = new Set<string>();
-    const serviceTotals = new Map<string, { duration: number; price: number }>();
-    const selectedOptionsSnapshot: {
-      serviceId: string;
-      serviceName: string;
-      categoryId: string;
-      categoryName: string;
-      alternativeId: string;
-      alternativeName: string;
-      priceDelta: number;
-      durationDelta: number;
-      isHomeService: boolean;
-    }[] = [];
     const allSelectedServices = [service];
-    serviceTotals.set(service.id, { duration: service.duration, price: service.price });
-
     if (additionalIds.length > 0) {
       const additionalServices = await prisma.service.findMany({
         where: { id: { in: additionalIds }, businessId: business.id },
-        include: {
-          category: true,
-          optionCategories: {
-            orderBy: { position: "asc" },
-            include: { alternatives: { orderBy: { position: "asc" } } },
-          },
-        },
+        include: { category: true, optionCategories: { orderBy: { position: "asc" }, include: { alternatives: { orderBy: { position: "asc" } } } } },
       });
-
-      if (additionalServices.length !== additionalIds.length) {
-        return Response.json(
-          { error: "Uno o mas servicios seleccionados no pertenecen a este negocio" },
-          { status: 400 }
-        );
-      }
-
-      for (const s of additionalServices) {
-        totalDuration += s.duration;
-        totalPrice += s.price;
-        allSelectedServices.push(s);
-        serviceTotals.set(s.id, { duration: s.duration, price: s.price });
-      }
+      if (additionalServices.length !== additionalIds.length) return Response.json({ error: "Uno o mas servicios seleccionados no pertenecen a este negocio" }, { status: 400 });
+      allSelectedServices.push(...additionalServices);
     }
-
-    for (const currentService of allSelectedServices) {
-      for (const category of currentService.optionCategories) {
-        const selectedAlternatives = category.alternatives.filter((alt) =>
-          selectedOptionIdSet.has(alt.id)
-        );
-
-        if (selectedAlternatives.length > category.maxSelections) {
-          return Response.json(
-            { error: `Puedes seleccionar hasta ${category.maxSelections} alternativa(s) para ${category.name}` },
-            { status: 400 }
-          );
-        }
-
-        if (category.isRequired && selectedAlternatives.length === 0) {
-          return Response.json(
-            { error: `Debes seleccionar una alternativa para ${category.name}` },
-            { status: 400 }
-          );
-        }
-
-        for (const alternative of selectedAlternatives) {
-          matchedOptionIds.add(alternative.id);
-          totalDuration += alternative.durationDelta;
-          totalPrice += alternative.priceDelta;
-          const currentTotals = serviceTotals.get(currentService.id) ?? { duration: currentService.duration, price: currentService.price };
-          serviceTotals.set(currentService.id, {
-            duration: currentTotals.duration + alternative.durationDelta,
-            price: currentTotals.price + alternative.priceDelta,
-          });
-          selectedOptionsSnapshot.push({
-            serviceId: currentService.id,
-            serviceName: currentService.name,
-            categoryId: category.id,
-            categoryName: category.name,
-            alternativeId: alternative.id,
-            alternativeName: alternative.name,
-            priceDelta: alternative.priceDelta,
-            durationDelta: alternative.durationDelta,
-            isHomeService: alternative.isHomeService,
-          });
-        }
-      }
-    }
-
-    if (matchedOptionIds.size !== selectedOptionIdSet.size) {
-      return Response.json(
-        { error: "Una o mas opciones seleccionadas no son validas para estos servicios" },
-        { status: 400 }
-      );
-    }
+    const quote = quoteBookingSelection(allSelectedServices, selectedOptionAlternativeIds);
+    const totalDuration = quote.duration;
+    let totalPrice = quote.price;
+    const serviceTotals = quote.serviceTotals;
+    const selectedOptionsSnapshot = quote.selectedOptions;
 
     const requiresHomeAddress = selectedOptionsSnapshot.some((selected) => selected.isHomeService);
     if (requiresHomeAddress && (!customerAddress || customerAddress.trim().length < 5)) {
@@ -463,6 +476,16 @@ export async function POST(
       }
     }
 
+    if (isBookingV1(request)) {
+      if (hasStaffAssignments) throw new BookingSelectionError("El contrato v1 no admite profesionales separados por servicio", "UNSUPPORTED_CAPABILITY");
+      const availability = await getBookingAvailability(await loadBookingContext(business.id), {
+        date: bookingDateKey, serviceId, serviceIds: allServiceIds, locationId: location.id,
+        staffId, selectedOptionAlternativeIds,
+      });
+      if (!availability.slots.some((slot) => slot.startTime === requestedStart.toISOString() && slot.endTime === expectedEnd.toISOString())) {
+        return bookingJson({ error: "El horario seleccionado ya no está disponible", code: "SLOT_CONFLICT" }, 409);
+      }
+    } else {
     const blockedDate = await prisma.blockedDate.findUnique({
       where: {
         businessId_date: {
@@ -633,6 +656,8 @@ export async function POST(
           }
         }
       }
+    }
+
     }
 
     const client = await prisma.client.upsert({
@@ -811,7 +836,7 @@ export async function POST(
           }
         }
 
-        const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
+        const { hasCollision } = await checkAppointmentCollision(
           business.id,
           requestedStart,
           groupEnd,
@@ -822,7 +847,7 @@ export async function POST(
 
         if (hasCollision) {
           return Response.json(
-            { error: `Ya existe una cita en ese horario (cliente: ${conflictingAppointment?.customerName}). Por favor selecciona otro horario.` },
+            { error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario." },
             { status: 409 }
           );
         }
@@ -1054,9 +1079,10 @@ export async function POST(
     } : null);
 
     if (!result.success) {
-      return Response.json({ error: result.error }, { status: 409 });
+      return Response.json({ error: result.error, code: "SLOT_CONFLICT" }, { status: 409 });
     }
 
+    await checkpointBookingResponse(result.appointment, business.currencyCode, null);
     // ── If deposit required, create MP payment preference ──
     let paymentUrl: string | null = depositRequired && usesManualPaymentLink
       ? await createManualDepositPageUrl([result.appointment.id])
@@ -1106,12 +1132,13 @@ export async function POST(
           where: { id: result.appointment.id },
           data: { mpPreferenceId: prefResult.id || null },
         });
-      } catch (err) {
-        console.error("[Book] Error creating MP preference:", err);
+      } catch {
+        console.error("[Book] Payment preference failed");
         await prisma.appointment.update({
           where: { id: result.appointment.id },
           data: { status: "CANCELLED", paymentStatus: "REJECTED" },
         });
+        await checkpointBookingResponse({ ...result.appointment, status: "CANCELLED" }, business.currencyCode, null);
         if (appliedReward) await prisma.$transaction((tx) => releaseLoyaltyReward(tx, {
           rewardId: appliedReward.id,
           appointmentId: result.appointment.id,
@@ -1121,10 +1148,10 @@ export async function POST(
           { error: "No se pudo generar el link de pago. Intenta nuevamente." },
           { status: 502 }
         );
-        // Don't block booking if preference creation fails — appointment is still created
       }
     }
 
+    await checkpointBookingResponse(result.appointment, business.currencyCode, paymentUrl);
     // Send email notifications asynchronously (don't block the response)
     // Only send if no deposit required (otherwise wait for payment)
     if (!depositRequired) {
@@ -1142,6 +1169,7 @@ export async function POST(
       }
     }
 
+    if (isBookingV1(request)) return bookingJson(bookingResult(result.appointment, business.currencyCode, paymentUrl), 201);
     return Response.json(
       {
         ...result.appointment,
@@ -1155,7 +1183,9 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error("[route] Error:", error);
+    if (error instanceof BookingSelectionError) return bookingJson({ error: error.message, code: error.code }, error.status);
+    if (isAppointmentCapacityConflict(error)) return bookingJson({ error: "El horario seleccionado ya está ocupado", code: "SLOT_CONFLICT" }, 409);
+    console.error("[book] Internal error");
     return Response.json(
       { error: "Error interno del servidor" },
       { status: 500 }

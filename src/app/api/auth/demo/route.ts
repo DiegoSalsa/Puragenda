@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE_NAME, getSessionCookieOptions } from "@/server/auth/session";
-import { issueDemoSessionToken } from "@/server/auth/demo-session";
+import { AUTH_COOKIE_NAME } from "@/server/auth/session";
+import { getDemoSessionCookieOptions, issueDemoSessionToken } from "@/server/auth/demo-session";
 
 export async function GET(request: Request) {
   try {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const protocol = request.headers.get("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
     const origin = host ? `${protocol}://${host}` : requestUrl.origin;
     const response = NextResponse.redirect(new URL("/dashboard", origin));
-    response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
+    response.cookies.set(AUTH_COOKIE_NAME, token, getDemoSessionCookieOptions());
     return response;
   } catch (error) {
     console.error("[route] Error in demo login:", error);

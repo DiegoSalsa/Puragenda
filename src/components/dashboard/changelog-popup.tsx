@@ -3,7 +3,9 @@ import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION, type ChangelogSpotlight } from "@/config/changelog";
+import { CHANGELOG_DATA, type ChangelogSpotlight } from "@/config/changelog";
+import { WebsiteLaunchPopup } from "./website-launch-popup";
+import type { WebsiteLaunchContext } from "@/websites/launch";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { ChangelogLaunchPopup } from "@/components/dashboard/changelog-launch-popup";
 import { PuriMascot } from "@/components/brand/puri-mascot";
@@ -17,11 +19,12 @@ const POPUP_FEATURE_TITLES = [
   "Información con permiso",
 ];
 
-export function ChangelogPopup() {
+export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunchContext | null }) {
   const legacy = useTranslations("legacy");
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
   const latestUpdate = CHANGELOG_DATA[0];
+  const LATEST_CHANGELOG_VERSION = latestUpdate.version;
   const viewedLaunch = useRef(false);
   const previousFocus = useRef<HTMLElement | null>(null);
 
@@ -29,7 +32,7 @@ export function ChangelogPopup() {
     setChangelogOpen(false);
     await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
     router.refresh();
-  }, [router, setChangelogOpen]);
+  }, [router, setChangelogOpen, LATEST_CHANGELOG_VERSION]);
 
   useEffect(() => {
     if (!isChangelogOpen) return;
@@ -72,6 +75,8 @@ export function ChangelogPopup() {
     await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
     router.push(spotlight.href);
   }
+
+  if (websiteLaunch) return <WebsiteLaunchPopup context={websiteLaunch} onDismiss={() => void handleDismiss()} onNavigate={() => { void (async () => { setChangelogOpen(false); await markChangelogSeenAction(LATEST_CHANGELOG_VERSION); router.push("/dashboard/website"); router.refresh(); })(); }} />;
 
   if (latestUpdate.popupVariant === "launch") {
     return (

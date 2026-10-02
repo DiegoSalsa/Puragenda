@@ -50,8 +50,13 @@ next-env.d.ts
 
 # local QA and marketing artifacts
 /scratch/
+/.next-websites-qa/
+/.next-websites-build/
+/public/website-media-qa/
 /marketing/
 /social/puri-update-reel/
+/social/puragenda-update-story/
+/prompt-hotfix-vivachile18-terapias-sec.txt
 /carruseles/
 /carruseles-instagram-septiembre-2026/
 /semrush-puragenda/
@@ -60,6 +65,7 @@ next-env.d.ts
 # local SEO audit cache and generated lighthouse dumps
 /.seo-cache/
 /seo-audit-puragenda/*.json
+/seo-audit-puragenda/screenshots/
 
 # local one-off browser automation / scratch scripts
 /docs/seo/_seo014-browser/
@@ -67,3 +73,9 @@ next-env.d.ts
 /check2.ts
 /check3.ts
 /migrate_locations.ts
+
+# local agent tooling
+/.agents/
+
+# local visual QA artifacts
+/artifacts/

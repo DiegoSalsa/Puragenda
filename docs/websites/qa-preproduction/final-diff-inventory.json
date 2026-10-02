@@ -1,0 +1,1951 @@
+{
+  "base": "6f0ab2266bb3f76fc92e97c036dde9e40061d07e",
+  "productHead": "b0044c764defd89393ffc3bd26b80f8dff8bb07e",
+  "counts": {
+    "config": 53,
+    "docs": 196,
+    "migrations": 8,
+    "product": 174,
+    "scripts": 20,
+    "billing": 6,
+    "tests": 27
+  },
+  "files": [
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/SKILL.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/_contributing.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/_sections.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/_template.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/advanced-full-text-search.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/advanced-jsonb-indexing.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/conn-idle-timeout.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/conn-limits.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/conn-pooling.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/conn-prepared-statements.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/data-batch-inserts.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/data-n-plus-one.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/data-pagination.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/data-upsert.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/lock-advisory.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/lock-deadlock-prevention.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/lock-short-transactions.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/lock-skip-locked.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/monitor-explain-analyze.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/monitor-pg-stat-statements.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/monitor-vacuum-analyze.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/query-composite-indexes.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/query-covering-indexes.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/query-index-types.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/query-missing-indexes.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/query-partial-indexes.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-constraints.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-data-types.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-foreign-key-indexes.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-lowercase-identifiers.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-partitioning.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/schema-primary-keys.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/security-privileges.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/security-rls-basics.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase-postgres-best-practices/references/security-rls-performance.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase/SKILL.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase/assets/feedback-issue-template.md",
+      "category": "config"
+    },
+    {
+      "file": ".agents/skills/supabase/references/skill-feedback.md",
+      "category": "config"
+    },
+    {
+      "file": ".env.example",
+      "category": "config"
+    },
+    {
+      "file": ".gitignore",
+      "category": "config"
+    },
+    {
+      "file": "docs/booking-api/widget-90-minutes.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/booking-api/widget-booking-summary.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/public-booking-api-production.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/public-booking-api-verification.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/public-booking-api.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/website-launch-commercial-policy.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/ARCHITECTURE.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/BELLA.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/BILLING.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/DELIVERY.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/DOMAINS.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/LAUNCH-COPY.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/MATCHDAY-DELIVERY.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/MATCHDAY.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/PREPRODUCTION-REPORT.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/PREPRODUCTION-STATES.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/PRODUCTION-READINESS.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/QA.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/RELEASE-RUNBOOK.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/RITUAL-DELIVERY.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/RITUAL.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/VISUAL-BUILDER-V2.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/VISUAL-BUILDER-V3.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/bella-copy-audit-v3.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/bella-source-audit.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/bella-source-manifest.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/final-diff-inventory.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/matchday-media-sources.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/bella-regression-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/bella-regression-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/booking-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/booking-hours-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/booking-received-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/booking-staff-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/browser-persistence.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-bella-switch.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-custom-palette.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-gallery-upload.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-layout-1280.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-layout-1440.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-layout-360.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-layout-390.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-layout-768.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-live-preview.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-matchday-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-mobile-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/builder-staff-editorial.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/distrito-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/distrito-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/footer-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/footer-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/gallery-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/gallery-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/gallery-lightbox-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/http-tests.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/keyboard-focus.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/long-name-mobile-builder.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/name-stress-tests.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/production-assets.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/puragenda-booking-persisted.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/services-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/services-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/soccerbarber-1280.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/soccerbarber-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/soccerbarber-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/soccerbarber-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/soccerbarber-768.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/staff-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/staff-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-matchday/viewport-metrics.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-builder-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-builder-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-builder-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-public-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-public-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/bella-public-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/changelog-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/changelog-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/commercial-http.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/early-charge-blocked-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/final-diff-inventory.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/founder-expired-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/founder-launch-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/founder-launch-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/founder-trial-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/layout.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-builder-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-builder-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-builder-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-public-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-public-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/matchday-public-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/production-readonly.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-browser-booking-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-builder-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-builder-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-builder-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-custom-builder-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-public-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-public-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-public-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-realistic-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-realistic-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-realistic-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-stress-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-stress-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-stress-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/ritual-stress-lightbox-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/standard-launch-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/standard-offer-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/test-output.txt",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-preproduction/validation.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-a-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-a-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-matchday-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-matchday-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-ritual-terapias-sec-realistic-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/comparison-ritual-terapias-sec-realistic-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/field-inventory.md",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/final-diff-inventory.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/height-metrics.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-booking-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-builder-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-builder-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-builder-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-custom-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-custom.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-earth-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-earth.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-ember-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-ember.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-gallery-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-lightbox-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-realistic-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-realistic-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-realistic-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-sage-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-sage.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-services-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-staff-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-stone-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/ritual-stone.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-ritual/validation.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/domains-connected-desktop.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/domains-waiting-desktop.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/gallery-desktop.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/gallery-desktop.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/google-desktop.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/hero-desktop.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/mobile-edit-390.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/mobile-preview-360.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/mobile-preview-390.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa-v2/palettes-desktop.png",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/authenticated-mobile-preview.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/authenticated-preview.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-a-1280.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-a-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-a-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-a-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-a-services-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-b-1280.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-b-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-b-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-b-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-b-footer-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-booking-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-booking-demo-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-booking-desktop.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-booking-received.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-footer-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-footer-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-lightbox-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-portfolio-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-public-a.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-public-b.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/bella-studio-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/final-contact-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/final-contact-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/final-layout-20261001.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/http-tests.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-1280.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-360.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-booking-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-booking-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-footer-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-footer-390.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-portfolio-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/original-studio-1440.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/prisma-migration.txt",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/validation.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/viewport-metrics.json",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/website-editor-published.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/website-editor-validation.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "docs/websites/qa/website-editor.jpg",
+      "category": "docs"
+    },
+    {
+      "file": "eslint.config.mjs",
+      "category": "config"
+    },
+    {
+      "file": "messages/de.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/en.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/es.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/fr.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/it.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/pt.json",
+      "category": "config"
+    },
+    {
+      "file": "messages/zh-CN.json",
+      "category": "config"
+    },
+    {
+      "file": "next.config.ts",
+      "category": "config"
+    },
+    {
+      "file": "package-lock.json",
+      "category": "config"
+    },
+    {
+      "file": "package.json",
+      "category": "config"
+    },
+    {
+      "file": "prisma.config.ts",
+      "category": "config"
+    },
+    {
+      "file": "prisma/migrations/20260930120000_public_booking_operations/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20260930160000_websites_addon_v1/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20260930210000_website_visual_builder_v2/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20261001120000_website_domain_tenant_ownership/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20261001120000_website_launch_offers/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20261001121000_booking_operation_fk_update/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20261001190000_matchday_template_snapshots/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/migrations/20261002190000_website_mercadopago/migration.sql",
+      "category": "migrations"
+    },
+    {
+      "file": "prisma/schema.prisma",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/hero/red-chrome.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/portfolio/art.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/portfolio/chrome.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/portfolio/french.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/portfolio/red.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/services/brows.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/services/lashes.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/services/permanente.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/studio/process.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/bella/studio/space.webp",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/previews/bella.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/previews/matchday.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/previews/ritual.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/ritual-v2/detail.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/ritual-v2/hero.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/ritual-v2/portrait.svg",
+      "category": "product"
+    },
+    {
+      "file": "public/websites/ritual-v2/space.svg",
+      "category": "product"
+    },
+    {
+      "file": "scripts/audit-bella-source.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/audit-websites-production.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/dev-websites-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/generate-booking-kit-catalog.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/generate-booking-kit.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/grant-website-beta-founder.ts",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/prepare-matchday-local.ts",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/prepare-matchday-media.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/prepare-website-commercial-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/prepare-websites-local.ts",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/qa-matchday-layout.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/qa-website-layout.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/start-websites-local.ps1",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-booking-api-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-matchday-bundles.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-matchday-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-website-actions-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-website-commercial-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-website-migrations.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "scripts/test-websites-local.mjs",
+      "category": "scripts"
+    },
+    {
+      "file": "src/app/api/auth/demo/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/business/[slug]/appointments/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/business/[slug]/availability/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/business/[slug]/book/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/business/[slug]/booking-catalog/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/webhooks/mercadopago/route.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/app/api/website/availability/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/website/book/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/website/media/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/website/payment-simulator/route.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/app/api/website/robots/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/api/website/sitemap/route.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/changelog/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/layout.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/billing-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/domain-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/gallery-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/live-preview-frame.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/matchday-editor.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/matchday-gallery-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/media-library.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/media-picker.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/payment-simulator/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/payment-simulator/simulator.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/process-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/ritual-copy-fields.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/ritual-editor.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/ritual-gallery-panel.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/template-selector.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/website-builder.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/app/dashboard/website/website-editor.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/layout.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/para/x7k9m2v4q8/(panel)/admin-panel-shell.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/para/x7k9m2v4q8/(panel)/websites/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/sites/[hostname]/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/website-demo/[tenant]/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/website-preview/page.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/app/widget/[slug]/widget-client.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/components/dashboard/changelog-popup.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/components/dashboard/sidebar.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/components/dashboard/website-changelog-card.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/components/dashboard/website-launch-popup.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/components/dashboard/website-launch.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/config/changelog.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/core/booking-availability.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/core/booking-selection.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/core/permissions.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/lib/analytics/events.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/lib/crawler-policy.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/proxy.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/actions/demo.actions.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/actions/website.actions.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/server/auth/demo-session.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/booking/contracts.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/booking/http.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/booking/idempotency.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/booking/read.service.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/booking/response.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/email/resend.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/email/send.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/services/appointment.service.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/services/paddle-webhook.service.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/validations/booking.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/billing.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/server/websites/booking.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/checkout.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/server/websites/domain-provider.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/domains.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/errors.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/media.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/server/websites/mercadopago-billing.ts",
+      "category": "billing"
+    },
+    {
+      "file": "src/server/websites/service.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/RuntimeChrome.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/autosave.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/booking/client.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/booking/errors.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/booking/state.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/booking/types.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/booking/validation.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/catalog.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/diagnostics.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/editor-types.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/editor-utils.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/fixtures/catalog.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/fixtures/matchday.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/fixtures/portfolio.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/fixtures/ritual.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/fixtures/views.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/gallery-categories.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/launch.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/media.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/metadata.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/offers.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/palettes.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/policy.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/preview-protocol.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/preview-transport.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/publishing.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/registry.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/shared-config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/stored-media.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/template-snapshots.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/Bella.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/BellaContent.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/Context.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/Lazy.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/LivePreview.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/Media.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Action.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/BookingFlow.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/BookingSection.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Header.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Motion.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Portfolio.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Services.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Staff.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/Studio.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_components/booking-events.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_lib/booking-state.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_lib/puragenda/errors.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_lib/puragenda/types.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/_lib/puragenda/validation.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/brand.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/categories.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/copy.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/display-config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/gallery.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/icons/arrow-narrow-right-icon.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/icons/simple-checked-icon.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/icons/types.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/process.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/studio.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/bella/types.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Booking.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Content.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Context.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Lazy.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Matchday.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/Media.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/booking.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/gallery.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/matchday.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/palettes.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/matchday/preview.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Booking.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Context.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Lazy.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Lightbox.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Media.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Rail.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/Ritual.tsx",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/config.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/gallery.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/palettes.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/preview.ts",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/ritual-booking.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/templates/ritual/ritual.module.css",
+      "category": "product"
+    },
+    {
+      "file": "src/websites/types.ts",
+      "category": "product"
+    },
+    {
+      "file": "tests/changelog.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/bella-gallery-render.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/bella-v3.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/booking-availability.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/booking-selection.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/matchday.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/website-builder.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/website-empty-media.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/website-launch.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/website-offers.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/website-structured-data.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/core/websites.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/fixtures/booking-catalog.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/appointment-google-collision.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/booking-api.integration.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/booking-read.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/demo-session.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/email-send.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/ritual-template.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/website-domain-provider.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/website-media.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/website-mercadopago.integration.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/website-mp-webhook.route.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/websites.actions.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/websites.billing.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/websites.proxy.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tests/server/websites.service.test.ts",
+      "category": "tests"
+    },
+    {
+      "file": "tsconfig.json",
+      "category": "config"
+    }
+  ]
+}

@@ -71,8 +71,9 @@ describe("booking notification delivery accounting", () => {
     }));
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Resend rejected"),
-      expect.objectContaining({ message: "provider rejected" }),
     );
+    expect(JSON.stringify([...errorSpy.mock.calls, ...logSpy.mock.calls])).not.toMatch(/(staff|owner|client)@example\.test/);
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("provider rejected");
     expect(logSpy).toHaveBeenCalledWith(
       "[Email] Booking notifications complete for appointment appointment-qa: 2/3 delivered",
     );

@@ -1,0 +1,180 @@
+[
+  {
+    "template": "bella",
+    "surface": "public",
+    "width": 1440,
+    "bodyWidth": 1425,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "template": "bella",
+    "surface": "builder",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "viewport": 1440
+  },
+  {
+    "template": "bella",
+    "surface": "public",
+    "width": 390,
+    "bodyWidth": 375,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "template": "bella",
+    "surface": "public",
+    "width": 360,
+    "bodyWidth": 345,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "template": "bella",
+    "surface": "builder",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "viewport": 1440
+  },
+  {
+    "template": "bella",
+    "surface": "builder",
+    "width": 390,
+    "scrollWidth": 390,
+    "viewport": 390
+  },
+  {
+    "template": "bella",
+    "surface": "builder",
+    "width": 360,
+    "scrollWidth": 360,
+    "viewport": 360
+  },
+  {
+    "template": "matchday",
+    "surface": "builder",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "viewport": 1440
+  },
+  {
+    "template": "matchday",
+    "surface": "builder",
+    "width": 390,
+    "scrollWidth": 390,
+    "viewport": 390
+  },
+  {
+    "template": "matchday",
+    "surface": "builder",
+    "width": 360,
+    "scrollWidth": 360,
+    "viewport": 360
+  },
+  {
+    "template": "matchday",
+    "surface": "public",
+    "width": 1440,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "template": "matchday",
+    "surface": "public",
+    "width": 390,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "template": "matchday",
+    "surface": "public",
+    "width": 360,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "template": "ritual",
+    "surface": "builder",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "viewport": 1440
+  },
+  {
+    "template": "ritual",
+    "surface": "builder",
+    "width": 390,
+    "scrollWidth": 390,
+    "viewport": 390
+  },
+  {
+    "template": "ritual",
+    "surface": "builder",
+    "width": 360,
+    "scrollWidth": 360,
+    "viewport": 360
+  },
+  {
+    "template": "ritual",
+    "surface": "public",
+    "width": 1440,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "template": "ritual",
+    "surface": "public",
+    "width": 390,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "template": "ritual",
+    "surface": "public",
+    "width": 360,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "template": "ritual-stress",
+    "surface": "demo",
+    "width": 1440,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "template": "ritual-stress",
+    "surface": "demo",
+    "width": 390,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "template": "ritual-stress",
+    "surface": "demo",
+    "width": 360,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "template": "ritual-realistic",
+    "surface": "demo",
+    "width": 1440,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "template": "ritual-realistic",
+    "surface": "demo",
+    "width": 390,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "template": "ritual-realistic",
+    "surface": "demo",
+    "width": 360,
+    "scrollWidth": 345,
+    "viewport": 360
+  }
+]

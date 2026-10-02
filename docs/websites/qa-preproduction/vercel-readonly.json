@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-10-02",
+  "method": "Vercel authenticated project UI, read-only search; values never revealed",
+  "project": "puragenda",
+  "scope": "Production and Preview unless stated",
+  "variables": {
+    "MERCADOPAGO_ACCESS_TOKEN": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "MERCADOPAGO_WEBHOOK_SECRET": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "MERCADOPAGO_PUBLIC_KEY": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "AUTH_SECRET": { "present": true, "scope": "Production and Preview", "structuralStatus": "NOT_VERIFIABLE_WITHOUT_REVEALING_VALUE" },
+    "NEXTAUTH_SECRET": { "present": false },
+    "DATABASE_URL": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "DIRECT_URL": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "NEXT_PUBLIC_APP_URL": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "CLOUDINARY_CLOUD_NAME": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "CLOUDINARY_API_KEY": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "CLOUDINARY_API_SECRET": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "RESEND_API_KEY": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "EMAIL_FROM": { "present": true, "scope": "Production and Preview", "value": "NOT_REVEALED" },
+    "WEBSITE_ROOT_DOMAIN": { "present": false, "runtimeDefault": "puragenda.cl" },
+    "WEBSITE_CHECKOUT_ENABLED": { "present": false, "runtimeDefault": "off" },
+    "WEBSITE_LAUNCH_ENABLED": { "present": false, "runtimeDefault": "off" },
+    "WEBSITE_LAUNCH_AT": { "present": false, "runtimeDefault": "unset; no snapshot" }
+  },
+  "deploymentObservation": {
+    "currentProduction": { "status": "Ready", "domains": ["www.puragenda.cl", "puragenda.vercel.app"], "taskAction": "not modified" },
+    "websPreview": { "status": "Ready", "sourceBranch": "webs", "taskAction": "not promoted" }
+  },
+  "interpretation": {
+    "auth": "AUTH_SECRET is configured in Vercel; structural validity is NOT_VERIFIABLE without revealing its value. The runtime uses AUTH_SECRET first and NEXTAUTH_SECRET only as fallback.",
+    "mercadoPagoWebhook": "MERCADOPAGO_WEBHOOK_SECRET is present in Vercel; provider test signature/E2E remains NOT_RUN.",
+    "previewSafety": "MP production credentials are scoped to Preview as well as Production. Do not run a provider test from the webs preview until Preview receives isolated official test credentials or is otherwise isolated from production data.",
+    "localDifference": "The checkout .env used by the prior read-only DB audit is not the Vercel project environment; its missing values must not be reported as missing from Vercel."
+  }
+}

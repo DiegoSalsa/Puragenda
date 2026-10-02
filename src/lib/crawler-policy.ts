@@ -47,6 +47,8 @@ export const ROBOTS_DISALLOW_PREFIXES = [
  * Includes both robots-disallowed internals and linked app surfaces.
  */
 export const NOINDEX_HEADER_SOURCES = [
+  "/website-preview",
+  "/website-demo/:path*",
   "/dashboard/:path*",
   "/login",
   "/register",

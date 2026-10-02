@@ -1,0 +1,138 @@
+[
+  {
+    "key": "original-1280",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 1265,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 332.796875,
+    "photoComplete": true,
+    "scrollWidth": 1265,
+    "viewport": 1280
+  },
+  {
+    "key": "bella-a-1280",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 1265,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 332.796875,
+    "photoComplete": true,
+    "scrollWidth": 1265,
+    "viewport": 1280
+  },
+  {
+    "key": "bella-b-1440",
+    "brand": "AURABEAUTY ATELIER.",
+    "contentWidth": 1425,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 374.390625,
+    "photoComplete": true,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "key": "bella-b-390",
+    "brand": "AURABEAUTY ATELIER.",
+    "contentWidth": 375,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 844,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "key": "original-360",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 345,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 800,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "key": "bella-a-360",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 345,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 800,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "key": "bella-b-360",
+    "brand": "AURABEAUTY ATELIER.",
+    "contentWidth": 345,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 800,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 345,
+    "viewport": 360
+  },
+  {
+    "key": "bella-b-1280",
+    "brand": "AURABEAUTY ATELIER.",
+    "contentWidth": 1265,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 332.796875,
+    "photoComplete": true,
+    "scrollWidth": 1265,
+    "viewport": 1280
+  },
+  {
+    "key": "original-1440",
+    "bodyFont": "\"DM Sans\", \"DM Sans Fallback\", sans-serif",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 1425,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 374.390625,
+    "photoComplete": true,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "key": "bella-a-1440",
+    "bodyFont": "\"DM Sans\", \"DM Sans Fallback\", sans-serif",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 1425,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 900,
+    "heroHeight": 374.390625,
+    "photoComplete": true,
+    "scrollWidth": 1425,
+    "viewport": 1440
+  },
+  {
+    "key": "original-390",
+    "bodyFont": "\"DM Sans\", \"DM Sans Fallback\", sans-serif",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 375,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 844,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 375,
+    "viewport": 390
+  },
+  {
+    "key": "bella-a-390",
+    "bodyFont": "\"DM Sans\", \"DM Sans Fallback\", sans-serif",
+    "brand": "ESTÉTICABELLA.",
+    "contentWidth": 375,
+    "font": "\"Bricolage Grotesque\", \"Bricolage Grotesque Fallback\", sans-serif",
+    "height": 844,
+    "heroHeight": 300,
+    "photoComplete": true,
+    "scrollWidth": 375,
+    "viewport": 390
+  }
+]

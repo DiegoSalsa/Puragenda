@@ -1,0 +1,26 @@
+[
+  {
+    "name": "process",
+    "source": "https://unsplash.com/photos/man-in-white-dress-shirt-cutting-hair-of-man-Q82AM6BWBPM",
+    "local": "/website-media-qa/matchday/process.webp",
+    "usage": "local QA only; never default tenant assets"
+  },
+  {
+    "name": "detail",
+    "source": "https://unsplash.com/photos/grayscale-photography-of-person-holding-scissor-clipping-mans-beard-fE42nRlBcG8",
+    "local": "/website-media-qa/matchday/detail.webp",
+    "usage": "local QA only; never default tenant assets"
+  },
+  {
+    "name": "portrait",
+    "source": "https://unsplash.com/photos/a-man-with-a-beard-is-getting-his-hair-cut-cmoQYMqGgoI",
+    "local": "/website-media-qa/matchday/portrait.webp",
+    "usage": "local QA only; never default tenant assets"
+  },
+  {
+    "name": "cut",
+    "source": "https://unsplash.com/photos/a-man-getting-his-hair-cut-by-a-barber-alPVAV3zMMI",
+    "local": "/website-media-qa/matchday/cut.webp",
+    "usage": "local QA only; never default tenant assets"
+  }
+]

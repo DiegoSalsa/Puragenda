@@ -1,6 +1,6 @@
 export interface ChangelogSpotlight {
   id: "gift_cards" | "loyalty" | string;
-  preview: "gift_card" | "loyalty_card";
+  preview: "gift_card" | "loyalty_card" | "website_recommended";
   title: string;
   description: string;
   bullets: string[];
@@ -24,6 +24,36 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
+  {
+    version: "v2.2.1",
+    date: "2026-10-02",
+    title: "Tu negocio ahora puede tener su propia página web",
+    description: "Te dejamos una web preconfigurada para tu negocio, conectada a tus servicios y reservas, para que puedas empezar a recibir clientes desde un enlace profesional.",
+    popupVariant: "launch",
+    popupEyebrow: "Nuevo · Sitio Web Puragenda",
+    popupTitle: "Una web que trabaja para que tu negocio gane más",
+    popupDescription: "Te preparamos una web con el estilo que mejor encaja con tu negocio. Tus clientes entienden lo que ofreces, ven tus servicios y pueden reservar sin escribirte.",
+    spotlights: [
+      {
+        id: "website_recommended",
+        preview: "website_recommended",
+        title: "Tu web recomendada",
+        description: "La dejamos armada por ti para que solo revises, publiques y compartas el enlace.",
+        bullets: ["Más confianza antes del primer contacto", "Servicios, horarios y reservas conectados", "Un enlace profesional para Instagram, WhatsApp y Google"],
+        href: "/dashboard/website",
+        cta: "Ver mi web preconfigurada",
+      },
+    ],
+    features: [
+      "Web preconfigurada según el tipo de negocio, con una estructura lista para publicar.",
+      "Personaliza colores, fotos, textos, galería y presentación de tu equipo cuando quieras.",
+      "Servicios y profesionales conectados a tu agenda, con sus precios y disponibilidad.",
+      "Recibe reservas desde tu propia web, también desde el celular.",
+      "Hosting, subdominio de Puragenda y configuración de tu dominio propio.",
+      "Título, descripción y vista para compartir tu web y presentarla en buscadores.",
+    ],
+    notice: "Sitio Web es un add-on mensual independiente de tu plan Puragenda. La idea es que se pague con las primeras reservas que te ayude a generar; tu contenido se conserva si decides cancelar.",
+  },
   {
     version: "v2.1.0",
     date: "2026-09-26",

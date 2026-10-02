@@ -1,0 +1,92 @@
+Product code HEAD: b0044c764defd89393ffc3bd26b80f8dff8bb07e
+Provider E2E: NOT_RUN. MP provider: PASS SIMULATED. Real persistence/HTTP: isolated local PostgreSQL only.
+
+normal
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 C:/Users/diego/Desktop/agenda
+
+
+ Test Files  181 passed | 3 skipped (184)
+      Tests  1076 passed | 51 skipped (1127)
+   Start at  16:24:56
+   Duration  76.25s (transform 32.32s, setup 0ms, import 248.51s, tests 20.29s, environment 24ms)
+
+PostgreSQL
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 C:/Users/diego/Desktop/agenda
+
+(node:24600) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ Test Files  184 passed (184)
+      Tests  1127 passed (1127)
+   Start at  16:25:01
+   Duration  75.20s (transform 37.35s, setup 0ms, import 262.87s, tests 32.72s, environment 43ms)
+
+lint
+  30:22  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+✖ 32 problems (0 errors, 32 warnings)
+
+typecheck
+> agenda@0.1.0 typecheck
+> tsc --noEmit
+
+prisma validate
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+The schema at prisma\schema.prisma is valid 🚀
+
+prisma generate
+
+Prisma schema loaded from prisma\schema.prisma.
+
+✔ Generated Prisma Client (v7.10.0) to .\node_modules\@prisma\client in 599ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+migrations
+Loaded Prisma config from prisma.config.ts.
+
+PASS prisma/migrations/20260930120000_public_booking_operations/migration.sql
+PASS prisma/migrations/20260930160000_websites_addon_v1/migration.sql
+PASS baseline MAIN -> V1 checkpoint (WebsiteMedia absent)
+PASS prisma/migrations/20260930210000_website_visual_builder_v2/migration.sql
+PASS V1 -> V2 WebsiteMedia and domain fields
+PASS prisma/migrations/20261001120000_website_domain_tenant_ownership/migration.sql
+PASS legacy ACTIVE requires new tenant TXT; reservation retained
+PASS prisma/migrations/20261001120000_website_launch_offers/migration.sql
+PASS prisma/migrations/20261001121000_booking_operation_fk_update/migration.sql
+PASS prisma/migrations/20261001190000_matchday_template_snapshots/migration.sql
+PASS prisma/migrations/20261002190000_website_mercadopago/migration.sql
+Loaded Prisma config from prisma.config.ts.
+
+No difference detected.
+PASS NO DRIFT + RLS. Disposable local database retained: website_migration_1790969160480
+
+founder dry run 1
+Negocios elegibles: 3
+Ya marcados: 1
+Nuevos a marcar: 2
+DRY RUN: no se modificó la base de datos. Usa --apply y WEBSITE_LAUNCH_SNAPSHOT_CONFIRM=... para mutar.
+
+founder dry run 2
+Negocios elegibles: 3
+Ya marcados: 1
+Nuevos a marcar: 2
+DRY RUN: no se modificó la base de datos. Usa --apply y WEBSITE_LAUNCH_SNAPSHOT_CONFIRM=... para mutar.
+
+Build isolated
+✓ Compiled successfully in 22.8s
+  Finished TypeScript in 26.9s ...
+✓ Generating static pages using 7 workers (135/135) in 1608ms
+
+HTTP: 52 commercial; 29 public; 18 authenticated actions. All PASS. Provider simulated.
+Browser Ritual booking: Appointment count 1, PENDING in isolated fixture; no email delivered.

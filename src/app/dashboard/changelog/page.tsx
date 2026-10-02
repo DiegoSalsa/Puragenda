@@ -1,5 +1,10 @@
 import { CHANGELOG_DATA, type ChangelogEntry } from "@/config/changelog";
 import { Calendar, CheckCircle2, ChevronDown, ShieldCheck, Sparkles } from "@/components/icons/hover-icons";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
+import { prisma } from "@/server/db/prisma";
+import WebsiteChangelogCard from "@/components/dashboard/website-changelog-card";
+import { ChangelogAnnouncementButton } from "@/components/dashboard/changelog-announcement-button";
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("es-CL", options).format(new Date(`${date}T12:00:00`));
@@ -105,8 +110,13 @@ function HistoricalEntry({ entry }: { entry: ChangelogEntry }) {
   );
 }
 
-export default function ChangelogPage() {
+export default async function ChangelogPage({ searchParams }: { searchParams: Promise<{ popup?: string | string[] }> }) {
+  const openAnnouncement = (await searchParams).popup === "website";
+  const enabled = process.env.WEBSITE_LAUNCH_ENABLED === "1";
   const [latest, ...history] = CHANGELOG_DATA;
+  const user = enabled ? await getCurrentSessionUser() : null;
+  const business = user ? await getBusinessForUser(user.id) : null;
+  const context = business ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business.id } }), canManage: business.ownerId === user?.id } : null;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10 pb-16">
@@ -116,9 +126,11 @@ export default function ChangelogPage() {
         </p>
         <h1 className="mt-5 text-[clamp(2.8rem,7vw,5rem)] font-black leading-[0.92] tracking-[-0.07em] text-black">Novedades que te ayudan a trabajar mejor.</h1>
         <p className="mt-5 max-w-2xl text-base font-semibold leading-7 text-muted-foreground">Descubre las últimas mejoras, correcciones y nuevas funcionalidades de Puragenda.</p>
+        <ChangelogAnnouncementButton openOnLoad={openAnnouncement} />
       </header>
 
       <LatestEntry entry={latest} />
+      {context ? <WebsiteChangelogCard context={context} /> : null}
 
       <section className="space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

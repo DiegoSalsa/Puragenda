@@ -6,6 +6,208 @@ datasource db {
   provider = "postgresql"
 }
 
+// Public booking keys are scoped by business; hashes contain no customer data.
+model BookingOperation {
+  id            String   @id @default(cuid())
+  businessId    String
+  keyHash       String
+  payloadHash   String
+  ownerToken    String
+  leaseUntil    DateTime
+  expiresAt     DateTime
+  appointmentId String?  @unique
+  response      Json?
+  httpStatus    Int?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, keyHash])
+  @@index([expiresAt])
+}
+
+enum WebsiteStatus {
+  DRAFT
+  PUBLISHED
+  SUSPENDED
+}
+
+enum WebsiteDomainStatus {
+  PENDING
+  VERIFIED
+  ACTIVE
+  FAILED
+}
+
+enum DomainRequestStatus {
+  REQUESTED
+  REVIEWING
+  QUOTED
+  COMPLETED
+  CANCELLED
+}
+
+model BusinessWebsite {
+  id               String        @id @default(cuid())
+  businessId       String        @unique
+  templateKey      String        @default("bella")
+  templateVersion  Int           @default(1)
+  status           WebsiteStatus @default(DRAFT)
+  subdomain        String        @unique
+  draftConfig      Json
+  publishedConfig  Json?
+  templateConfigs  Json          @default("{}")
+  publishedTemplateKey String?
+  publishedTemplateVersion Int?
+  revision         Int           @default(0)
+  publishedRevision Int?
+  publishedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  business         Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  domains          WebsiteDomain[]
+  domainRequests   DomainRequest[]
+  media            WebsiteMedia[]
+}
+
+model WebsiteMedia {
+  id          String   @id @default(cuid())
+  websiteId   String
+  publicId    String   @unique
+  secureUrl   String   @unique
+  width       Int
+  height      Int
+  format      String
+  bytes       Int
+  usage       String
+  provider    String   @default("cloudinary")
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  website     BusinessWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, deletedAt])
+}
+
+model WebsiteDomain {
+  id               String              @id @default(cuid())
+  websiteId        String
+  hostname         String              @unique
+  status           WebsiteDomainStatus @default(PENDING)
+  verificationToken String
+    tenantVerifiedAt DateTime?
+  isPrimary        Boolean             @default(false)
+  verifiedAt       DateTime?
+  activatedAt      DateTime?
+  lastError        String?
+  provider         String              @default("pending")
+  dnsRecords       Json                @default("[]")
+  checkedAt        DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  website          BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, status])
+}
+
+model DomainRequest {
+  id          String              @id @default(cuid())
+  websiteId   String
+  hostname    String
+  notes       String              @default("")
+  status      DomainRequestStatus @default(REQUESTED)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  website     BusinessWebsite     @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  @@index([websiteId, status])
+}
+
+// Independent recurring item: supports Chilean MP base plans and annual base plans
+// without replacing or cancelling any existing subscription.
+model WebsiteAddon {
+  id                    String             @id @default(cuid())
+  businessId            String             @unique
+  status                SubscriptionStatus @default(INACTIVE)
+  provider              String             @default("paddle")
+  paddleSubscriptionId  String?            @unique
+  paddleCustomerId      String?
+  paddlePriceId         String?
+  checkoutTransactionId String?
+  mpSubscriptionId      String?            @unique
+  mpCustomerId          String?
+  checkoutOperations    WebsiteCheckoutOperation[]
+  validUntil            DateTime?
+  cancelAt              DateTime?
+  lastEventAt           DateTime?
+  lastEventId           String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  business              Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// Durable server-created ownership proof. Unknown provider create outcomes are
+// reconciled by reference before retrying; never silently create another agreement.
+model WebsiteCheckoutOperation {
+  id              String @id
+  addonId         String
+  provider        String @default("mercadopago")
+  priceTier       WebsitePriceTier
+  amount          Int
+  currency        String @default("CLP")
+  firstChargeAt   DateTime?
+  state           String @default("CREATING")
+  mpSubscriptionId String? @unique
+  checkoutUrl     String?
+  providerStatus  String?
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  addon           WebsiteAddon @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  @@index([addonId, createdAt])
+}
+
+model WebsiteBillingEvent {
+  eventId   String   @id
+  createdAt DateTime @default(now())
+}
+
+enum WebsitePriceTier {
+  STANDARD
+  BETA_FOUNDER
+}
+
+// Sealed once at launch. Eligibility is never recalculated by the application.
+model WebsiteLaunchSnapshot {
+  id         String   @id
+  launchAt   DateTime @unique
+  capturedAt DateTime
+  memberCount Int
+  members    WebsiteOfferEligibility[]
+}
+
+// Lifetime commercial promise belongs to businessId, independent of WebsiteAddon.
+// priceTier / grandfathered / betaEligible are derived from offerCode.
+model WebsiteOfferEligibility {
+  businessId      String @id
+  offerCode       WebsitePriceTier @default(BETA_FOUNDER)
+  snapshotId      String
+  eligibleAt      DateTime
+  trialStartedAt  DateTime?
+  trialEndsAt     DateTime?
+  trialConsumedAt DateTime?
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  snapshot        WebsiteLaunchSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+}
+
+// First-party commercial audit, without email, owner, hostname or payment details.
+model WebsiteCommercialEvent {
+  key        String @id
+  businessId String
+  event      String
+  priceTier  WebsitePriceTier
+  occurredAt DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@index([event, occurredAt])
+}
+
 // ==========================================
 // AUTH & USERS
 // ==========================================
@@ -438,6 +640,11 @@ model Business {
   appointments                Appointment[]
   clients                     Client[]
   subscription                Subscription?
+  bookingOperations           BookingOperation[]
+  website                     BusinessWebsite?
+  websiteAddon                WebsiteAddon?
+  websiteOfferEligibility     WebsiteOfferEligibility?
+  websiteCommercialEvents     WebsiteCommercialEvent[]
   businessHours               BusinessHours[]
   blockedDates                BlockedDate[]
   loyaltyCodes                LoyaltyCode[]

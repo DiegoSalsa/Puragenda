@@ -1,0 +1,30 @@
+{
+  "site": {
+    "templateKey": "matchday",
+    "publishedTemplateKey": "matchday",
+    "revision": 11,
+    "publishedRevision": 11,
+    "headline": "Tu estilo.\nTu momento.",
+    "publishedHeadline": "Tu estilo.\nTu momento.",
+    "gallery": 5,
+    "retainedBellaHeadline": "Bella conserva su propio titular QA",
+    "staffNumber": "01"
+  },
+  "appointment": {
+    "id": "cmuq12jjc00072gtcxqn4wrh4",
+    "businessId": "website-qa-soccerbarber",
+    "serviceId": "soccerbarber-fade",
+    "staffId": "soccerbarber-staff-1",
+    "status": "PENDING"
+  },
+  "media": [
+    {
+      "id": "cmuq1ui3l000h2gtcwxgigq7v",
+      "websiteId": "cmuq0rum0000txgtcxkiqmkxc",
+      "format": "webp",
+      "bytes": 143624,
+      "width": 1500,
+      "height": 1000
+    }
+  ]
+}

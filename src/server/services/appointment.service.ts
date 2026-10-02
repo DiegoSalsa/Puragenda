@@ -1,5 +1,11 @@
 import { prisma } from "@/server/db/prisma";
 import type { AppointmentStatus, Prisma } from "@prisma/client";
+import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
+import { checkpointBookingOperation, fenceBookingOperation, bookingContractContext } from "@/server/booking/idempotency";
+import { BookingSelectionError } from "@/core/booking-selection";
+import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { format } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import {
   getGoogleCalendarBusySlots,
@@ -23,16 +29,21 @@ export async function checkAppointmentCollision(
   staffId?: string | null,
   excludeAppointmentId?: string,
   locationId?: string | null,
+  db: Prisma.TransactionClient = prisma,
+  checkGoogle = true,
 ): Promise<{
   hasCollision: boolean;
   conflictingAppointment?: { customerName: string; startTime: Date; endTime: Date };
 }> {
-  const conflicting = await prisma.appointment.findFirst({
+  const subscription = await db.subscription.findUnique({ where: { businessId }, select: { plan: true } });
+  const businessOnly = usesBusinessScheduleOnly(subscription?.plan);
+  const conflicting = await db.appointment.findFirst({
     where: {
       businessId,
       status: { not: "CANCELLED" },
-      ...(staffId && { staffId }),
-      ...(!staffId && locationId && { locationId }),
+      ...(!businessOnly && staffId
+        ? { OR: [{ staffId }, { staffId: null, ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}) }] }
+        : locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
       ...(excludeAppointmentId && { id: { not: excludeAppointmentId } }),
       // Overlap condition: newStart < existingEnd AND newEnd > existingStart
       startTime: { lt: endTime },
@@ -49,10 +60,13 @@ export async function checkAppointmentCollision(
     return { hasCollision: true, conflictingAppointment: conflicting };
   }
 
-  if (staffId) {
-    const googleBusy = await getGoogleCalendarBusySlots(staffId, startTime, endTime);
+  if (checkGoogle && (staffId || businessOnly)) {
+    const staffIds = businessOnly
+      ? (await db.staff.findMany({ where: { businessId, isActive: true, ...(locationId ? { locations: { some: { locationId, isActive: true } } } : {}) }, select: { id: true }, take: 100 })).map((item) => item.id)
+      : [staffId!];
+    const googleBusy = (await Promise.all(staffIds.map((id) => getGoogleCalendarBusySlots(id, startTime, endTime)))).flat();
     const ownGoogleEventRange = excludeAppointmentId
-      ? await prisma.appointment.findUnique({
+      ? await db.appointment.findUnique({
           where: { id: excludeAppointmentId },
           select: {
             startTime: true,
@@ -111,29 +125,64 @@ export async function createAppointment(data: {
   internalNotes?: string;
   allowPrioritySlots?: boolean;
   storyCampaignId?: string;
-}, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }) {
+}, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }): Promise<
+  { success: true; appointment: Prisma.AppointmentGetPayload<{ include: { service: true } }> }
+  | { success: false; error: string; code?: string }
+> {
+  if (!options?.tx) {
+    const external = await checkAppointmentCollision(data.businessId, data.startTime, data.endTime, data.staffId, undefined, data.locationId);
+    if (external.hasCollision) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
+    try {
+      const result = await prisma.$transaction((tx) => createAppointment(data, { tx, syncGoogle: false }));
+      if (result.success && options?.syncGoogle !== false) await syncAppointmentToGoogle(result.appointment.id);
+      return result;
+    } catch (error) {
+      if (isAppointmentCapacityConflict(error)) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
+      throw error;
+    }
+  }
+  const db = options.tx;
+  await fenceBookingOperation(db);
+  await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`booking-capacity:${data.businessId}`}, 0))::text`;
+  if (bookingContractContext.getStore()) {
+    const { getBookingAvailability, loadBookingContext } = await import("@/server/booking/read.service");
+    const current = await loadBookingContext(data.businessId, db);
+    const subscription = await db.subscription.findUnique({ where: { businessId: data.businessId } });
+    if (!hasOperationalSubscriptionAccess(subscription)) throw new BookingSelectionError("Las reservas online no están disponibles temporalmente", "SUBSCRIPTION_INACTIVE", 403);
+    const location = current.locations.find((item) => item.id === data.locationId);
+    const timezone = location?.timezone || current.timezone;
+    const optionIds = Array.isArray(data.selectedOptions) ? data.selectedOptions.map((option) => (option as { alternativeId: string }).alternativeId) : [];
+    const availability = await getBookingAvailability(current, { date: format(toZonedTime(data.startTime, timezone), "yyyy-MM-dd"), serviceId: data.serviceId, locationId: data.locationId, staffId: data.staffId, selectedOptionAlternativeIds: optionIds }, new Date(), { db, skipBusy: true });
+    if (availability.selection.price !== data.totalPrice || availability.selection.duration !== data.totalDuration) throw new BookingSelectionError("El catálogo cambió; consulta nuevamente", "SELECTION_CHANGED", 409);
+    if (!availability.slots.some((slot) => slot.startTime === data.startTime.toISOString() && slot.endTime === data.endTime.toISOString())) throw new BookingSelectionError("El horario seleccionado ya no está disponible", "SLOT_CONFLICT", 409);
+  }
   // Check collision for the specific staff member (or business-wide if no staff)
-  const { hasCollision, conflictingAppointment } = await checkAppointmentCollision(
+  const { hasCollision } = await checkAppointmentCollision(
     data.businessId,
     data.startTime,
     data.endTime,
     data.staffId,
     undefined,
     data.locationId,
+    db,
+    false,
   );
 
   if (hasCollision) {
     return {
       success: false as const,
-      error: `Ya existe una cita en ese horario (cliente: ${conflictingAppointment?.customerName}). Por favor selecciona otro horario.`,
+      error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.",
+      code: "SLOT_CONFLICT",
     };
   }
 
   // Check collision with schedule blocks (breaks)
-  if (data.staffId) {
-    const blockCollision = await prisma.scheduleBlock.findFirst({
+  const businessOnly = usesBusinessScheduleOnly((await db.subscription.findUnique({ where: { businessId: data.businessId }, select: { plan: true } }))?.plan);
+  if (data.staffId || businessOnly) {
+    const blockCollision = await db.scheduleBlock.findFirst({
       where: {
-        staffId: data.staffId,
+        ...(businessOnly ? { staff: { businessId: data.businessId } } : { staffId: data.staffId }),
+        ...(data.locationId ? { OR: [{ locationId: data.locationId }, { locationId: null }] } : {}),
         startTime: { lt: data.endTime },
         endTime: { gt: data.startTime },
         ...(data.allowPrioritySlots
@@ -152,7 +201,6 @@ export async function createAppointment(data: {
   // Determine initial status based on deposit config
   const initialStatus = data.status ?? (data.depositRequired ? "AWAITING_PAYMENT" : "PENDING");
 
-  const db = options?.tx ?? prisma;
   const appointment = await db.appointment.create({
     data: {
       customerName: data.customerName,
@@ -187,9 +235,17 @@ export async function createAppointment(data: {
     include: { service: true },
   });
 
-  if (options?.syncGoogle !== false) await syncAppointmentToGoogle(appointment.id);
+  await checkpointBookingOperation(db, appointment);
 
   return { success: true as const, appointment };
+}
+
+export function isAppointmentCapacityConflict(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const item = error as { code?: string; message?: string; cause?: unknown; meta?: unknown };
+  return item.code === "23P01" || item.message?.includes("BOOKING_SLOT_CONFLICT") === true
+    || (item.cause !== undefined && isAppointmentCapacityConflict(item.cause))
+    || (item.meta !== undefined && JSON.stringify(item.meta).includes("BOOKING_SLOT_CONFLICT"));
 }
 
 
@@ -224,13 +280,16 @@ export async function getBlockedSlots(
   staffId?: string,
   locationId?: string,
 ) {
+  const businessOnly = usesBusinessScheduleOnly((await prisma.subscription.findUnique({ where: { businessId }, select: { plan: true } }))?.plan);
+  const effectiveStaffId = businessOnly ? undefined : staffId;
   // 1) Blocked by existing appointments
   const appointments = await prisma.appointment.findMany({
     where: {
       businessId,
       status: { not: "CANCELLED" },
-      ...(staffId && { staffId }),
-      ...(!staffId && locationId && { locationId }),
+      ...(effectiveStaffId
+        ? { OR: [{ staffId: effectiveStaffId }, { staffId: null, ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}) }] }
+        : locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
       startTime: { lt: dateEnd },
       endTime: { gt: dateStart },
     },
@@ -239,10 +298,10 @@ export async function getBlockedSlots(
   });
 
   // 2) Blocked by manual schedule blocks (breaks, colación, etc.)
-  const scheduleBlocks = staffId
+  const scheduleBlocks = effectiveStaffId || businessOnly
     ? await prisma.scheduleBlock.findMany({
         where: {
-          staffId,
+          ...(businessOnly ? { staff: { businessId } } : { staffId: effectiveStaffId }),
           ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
           startTime: { lt: dateEnd },
           endTime: { gt: dateStart },
@@ -253,9 +312,10 @@ export async function getBlockedSlots(
       })
     : [];
 
-  const googleBusy = staffId
-    ? await getGoogleCalendarBusySlots(staffId, dateStart, dateEnd)
-    : [];
+  const internalStaffIds = businessOnly
+    ? (await prisma.staff.findMany({ where: { businessId, isActive: true, ...(locationId ? { locations: { some: { locationId, isActive: true } } } : {}) }, select: { id: true }, take: 100 })).map((item) => item.id)
+    : effectiveStaffId ? [effectiveStaffId] : [];
+  const googleBusy = (await Promise.all(internalStaffIds.map((id) => getGoogleCalendarBusySlots(id, dateStart, dateEnd)))).flat();
 
   // Merge both lists
   return [...appointments, ...scheduleBlocks, ...googleBusy].sort(

@@ -1,0 +1,35 @@
+Auditoría P0 segunda pasada — 2026-10-02
+Código funcional: 84c9df516c55044fae70edeaa68ff977a5f8c139
+
+npx vitest run tests/server/validate-production-env.test.ts
+  Test Files  1 passed (1)
+  Tests       2 passed (2)
+
+npm test
+  Test Files  182 passed | 3 skipped (185)
+  Tests       1078 passed | 51 skipped (1129)
+
+PURAGENDA_BOOKING_TEST_DATABASE_URL=<loopback aislado> WEBSITE_BILLING_TEST_DATABASE_URL=<loopback aislado> node scripts/test-booking-api-local.mjs --all
+  Test Files  185 passed (185)
+  Tests       1129 passed (1129)
+
+npm run lint
+  0 errors, 47 warnings in the current workspace (32 product baseline + 15 from untracked Remotion files)
+
+npm run typecheck
+  exit 0
+
+npx prisma validate
+  The schema at prisma/schema.prisma is valid
+
+node scripts/dev-websites-local.mjs --build
+  exit 0; 135 páginas generadas
+
+node scripts/test-website-migrations.mjs
+  PASS NO DRIFT + RLS; baseline + 8 incrementales
+
+PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <evidence-path>
+  mode READ_ONLY; readOnly true; migrationStatus EXACTLY_TWO_PENDING
+  pending: 20261001120000_website_launch_offers, 20261002190000_website_mercadopago
+  waitingLocks 0; strongGrantedLocks 0; errorCode null
+  no migration, write, snapshot, payment, email, DNS, deploy, or provider call

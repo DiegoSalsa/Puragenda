@@ -1,0 +1,80 @@
+[
+  {
+    "template": "matchday",
+    "title": "SoccerBarber | Corte y Fade",
+    "paths": [
+      "/_next/static/chunks/1zqnx0c9jo_19.css",
+      "/_next/static/chunks/3jskaj7yyz_tl.css",
+      "/_next/static/chunks/1f1w0y-uzw8vg.css",
+      "/_next/static/chunks/2e0mqzum4rz7s.css",
+      "/_next/static/chunks/431bw722fec3m.js",
+      "/_next/static/chunks/2-urkx3cuhmdn.js",
+      "/_next/static/chunks/3xu3-r127jcui.js",
+      "/_next/static/chunks/0id6aevbwms6i.js",
+      "/_next/static/chunks/26g4tn5b226u5.js",
+      "/_next/static/chunks/turbopack-3vs2rzk6wmzky.js",
+      "/_next/static/chunks/2zbr485be3qb8.js",
+      "/_next/static/chunks/0drf-dv3vga39.js",
+      "/_next/static/chunks/3co926xxd0cfh.js",
+      "/_next/static/chunks/25x5-3etg_5n3.js",
+      "/_next/static/chunks/2cyi1t7yh20nv.js",
+      "/_next/static/chunks/33t46atd3n2zd.js",
+      "/_next/static/chunks/205q4xhs72lo5.js",
+      "/_next/static/chunks/2o9y17ycy07z2.js",
+      "/_next/static/chunks/24ytnuwfjjc9y.js",
+      "/_next/static/chunks/1kinu-911xau8.js",
+      "/_next/static/chunks/06mua8f_tr87n.js",
+      "/_next/static/chunks/3yszc1a78578_.js",
+      "/_next/static/chunks/0cz1d0mv5g_q7.js"
+    ],
+    "cssBytes": 311442,
+    "jsBytes": 1349752,
+    "fonts": {
+      "oswald": true,
+      "manrope": true,
+      "bricolage": false,
+      "dmSans": false
+    },
+    "matchdayCSS": true,
+    "bellaCSS": false
+  },
+  {
+    "template": "bella",
+    "title": "Estética Bella | Manicure permanente y Nivelación",
+    "paths": [
+      "/_next/static/chunks/1zqnx0c9jo_19.css",
+      "/_next/static/chunks/3jskaj7yyz_tl.css",
+      "/_next/static/chunks/1f1w0y-uzw8vg.css",
+      "/_next/static/chunks/3-31dtnyw7gt3.css",
+      "/_next/static/chunks/431bw722fec3m.js",
+      "/_next/static/chunks/2-urkx3cuhmdn.js",
+      "/_next/static/chunks/3xu3-r127jcui.js",
+      "/_next/static/chunks/0id6aevbwms6i.js",
+      "/_next/static/chunks/26g4tn5b226u5.js",
+      "/_next/static/chunks/turbopack-3vs2rzk6wmzky.js",
+      "/_next/static/chunks/2zbr485be3qb8.js",
+      "/_next/static/chunks/0drf-dv3vga39.js",
+      "/_next/static/chunks/3co926xxd0cfh.js",
+      "/_next/static/chunks/25x5-3etg_5n3.js",
+      "/_next/static/chunks/2cyi1t7yh20nv.js",
+      "/_next/static/chunks/33t46atd3n2zd.js",
+      "/_next/static/chunks/205q4xhs72lo5.js",
+      "/_next/static/chunks/2o9y17ycy07z2.js",
+      "/_next/static/chunks/24ytnuwfjjc9y.js",
+      "/_next/static/chunks/1kinu-911xau8.js",
+      "/_next/static/chunks/3t-hkko_r-517.js",
+      "/_next/static/chunks/40s3b9e94_9k2.js",
+      "/_next/static/chunks/0cz1d0mv5g_q7.js"
+    ],
+    "cssBytes": 334807,
+    "jsBytes": 1360987,
+    "fonts": {
+      "oswald": false,
+      "manrope": false,
+      "bricolage": true,
+      "dmSans": true
+    },
+    "matchdayCSS": false,
+    "bellaCSS": true
+  }
+]
