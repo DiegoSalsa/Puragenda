@@ -38,11 +38,19 @@ export function WebsiteLaunchPopup({ context, onDismiss, onNavigate }: { context
   }} onCancel={event => { event.preventDefault(); dismiss(); }}>
     <button className={styles.close} aria-label="Cerrar anuncio de Sitio Web" onClick={dismiss}>×</button>
     <p className={styles.sticker}>NUEVO EN PURAGENDA</p>
-    <h2 id="website-launch-title">{message.showFounderOffer ? "Llegaste antes. Este precio es tuyo." : "Tu negocio ahora puede tener su propia página web."}</h2>
-    <p id="website-launch-description">{message.showFounderOffer ? "Gracias por confiar en Puragenda antes de este lanzamiento. Este beneficio queda reservado para tu negocio." : "Tu web, tus servicios y tus reservas, todo conectado a Puragenda."}</p>
-    <div className={styles.previews}>{["bella", "matchday", "ritual"].map(key => <figure key={key}><Image src={`/websites/previews/${key}.svg`} width={220} height={140} alt={`Vista del diseño ${key}`} /><figcaption>{key.toUpperCase()}</figcaption></figure>)}</div>
+    <h2 id="website-launch-title">{message.showFounderOffer ? "Llegaste antes. Este precio es tuyo." : "Una web que trabaja para que tu negocio gane más."}</h2>
+    <p id="website-launch-description">{message.showFounderOffer ? "Gracias por confiar en Puragenda antes de este lanzamiento. Te dejamos una web preconfigurada para tu negocio y este beneficio reservado para ti." : "Te dejamos una web preconfigurada para tu negocio, con tus servicios y reservas conectados para que tus clientes puedan encontrarte y reservar."}</p>
+    <figure className={styles.preview}>
+      <Image src="/websites/previews/bella.svg" width={560} height={350} alt="Vista previa de la web recomendada para tu negocio" />
+      <figcaption>Tu web recomendada · lista para revisar y publicar</figcaption>
+    </figure>
     {message.showFounderOffer ? <div className={styles.offer}><strong>15 DÍAS GRATIS</strong><span>Después, si decides quedártela:</span><b>$5.990 / mes</b><strong>PARA SIEMPRE</strong><small>Nuevos negocios: $9.990 / mes</small></div> : !message.paid && message.trial !== "TRIALING" ? <div className={styles.offer}><b>{message.price}</b>{message.trial === "EXPIRED" ? <span>Tu web sigue aquí. Guardamos todo lo que creaste.</span> : null}</div> : null}
-    <p>Elige Bella, Matchday o Ritual. Personaliza colores, fotos y textos, y recibe reservas desde tu propia web.</p>
+    <div className={styles.benefits}>
+      <strong>¿Qué ganas con tenerla?</strong>
+      <span>Más confianza antes del primer contacto.</span>
+      <span>Un enlace profesional para compartir en todas partes.</span>
+      <span>Reservas conectadas a tu agenda, sin trabajo extra.</span>
+    </div>
     <button className={styles.primary} disabled={pending || !context.canManage} onClick={activate}>{pending ? "Preparando tu web…" : message.cta}</button>
     <button className={styles.later} disabled={pending} onClick={dismiss}>Ahora no</button>
     {error ? <p role="alert">{error}</p> : null}

@@ -1,6 +1,6 @@
 export interface ChangelogSpotlight {
   id: "gift_cards" | "loyalty" | string;
-  preview: "gift_card" | "loyalty_card" | "website_bella" | "website_matchday" | "website_ritual";
+  preview: "gift_card" | "loyalty_card" | "website_recommended";
   title: string;
   description: string;
   bullets: string[];
@@ -28,49 +28,31 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     version: "v2.2.0",
     date: "2026-10-02",
     title: "Tu negocio ahora puede tener su propia página web",
-    description: "Tu web, tus servicios y tus reservas, todo conectado a Puragenda. Elige Bella, Matchday o Ritual y dale el estilo de tu negocio.",
+    description: "Te dejamos una web preconfigurada para tu negocio, conectada a tus servicios y reservas, para que puedas empezar a recibir clientes desde un enlace profesional.",
     popupVariant: "launch",
     popupEyebrow: "Nuevo · Sitio Web Puragenda",
-    popupTitle: "Haz que tu negocio se vea listo para reservar",
-    popupDescription: "Tus servicios ya están en Puragenda. Ahora conviértelos en una web que explica lo que haces, muestra tu estilo y recibe reservas desde el celular.",
+    popupTitle: "Una web que trabaja para que tu negocio gane más",
+    popupDescription: "Te preparamos una web con el estilo que mejor encaja con tu negocio. Tus clientes entienden lo que ofreces, ven tus servicios y pueden reservar sin escribirte.",
     spotlights: [
       {
-        id: "website_bella",
-        preview: "website_bella",
-        title: "Bella",
-        description: "Una portada editorial para mostrar tu trabajo y llevar a cada visita directo a reservar.",
-        bullets: ["Galería que vende tu estilo", "Servicios y equipo conectados", "Reserva visible desde el primer pantallazo"],
+        id: "website_recommended",
+        preview: "website_recommended",
+        title: "Tu web recomendada",
+        description: "La dejamos armada por ti para que solo revises, publiques y compartas el enlace.",
+        bullets: ["Más confianza antes del primer contacto", "Servicios, horarios y reservas conectados", "Un enlace profesional para Instagram, WhatsApp y Google"],
         href: "/dashboard/website",
-        cta: "Probar Bella",
-      },
-      {
-        id: "website_matchday",
-        preview: "website_matchday",
-        title: "Matchday",
-        description: "Una web con energía para negocios que quieren destacar ofertas, equipo y movimiento.",
-        bullets: ["Diseño con personalidad", "Catálogo fácil de recorrer", "Botones de reserva siempre a mano"],
-        href: "/dashboard/website",
-        cta: "Ver Matchday",
-      },
-      {
-        id: "website_ritual",
-        preview: "website_ritual",
-        title: "Ritual",
-        description: "Una experiencia más sensorial para que tu marca se sienta antes de que llegue la primera cita.",
-        bullets: ["Fotos y colores de tu marca", "Presenta tu forma de trabajar", "Comparte un enlace profesional"],
-        href: "/dashboard/website",
-        cta: "Explorar Ritual",
+        cta: "Ver mi web preconfigurada",
       },
     ],
     features: [
-      "Constructor visual con tres diseños: Bella, Matchday y Ritual.",
-      "Personaliza colores, fotos, textos, galería y presentación de tu equipo.",
+      "Web preconfigurada según el tipo de negocio, con una estructura lista para publicar.",
+      "Personaliza colores, fotos, textos, galería y presentación de tu equipo cuando quieras.",
       "Servicios y profesionales conectados a tu agenda, con sus precios y disponibilidad.",
       "Recibe reservas desde tu propia web, también desde el celular.",
       "Hosting, subdominio de Puragenda y configuración de tu dominio propio.",
       "Título, descripción y vista para compartir tu web y presentarla en buscadores.",
     ],
-    notice: "Sitio Web es un add-on mensual independiente de tu plan Puragenda. Tu contenido se conserva si decides cancelar.",
+    notice: "Sitio Web es un add-on mensual independiente de tu plan Puragenda. La idea es que se pague con las primeras reservas que te ayude a generar; tu contenido se conserva si decides cancelar.",
   },
   {
     version: "v2.1.0",

@@ -5,12 +5,11 @@ describe("changelog entries", () => {
   it("prepares Website launch as the latest update", () => {
     const latest = CHANGELOG_DATA[0];
     expect(LATEST_CHANGELOG_VERSION).toBe("v2.2.0");
-    expect(latest.features.join(" ")).toContain("Bella");
-    expect(latest.features.join(" ")).toContain("Matchday");
-    expect(latest.features.join(" ")).toContain("Ritual");
+    expect(latest.features.join(" ")).toContain("preconfigurada");
+    expect(latest.features.join(" ")).not.toMatch(/Bella|Matchday|Ritual/);
     expect(latest.description).not.toContain("$5.990");
     expect(latest).toMatchObject({ popupVariant: "launch", spotlights: expect.any(Array) });
-    expect(latest.spotlights?.map(spotlight => spotlight.preview)).toEqual(["website_bella", "website_matchday", "website_ritual"]);
+    expect(latest.spotlights?.map(spotlight => spotlight.preview)).toEqual(["website_recommended"]);
   });
   it("preserves Puri and Hoy in history", () => {
     const latest = CHANGELOG_DATA.find(entry => entry.version === "v2.1.0")!;
