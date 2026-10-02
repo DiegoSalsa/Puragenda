@@ -19,7 +19,7 @@ export default function Header() {
     return () => window.removeEventListener("keydown", close);
   }, [open]);
   return <header className={styles.header} data-website-field="logo">
-    <a href="#inicio" className={styles.brand} data-website-field="displayName" aria-label={`${config.displayName || business.name}, inicio`}>{config.logo || business.logo ? <Image src={config.logo || business.logo || ""} alt={config.displayName || business.name} width={150} height={48} style={{ objectFit: "contain" }} /> : <>{brand.eyebrow.toUpperCase()} <strong>{brand.title.toUpperCase()}<span>.</span></strong></>}</a>
+    <a href="#inicio" className={styles.brand} data-website-field="displayName" aria-label={`${config.displayName || business.name}, inicio`}>{config.logo || business.logo ? <span className={styles.brandLogoFrame}><Image className={styles.brandLogo} src={config.logo || business.logo || ""} alt={config.displayName || business.name} width={180} height={56} /></span> : <>{brand.eyebrow.toUpperCase()} <strong>{brand.title.toUpperCase()}<span>.</span></strong></>}</a>
     <nav id="bella-nav" className={styles.nav} aria-label={copy.nav.aria} data-open={open} onClick={() => setOpen(false)}>
       {config.gallery.length ? <a href="#trabajos">{copy.nav.gallery}</a> : null}<a href="#tratamientos">{copy.nav.services}</a>{catalog.staff.length ? <a href="#profesionales">{copy.nav.staff}</a> : null}{config.about || config.process.length ? <a href="#estudio">{copy.nav.about}</a> : null}
     </nav>

@@ -23,7 +23,7 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
   const legacy = useTranslations("legacy");
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
-  const latestUpdate = websiteLaunch ? CHANGELOG_DATA[0] : CHANGELOG_DATA[1];
+  const latestUpdate = CHANGELOG_DATA[0];
   const LATEST_CHANGELOG_VERSION = latestUpdate.version;
   const viewedLaunch = useRef(false);
   const previousFocus = useRef<HTMLElement | null>(null);

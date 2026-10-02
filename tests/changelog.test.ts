@@ -9,6 +9,8 @@ describe("changelog entries", () => {
     expect(latest.features.join(" ")).toContain("Matchday");
     expect(latest.features.join(" ")).toContain("Ritual");
     expect(latest.description).not.toContain("$5.990");
+    expect(latest).toMatchObject({ popupVariant: "launch", spotlights: expect.any(Array) });
+    expect(latest.spotlights?.map(spotlight => spotlight.preview)).toEqual(["website_bella", "website_matchday", "website_ritual"]);
   });
   it("preserves Puri and Hoy in history", () => {
     const latest = CHANGELOG_DATA.find(entry => entry.version === "v2.1.0")!;

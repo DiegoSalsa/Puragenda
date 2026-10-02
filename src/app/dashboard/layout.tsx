@@ -67,7 +67,7 @@ export default async function DashboardLayout({
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
   const launchEnabled = process.env.WEBSITE_LAUNCH_ENABLED === "1" && !!business && business.ownerId === user.id;
   const websiteLaunch = launchEnabled ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business!.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business!.id } }), canManage: true } : null;
-  const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[launchEnabled ? 0 : 1].version;
+  const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[0].version;
   const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (

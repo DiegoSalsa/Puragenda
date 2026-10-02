@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, Gift, Sparkles, X } from "@/components/icons/
 import { GiftCardVisual } from "@/components/gift-cards/gift-card-visual";
 import { LoyaltyCard } from "@/components/loyalty/loyalty-card";
 import type { ChangelogEntry, ChangelogSpotlight } from "@/config/changelog";
+import Image from "next/image";
 
 type Props = {
   entry: ChangelogEntry;
@@ -13,6 +14,21 @@ type Props = {
 };
 
 function ProductPreview({ spotlight }: { spotlight: ChangelogSpotlight }) {
+  if (spotlight.preview.startsWith("website_")) {
+    const template = spotlight.preview.replace("website_", "");
+    return (
+      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border-2 border-black bg-white shadow-[3px_3px_0_#000]">
+        <Image
+          src={`/websites/previews/${template}.svg`}
+          alt={`Vista del diseño ${template}`}
+          fill
+          sizes="(max-width: 768px) 86vw, 380px"
+          className="object-cover object-top"
+        />
+      </div>
+    );
+  }
+
   if (spotlight.preview === "gift_card") {
     return (
       <GiftCardVisual
@@ -89,7 +105,7 @@ export function ChangelogLaunchPopup({ entry, onDismiss, onNavigate, onViewDetai
               {(entry.spotlights || []).map((spotlight, index) => (
                 <article
                   key={spotlight.id}
-                  className={`flex min-w-0 flex-col rounded-[22px] border-[3px] border-black p-4 shadow-[6px_6px_0_#000] animate-in slide-in-from-bottom-3 duration-500 sm:p-5 ${spotlight.preview === "gift_card" ? "bg-[#FFB5E8]" : "bg-[#C4B5FD]"}`}
+                  className={`flex min-w-0 flex-col rounded-[22px] border-[3px] border-black p-4 shadow-[6px_6px_0_#000] animate-in slide-in-from-bottom-3 duration-500 sm:p-5 ${spotlight.preview === "gift_card" ? "bg-[#FFB5E8]" : spotlight.preview === "loyalty_card" ? "bg-[#C4B5FD]" : index === 0 ? "bg-[#DDF8F1]" : index === 1 ? "bg-[#FFF5BA]" : "bg-[#E9D8FF]"}`}
                   style={{ animationDelay: `${index * 80}ms`, animationFillMode: "both" }}
                 >
                   <div className="mb-4 flex items-center gap-2">
@@ -122,7 +138,7 @@ export function ChangelogLaunchPopup({ entry, onDismiss, onNavigate, onViewDetai
             </div>
 
             <div className="mt-6 flex flex-col items-center gap-3 border-t-[3px] border-dashed border-black/25 pt-5 text-center">
-              <p className="text-sm font-bold text-black/65">Todo ya está disponible en tu panel.</p>
+              <p className="max-w-xl text-sm font-bold leading-6 text-black/65">Tu catálogo ya existe. Empieza hoy, elige un diseño y comparte una web que puede recibir reservas antes de que termine el día.</p>
               <button
                 type="button"
                 onClick={onViewDetails}

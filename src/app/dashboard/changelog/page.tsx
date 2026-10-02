@@ -111,7 +111,7 @@ function HistoricalEntry({ entry }: { entry: ChangelogEntry }) {
 
 export default async function ChangelogPage() {
   const enabled = process.env.WEBSITE_LAUNCH_ENABLED === "1";
-  const [latest, ...history] = enabled ? CHANGELOG_DATA : CHANGELOG_DATA.slice(1);
+  const [latest, ...history] = CHANGELOG_DATA;
   const user = enabled ? await getCurrentSessionUser() : null;
   const business = user ? await getBusinessForUser(user.id) : null;
   const context = business ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business.id } }), canManage: business.ownerId === user?.id } : null;

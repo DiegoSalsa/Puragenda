@@ -24,7 +24,9 @@
 .skip { position: fixed; left: 20px; top: -100px; padding: 12px 24px; background: var(--ink); color: white; z-index: 100; }
 .skip:focus { top: 12px; }
 .header { height: 86px; padding: 0 48px; display: flex; align-items: center; justify-content: space-between; gap: 24px; position: sticky; top: 0; z-index: 30; background: white; border-bottom: 1px solid transparent; }
-.brand { font-size: 17px; white-space: nowrap; letter-spacing: -.045em; }
+.brand { display: inline-flex; align-items: center; min-width: 0; font-size: 17px; white-space: nowrap; letter-spacing: -.045em; }
+.brandLogoFrame { display: flex; align-items: center; justify-content: flex-start; width: min(180px, 22vw); height: 56px; min-width: 0; overflow: hidden; }
+.brandLogo { display: block; width: auto; max-width: 100%; height: 44px; object-fit: contain; object-position: left center; }
 .brand strong { font-family: var(--bella-display), sans-serif; font-size: 21px; font-weight: 800; }
 .brand strong span,.heroCopy h2 span,.serviceHeading h2 span,.sectionHeading h2 span,.footerWordmark span { color: var(--red); }
 .nav { display: flex; align-items: center; gap: 42px; font-size: 14px; }
@@ -282,7 +284,7 @@
 }
 @media (max-width: 700px) {
   .root { font-size: 15px; }.root :where(section) { scroll-margin-top: 82px; }
-  .header { height: 72px; padding: 0 20px; gap: 12px; }.brand { font-size: 11px; }.brand strong { font-size: 15px; }
+  .header { height: 72px; padding: 0 20px; gap: 12px; }.brand { font-size: 11px; }.brand strong { font-size: 15px; }.brandLogoFrame { width: min(132px, 36vw); height: 44px; }.brandLogo { height: 34px; }
   .headerActions { gap: 10px; }.header .action { padding: 8px 15px; min-height: 44px; font-size: 12px; }.header .action > span { display: none; }
   .menuButton { display: block; min-width: 44px; background: white; border: 0; padding: 8px 0; font-size: 12px; min-height: 44px; }
   .nav { display: none; position: absolute; top: 72px; left: 0; width: 100%; background: white; padding: 14px 20px 22px; border-bottom: 1px solid var(--line); }

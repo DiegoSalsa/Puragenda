@@ -1,6 +1,6 @@
 export interface ChangelogSpotlight {
   id: "gift_cards" | "loyalty" | string;
-  preview: "gift_card" | "loyalty_card";
+  preview: "gift_card" | "loyalty_card" | "website_bella" | "website_matchday" | "website_ritual";
   title: string;
   description: string;
   bullets: string[];
@@ -29,6 +29,39 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     date: "2026-10-02",
     title: "Tu negocio ahora puede tener su propia página web",
     description: "Tu web, tus servicios y tus reservas, todo conectado a Puragenda. Elige Bella, Matchday o Ritual y dale el estilo de tu negocio.",
+    popupVariant: "launch",
+    popupEyebrow: "Nuevo · Sitio Web Puragenda",
+    popupTitle: "Haz que tu negocio se vea listo para reservar",
+    popupDescription: "Tus servicios ya están en Puragenda. Ahora conviértelos en una web que explica lo que haces, muestra tu estilo y recibe reservas desde el celular.",
+    spotlights: [
+      {
+        id: "website_bella",
+        preview: "website_bella",
+        title: "Bella",
+        description: "Una portada editorial para mostrar tu trabajo y llevar a cada visita directo a reservar.",
+        bullets: ["Galería que vende tu estilo", "Servicios y equipo conectados", "Reserva visible desde el primer pantallazo"],
+        href: "/dashboard/website",
+        cta: "Probar Bella",
+      },
+      {
+        id: "website_matchday",
+        preview: "website_matchday",
+        title: "Matchday",
+        description: "Una web con energía para negocios que quieren destacar ofertas, equipo y movimiento.",
+        bullets: ["Diseño con personalidad", "Catálogo fácil de recorrer", "Botones de reserva siempre a mano"],
+        href: "/dashboard/website",
+        cta: "Ver Matchday",
+      },
+      {
+        id: "website_ritual",
+        preview: "website_ritual",
+        title: "Ritual",
+        description: "Una experiencia más sensorial para que tu marca se sienta antes de que llegue la primera cita.",
+        bullets: ["Fotos y colores de tu marca", "Presenta tu forma de trabajar", "Comparte un enlace profesional"],
+        href: "/dashboard/website",
+        cta: "Explorar Ritual",
+      },
+    ],
     features: [
       "Constructor visual con tres diseños: Bella, Matchday y Ritual.",
       "Personaliza colores, fotos, textos, galería y presentación de tu equipo.",
