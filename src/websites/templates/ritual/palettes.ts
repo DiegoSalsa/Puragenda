@@ -14,3 +14,10 @@ export function ritualTokens(config: Pick<RitualConfig, "accent" | "paletteMode"
 function channel(value: number) { const v = value / 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }
 export function ritualContrast(a: string, b: string) { const lum = (hex: string) => { const c = [0, 2, 4].map(i => channel(Number.parseInt(hex.slice(i + 1, i + 3), 16))); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }; const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
 export function validRitualPalette(tokens: RitualPalette) { return ritualContrast(tokens.text, tokens.background) >= 4.5 && ritualContrast(tokens.accentContrast, tokens.accent) >= 4.5 && ritualContrast(tokens.text, tokens.surface) >= 4.5; }
+export const RITUAL_COLOR_CONTROLS = [{ key: "background", label: "Fondo" }, { key: "surface", label: "Superficie" }, { key: "text", label: "Texto" }, { key: "accent", label: "Color principal" }, { key: "warm", label: "Color secundario" }, { key: "line", label: "Detalles" }] as const;
+export function ritualCustomColor(tokens: RitualPalette, key: typeof RITUAL_COLOR_CONTROLS[number]["key"], value: string): RitualPalette {
+  const next = { ...tokens, [key]: value };
+  if (key === "text") { next.dark = value; next.muted = value; }
+  next.accentContrast = ritualContrast(next.accent, "#ffffff") >= ritualContrast(next.accent, "#111111") ? "#ffffff" : "#111111";
+  return next;
+}

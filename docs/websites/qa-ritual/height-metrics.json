@@ -1,0 +1,9 @@
+{
+  "head": "0c3e82a42bef0c62c80d7b83e7400037aa7601db",
+  "fixture": "ritual-terapias-sec",
+  "desktop": {"viewport": 1440, "documentClientWidth": 1425, "documentScrollWidth": 1425, "documentHeight": 7829, "pass": true},
+  "mobile390": {"viewport": 390, "documentClientWidth": 375, "documentScrollWidth": 375, "galleryItems": 12, "galleryTrackWidth": 3760, "galleryViewportWidth": 336, "staffItems": 5, "staffTrackWidth": 1561, "staffViewportWidth": 336, "pass": true},
+  "mobile360": {"viewport": 360, "documentClientWidth": 345, "documentScrollWidth": 345, "documentHeight": 7995, "galleryItems": 12, "galleryTrackWidth": 3480, "galleryViewportWidth": 309, "staffItems": 5, "staffTrackWidth": 1444, "staffViewportWidth": 309, "pass": true},
+  "overflowAssertion": "document.scrollWidth <= document.clientWidth + 2",
+  "note": "Rails use native horizontal overflow inside the track; the page itself has no horizontal overflow."
+}

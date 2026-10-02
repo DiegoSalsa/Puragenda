@@ -1,6 +1,6 @@
 # Entrega final de la auditoría — webs
 
-Estado: hardening completado y validado localmente; listo para revisión de merge. No se realizó merge, push ni deploy. Bella y la distribución del constructor permanecen aprobadas; no se creó Template 02.
+Estado: hardening completado y validado localmente; listo para revisión de merge. No se realizó merge, push ni deploy. Bella, Matchday y Ritual están registrados y mantienen sus configuraciones aisladas. Para el estado actual de Ritual, consulta [RITUAL-DELIVERY.md](RITUAL-DELIVERY.md).
 
 | # | Punto solicitado | Resultado final |
 | ---: | --- | --- |

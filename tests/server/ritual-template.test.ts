@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { bellaConfigSchema } from "@/websites/config";
 import { matchdayConfigSchema } from "@/websites/templates/matchday/config";
 import { ritualConfigSchema, emptyRitualConfig, readRitualConfig } from "@/websites/templates/ritual/config";
-import { ritualGallery, ritualGalleryWindow, ritualServiceLimit } from "@/websites/templates/ritual/gallery";
+import { ritualGallery, ritualGalleryCategories, ritualGalleryWindow, ritualServiceLimit } from "@/websites/templates/ritual/gallery";
 import { parseRitualPreview } from "@/websites/templates/ritual/preview";
 import { PREVIEW_PROTOCOL } from "@/websites/preview-transport";
 import { RITUAL_PALETTES, ritualTokens, validRitualPalette } from "@/websites/templates/ritual/palettes";
-import { ritualFixture, ritualTerapiasSecFixture } from "@/websites/fixtures/ritual";
+import { ritualFixture, ritualTerapiasSecFixture, ritualTerapiasSecRealisticFixture } from "@/websites/fixtures/ritual";
 import { resolveTemplate, templateRegistry } from "@/websites/registry";
 import { templateSwitchDraft } from "@/websites/template-snapshots";
 describe("Ritual template", () => {
@@ -22,6 +22,8 @@ describe("Ritual template", () => {
   it("uses manual gallery, then service images, then no section", () => {
     const view = ritualFixture("casa");
     expect(ritualGallery(view.config, view.catalog)).toHaveLength(new Set(view.catalog.services.filter(x => x.image).map(x => x.image)).size);
+    expect(ritualGallery(emptyRitualConfig(), view.catalog).some(image => image.categoryIds?.length)).toBe(true);
+    expect(ritualGalleryCategories(emptyRitualConfig(), view.catalog).length).toBeGreaterThan(0);
     const manual = ritualConfigSchema.parse({ gallery: [{ image: "/custom.webp", name: "Detalle", alt: "Detalle" }] });
     expect(ritualGallery(manual, view.catalog)[0].image).toBe("/custom.webp");
     const noImages = { ...view.catalog, services: view.catalog.services.map(service => ({ ...service, image: "" })) };
@@ -38,9 +40,16 @@ describe("Ritual template", () => {
     expect(ritualGalleryWindow([1, 2, 3], 2, 6).items).toEqual([3, 1, 2]);
     expect(RITUAL_PALETTES.every(palette => validRitualPalette(ritualTokens({ accent: palette.key, paletteMode: "preset", customPalette: undefined })))).toBe(true);
   });
+  it("migrates legacy sensorial copy and stable gallery categories", () => {
+    const migrated = readRitualConfig({ sensorial: { eyebrow: "Antes" }, copy: { pauseTitle: "Llegar", pauseBody: "Respirar" }, gallery: [{ image: "/detail.webp", name: "Detalle", alt: "Detalle", category: "Espacio" }] });
+    expect(migrated.sensorial.title).toBe("Llegar");
+    expect(migrated.sensorial.body).toBe("Respirar");
+    expect(migrated.galleryCategories[0]?.id).toMatch(/^cat-/);
+    expect(migrated.gallery[0]?.categoryIds).toEqual([migrated.galleryCategories[0]?.id]);
+  });
   it("accepts the live preview protocol and custom palette draft", () => {
     const config = emptyRitualConfig();
-    const parsed = parseRitualPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config: { ...config, paletteMode: "custom", customPalette: { background: "#f3ede3", surface: "#fffaf2", text: "#2f241e", muted: "#78685b", accent: "#a85b3b", accentContrast: "#fffaf2", line: "#d8cabe", warm: "#d9b79c", dark: "#2f241e" } } });
+    const parsed = parseRitualPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config: { ...config, paletteMode: "custom", customPalette: { background: "#f3ede3", surface: "#fffaf2", text: "#2f241e", muted: "#78685b", accent: "#a85b3b", accentContrast: "#fffaf2", line: "#d8cabe", warm: "#d9b79c", dark: "#2f241e" } } }, "http://localhost:3005");
     expect(parsed.success).toBe(true);
   });
   it("keeps fixture tenants isolated", () => {
@@ -58,6 +67,14 @@ describe("Ritual template", () => {
     expect(view.catalog.locations).toHaveLength(2);
     expect(view.catalog.services[0].optionCategories[0]?.name).toBe("Zona");
     expect(view.config.visibility.showGallery).toBe(true);
+  });
+  it("provides a sanitized realistic density fixture", () => {
+    const view = ritualTerapiasSecRealisticFixture();
+    expect(view.catalog.services.length).toBeGreaterThanOrEqual(20);
+    expect(view.catalog.staff).toHaveLength(3);
+    expect(view.catalog.services.some(service => !service.image)).toBe(true);
+    expect(view.config.gallery).toHaveLength(7);
+    expect(new Set(view.catalog.services.map(service => service.categoryId)).size).toBeGreaterThan(1);
   });
   it("keeps draft snapshots when switching Bella to Ritual and back", () => {
     const bella = bellaConfigSchema.parse({ heroImage: "/bella.webp", headline: "Bella" });

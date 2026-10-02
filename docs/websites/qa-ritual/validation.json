@@ -1,0 +1,21 @@
+{
+  "head": "0c3e82a42bef0c62c80d7b83e7400037aa7601db",
+  "scope": "Ritual final hardening iteration",
+  "checks": {
+    "gallery_mobile_2_3_6_7_12_30": "covered by Rail and fixture tests",
+    "staff_mobile_1_2_3_5_10": "covered by Rail and renderer logic",
+    "gallery_categories_crud": "covered by ritual-gallery-panel",
+    "gallery_multi_category": "covered by ritual-gallery-panel",
+    "gallery_reorder": "covered by reorderGallery and editor controls",
+    "service_fallback_categories": "covered by ritualGallery and ritualGalleryCategories",
+    "staff_editorial": "covered by RitualEditor controls",
+    "sensorial_single_source": "covered by readRitualConfig migration",
+    "progressive_services": "covered by visibleCount and category reset",
+    "local_gallery_preview": "covered by visualMedia gallery keys",
+    "media_asset_tracking": "covered by referencedAssets flow",
+    "realistic_fixture": "covered by ritualTerapiasSecRealisticFixture",
+    "asset_ownership": "preserved; no backend or URL validation relaxed",
+    "merge": "not performed",
+    "deploy": "not performed"
+  }
+}
