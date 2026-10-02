@@ -31,14 +31,14 @@ export async function ensureWebsite(businessId: string, slug: string) {
   const subdomain = validSubdomain(slug) ? slug : `sitio-${randomUUID().slice(0, 8)}`;
   return prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: resolveTemplate("bella", 1).defaultConfig() }, update: {} });
 }
-const includeBusiness = { business: { include: { subscription: true, websiteAddon: true } }, domains: { where: { status: "ACTIVE" as const, tenantVerifiedAt: { not: null } } } } satisfies Prisma.BusinessWebsiteInclude;
+const includeBusiness = { business: { include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true } }, domains: { where: { status: "ACTIVE" as const, tenantVerifiedAt: { not: null } } } } satisfies Prisma.BusinessWebsiteInclude;
 export async function resolveWebsiteHost(raw: string) {
   const hostname = normalizeHostname(raw);
   const slug = websiteSubdomain(hostname, websiteRootDomain());
   const site = slug
     ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
     : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE", tenantVerifiedAt: { not: null } } } }, include: includeBusiness });
-  if (!site || !websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt)) return null;
+  if (!site || !websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt, new Date(), site.business.websiteOfferEligibility)) return null;
   const identity = websiteTemplate(site, false);
   resolveTemplate(identity.key, identity.version);
   return site;

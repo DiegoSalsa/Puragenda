@@ -145,6 +145,45 @@ model WebsiteBillingEvent {
   createdAt DateTime @default(now())
 }
 
+enum WebsitePriceTier {
+  STANDARD
+  BETA_FOUNDER
+}
+
+// Sealed once at launch. Eligibility is never recalculated by the application.
+model WebsiteLaunchSnapshot {
+  id         String   @id
+  launchAt   DateTime @unique
+  capturedAt DateTime
+  memberCount Int
+  members    WebsiteOfferEligibility[]
+}
+
+// Lifetime commercial promise belongs to businessId, independent of WebsiteAddon.
+// priceTier / grandfathered / betaEligible are derived from offerCode.
+model WebsiteOfferEligibility {
+  businessId      String @id
+  offerCode       WebsitePriceTier @default(BETA_FOUNDER)
+  snapshotId      String
+  eligibleAt      DateTime
+  trialStartedAt  DateTime?
+  trialEndsAt     DateTime?
+  trialConsumedAt DateTime?
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  snapshot        WebsiteLaunchSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+}
+
+// First-party commercial audit, without email, owner, hostname or payment details.
+model WebsiteCommercialEvent {
+  key        String @id
+  businessId String
+  event      String
+  priceTier  WebsitePriceTier
+  occurredAt DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@index([event, occurredAt])
+}
+
 // ==========================================
 // AUTH & USERS
 // ==========================================
@@ -580,6 +619,8 @@ model Business {
   bookingOperations           BookingOperation[]
   website                     BusinessWebsite?
   websiteAddon                WebsiteAddon?
+  websiteOfferEligibility     WebsiteOfferEligibility?
+  websiteCommercialEvents     WebsiteCommercialEvent[]
   businessHours               BusinessHours[]
   blockedDates                BlockedDate[]
   loyaltyCodes                LoyaltyCode[]

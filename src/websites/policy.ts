@@ -1,14 +1,18 @@
 import { hasOperationalSubscriptionAccess, type OperationalSubscription } from "@/core/subscription-access";
+import { hasWebsiteTrial, type WebsiteOffer } from "./offers";
 
 export type WebsiteAccess = { status: string; validUntil?: Date | string | null; cancelAt?: Date | string | null };
-export function hasWebsiteEntitlement(addon: WebsiteAccess | null | undefined, now = new Date()) {
-  if (!addon || !["ACTIVE", "TRIALING"].includes(addon.status)) return false;
+export function hasWebsiteEntitlement(addon: WebsiteAccess | null | undefined, now = new Date(), offer?: WebsiteOffer | null) {
+  return hasWebsitePaidAccess(addon, now) || hasWebsiteTrial(offer, now);
+}
+export function hasWebsitePaidAccess(addon: WebsiteAccess | null | undefined, now = new Date()) {
+  if (!addon || addon.status !== "ACTIVE") return false;
   if (!addon.validUntil) return false;
   const dates = [addon.validUntil, ...(addon.cancelAt ? [addon.cancelAt] : [])].map(value => new Date(value).getTime());
   return dates.every(until => Number.isFinite(until) && until > now.getTime());
 }
-export function websiteIsVisible(site: { status: string; publishedConfig: unknown } | null, addon: WebsiteAccess | null | undefined, subscription: OperationalSubscription | null | undefined, deletedAt?: Date | null, now = new Date()) {
-  return !deletedAt && !!site && site.status === "PUBLISHED" && !!site.publishedConfig && hasWebsiteEntitlement(addon, now) && hasOperationalSubscriptionAccess(subscription, now);
+export function websiteIsVisible(site: { status: string; publishedConfig: unknown } | null, addon: WebsiteAccess | null | undefined, subscription: OperationalSubscription | null | undefined, deletedAt?: Date | null, now = new Date(), offer?: WebsiteOffer | null) {
+  return !deletedAt && !!site && site.status === "PUBLISHED" && !!site.publishedConfig && hasWebsiteEntitlement(addon, now, offer) && hasOperationalSubscriptionAccess(subscription, now);
 }
 const reserved = new Set(["www", "api", "app", "admin", "dashboard", "mail", "support", "status", "puragenda", "localhost"]);
 export function validSubdomain(slug: string) {

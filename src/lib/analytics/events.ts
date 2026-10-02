@@ -35,6 +35,16 @@ export const TRACKING_EVENTS = [
   "directory_search",
   "directory_filter",
   "directory_booking_clicked",
+  "website_beta_offer_seen",
+  "website_trial_started",
+  "website_trial_day_remaining",
+  "website_trial_expired",
+  "website_beta_checkout_started",
+  "website_beta_activated",
+  "website_standard_checkout_started",
+  "website_standard_activated",
+  "website_addon_cancelled",
+  "website_addon_reactivated",
 ] as const;
 
 export type TrackingEventName = (typeof TRACKING_EVENTS)[number];
@@ -81,6 +91,16 @@ export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]>
   directory_search: ["has_query"],
   directory_filter: ["has_category", "has_locality"],
   directory_booking_clicked: ["placement"],
+  website_beta_offer_seen: [],
+  website_trial_started: [],
+  website_trial_day_remaining: ["days_remaining"],
+  website_trial_expired: [],
+  website_beta_checkout_started: [],
+  website_beta_activated: [],
+  website_standard_checkout_started: [],
+  website_standard_activated: [],
+  website_addon_cancelled: [],
+  website_addon_reactivated: [],
 };
 
 const MAX_PROPERTY_LENGTH = 120;

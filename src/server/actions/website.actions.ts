@@ -6,7 +6,7 @@ import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
 import { addWebsiteDomain, customHostname, verifyWebsiteDomain, refreshWebsiteDomain, removeWebsiteDomain } from "@/server/websites/domains";
-import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment } from "@/server/websites/billing";
+import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment, startWebsiteTrial } from "@/server/websites/billing";
 import { resolveTemplate } from "@/websites/registry";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -37,8 +37,8 @@ async function publishWebsiteImpl(revision: number) {
   const { business } = await requireWebsiteManager();
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
-    const current = await tx.business.findUniqueOrThrow({ where: { id: business.id }, include: { subscription: true, websiteAddon: true, website: true } });
-    if (current.deletedAt || !hasWebsiteEntitlement(current.websiteAddon) || !hasOperationalSubscriptionAccess(current.subscription)) throw new WebsiteError("Activa el add-on y regulariza tu suscripción para publicar");
+    const current = await tx.business.findUniqueOrThrow({ where: { id: business.id }, include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true, website: true } });
+    if (current.deletedAt || !hasWebsiteEntitlement(current.websiteAddon, new Date(), current.websiteOfferEligibility) || !hasOperationalSubscriptionAccess(current.subscription)) throw new WebsiteError("Activa el add-on y regulariza tu suscripción para publicar");
     const site = current.website;
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
@@ -123,6 +123,7 @@ export async function checkWebsiteDomain(id: string) { return safeAction(() => c
 export async function requestWebsiteDomain(raw: string, notes: string) { return safeAction(() => requestWebsiteDomainImpl(raw, notes)); }
 export async function setPrimaryWebsiteDomain(id: string) { return safeAction(() => setPrimaryWebsiteDomainImpl(id)); }
 export async function activateWebsiteAddon() { return safeAction(() => activateWebsiteAddonImpl()); }
+export async function activateWebsiteTrial() { return safeAction(() => startWebsiteTrial()); }
 export async function regularizeWebsiteAddon() { return safeAction(() => regularizeWebsiteAddonImpl()); }
 export async function cancelWebsiteAddon(confirmed: boolean) { return safeAction(() => cancelWebsiteAddonImpl(confirmed)); }
 export async function reactivateWebsiteAddon(confirmed: boolean) { return safeAction(() => reactivateWebsiteAddonImpl(confirmed)); }
