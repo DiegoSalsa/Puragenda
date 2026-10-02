@@ -49,6 +49,9 @@ export default function WebsiteEditor(props: Props) {
   const frame = useRef<HTMLIFrameElement>(null), sequence = useRef(0), focus = useRef<PreviewField | undefined>(undefined), payload = useRef<unknown>(null);
   const controls = useRef<HTMLDivElement>(null);
   const active = hasWebsiteEntitlement(props.addon);
+  const missingServiceImages = props.view.catalog.services.filter(service => !service.image).length;
+  const missingStaffImages = props.view.catalog.staff.filter(person => !person.image).length;
+  const missingEditorialImages = [!config.heroImage ? "la portada" : "", !config.aboutImage ? "la foto del espacio" : "", missingServiceImages ? `${missingServiceImages} servicio${missingServiceImages === 1 ? "" : "s"}` : "", missingStaffImages ? `${missingStaffImages} profesional${missingStaffImages === 1 ? "" : "es"}` : ""].filter(Boolean);
   const visualConfig = { ...config };
   for (const [key, value] of Object.entries(visualMedia)) {
     if (key.startsWith("gallery.")) { const index = Number(key.slice(8)); visualConfig.gallery = visualConfig.gallery.map((item, i) => i === index ? { ...item, image: value } : item); }
@@ -102,6 +105,7 @@ export default function WebsiteEditor(props: Props) {
     {save.status === "error" ? <div className={styles.notice} role="alert">{save.error}<button onClick={() => run(() => autosave.flush(), "Cambios guardados")}>Reintentar</button><button onClick={() => { if (window.confirm("Recargar recupera la última versión guardada y descarta los cambios locales. ¿Continuar?")) window.location.reload(); }}>Recargar</button></div> : null}
     {message ? <div className={styles.notice} role="status">{message}<button aria-label="Cerrar aviso" onClick={() => setMessage("")}>Cerrar</button></div> : null}
     {!active ? <div className={styles.notice}>Puedes preparar tu sitio. Activa Sitio Web para publicarlo.<button onClick={() => setSection("business")}>Ver suscripción</button></div> : null}
+    {missingEditorialImages.length ? <div className={styles.notice} role="status">Faltan imágenes en {missingEditorialImages.join(", ")}. El sitio público mantiene una composición limpia; puedes completar las fotos desde Portada, Servicios y Equipo.</div> : null}
     <div className={styles.body}>
       <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.filter(item => templateRegistry.matchday.editor.sections.includes(item.key)).map(item => <button key={item.key} id={`website-tab-${item.key}`} role="tab" aria-selected={section === item.key} aria-controls={`website-panel-${item.key}`} onClick={() => { setSection(item.key); controls.current?.scrollTo(0, 0); if (item.key === "hero") highlight("brandTitle"); if (item.key === "gallery") highlight("gallery"); if (item.key === "business") highlight("about"); if (item.key === "contact") highlight("contact"); }}><item.icon size={19} strokeWidth={1.6} />{item.name}</button>)}</nav>
       <div className={styles.controls} ref={controls}>
