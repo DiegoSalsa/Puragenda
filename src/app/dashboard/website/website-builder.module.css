@@ -1,4 +1,4 @@
-.builder { --builder-ink:#222c35; --builder-muted:#75818a; --builder-accent:#39786b; color:var(--builder-ink); background:#f7f8f7; margin:0; height:calc(100dvh - 56px); min-height:550px; display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
+.builder { --builder-ink:#222c35; --builder-muted:#75818a; --builder-accent:#39786b; color:var(--builder-ink); background:#f7f8f7; margin:0; width:100%; max-width:100%; height:calc(100dvh - 56px); min-height:550px; display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
 :global(.dashboard-content):has(.builder) { padding:0; }
 :global(body):has(.builder) :global(.puri-launcher) { display:none; }
 .builder button { cursor:pointer; }
@@ -12,11 +12,11 @@
 .saveStatus[data-error=true] { color:#b33e35; }
 .publish, .primary { background:var(--builder-accent); color:white; border:0; border-radius:9px; padding:11px 17px; display:inline-flex; gap:8px; align-items:center; justify-content:center; font-weight:600; }
 .secondary { border:1px solid #d9e0dc; background:white; color:#34443c; border-radius:9px; padding:10px 13px; display:inline-flex; gap:7px; align-items:center; justify-content:center; text-decoration:none; }
-.body { display:grid; grid-template-columns:66px 290px minmax(0,1fr); flex:1; min-height:0; }
+.body { display:grid; grid-template-columns:66px 290px minmax(0,1fr); width:100%; max-width:100%; min-width:0; flex:1; min-height:0; }
 .navigation { background:#fff; border-right:1px solid #e4e8e6; display:flex; flex-direction:column; gap:5px; padding:15px 6px; }
 .navigation button { padding:10px 2px; border:0; background:none; border-radius:9px; color:#75818a; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:9px; font-weight:600; }
 .navigation button[aria-selected=true] { background:#edf4f0; color:#356d5c; }
-.controls { background:#fff; overflow-y:auto; padding:23px 22px 40px; border-right:1px solid #e4e8e6; min-width:0; }
+.controls { background:#fff; overflow-x:hidden; overflow-y:auto; padding:23px 22px 40px; border-right:1px solid #e4e8e6; min-width:0; max-width:100%; }
 .panel[hidden] { display:none; }
 .panel { display:flex; flex-direction:column; gap:20px; }
 .panel h2 { font-size:21px; font-weight:650; letter-spacing:-.6px; margin:0; }
@@ -63,13 +63,13 @@
 .focusOptions button[aria-pressed=true] { border-color:#39786b; }
 .focusOptions img { width:100%; aspect-ratio:1; object-fit:cover; }
 .focusOptions span { display:block; padding:6px 0; }
-.previewArea { min-width:0; min-height:0; display:flex; flex-direction:column; background:#e9eeeb; }
+.previewArea { min-width:0; max-width:100%; min-height:0; display:flex; flex-direction:column; background:#e9eeeb; overflow:hidden; }
 .previewToolbar { display:flex; flex-shrink:0; height:53px; align-items:center; justify-content:center; gap:12px; padding:8px 15px; border-bottom:1px solid #dce4df; }
 .segmented { display:flex; padding:3px; border:1px solid #d7dfda; border-radius:8px; background:#dfe6e1; gap:3px; }
 .segmented button { border:0; background:none; border-radius:6px; padding:6px 12px; display:flex; align-items:center; gap:6px; font-size:11px; color:#748176; }
 .segmented button[aria-pressed=true] { background:#fff; color:#33463b; box-shadow:0 1px 3px #142b1310; }
 .previewCaption { color:#7b897e; font-size:10px; }
-.frameArea { flex:1; min-height:0; min-width:0; overflow:auto; display:flex; justify-content:center; padding:20px; }
+.frameArea { flex:1; min-height:0; min-width:0; max-width:100%; overflow:auto; display:flex; justify-content:center; padding:20px; }
 .frame { width:100%; height:100%; min-height:400px; background:white; border:0; border-radius:5px; box-shadow:0 2px 12px #18322215; }
 .frameStage { height:100%; position:relative; min-height:0; flex:none; }
 .frameStage .frame { position:absolute; top:0; left:0; min-height:0; transform-origin:top left; }
@@ -81,7 +81,8 @@
 .google h4 { font-size:15px; line-height:1.4; color:#1a42a6; margin:8px 0 5px; font-weight:500; }
 .google p { font-size:11px; color:#69736d; margin:0; line-height:1.6; }
 .googleSettings summary { cursor:pointer; color:#4b6154; font-size:12px; }
-.googleSettings > div { display:flex; flex-direction:column; gap:15px; margin-top:15px; }
+.googleSettings > div { display:flex; flex-direction:column; gap:15px; min-width:0; max-width:100%; margin-top:15px; }
+.googleSettings p, .googleSettings .helper, .panel { overflow-wrap:anywhere; }
 .domainAddress { border:1px solid #dce4df; background:#f7faf8; border-radius:10px; padding:14px; overflow-wrap:anywhere; font-weight:500; font-size:13px; }
 .domainCard { border:1px solid #dce4df; border-radius:10px; padding:13px; display:flex; flex-direction:column; gap:11px; overflow-wrap:anywhere; }
 .domainStatus { font-size:10px; color:#3e8261; }

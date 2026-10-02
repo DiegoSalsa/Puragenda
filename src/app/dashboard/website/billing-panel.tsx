@@ -51,7 +51,7 @@ export default function BillingPanel({ addon, offer, price, canManage }: { addon
   const firstCharge = trial === "TRIALING" && offer?.trialEndsAt ? new Date(offer.trialEndsAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" }) : "Desde la activación";
   return <details id="website-billing" className={styles.googleSettings} open={!paid}><summary>Tu suscripción de Sitio Web</summary><div>
     <h3>{title}</h3>
-    <p className={styles.helper}>{trial === "TRIALING" && !paid ? `Te quedan ${trialDays} días. Tu precio fundador está asegurado.` : trial === "EXPIRED" && !paid ? "Guardamos todo lo que creaste. Activa cuando quieras; no se reinicia la prueba." : founder ? "Llegaste antes. Este precio queda reservado para tu negocio." : "Bella, Matchday y Ritual. Tus servicios, profesionales y reservas conectados."}</p>
+    <p className={styles.helper}>{trial === "TRIALING" && !paid ? `Te quedan ${trialDays} días. Tu precio fundador está asegurado.` : trial === "EXPIRED" && !paid ? "Guardamos todo lo que creaste. Activa cuando quieras; no se reinicia la prueba." : founder ? "Llegaste antes. Este precio queda reservado para tu negocio." : "Te dejamos una web preconfigurada con tus servicios, profesionales y reservas conectados."}</p>
     {trial === "AVAILABLE" && !paid ? <p><strong>15 DÍAS GRATIS</strong></p> : null}
     <p><strong>{formatWebsitePrice(websitePriceTier(offer))} / mes{founder ? " PARA SIEMPRE" : ""}</strong></p>
     {!paid && trial !== "AVAILABLE" ? <p className={styles.helper}>Primer cobro: {firstCharge}. {trial === "TRIALING" ? "Conservarás los días gratuitos que te quedan. " : ""}Cobro mensual. Puedes cancelar Sitio Web sin cancelar tu plan Puragenda.</p> : null}
