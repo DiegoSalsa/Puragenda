@@ -3,7 +3,7 @@ import { migrateBellaCategories, readBellaConfig } from "./templates/bella/categ
 import { effectiveWebsiteHeadline } from "./publishing";
 import { paletteTokens, validatePalette } from "./palettes";
 import { BELLA_PALETTES } from "./palettes";
-import { emptyMatchdayConfig, matchdayConfigSchema, type MatchdayConfig } from "./templates/matchday/config";
+import { emptyMatchdayConfig, matchdayConfigSchema, readMatchdayConfig, type MatchdayConfig } from "./templates/matchday/config";
 import { MATCHDAY_PALETTES, matchdayTokens, validMatchdayPalette } from "./templates/matchday/palettes";
 import { createElement, type ComponentType } from "react";
 import type { WebsiteView } from "./types";
@@ -57,7 +57,7 @@ export const templateRegistry = {
     capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: true, process: false },
     editor: { category: "Barbería / Grooming", sections: ["design", "hero", "services", "staff", "gallery", "business", "contact", "domain"], palettes: MATCHDAY_PALETTES, customControls: ["marquee", "staffEditorial", "graphicPhrase"] },
     preview: { thumbnail: "/websites/previews/matchday.svg", desktop: "/website-preview?template=matchday", mobile: "/website-preview?template=matchday&viewport=mobile" },
-    configSchema: matchdayConfigSchema, defaultConfig: emptyMatchdayConfig, readConfig: matchdayConfigSchema.parse, parseDraft: matchdayConfigSchema.parse,
+    configSchema: matchdayConfigSchema, defaultConfig: emptyMatchdayConfig, readConfig: readMatchdayConfig, parseDraft: matchdayConfigSchema.parse,
     publicationError: config => !validMatchdayPalette(matchdayTokens(config)) ? "La paleta necesita más contraste antes de publicar" : !config.heroImage || !config.headline ? "Agrega una portada y un titular antes de publicar" : null,
     loadComponent: () => import("./templates/matchday/Lazy").then(module => module.default),
     loadEditor: () => import("@/app/dashboard/website/matchday-editor").then(module => module.default),

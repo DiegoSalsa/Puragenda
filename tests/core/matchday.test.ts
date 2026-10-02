@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveTemplate } from "@/websites/registry";
-import { emptyMatchdayConfig, matchdayConfigSchema } from "@/websites/templates/matchday/config";
+import { DEFAULT_MATCHDAY_MARQUEE, emptyMatchdayConfig, matchdayConfigSchema, readMatchdayConfig } from "@/websites/templates/matchday/config";
 import { matchdayTokens, validMatchdayPalette } from "@/websites/templates/matchday/palettes";
 import { matchdayGallery } from "@/websites/templates/matchday/gallery";
 import { templateSwitchDraft, websiteTemplate } from "@/websites/template-snapshots";
@@ -40,6 +40,8 @@ describe("Matchday 1 and template independence", () => {
     expect(matchdayGallery({ gallery: [] }, { ...view.catalog, services: view.catalog.services.map(s => ({ ...s, image: "" })) })).toEqual([]);
     expect(emptyMatchdayConfig().heroImage).toBe("");
     expect(emptyMatchdayConfig().gallery).toEqual([]);
+    expect(emptyMatchdayConfig().marquee).toEqual([...DEFAULT_MATCHDAY_MARQUEE]);
+    expect(readMatchdayConfig({ marquee: [] }).marquee).toEqual([...DEFAULT_MATCHDAY_MARQUEE]);
   });
   it.each(["signal", "ice", "terrain"] as const)("validates %s palette and blocks unreadable custom colors", accent => {
     expect(validMatchdayPalette(matchdayTokens({ ...emptyMatchdayConfig(), accent }))).toBe(true);

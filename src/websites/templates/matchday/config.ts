@@ -3,6 +3,7 @@ import { safeLink, safeMediaUrl, galleryImageSchema, galleryCategorySchema } fro
 import { websiteAssetSchema } from "../../media";
 const text = (max: number, fallback = "") => z.string().trim().max(max).default(fallback);
 const media = text(2000).refine(safeMediaUrl, "Sube una imagen de tu negocio");
+export const DEFAULT_MATCHDAY_MARQUEE = ["El próximo corte es tuyo", "Técnica en cada detalle", "Nos vemos en la silla"] as const;
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 export const matchdayConfigSchema = z.object({
   schemaVersion: z.literal(1).default(1),
@@ -14,7 +15,7 @@ export const matchdayConfigSchema = z.object({
   gallery: z.array(galleryImageSchema).max(30).default([]), galleryCategories: z.array(galleryCategorySchema).max(20).default([]),
   staffEditorial: z.record(z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), z.object({ visualNumber: text(4), label: text(100), visible: z.boolean().default(true) }).strict()).default({}),
   showNumbers: z.boolean().default(true), showMarquee: z.boolean().default(true), showGalleryCategories: z.boolean().default(true),
-  marquee: z.array(z.string().trim().min(1).max(100)).max(8).default([]),
+  marquee: z.array(z.string().trim().min(1).max(100)).max(8).default([...DEFAULT_MATCHDAY_MARQUEE]),
   copy: z.object({
     nav: z.object({ services: text(60, "Servicios"), staff: text(60, "Equipo"), gallery: text(60, "Trabajos"), about: text(60, "Estudio"), reserve: text(60, "Reservar") }).strict().default({ services: "Servicios", staff: "Equipo", gallery: "Trabajos", about: "Estudio", reserve: "Reservar" }),
     reserve: text(80, "Reserva tu hora"), secondary: text(80, "Ver los trabajos"),
@@ -38,3 +39,7 @@ export const matchdayConfigSchema = z.object({
 });
 export type MatchdayConfig = z.infer<typeof matchdayConfigSchema>;
 export const emptyMatchdayConfig = () => matchdayConfigSchema.parse({});
+export function readMatchdayConfig(input: unknown): MatchdayConfig {
+  const raw = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : {};
+  return matchdayConfigSchema.parse({ ...raw, marquee: Array.isArray(raw.marquee) && raw.marquee.length ? raw.marquee : [...DEFAULT_MATCHDAY_MARQUEE] });
+}
