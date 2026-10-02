@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { PaymentWall } from "@/components/dashboard/payment-wall";
 import { ChangelogPopup } from "@/components/dashboard/changelog-popup";
 import { DashboardOverlayProvider } from "@/components/dashboard/dashboard-overlay-context";
-import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
+import { CHANGELOG_DATA } from "@/config/changelog";
 import type { Metadata } from "next";
 import { ContextualHelpButton } from "@/components/dashboard/contextual-help";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
@@ -65,6 +65,9 @@ export default async function DashboardLayout({
   }
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
+  const launchEnabled = process.env.WEBSITE_LAUNCH_ENABLED === "1" && !!business && business.ownerId === user.id;
+  const websiteLaunch = launchEnabled ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business!.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business!.id } }), canManage: true } : null;
+  const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[launchEnabled ? 0 : 1].version;
   const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
@@ -90,7 +93,7 @@ export default async function DashboardLayout({
           <ContextualHelpButton />
         </div>
         {business ? <PuriAssistant /> : null}
-        <ChangelogPopup />
+        <ChangelogPopup websiteLaunch={websiteLaunch} />
       </div>
     </DashboardOverlayProvider>
     </RequestIntlProvider>

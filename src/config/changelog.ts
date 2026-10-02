@@ -25,6 +25,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
+    version: "v2.2.0",
+    date: "2026-10-02",
+    title: "Tu negocio ahora puede tener su propia página web",
+    description: "Tu web, tus servicios y tus reservas, todo conectado a Puragenda. Elige Bella, Matchday o Ritual y dale el estilo de tu negocio.",
+    features: [
+      "Constructor visual con tres diseños: Bella, Matchday y Ritual.",
+      "Personaliza colores, fotos, textos, galería y presentación de tu equipo.",
+      "Servicios y profesionales conectados a tu agenda, con sus precios y disponibilidad.",
+      "Recibe reservas desde tu propia web, también desde el celular.",
+      "Hosting, subdominio de Puragenda y configuración de tu dominio propio.",
+      "Título, descripción y vista para compartir tu web y presentarla en buscadores.",
+    ],
+    notice: "Sitio Web es un add-on mensual independiente de tu plan Puragenda. Tu contenido se conserva si decides cancelar.",
+  },
+  {
     version: "v2.1.0",
     date: "2026-09-26",
     title: "Conoce a Puri y organiza tu día desde Hoy",

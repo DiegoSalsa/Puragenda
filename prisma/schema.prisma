@@ -131,6 +131,9 @@ model WebsiteAddon {
   paddleCustomerId      String?
   paddlePriceId         String?
   checkoutTransactionId String?
+  mpSubscriptionId      String?            @unique
+  mpCustomerId          String?
+  checkoutOperations    WebsiteCheckoutOperation[]
   validUntil            DateTime?
   cancelAt              DateTime?
   lastEventAt           DateTime?
@@ -138,6 +141,27 @@ model WebsiteAddon {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   business              Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// Durable server-created ownership proof. Unknown provider create outcomes are
+// reconciled by reference before retrying; never silently create another agreement.
+model WebsiteCheckoutOperation {
+  id              String @id
+  addonId         String
+  provider        String @default("mercadopago")
+  priceTier       WebsitePriceTier
+  amount          Int
+  currency        String @default("CLP")
+  firstChargeAt   DateTime?
+  state           String @default("CREATING")
+  mpSubscriptionId String? @unique
+  checkoutUrl     String?
+  providerStatus  String?
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  addon           WebsiteAddon @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  @@index([addonId, createdAt])
 }
 
 model WebsiteBillingEvent {

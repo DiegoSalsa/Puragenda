@@ -6,7 +6,7 @@ import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
 import { addWebsiteDomain, customHostname, verifyWebsiteDomain, refreshWebsiteDomain, removeWebsiteDomain } from "@/server/websites/domains";
-import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment, startWebsiteTrial } from "@/server/websites/billing";
+import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment, startWebsiteTrial } from "@/server/websites/checkout";
 import { resolveTemplate } from "@/websites/registry";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -14,6 +14,7 @@ import { storeWebsiteImage, deleteWebsiteAsset, validateWebsiteAssets } from "@/
 import { templateSwitchDraft, storedTemplateConfigs, templateSnapshotKey } from "@/websites/template-snapshots";
 import { storedMediaUrls } from "@/websites/stored-media";
 import { websiteAssetSchema } from "@/websites/media";
+import { websitePriceTier } from "@/websites/offers";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -48,6 +49,7 @@ async function publishWebsiteImpl(revision: number) {
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedTemplateKey: site.templateKey, publishedTemplateVersion: site.templateVersion, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });
     if (published.count !== 1) throw new WebsiteError("El borrador cambió. Revisa y publica nuevamente.");
+    await tx.websiteCommercialEvent?.upsert?.({ where: { key: `${site.id}:website_published:${revision}` }, create: { key: `${site.id}:website_published:${revision}`, businessId: business.id, event: "website_published", priceTier: websitePriceTier(current.websiteOfferEligibility) }, update: {} });
   });
   revalidatePath("/dashboard/website");
 }
@@ -111,6 +113,8 @@ export async function switchWebsiteTemplate(key: string, version: number, revisi
       await validateWebsiteAssets(tx, site.id, config, [site.draftConfig, site.templateConfigs]);
       const result = await tx.businessWebsite.updateMany({ where: { id: site.id, businessId: business.id, revision }, data: { templateKey: key, templateVersion: version, draftConfig: config, templateConfigs: snapshots as Prisma.InputJsonObject, revision: { increment: 1 } } });
       if (result.count !== 1) throw new WebsiteError("El borrador cambió. Recarga antes de cambiar el diseño.");
+      const offer = await tx.websiteOfferEligibility?.findUnique?.({ where: { businessId: business.id } });
+      await tx.websiteCommercialEvent?.upsert?.({ where: { key: `${site.id}:website_template_selected:${revision + 1}` }, create: { key: `${site.id}:website_template_selected:${revision + 1}`, businessId: business.id, event: "website_template_selected", priceTier: websitePriceTier(offer) }, update: {} });
     });
     revalidatePath("/dashboard/website");
     return { revision: revision + 1 };

@@ -11,6 +11,7 @@ import {
 } from "@/server/services/subscription-dunning.service";
 import { stateForCancelledProviderSubscription } from "@/server/services/subscription-billing.service";
 import { verifyMercadoPagoWebhookSignature } from "@/server/lib/mercadopago-webhook";
+import { syncMercadoPagoWebsitePreapproval, syncMercadoPagoWebsiteInvoice } from "@/server/websites/mercadopago-billing";
 
 function dateOrNull(value?: string | null) {
   if (!value) return null;
@@ -25,6 +26,8 @@ async function processPreapproval(resourceId: string) {
   if (!mpSubscription?.id) {
     return { handled: false, reason: "preapproval_not_found" };
   }
+
+  if (await syncMercadoPagoWebsitePreapproval(mpSubscription)) return { handled: true, product: "website" };
 
   const subscription = await prisma.subscription.findFirst({
     where: { mpSubscriptionId: mpSubscription.id },
@@ -105,6 +108,7 @@ async function processPaymentNotification(resourceId: string) {
     return { handled: false, reason: "subscription_invoice_not_found" };
   }
 
+  if (await syncMercadoPagoWebsiteInvoice(invoice)) return { handled: true, product: "website" };
   return processMercadoPagoInvoice(invoice);
 }
 
@@ -155,7 +159,7 @@ export async function POST(request: NextRequest) {
       const invoice = (await invoiceClient.get({
         id: resourceId,
       })) as MercadoPagoInvoiceSnapshot;
-      const result = await processMercadoPagoInvoice(invoice);
+      const result = await syncMercadoPagoWebsiteInvoice(invoice) ? { handled: true, product: "website" } : await processMercadoPagoInvoice(invoice);
       return NextResponse.json({ received: true, result });
     }
 
@@ -173,7 +177,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Return a retryable status: losing billing notifications is worse than a
     // duplicate because invoice processing is idempotent by invoice/payment ID.
-    console.error("[webhook/mp] Error processing notification:", error);
+    console.error("[webhook/mp] Error processing notification", { kind: error instanceof Error ? error.name : "ProviderError" });
     return NextResponse.json(
       { received: false, error: "Webhook processing failed" },
       { status: 500 }

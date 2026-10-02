@@ -1,5 +1,9 @@
 import { CHANGELOG_DATA, type ChangelogEntry } from "@/config/changelog";
 import { Calendar, CheckCircle2, ChevronDown, ShieldCheck, Sparkles } from "@/components/icons/hover-icons";
+import { getCurrentSessionUser } from "@/server/auth/user-session";
+import { getBusinessForUser } from "@/server/services/business.service";
+import { prisma } from "@/server/db/prisma";
+import WebsiteChangelogCard from "@/components/dashboard/website-changelog-card";
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("es-CL", options).format(new Date(`${date}T12:00:00`));
@@ -105,8 +109,12 @@ function HistoricalEntry({ entry }: { entry: ChangelogEntry }) {
   );
 }
 
-export default function ChangelogPage() {
-  const [latest, ...history] = CHANGELOG_DATA;
+export default async function ChangelogPage() {
+  const enabled = process.env.WEBSITE_LAUNCH_ENABLED === "1";
+  const [latest, ...history] = enabled ? CHANGELOG_DATA : CHANGELOG_DATA.slice(1);
+  const user = enabled ? await getCurrentSessionUser() : null;
+  const business = user ? await getBusinessForUser(user.id) : null;
+  const context = business ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business.id } }), canManage: business.ownerId === user?.id } : null;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10 pb-16">
@@ -119,6 +127,7 @@ export default function ChangelogPage() {
       </header>
 
       <LatestEntry entry={latest} />
+      {context ? <WebsiteChangelogCard context={context} /> : null}
 
       <section className="space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

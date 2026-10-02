@@ -45,6 +45,11 @@ export const TRACKING_EVENTS = [
   "website_standard_activated",
   "website_addon_cancelled",
   "website_addon_reactivated",
+  "website_launch_modal_seen",
+  "website_launch_modal_dismissed",
+  "website_template_selected",
+  "website_template_published",
+  "website_published",
 ] as const;
 
 export type TrackingEventName = (typeof TRACKING_EVENTS)[number];
@@ -101,6 +106,11 @@ export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]>
   website_standard_activated: [],
   website_addon_cancelled: [],
   website_addon_reactivated: [],
+  website_launch_modal_seen: [],
+  website_launch_modal_dismissed: [],
+  website_template_selected: [],
+  website_template_published: [],
+  website_published: [],
 };
 
 const MAX_PROPERTY_LENGTH = 120;

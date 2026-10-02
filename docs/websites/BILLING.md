@@ -1,4 +1,22 @@
-# Add-on Sitio Web Puragenda
+# Billing actual: Website Chile / Mercado Pago
+
+La fachada checkout.ts selecciona MP para CL. WebsiteAddon.mpSubscriptionId y Subscription.mpSubscriptionId son productos independientes. Founder businessId: 15×24h una vez al pulsar PROBAR, luego 5990 CLP/mes permanentemente. Standard: 9990, sin trial. El servidor deriva todo precio; cliente no decide tier/monto/negocio.
+
+WebsiteCheckoutOperation bajo lock crea UUID/ref, monto/moneda, firstChargeAt, estado y provider ID único. Triple click reutiliza una operación. CREATING/UNKNOWN exige conciliación antes de otro POST; no se presume idempotencia del proveedor. Pending reutiliza URL por GET; después de 24h exige cancelar antes de recrear.
+
+PreApproval mensual sin plan, CLP, reason Sitio Web Puragenda, status pending, external_reference website:<UUID>. auto_recurring.start_date = trialEndsAt en conversión temprana; conserva período ya pagado tras cancelación. Capacidad documentada y probada con simulador: **débito diferido del proveedor NOT_RUN**.
+
+Firma HMAC existente antes de GET; routing Website por ID local vinculado, sin ownership por monto/metadata. Verifica referencia/monto/moneda/periodicidad y invoice/acuerdo/payment remotos. ACTIVE solo por approved + payment ID. Evento temprano rechazado; ledger/lock/timestamp evitan duplicados y regresiones viejas. Authorized no activa ni limpia PAST_DUE.
+
+MP cancela recurrencia inmediatamente; período pagado verificado se conserva hasta su límite local. No se documentó cancel-at-period-end de MP. Acuerdo terminado necesita nuevo checkout, pausa permite authorized sin conceder paid access. Recovery cancela solo Website fallido y recalcula precio. Cancelar PAST_DUE no restaura acceso por validUntil residual. Nunca modifica BASE.
+
+WEBSITE_CHECKOUT_ENABLED=0 bloquea trials/checkout/recovery sin quitar runtime pagado; cancelación sigue disponible. Simulador solo NODE_ENV no production + WEBSITE_QA/WEBSITE_BILLING_SIMULATOR=1 + DB loopback 55439/websiteqa, owner/origin/operación propios; sin dinero ni APIs externas.
+
+QA DB/HTTP y HMAC local real; provider PASS SIMULATED. Paddle internacional NOT_RUN, no bloquea CL. Ver [estado](PREPRODUCTION-STATES.md), [preparación](PRODUCTION-READINESS.md), [runbook](RELEASE-RUNBOOK.md). Fuentes: [PreApproval](https://www.mercadopago.cl/developers/en/reference/online-payments/subscriptions/create-preapproval/post), [gestión](https://www.mercadopago.cl/developers/es/docs/subscriptions/subscription-management), [webhooks](https://www.mercadopago.cl/developers/es/docs/subscriptions/additional-content/your-integrations/notifications/webhooks).
+
+# Historia: implementación anterior Paddle sandbox
+
+Lo siguiente conserva la auditoría previa; no describe el flujo actual Chile.
 
 Estado de esta rama: billing sigue preparado para sandbox/mock. Esta auditoría no llama Paddle LIVE ni modifica productos, precios o suscripciones.
 

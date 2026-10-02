@@ -24,7 +24,7 @@ try {
   // Include an uncommitted incremental migration during development.
   for (const directory of fs.readdirSync('prisma/migrations')) {
     const file = `prisma/migrations/${directory}/migration.sql`;
-    if (directory.startsWith('20261001') && fs.existsSync(file) && !migrations.includes(file)) migrations.push(file);
+    if (directory.startsWith('2026100') && fs.existsSync(file) && !migrations.includes(file)) migrations.push(file);
   }
   migrations.sort();
   for (const file of migrations) {
@@ -54,7 +54,7 @@ try {
   }
   const drift = prisma(['migrate', 'diff', '--from-config-datasource', '--to-schema', 'prisma/schema.prisma', '--exit-code'], name);
   console.log(drift.trim());
-  const rls = await db.query(`SELECT relname, relrowsecurity FROM pg_class WHERE relname = ANY($1)`, [['BusinessWebsite', 'WebsiteMedia', 'WebsiteDomain', 'WebsiteAddon', 'DomainRequest', 'WebsiteBillingEvent']]);
-  assert.equal(rls.rows.length, 6); assert.ok(rls.rows.every(row => row.relrowsecurity));
+  const rls = await db.query(`SELECT relname, relrowsecurity FROM pg_class WHERE relname = ANY($1)`, [['BusinessWebsite', 'WebsiteMedia', 'WebsiteDomain', 'WebsiteAddon', 'DomainRequest', 'WebsiteBillingEvent', 'WebsiteCheckoutOperation', 'WebsiteOfferEligibility', 'WebsiteLaunchSnapshot', 'WebsiteCommercialEvent']]);
+  assert.equal(rls.rows.length, 10); assert.ok(rls.rows.every(row => row.relrowsecurity));
   console.log(`PASS NO DRIFT + RLS. Disposable local database retained: ${name}`);
 } finally { await db.end(); await admin.end(); }

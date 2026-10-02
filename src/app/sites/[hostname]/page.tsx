@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { resolveWebsiteHost, websiteView, canonicalWebsiteUrl } from "@/server/websites/service";
 import { normalizeHostname } from "@/websites/policy";
 import { resolveTemplate } from "@/websites/registry";
-import { websiteMetadata } from "@/websites/metadata";
+import { websiteMetadata, websiteStructuredData, serializeWebsiteStructuredData } from "@/websites/metadata";
 import { websiteTemplate } from "@/websites/template-snapshots";
 import { cache } from "react";
 export const dynamic = "force-dynamic";
@@ -24,5 +24,6 @@ export default async function Website({ params }: { params: Promise<{ hostname: 
   const site = await load((await params).hostname);
   const identity = websiteTemplate(site, false);
   const Component = await resolveTemplate(identity.key, identity.version).loadComponent();
-  return <Component view={await websiteView(site, false)} />;
+  const view = await websiteView(site, false);
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeWebsiteStructuredData(websiteStructuredData(view, canonicalWebsiteUrl(site))) }} /><Component view={view} /></>;
 }

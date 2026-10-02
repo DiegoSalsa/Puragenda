@@ -13,3 +13,21 @@ export function websiteMetadata(view: WebsiteView<{ displayName: string; seoTitl
   const description = config.seoDescription || truncate(`${intro}${business.address ? ` Encuéntranos en ${business.address}.` : ""}`, 170);
   return { title, description, image: config.socialImage || config.heroImage };
 }
+
+export function websiteStructuredData(view: WebsiteView<{ displayName: string; seoTitle: string; seoDescription: string; intro: string; socialImage: string; heroImage: string; phone: string; contactEmail: string; logo: string }>, url: string) {
+  const metadata = websiteMetadata(view);
+  return {
+    "@context": "https://schema.org", "@type": "LocalBusiness", "@id": `${url}#business`, url,
+    name: clean(view.config.displayName || view.business.name), description: metadata.description,
+    ...(view.business.address ? { address: view.business.address } : {}),
+    ...(view.config.phone ? { telephone: view.config.phone } : {}),
+    ...(view.config.contactEmail ? { email: view.config.contactEmail } : {}),
+    ...(metadata.image ? { image: new URL(metadata.image, url).toString() } : {}),
+    ...(view.config.logo || view.business.logo ? { logo: new URL(view.config.logo || view.business.logo!, url).toString() } : {}),
+    hasOfferCatalog: { "@type": "OfferCatalog", name: "Servicios", itemListElement: view.catalog.services.map(service => ({ "@type": "Offer", price: service.price, priceCurrency: view.catalog.business.currency, itemOffered: { "@type": "Service", name: service.name, ...(service.description ? { description: service.description } : {}) } })) },
+  };
+}
+export function serializeWebsiteStructuredData(value: unknown) {
+  // Public editable text must never break out of the JSON-LD script element.
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}

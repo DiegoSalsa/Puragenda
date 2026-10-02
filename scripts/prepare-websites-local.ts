@@ -26,6 +26,10 @@ const hasOwnership = await client.query("SELECT 1 FROM information_schema.column
 if (!hasOwnership.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261001120000_website_domain_tenant_ownership/migration.sql", "utf8"));
 const hasTemplateSnapshots = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='BusinessWebsite' AND column_name='templateConfigs'");
 if (!hasTemplateSnapshots.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261001190000_matchday_template_snapshots/migration.sql", "utf8"));
+const hasOffers = await client.query("SELECT to_regclass('public.\"WebsiteOfferEligibility\"') as table");
+if (!hasOffers.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20261001120000_website_launch_offers/migration.sql", "utf8"));
+const hasMp = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='WebsiteAddon' AND column_name='mpSubscriptionId'");
+if (!hasMp.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261002190000_website_mercadopago/migration.sql", "utf8"));
 await client.end();
 fs.mkdirSync("public/website-media-qa/website-qa-c", { recursive: true });
 await sharp({ create: { width: 640, height: 480, channels: 3, background: "#947867" } }).webp().toFile("public/website-media-qa/website-qa-c/service.webp");
@@ -71,7 +75,7 @@ for (const key of ["a", "b", "c"] as const) {
   await prisma.websiteAddon.upsert({ where: { businessId: prefix }, create: { businessId: prefix, provider: "mock", status: "ACTIVE", validUntil: new Date("2026-12-31T00:00:00Z") }, update: {} });
   const existingWebsite = await prisma.businessWebsite.findUnique({ where: { businessId: prefix }, select: { revision: true } });
   const fixtureRevision = existingWebsite ? existingWebsite.revision + 1 : 0;
-  await prisma.businessWebsite.upsert({ where: { businessId: prefix }, create: { businessId: prefix, subdomain: `bella-${key}`, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), publishedRevision: 0 }, update: { draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), revision: fixtureRevision, publishedRevision: fixtureRevision } });
+  await prisma.businessWebsite.upsert({ where: { businessId: prefix }, create: { businessId: prefix, subdomain: `bella-${key}`, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), publishedRevision: 0 }, update: { templateKey: "bella", templateVersion: 1, publishedTemplateKey: "bella", publishedTemplateVersion: 1, draftConfig: view.config, publishedConfig: view.config, status: "PUBLISHED", publishedAt: new Date(), revision: fixtureRevision, publishedRevision: fixtureRevision } });
 }
 await prisma.staff.upsert({
   where: { id: "website-qa-a-demo-staff" },
