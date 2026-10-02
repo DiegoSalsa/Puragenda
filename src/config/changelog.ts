@@ -25,7 +25,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
   {
-    version: "v2.2.0",
+    version: "v2.2.1",
     date: "2026-10-02",
     title: "Tu negocio ahora puede tener su propia página web",
     description: "Te dejamos una web preconfigurada para tu negocio, conectada a tus servicios y reservas, para que puedas empezar a recibir clientes desde un enlace profesional.",

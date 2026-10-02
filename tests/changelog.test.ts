@@ -4,7 +4,7 @@ import { CHANGELOG_DATA, LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 describe("changelog entries", () => {
   it("prepares Website launch as the latest update", () => {
     const latest = CHANGELOG_DATA[0];
-    expect(LATEST_CHANGELOG_VERSION).toBe("v2.2.0");
+    expect(LATEST_CHANGELOG_VERSION).toBe("v2.2.1");
     expect(latest.features.join(" ")).toContain("preconfigurada");
     expect(latest.features.join(" ")).not.toMatch(/Bella|Matchday|Ritual/);
     expect(latest.description).not.toContain("$5.990");
