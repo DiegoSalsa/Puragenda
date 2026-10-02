@@ -5,10 +5,12 @@ import { paletteTokens, validatePalette } from "./palettes";
 import { BELLA_PALETTES } from "./palettes";
 import { emptyMatchdayConfig, matchdayConfigSchema, readMatchdayConfig, type MatchdayConfig } from "./templates/matchday/config";
 import { MATCHDAY_PALETTES, matchdayTokens, validMatchdayPalette } from "./templates/matchday/palettes";
+import { emptyRitualConfig, readRitualConfig, ritualConfigSchema, type RitualConfig } from "./templates/ritual/config";
+import { RITUAL_PALETTES, ritualTokens, validRitualPalette } from "./templates/ritual/palettes";
 import { createElement, type ComponentType } from "react";
 import type { WebsiteView } from "./types";
 import type { WebsiteEditorProps } from "./editor-types";
-export type WebsiteConfig = BellaConfig | MatchdayConfig;
+export type WebsiteConfig = BellaConfig | MatchdayConfig | RitualConfig;
 function defineTemplate<C extends WebsiteConfig>(definition: {
   key: string; name: string; version: number; industries: string[];
   capabilities: { gallery: boolean; nativeBooking: boolean; multiLocation: boolean; controlledTheme: boolean; staffEditorial: boolean; process: boolean };
@@ -61,6 +63,17 @@ export const templateRegistry = {
     publicationError: config => !validMatchdayPalette(matchdayTokens(config)) ? "La paleta necesita más contraste antes de publicar" : !config.heroImage || !config.headline ? "Agrega una portada y un titular antes de publicar" : null,
     loadComponent: () => import("./templates/matchday/Lazy").then(module => module.default),
     loadEditor: () => import("@/app/dashboard/website/matchday-editor").then(module => module.default),
+  }),
+  ritual: defineTemplate<RitualConfig>({
+    key: "ritual", name: "Ritual", version: 1,
+    industries: ["masajes", "masoterapia", "reiki", "terapias holísticas", "wellness", "piedras calientes", "reflexología", "spa", "terapias corporales", "bienestar"],
+    capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: true, process: false },
+    editor: { category: "Masajes / Wellness / Terapias", sections: ["design", "hero", "services", "staff", "gallery", "faq", "business", "contact", "domain"], palettes: RITUAL_PALETTES, customControls: ["sensorial", "faq", "staffEditorial", "visibility", "featuredService", "customPalette"] },
+    preview: { thumbnail: "/websites/previews/ritual.svg", desktop: "/website-preview?template=ritual", mobile: "/website-preview?template=ritual&viewport=mobile" },
+    configSchema: ritualConfigSchema, defaultConfig: emptyRitualConfig, readConfig: readRitualConfig, parseDraft: readRitualConfig,
+    publicationError: config => !validRitualPalette(ritualTokens(config)) ? "La paleta necesita más contraste antes de publicar" : !config.heroImage || !config.headline ? "Agrega una portada y un titular antes de publicar" : null,
+    loadComponent: () => import("./templates/ritual/Lazy").then(module => module.default),
+    loadEditor: () => import("@/app/dashboard/website/ritual-editor").then(module => module.default),
   }),
 } as const;
 export type TemplateKey = keyof typeof templateRegistry;

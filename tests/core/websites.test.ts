@@ -43,9 +43,10 @@ describe("hostname resolution", () => {
   });
 });
 describe("template schema and tenant content", () => {
-  it("provides Bella and Matchday v1 and rejects unknown keys and versions", () => {
-    expect(Object.keys(templateRegistry)).toEqual(["bella", "matchday"]);
+  it("provides Bella, Matchday and Ritual v1 and rejects unknown keys and versions", () => {
+    expect(Object.keys(templateRegistry)).toEqual(["bella", "matchday", "ritual"]);
     expect(resolveTemplate("bella", 1).name).toBe("Bella");
+    expect(resolveTemplate("ritual", 1).name).toBe("Ritual");
     expect(() => resolveTemplate("bella", 2)).toThrow();
     expect(() => resolveTemplate("fake", 1)).toThrow();
   });

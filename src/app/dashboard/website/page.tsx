@@ -11,7 +11,9 @@ export default async function WebsitePage() {
   const site = await ensureWebsite(business.id, business.slug);
   const [addon, offer, domains, requests] = await Promise.all([
     prisma.websiteAddon.findUnique({ where: { businessId: business.id } }),
-    prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id } }),
+    // Older dev processes can retain a Prisma singleton generated before the launch-offer model existed.
+    // Treat the optional eligibility row as absent until that process is restarted/migrated.
+    Promise.resolve(prisma.websiteOfferEligibility?.findUnique?.({ where: { businessId: business.id } }) ?? null).catch(() => null),
     prisma.websiteDomain.findMany({ where: { websiteId: site.id } }),
     prisma.domainRequest.findMany({ where: { websiteId: site.id }, orderBy: { createdAt: "desc" } }),
   ]);

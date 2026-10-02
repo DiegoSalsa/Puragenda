@@ -114,3 +114,4 @@
   .previewToolbar { height:48px; } .notice { font-size:10px; }
 }
 @media (prefers-reduced-motion:reduce) { .spin { animation:none; } }
+.paletteGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.paletteGrid .field{font-size:11px;text-transform:capitalize}.paletteGrid input[type=color]{width:100%;height:34px;padding:2px}.toggleGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}.checkbox{display:flex;align-items:center;gap:8px;font-size:12px}.checkbox input{accent-color:var(--builder-accent,#6a4b3b)}
