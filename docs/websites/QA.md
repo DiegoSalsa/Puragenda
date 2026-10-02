@@ -1,8 +1,37 @@
-# QA final de webs — 1 de octubre de 2026
+# QA actual de webs — 2 de octubre de 2026
 
-La evidencia de esta página corresponde a la auditoría actual. Los screenshots y números de entregas anteriores se conservan como historia, sin usarlos como resultados finales.
+Esta sección corresponde al HEAD de producto auditado de la pasada Ritual y se mantiene separada de la historia de auditorías anteriores.
 
 | Comprobación actual | Resultado |
+| --- | --- |
+| HEAD de producto auditado | ce613981829a049b33a381b2b9fe8553dbc715d5 |
+| Ritual browser realistic | PASS: 1440, 1280, 768, 390 y 360; evidencia en docs/websites/qa-ritual |
+| Ritual overflow | PASS en renderer: 1440/1280/768/390/360; tolerancia 2 px |
+| Ritual builder | PASS: 50/50, diez paneles en 1440/1280/768/390/360, sin overflow del documento |
+| Gallery / staff rails | PASS: gallery 2/3/6/7/12/30, staff 1/2/3/5/10; touch físico NOT_RUN |
+| Lightbox | PASS: open, next, previous, ArrowLeft, ESC, close y focus restore; click fuera PASS |
+| Services density | PASS: 6 iniciales, +6, reset de categoría |
+| Presets y custom palette | PASS: Tierra, Salvia, Piedra, Brasa y seis controles custom; accentContrast derivado |
+| Copy preview/persistence | PASS: heroCaption, featuredTitle, staffNote, galleryNote, bookingTitle, footerStatement |
+| Template switching | PASS: draft Ritual → Matchday → Ritual; published Ritual conservado |
+| npm test | 178 archivos PASS / 2 skipped; 1.060 tests PASS / 21 skipped; 0 FAIL |
+| PostgreSQL opt-in completo | 180 archivos PASS; 1.081 tests PASS; 0 skipped; 0 FAIL |
+| HTTP público + acciones | 29 + 18 PASS; no se suman al total Vitest |
+| Migraciones | PASS: baseline MAIN, incrementales, launch offers, sin drift y RLS |
+| Lint / Typecheck | 0 errores, 32 warnings existentes / PASS |
+| Prisma validate / generate | PASS / PASS |
+| Build producción aislado | PASS; 133 páginas |
+| External providers | NOT_RUN; no Cloudinary remoto, Vercel, DNS, Paddle LIVE ni producción |
+
+Las capturas, viewports, scenarios PASS/NOT_RUN y métricas están en [qa-ritual/](qa-ritual/). baseline histórica no reproducible; no se afirma porcentaje de mejora.
+
+## Historia de auditoría previa
+
+## Auditoría histórica de webs — 1 de octubre de 2026
+
+La evidencia de esta sección corresponde a la auditoría histórica del 1 de octubre. Los screenshots y números de entregas anteriores se conservan como historia, sin usarlos como resultados finales.
+
+| Comprobación histórica | Resultado |
 | --- | --- |
 | npm test | 174 archivos PASS, 2 omitidos; 1.022 tests PASS, 21 omitidos por falta de opt-in de PostgreSQL |
 | Suite completa con PostgreSQL aislado | **176 archivos PASS; 1.043 tests PASS; 0 FAIL; 0 skipped** |

@@ -1,4 +1,22 @@
-# Entrega final de la auditoría — webs
+# Entrega actual — webs / Ritual
+
+HEAD inicial de la pasada: 3f7f85adfc47e7abb68ab66ffd88b24610ea7a80.
+HEAD final de producto auditado: ce613981829a049b33a381b2b9fe8553dbc715d5.
+Rama: webs. La evidencia se guarda en un commit posterior de docs; los object IDs en validation.json prueban que el código coincide con este SHA auditado. El trabajo está preparado para revisión final de merge; no se hizo merge ni deploy.
+
+Esta pasada solo completa la superficie editable de Ritual, ejecuta QA browser real, actualiza evidencia y repite calidad. Bella, Matchday, billing, domains y Template 04 no fueron rediseñados.
+
+- Copy audit completo: [RITUAL.md](RITUAL.md) y [field-inventory.md](qa-ritual/field-inventory.md).
+- Evidencia actual: [RITUAL-DELIVERY.md](RITUAL-DELIVERY.md), [validation.json](qa-ritual/validation.json) y [height-metrics.json](qa-ritual/height-metrics.json).
+- Calidad actual: 1.060 tests PASS / 21 skipped en modo normal; 1.081 PASS / 0 skipped con PostgreSQL. Lint 0 errores / 32 warnings, typecheck y Prisma PASS; build 133 páginas.
+- Diff acumulado: 413 archivos (164 producto, 7 migraciones, 22 tests, 149 docs, 17 scripts y 54 configuración); [inventario actual](qa-ritual/final-diff-inventory.json).
+- Sin claims de CWV, pentest, pixel-perfect o certificación de dispositivo móvil.
+
+## Historia de auditoría previa
+
+La tabla siguiente conserva resultados históricos y no describe el HEAD de producto auditado de esta pasada.
+
+## Entrega histórica de la auditoría — webs
 
 Estado: hardening completado y validado localmente; listo para revisión de merge. No se realizó merge, push ni deploy. Bella, Matchday y Ritual están registrados y mantienen sus configuraciones aisladas. Para el estado actual de Ritual, consulta [RITUAL-DELIVERY.md](RITUAL-DELIVERY.md).
 

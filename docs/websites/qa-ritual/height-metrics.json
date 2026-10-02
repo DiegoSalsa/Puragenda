@@ -1,9 +1,168 @@
 {
-  "head": "0c3e82a42bef0c62c80d7b83e7400037aa7601db",
-  "fixture": "ritual-terapias-sec",
-  "desktop": {"viewport": 1440, "documentClientWidth": 1425, "documentScrollWidth": 1425, "documentHeight": 7829, "pass": true},
-  "mobile390": {"viewport": 390, "documentClientWidth": 375, "documentScrollWidth": 375, "galleryItems": 12, "galleryTrackWidth": 3760, "galleryViewportWidth": 336, "staffItems": 5, "staffTrackWidth": 1561, "staffViewportWidth": 336, "pass": true},
-  "mobile360": {"viewport": 360, "documentClientWidth": 345, "documentScrollWidth": 345, "documentHeight": 7995, "galleryItems": 12, "galleryTrackWidth": 3480, "galleryViewportWidth": 309, "staffItems": 5, "staffTrackWidth": 1444, "staffViewportWidth": 309, "pass": true},
+  "head": "ce613981829a049b33a381b2b9fe8553dbc715d5",
+  "date": "2026-10-02",
+  "fixture": "ritualTerapiasSecRealisticFixture",
+  "baseline": "baseline histórica no reproducible",
+  "initial": {
+    "360": {
+      "viewportHeight": 844,
+      "documentClientWidth": 345,
+      "documentScrollWidth": 345,
+      "documentHeight": 8216,
+      "galleryItems": 7,
+      "staffItems": 3,
+      "serviceItems": 6,
+      "pass": true
+    },
+    "390": {
+      "viewportHeight": 844,
+      "documentClientWidth": 375,
+      "documentScrollWidth": 375,
+      "documentHeight": 8171,
+      "galleryItems": 7,
+      "staffItems": 3,
+      "serviceItems": 6,
+      "pass": true
+    },
+    "768": {
+      "viewportHeight": 900,
+      "documentClientWidth": 753,
+      "documentScrollWidth": 753,
+      "documentHeight": 7721,
+      "galleryItems": 7,
+      "staffItems": 3,
+      "serviceItems": 6,
+      "pass": true
+    },
+    "1280": {
+      "viewportHeight": 900,
+      "documentClientWidth": 1265,
+      "documentScrollWidth": 1265,
+      "documentHeight": 7570,
+      "galleryItems": 6,
+      "staffItems": 3,
+      "serviceItems": 6,
+      "pass": true
+    },
+    "1440": {
+      "viewportHeight": 900,
+      "documentClientWidth": 1425,
+      "documentScrollWidth": 1425,
+      "documentHeight": 7961,
+      "galleryItems": 6,
+      "staffItems": 3,
+      "serviceItems": 6,
+      "pass": true
+    }
+  },
+  "servicesExpanded": {
+    "fixture": "ritualTerapiasSecFixture(25)",
+    "viewports": {
+      "360": {
+        "documentClientWidth": 345,
+        "documentScrollWidth": 345,
+        "initialHeight": 7995,
+        "documentHeight": 8661,
+        "initialServiceItems": 6,
+        "expandedServiceItems": 12,
+        "pass": true
+      },
+      "390": {
+        "documentClientWidth": 375,
+        "documentScrollWidth": 375,
+        "initialHeight": 7951,
+        "documentHeight": 8617,
+        "initialServiceItems": 6,
+        "expandedServiceItems": 12,
+        "pass": true
+      },
+      "1440": {
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "initialHeight": 7814,
+        "documentHeight": 8335,
+        "initialServiceItems": 6,
+        "expandedServiceItems": 12,
+        "pass": true
+      }
+    },
+    "categoryResetServiceItems": 6
+  },
+  "gallery30": {
+    "fixture": "ritualTerapiasSecFixture(12) with gallery=30 QA parameter",
+    "totalGalleryItems": 30,
+    "viewports": {
+      "360": {
+        "documentClientWidth": 345,
+        "documentScrollWidth": 345,
+        "documentHeight": 7995,
+        "mountedGalleryItems": 30,
+        "pass": true
+      },
+      "390": {
+        "documentClientWidth": 375,
+        "documentScrollWidth": 375,
+        "documentHeight": 7951,
+        "mountedGalleryItems": 30,
+        "pass": true
+      },
+      "1440": {
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "documentHeight": 7814,
+        "mountedGalleryItems": 6,
+        "pass": true
+      }
+    }
+  },
   "overflowAssertion": "document.scrollWidth <= document.clientWidth + 2",
-  "note": "Rails use native horizontal overflow inside the track; the page itself has no horizontal overflow."
+  "notes": [
+    "Native rail track overflow is intentional and measured separately from the document.",
+    "No historical percentage is claimed because a reproducible baseline was unavailable."
+  ],
+  "headScope": "Exact final product commit audited. The subsequent evidence commit changes docs only; these Git object IDs identify the same executable content at the branch final HEAD.",
+  "productObjects": {
+    "src": "13e2f104415f70c67abd3169ec7ff92baab1a01e",
+    "tests": "fa90d794eca19e6fe2587b6ca9a5d9c659e8bf6e",
+    "prisma": "01c6212131c5042301209f6da3f5ab8069ee7298",
+    "scripts": "9d18280a17a116eae52ccabad16a1b26a7bdf679",
+    "public": "f044ffe3ed4f6901cec0c65f3c28d60379ae4d3b",
+    "package.json": "ee6afdcd70023b277bb69a046c53099b050e5cb0",
+    "package-lock.json": "04b2e307c2048da518574b146d96762eebb98641",
+    "next.config.ts": "e3c0b8b3d40e82d0fc2ea959bfcc2a01734dc6b9",
+    "prisma.config.ts": "c169ccef5eb3bc5d4e929e2ac1df7fef79174b4f",
+    "tsconfig.json": "0f49452943a77be41c47f68b661f24e7488d5383"
+  },
+  "builder": {
+    "panelsPerViewport": 10,
+    "scenariosPassed": 50,
+    "scope": "document only",
+    "widths": {
+      "360": {
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "pass": true
+      },
+      "390": {
+        "documentClientWidth": 390,
+        "documentScrollWidth": 390,
+        "pass": true
+      },
+      "768": {
+        "documentClientWidth": 768,
+        "documentScrollWidth": 768,
+        "pass": true
+      },
+      "1280": {
+        "documentClientWidth": 1280,
+        "documentScrollWidth": 1280,
+        "pass": true
+      },
+      "1440": {
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "pass": true
+      }
+    }
+  }
 }
