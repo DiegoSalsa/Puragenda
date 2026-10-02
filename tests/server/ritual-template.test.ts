@@ -9,6 +9,7 @@ import { RITUAL_PALETTES, ritualTokens, validRitualPalette } from "@/websites/te
 import { ritualFixture, ritualTerapiasSecFixture, ritualTerapiasSecRealisticFixture } from "@/websites/fixtures/ritual";
 import { resolveTemplate, templateRegistry } from "@/websites/registry";
 import { templateSwitchDraft } from "@/websites/template-snapshots";
+import { galleryCategoryLabelError } from "@/websites/gallery-categories";
 describe("Ritual template", () => {
   it("is independently registered and has safe defaults", () => {
     expect(Object.keys(templateRegistry)).toEqual(["bella", "matchday", "ritual"]);
@@ -83,5 +84,44 @@ describe("Ritual template", () => {
     expect(ritual.config.heroImage).toBe("/bella.webp");
     const back = templateSwitchDraft({ ...site, templateKey: "ritual", templateVersion: 1, draftConfig: ritual.config, templateConfigs: ritual.snapshots }, "bella", 1);
     expect(back.config.headline).toBe("Bella");
+  });
+  it("provides every public copy default and exactly five branded booking labels", () => {
+    const config = emptyRitualConfig();
+    expect(config.copy.featuredEyebrow).toBe("Tratamiento destacado");
+    expect(config.copy.allServices).toBe("Mostrar {count} más");
+    expect(config.copy.bookingSteps).toEqual(["Tratamiento", "Profesional", "Día y hora", "Tus datos", "Confirma"]);
+    expect(config.copy.nav.reserve).toBe("Reservar");
+    expect(ritualConfigSchema.safeParse({ ...config, copy: { ...config.copy, bookingSteps: ["Uno"] } }).success).toBe(false);
+    expect(ritualConfigSchema.safeParse({ ...config, copy: { ...config.copy, bookingSteps: [...config.copy.bookingSteps, "Seis"] } }).success).toBe(false);
+  });
+  it("persists branded copy through parsing and switching snapshots without changing the template version", () => {
+    const initial = emptyRitualConfig();
+    const config = ritualConfigSchema.parse({ ...initial, heroCaption: "Tu pausa comienza aquí", copy: { ...initial.copy, featuredTitle: "A tu ritmo", staffNote: "Nuestro equipo", galleryNote: "Un lugar preparado", bookingTitle: "Encuentra tu hora", footerStatement: "Vuelve a ti", bookingSteps: ["Práctica", "Acompañante", "Momento", "Contacto", "Revisar"] } });
+    expect(readRitualConfig(JSON.parse(JSON.stringify(config)))).toEqual(config);
+    const site = { templateKey: "ritual", templateVersion: 1, draftConfig: config, templateConfigs: {} };
+    const matchday = templateSwitchDraft(site, "matchday", 1);
+    const restored = templateSwitchDraft({ ...site, templateKey: "matchday", draftConfig: matchday.config, templateConfigs: matchday.snapshots }, "ritual", 1);
+    expect(restored.config).toEqual(config);
+    expect(resolveTemplate("ritual", 1).version).toBe(1);
+  });
+  it("keeps the canonical sensorial values over legacy copy", () => {
+    const config = readRitualConfig({ sensorial: { title: "Nuevo", body: "Actual" }, copy: { pauseTitle: "Viejo", pauseBody: "Anterior" } });
+    expect(config.sensorial.title).toBe("Nuevo");
+    expect(config.sensorial.body).toBe("Actual");
+    expect(config.copy).not.toHaveProperty("pauseTitle");
+  });
+  it("rejects empty and duplicate category renames locally and in the write schema", () => {
+    const categories = [{ id: "cat-a", label: "Masajes", order: 0 }, { id: "cat-b", label: "Rituales", order: 1 }];
+    expect(galleryCategoryLabelError(" ", categories, "cat-a")).toBe("Escribe un nombre para la categoría.");
+    expect(galleryCategoryLabelError(" mAsAjEs ", categories, "cat-b")).toBe("Ya existe una categoría con ese nombre.");
+    expect(galleryCategoryLabelError("Masajes", categories, "cat-a")).toBeUndefined();
+    expect(ritualConfigSchema.safeParse({ galleryCategories: [{ ...categories[0], label: " " }] }).success).toBe(false);
+    expect(ritualConfigSchema.safeParse({ galleryCategories: [categories[0], { ...categories[1], label: "MASAJES" }] }).success).toBe(false);
+  });
+  it("accepts nested focus keys without accepting selector injection", () => {
+    const envelope = { protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config: emptyRitualConfig() };
+    expect(parseRitualPreview({ ...envelope, focus: "sensorial.title" }, "http://localhost:3005").success).toBe(true);
+    expect(parseRitualPreview({ ...envelope, focus: "bookingSteps.4" }, "http://localhost:3005").success).toBe(true);
+    expect(parseRitualPreview({ ...envelope, focus: 'x"]' }, "http://localhost:3005").success).toBe(false);
   });
 });

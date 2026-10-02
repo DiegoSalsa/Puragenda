@@ -4,3 +4,9 @@ export const categoryId = (label: string, used: Iterable<string> = []) => {
   while (existing.has(next)) next = `${base}-${index++}`;
   return next;
 };
+
+export function galleryCategoryLabelError(label: string, categories: ReadonlyArray<{ id: string; label: string }>, currentId?: string): string | undefined {
+  const value = label.trim();
+  if (!value) return "Escribe un nombre para la categoría.";
+  if (categories.some(category => category.id !== currentId && category.label.trim().toLocaleLowerCase() === value.toLocaleLowerCase())) return "Ya existe una categoría con ese nombre.";
+}

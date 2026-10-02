@@ -25,4 +25,3 @@ describe("website addon billing safety", () => {
  it("recovers payment only for the owner's existing addon", async () => {m.addon.mockResolvedValue({status:"PAST_DUE",provider:"paddle",paddleSubscriptionId:"sub_website"});m.payment.mockResolvedValue({id:"txn_recovery"});expect(await recoverWebsitePayment()).toEqual({transactionId:"txn_recovery"});expect(m.payment).toHaveBeenCalledWith("sub_website");expect(m.owner).toHaveBeenCalledWith(true);expect(m.upsert).not.toHaveBeenCalled();});
  it("reuses an unfinished checkout instead of creating duplicate subscriptions", async () => {m.addon.mockResolvedValue({status:"INACTIVE",checkoutTransactionId:"txn_pending"});m.get.mockResolvedValue({id:"txn_pending",status:"ready"});expect(await startWebsiteCheckout()).toEqual({transactionId:"txn_pending"});expect(m.create).not.toHaveBeenCalled();});
 });
-
