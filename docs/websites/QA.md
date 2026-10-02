@@ -15,7 +15,7 @@ P0 segunda pasada: Vercel Production+Preview muestra MP access token, webhook se
 | Booking navegador Ritual | Appointment count=1, PENDING; datos ficticios, email apagado |
 | Quality | Lint 0 errores /47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck/Prisma PASS, build aislado 135 páginas |
 | Migraciones | Baseline MAIN +8 incrementales, sin drift; RLS 10 tablas PASS REAL local |
-| Producción | Migraciones aplicadas; post-check read-only sin pendientes/locks; server local 3006 feature-off |
+| Producción | Migraciones aplicadas; post-check read-only sin pendientes/locks; server local 3000 feature-off |
 | Bloqueadores | Secretos webhook/sesión presentes en Vercel pero no disponibles localmente, provider MP oficial no probado, corte/snapshot sin preparar |
 | Externos | Cloudinary/Vercel/DNS/TLS/email/Paddle internacional NOT_RUN |
 

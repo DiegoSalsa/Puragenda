@@ -1,7 +1,7 @@
 {
-  "checkedAt": "2026-10-02T20:28:00Z",
+  "checkedAt": "2026-10-02T20:38:00Z",
   "mode": "LOCAL_PRODUCTION_BUILD",
-  "bind": "127.0.0.1:3006",
+  "bind": "127.0.0.1:3000",
   "process": "RUNNING",
   "build": "PASS; WEBSITE_BUILD_QA=1 isolated distDir",
   "featureFlags": {
@@ -12,14 +12,14 @@
     "DATABASE_URL": true,
     "DIRECT_URL": true,
     "MERCADOPAGO_ACCESS_TOKEN": true,
-    "AUTH_SECRET": false,
+    "AUTH_SECRET": true,
     "MERCADOPAGO_WEBHOOK_SECRET": false
   },
   "smoke": {
     "GET /": 200,
     "GET /dashboard/website": 307
   },
-  "interpretation": "Uses the production database and MP access token available in the checkout .env. Vercel-only AUTH_SECRET and MERCADOPAGO_WEBHOOK_SECRET were not extracted; auth/webhook parity with Vercel is therefore NOT_VERIFIABLE locally.",
+  "interpretation": "Uses the production database, MP access token and Resend credentials available in the checkout .env. A process-only ephemeral AUTH_SECRET was injected so local OTP/session access works; it is not the Vercel AUTH_SECRET. MERCADOPAGO_WEBHOOK_SECRET was not extracted, so webhook parity with Vercel is NOT_VERIFIABLE locally.",
   "externalWrites": false,
   "payments": false
 }

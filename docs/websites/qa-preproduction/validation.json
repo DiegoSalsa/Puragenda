@@ -79,11 +79,11 @@
     },
     "productionServer": {
       "status": "RUNNING_LOCAL_ONLY",
-      "bind": "127.0.0.1:3006",
+      "bind": "127.0.0.1:3000",
       "featureFlags": "checkout/launch off",
       "root": 200,
       "dashboard": 307,
-      "authAndWebhookSecrets": "NOT_AVAILABLE_IN_CHECKOUT_ENV"
+      "authAndWebhookSecrets": "Ephemeral local AUTH_SECRET injected; Vercel webhook secret unavailable locally"
     }
   },
   "billing": {
@@ -157,7 +157,7 @@
     "npm run db:migrate:deploy",
     "PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <post-migrate evidence path>",
     "npm run build with NODE_ENV=production, VERCEL_ENV=production, WEBSITE_BUILD_QA=1",
-    "npm run start -- -p 3006 -H 127.0.0.1 with checkout/launch flags disabled"
+    "npm run start -- -p 3000 -H 127.0.0.1 with checkout/launch flags disabled"
   ],
   "screenshots": [
     {

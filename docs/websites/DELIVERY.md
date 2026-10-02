@@ -12,7 +12,7 @@ Se implementó MP Website CL separado de BASE, precio canónico, operaciones dur
 - 52 comprobaciones comerciales +29 públicas +18 acciones HTTP PASS. Proveedor MP PASS SIMULATED; oficial E2E/primer débito diferido NOT_RUN.
 - Lint 0 errores/47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck/Prisma PASS; build aislado 135 páginas. Migraciones baseline MAIN+8, sin drift y RLS 10 tablas.
 - 36 capturas y 25 muestras de layout; templates/builders a 1440/390/360. Reserva navegador persistida una vez, PENDING.
-- Producción: `migrate deploy` aplicó las 2 migraciones; post-check read-only sin pendientes/locks y launchAt ausente. Vercel muestra webhook secret/sesión presentes sin revelar valores. Servidor local 3006 iniciado feature-off; no hubo deploy Vercel ni snapshot.
+- Producción: `migrate deploy` aplicó las 2 migraciones; post-check read-only sin pendientes/locks y launchAt ausente. Vercel muestra webhook secret/sesión presentes sin revelar valores. Servidor local 3000 iniciado feature-off; no hubo deploy Vercel ni snapshot.
 - [Readiness](PRODUCTION-READINESS.md), [release/rollback](RELEASE-RUNBOOK.md), [state machine](PREPRODUCTION-STATES.md), [copy/emails sin envío](LAUNCH-COPY.md), [evidencia](qa-preproduction/).
 
 La subida a origin/webs sigue la autorización del usuario; los bloqueadores deben resolverse antes de considerar merge o producción. Paddle internacional conservado y NOT_RUN, no bloquea Chile.
