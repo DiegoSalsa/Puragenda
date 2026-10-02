@@ -44,7 +44,7 @@ Subdominio/hosting/TLS, uploads Cloudinary y asociación Vercel reales: **NOT_RU
 
 ## D. P2
 
-47 warnings ESLint existentes (principalmente imágenes y dependencias de hooks); 0 errores. Touch físico y dispositivos reales NOT_RUN. No se afirma CWV medido, pentest, pixel-perfect o certificación de accesibilidad. Paddle internacional NOT_RUN y no bloquea Chile. Recordatorios por email preparados como copy, sin dispatcher nuevo ni envíos.
+47 warnings ESLint en el workspace (32 del producto, principalmente imágenes/dependencias de hooks, más 15 del Remotion no trackeado); 0 errores. Touch físico y dispositivos reales NOT_RUN. No se afirma CWV medido, pentest, pixel-perfect o certificación de accesibilidad. Paddle internacional NOT_RUN y no bloquea Chile. Recordatorios por email preparados como copy, sin dispatcher nuevo ni envíos.
 
 ## E. MERCADOPAGO
 
@@ -147,7 +147,7 @@ PASS REAL local navegador: public y builder Bella/Matchday/Ritual 1440, 390×844
 
 HTTP adicionales: 52 comerciales +29 públicos +18 acciones, todos PASS; no se suman a Vitest. Proveedor MP/Cloudinary/Vercel simulado donde aplica. La primera repetición comercial tras dejar B sin pago bloqueó la request antes de validar service ajeno (404); se restauró **fixture local B pagada** como precondición y la prueba adversarial devolvió el rechazo esperado. No se modificó producción ni se ocultó un bug del producto.
 
-Lint 0 errores /47 warnings; typecheck PASS; Prisma validate/generate PASS; build producción aislado PASS, 135 páginas. Resultados, hashes de archivos, object IDs y comandos en [validation.json](qa-preproduction/validation.json). La repetición P0 está resumida en [second-pass-output.txt](qa-preproduction/second-pass-output.txt); logs completos quedan en scratch ignorado; extractos previos en [test-output.txt](qa-preproduction/test-output.txt). Verificación final de HEAD se registra fuera del commit para evitar un SHA autorreferencial.
+Lint 0 errores /47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck PASS; Prisma validate/generate PASS; build producción aislado PASS, 135 páginas. Resultados, hashes de archivos, object IDs y comandos en [validation.json](qa-preproduction/validation.json). La repetición P0 está resumida en [second-pass-output.txt](qa-preproduction/second-pass-output.txt); logs completos quedan en scratch ignorado; extractos previos en [test-output.txt](qa-preproduction/test-output.txt). Verificación final de HEAD se registra fuera del commit para evitar un SHA autorreferencial.
 
 ## S. MIGRATIONS
 

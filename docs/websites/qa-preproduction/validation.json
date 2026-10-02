@@ -58,7 +58,7 @@
     "validatorTest": "PASS REAL local; 1 file, 2 tests",
     "normal": { "filesPassed": 182, "filesSkipped": 3, "filesFailed": 0, "passed": 1078, "skipped": 51, "failed": 0 },
     "postgres": { "filesPassed": 185, "filesSkipped": 0, "filesFailed": 0, "passed": 1129, "skipped": 0, "failed": 0 },
-    "lint": { "errors": 0, "warnings": 47 },
+    "lint": { "errors": 0, "workspaceWarnings": 47, "trackedProductBaselineWarnings": 32, "untrackedRemotionWarnings": 15 },
     "typecheck": "PASS REAL local",
     "isolatedBuild": "PASS REAL isolated; 135 pages",
     "migrationContract": "PASS REAL local; no drift + RLS",

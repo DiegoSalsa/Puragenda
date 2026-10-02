@@ -10,7 +10,7 @@ Se implementó MP Website CL separado de BASE, precio canónico, operaciones dur
 
 - Final PostgreSQL: 185 archivos /1129 tests PASS, 0 skipped/fail. Normal: 182 archivos /1078 tests PASS, 3 archivos /51 tests skipped, 0 fail.
 - 52 comprobaciones comerciales +29 públicas +18 acciones HTTP PASS. Proveedor MP PASS SIMULATED; oficial E2E/primer débito diferido NOT_RUN.
-- Lint 0 errores/47 warnings; typecheck/Prisma PASS; build aislado 135 páginas. Migraciones baseline MAIN+8, sin drift y RLS 10 tablas.
+- Lint 0 errores/47 warnings en el workspace (32 del producto +15 Remotion no trackeado); typecheck/Prisma PASS; build aislado 135 páginas. Migraciones baseline MAIN+8, sin drift y RLS 10 tablas.
 - 36 capturas y 25 muestras de layout; templates/builders a 1440/390/360. Reserva navegador persistida una vez, PENDING.
 - Producción inspeccionada en solo lectura: Vercel muestra webhook secret/sesión presentes sin revelar valores; DB con 2 migraciones pendientes y launchAt ausente. No se cambiaron env remotas ni snapshot.
 - [Readiness](PRODUCTION-READINESS.md), [release/rollback](RELEASE-RUNBOOK.md), [state machine](PREPRODUCTION-STATES.md), [copy/emails sin envío](LAUNCH-COPY.md), [evidencia](qa-preproduction/).

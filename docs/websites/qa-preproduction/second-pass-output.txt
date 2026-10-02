@@ -14,7 +14,7 @@ PURAGENDA_BOOKING_TEST_DATABASE_URL=<loopback aislado> WEBSITE_BILLING_TEST_DATA
   Tests       1129 passed (1129)
 
 npm run lint
-  0 errors, 47 warnings
+  0 errors, 47 warnings in the current workspace (32 product baseline + 15 from untracked Remotion files)
 
 npm run typecheck
   exit 0
