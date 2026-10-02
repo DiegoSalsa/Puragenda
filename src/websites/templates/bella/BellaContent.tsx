@@ -12,6 +12,7 @@ import Header from "./_components/Header";
 import Action from "./_components/Action";
 import Portfolio from "./_components/Portfolio";
 import Services from "./_components/Services";
+import Staff from "./_components/Staff";
 import Studio from "./_components/Studio";
 import BookingSection from "./_components/BookingSection";
 import Motion from "./_components/Motion";
@@ -41,6 +42,7 @@ export default function BellaContent({ view: initial, fontClass }: { view: Bella
       </section>
       <Portfolio />
       <Services catalog={catalog} error={null} />
+      <Staff catalog={catalog} />
       {config.about || config.process.length ? <Studio /> : null}
       <BookingSection catalog={catalog} error={null} today={dateKey(new Date(), catalog.business.timezone)} fallbackUrl={null} />
     </main>

@@ -128,6 +128,16 @@
 .serviceBottom > span { font-size: 12px; color: #59595b; }
 .errorPanel { grid-column: 1 / -1; padding: 30px; background: white; border-left: 3px solid var(--red); }
 .errorPanel .outlineButton { margin-top: 20px; }
+.staff { padding: 106px 48px 104px; background: var(--paper); }
+.staff .sectionHeading { align-items: center; }
+.staff .sectionHeading h2 { font-size: clamp(48px,6.55vw,105px); }
+.staffGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px; margin-top: 44px; }
+.staffCard { min-width: 0; }
+.staffPhoto { position: relative; height: clamp(260px,30vw,460px); display: grid; place-items: center; overflow: hidden; background: var(--gray); }
+.staffPhoto img { object-fit: contain; object-position: center; background: var(--gray); }
+.staffPhoto > span { font-family: var(--bella-display),sans-serif; font-size: clamp(52px,7vw,100px); }
+.staffCard h3 { margin-top: 18px; font-size: clamp(24px,2.5vw,40px); font-weight: 750; letter-spacing: -.045em; line-height: 1; }
+.staffCard p { margin-top: 9px; font-size: 13px; color: #59595b; }
 .studio { padding: 106px 48px 104px; }
 .studio .sectionHeading { align-items: center; }
 .studio .sectionHeading h2 { font-size: clamp(48px,6.55vw,105px); }
@@ -302,6 +312,19 @@
 @media (prefers-reduced-motion: reduce) {
   .root *, .root *::before, .root *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .action:hover,.workImage:hover img { transform: none; }.marqueeTrack { transform: none; }.marquee button { display: none; }
+}
+
+@media (max-width:1100px) {
+  .staff { padding-left: 32px; padding-right: 32px; }
+}
+
+@media (max-width:700px) {
+  .staff { padding: 58px 20px; }
+  .staff .sectionHeading h2 { font-size: 46px; }
+  .staffGrid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin-top: 28px; }
+  .staffPhoto { height: 280px; }
+  .staffCard h3 { font-size: 28px; }
+  .staffCard p { font-size: 11px; }
 }
 
 /* Variable tenant content, scoped infrastructure reset. */

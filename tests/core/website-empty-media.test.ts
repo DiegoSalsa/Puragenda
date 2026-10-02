@@ -7,6 +7,7 @@ import { editableProcess } from "@/websites/templates/bella/process";
 import { BellaProvider } from "@/websites/templates/bella/Context";
 import Portfolio from "@/websites/templates/bella/_components/Portfolio";
 import Studio from "@/websites/templates/bella/_components/Studio";
+import Staff from "@/websites/templates/bella/_components/Staff";
 import ProcessPanel from "@/app/dashboard/website/process-panel";
 import { fixtureView } from "@/websites/fixtures/views";
 import { matchdayGallery } from "@/websites/templates/matchday/gallery";
@@ -15,6 +16,13 @@ vi.mock("@/websites/templates/bella/Media", () => ({ default: ({ src, alt }: { s
 vi.mock("@/app/dashboard/website/media-picker", () => ({ default: ({ label }: { label: string }) => React.createElement("button", null, label) }));
 
 describe("empty website media", () => {
+  it("renders Bella's public professionals section when the catalog has staff", () => {
+    const view = fixtureView("a");
+    const html = renderToStaticMarkup(React.createElement(BellaProvider, { view }, React.createElement(Staff, { catalog: view.catalog })));
+    expect(html).toContain('id="profesionales"');
+    expect(html).toContain(view.catalog.staff[0].name);
+  });
+
   it("shows gallery and three process positions in a private preview without mutating the stored config", () => {
     const view = fixtureView("c");
     view.config = emptyBellaConfig();

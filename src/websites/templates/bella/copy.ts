@@ -4,7 +4,7 @@ const copyText = (max: number, fallback: string) => z.string().trim().max(max).d
 
 export const bellaCopySchema = z.object({
   nav: z.preprocess(value => value ?? {}, z.object({
-    gallery: copyText(60, "Trabajos"), services: copyText(60, "Tratamientos"), about: copyText(60, "El estudio"),
+    gallery: copyText(60, "Trabajos"), services: copyText(60, "Tratamientos"), staff: copyText(60, "Profesionales"), about: copyText(60, "El estudio"),
     reserve: copyText(60, "Reservar"), menu: copyText(40, "Menú"), close: copyText(40, "Cerrar"), aria: copyText(100, "Navegación principal"),
   }).strict()),
   hero: z.preprocess(value => value ?? {}, z.object({
