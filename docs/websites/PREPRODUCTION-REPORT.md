@@ -1,21 +1,37 @@
 # Auditoría final de preproducción — 2026-10-02
 
 Rama `webs`. PREPRODUCTION_HEAD_INITIAL: `ae6e735602f206125df765d99dc8fe06aa6102f6`.
-Código final auditado: `b0044c764defd89393ffc3bd26b80f8dff8bb07e`.
+Código final auditado: `84c9df516c55044fae70edeaa68ff977a5f8c139`.
 Las variables del checkout que apuntan a producción se usaron para diagnóstico de solo lectura. La QA que escribe datos usó exclusivamente PostgreSQL aislado y nombres de fixtures locales. No hubo merge, deploy, DNS, compras, pagos, correos, snapshot aplicado ni Paddle live.
 
 `PASS REAL` significa ejecución real del componente indicado, especificando **local** cuando corresponde. `PASS SIMULATED` significa proveedor/tiempo simulado, aunque HTTP y persistencia sean reales. `NOT_RUN` no cuenta como aprobado. `FAIL` identifica una condición comprobada que no cumple el requisito.
 
+## Cierre operacional P0 — segunda pasada
+
+| P0 | CURRENT STATE | ACTION | RESULT | REQUIRES ME | BLOCKS RELEASE |
+| --- | --- | --- | --- | --- | --- |
+| MercadoPago webhook secret | Vercel: presente en Production+Preview; valor no revelado | Mantener Secret en Production; URL `/api/webhooks/mercadopago`; topics `subscription_preapproval`, `subscription_authorized_payment`, `payment` | Configurado por nombre/ámbito; provider test NOT_RUN | Separar Preview con secret/test token y probar firma oficial | Sí |
+| Auth secret | Vercel: `AUTH_SECRET` presente; `NEXTAUTH_SECRET` ausente; valor/longitud no revelados | Usar único `AUTH_SECRET` ≥32 bytes; validator corregido para no aceptar `GIFT_CARD_SECRET` | `NOT_VERIFIABLE` estructuralmente sin revelar | Confirmar valor válido en ventana sin imprimirlo | Sí |
+| Production migrations | Preflight `BEGIN READ ONLY`: exactamente 2 pendientes; 0 waiting/strong locks | Backup + ventana; `npm run db:migrate:deploy`; post-check tablas/RLS/drift | READY_TO_RUN, NOT_EXECUTED | Backup y ventana autorizada | Sí |
+| MP official deferred billing | Sin vendedor/comprador test ni Preview/DB aislada | Crear cuentas oficiales test del mismo país y PreApproval 5990 con `start_date` futuro | NOT_RUN | Credenciales/entorno test aislado | Sí |
+| MP real webhook | Route/HMAC local PASS; callback provider real no ejecutado | Conectar URL test y validar firma→GET→binding→add-on | NOT_RUN | Test application/secret y endpoint aislado | Sí |
+| Website/base isolation | 30 integration + 7 route local PASS; BASE intacta en simulador | Repetir con provider test y DB aislada | PASS REAL local / provider NOT_RUN | Fixture provider test | Sí |
+| Website launch date | `WEBSITE_LAUNCH_AT` ausente | Diego debe entregar ISO UTC exacta | Correctamente sin snapshot | Fecha de Diego | Sí |
+| Founder snapshot | No aplicado ni creado real | Dos dry runs después de fecha; luego apply autorizado | NOT_RUN por diseño | Fecha + confirmación operativa | Sí |
+| Feature-off | `WEBSITE_CHECKOUT_ENABLED`, `WEBSITE_LAUNCH_ENABLED` ausentes; runtime default off | Mantener ausentes/0 hasta GO | Adquisición/comunicación apagadas | Ninguno ahora | No |
+
+La UI de Vercel mostró que las credenciales MP actuales tienen alcance Preview y Production. No se hizo ninguna llamada autenticada MP ni modificación externa: Preview no es sandbox y debe aislarse antes del test.
+
 ## A. VEREDICTO
 
-**NO-GO PARA PRODUCCIÓN CHILE.** El producto pasa la validación local, pero la configuración inspeccionada tiene bloqueos y Mercado Pago oficial no fue probado de extremo a extremo. No habilitar adquisición/comunicación hasta cerrar B y los smoke externos de C.
+**NO-GO PARA PRODUCCIÓN CHILE.** La presencia de secretos P0 en Vercel quedó comprobada sin revelar valores; siguen bloqueando el release las migraciones no ejecutadas, provider E2E, webhook provider real, fecha de lanzamiento y snapshot deliberadamente no creado. No habilitar adquisición/comunicación.
 
 ## B. P0
 
 | Bloqueador | Evidencia / estado | Cierre necesario |
 | --- | --- | --- |
-| MERCADOPAGO_WEBHOOK_SECRET ausente | FAIL en env inspeccionada | Configurar secreto del webhook correcto y verificar firma/recurso con cuenta autorizada |
-| AUTH_SECRET/NEXTAUTH_SECRET válido ausente | FAIL; ninguna alternativa efectiva de al menos 32 caracteres | Configurar secreto de sesión válido sin exponerlo |
+| MERCADOPAGO_WEBHOOK_SECRET local ausente | Vercel presente Production+Preview; local checkout no representa Vercel | Separar Preview y verificar firma con aplicación test |
+| AUTH_SECRET local ausente | Vercel `AUTH_SECRET` presente; longitud no revelada | Confirmar estructuralmente en ventana sin exponer; validator exige la variable real |
 | Schema de producción incompleto | FAIL; faltan launch offers y Mercado Pago | Backup, migrate deploy y verificación de DDL/RLS/drift |
 | Primer débito diferido y ciclo MP oficial | NOT_RUN; solo simulador y SDK mock | Vendedor/comprador de prueba compatibles; probar start_date, aprobación, rechazo, cancelación y recovery |
 | Corte/snapshot fundador no preparado en producción | NOT_RUN; WEBSITE_LAUNCH_AT ausente | Fijar corte aprobado, doble dry run estable y sellado en release autorizado |
@@ -28,9 +44,11 @@ Subdominio/hosting/TLS, uploads Cloudinary y asociación Vercel reales: **NOT_RU
 
 ## D. P2
 
-32 warnings ESLint existentes (principalmente imágenes y dependencias de hooks); 0 errores. Touch físico y dispositivos reales NOT_RUN. No se afirma CWV medido, pentest, pixel-perfect o certificación de accesibilidad. Paddle internacional NOT_RUN y no bloquea Chile. Recordatorios por email preparados como copy, sin dispatcher nuevo ni envíos.
+47 warnings ESLint existentes (principalmente imágenes y dependencias de hooks); 0 errores. Touch físico y dispositivos reales NOT_RUN. No se afirma CWV medido, pentest, pixel-perfect o certificación de accesibilidad. Paddle internacional NOT_RUN y no bloquea Chile. Recordatorios por email preparados como copy, sin dispatcher nuevo ni envíos.
 
 ## E. MERCADOPAGO
+
+La URL operativa es `https://www.puragenda.cl/api/webhooks/mercadopago`. El secret se obtiene en la aplicación Mercado Pago → Webhooks/Notifications → secret signature y se guarda como `MERCADOPAGO_WEBHOOK_SECRET` Secret en Vercel Production. Los tres topics que procesa la ruta son `subscription_preapproval`, `subscription_authorized_payment` y `payment`. La guía de configuración y la separación segura Preview/Production están en [PRODUCTION-READINESS](PRODUCTION-READINESS.md).
 
 **Arquitectura:** `checkout.ts` elige MP para CL. `WebsiteAddon.mpSubscriptionId` es distinto de `Subscription.mpSubscriptionId` BASE. `WebsiteCheckoutOperation` guarda UUID/referencia `website:<UUID>`, tier/monto/moneda/primer cobro, estado y binding a add-on. Owner, businessId y precio se resuelven en servidor. Mensual CLP 5990 founder / 9990 standard, descripción Sitio Web Puragenda; no mezcla staff ni ciclo/descuentos base.
 
@@ -124,12 +142,12 @@ PASS REAL local navegador: public y builder Bella/Matchday/Ritual 1440, 390×844
 
 | Ejecución final sobre código auditado | Files passed / skipped / failed | Tests passed / skipped / failed |
 | --- | --- | --- |
-| npm test | 181 / 3 / 0 (184 total) | 1076 / 51 / 0 (1127 total) |
-| PostgreSQL opt-in completo | 184 / 0 / 0 | 1127 / 0 / 0 |
+| npm test | 182 / 3 / 0 (185 total) | 1078 / 51 / 0 (1129 total) |
+| PostgreSQL opt-in completo | 185 / 0 / 0 | 1129 / 0 / 0 |
 
 HTTP adicionales: 52 comerciales +29 públicos +18 acciones, todos PASS; no se suman a Vitest. Proveedor MP/Cloudinary/Vercel simulado donde aplica. La primera repetición comercial tras dejar B sin pago bloqueó la request antes de validar service ajeno (404); se restauró **fixture local B pagada** como precondición y la prueba adversarial devolvió el rechazo esperado. No se modificó producción ni se ocultó un bug del producto.
 
-Lint 0 errores /32 warnings; typecheck PASS; Prisma validate/generate PASS; build producción aislado PASS, 135 páginas. Resultados, hashes de archivos, object IDs y comandos en [validation.json](qa-preproduction/validation.json). Logs completos quedan en scratch ignorado; extractos sanitizados en [test-output.txt](qa-preproduction/test-output.txt). Verificación final de HEAD se registra fuera del commit para evitar un SHA autorreferencial.
+Lint 0 errores /47 warnings; typecheck PASS; Prisma validate/generate PASS; build producción aislado PASS, 135 páginas. Resultados, hashes de archivos, object IDs y comandos en [validation.json](qa-preproduction/validation.json). La repetición P0 está resumida en [second-pass-output.txt](qa-preproduction/second-pass-output.txt); logs completos quedan en scratch ignorado; extractos previos en [test-output.txt](qa-preproduction/test-output.txt). Verificación final de HEAD se registra fuera del commit para evitar un SHA autorreferencial.
 
 ## S. MIGRATIONS
 
@@ -142,11 +160,11 @@ No se ejecutó migrate deploy ni db push remoto. Fallo de migración/recuperaci�
 
 ## T. ENV
 
-[PRODUCTION-READINESS](PRODUCTION-READINESS.md) y [production-readonly.json](qa-preproduction/production-readonly.json): DB remota conectada dentro de BEGIN READ ONLY/ROLLBACK, MP GET200/MLC. Secretos nunca guardados en evidencia. Checkout/launch flags ausentes → apagados; root no explícito → fallback puragenda.cl; launchAt ausente. Cloudinary presente pero escritura NOT_RUN. Comprobar hosting/orígenes/proveedor antes de release. .env reales y .agents no trackeados; .env.example contiene placeholders y defaults feature-off.
+[PRODUCTION-READINESS](PRODUCTION-READINESS.md), [production-readonly.json](qa-preproduction/production-readonly.json), [production-preflight-readonly.json](qa-preproduction/production-preflight-readonly.json) y [vercel-readonly.json](qa-preproduction/vercel-readonly.json): DB conectada dentro de BEGIN READ ONLY/ROLLBACK, exactamente dos migraciones pendientes, cero locks de espera, MP GET200/MLC, y Vercel muestra MP token/webhook, AUTH_SECRET, DB y URL presentes. Secretos nunca guardados. Checkout/launch flags ausentes → apagados; root no explícito → fallback puragenda.cl; launchAt ausente. Preview comparte credenciales MP Production y debe aislarse antes de provider test. .env reales y .agents no trackeados; .env.example contiene placeholders y defaults feature-off.
 
 ## U. RELEASE RUNBOOK
 
-[RELEASE-RUNBOOK](RELEASE-RUNBOOK.md): backup recuperable → migraciones → deploy feature-off → smoke base/runtime → MP autorizado → prueba diferida → corte/doble dry run/snapshot → resolver P0/P1 y GO → habilitar adquisición → comunicación → monitor. Checklist post-deploy exacto preparado, **NOT_RUN**. WEBSITE_CHECKOUT_ENABLED=0 bloquea nuevas pruebas/checkouts/recovery sin retirar acceso pagado. WEBSITE_LAUNCH_ENABLED=0 bloquea nuevo anuncio. Runtime conserva política de base/publicación/entitlement; suspensión individual existente evita un kill switch global innecesario.
+[RELEASE-RUNBOOK](RELEASE-RUNBOOK.md): Vercel/env read-only → backup recuperable → preflight locks/migration → migrate deploy → post-check → deploy feature-off → smoke base/runtime → MP test aislado → corte/doble dry run/snapshot → resolver P0/P1 y GO → habilitar adquisición → comunicación → monitor. Checklist post-deploy exacto preparado, **NOT_RUN**. WEBSITE_CHECKOUT_ENABLED=0 bloquea nuevas pruebas/checkouts/recovery sin retirar acceso pagado. WEBSITE_LAUNCH_ENABLED=0 bloquea nuevo anuncio. Runtime conserva política de base/publicación/entitlement; suspensión individual existente evita un kill switch global innecesario.
 
 ## V. ROLLBACK
 
@@ -154,11 +172,12 @@ Runbook cubre deployment, migración, MP, runtime, dominio y débito temprano. C
 
 ## W. HEAD FINAL
 
-Todos los fixes están en `b0044c764defd89393ffc3bd26b80f8dff8bb07e`. El commit posterior añade solo docs/evidencia: los object IDs de `src`, `prisma`, `tests`, `scripts` y configuración prueban equivalencia del producto. PREPRODUCTION_HEAD_FINAL se obtiene **después** del commit de evidencia y se entrega en el informe final y `scratch/PREPRODUCTION_HEAD_FINAL.json`; el commit no puede incluir su propio hash. Se repiten comprobaciones finales sobre ese HEAD y se verifica igualdad con origin/webs. No se presenta un SHA previo como HEAD final.
+Los fixes de producto y hardening están en `b0044c764defd89393ffc3bd26b80f8dff8bb07e` y `84c9df516c55044fae70edeaa68ff977a5f8c139`. El commit posterior añade solo docs/evidencia: los object IDs de `src`, `prisma`, `tests`, `scripts` y configuración prueban equivalencia del producto. PREPRODUCTION_HEAD_FINAL se obtiene **después** del commit de evidencia y se entrega en el informe final y `scratch/PREPRODUCTION_HEAD_FINAL.json`; el commit no puede incluir su propio hash. Se repiten comprobaciones finales sobre ese HEAD y se verifica igualdad con origin/webs. No se presenta un SHA previo como HEAD final.
 
 ## X. COMMITS
 
 - `b0044c7` — feat(websites): harden Chile Mercado Pago billing and launch flows.
+- `84c9df5` — fix(websites): enforce production auth and preflight migrations.
 - Commit posterior de docs — informe NO-GO, evidencia y actualización QA/DELIVERY; SHA exacto en la entrega final.
 
 Diff acumulado clasificado en [final-diff-inventory.json](qa-preproduction/final-diff-inventory.json): producto, billing, migraciones, tests, docs, scripts y config. Revisión de secretos/paths documentada en validation.json. Rama webs subida tras validación; no merge ni deploy.

@@ -2,6 +2,8 @@
 
 La fachada checkout.ts selecciona MP para CL. WebsiteAddon.mpSubscriptionId y Subscription.mpSubscriptionId son productos independientes. Founder businessId: 15×24h una vez al pulsar PROBAR, luego 5990 CLP/mes permanentemente. Standard: 9990, sin trial. El servidor deriva todo precio; cliente no decide tier/monto/negocio.
 
+Vercel Production fue inspeccionado el 2026-10-02 en modo lectura: `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_WEBHOOK_SECRET` aparecen configurados en Production+Preview, pero sus valores no se revelaron ni se verificó un cobro. La Preview `webs` no debe usarse para proveedor real mientras comparte credenciales MP de producción; necesita credenciales oficiales de test y una DB aislada.
+
 WebsiteCheckoutOperation bajo lock crea UUID/ref, monto/moneda, firstChargeAt, estado y provider ID único. Triple click reutiliza una operación. CREATING/UNKNOWN exige conciliación antes de otro POST; no se presume idempotencia del proveedor. Pending reutiliza URL por GET; después de 24h exige cancelar antes de recrear.
 
 PreApproval mensual sin plan, CLP, reason Sitio Web Puragenda, status pending, external_reference website:<UUID>. auto_recurring.start_date = trialEndsAt en conversión temprana; conserva período ya pagado tras cancelación. Capacidad documentada y probada con simulador: **débito diferido del proveedor NOT_RUN**.
@@ -13,6 +15,14 @@ MP cancela recurrencia inmediatamente; período pagado verificado se conserva ha
 WEBSITE_CHECKOUT_ENABLED=0 bloquea trials/checkout/recovery sin quitar runtime pagado; cancelación sigue disponible. Simulador solo NODE_ENV no production + WEBSITE_QA/WEBSITE_BILLING_SIMULATOR=1 + DB loopback 55439/websiteqa, owner/origin/operación propios; sin dinero ni APIs externas.
 
 QA DB/HTTP y HMAC local real; provider PASS SIMULATED. Paddle internacional NOT_RUN, no bloquea CL. Ver [estado](PREPRODUCTION-STATES.md), [preparación](PRODUCTION-READINESS.md), [runbook](RELEASE-RUNBOOK.md). Fuentes: [PreApproval](https://www.mercadopago.cl/developers/en/reference/online-payments/subscriptions/create-preapproval/post), [gestión](https://www.mercadopago.cl/developers/es/docs/subscriptions/subscription-management), [webhooks](https://www.mercadopago.cl/developers/es/docs/subscriptions/additional-content/your-integrations/notifications/webhooks).
+
+## Checklist de proveedor oficial pendiente
+
+- Crear/seleccionar vendedor y comprador oficiales de test del mismo país, con credenciales de test separadas.
+- Apuntar una Preview/entorno aislado a una DB de test y a `/api/webhooks/mercadopago` con el secret de esa aplicación; nunca usar el token Production del proyecto actual.
+- Crear PreApproval Website founder de 5990 CLP mensual con `external_reference=website:<UUID>` y `auto_recurring.start_date=trialEndsAt` futuro.
+- Registrar la respuesta, no activar por retorno, recibir `subscription_preapproval`/`subscription_authorized_payment`/`payment`, validar firma → GET → binding → monto/moneda → add-on.
+- Comprobar que no hay débito antes de `trialEndsAt`, que cancelación solo toca Website y que BASE permanece intacta. Si MP no permite reproducir el débito diferido, conservar `NOT_RUN`/`PROVIDER_LIMITATION`.
 
 # Historia: implementación anterior Paddle sandbox
 

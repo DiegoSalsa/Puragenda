@@ -1,20 +1,22 @@
 # QA final de preproducción — 2 de octubre de 2026
 
-**NO-GO para producción Chile.** [Informe A–X](PREPRODUCTION-REPORT.md), [evidencia actual](qa-preproduction/validation.json), [env](PRODUCTION-READINESS.md) y [runbook](RELEASE-RUNBOOK.md). Código final auditado: `b0044c764defd89393ffc3bd26b80f8dff8bb07e`; commit de evidencia posterior solo docs. HEAD final se registra después del commit en la entrega y `scratch/PREPRODUCTION_HEAD_FINAL.json`.
+**NO-GO para producción Chile.** [Informe A–X](PREPRODUCTION-REPORT.md), [evidencia actual](qa-preproduction/validation.json), [env](PRODUCTION-READINESS.md) y [runbook](RELEASE-RUNBOOK.md). Código final auditado: `84c9df516c55044fae70edeaa68ff977a5f8c139`; commit de evidencia posterior solo docs. HEAD final se registra después del commit en la entrega y `scratch/PREPRODUCTION_HEAD_FINAL.json`.
+
+P0 segunda pasada: Vercel Production+Preview muestra MP access token, webhook secret, `AUTH_SECRET`, DB y URL presentes sin revelar valores; `WEBSITE_*` no definidos → adquisición/comunicación off. Preflight remoto read-only confirmó exactamente las dos migraciones pendientes y cero locks conflictivos. Provider MP oficial, webhook real, backup/migrate deploy y fecha/snapshot founder siguen **NOT_RUN/READY_TO_RUN**, según la [tabla operacional](PREPRODUCTION-REPORT.md#cierre-operacional-p0--segunda-pasada).
 
 | Comprobación de esta pasada | Resultado |
 | --- | --- |
-| Suite normal final | 181 files PASS /3 skipped /0 FAIL; 1076 tests PASS /51 skipped /0 FAIL |
-| Suite PostgreSQL opt-in final | 184 files PASS; 1127 tests PASS /0 skipped /0 FAIL |
+| Suite normal final | 182 files PASS /3 skipped /0 FAIL; 1078 tests PASS /51 skipped /0 FAIL |
+| Suite PostgreSQL opt-in final | 185 files PASS; 1129 tests PASS /0 skipped /0 FAIL |
 | HTTP real local | 52 comercial +29 público +18 acciones PASS; no sumados a Vitest |
 | MP Website Chile | 30 integration +7 route webhook; proveedor PASS SIMULATED; oficial E2E/deferred debit NOT_RUN |
 | Trial/founder/standard | Precio server 5990/9990, trial único exacto, early start_date, expiry, cancel/recovery y BASE separada validados localmente |
 | Browser | 3 templates public/builder 1440/390/360, popup/changelog, Ritual stress/HEX/lightbox/reserva; 36 capturas |
 | Booking navegador Ritual | Appointment count=1, PENDING; datos ficticios, email apagado |
-| Quality | Lint 0 errores /32 warnings, typecheck/Prisma PASS, build aislado 135 páginas |
+| Quality | Lint 0 errores /47 warnings, typecheck/Prisma PASS, build aislado 135 páginas |
 | Migraciones | Baseline MAIN +8 incrementales, sin drift; RLS 10 tablas PASS REAL local |
 | Producción | Env/DB BEGIN READ ONLY +ROLLBACK y MP GET200/MLC; no escrituras |
-| Bloqueadores | Secreto webhook y sesión faltantes, 2 migraciones pendientes, corte/snapshot sin preparar, MP oficial no probado |
+| Bloqueadores | Secretos webhook/sesión presentes en Vercel pero longitud/firma no verificables sin revelar, 2 migraciones pendientes, corte/snapshot sin preparar, MP oficial no probado |
 | Externos | Cloudinary/Vercel/DNS/TLS/email/Paddle internacional NOT_RUN |
 
 El kill switch de adquisición deja vigentes los sitios pagados. Capturas de trial/early conversion usan fechas del fixture y reloj avanzado local, no un débito aceptado por MP. [Extractos de ejecución](qa-preproduction/test-output.txt) y [diff clasificado](qa-preproduction/final-diff-inventory.json). Nada de merge/deploy ni pagos reales.

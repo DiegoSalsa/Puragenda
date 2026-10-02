@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-02T19:55:38.249Z",
+  "mode": "READ_ONLY",
+  "envPresence": {
+    "DATABASE_URL": true,
+    "DIRECT_URL": true
+  },
+  "migration": {
+    "expected": [
+      "20261001120000_website_launch_offers",
+      "20261002190000_website_mercadopago"
+    ],
+    "rows": [],
+    "pending": [
+      "20261001120000_website_launch_offers",
+      "20261002190000_website_mercadopago"
+    ],
+    "status": "EXACTLY_TWO_PENDING"
+  },
+  "schema": {
+    "tables": [],
+    "websiteAddonMpColumns": []
+  },
+  "locks": {
+    "waiting": 0,
+    "strongGranted": 0
+  },
+  "database": {
+    "readOnly": true,
+    "serverVersion": "17.6"
+  }
+}

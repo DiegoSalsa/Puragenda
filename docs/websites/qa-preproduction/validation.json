@@ -1,7 +1,7 @@
 {
   "date": "2026-10-02",
   "initialHead": "ae6e735602f206125df765d99dc8fe06aa6102f6",
-  "productHead": "b0044c764defd89393ffc3bd26b80f8dff8bb07e",
+  "productHead": "84c9df516c55044fae70edeaa68ff977a5f8c139",
   "runtimeObjects": {
     "src": "674b6c085b23f8a83d6d0a292a3fa0d0893662aa",
     "prisma": "dfdc550dcd5f06fe0236c9838767d2ec73e5a861",
@@ -52,6 +52,25 @@
       "pages": 135
     },
     "migrations": "PASS REAL local; 8 incrementals, no drift, RLS 10 tables"
+  },
+  "secondPass": {
+    "productCommit": "84c9df516c55044fae70edeaa68ff977a5f8c139",
+    "validatorTest": "PASS REAL local; 1 file, 2 tests",
+    "normal": { "filesPassed": 182, "filesSkipped": 3, "filesFailed": 0, "passed": 1078, "skipped": 51, "failed": 0 },
+    "postgres": { "filesPassed": 185, "filesSkipped": 0, "filesFailed": 0, "passed": 1129, "skipped": 0, "failed": 0 },
+    "lint": { "errors": 0, "warnings": 47 },
+    "typecheck": "PASS REAL local",
+    "isolatedBuild": "PASS REAL isolated; 135 pages",
+    "migrationContract": "PASS REAL local; no drift + RLS",
+    "productionPreflight": {
+      "mode": "READ_ONLY",
+      "readOnly": true,
+      "status": "EXACTLY_TWO_PENDING",
+      "pending": ["20261001120000_website_launch_offers", "20261002190000_website_mercadopago"],
+      "waitingLocks": 0,
+      "strongGrantedLocks": 0,
+      "executed": false
+    }
   },
   "billing": {
     "mpIntegrationCases": 30,
@@ -106,6 +125,7 @@
   },
   "commands": [
     "npm test",
+    "npx vitest run tests/server/validate-production-env.test.ts",
     "PURAGENDA_BOOKING_TEST_DATABASE_URL=<isolated loopback booking DB> WEBSITE_BILLING_TEST_DATABASE_URL=<isolated loopback website DB> node scripts/test-booking-api-local.mjs --all",
     "npm run lint",
     "npm run typecheck",
@@ -118,7 +138,8 @@
     "node scripts/test-websites-local.mjs",
     "node scripts/test-website-actions-local.mjs",
     "npx tsx scripts/grant-website-beta-founder.ts (two local dry runs, no --apply)",
-    "node scripts/audit-websites-production.mjs <sanitized evidence path>"
+    "node scripts/audit-websites-production.mjs <sanitized evidence path>",
+    "PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <sanitized evidence path>"
   ],
   "screenshots": [
     {

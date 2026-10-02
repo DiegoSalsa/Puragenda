@@ -4,18 +4,24 @@ Plan preparado, **NO ejecutado en producción**. No habilitar comunicación/adqu
 
 ## Orden de release
 
-1. Registrar SHA aprobado/deployment actual; backup PostgreSQL y prueba de recuperación. Guardar conteos Website, snapshot/ofertas, acuerdos y eventos en almacenamiento privado.
-2. WEBSITE_CHECKOUT_ENABLED=0 y WEBSITE_LAUNCH_ENABLED=0. Validar secreto de sesión, token/secreto MP, HTTPS app URL, root domain, media y conexión directa para migrar. No copiar valores a logs/tickets.
-3. Revisar `prisma migrate status`, migraciones pendientes y locks. Ejecutar `npm run db:migrate:deploy` solo contra el entorno aprobado. Nunca `db push` en producción ni marcar resuelta una migración parcial sin revisar DDL.
-4. Verificar tablas/columnas MP, índices, FKs, RLS/permisos. Prisma validate/generate y build corresponden al SHA aprobado.
-5. Desplegar feature-off. Smoke login, agenda, suscripción base y sitios ya pagados. Checkout apagado no modifica entitlement/runtime de sitios vigentes.
-6. Configurar `/api/webhooks/mercadopago`, secreto y topics subscription_preapproval, subscription_authorized_payment y payment cuando aplique. Signature antes de fetch; recurso remoto/operación local deben coincidir; Website se distingue de BASE.
-7. Con cuentas/entorno de prueba autorizados, completar matriz MP: founder/standard, primer débito trialEndsAt, rechazo/replay/cancel/recovery y BASE intacta. Authorized no equivale a pago aprobado.
-8. Fijar una WEBSITE_LAUNCH_AT ISO UTC aprobada. Ejecutar dos veces `npx tsx scripts/grant-website-beta-founder.ts`, sin --apply. Comparar candidatos/ya marcados/nuevos. Si hay otro snapshot, conciliar sin ampliar el snapshot sellado.
-9. Solo con aprobación operativa, aplicar una vez --apply y WEBSITE_LAUNCH_SNAPSHOT_CONFIRM con el ID calculado a partir del timestamp. Verificar miembros/eligibilidad y ausencia de trials automáticos. No cambiar el corte para otorgar beneficios posteriores.
-10. Resolver P0/P1 y registrar nuevo GO. Habilitar WEBSITE_CHECKOUT_ENABLED=1 y verificar ambas cohorts.
-11. Habilitar WEBSITE_LAUNCH_ENABLED=1; popup/version vista/changelog. Correos permanecen borradores hasta autorización de campaña.
-12. Monitorizar errores seguros, UNKNOWN/CREATING, pending/PAST_DUE, precios y reservas. Nunca payloads completos, correos ni tokens.
+### Preflight obligatorio (no muta)
+
+1. Abrir Vercel Project `puragenda` → Environment Variables y comprobar presencia por nombre/ámbito sin revelar valores. `AUTH_SECRET` es la variable efectiva de sesión; `NEXTAUTH_SECRET` es solo fallback. Confirmar que Preview no comparte credenciales MP de producción antes de una prueba.
+2. Ejecutar `PRODUCTION_PREFLIGHT_CONFIRM=READ_ONLY_ONLY node scripts/preflight-website-production.mjs <evidence-path>` contra la conexión aprobada. Debe reportar exactamente las dos migraciones pendientes, `readOnly=true`, cero locks esperando y cero locks fuertes concedidos por otra sesión. Si no coincide, detenerse.
+3. Revisar los dos SQL y el backup recuperable. La operación es aditiva, pero `ALTER TABLE`/índices requieren ventana. No hay `down` migration segura.
+
+4. Registrar SHA aprobado/deployment actual; backup PostgreSQL y prueba de recuperación. Guardar conteos Website, snapshot/ofertas, acuerdos y eventos en almacenamiento privado.
+5. WEBSITE_CHECKOUT_ENABLED=0 y WEBSITE_LAUNCH_ENABLED=0. Validar secreto de sesión, token/secreto MP, HTTPS app URL, root domain, media y conexión directa para migrar. No copiar valores a logs/tickets.
+6. Revisar `prisma migrate status`, migraciones pendientes y locks. Ejecutar `npm run db:migrate:deploy` solo contra el entorno aprobado. Nunca `db push` en producción ni marcar resuelta una migración parcial sin revisar DDL.
+7. Verificar tablas/columnas MP, índices, FKs, RLS/permisos. Prisma validate/generate y build corresponden al SHA aprobado.
+8. Desplegar feature-off. Smoke login, agenda, suscripción base y sitios ya pagados. Checkout apagado no modifica entitlement/runtime de sitios vigentes.
+9. Configurar `https://www.puragenda.cl/api/webhooks/mercadopago`, secret y topics `subscription_preapproval`, `subscription_authorized_payment` y `payment`. Signature antes de fetch; recurso remoto/operación local deben coincidir; Website se distingue de BASE.
+10. Con cuentas de vendedor/comprador oficiales de test del mismo país, Preview aislado y DB de test, completar matriz MP: founder/standard, primer débito `trialEndsAt`, rechazo/replay/cancel/recovery y BASE intacta. Authorized no equivale a pago aprobado.
+11. Fijar una `WEBSITE_LAUNCH_AT` ISO UTC aprobada. Ejecutar dos veces `npx tsx scripts/grant-website-beta-founder.ts`, sin `--apply`. Comparar candidatos/ya marcados/nuevos. Si hay otro snapshot, conciliar sin ampliar el snapshot sellado.
+12. Solo con aprobación operativa, aplicar una vez `--apply` y `WEBSITE_LAUNCH_SNAPSHOT_CONFIRM` con el ID calculado a partir del timestamp. Verificar miembros/eligibilidad y ausencia de trials automáticos. No cambiar el corte para otorgar beneficios posteriores.
+13. Resolver P0/P1 y registrar nuevo GO. Habilitar `WEBSITE_CHECKOUT_ENABLED=1` y verificar ambas cohorts.
+14. Habilitar `WEBSITE_LAUNCH_ENABLED=1`; popup/version vista/changelog. Correos permanecen borradores hasta autorización de campaña.
+15. Monitorizar errores seguros, UNKNOWN/CREATING, pending/PAST_DUE, precios y reservas. Nunca payloads completos, correos ni tokens.
 
 ## Checkout ambiguo
 
