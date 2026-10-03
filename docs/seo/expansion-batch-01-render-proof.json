@@ -1,0 +1,46 @@
+{
+  "/software-agenda-barberias": {
+    "before": "304cdc03c5199c46c28701d8e8cb0de0b07a1c999d6412c1a45473ea6969ef36",
+    "after": "304cdc03c5199c46c28701d8e8cb0de0b07a1c999d6412c1a45473ea6969ef36"
+  },
+  "/para/barberias": {
+    "before": "030184b87f108562f22eca34170e4eec195fee683a4aa2a46f4e799728048250",
+    "after": "030184b87f108562f22eca34170e4eec195fee683a4aa2a46f4e799728048250"
+  },
+  "/software-agenda-peluquerias": {
+    "before": "5a7453de70da5fc1fbae77c68c3a564cad3091c14406a08afd1b8844c462714e",
+    "after": "5a7453de70da5fc1fbae77c68c3a564cad3091c14406a08afd1b8844c462714e"
+  },
+  "/para/peluquerias": {
+    "before": "33e6512d794021d7f6ac2c7da4f8513b26c86ebadc7aeb3a5d59a4ff0f22ee02",
+    "after": "33e6512d794021d7f6ac2c7da4f8513b26c86ebadc7aeb3a5d59a4ff0f22ee02"
+  },
+  "/software-agenda-manicure": {
+    "before": "a2a2017388ed737e3e05bf9ebd2e1222afbb65d0ea5d0f8b98d361c39480b28e",
+    "after": "a2a2017388ed737e3e05bf9ebd2e1222afbb65d0ea5d0f8b98d361c39480b28e"
+  },
+  "/para/manicure": {
+    "before": "2218da59d67e9c239124999d3697cf9109dadf7ba280ec231666855032ecb225",
+    "after": "2218da59d67e9c239124999d3697cf9109dadf7ba280ec231666855032ecb225"
+  },
+  "/software-agenda-estetica": {
+    "before": "5cd88130e9605f30a3182ef7cf600a50df8837465a43ad32e6930be000ffd0e5",
+    "after": "5cd88130e9605f30a3182ef7cf600a50df8837465a43ad32e6930be000ffd0e5"
+  },
+  "/para/estetica": {
+    "before": "922f7768420013c185225f283d9cd15be68c6480445d3c121edbeed998f21366",
+    "after": "922f7768420013c185225f283d9cd15be68c6480445d3c121edbeed998f21366"
+  },
+  "/software-agenda-psicologos": {
+    "before": "84a8c18e46021804d4807614f40957d94e6678e3d635a1bbfc62e6054fb7349d",
+    "after": "84a8c18e46021804d4807614f40957d94e6678e3d635a1bbfc62e6054fb7349d"
+  },
+  "/para/psicologos": {
+    "before": "85b367fed0b2208fa4201ee994f0b59f60b46a9d9c3184a0107608a98d21bc6b",
+    "after": "85b367fed0b2208fa4201ee994f0b59f60b46a9d9c3184a0107608a98d21bc6b"
+  },
+  "/soluciones": {
+    "before": "725400ea6a1f09b981a3061385bc0dfcbbef7025fdc7f23f85b664d764ebdd23",
+    "after": "725400ea6a1f09b981a3061385bc0dfcbbef7025fdc7f23f85b664d764ebdd23"
+  }
+}

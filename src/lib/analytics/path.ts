@@ -16,6 +16,8 @@ const STATIC_PATHS = new Set([
   "/sobre-nosotros",
   "/contacto",
   "/alternativa-agendapro",
+  "/alternativa-calendly",
+  "/alternativa-fresha",
   "/politica-de-privacidad",
   "/terminos-y-condiciones",
   "/privacidad/solicitud",

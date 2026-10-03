@@ -1,3 +1,5 @@
+import { expansionFeatureSolutions, type FeatureDetail } from "./expansion-features";
+
 export type FeatureSolution = {
   slug: string;
   title: string;
@@ -9,6 +11,7 @@ export type FeatureSolution = {
   benefits: Array<{ title: string; description: string }>;
   steps: Array<{ title: string; description: string }>;
   faq: Array<{ question: string; answer: string }>;
+  detail?: FeatureDetail;
 };
 
 export const featureSolutions: FeatureSolution[] = [
@@ -90,5 +93,10 @@ export const featureSolutions: FeatureSolution[] = [
 ];
 
 export function getFeatureSolution(slug: string) {
-  return featureSolutions.find((solution) => solution.slug === slug);
+  return getAllFeatureSolutions().find((solution) => solution.slug === slug);
+}
+
+// Keep the curated /soluciones selection stable during the vertical experiment.
+export function getAllFeatureSolutions(): FeatureSolution[] {
+  return [...featureSolutions, ...expansionFeatureSolutions];
 }

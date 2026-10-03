@@ -10,6 +10,7 @@ import {
 import { googleAnalyticsEventsFor } from "@/lib/analytics/google-events";
 import { getGoogleAnalyticsId } from "@/lib/analytics/google-analytics";
 import { normalizeTrackingPath } from "@/lib/analytics/path";
+import { seoContentProperties } from "@/lib/data/seo-expansion";
 
 const VISITOR_ID_KEY = "puragenda_tracking_visitor_id";
 const SESSION_ID_KEY = "puragenda_tracking_session_id";
@@ -173,6 +174,7 @@ export function track(
   const attribution = firstTouchAttribution();
   const safeProperties = sanitizeTrackingProperties(event, {
     ...properties,
+    ...(event === "page_view" || event === "landing_cta_clicked" ? seoContentProperties(window.location.pathname) : {}),
     landing_path: attribution.landingPath,
     first_referrer_domain: attribution.referrerDomain,
     first_utm_source: attribution.utmSource,

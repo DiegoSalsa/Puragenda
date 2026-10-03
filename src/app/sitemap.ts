@@ -4,7 +4,8 @@ import { industriesData } from "@/lib/data/industries";
 import { guides } from "@/lib/data/guides";
 import { getIndexableMarketplaceSitemapEntries } from "@/lib/marketplace";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
-import { featureSolutions } from "@/lib/data/feature-solutions";
+import { getAllFeatureSolutions } from "@/lib/data/feature-solutions";
+import { alternatives } from "@/lib/data/alternatives";
 import { CASE_STUDIES_PATH, caseStudyPath, getIndexableCaseStudyPaths, getPublishedCaseStudies } from "@/lib/data/case-studies";
 
 const contentUpdatedAt = new Date("2026-09-01T00:00:00-04:00");
@@ -63,17 +64,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(({ path }) => isSitemapEligible(path))
     .map(({ guide, path }) => ({
       url: sitemapUrl(path),
-      lastModified: new Date(`${guide.updatedAt}T00:00:00-04:00`),
+      lastModified: new Date(`${guide.updatedAt}T00:00:00${guide.detail ? "-03:00" : "-04:00"}`),
       changeFrequency: "monthly" as const,
       priority: 0.8,
     }));
 
-  const featureRoutes: MetadataRoute.Sitemap = featureSolutions
-    .map((feature) => `/funciones/${feature.slug}`)
-    .filter(isSitemapEligible)
-    .map((path) => ({
+  const featureRoutes: MetadataRoute.Sitemap = getAllFeatureSolutions()
+    .map((feature) => ({ feature, path: `/funciones/${feature.slug}` }))
+    .filter(({ path }) => isSitemapEligible(path))
+    .map(({ feature, path }) => ({
       url: sitemapUrl(path),
-      lastModified: contentUpdatedAt,
+      lastModified: feature.detail ? new Date(`${feature.detail.updatedAt}T00:00:00-03:00`) : contentUpdatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.9,
     }));
@@ -96,5 +97,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     return isSitemapEligible(path);
   });
 
-  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes, ...caseStudyRoutes, ...marketplaceRoutes];
+  const alternativeRoutes: MetadataRoute.Sitemap = alternatives
+    .filter((page) => isSitemapEligible("/" + page.slug))
+    .map((page) => ({
+      url: sitemapUrl("/" + page.slug),
+      lastModified: new Date(page.updatedAt + "T00:00:00-03:00"),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    }));
+
+  return [...staticRoutes, ...featureRoutes, ...industryRoutes, ...guideRoutes, ...caseStudyRoutes, ...marketplaceRoutes, ...alternativeRoutes];
 }

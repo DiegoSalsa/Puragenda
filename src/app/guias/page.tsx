@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Clock3 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { guides } from "@/lib/data/guides";
+import { expansionFeatureSolutions } from "@/lib/data/expansion-features";
+import { alternatives } from "@/lib/data/alternatives";
 import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
@@ -74,6 +76,15 @@ export default async function GuidesPage() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section className="mt-16 border-t-2 border-black pt-10 dark:border-white" aria-labelledby="resources-heading">
+          <h2 id="resources-heading" className="text-2xl font-black">Funciones y alternativas para aplicar estas guías</h2>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+            {[...expansionFeatureSolutions.map((feature) => ({ href: "/funciones/" + feature.slug, title: feature.title.replace(" | Puragenda", "") })), ...alternatives.map((page) => ({ href: "/" + page.slug, title: page.title }))].map((item) => (
+              <li key={item.href}><Link href={item.href} className="block rounded-xl border-2 border-black/20 bg-white p-5 font-bold underline underline-offset-4 dark:border-white/25 dark:bg-[#222]">{item.title}</Link></li>
+            ))}
+          </ul>
         </section>
 
         <section className="mx-auto mt-20 max-w-4xl border-t-4 border-black pt-12 text-center dark:border-white">

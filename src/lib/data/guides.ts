@@ -1,3 +1,5 @@
+import { expansionGuides, type GuideDetail } from "./expansion-guides";
+
 export type GuideSection = {
   heading: string;
   paragraphs: string[];
@@ -14,9 +16,10 @@ export type Guide = {
   sections: GuideSection[];
   faq: { question: string; answer: string }[];
   related: string[];
+  detail?: GuideDetail;
 };
 
-export const guides: Guide[] = [
+export const guides: Guide[] = [...expansionGuides,
   {
     slug: "agenda-encargos-con-abono",
     title: "Cómo organizar encargos con abono y fecha de entrega",

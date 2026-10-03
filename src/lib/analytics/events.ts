@@ -1,3 +1,5 @@
+import { isSafeSeoProperty, SEO_CONTENT_KEYS } from "@/lib/data/seo-expansion";
+
 export const TRACKING_EVENTS = [
   "page_view",
   "landing_cta_clicked",
@@ -60,8 +62,8 @@ export type TrackingProperties = Record<string, TrackingPropertyValue>;
 // This is a deny-by-default schema. Adding an event or property is an explicit
 // product decision and makes accidental collection of PII much harder.
 export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]> = {
-  page_view: ["page_type", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
-  landing_cta_clicked: ["cta", "placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  page_view: ["page_type", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign", ...SEO_CONTENT_KEYS],
+  landing_cta_clicked: ["cta", "placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign", ...SEO_CONTENT_KEYS],
   contact_lead_submitted: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
   whatsapp_clicked: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
   pricing_plan_selected: ["plan", "intent", "extra_staff", "billing_cycle", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
@@ -130,6 +132,7 @@ export function sanitizeTrackingProperties(
 
   for (const [key, value] of Object.entries(properties)) {
     if (!allowed.has(key)) continue;
+    if (key.startsWith("seo_") && !isSafeSeoProperty(key, value)) continue;
     if (typeof value === "string") {
       sanitized[key] = value.trim().slice(0, MAX_PROPERTY_LENGTH);
     } else if (typeof value === "number" && Number.isFinite(value)) {
