@@ -15,7 +15,7 @@ export type FeatureDetail = {
 export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDetail })[] = [
   {
     slug: "recordatorios-citas-email",
-    title: "Recordatorios de citas por email | Puragenda",
+    title: "Recordatorios de citas por email",
     description: "Conoce cuándo envía Puragenda los recordatorios de citas por email, qué información incluyen y qué ocurre con las reservas de última hora.",
     eyebrow: "Comunicación de citas",
     headline: "Recordatorios de citas por email, con un horario claro",
@@ -71,7 +71,7 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
   },
   {
     slug: "reservas-sin-cuenta",
-    title: "Reservas online sin crear cuenta | Puragenda",
+    title: "Reservas online sin crear cuenta",
     description: "Tus clientes reservan desde un enlace o widget en el navegador, sin cuenta de Puragenda ni app. Conoce los datos y pasos del flujo real.",
     eyebrow: "Acceso del cliente",
     headline: "Tus clientes reservan sin crear una cuenta",
@@ -127,7 +127,7 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
   },
   {
     slug: "widget-reservas-web",
-    title: "Widget de reservas para tu página web | Puragenda",
+    title: "Widget de reservas para tu página web",
     description: "Inserta la agenda de Puragenda mediante iframe en un sitio existente. Conecta catálogo, profesionales y disponibilidad sin duplicar reservas.",
     eyebrow: "Agenda en tu sitio existente",
     headline: "Un widget de reservas dentro de tu página web",
@@ -183,7 +183,7 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
   },
   {
     slug: "agenda-multiples-sucursales",
-    title: "Agenda para múltiples sucursales | Puragenda",
+    title: "Agenda para múltiples sucursales",
     description: "Organiza ubicaciones, servicios, profesionales y horarios por sucursal. Conoce cómo el cliente elige el local al reservar con Puragenda.",
     eyebrow: "Ubicaciones y disponibilidad",
     headline: "Organiza reservas para varias sucursales",
@@ -239,7 +239,7 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
   },
   {
     slug: "gift-cards",
-    title: "Gift Cards para negocios de servicios | Puragenda",
+    title: "Gift Cards para negocios de servicios",
     description: "Crea Gift Cards por monto o servicios, registra ventas manuales y habilita venta online con Mercado Pago. Gestiona entrega y canje desde Puragenda.",
     eyebrow: "Regalar una atención",
     headline: "Gift Cards por monto o servicios para tu negocio",

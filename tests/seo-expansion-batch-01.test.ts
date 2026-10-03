@@ -8,13 +8,16 @@ import sitemap from "@/app/sitemap";
 import { featureSolutions, getAllFeatureSolutions, getFeatureSolution } from "@/lib/data/feature-solutions";
 import { guides, getGuide } from "@/lib/data/guides";
 import { alternatives } from "@/lib/data/alternatives";
+import { expansionFeatureSolutions } from "@/lib/data/expansion-features";
 import { SEO_EXPANSION_BATCH, seoExpansionPages, seoContentProperties } from "@/lib/data/seo-expansion";
 import { expansionMetadata, expansionSchema } from "@/lib/seo-expansion";
 import { sanitizeTrackingProperties } from "@/lib/analytics/events";
 import { googleAnalyticsEventsFor } from "@/lib/analytics/google-events";
 import { toGoogleAnalyticsPagePath } from "@/lib/analytics/path";
-import { generateStaticParams as featureParams } from "@/app/funciones/[slug]/page";
-import { generateStaticParams as guideParams } from "@/app/guias/[slug]/page";
+import { generateStaticParams as featureParams, generateMetadata as featureMetadata } from "@/app/funciones/[slug]/page";
+import { generateStaticParams as guideParams, generateMetadata as guideMetadata } from "@/app/guias/[slug]/page";
+import { metadata as calendlyMetadata } from "@/app/alternativa-calendly/page";
+import { metadata as freshaMetadata } from "@/app/alternativa-fresha/page";
 
 const baseline = JSON.parse(readFileSync("docs/seo/expansion-batch-01-baseline.json", "utf8")) as { base: string; initialDiff: string; hashes: Record<string, string> };
 const pages = seoExpansionPages.map((entry) => {
@@ -26,8 +29,8 @@ const pages = seoExpansionPages.map((entry) => {
   return { ...entry, content, h1, directAnswer };
 });
 
-function originalData(path: string, name: string) {
-  const original = execFileSync("git", ["show", baseline.base + ":" + path], { encoding: "utf8" });
+function originalData(path: string, name: string, ref = baseline.base) {
+  const original = execFileSync("git", ["show", ref + ":" + path], { encoding: "utf8" });
   const code = ts.transpileModule(original, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   const exports: Record<string, unknown> = {};
   vm.runInNewContext(code, { exports });
@@ -46,11 +49,57 @@ describe("SEO expansion batch 01", () => {
     expect(alternatives.map((page) => page.slug)).toEqual(["alternativa-calendly", "alternativa-fresha"]);
   });
 
-  it.each(pages)("has canonical, index/follow and OG for $path", (page) => {
-    const metadata = expansionMetadata({ title: page.content.title, description: page.content.description, path: page.path });
+  it.each(pages)("preserves canonical, single-brand social metadata and Googlebot directives for $path", async (page) => {
+    const metadata = page.cluster === "feature" ? await featureMetadata({ params: Promise.resolve({ slug: page.id }) }) :
+      page.cluster === "guide" ? await guideMetadata({ params: Promise.resolve({ slug: page.id }) }) :
+      page.id === "alternativa-calendly" ? calendlyMetadata : freshaMetadata;
+    const brandedTitle = page.content.title + " | Puragenda";
     expect(metadata.alternates?.canonical).toBe("https://www.puragenda.cl" + page.path);
-    expect(metadata.robots).toEqual({ index: true, follow: true });
-    expect(metadata.openGraph).toMatchObject({ url: "https://www.puragenda.cl" + page.path });
+    expect(metadata.title).toEqual({ absolute: brandedTitle });
+    expect(metadata.openGraph).toMatchObject({
+      url: "https://www.puragenda.cl" + page.path,
+      title: brandedTitle,
+      images: [{ alt: page.content.title + " — Puragenda" }],
+    });
+    expect(metadata.twitter).toMatchObject({ title: brandedTitle });
+    const serialized = JSON.stringify(metadata);
+    expect(serialized).not.toMatch(/Puragenda — Puragenda|Puragenda \| Puragenda/);
+    const finalTitle = typeof metadata.title === "object" && metadata.title && "absolute" in metadata.title ? metadata.title.absolute : metadata.title;
+    for (const title of [finalTitle, metadata.openGraph?.title, metadata.twitter?.title]) {
+      expect(typeof title).toBe("string");
+      expect(String(title).match(/Puragenda/g)).toHaveLength(1);
+    }
+    const images = metadata.openGraph?.images;
+    const image = Array.isArray(images) ? images[0] : images;
+    expect(image).toBeTypeOf("object");
+    expect(String((image as { alt: string }).alt).match(/Puragenda/g)).toHaveLength(1);
+    expect(metadata.robots).toEqual({
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    });
+  });
+
+  it("brands legacy suffixed input once without duplicating the social image alt", () => {
+    const input = { title: "Reservas online sin crear cuenta", description: "Reserva desde el navegador.", path: "/funciones/reservas-sin-cuenta" };
+    expect(expansionMetadata({ ...input, title: input.title + " | Puragenda" })).toEqual(expansionMetadata(input));
+  });
+
+  it("preserves audited feature content except for removing title branding", () => {
+    const approved = originalData("src/lib/data/expansion-features.ts", "expansionFeatureSolutions", "26d8b035958d02f943f9d13b56347649a2ab2223") as typeof expansionFeatureSolutions;
+    expect(expansionFeatureSolutions).toEqual(approved.map((feature) => ({ ...feature, title: feature.title.replace(/ \| Puragenda$/, "") })));
+    for (const feature of expansionFeatureSolutions) expect(feature.title).not.toContain("Puragenda");
+  });
+
+  it("preserves the sitemap URL list from audited SHA 26d8b035958d02f943f9d13b56347649a2ab2223", () => {
+    const urls = sitemap().map((entry) => entry.url);
+    expect(createHash("sha256").update(JSON.stringify(urls)).digest("hex")).toBe("e40ffbf3ec93fc18700d1e911aee76f2bb3336a1956a357963d6af8352b4f76c");
   });
 
   it("has distinct titles, H1s, descriptions, answers and FAQ questions", () => {
