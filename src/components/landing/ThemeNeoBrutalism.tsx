@@ -25,7 +25,7 @@ const neoVars: React.CSSProperties & Record<string, string> = {
   "--ring": "#7C3AED",
 };
 
-export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
+export function ThemeNeoBrutalism({ user, business, commercialSection }: LandingIdentityProps & { commercialSection?: React.ReactNode }) {
   const puriT = useTranslations("puri");
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#FFFAEB] text-black dark:bg-[#111111] dark:text-white font-sans selection:bg-[#B28DFF] dark:selection:text-black transition-colors duration-300" style={neoVars}>
@@ -436,6 +436,7 @@ export function ThemeNeoBrutalism({ user, business }: LandingIdentityProps) {
           </div>
         </section>
 
+        {commercialSection}
         {/* CTA FINAL */}
         <section className="border-t-4 border-black dark:border-white py-20 bg-[#85E3FF] dark:bg-[#B28DFF] dark:text-black">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center">

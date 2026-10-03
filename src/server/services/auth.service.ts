@@ -83,6 +83,8 @@ export async function registerUser(data: {
   referralCode?: string | null;
   planIntent?: "INDIVIDUAL" | "EQUIPO" | "TEST" | null;
   extraStaffCount?: number;
+  websiteIntent?: boolean;
+  billingCycle?: "MONTHLY" | "ANNUAL";
   locale?: AppLocale;
   marketplaceCategorySlug: string;
   marketplaceOtherDescription?: string | null;
@@ -196,6 +198,7 @@ export async function registerUser(data: {
     await tx.subscription.create({
       data: {
         businessId: business.id,
+        billingCycle: data.billingCycle ?? "MONTHLY",
         plan,
         status,
         isTrial,
@@ -203,6 +206,11 @@ export async function registerUser(data: {
         extraStaffCount: plan === "EQUIPO" ? Math.max(0, Math.min(20, Math.floor(data.extraStaffCount ?? 0))) : 0,
       },
     });
+
+    // Selection persists independently of entitlement and Founder eligibility.
+    if (data.websiteIntent && region.code === "CL" && plan !== "TEST") {
+      await tx.websitePurchaseIntent.create({ data: { businessId: business.id } });
+    }
 
     // Record IP for future fraud detection
     const WHITELISTED_IPS = (process.env.WHITELISTED_IPS || "").split(",").map(i => i.trim()).filter(Boolean);

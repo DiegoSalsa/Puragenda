@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const redirect = new URL("/dashboard/settings", request.nextUrl.origin);
+    const intent = await prisma.websitePurchaseIntent.findUnique({ where: { businessId: payload.businessId } });
+    const redirect = new URL(intent ? "/onboarding/website" : "/dashboard/settings", request.nextUrl.origin);
     redirect.searchParams.set("local_payment", approved ? "approved" : "rejected");
     return NextResponse.redirect(redirect, 303);
   }

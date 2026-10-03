@@ -3,6 +3,8 @@ import { isSupportedCountryCode, isValidTimeZone } from "@/core/countries";
 import { registrationMarketplaceShapeErrors } from "@/lib/marketplace/onboarding";
 
 export const registerSchema = z.object({
+  websiteIntent: z.boolean().optional().default(false),
+  billingCycle: z.enum(["MONTHLY", "ANNUAL"]).optional().default("MONTHLY"),
   email: z
     .string({ message: "El email es obligatorio" })
     .email("Debe ser un email válido")

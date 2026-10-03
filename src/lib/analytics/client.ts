@@ -171,22 +171,24 @@ export function track(
   if (typeof window === "undefined" || !hasAnalyticsConsent()) return;
 
   initializeAnalytics();
+  const commercialFunnel = properties.website_intent === true || ["website_addon_toggled", "website_purchase_continued", "base_subscription_activated"].includes(event);
   const attribution = firstTouchAttribution();
   const safeProperties = sanitizeTrackingProperties(event, {
     ...properties,
     ...(event === "page_view" || event === "landing_cta_clicked" ? seoContentProperties(window.location.pathname) : {}),
     landing_path: attribution.landingPath,
-    first_referrer_domain: attribution.referrerDomain,
-    first_utm_source: attribution.utmSource,
-    first_utm_medium: attribution.utmMedium,
-    first_utm_campaign: attribution.utmCampaign,
+    first_referrer_domain: commercialFunnel ? undefined : attribution.referrerDomain,
+    first_utm_source: commercialFunnel ? undefined : attribution.utmSource,
+    first_utm_medium: commercialFunnel ? undefined : attribution.utmMedium,
+    first_utm_campaign: commercialFunnel ? undefined : attribution.utmCampaign,
   });
   const browserContext = currentContext();
   const payload = {
     event,
     ...browserContext,
+    ...(commercialFunnel ? { referrerDomain: undefined, utmSource: undefined, utmMedium: undefined, utmCampaign: undefined } : {}),
     consentVersion: ANALYTICS_POLICY_VERSION,
-    businessSlug: eventContext?.businessSlug,
+    businessSlug: commercialFunnel ? undefined : eventContext?.businessSlug,
     properties: safeProperties,
   };
 
@@ -199,7 +201,7 @@ export function track(
   }).catch(() => undefined);
 
   void loadPosthog().then((posthog) => {
-    posthog?.capture(event, { ...safeProperties, $current_url: window.location.origin + payload.path });
+    posthog?.capture(event, { ...safeProperties, $current_url: commercialFunnel ? payload.path : window.location.origin + payload.path });
   });
 
   sendGoogleAnalyticsEvents(event, safeProperties);

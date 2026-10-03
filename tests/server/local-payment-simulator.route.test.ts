@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
     subscription: { findUnique: vi.fn(), update: vi.fn() },
+    websitePurchaseIntent: { findUnique: vi.fn() },
     appointment: { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
@@ -32,6 +33,7 @@ function postRequest(token: string, result: "approved" | "rejected") {
 
 describe("local payment simulator route", () => {
   beforeEach(() => {
+    vi.mocked(prisma.websitePurchaseIntent.findUnique).mockResolvedValue(null);
     vi.stubEnv("NODE_ENV", "test");
     vi.stubEnv("LOCAL_PAYMENT_SIMULATOR", "true");
     vi.stubEnv("LOCAL_PAYMENT_SIMULATOR_SECRET", "dummy-secret-only-for-local-tests");

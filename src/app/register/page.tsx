@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -10,7 +11,8 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { getLocale } from "next-intl/server";
 import { listRegistrationMarketplaceCatalog } from "@/server/services/marketplace-onboarding.service";
 
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const query = await searchParams;
   const user = await getCurrentSessionUser();
   const locale = await getLocale();
   const requestHeaders = await headers();
@@ -18,7 +20,7 @@ export default async function RegisterPage() {
   const initialCountryCode = isSupportedCountryCode(detectedCountry) ? detectedCountry : "";
 
   if (user) {
-    redirect("/dashboard");
+    redirect(query.website === "1" ? "/onboarding/website?select=1" : "/dashboard");
   }
 
   const marketplaceCatalog = await listRegistrationMarketplaceCatalog();
@@ -44,6 +46,7 @@ export default async function RegisterPage() {
             localityOptions={marketplaceCatalog.localities}
             paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
             initialCountryCode={initialCountryCode}
+            websiteAcquisitionEnabled={publicWebsiteAcquisitionEnabled()}
           />
         </Suspense>
       </div>

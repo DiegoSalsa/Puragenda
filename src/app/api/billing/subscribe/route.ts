@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { claimBundleBaseCheckout, finishBundleBaseCheckout, markBundleBaseUnknown } from "@/server/websites/purchase-intent";
+import { WebsiteError } from "@/server/websites/errors";
 import { billingLimiter } from "@/server/lib/rate-limit";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
@@ -26,6 +28,7 @@ import { getPaddleCheckoutItems } from "@/server/lib/paddle";
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
 export async function POST(request: NextRequest) {
+  let bundleClaim: { businessId: string; key: string } | null = null;
   try {
     // Rate limiting
     const blocked = billingLimiter.check(request);
@@ -84,12 +87,15 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    const purchaseIntent = business.countryCode === "CL" ? await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }) : null;
+    if (purchaseIntent && business.ownerId !== user.id) return NextResponse.json({ error: "Solo el propietario puede contratar." }, { status: 403 });
+    if (purchaseIntent) requestedExtraStaffCount = subscription?.extraStaffCount ?? 0;
 
     // The persisted Equipo plan is authoritative for activation. A stale or
     // tampered client payload must not silently downgrade its checkout to
     // Individual; an explicit Equipo request still supports upgrades.
     const targetPlan: ValidPlan =
-      subscription?.plan === "EQUIPO" && requestedPlan !== "EQUIPO"
+      purchaseIntent ? subscription?.plan === "EQUIPO" ? "EQUIPO" : "INDIVIDUAL" : subscription?.plan === "EQUIPO" && requestedPlan !== "EQUIPO"
         ? "EQUIPO"
         : requestedPlan ?? "EQUIPO";
 
@@ -117,7 +123,7 @@ export async function POST(request: NextRequest) {
     const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "");
     const baseUrl = configuredBaseUrl
       || (isProduction ? "https://www.puragenda.cl" : request.nextUrl.origin);
-    const backUrl = `${baseUrl}/dashboard/settings`;
+    const backUrl = `${baseUrl}${purchaseIntent ? "/onboarding/website" : "/dashboard/settings"}`;
 
     // Chile keeps Mercado Pago in CLP. Every other country starts Paddle Checkout
     // with the fixed USD catalog price; Paddle localizes the presented currency and tax.
@@ -222,6 +228,22 @@ export async function POST(request: NextRequest) {
 
     const pendingState = pendingCheckoutSubscriptionState(subscription);
 
+    if (!localSimulatorEnabled && !process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
+      const failure = mercadoPagoNotConfigured(isProduction);
+      return NextResponse.json(failure.body, { status: failure.status });
+    }
+    if (purchaseIntent) {
+      try {
+        const claimed = await claimBundleBaseCheckout(business.id, { get: async ({ id }) => localSimulatorEnabled
+          ? { status: "pending", init_point: (await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }))?.baseCheckoutUrl ?? undefined }
+          : new PreApproval(mpClient).get({ id }) });
+        if (claimed?.reused) return NextResponse.json({ init_point: claimed.url, reused: true });
+        if (claimed && !claimed.reused) bundleClaim = { businessId: business.id, key: claimed.key };
+      } catch (error) {
+        if (error instanceof WebsiteError) return NextResponse.json({ error: error.message }, { status: 409 });
+        throw error;
+      }
+    }
     if (localSimulatorEnabled) {
       const providerId = localProviderId("subscription");
       const savedSubscription = await prisma.subscription.upsert({
@@ -273,6 +295,7 @@ export async function POST(request: NextRequest) {
         amount: transactionAmount,
         currency: business.currencyCode,
       });
+      if (bundleClaim) await finishBundleBaseCheckout(business.id, bundleClaim.key, providerId, localPaymentCheckoutUrl(baseUrl, token));
       return NextResponse.json({
         init_point: localPaymentCheckoutUrl(baseUrl, token),
         discount: platformDiscount ?? null,
@@ -295,8 +318,9 @@ export async function POST(request: NextRequest) {
     const result = await preapproval.create({
       body: {
         reason: `Puragenda — Plan ${PRICING[targetPlan].name} (${business.name})`,
+        ...(bundleClaim ? { external_reference: `base-bundle:${bundleClaim.key}` } : {}),
         auto_recurring: {
-          frequency: 1,
+          frequency: subscription?.billingCycle === "ANNUAL" ? 12 : 1,
           frequency_type: "months",
           transaction_amount: transactionAmount,
           currency_id: "CLP",
@@ -308,6 +332,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.id || !result.init_point) {
+      if (bundleClaim) await markBundleBaseUnknown(bundleClaim.businessId, bundleClaim.key);
       console.error("[billing/subscribe] MercadoPago response missing id or init_point:", result);
       return NextResponse.json(
         { error: "Error al crear la suscripción en MercadoPago." },
@@ -361,8 +386,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 8. Return the payment URL
+    if (bundleClaim) await finishBundleBaseCheckout(business.id, bundleClaim.key, result.id, result.init_point);
     return NextResponse.json({ init_point: result.init_point, discount: platformDiscount ?? null });
   } catch (error: unknown) {
+    if (bundleClaim) await markBundleBaseUnknown(bundleClaim.businessId, bundleClaim.key).catch(() => {});
     const failure = mapMercadoPagoFailure(error, process.env.NODE_ENV === "production");
     console.error("[billing/subscribe] Failed to create subscription", {
       code: failure.body.code,

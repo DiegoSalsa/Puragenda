@@ -571,6 +571,17 @@ model SubscriptionPaymentNotification {
 // BUSINESS & SERVICES
 // ==========================================
 
+model WebsitePurchaseIntent {
+  businessId        String   @id
+  selectedAt        DateTime @default(now())
+  baseOperationKey  String?  @unique
+  baseState         String   @default("NONE")
+  baseCheckoutUrl   String?
+  baseProviderId    String?
+  baseActivatedAt   DateTime?
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
 model Business {
   id                                           String             @id @default(cuid())
   name                                         String
@@ -669,6 +680,7 @@ model Business {
   giftCardPurchases           GiftCardPurchase[]
   giftCards                   GiftCard[]
   bookingFeedbacks            BookingFeedback[]
+  websitePurchaseIntent       WebsitePurchaseIntent?
 
   @@index([ownerId])
   @@index([referredByAffiliateId])
