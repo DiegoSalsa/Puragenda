@@ -8,6 +8,8 @@ import { LandingLayout } from "@/components/landing/landing-layout";
 import { getGuide, guides } from "@/lib/data/guides";
 import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata } from "@/lib/seo";
+import { expansionMetadata } from "@/lib/seo-expansion";
+import { ExpansionGuidePage } from "@/components/landing/seo/expansion-guide-page";
 import { JsonLd } from "@/components/json-ld";
 import {
   articleNode,
@@ -31,7 +33,8 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
   const guide = getGuide(slug);
   if (!guide) return {};
 
-  return createPageMetadata({
+  const metadataFor = guide.detail ? expansionMetadata : createPageMetadata;
+  return metadataFor({
     title: guide.title,
     description: guide.description,
     path: `/guias/${guide.slug}`,
@@ -45,6 +48,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
   const { slug } = await params;
   const guide = getGuide(slug);
   if (!guide) notFound();
+  if (guide.detail) return <ExpansionGuidePage guide={guide} detail={guide.detail} />;
 
   const guideUrl = absoluteUrl(`/guias/${guide.slug}`);
   const relatedGuides = guide.related

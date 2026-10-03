@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2 } from "@/components/icons/hover-icons";
 import { LandingLayout } from "@/components/landing/landing-layout";
-import { featureSolutions, getFeatureSolution } from "@/lib/data/feature-solutions";
+import { getAllFeatureSolutions, getFeatureSolution } from "@/lib/data/feature-solutions";
+import { ExpansionFeaturePage } from "@/components/landing/seo/expansion-feature-page";
+import { expansionMetadata } from "@/lib/seo-expansion";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
 import {
@@ -21,13 +23,14 @@ export const dynamicParams = false;
 export const revalidate = 3600;
 
 export function generateStaticParams() {
-  return featureSolutions.map(({ slug }) => ({ slug }));
+  return getAllFeatureSolutions().map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const solution = getFeatureSolution((await params).slug);
   if (!solution) return {};
-  return createPageMetadata({
+  const metadataFor = solution.detail ? expansionMetadata : createPageMetadata;
+  return metadataFor({
     title: solution.title,
     description: solution.description,
     path: `/funciones/${solution.slug}`,
@@ -38,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FeatureSolutionPage({ params }: Props) {
   const solution = getFeatureSolution((await params).slug);
   if (!solution) notFound();
+  if (solution.detail) return <ExpansionFeaturePage solution={solution} detail={solution.detail} />;
   const structuredData = jsonLdGraph([
     organizationRef(),
     softwareApplicationNode(solution.description),

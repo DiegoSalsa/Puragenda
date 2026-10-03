@@ -1,5 +1,6 @@
 import type { TrackingEventName, TrackingProperties } from "./events";
 import { toGoogleAnalyticsPagePath } from "./path";
+import { SEO_CONTENT_KEYS } from "@/lib/data/seo-expansion";
 
 export type GoogleAnalyticsEvent = {
   name: string;
@@ -81,6 +82,7 @@ export function googleAnalyticsEventsFor(
       params: {
         source_page: sourcePage,
         cta_location: typeof safe.placement === "string" ? safe.placement : "unknown",
+        ...pick(safe, SEO_CONTENT_KEYS),
       },
     }];
   }
