@@ -1,12 +1,75 @@
 # Contratación pública: Puragenda + Sitio Web
 
-Rama `feature/website-public-pricing`, desde `main` `4d009e6714a69c7178b2dd9fd22b9f68cae8423f`. Implementación y QA locales; rama publicada para auditoría. Sin merge, deploy manual, cambios GSC, cobros reales, mutaciones de suscripciones remotas ni cambios del snapshot Founder. De los Previews automáticos de Vercel solo se consulta el estado de build.
+Rama `feature/website-public-pricing`, desde `main` `4d009e6714a69c7178b2dd9fd22b9f68cae8423f`. HEAD auditado `77ff2d248fed746008827f30af5ef700533d562b`, integrado mediante merge normal y desplegado en Production el 4 de octubre de 2026, inicialmente OFF y posteriormente con adquisición pública **ON por nueva autorización expresa**. Los cuatro commits auditados se conservaron. Sin cambios GSC, cobros de QA, mutaciones de contratos/suscripciones ni cambios del snapshot Founder. Los Previews solo se consultaron para comprobar el estado de build.
 
 ## Decisión de lanzamiento
 
-**NO-GO de adquisición pública.** La implementación está preparada y se prueba localmente con proveedores simulados. En producción no existe `WEBSITE_PUBLIC_ACQUISITION_ENABLED`: su ausencia mantiene deshabilitado el CTA público de contratación del sitio cuando se despliegue este código. Seleccionar el complemento permite conservar el interés e iniciar únicamente la prueba de Puragenda, con explicación visible. Los sitios y contratos existentes mantienen su política.
+**CÓDIGO WEBSITE PUBLIC PRICING EN PRODUCCIÓN — PUBLIC ACQUISITION ON POR AUTORIZACIÓN EXPRESA.** `WEBSITE_PUBLIC_ACQUISITION_ENABLED=1` únicamente en Production habilita los botones públicos de contratación. Los sitios y contratos existentes mantienen su política. La prueba oficial de Mercado Pago del primer débito diferido sigue **NOT_RUN**; no se declara completada la validación MP ni un GO basado en esa prueba.
 
-Para habilitar adquisición pública se requieren `WEBSITE_PUBLIC_ACQUISITION_ENABLED=1`, `WEBSITE_CHECKOUT_ENABLED=1` y presencia de token/secreto MP en el servidor, **después** de registrar GO operativo y aplicar la nueva migración. La UI recibe solo un booleano. Este flag no activa entitlement ni sustituye al webhook. No se modificaron variables Vercel durante esta tarea.
+El gate previsto exigía GO operativo y migración aplicada antes de activar adquisición pública. La migración está aplicada; el usuario autorizó expresamente activar ahora dejando pendiente la prueba MP. El servidor exige `WEBSITE_PUBLIC_ACQUISITION_ENABLED=1`, `WEBSITE_CHECKOUT_ENABLED=1` y presencia de token/secreto MP. La UI recibe solo un booleano; el flag no activa entitlement ni sustituye al webhook. La única variable Vercel modificada en esta ejecución fue la incorporación del flag público al ámbito Production, tras esa autorización.
+
+## Integración controlada en Production, inicialmente OFF — 4 de octubre de 2026
+
+Evidencia UTC, sanitizada. Preflight confirmó los dos SHA esperados, rama ahead=4/behind=0, worktrees limpios, Preview aprobado READY y ausencia de commits nuevos. La única migración pendiente era `20261003220000_website_purchase_intent`; se revisaron SQL y locks antes de aplicarla con la conexión Production aprobada, sin imprimir credenciales.
+
+| Evidencia | Resultado |
+| --- | --- |
+| Base main | `4d009e6714a69c7178b2dd9fd22b9f68cae8423f` |
+| Feature auditada | `77ff2d248fed746008827f30af5ef700533d562b` |
+| Backup privado | `website-public-pricing-2026-10-04T02-44-39-180Z`, completado `2026-10-04T02:45:11.222Z` |
+| Recovery | Restauración local aislada verificada `2026-10-04T02:52:00.262Z`: 92 tablas y seis agregados críticos coincidentes |
+| Migración | Inicio `2026-10-04T02:55:50.394Z`, fin `2026-10-04T02:55:51.482Z`; aplicada exactamente una vez |
+| Post-migration status | Prisma up to date; ninguna migración pendiente |
+| Merge normal | `5ec97d91c2df21b0f4b16479853b9a83a187ea7a`; padres base main + feature aprobada; tree idéntico al HEAD auditado |
+| Deployment Production del código | `dpl_9YRQzmj1gXTU9TioHrQyFgBSsBne` |
+| READY | `2026-10-04T03:09:02.485Z`; GitHub/Vercel success |
+| Aliases verificados | `www.puragenda.cl`, `puragenda.cl`, ambos asignados al deployment READY |
+| Public acquisition | Variable ausente: OFF |
+| Checkout / launch | Ambos continúan en `1`; no se apagaron |
+| MP / DB / Auth / app URL | Variables requeridas presentes en Production; no se modificaron |
+
+El backup lógico cubre todas las tablas y funciones de la aplicación en `public`, con almacenamiento local privado fuera de Git. No incluye schemas administrados de Supabase ni objetos de Storage; no equivale a una copia completa del proveedor/PITR. Archivo de 882.920 bytes, SHA-256 `9a7432baf2465c6edd91191b459817e277655962ef3a74bdba8821bedb7631ed`. Se conservan el dump y la evidencia privada de restauración; no se versionaron datos, credenciales ni bases locales.
+
+El primer deployment automático, `dpl_AoW4dhco3Q9NUQpbZbgriUv1EZdW`, terminó ERROR en fuentes `next/font/google` de Turbopack después de restaurar caché. Los dominios siguieron sirviendo el deployment anterior. Se reintentó ese deployment ya finalizado sobre el mismo merge SHA, sin caché y sin cambios de código, env o configuración. El reintento compiló correctamente y generó 144 páginas estáticas antes de llegar a READY. No se lanzó un build paralelo ni se promovió un Preview.
+
+### Smoke tests Production OFF
+
+QA en navegador con la cuenta existente y posteriormente sin sesión, `2026-10-04T03:11:00.910Z`–`2026-10-04T03:16:16.422Z`. Se cerró la sesión del navegador para cubrir el caso anónimo. No se enviaron formularios de registro ni se pulsaron acciones que creen, paguen, recuperen o cancelen acuerdos.
+
+| Área | Comprobación |
+| --- | --- |
+| Home | HTTP 200; sección nueva visible; +$9.990/mes; aviso próximamente; CTA a Pricing; compra de dominio excluida |
+| Pricing | HTTP 200; Individual $12.990, Equipo $29.990, Website $9.990; bundles $22.980/$39.980 mensuales; Founder $5.990 ausente del precio público |
+| Anual | Individual $129.900/año y Equipo $299.900/año; Website $9.990/mes separado; no se aplica descuento anual al sitio |
+| Anónimo OFF | Website seleccionable; ambos CTA de pago deshabilitados/próximamente; trial BASE 30 días habilitado; navegación a registro, sin submit ni intent nuevo |
+| Autenticado OFF | Seleccionar Website muestra «Ir a Sitio Web», navega a `/dashboard/website`; editor y dashboard/reservas cargan; BASE no cambia |
+| Onboarding | Sin sesión redirige a login; con sesión responde noindex/nofollow; plan/ciclo persistidos se conservan frente a queries opuestas; queries no conceden acceso ni crean intent |
+| Founder / pending | UI $5.990 y acuerdo pendiente conservados; administración disponible; ninguna acción de billing ejecutada |
+| ACTIVE / PAST_DUE / UNKNOWN | NOT_PRESENT en los datos Production existentes; sin fixtures ni impersonación. Estas ramas permanecen cubiertas por las regresiones locales del SHA aprobado, no por un smoke live |
+| Standard OFF | Gate estructural auditado preservado; CTA público bloqueado en Production. No se creó un negocio/intent Standard para forzar el onboarding live |
+| Webhook MP | POST vacío sin firma ni resource ID devuelve 401 Invalid signature; la firma se rechaza antes de contactar al proveedor |
+
+Post-check read-only `2026-10-04T03:18:02.806Z`: `WebsitePurchaseIntent` contiene las siete columnas aprobadas, PK/FK CASCADE/CHECK/UNIQUE y RLS; conteo 0. Se conserva una sola migración aplicada y Prisma up to date. Conteos y digests coinciden con preflight: WebsiteOfferEligibility 6, WebsiteLaunchSnapshot 3, WebsiteAddon 1, Subscription 8, WebsiteCheckoutOperation 1 y WebsiteCommercialEvent 3. QA no modificó ofertas, snapshots, add-ons, BASE ni operaciones.
+
+**Drift histórico, sin drift añadido:** antes de la migración ya existían cuatro diferencias de checksum (`20260430_rename_roles`, `20260504_pivot_plans_equipo`, `20260723223050_production_order_services`, `20260726223029_widget_promo_real_discounts`), la migración DB-only `20260913120000_add_verified_appointment_reviews` y diferencias de schema documentadas previamente. El diff DB→schema aprobado después de la migración es idéntico al diff DB→main anterior. No se declara drift global cero ni se corrigió ese historial, ejecutó resolve o eliminó schema ajeno a este frente.
+
+SEO Production: sitemap HTTP 200, 44 URLs idénticas; 10 páginas Batch 01 HTTP 200; canonicals, robots, Googlebot y metadata social idénticos a la captura anterior al cambio de aliases. `robots.txt` idéntico. Batch 01 pasó 41 tests; la herramienta de protección pasó 206/206 fuentes equivalentes con la inserción Home explícitamente autorizada (205 byte-identical). Sin cambio GSC ni solicitud de indexación. La validación local completa del código aprobado, lint, typecheck y build OFF figura en la sección de QA; no hubo nuevos cambios runtime durante la integración.
+
+Observabilidad: consultas del deployment nuevo por nivel error y status 5xx desde `2026-10-04T03:09:00Z` devolvieron únicamente el rechazo esperado de firma inválida y cero 5xx. No se observaron P2021/P2022, tabla faltante, errores de pricing/register/onboarding/dashboard, loops, hydration o analytics; navegador: cero errores nuevos durante QA. La consulta general está limitada a 1.000 registros; las consultas específicas de errores/5xx no alcanzaron ese límite. Los agregados DB no muestran intents/operaciones de QA. Evidencia local ignorada: `artifacts/website-commercial/production/`.
+
+Rollback compatible disponible: `dpl_HNdXqQbxv6yANp666ontfnStLVBs`, READY sobre la base main anterior. Ante un fallo de código, regresar a ese deployment conservando la tabla aditiva y PUBLIC OFF; sin DROP, borrado de intents ni cancelaciones o cambios BASE. No fue necesario rollback de tráfico. Al cerrar esta fase OFF la matriz oficial MP y el primer débito diferido seguían pendientes; la autorización posterior para habilitar adquisición se registra a continuación.
+
+## Nueva autorización de adquisición pública — 4 de octubre de 2026
+
+Después del QA OFF, el usuario solicitó habilitar los botones para contratar y confirmó expresamente «Habilitar contratación pública ahora», dejando pendiente la prueba oficial MP y sustituyendo la instrucción anterior de PUBLIC OFF. Esta autorización cambia el gate comercial; no acredita la prueba del primer débito diferido ni autoriza ejecutar cobros de QA.
+
+Se añadió exclusivamente `WEBSITE_PUBLIC_ACQUISITION_ENABLED=1` al proyecto Puragenda, ámbito **Production**; API verificada `2026-10-04T03:25:06.368Z`. Preview y Development no recibieron ese flag; checkout/launch y secretos no se modificaron. Se solicitó una reconstrucción del mismo merge SHA para aplicar la nueva variable, sin cambios runtime ni nueva migración.
+
+Deployment de activación `dpl_GPHBvfNx9k6aMaBKQw5osyq4KL1D`, Production, merge SHA `5ec97d91c2df21b0f4b16479853b9a83a187ea7a`, READY `2026-10-04T03:27:21.114Z`. Ambos dominios asignados y GitHub/Vercel success. Compilación correcta; 144 páginas estáticas; ninguna migración pendiente.
+
+QA anónimo ON `2026-10-04T03:28:27.057Z`: ambos botones «Contratar Puragenda + Sitio Web» habilitados después de seleccionar Website; bundles $22.980/$39.980; aviso próximamente retirado de Home/Pricing; trial BASE 30 días disponible; Founder no aparece como precio público. El CTA Individual navega a `/register` conservando `website=1`. No se envió registro ni se crearon pagos/acuerdos. Las queries de errores y 5xx del deployment ON no mostraron registros; se repitió SEO con sitemap 44 URLs y metadata/robots/canonicals idénticos. El post-check DB read-only conserva la migración única, constraints/RLS, cero intents y los mismos agregados críticos, sin drift añadido.
+
+El deployment OFF `dpl_9YRQzmj1gXTU9TioHrQyFgBSsBne` también queda disponible para rollback de UI sobre el mismo código. Ante un incidente, deshabilitar PUBLIC, conservar checkout/launch y la tabla aditiva, y volver a un deployment compatible. La prueba oficial del primer débito diferido continúa pendiente pese a la activación autorizada; no se ejecutó ningún test contra MP Production o Preview.
 
 ## Producción auditada antes de los cambios
 
