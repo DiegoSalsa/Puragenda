@@ -202,10 +202,13 @@ export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = fal
     try {
       if (isLoggedIn) {
         if (websites[key]) {
-          const response = await fetch("/api/websites/purchase-intent", { method: "POST" });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.error || "No se pudo guardar la selección.");
-          router.push(data.nextUrl);
+          if (!websiteAcquisitionEnabled) router.push("/dashboard/website");
+          else {
+            const response = await fetch("/api/websites/purchase-intent", { method: "POST" });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "No se pudo guardar la selección.");
+            router.push(data.nextUrl);
+          }
         } else router.push("/dashboard");
       } else router.push(commercialRegisterUrl(key, cycle, extras[key], websites[key], isTrial));
     } catch (err) {
@@ -220,7 +223,7 @@ export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = fal
     <div className="space-y-8">
       {/* Billing Cycle Toggle */}
       <BillingToggle cycle={cycle} onChange={setCycle} monthlyLabel={t("monthly")} annualLabel={t("annual")} />
-
+      {isLoggedIn && <p className="mx-auto max-w-4xl text-center text-sm font-bold">Se usará tu plan Puragenda actual. Los cambios de plan se gestionan desde tu suscripción.</p>}
 
 
       {/* Plan Cards — 2 columns */}
@@ -412,7 +415,7 @@ export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = fal
                       {loading === "EQUIPO" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        withWebsite ? isLoggedIn ? "Continuar con mi sitio" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
+                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
                       )}
                     </button>
                     <button
@@ -439,7 +442,7 @@ export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = fal
                       {loading === "INDIVIDUAL" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        withWebsite ? isLoggedIn ? "Continuar con mi sitio" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
+                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
                       )}
                     </button>
                     <button

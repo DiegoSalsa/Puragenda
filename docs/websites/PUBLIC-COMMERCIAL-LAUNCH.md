@@ -68,6 +68,8 @@ La continuación privada está en **`/onboarding/website`**, con sesión y propi
 
 Pricing autenticado no modifica la elegibilidad: Website activo dirige a administrar; PAST_DUE dirige a recuperar el contrato existente; sin complemento dirige a los pasos con la suscripción real del negocio. Founder conserva catálogo/oferta. Las dos suscripciones, dunning y cancelaciones siguen independientes. Cancelar Website no toca BASE; cancelar BASE afecta visibilidad por la política previa.
 
+Con adquisición pública **OFF**, Pricing autenticado muestra «Ir a Sitio Web» y navega directamente a `/dashboard/website`, sin POST ni nuevo intent. El endpoint también devuelve ese destino seguro sin escribir, borrar o modificar intents, ofertas, add-ons ni Subscription. Así, una selección informativa no transforma una cuenta existente en un bundle restringido por el flag público. El checkout interno sigue sujeto a su flag y política existentes. Con adquisición pública **ON**, el CTA dice «Continuar con Sitio Web» y puede persistir intent; el onboarding usa exclusivamente la Subscription vigente. Pricing avisa a usuarios autenticados que los cambios de plan se gestionan desde su suscripción: elegir visualmente Equipo nunca cambia una cuenta Individual.
+
 ## Idempotencia y resultados inciertos
 
 BASE del bundle usa el mismo registro de intent como claim operacional: `baseOperationKey`, `baseState`, `baseProviderId`, `baseCheckoutUrl`. Business FOR UPDATE serializa la transición NONE → CREATING **antes** de contactar MP. Otros clicks no crean una segunda PreApproval. PENDING reutiliza el acuerdo verificado/URL; no modifica Subscription. Una respuesta incierta pasa a UNKNOWN y bloquea reintentos nuevos. `external_reference=base-bundle:<operationKey>` permite conciliación por el operador sin asumir una garantía de idempotencia del proveedor.
@@ -121,6 +123,8 @@ La nueva migración se aplica a un schema limpio del main auditado en una DB des
 
 QA A–L: Individual, Individual+Website, Equipo+Website, extras, anual, registro/BASE/Website, usuarios existentes, Website activo, Founder, Website PAST_DUE, BASE PAST_DUE, concurrencia/reload y mobile. Capturas Home/Pricing/Registro en **1440/390/360**, sin overflow horizontal. Evidencia: `artifacts/website-commercial/qa-report.json`, PNGs y logs locales de checks. Pagos/endpoints oficiales reales no ejecutados; un PASS SIMULATED no equivale a GO financiero.
 
+Regresiones del acceso público autenticado: `scripts/qa-website-public-access.mjs --off` contra el helper local OFF, y sin ese argumento contra el helper local ON. Comprueban ausencia de POST desde Pricing OFF, respuesta directa del endpoint, conservación exacta de intent/BASE/Founder/add-on, disponibilidad del checkout/recovery interno previo, trial anónimo, copy contextual y plan Individual real al pulsar Equipo. Ambos modos cubren 1440/390/360 y no crean operaciones de pago. La integración PostgreSQL también ejercita el endpoint y los props del onboarding con la Subscription real. La migración y las políticas de billing permanecen intactas.
+
 ## Pendientes externos y orden seguro
 
 1. Disponer de vendedor/comprador oficiales MP Chile y Preview con DB y credenciales de test aisladas; actualmente no disponibles bajo esta auditoría.
@@ -133,7 +137,9 @@ QA A–L: Individual, Individual+Website, Equipo+Website, extras, anual, registr
 
 | Check | Resultado |
 | --- | --- |
-| Suite completa, con integraciones Website habilitadas sobre PostgreSQL local | **1.179 tests passed, 21 skipped**; 187 archivos passed y 2 skipped; cero fallos |
+| Suite completa, con integraciones Website habilitadas sobre PostgreSQL local | **1.188 tests passed, 21 skipped**; 187 archivos passed y 2 skipped; cero fallos |
+| Public Pricing, WebsitePurchaseIntent y checkout bundle | PASS: 39 tests, incluidas nueve regresiones del endpoint OFF/ON y plan real |
+| Suite Website/Mercado Pago | PASS: 243 tests en 26 archivos |
 | Batch 01 y suite SEO | PASS dentro de la suite completa; 41 tests Batch 01 |
 | Lint | PASS: cero errores, 33 warnings |
 | Typecheck | PASS |
@@ -142,6 +148,7 @@ QA A–L: Individual, Individual+Website, Equipo+Website, extras, anual, registr
 | QA A–L con proveedores simulados | PASS; registro real local, persistencia, BASE primero, reutilización al recargar y segundo checkout explícito |
 | Home/Pricing/Registro en 1440, 390 y 360 | PASS: nueve capturas, sin overflow horizontal |
 | Pricing OFF sobre el build de producción, en los tres anchos | PASS: CTA de contratación bloqueado, title con una marca y canonical idéntico |
+| Regresión Pricing autenticado OFF/ON en 1440/390/360 | PASS: 18 comprobaciones OFF y 3 ON; sin nuevo intent desde Pricing OFF, plan BASE real y capacidad interna previa preservada |
 | Baseline con excepción exacta de inserción comercial Home | PASS: 205 archivos idénticos y todos los bytes originales del componente Home preservados |
 | Diff de las rutas y datos SEO protegidos respecto de main | Vacío |
 | git diff --check | PASS |
@@ -150,7 +157,7 @@ Logs y capturas locales en `artifacts/website-commercial/`, ignorados por Git. L
 
 ## Archivos de este cambio
 
-38 archivos: 23 modificados y 15 nuevos. La lista incluye exclusivamente implementación, migración, documentación y validación de este frente comercial.
+39 archivos respecto de main: 23 modificados y 16 nuevos, incluido el script de regresión del acceso autenticado añadido después de la implementación inicial de 38 archivos. La lista incluye exclusivamente implementación, migración, documentación y validación de este frente comercial.
 
 ```text
 docs/websites/PRODUCTION-READINESS.md
@@ -159,6 +166,7 @@ docs/websites/RELEASE-RUNBOOK.md
 prisma/schema.prisma
 prisma/migrations/20261003220000_website_purchase_intent/migration.sql
 scripts/dev-website-public-pricing.mjs
+scripts/qa-website-public-access.mjs
 scripts/qa-website-public-pricing.mjs
 scripts/seo-expansion-baseline.mjs
 scripts/test-website-public-pricing-migration.mjs

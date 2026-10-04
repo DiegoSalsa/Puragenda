@@ -25,7 +25,7 @@ async function fixture(name,options={}) {
 }
 async function selectWebsite(page,index=0){await page.getByRole("button",{name:/Añadir Sitio Web/}).nth(index).click();}
 async function openPricing(page){const hydrated=page.waitForResponse(r=>r.url().endsWith("/api/auth/me"));await page.goto(origin+"/pricing");await hydrated;}
-async function authSelect(page){await openPricing(page);await selectWebsite(page);await page.getByRole("button",{name:"Continuar con mi sitio",exact:true}).waitFor();await page.getByRole("button",{name:"Continuar con mi sitio",exact:true}).click();await page.waitForURL(/\/onboarding\/website|\/dashboard\/website/);}
+async function authSelect(page){await openPricing(page);await selectWebsite(page);await page.getByRole("button",{name:"Continuar con Sitio Web",exact:true}).waitFor();await page.getByRole("button",{name:"Continuar con Sitio Web",exact:true}).click();await page.waitForURL(/\/onboarding\/website|\/dashboard\/website/);}
 try {
   for(const width of [1440,390,360]){
     const {context,page}=await fresh(width);
