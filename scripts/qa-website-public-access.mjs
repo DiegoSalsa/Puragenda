@@ -60,7 +60,7 @@ try {
       assert.equal(writes.some(p => /billing|purchase-intent|websites/.test(p)), false);
       report.checks.push({ width, state: "anonymous", baseTrialOnly: true, pass: true }); await context.close();
     }
-    for (const state of off ? ["STANDARD", "FOUNDER", "ACTIVE", "PAST_DUE", "EXISTING_INTENT", "FOUNDER_INTENT", "ACTIVE_INTENT", "PAST_DUE_INTENT", "PENDING_INTENT", "AUTHORIZED_INTENT", "UNKNOWN_INTENT", "EMPTY_ADDON_INTENT"] : ["STANDARD"]) {
+    for (const state of off ? ["STANDARD", "FOUNDER", "ACTIVE", "PAST_DUE", "EXISTING_INTENT", "FOUNDER_INTENT", "ACTIVE_INTENT", "PAST_DUE_INTENT", "PENDING_INTENT", "AUTHORIZED_INTENT", "UNKNOWN_INTENT", "EMPTY_ADDON_INTENT", "CANCELLED_FUTURE_INTENT", "CANCELLED_EXPIRED_INTENT", "CANCELLED_HISTORICAL_INTENT", "CANCELLED_OPERATION_INTENT"] : ["STANDARD", "CANCELLED_EXPIRED_INTENT"]) {
       const { context, page } = await fresh(width); const id = await owner(context, `${state}-${width}`);
       if (state.startsWith("FOUNDER")) {
         const snapshotId = id + "-snapshot"; snapshots.push(snapshotId);
@@ -74,6 +74,12 @@ try {
         await prisma.websiteCheckoutOperation.create({ data: { id: operationId, addonId: addon.id, priceTier: "STANDARD", amount: 9990, state: state.replace("_INTENT", ""), mpSubscriptionId: mpId, providerStatus: state === "AUTHORIZED_INTENT" ? "authorized" : mpId ? "pending" : null, checkoutUrl: mpId ? `${origin}/dashboard/website/payment-simulator?operation=${operationId}` : null, expiresAt: new Date(Date.now() + 86400000) } });
       }
       if (state === "EMPTY_ADDON_INTENT") await prisma.websiteAddon.create({ data: { businessId: id } });
+      if (state.startsWith("CANCELLED")) {
+        const past = new Date(Date.now() - 86400000), future = new Date(Date.now() + 86400000), operationId = id + "-historical", mpId = "MP-WEB-SIM-" + operationId;
+        const historical = ["CANCELLED_HISTORICAL_INTENT", "CANCELLED_OPERATION_INTENT"].includes(state);
+        const addon = await prisma.websiteAddon.create({ data: { businessId: id, provider: "mercadopago", status: state === "CANCELLED_OPERATION_INTENT" ? "INACTIVE" : "CANCELLED", validUntil: state === "CANCELLED_FUTURE_INTENT" ? future : past, cancelAt: past, mpSubscriptionId: historical ? mpId : null } });
+        if (historical) await prisma.websiteCheckoutOperation.create({ data: { id: operationId, addonId: addon.id, priceTier: "STANDARD", amount: 9990, state: "CANCELLED", providerStatus: "cancelled", mpSubscriptionId: mpId, expiresAt: past } });
+      }
       if (state.endsWith("_INTENT")) await prisma.websitePurchaseIntent.create({ data: { businessId: id } });
       const before = await account(id), requests = [];
       page.on("request", r => { if (r.method() === "POST" && r.url().includes("/api/websites/purchase-intent")) requests.push(r.url()); });
@@ -102,11 +108,11 @@ try {
           assert.match(await page.locator("#website-billing").textContent(), /esperando la confirmación de Mercado Pago/);
         }
         if (["EXISTING_INTENT", "EMPTY_ADDON_INTENT"].includes(state)) assert.equal(await page.getByRole("button", { name: "ACTIVAR SITIO WEB", exact: true, includeHidden: true }).isDisabled(), true);
-        if (["PAST_DUE_INTENT", "UNKNOWN_INTENT"].includes(state)) {
+        if (["PAST_DUE_INTENT", "UNKNOWN_INTENT"].includes(state) || state.startsWith("CANCELLED")) {
           const panel = page.locator("#website-billing").locator('xpath=ancestor::section[@role="tabpanel"]');
           const tab = await panel.getAttribute("aria-labelledby"); await page.locator(`[id="${tab}"]`).click();
           const action = page.getByRole("button", { name: state === "PAST_DUE_INTENT" ? "REGULARIZAR MI PAGO" : "ACTIVAR SITIO WEB", exact: true });
-          await action.waitFor(); assert.equal(await action.isEnabled(), true);
+          await action.waitFor(); assert.equal(await action.isEnabled(), !state.startsWith("CANCELLED") || state === "CANCELLED_FUTURE_INTENT");
           if (state === "UNKNOWN_INTENT") { await action.click(); await page.getByText(/Estamos conciliando tu solicitud de pago/).waitFor(); }
           await page.locator("#website-billing").screenshot({ path: `${output}/lifecycle-${state.toLowerCase()}-${width}.png` });
           assert.deepEqual(await account(id), before);
@@ -116,6 +122,14 @@ try {
         assert.deepEqual((await account(id)).base, before.base);
         assert.match(await page.locator("section").first().innerText(), /Individual:\s*\$\s*12\.990\/mes/);
         assert.equal(await page.getByRole("button", { name: "Continuar con Sitio Web", exact: true }).isEnabled(), true);
+        if (state === "CANCELLED_EXPIRED_INTENT") {
+          await page.goto(origin + "/dashboard/website");
+          const panel = page.locator("#website-billing").locator('xpath=ancestor::section[@role="tabpanel"]');
+          const tab = await panel.getAttribute("aria-labelledby"); await page.locator(`[id="${tab}"]`).click();
+          const action = page.getByRole("button", { name: "ACTIVAR SITIO WEB", exact: true });
+          await action.waitFor(); assert.equal(await action.isEnabled(), true);
+          await page.locator("#website-billing").screenshot({ path: `${output}/lifecycle-cancelled-expired-on-${width}.png` });
+        }
       }
       assert.equal(await prisma.websiteCheckoutOperation.count({ where: { addon: { businessId: id } } }), before.operations.length);
       report.checks.push({ width, state, ...measure, pass: true }); await context.close();

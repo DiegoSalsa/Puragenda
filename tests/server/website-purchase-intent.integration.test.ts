@@ -95,6 +95,44 @@ describe.skipIf(!enabled)("Website purchase with isolated real PostgreSQL and si
     await expect(requireBundlePaidBase(a)).resolves.toBeUndefined();expect(await accountState()).toEqual(before);
     expect(hasWebsiteEntitlement(before.addon)).toBe(true);
   });
+  it("CANCELLED + future paid period + intent + PUBLIC OFF preserves manageable lifecycle without granting entitlement",async()=>{
+    await paid();await selected();
+    await prisma.websiteAddon.create({data:{businessId:a,provider:"mercadopago",status:"CANCELLED",validUntil:new Date(Date.now()+86400000),cancelAt:new Date(Date.now()-86400000),mpSubscriptionId:"local-cancelled-paid-period"}});
+    const before=await accountState();vi.stubEnv("WEBSITE_PUBLIC_ACQUISITION_ENABLED","0");
+    await expect(requireBundlePaidBase(a)).resolves.toBeUndefined();
+    expect(await accountState()).toEqual(before);expect(hasWebsiteEntitlement(before.addon)).toBe(false);
+    expect(await prisma.websiteCheckoutOperation.count({where:{addon:{businessId:a}}})).toBe(0);
+  });
+  it.each(["expired","historical MP agreement","historical Paddle agreement","CANCELLED operation"])("PUBLIC OFF blocks new acquisition from %s + intent without changing billing history",async state=>{
+    await paid();await selected();const past=new Date(Date.now()-86400000);
+    const addon=await prisma.websiteAddon.create({data:{businessId:a,status:state==="CANCELLED operation"?"INACTIVE":"CANCELLED",validUntil:past,cancelAt:past,
+      ...(state==="historical MP agreement"?{provider:"mercadopago",mpSubscriptionId:"local-terminal-agreement"}:{}),
+      ...(state==="historical Paddle agreement"?{paddleSubscriptionId:"sub_local_terminal",checkoutTransactionId:"txn_local_terminal"}:{}),
+      ...(state==="CANCELLED operation"?{provider:"mercadopago",mpSubscriptionId:"local-terminal-operation-agreement"}:{}),
+    }});
+    if(state==="CANCELLED operation")await prisma.websiteCheckoutOperation.create({data:{id:"local-terminal-operation",addonId:addon.id,priceTier:"STANDARD",amount:9990,state:"CANCELLED",providerStatus:"cancelled",mpSubscriptionId:"local-terminal-operation-agreement",expiresAt:past}});
+    const before=await accountState(),operations=await prisma.websiteCheckoutOperation.findMany({where:{addonId:addon.id}});
+    vi.stubEnv("WEBSITE_PUBLIC_ACQUISITION_ENABLED","0");
+    await expect(requireBundlePaidBase(a)).rejects.toThrow("no está habilitada");
+    await expect(startMercadoPagoWebsiteCheckout()).rejects.toThrow("no está habilitada");
+    expect(await accountState()).toEqual(before);
+    expect(await prisma.websiteCheckoutOperation.findMany({where:{addonId:addon.id}})).toEqual(operations);
+  });
+  it("PUBLIC ON with paid BASE allows a new checkout after CANCELLED expiry, preserving the terminal operation",async()=>{
+    await paid();const intent=await selected(),past=new Date(Date.now()-86400000);
+    const addon=await prisma.websiteAddon.create({data:{businessId:a,provider:"mercadopago",status:"CANCELLED",validUntil:past,cancelAt:past,mpSubscriptionId:"local-terminal-agreement"}});
+    const historical=await prisma.websiteCheckoutOperation.create({data:{id:"local-terminal-operation",addonId:addon.id,priceTier:"STANDARD",amount:9990,state:"CANCELLED",providerStatus:"cancelled",mpSubscriptionId:"local-terminal-agreement",expiresAt:past}});
+    const base=await prisma.subscription.findUniqueOrThrow({where:{businessId:a}});
+    vi.stubEnv("WEBSITE_PUBLIC_ACQUISITION_ENABLED","0");await expect(startMercadoPagoWebsiteCheckout()).rejects.toThrow("no está habilitada");
+    vi.stubEnv("WEBSITE_PUBLIC_ACQUISITION_ENABLED","1");const checkout=await startMercadoPagoWebsiteCheckout();
+    expect(checkout.checkoutUrl).not.toContain(historical.id);
+    expect(await prisma.websiteCheckoutOperation.count({where:{addonId:addon.id}})).toBe(2);
+    expect(await prisma.websiteCheckoutOperation.count({where:{addonId:addon.id,state:"PENDING"}})).toBe(1);
+    expect(await prisma.websiteCheckoutOperation.findUniqueOrThrow({where:{id:historical.id}})).toEqual(historical);
+    expect(await prisma.websitePurchaseIntent.findUniqueOrThrow({where:{businessId:a}})).toEqual(intent);
+    expect(await prisma.subscription.findUniqueOrThrow({where:{businessId:a}})).toEqual(base);
+    expect(hasWebsiteEntitlement(await prisma.websiteAddon.findUnique({where:{businessId:a}}))).toBe(false);
+  });
   it("PENDING MP agreement + existing intent + PUBLIC OFF reuses and cancels that request, never duplicates it",async()=>{
     await paid();const intent=await selected();const first=await startMercadoPagoWebsiteCheckout();
     const base=await prisma.subscription.findUniqueOrThrow({where:{businessId:a}});
