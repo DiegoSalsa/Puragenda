@@ -2,7 +2,7 @@ import { requireWebsiteManager, ensureWebsite, websiteRootDomain, websiteView } 
 import Link from "next/link";
 import { hasPaidBase } from "@/websites/commercial";
 import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
-import { hasWebsitePaidAccess } from "@/websites/policy";
+import { hasExistingWebsiteBillingLifecycle } from "@/websites/billing-lifecycle";
 import { prisma } from "@/server/db/prisma";
 import { resolveTemplate } from "@/websites/registry";
 
@@ -15,7 +15,7 @@ export default async function WebsitePage() {
   const { business, user } = await requireWebsiteManager();
   const site = await ensureWebsite(business.id, business.slug);
   const [addon, offer, domains, requests] = await Promise.all([
-    prisma.websiteAddon.findUnique({ where: { businessId: business.id } }),
+    prisma.websiteAddon.findUnique({ where: { businessId: business.id }, include: { checkoutOperations: { orderBy: { createdAt: "desc" }, take: 1, select: { state: true, mpSubscriptionId: true } } } }),
     // Older dev processes can retain a Prisma singleton generated before the launch-offer model existed.
     // Treat the optional eligibility row as absent until that process is restarted/migrated.
     Promise.resolve(prisma.websiteOfferEligibility?.findUnique?.({ where: { businessId: business.id } }) ?? null).catch(() => null),
@@ -24,7 +24,7 @@ export default async function WebsitePage() {
   ]);
   const tier = websitePriceTier(offer);
   const intent = await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } });
-  const bundleAllowed = !intent || tier === "BETA_FOUNDER" || hasWebsitePaidAccess(addon) || (publicWebsiteAcquisitionEnabled() && hasPaidBase(await prisma.subscription.findUnique({ where: { businessId: business.id } })));
+  const bundleAllowed = !intent || tier === "BETA_FOUNDER" || hasExistingWebsiteBillingLifecycle(addon) || (publicWebsiteAcquisitionEnabled() && hasPaidBase(await prisma.subscription.findUnique({ where: { businessId: business.id } })));
   // Expiry is enforced at every entitlement check; this once-only audit event
   // is observed on the next managed visit and does not require a scheduler.
   if (offer && websiteTrialState(offer) === "EXPIRED") {

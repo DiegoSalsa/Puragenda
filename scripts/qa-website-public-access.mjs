@@ -13,16 +13,20 @@ const { chromium } = await import(process.env.WEBSITE_QA_PLAYWRIGHT_MODULE ? pat
 const browser = await chromium.launch({ headless: true, channel: "chrome" });
 const report = { mode: off ? "PUBLIC_OFF" : "PUBLIC_ON", externalPayments: false, checks: [] };
 const fixtures = [], snapshots = [];
+const changelogVersion = fs.readFileSync("src/config/changelog.ts", "utf8").match(/version:\s*"([^"]+)"/)?.[1];
+assert.ok(changelogVersion);
 fs.mkdirSync(output, { recursive: true });
 
 async function fresh(width) {
   const context = await browser.newContext({ viewport: { width, height: 1000 } });
-  await context.addCookies([{ name: "puragenda_locale", value: "es", url: origin }]);
+  await context.addCookies([{ name: "puragenda_locale", value: "es", url: origin }, { name: "puragenda_changelog_seen", value: changelogVersion, url: origin }]);
   return { context, page: await context.newPage() };
 }
 async function openPricing(page) {
   const hydrated = page.waitForResponse(r => r.url().endsWith("/api/auth/me"));
   await page.goto(origin + "/pricing"); await hydrated;
+  const rejectCookies = page.getByRole("button", { name: "Rechazar", exact: true });
+  if (await rejectCookies.isVisible()) { await rejectCookies.click(); await rejectCookies.waitFor({ state: "hidden" }); }
 }
 async function account(id) {
   return {
@@ -30,6 +34,7 @@ async function account(id) {
     intent: await prisma.websitePurchaseIntent.findUnique({ where: { businessId: id } }),
     addon: await prisma.websiteAddon.findUnique({ where: { businessId: id } }),
     offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: id } }),
+    operations: await prisma.websiteCheckoutOperation.findMany({ where: { addon: { businessId: id } }, orderBy: { createdAt: "asc" } }),
   };
 }
 async function owner(context, name) {
@@ -55,15 +60,21 @@ try {
       assert.equal(writes.some(p => /billing|purchase-intent|websites/.test(p)), false);
       report.checks.push({ width, state: "anonymous", baseTrialOnly: true, pass: true }); await context.close();
     }
-    for (const state of off ? ["STANDARD", "FOUNDER", "ACTIVE", "PAST_DUE", "EXISTING_INTENT"] : ["STANDARD"]) {
+    for (const state of off ? ["STANDARD", "FOUNDER", "ACTIVE", "PAST_DUE", "EXISTING_INTENT", "FOUNDER_INTENT", "ACTIVE_INTENT", "PAST_DUE_INTENT", "PENDING_INTENT", "AUTHORIZED_INTENT", "UNKNOWN_INTENT", "EMPTY_ADDON_INTENT"] : ["STANDARD"]) {
       const { context, page } = await fresh(width); const id = await owner(context, `${state}-${width}`);
-      if (state === "FOUNDER") {
+      if (state.startsWith("FOUNDER")) {
         const snapshotId = id + "-snapshot"; snapshots.push(snapshotId);
         await prisma.websiteLaunchSnapshot.create({ data: { id: snapshotId, launchAt: new Date(), capturedAt: new Date(), memberCount: 1 } });
         await prisma.websiteOfferEligibility.create({ data: { businessId: id, snapshotId, eligibleAt: new Date(), offerCode: "BETA_FOUNDER" } });
       }
-      if (state === "ACTIVE" || state === "PAST_DUE") await prisma.websiteAddon.create({ data: { businessId: id, provider: "mercadopago", status: state, mpSubscriptionId: "local-existing-" + id, validUntil: new Date(Date.now() + 86400000) } });
-      if (state === "EXISTING_INTENT") await prisma.websitePurchaseIntent.create({ data: { businessId: id } });
+      if (state.startsWith("ACTIVE") || state.startsWith("PAST_DUE")) await prisma.websiteAddon.create({ data: { businessId: id, provider: "mercadopago", status: state.startsWith("ACTIVE") ? "ACTIVE" : "PAST_DUE", mpSubscriptionId: "local-existing-" + id, validUntil: new Date(Date.now() + 86400000) } });
+      if (["PENDING_INTENT", "AUTHORIZED_INTENT", "UNKNOWN_INTENT"].includes(state)) {
+        const operationId = id + "-operation", mpId = state === "UNKNOWN_INTENT" ? null : "MP-WEB-SIM-" + operationId;
+        const addon = await prisma.websiteAddon.create({ data: { businessId: id, provider: "mercadopago", mpSubscriptionId: mpId } });
+        await prisma.websiteCheckoutOperation.create({ data: { id: operationId, addonId: addon.id, priceTier: "STANDARD", amount: 9990, state: state.replace("_INTENT", ""), mpSubscriptionId: mpId, providerStatus: state === "AUTHORIZED_INTENT" ? "authorized" : mpId ? "pending" : null, checkoutUrl: mpId ? `${origin}/dashboard/website/payment-simulator?operation=${operationId}` : null, expiresAt: new Date(Date.now() + 86400000) } });
+      }
+      if (state === "EMPTY_ADDON_INTENT") await prisma.websiteAddon.create({ data: { businessId: id } });
+      if (state.endsWith("_INTENT")) await prisma.websitePurchaseIntent.create({ data: { businessId: id } });
       const before = await account(id), requests = [];
       page.on("request", r => { if (r.method() === "POST" && r.url().includes("/api/websites/purchase-intent")) requests.push(r.url()); });
       await openPricing(page); await page.getByText("Se usará tu plan Puragenda actual.", { exact: false }).waitFor();
@@ -79,20 +90,34 @@ try {
         const direct = await context.request.post(origin + "/api/websites/purchase-intent", { headers: { origin }, data: { plan: "EQUIPO", extraStaff: 20 } });
         assert.equal(direct.status(), 200); assert.deepEqual(await direct.json(), { nextUrl: "/dashboard/website" });
         assert.deepEqual(await account(id), before);
-        if (["STANDARD", "FOUNDER", "PAST_DUE"].includes(state)) {
-          const label = state === "FOUNDER" ? "PROBAR MI WEB GRATIS" : state === "PAST_DUE" ? "REGULARIZAR MI PAGO" : "ACTIVAR SITIO WEB";
+        if (state === "STANDARD" || state.startsWith("FOUNDER") || state.startsWith("PAST_DUE")) {
+          const label = state.startsWith("FOUNDER") ? "PROBAR MI WEB GRATIS" : state.startsWith("PAST_DUE") ? "REGULARIZAR MI PAGO" : "ACTIVAR SITIO WEB";
           // Billing belongs to an editor tab; its capability must survive navigation.
           assert.equal(await page.getByRole("button", { name: label, exact: true, includeHidden: true }).isEnabled(), true);
         }
-        if (state === "ACTIVE") assert.equal(await page.getByRole("button", { name: "CANCELAR SITIO WEB", exact: true, includeHidden: true }).isEnabled(), true);
-        if (state === "FOUNDER") assert.ok((await page.locator("#website-billing").textContent()).includes("5.990"));
+        if (state.startsWith("ACTIVE")) assert.equal(await page.getByRole("button", { name: "CANCELAR SITIO WEB", exact: true, includeHidden: true }).isEnabled(), true);
+        if (state.startsWith("FOUNDER")) assert.ok((await page.locator("#website-billing").textContent()).includes("5.990"));
+        if (["PENDING_INTENT", "AUTHORIZED_INTENT"].includes(state)) {
+          assert.equal(await page.getByRole("button", { name: "CANCELAR SOLICITUD DE PAGO", exact: true, includeHidden: true }).isEnabled(), true);
+          assert.match(await page.locator("#website-billing").textContent(), /esperando la confirmación de Mercado Pago/);
+        }
+        if (["EXISTING_INTENT", "EMPTY_ADDON_INTENT"].includes(state)) assert.equal(await page.getByRole("button", { name: "ACTIVAR SITIO WEB", exact: true, includeHidden: true }).isDisabled(), true);
+        if (["PAST_DUE_INTENT", "UNKNOWN_INTENT"].includes(state)) {
+          const panel = page.locator("#website-billing").locator('xpath=ancestor::section[@role="tabpanel"]');
+          const tab = await panel.getAttribute("aria-labelledby"); await page.locator(`[id="${tab}"]`).click();
+          const action = page.getByRole("button", { name: state === "PAST_DUE_INTENT" ? "REGULARIZAR MI PAGO" : "ACTIVAR SITIO WEB", exact: true });
+          await action.waitFor(); assert.equal(await action.isEnabled(), true);
+          if (state === "UNKNOWN_INTENT") { await action.click(); await page.getByText(/Estamos conciliando tu solicitud de pago/).waitFor(); }
+          await page.locator("#website-billing").screenshot({ path: `${output}/lifecycle-${state.toLowerCase()}-${width}.png` });
+          assert.deepEqual(await account(id), before);
+        }
       } else {
         assert.equal(requests.length, 1); assert.ok((await account(id)).intent);
         assert.deepEqual((await account(id)).base, before.base);
         assert.match(await page.locator("section").first().innerText(), /Individual:\s*\$\s*12\.990\/mes/);
         assert.equal(await page.getByRole("button", { name: "Continuar con Sitio Web", exact: true }).isEnabled(), true);
       }
-      assert.equal(await prisma.websiteCheckoutOperation.count({ where: { addon: { businessId: id } } }), 0);
+      assert.equal(await prisma.websiteCheckoutOperation.count({ where: { addon: { businessId: id } } }), before.operations.length);
       report.checks.push({ width, state, ...measure, pass: true }); await context.close();
     }
   }

@@ -3,7 +3,7 @@ import { prisma } from "@/server/db/prisma";
 import { WebsiteError } from "./errors";
 import { hasPaidBase } from "@/websites/commercial";
 import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
-import { hasWebsitePaidAccess } from "@/websites/policy";
+import { hasExistingWebsiteBillingLifecycle } from "@/websites/billing-lifecycle";
 
 export async function rememberWebsiteIntent(business: { id: string; ownerId: string | null; countryCode: string }, userId: string) {
   if (business.ownerId !== userId) throw new WebsiteError("Solo el propietario puede contratar el sitio.");
@@ -47,11 +47,12 @@ export async function requireBundlePaidBase(businessId: string, db: Pick<typeof 
   if (!intent) return;
   const [base, addon, offer] = await Promise.all([
     db.subscription.findUnique({ where: { businessId } }),
-    db.websiteAddon.findUnique({ where: { businessId } }),
+    db.websiteAddon.findUnique({ where: { businessId }, include: { checkoutOperations: { orderBy: { createdAt: "desc" }, take: 1, select: { state: true, mpSubscriptionId: true } } } }),
     db.websiteOfferEligibility.findUnique({ where: { businessId } }),
   ]);
-  // Existing paid add-ons and Founder terms retain their established lifecycle.
-  if (offer?.offerCode === "BETA_FOUNDER" || hasWebsitePaidAccess(addon)) return;
+  // Public acquisition does not gate recovery, cancellation or reconciliation.
+  // Existing lifecycle still follows the billing service's own safety checks.
+  if (offer?.offerCode === "BETA_FOUNDER" || hasExistingWebsiteBillingLifecycle(addon)) return;
   if (!publicWebsiteAcquisitionEnabled()) throw new WebsiteError("La contratación pública del sitio todavía no está habilitada.");
   if (!hasPaidBase(base)) throw new WebsiteError("Confirma el pago de Puragenda antes de contratar Sitio Web.");
 }
