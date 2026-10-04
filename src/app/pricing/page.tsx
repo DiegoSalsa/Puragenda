@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { WebsiteCommercialSection } from "@/components/website-commercial-section";
+import { publicWebsiteMonthly } from "@/websites/commercial";
+import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
 import { LandingLayout } from "@/components/landing/landing-layout";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
@@ -9,14 +12,20 @@ export const revalidate = 3600;
 
 export async function generateMetadata() {
   return createPageMetadata({
-    title: "Precios de Puragenda: planes de agenda online",
-    description: "Planes desde $12.990 CLP al mes, reservas ilimitadas y 30 días gratis sin tarjeta. Compara funciones para profesionales y equipos en Chile.",
+    title: "Precios y planes de agenda online",
+    description: `Planes desde $12.990 CLP al mes y 30 días de prueba. Conoce Sitio Web Puragenda, complemento de $${new Intl.NumberFormat("es-CL").format(publicWebsiteMonthly)} CLP/mes con facturación independiente en Chile.`,
     path: "/pricing",
   });
 }
 
 export default async function PricingPage() {
+  const enabled = publicWebsiteAcquisitionEnabled();
+  const websitePrice = new Intl.NumberFormat("es-CL").format(publicWebsiteMonthly);
   const pricingFaq = [
+    { question: "¿Puedo contratar Puragenda con página web?", answer: `Puedes seleccionar Sitio Web como complemento de Individual o Equipo. ${enabled ? "Primero contratas Puragenda y, tras confirmar su activación, contratas el sitio por separado." : "La contratación pública del sitio está pendiente de habilitación. La prueba de 30 días inicia únicamente Puragenda y conserva tu interés en el sitio, sin cobrarlo ni activarlo."}` },
+    { question: "¿Cuánto cuesta agregar un sitio web?", answer: `El precio público de Sitio Web Puragenda es $${websitePrice} CLP al mes. Es un complemento mensual; no recibe el descuento anual de la agenda ni incluye una prueba gratuita para clientes nuevos.` },
+    { question: "¿El dominio está incluido?", answer: "Incluye un subdominio Puragenda, hosting y SSL. Puedes conectar un dominio propio mediante el flujo del dashboard. La compra del dominio no está incluida." },
+    { question: "¿El sitio web y Puragenda se cobran juntos?", answer: "Son dos suscripciones recurrentes independientes. Puedes cancelar el sitio sin cancelar Puragenda. Si eliges Puragenda anual, la agenda se factura anualmente y el sitio mensualmente." },
     { question: "¿Cuánto cuesta un sistema de reservas online en Chile?", answer: "Puragenda cuesta $12.990 CLP al mes para un profesional y $29.990 CLP al mes para equipos, con reservas ilimitadas y 30 días de prueba sin tarjeta." },
     { question: "¿Puragenda cobra comisión por cada reserva?", answer: "No. Los planes publicados no agregan una comisión por cada reserva recibida." },
     { question: "¿Puedo probar la agenda antes de pagar?", answer: "Sí. Puedes usar Puragenda durante 30 días sin ingresar una tarjeta y decidir después si activas un plan." },
@@ -30,7 +39,8 @@ export default async function PricingPage() {
           faqPageNode(pricingFaq),
         ])}
       />
-      <PricingHero />
+      <PricingHero websiteAcquisitionEnabled={enabled} />
+      <WebsiteCommercialSection enabled={enabled} />
 
       <section className="mx-auto w-full max-w-4xl px-4 pb-8 sm:px-6" aria-labelledby="precio-reservas">
         <div className="rounded-3xl border-4 border-black bg-[#E9D5FF] p-7 text-black shadow-[7px_7px_0_#000] dark:border-white sm:p-9">

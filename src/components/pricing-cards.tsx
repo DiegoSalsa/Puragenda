@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { commercialQuote, commercialRegisterUrl, publicWebsiteMonthly } from "@/websites/commercial";
 import { Check, Loader2, Minus, Plus, Sparkles, Users, Crown, Zap } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,7 @@ type BillingCycle = "monthly" | "annual";
 
 interface PricingCardsProps {
   mode?: "landing" | "selection";
+  websiteAcquisitionEnabled?: boolean;
 }
 
 // ═══════════════════════════════════════════
@@ -29,9 +31,10 @@ interface PricingCardsProps {
 // ═══════════════════════════════════════════
 
 function formatCLP(amount: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(locale.startsWith("es") ? "es-CL" : locale, {
     style: "currency",
     currency: "CLP",
+    currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
   }).format(amount);
 }
@@ -103,7 +106,7 @@ function BillingToggle({
 // COMPONENT
 // ═══════════════════════════════════════════
 
-export function PricingCards({ mode = "landing" }: PricingCardsProps) {
+export function PricingCards({ mode = "landing", websiteAcquisitionEnabled = false }: PricingCardsProps) {
   const t = useTranslations("pricing");
   const locale = useLocale();
   const router = useRouter();
@@ -139,6 +142,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     },
   ];
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
+  const [websites, setWebsites] = useState<Record<PlanKey, boolean>>({ INDIVIDUAL: false, EQUIPO: false, TEST: false });
+  const actionBusy = useRef(false);
   const [extras, setExtras] = useState<Record<PlanKey, number>>({
     INDIVIDUAL: 0,
     EQUIPO: 0,
@@ -178,27 +183,39 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     return getDisplayMonthlyPrice(PRICING[key].monthly, cycle);
   }
 
-  const [loading] = useState<PlanKey | null>(null);
-  const [error] = useState<string | null>(null);
+  const [loading, setLoading] = useState<PlanKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handlePlanAction(key: PlanKey, isTrial: boolean) {
+    if (actionBusy.current || key === "TEST") return;
+    if (websites[key] && !websiteAcquisitionEnabled && !isTrial && !isLoggedIn) return;
+    actionBusy.current = true;
+    setLoading(key);
+    setError(null);
     track("pricing_plan_selected", {
       plan: key,
       intent: isTrial ? "trial" : "subscription",
       extra_staff: extras[key],
       billing_cycle: cycle,
+      website_intent: websites[key],
     });
-    if (isLoggedIn) {
-      router.push("/dashboard");
-      return;
-    }
-
-    // If user is NOT logged in, redirect to register with plan info
-    const extraParam = key === "EQUIPO" && extras.EQUIPO > 0 ? `&extraStaff=${extras.EQUIPO}` : "";
-    if (isTrial) {
-      router.push(`/register?plan=${key}&trial=1${extraParam}`);
-    } else {
-      router.push(`/register?plan=${key}${extraParam}`);
+    try {
+      if (isLoggedIn) {
+        if (websites[key]) {
+          if (!websiteAcquisitionEnabled) router.push("/dashboard/website");
+          else {
+            const response = await fetch("/api/websites/purchase-intent", { method: "POST" });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "No se pudo guardar la selección.");
+            router.push(data.nextUrl);
+          }
+        } else router.push("/dashboard");
+      } else router.push(commercialRegisterUrl(key, cycle, extras[key], websites[key], isTrial));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Intenta nuevamente.");
+    } finally {
+      actionBusy.current = false;
+      setLoading(null);
     }
   }
 
@@ -206,7 +223,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
     <div className="space-y-8">
       {/* Billing Cycle Toggle */}
       <BillingToggle cycle={cycle} onChange={setCycle} monthlyLabel={t("monthly")} annualLabel={t("annual")} />
-
+      {isLoggedIn && <p className="mx-auto max-w-4xl text-center text-sm font-bold">Se usará tu plan Puragenda actual. Los cambios de plan se gestionan desde tu suscripción.</p>}
 
 
       {/* Plan Cards — 2 columns */}
@@ -217,6 +234,8 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
           const hasExtras = plan.key === "EQUIPO" && extras.EQUIPO > 0;
           const monthlyFull = PRICING[plan.key].monthly;
           const PlanIcon = plan.icon;
+          const withWebsite = websites[plan.key];
+          const quote = commercialQuote(plan.key === "EQUIPO" ? "EQUIPO" : "INDIVIDUAL", cycle, extras[plan.key], withWebsite);
 
           return (
             <div
@@ -253,7 +272,7 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-4 border-black dark:border-white ${plan.highlighted ? "bg-[#FFF5BA] dark:bg-black" : "bg-[#85E3FF] dark:bg-black"} shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#FFF]`}>
                     <PlanIcon className="h-7 w-7 text-black dark:text-white" />
                   </div>
-                  <p className="min-w-0 break-words text-3xl font-black uppercase sm:text-4xl">{plan.name}</p>
+                  <p className="min-w-0 break-words text-3xl font-black uppercase sm:text-4xl">{plan.name}{withWebsite && <span className="block text-xl">+ Sitio Web</span>}</p>
                 </div>
                 <p className="text-base font-bold opacity-80">{plan.description}</p>
 
@@ -267,15 +286,15 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                 <div className="space-y-2 pt-2">
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                     <p className="min-w-0 text-5xl font-black tracking-tighter sm:text-6xl">
-                      {formatCLP(totalPrice, locale)}
+                      {formatCLP(withWebsite ? quote.monthlyTotal ?? quote.baseCharge : totalPrice, locale)}
                     </p>
-                    <span className="text-xl font-bold opacity-70">/{t("month")}</span>
+                    <span className="text-xl font-bold opacity-70">/{withWebsite && cycle === "annual" ? t("year") : t("month")}</span>
                   </div>
                   <p className="text-sm font-black uppercase tracking-widest pb-1 opacity-70">
                     {t("taxIncluded")}
                   </p>
 
-                  {cycle === "annual" && (
+                  {cycle === "annual" && !withWebsite && (
                     <div className="space-y-2 animate-fade-in mt-4 border-t-4 border-black dark:border-white pt-4">
                       <p className="text-sm font-bold line-through opacity-60">
                         {formatCLP(monthlyFull + (plan.key === "EQUIPO" ? EXTRA_STAFF_COST.EQUIPO * extras.EQUIPO : 0), locale)}/{t("month")}
@@ -286,7 +305,12 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                     </div>
                   )}
 
-                  {hasExtras && (
+                  {withWebsite && <div className="space-y-2 rounded-xl border-2 border-black bg-white p-3 text-sm font-bold text-black dark:border-white">
+                    <p>Puragenda: {formatCLP(quote.baseCharge, locale)}/{cycle === "annual" ? "año" : "mes"}{hasExtras ? " (con profesionales extra)" : ""}</p>
+                    <p>Sitio Web: {formatCLP(quote.websiteMonthly, locale)}/mes</p>
+                    <p>{cycle === "annual" ? "Tu plan Puragenda se factura anualmente y el sitio web mensualmente." : "Dos suscripciones recurrentes independientes."}</p>
+                  </div>}
+                  {hasExtras && !withWebsite && (
                     <p className="text-sm font-black uppercase mt-2 opacity-80 animate-fade-in">
                       {t("basePlusExtras", { base: formatCLP(basePrice, locale), extras: formatCLP(totalPrice - basePrice, locale) })}
                     </p>
@@ -351,13 +375,13 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   {extras.EQUIPO > 0 && (
                     <p className="mt-4 text-sm font-bold opacity-80 animate-fade-in">
                       +{formatCLP(
-                        cycle === "annual"
+                        cycle === "annual" && withWebsite ? EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER : cycle === "annual"
                           ? Math.round((EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER) / 12)
                           : EXTRA_STAFF_COST.EQUIPO,
                         locale
-                      )}/{t("month")} {t("perProfessional")} ·{" "}
+                      )}/{withWebsite && cycle === "annual" ? t("year") : t("month")} {t("perProfessional")} ·{" "}
                       <span className="font-black uppercase">
-                        {t("extrasTotal", { amount: formatCLP(totalPrice - basePrice, locale) })}
+                        {t("extrasTotal", { amount: formatCLP(withWebsite && cycle === "annual" ? quote.extras * EXTRA_STAFF_COST.EQUIPO * ANNUAL_MULTIPLIER : totalPrice - basePrice, locale) })}
                       </span>
                     </p>
                   )}
@@ -367,19 +391,31 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                 </div>
               )}
 
+              <button type="button" aria-pressed={withWebsite} onClick={() => {
+                setWebsites(prev => ({ ...prev, [plan.key]: !withWebsite }));
+                track("website_addon_toggled", { selected: !withWebsite, plan: plan.key, billing_cycle: cycle });
+              }} className={`mt-8 w-full rounded-2xl border-4 border-black p-4 text-left text-black shadow-[4px_4px_0_#000] ${withWebsite ? "bg-[#85E3FF]" : "bg-[#FFF5BA]"}`}>
+                <span className="flex items-center justify-between gap-2 text-base font-black"><span>{withWebsite ? "✓ Sitio Web añadido" : "+ Añadir Sitio Web"}</span><span className="shrink-0">+{formatCLP(publicWebsiteMonthly, locale)}/mes</span></span>
+                <span className="mt-2 block text-sm font-bold">Editor, 3 templates, hosting, SSL, subdominio y reservas integradas.</span>
+              </button>
+              {withWebsite && <div className="mt-4 space-y-2 text-sm font-bold">
+                <p>Publica desde Puragenda. Dominio propio compatible; compra del dominio no incluida.</p>
+                <p>La prueba de 30 días cubre solo Puragenda. No cobra ni activa Sitio Web.</p>
+                {!websiteAcquisitionEnabled && <p role="status">Contratación pública del sitio próximamente.</p>}
+              </div>}
               {/* Action Buttons */}
               <div className="mt-auto pt-10 space-y-4">
                 {plan.key === "EQUIPO" && (
                   <>
                     <button
                       onClick={() => handlePlanAction("EQUIPO", false)}
-                      disabled={loading === "EQUIPO"}
+                      disabled={loading === "EQUIPO" || (withWebsite && !websiteAcquisitionEnabled && !isLoggedIn)}
                       className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                       {loading === "EQUIPO" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        t("subscribe")
+                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
                       )}
                     </button>
                     <button
@@ -400,13 +436,13 @@ export function PricingCards({ mode = "landing" }: PricingCardsProps) {
                   <>
                     <button
                       onClick={() => handlePlanAction("INDIVIDUAL", false)}
-                      disabled={loading === "INDIVIDUAL"}
+                      disabled={loading === "INDIVIDUAL" || (withWebsite && !websiteAcquisitionEnabled && !isLoggedIn)}
                       className="w-full rounded-2xl border-4 border-black dark:border-white bg-[#FFB5E8] dark:bg-[#7C3AED] py-5 text-xl font-black uppercase tracking-wider text-black dark:text-white shadow-[6px_6px_0_#000] dark:shadow-[6px_6px_0_#FFF] transition-all hover:-translate-y-1 active:translate-y-1 active:shadow-[0px_0px_0_#000] disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                       {loading === "INDIVIDUAL" ? (
                         <span className="flex items-center justify-center gap-3"><Loader2 className="h-6 w-6 animate-spin" /> ...</span>
                       ) : (
-                        t("subscribe")
+                        withWebsite ? isLoggedIn ? websiteAcquisitionEnabled ? "Continuar con Sitio Web" : "Ir a Sitio Web" : websiteAcquisitionEnabled ? "Contratar Puragenda + Sitio Web" : "Sitio Web próximamente" : t("subscribe")
                       )}
                     </button>
                     <button

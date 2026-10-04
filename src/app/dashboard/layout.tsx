@@ -1,4 +1,5 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import Link from "next/link";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { prisma } from "@/server/db/prisma";
@@ -49,6 +50,8 @@ export default async function DashboardLayout({
     if (paymentWallReason) {
       return (
         <RequestIntlProvider>
+        <>
+        {business.ownerId === user.id && await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }) && <Link href="/onboarding/website" className="block bg-[#FFF5BA] p-4 text-center font-bold text-black underline">Continuar contratación de Puragenda + Sitio Web</Link>}
         <PaymentWall 
           userEmail={user.email} 
           userName={user.name}
@@ -59,6 +62,7 @@ export default async function DashboardLayout({
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={paymentWallReason}
         />
+        </>
         </RequestIntlProvider>
       );
     }

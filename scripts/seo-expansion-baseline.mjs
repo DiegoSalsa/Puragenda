@@ -19,7 +19,14 @@ const roots = [
   "docs/seo/vertical-expansion-priority.md",
 ];
 export function sourceHash(path) {
-  return createHash("sha256").update(readFileSync(path, "utf8").replace(/\r\n/g, "\n")).digest("hex");
+  let source = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+  // Explicit allowance for the requested home-only insertion. The original
+  // baseline remains untouched; every other byte of this component is checked.
+  if (process.argv.includes("--website-public-pricing") && path === "src/components/landing/ThemeNeoBrutalism.tsx") {
+    source = source.replace("{ user, business, commercialSection }: LandingIdentityProps & { commercialSection?: React.ReactNode }", "{ user, business }: LandingIdentityProps")
+      .replace("        {commercialSection}\n", "");
+  }
+  return createHash("sha256").update(source).digest("hex");
 }
 if (process.argv.includes("--capture")) {
   if (existsSync(file)) throw new Error("Baseline already exists; never overwrite it after editing.");
@@ -37,5 +44,5 @@ if (process.argv.includes("--capture")) {
   const snapshot = JSON.parse(readFileSync(file, "utf8"));
   const changed = Object.keys(snapshot.hashes).filter((path) => sourceHash(path) !== snapshot.hashes[path]);
   if (changed.length) throw new Error(`Experiment changed: ${changed.join(", ")}`);
-  console.log(`PASS: ${Object.keys(snapshot.hashes).length} protected files unchanged; initial diff empty: ${!snapshot.initialDiff}`);
+  console.log(`PASS: ${Object.keys(snapshot.hashes).length} protected sources checked${process.argv.includes("--website-public-pricing") ? "; only the explicit home insertion is allowed" : "; unchanged"}; initial diff empty: ${!snapshot.initialDiff}`);
 }

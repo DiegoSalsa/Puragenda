@@ -1,4 +1,6 @@
 import { ThemeNeoBrutalism } from "@/components/landing/ThemeNeoBrutalism";
+import { WebsiteCommercialSection } from "@/components/website-commercial-section";
+import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
 import { JsonLd } from "@/components/json-ld";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/seo";
@@ -23,7 +25,7 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd data={jsonLdGraph([organizationNode(), websiteNode(), softwareApplicationNode(homeDescription)])} />
-      <ThemeNeoBrutalism />
+      <ThemeNeoBrutalism commercialSection={<WebsiteCommercialSection home enabled={publicWebsiteAcquisitionEnabled()} />} />
     </>
   );
 }

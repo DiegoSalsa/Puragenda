@@ -3,15 +3,16 @@
 import { useTranslations } from "next-intl";
 import { PricingCards } from "@/components/pricing-cards";
 import { STAFF_LIMITS } from "@/core/constants";
+import { publicWebsiteMonthly } from "@/websites/commercial";
 
-export function PricingHero() {
+export function PricingHero({ websiteAcquisitionEnabled = false }: { websiteAcquisitionEnabled?: boolean }) {
   const t = useTranslations("pricing");
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6">
       <h1 className="mx-auto max-w-4xl text-balance text-center text-3xl font-black uppercase tracking-tighter sm:text-5xl lg:text-6xl">{t("pageTitle")}</h1>
       <p className="mx-auto mb-4 mt-4 max-w-xl text-balance text-center font-bold text-black/70 dark:text-gray-400">{t("pageSubtitle")}</p>
-      <PricingCards mode="landing" />
+      <div id="planes"><PricingCards mode="landing" websiteAcquisitionEnabled={websiteAcquisitionEnabled} /></div>
     </section>
   );
 }
@@ -42,6 +43,8 @@ export function PricingComparisonTable() {
               </tr>
             </thead>
             <tbody className="font-bold">
+              <tr className="border-b-2 border-black bg-[#BFFCC6] text-black"><td className="border-r-2 border-black p-4">Sitio Web profesional</td>{["individual", "equipo"].map(plan => <td key={plan} className="border-r-2 border-black p-4 text-center">Complemento +${new Intl.NumberFormat("es-CL").format(publicWebsiteMonthly)}/mes</td>)}</tr>
+              <tr className="border-b-2 border-black"><td className="border-r-2 border-black p-4">Reservas integradas en tu sitio</td><td className="border-r-2 border-black p-4 text-center">Con complemento Website</td><td className="p-4 text-center">Con complemento Website</td></tr>
               {rows.map(([label, individual, team], index) => (
                 <tr key={label} className={index < rows.length - 1 ? "border-b-2 border-black dark:border-white/20" : undefined}>
                   <td className="border-r-2 border-black p-4 dark:border-white/20">{t(label)}</td>
@@ -53,6 +56,7 @@ export function PricingComparisonTable() {
           </table>
         </div>
       </div>
+      <p className="mt-4 text-sm font-bold">El widget inserta tu agenda en una web existente. Sitio Web crea y publica una página administrada desde Puragenda; es un complemento con cobro mensual separado.</p>
     </section>
   );
 }

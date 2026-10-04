@@ -6,6 +6,9 @@ export const TRACKING_EVENTS = [
   "contact_lead_submitted",
   "whatsapp_clicked",
   "pricing_plan_selected",
+  "website_addon_toggled",
+  "website_purchase_continued",
+  "base_subscription_activated",
   "registration_started",
   "registration_completed",
   "checkout_started",
@@ -66,11 +69,14 @@ export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]>
   landing_cta_clicked: ["cta", "placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign", ...SEO_CONTENT_KEYS],
   contact_lead_submitted: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
   whatsapp_clicked: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
-  pricing_plan_selected: ["plan", "intent", "extra_staff", "billing_cycle", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
-  registration_started: ["plan", "intent", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
-  registration_completed: ["plan", "intent", "country", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
-  checkout_started: ["plan", "provider", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  pricing_plan_selected: ["website_intent", "plan", "intent", "extra_staff", "billing_cycle", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  registration_started: ["website_intent", "plan", "intent", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  registration_completed: ["website_intent", "plan", "intent", "country", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
+  checkout_started: ["website_intent", "plan", "provider", "extra_staff", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],
   login_completed: [],
+  website_addon_toggled: ["selected", "plan", "billing_cycle"],
+  website_purchase_continued: ["plan", "billing_cycle"],
+  base_subscription_activated: ["plan", "billing_cycle"],
   widget_opened: ["embedded", "has_locations", "has_preselected_service", "preview_mode"],
   booking_service_selected: ["booking_mode", "service_count", "has_deposit", "has_options"],
   booking_slot_selected: ["lead_days", "has_staff", "service_count"],
@@ -132,6 +138,10 @@ export function sanitizeTrackingProperties(
 
   for (const [key, value] of Object.entries(properties)) {
     if (!allowed.has(key)) continue;
+    if ((key === "website_intent" || key === "selected") && typeof value !== "boolean") continue;
+    if ((event === "website_addon_toggled" || event === "website_purchase_continued" || event === "base_subscription_activated") &&
+      ((key === "plan" && value !== "INDIVIDUAL" && value !== "EQUIPO") ||
+        (key === "billing_cycle" && value !== "monthly" && value !== "annual"))) continue;
     if (key.startsWith("seo_") && !isSafeSeoProperty(key, value)) continue;
     if (typeof value === "string") {
       sanitized[key] = value.trim().slice(0, MAX_PROPERTY_LENGTH);

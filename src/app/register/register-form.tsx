@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useRef } from "react";
+import { commercialQuote, registrationIntent, publicWebsiteMonthly } from "@/websites/commercial";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "@/components/icons/hover-icons";
@@ -21,12 +22,14 @@ export function RegisterForm({
   localityOptions,
   paymentSimulatorEnabled,
   initialCountryCode = "",
+  websiteAcquisitionEnabled = false,
 }: {
   countryOptions: Array<{ code: string; name: string }>;
   categoryOptions: Array<{ slug: string; name: string }>;
   localityOptions: Array<{ slug: string; name: string; regionName: string }>;
   paymentSimulatorEnabled: boolean;
   initialCountryCode?: string;
+  websiteAcquisitionEnabled?: boolean;
 }) {
   const legacy = useTranslations("legacy");
   const t = useTranslations("register");
@@ -34,10 +37,13 @@ export function RegisterForm({
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
   const wantsTrial = searchParams.get("trial") === "1";
+  const selected = registrationIntent(searchParams);
+  const websiteSelected = selected.website;
+  const submitBusy = useRef(false);
   const extraStaffCount = wantsPlan === "EQUIPO"
-    ? Math.max(0, Math.min(20, Number(searchParams.get("extraStaff") || 0) || 0))
+    ? selected.extraStaff
     : 0;
-  const isDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
+  const requestedDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
   const planLabel = wantsPlan === "EQUIPO" ? t("plans.team") : wantsPlan === "INDIVIDUAL" ? t("plans.individual") : wantsPlan === "TEST" ? t("plans.test") : null;
   const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
   const totalEquipoStaff = STAFF_LIMITS.EQUIPO + extraStaffCount;
@@ -46,6 +52,9 @@ export function RegisterForm({
   const [businessName, setBusinessName] = useState("");
   const detectedCountry = getCountryConfig(initialCountryCode);
   const [countryCode, setCountryCode] = useState(initialCountryCode);
+  const withWebsite = websiteSelected && countryCode === "CL";
+  const isDirectSubscription = requestedDirectSubscription && (!withWebsite || websiteAcquisitionEnabled);
+  const selectedQuote = selected.plan ? commercialQuote(selected.plan, selected.cycle, extraStaffCount, withWebsite) : null;
   const [timezone, setTimezone] = useState(initialCountryCode ? detectedCountry.timezone : "");
   const [currencyCode, setCurrencyCode] = useState(initialCountryCode ? detectedCountry.currency : "");
   const [email, setEmail] = useState("");
@@ -77,6 +86,7 @@ export function RegisterForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitBusy.current) return;
     setError(null);
 
         if (!termsAccepted) {
@@ -89,6 +99,7 @@ export function RegisterForm({
       return;
     }
 
+    submitBusy.current = true;
     setLoading(true);
 
     try {
@@ -98,6 +109,7 @@ export function RegisterForm({
         plan: wantsPlan || "EQUIPO",
         intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
         extra_staff: extraStaffCount,
+        website_intent: withWebsite,
       });
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -113,6 +125,8 @@ export function RegisterForm({
           referralCode: referralCode.trim() || undefined,
           planIntent: wantsPlan || undefined,
           extraStaffCount,
+          websiteIntent: withWebsite,
+          billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY",
           termsAccepted,
           marketplaceCategorySlug,
           marketplaceOtherDescription: marketplaceCategorySlug === MARKETPLACE_OTHER_CATEGORY_SLUG
@@ -142,10 +156,11 @@ export function RegisterForm({
         plan: wantsPlan || "EQUIPO",
         intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
         country: countryCode || "unknown",
+        website_intent: withWebsite,
       });
 
       // Step 2: Start the provider selected by the business country.
-      if (isDirectSubscription) {
+      if (isDirectSubscription && (!withWebsite || websiteAcquisitionEnabled)) {
         setLoadingStep("payment");
         const billingRes = await fetch("/api/billing/subscribe", {
           method: "POST",
@@ -160,6 +175,7 @@ export function RegisterForm({
             plan: wantsPlan || "EQUIPO",
             provider: billingData.provider === "paddle" ? "paddle" : "mercadopago",
             extra_staff: extraStaffCount,
+            website_intent: withWebsite,
           });
           await startBillingCheckout(billingData);
           return;
@@ -171,8 +187,9 @@ export function RegisterForm({
       }
 
       // Step 3: Normal flow (trial or individual) → go to dashboard
-      window.location.href = "/dashboard";
+      window.location.href = withWebsite ? "/onboarding/website" : "/dashboard";
     } finally {
+      submitBusy.current = false;
       setLoading(false);
       setLoadingStep(null);
     }
@@ -182,6 +199,15 @@ export function RegisterForm({
     <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">{t("title")}</h2>
+        {websiteSelected && <div className="space-y-2 rounded-xl border-2 border-black bg-[#FFF5BA] p-3 text-sm font-bold text-black">
+          <p>{planLabel} + Sitio Web</p>
+          <p>Puragenda: ${new Intl.NumberFormat(locale).format(selectedQuote?.baseCharge ?? planPrice)}/{selected.cycle === "annual" ? "año" : "mes"}</p>
+          <p>Sitio Web: +${new Intl.NumberFormat(locale).format(publicWebsiteMonthly)}/mes, facturado por separado.</p>
+          {selected.cycle === "annual" && <p>Tu plan Puragenda se factura anualmente y el sitio web mensualmente.</p>}
+          <p>Primero Puragenda; después confirmarás la contratación del sitio. Dos suscripciones independientes.</p>
+          {(wantsTrial || !websiteAcquisitionEnabled) && <p>Inicias solo la prueba de 30 días de Puragenda. El sitio no se cobra ni activa. {!websiteAcquisitionEnabled && "Contratación del sitio próximamente."}</p>}
+          {countryCode !== "CL" && <p>Esta oferta está disponible en Chile. Para otros países el registro incluye solo Puragenda.</p>}
+        </div>}
         {isDirectSubscription ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
@@ -194,7 +220,7 @@ export function RegisterForm({
                   ? paymentSimulatorEnabled
                     ? t("localPlanPrice", { plan: planLabel ?? "", currency: currencyCode })
                     : t("usdPlanPrice", { plan: planLabel ?? "", price: wantsPlan === "EQUIPO" ? (32.99 + extraStaffCount * 3.49).toFixed(2) : wantsPlan === "INDIVIDUAL" ? "13.99" : "0.00" })
-                  : t("clpPlanPrice", { plan: planLabel ?? "", price: new Intl.NumberFormat(locale).format(planPrice) })}
+                : selected.cycle === "annual" && selectedQuote ? `${planLabel}: $${new Intl.NumberFormat(locale).format(selectedQuote.baseCharge)}/año` : t("clpPlanPrice", { plan: planLabel ?? "", price: new Intl.NumberFormat(locale).format(planPrice) })}
               </span>
             </div>
             {wantsPlan === "EQUIPO" && (

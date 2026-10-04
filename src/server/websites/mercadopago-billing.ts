@@ -4,6 +4,7 @@ import { PreApproval, Payment } from "mercadopago";
 import type { PreApprovalResponse, PreApprovalRequest } from "mercadopago/dist/clients/preApproval/commonTypes";
 import type { WebsiteCheckoutOperation } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
+import { requireBundlePaidBase } from "./purchase-intent";
 import { mpClient } from "@/server/lib/mercadopago";
 import { requireWebsiteManager } from "./service";
 import { WebsiteError } from "./errors";
@@ -63,6 +64,7 @@ export async function startMercadoPagoWebsiteCheckout() {
   websitePreapprovalBody({ id: "configuration-check", amount: 1, currency: "CLP", firstChargeAt: null }, user.email, process.env.NEXT_PUBLIC_APP_URL || "");
   const claim = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await requireBundlePaidBase(business.id, tx);
     const offer = await tx.websiteOfferEligibility.findUnique({ where: { businessId: business.id } });
     const tier = websitePriceTier(offer);
     let addon = await tx.websiteAddon.findUnique({ where: { businessId: business.id } });
