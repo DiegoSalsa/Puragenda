@@ -49,8 +49,8 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
     void Promise.allSettled([
       ...(reminderOpen ? [dismissWebsiteTrialReminder()] : []),
       markChangelogSeenAction(LATEST_CHANGELOG_VERSION),
-    ]).then(() => router.refresh());
-  }, [router, setChangelogOpen, LATEST_CHANGELOG_VERSION, reminderOpen, reminderKey]);
+    ]);
+  }, [setChangelogOpen, LATEST_CHANGELOG_VERSION, reminderOpen, reminderKey]);
 
   useEffect(() => {
     if (!reminderKey) return;
