@@ -17,6 +17,7 @@ import { RequestIntlProvider } from "@/components/i18n/request-intl-provider";
 import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate";
 import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { PuriAssistant } from "@/components/dashboard/puri-assistant";
+import { shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -70,9 +71,25 @@ export default async function DashboardLayout({
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
   const launchEnabled = process.env.WEBSITE_LAUNCH_ENABLED === "1" && !!business && business.ownerId === user.id;
-  const websiteLaunch = launchEnabled ? { offer: await prisma.websiteOfferEligibility.findUnique({ where: { businessId: business!.id } }), addon: await prisma.websiteAddon.findUnique({ where: { businessId: business!.id } }), canManage: true } : null;
+  const [websiteOffer, websiteAddon] = launchEnabled ? await Promise.all([
+    prisma.websiteOfferEligibility.findUnique({ where: { businessId: business!.id } }),
+    prisma.websiteAddon.findUnique({ where: { businessId: business!.id } }),
+  ]) : [null, null];
+  const websiteLaunch = launchEnabled ? { offer: websiteOffer, addon: websiteAddon, canManage: true } : null;
+  const reminderCandidate = shouldShowWebsiteTrialReminder({
+    context: websiteLaunch,
+    enabled: process.env.WEBSITE_CHECKOUT_ENABLED === "1",
+    demoAccount: isDemoAccountEmail(user.email),
+  });
+  const reminderDismissed = reminderCandidate ? await prisma.websiteCommercialEvent.findUnique({
+    where: { key: websiteTrialReminderKey(business!.id) },
+    select: { key: true },
+  }) : null;
+  const websiteReminder = reminderCandidate && !reminderDismissed && websiteLaunch
+    ? { ...websiteLaunch, businessName: business!.name, dismissalKey: websiteTrialReminderKey(business!.id) }
+    : null;
   const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[0].version;
-  const shouldShowChangelogPopup = changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
+  const shouldShowChangelogPopup = !!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
 
   return (
     <RequestIntlProvider>
@@ -97,7 +114,7 @@ export default async function DashboardLayout({
           <ContextualHelpButton />
         </div>
         {business ? <PuriAssistant /> : null}
-        <ChangelogPopup websiteLaunch={websiteLaunch} />
+        <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} />
       </div>
     </DashboardOverlayProvider>
     </RequestIntlProvider>

@@ -1,11 +1,13 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CHANGELOG_DATA, type ChangelogSpotlight } from "@/config/changelog";
 import { WebsiteLaunchPopup } from "./website-launch-popup";
 import type { WebsiteLaunchContext } from "@/websites/launch";
+import type { WebsiteTrialReminderContext } from "@/websites/trial-reminder";
+import { dismissWebsiteTrialReminder } from "@/server/actions/website-reminder.actions";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { ChangelogLaunchPopup } from "@/components/dashboard/changelog-launch-popup";
 import { PuriMascot } from "@/components/brand/puri-mascot";
@@ -19,7 +21,10 @@ const POPUP_FEATURE_TITLES = [
   "Información con permiso",
 ];
 
-export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunchContext | null }) {
+export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
+  websiteLaunch?: WebsiteLaunchContext | null;
+  websiteReminder?: WebsiteTrialReminderContext | null;
+}) {
   const legacy = useTranslations("legacy");
   const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
   const router = useRouter();
@@ -27,12 +32,38 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
   const LATEST_CHANGELOG_VERSION = latestUpdate.version;
   const viewedLaunch = useRef(false);
   const previousFocus = useRef<HTMLElement | null>(null);
+  const [reminderHandled, setReminderHandled] = useState(false);
+  const [checkedReminderKey, setCheckedReminderKey] = useState<string | null>(null);
+  const reminderKey = websiteReminder?.dismissalKey;
+  const reminderChecked = !reminderKey || checkedReminderKey === reminderKey;
+  const reminderOpen = !!websiteReminder && reminderChecked && !reminderHandled;
 
-  const handleDismiss = useCallback(async () => {
+  const handleDismiss = useCallback(() => {
+    if (reminderOpen) {
+      try { localStorage.setItem(reminderKey!, "dismissed"); } catch { /* Storage can be unavailable in private browsers. */ }
+      setReminderHandled(true);
+    }
     setChangelogOpen(false);
-    await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
-    router.refresh();
-  }, [router, setChangelogOpen, LATEST_CHANGELOG_VERSION]);
+    // Closing never waits for the network. The server record syncs across devices;
+    // the browser record prevents a reload from reopening it if that save fails.
+    void Promise.allSettled([
+      ...(reminderOpen ? [dismissWebsiteTrialReminder()] : []),
+      markChangelogSeenAction(LATEST_CHANGELOG_VERSION),
+    ]).then(() => router.refresh());
+  }, [router, setChangelogOpen, LATEST_CHANGELOG_VERSION, reminderOpen, reminderKey]);
+
+  useEffect(() => {
+    if (!reminderKey) return;
+    const frame = window.requestAnimationFrame(() => {
+      let dismissed = false;
+      try { dismissed = localStorage.getItem(reminderKey) === "dismissed"; } catch { /* Server dismissal still applies. */ }
+      setReminderHandled(dismissed);
+      setCheckedReminderKey(reminderKey);
+      setChangelogOpen(!dismissed);
+      if (dismissed) void dismissWebsiteTrialReminder().catch(() => {});
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [reminderKey, setChangelogOpen]);
 
   useEffect(() => {
     if (!isChangelogOpen) return;
@@ -43,6 +74,7 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
     });
 
     function handleKeyDown(event: KeyboardEvent) {
+      if (websiteLaunch || reminderOpen) return; // Native <dialog> owns Escape and focus.
       if (event.key === "Escape" || event.key === "Esc") void handleDismiss();
     }
 
@@ -52,7 +84,7 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
       window.removeEventListener("keydown", handleKeyDown);
       previousFocus.current?.focus();
     };
-  }, [handleDismiss, isChangelogOpen]);
+  }, [handleDismiss, isChangelogOpen, websiteLaunch, reminderOpen]);
 
   useEffect(() => {
     if (!isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
@@ -60,7 +92,7 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
     track("changelog_launch_viewed");
   }, [isChangelogOpen, latestUpdate.popupVariant]);
 
-  if (!isChangelogOpen) return null;
+  if (!reminderChecked || !isChangelogOpen) return null;
 
   async function handleViewDetails() {
     if (latestUpdate.popupVariant === "launch") track("changelog_launch_cta_clicked", { feature: "changelog" });
@@ -76,7 +108,18 @@ export function ChangelogPopup({ websiteLaunch }: { websiteLaunch?: WebsiteLaunc
     router.push(spotlight.href);
   }
 
-  if (websiteLaunch) return <WebsiteLaunchPopup context={websiteLaunch} onDismiss={() => void handleDismiss()} onNavigate={() => { void (async () => { setChangelogOpen(false); await markChangelogSeenAction(LATEST_CHANGELOG_VERSION); router.push("/dashboard/website"); router.refresh(); })(); }} />;
+  if (reminderOpen || websiteLaunch) return <WebsiteLaunchPopup
+    context={reminderOpen ? websiteReminder! : websiteLaunch!}
+    reminder={reminderOpen ? websiteReminder : null}
+    onDismiss={handleDismiss}
+    onNavigate={async () => {
+      setReminderHandled(true);
+      setChangelogOpen(false);
+      await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
+      router.push("/dashboard/website");
+      router.refresh();
+    }}
+  />;
 
   if (latestUpdate.popupVariant === "launch") {
     return (
