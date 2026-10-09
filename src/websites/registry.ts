@@ -7,10 +7,11 @@ import { emptyMatchdayConfig, matchdayConfigSchema, readMatchdayConfig, type Mat
 import { MATCHDAY_PALETTES, matchdayTokens, validMatchdayPalette } from "./templates/matchday/palettes";
 import { emptyRitualConfig, readRitualConfig, ritualConfigSchema, type RitualConfig } from "./templates/ritual/config";
 import { RITUAL_PALETTES, ritualTokens, validRitualPalette } from "./templates/ritual/palettes";
+import { emptyPinkConfig, pinkConfigSchema, pinkPublicationError, readPinkConfig, type PinkConfig } from "./templates/pink-y2k/config";
 import { createElement, type ComponentType } from "react";
 import type { WebsiteView } from "./types";
 import type { WebsiteEditorProps } from "./editor-types";
-export type WebsiteConfig = BellaConfig | MatchdayConfig | RitualConfig;
+export type WebsiteConfig = BellaConfig | MatchdayConfig | RitualConfig | PinkConfig;
 function defineTemplate<C extends WebsiteConfig>(definition: {
   key: string; name: string; version: number; industries: string[];
   capabilities: { gallery: boolean; nativeBooking: boolean; multiLocation: boolean; controlledTheme: boolean; staffEditorial: boolean; process: boolean };
@@ -36,6 +37,17 @@ function defineTemplate<C extends WebsiteConfig>(definition: {
 
 // Visual settings belong to each template. Infrastructure does not prescribe layout.
 export const templateRegistry = {
+  y2k: defineTemplate<PinkConfig>({
+    key: "y2k", name: "Y2K", version: 1,
+    industries: ["uñas", "nail art", "manicura", "belleza", "estética"],
+    capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: false, process: false },
+    editor: { category: "Nail art / Y2K", sections: ["design", "hero", "services", "gallery", "business", "contact", "domain"], palettes: [], customControls: ["pocket", "policies", "visibility", "customPalette"] },
+    preview: { thumbnail: "/websites/previews/y2k.svg", desktop: "/website-preview?template=y2k", mobile: "/website-preview?template=y2k&viewport=mobile" },
+    configSchema: pinkConfigSchema, defaultConfig: emptyPinkConfig, readConfig: readPinkConfig, parseDraft: pinkConfigSchema.parse,
+    publicationError: pinkPublicationError,
+    loadComponent: () => import("./templates/pink-y2k/Lazy").then(module => module.default),
+    loadEditor: () => import("@/app/dashboard/website/y2k-editor").then(module => module.default),
+  }),
   bella: defineTemplate<BellaConfig>({
     key: "bella", name: "Bella", version: 1,
     industries: ["belleza", "uñas", "cejas", "pestañas", "estética", "peluquería"],

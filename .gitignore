@@ -79,3 +79,5 @@ next-env.d.ts
 
 # local visual QA artifacts
 /artifacts/
+/.next-pink-y2k/
+/output/pink-y2k/

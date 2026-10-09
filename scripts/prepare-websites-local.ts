@@ -30,6 +30,8 @@ const hasOffers = await client.query("SELECT to_regclass('public.\"WebsiteOfferE
 if (!hasOffers.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20261001120000_website_launch_offers/migration.sql", "utf8"));
 const hasMp = await client.query("SELECT 1 FROM information_schema.columns WHERE table_name='WebsiteAddon' AND column_name='mpSubscriptionId'");
 if (!hasMp.rows.length) await client.query(fs.readFileSync("prisma/migrations/20261002190000_website_mercadopago/migration.sql", "utf8"));
+const hasPurchaseIntent = await client.query("SELECT to_regclass('public.\"WebsitePurchaseIntent\"') as table");
+if (!hasPurchaseIntent.rows[0].table) await client.query(fs.readFileSync("prisma/migrations/20261003220000_website_purchase_intent/migration.sql", "utf8"));
 await client.end();
 fs.mkdirSync("public/website-media-qa/website-qa-c", { recursive: true });
 await sharp({ create: { width: 640, height: 480, channels: 3, background: "#947867" } }).webp().toFile("public/website-media-qa/website-qa-c/service.webp");

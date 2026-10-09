@@ -17,6 +17,7 @@ import { effectiveWebsiteHeadline } from "@/websites/publishing";
 
 import { fixtureView } from "@/websites/fixtures/views";
 import { BELLA_PALETTES } from "@/websites/palettes";
+import { pinkFixtureView } from "@/websites/fixtures/pink-y2k";
 import { Prisma } from "@prisma/client";
 
 describe("website draft, publication and ownership",()=>{
@@ -24,6 +25,22 @@ describe("website draft, publication and ownership",()=>{
  beforeEach(()=>{vi.resetAllMocks();m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.ensure.mockResolvedValue({id:"website-a",status:"DRAFT",subdomain:"tenant-a",draftConfig:fixtureView("a").config});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});m.publish.mockResolvedValue({count:1});m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:{status:"ACTIVE",validUntil:new Date(Date.now()+86400000)},website:{id:"website-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config}});});
 
  it("saves only the authenticated tenant draft with optimistic concurrency",async()=>{await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a");expect(m.save).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",businessId:"tenant-a",revision:2},data:expect.not.objectContaining({publishedConfig:expect.anything()})}));m.save.mockResolvedValue({count:0});await expect(saveWebsiteDraft({},2,"tenant-a")).resolves.toEqual({error: "El borrador cambió en otra sesión. Recarga antes de guardar."});});
+ it("saves and publishes Y2K through the existing tenant-scoped actions", async () => {
+  const config = pinkFixtureView().config;
+  const site = { id: "website-a", businessId: "tenant-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config };
+  m.ensure.mockResolvedValue(site);
+  expect(await saveWebsiteDraft(config, 2, "tenant-a", "y2k")).toEqual({ revision: 3 });
+  expect(m.save).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "website-a", businessId: "tenant-a", revision: 2 }, data: expect.objectContaining({ templateConfigs: expect.objectContaining({ "y2k@1": config }) }) }));
+  m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { ...site, revision: 3 } });
+  expect(await publishWebsite(3)).toBeUndefined();
+  expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ publishedTemplateKey: "y2k", publishedTemplateVersion: 1, publishedConfig: config, publishedRevision: 3 }) }));
+ });
+ it("refuses a foreign image in a Y2K draft", async () => {
+  const config = pinkFixtureView().config;
+  m.ensure.mockResolvedValue({ id: "website-a", templateKey: "y2k", templateVersion: 1, draftConfig: config });
+  expect(await saveWebsiteDraft({ ...config, heroImage: "/website-media-qa/tenant-b/private.webp" }, 2, "tenant-a", "y2k")).toMatchObject({ error: expect.stringContaining("no pertenece") });
+  expect(m.save).not.toHaveBeenCalled();
+ });
 
  it("publishes one validated saved snapshot and rejects stale versions",async()=>{await publishWebsite(2);expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",revision:2},data:expect.objectContaining({status:"PUBLISHED",publishedRevision:2,publishedConfig:expect.objectContaining({schemaVersion:2,galleryFilters:[],galleryCategories:expect.arrayContaining([expect.objectContaining({id:"cat-color"})])})})}));await expect(publishWebsite(1)).resolves.toEqual({error:"Recarga el borrador antes de publicar"});});
 
@@ -62,6 +79,14 @@ describe("website draft, publication and ownership",()=>{
 describe("template switching",()=>{
  beforeEach(()=>{vi.resetAllMocks();m.manager.mockResolvedValue({business:{id:"tenant-a",slug:"tenant-a"}});m.website.mockResolvedValue({id:"website-a",businessId:"tenant-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:fixtureView("a").config,templateConfigs:{}});m.media.mockResolvedValue([]);m.save.mockResolvedValue({count:1});});
  it("saves the prior draft without modifying published identity or business data",async()=>{expect(await switchWebsiteTemplate("matchday",1,2)).toEqual({revision:3});expect(m.save).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",businessId:"tenant-a",revision:2},data:expect.objectContaining({templateKey:"matchday",templateConfigs:expect.objectContaining({"bella@1":expect.anything()})})}));expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedConfig");expect(m.save.mock.calls[0][0].data).not.toHaveProperty("publishedTemplateKey");});
+ it("selects Y2K without importing demo media or changing the live identity", async () => {
+  expect(await switchWebsiteTemplate("y2k", 1, 2)).toEqual({ revision: 3 });
+  const data = m.save.mock.calls[0][0].data;
+  expect(data.templateKey).toBe("y2k");
+  expect(data.draftConfig.displayName).toBe(fixtureView("a").config.displayName);
+  expect(JSON.stringify(data)).not.toContain("/websites/pink-y2k/pink-dream.webp");
+  expect(data).not.toHaveProperty("publishedTemplateKey");
+ });
  it("rejects stale switch revisions before writing",async()=>{expect(await switchWebsiteTemplate("matchday",1,1)).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
  it("rejects unsupported versions before the transaction",async()=>{expect(await switchWebsiteTemplate("matchday",2,2)).toHaveProperty("error");expect(m.website).not.toHaveBeenCalled();});
  it("rejects a stale editor saving a different template",async()=>{m.ensure.mockResolvedValue({templateKey:"matchday",templateVersion:1});expect(await saveWebsiteDraft(fixtureView("a").config,2,"tenant-a","bella")).toHaveProperty("error");expect(m.save).not.toHaveBeenCalled();});
