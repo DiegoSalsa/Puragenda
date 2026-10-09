@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { fixtureView } from "@/websites/fixtures/views";
 import { ritualFixture, ritualTerapiasSecFixture, ritualTerapiasSecRealisticFixture } from "@/websites/fixtures/ritual";
 import { resolveTemplate } from "@/websites/registry";
+import { pinkFixtureView } from "@/websites/fixtures/pink-y2k";
 import { matchdayFixture } from "@/websites/fixtures/matchday";
 export const metadata: Metadata = { title: { absolute: "QA local Bella" }, robots: { index: false, follow: false } };
 export default async function Demo({ params, searchParams }: { params: Promise<{ tenant: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -19,6 +20,7 @@ export default async function Demo({ params, searchParams }: { params: Promise<{
     if (["earth", "sage", "stone", "ember"].includes(String(query.palette))) view.config.accent = query.palette as typeof view.config.accent;
     return <Component view={view} />;
   }
+  if (tenant === "y2k") { const Component = await resolveTemplate("y2k", 1).loadComponent(); return <Component view={pinkFixtureView()} />; }
   if (tenant === "matchday") { const Component = await resolveTemplate("matchday", 1).loadComponent(); return <Component view={matchdayFixture("soccerbarber")} />; }
   if (tenant !== "a" && tenant !== "b") notFound();
   const Component = await resolveTemplate("bella", 1).loadComponent();

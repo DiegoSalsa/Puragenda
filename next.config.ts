@@ -36,8 +36,9 @@ const canonicalHostRedirects = [
 const securityPolicy = `default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'${unsafeEval} https://sdk.mercadopago.com https://cdn.paddle.com https://*.posthog.com https://www.googletagmanager.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://api.mercadopago.com https://secure-fields.mercadopago.com https://*.paddle.com https://*.posthog.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com; worker-src 'self' blob: data:; frame-src 'self' https://*.mercadopago.com https://*.mercadolibre.com https://*.paddle.com; frame-ancestors 'none';${upgradeInsecureRequests}`;
 
 const nextConfig: NextConfig = {
+  devIndicators: process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" ? false : undefined,
   skipProxyUrlNormalize: true,
-  distDir: process.env.WEBSITE_BUILD_QA === "1" ? ".next-websites-build" : process.env.WEBSITE_QA === "1" ? ".next-websites-qa" : ".next",
+  distDir: process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" && process.env.NODE_ENV !== "production" ? ".next-pink-y2k" : process.env.WEBSITE_BUILD_QA === "1" ? ".next-websites-build" : process.env.WEBSITE_QA === "1" ? ".next-websites-qa" : ".next",
   allowedDevOrigins: ["127.0.0.1"],
   env: {
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID ?? "",
@@ -56,6 +57,13 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/website-preview/pink-y2k",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
       ...noIndexRoutes.map((source) => ({
         source,
         headers: [

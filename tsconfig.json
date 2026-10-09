@@ -53,7 +53,9 @@
     ".next-websites-qa/types/**/*.ts",
     ".next-websites-qa/dev/types/**/*.ts",
     ".next-websites-build/types/**/*.ts",
-    ".next-websites-build/dev/types/**/*.ts"
+    ".next-websites-build/dev/types/**/*.ts",
+    ".next-pink-y2k/types/**/*.ts",
+    ".next-pink-y2k/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

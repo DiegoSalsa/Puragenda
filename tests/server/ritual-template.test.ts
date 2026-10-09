@@ -12,7 +12,7 @@ import { templateSwitchDraft } from "@/websites/template-snapshots";
 import { galleryCategoryLabelError } from "@/websites/gallery-categories";
 describe("Ritual template", () => {
   it("is independently registered and has safe defaults", () => {
-    expect(Object.keys(templateRegistry)).toEqual(["bella", "matchday", "ritual"]);
+    expect(Object.keys(templateRegistry)).toEqual(["y2k", "bella", "matchday", "ritual"]);
     expect(resolveTemplate("ritual", 1).name).toBe("Ritual");
     expect(emptyRitualConfig().headline).toBe("Una pausa hecha a tu medida.");
   });
