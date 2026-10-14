@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, basename } from "node:path";
+import { createHash } from "node:crypto";
 
 // Rectangles are measured on the background-extracted sheets, not invented artwork.
 // Run with the directory containing sheet-1.png, sheet-2.png and sheet-3.png.
@@ -8,6 +9,11 @@ const sourceDirectory = process.argv[2];
 if (!sourceDirectory) throw new Error("Pass the directory containing the three extracted sheets");
 const destination = resolve("public/websites/pink-y2k/stickers");
 await mkdir(destination, { recursive: true });
+const priorManifest = await readFile(resolve(destination, "manifest.json"), "utf8").then(JSON.parse).catch(error => {
+  if (error.code === "ENOENT") return null;
+  throw error;
+});
+const repaired = new Map((priorManifest?.assets ?? []).filter(row => row.repair).map(row => [row.kind, row]));
 const rows = [];
 const add = (sheet, kind, name, category, left, top, width, height) => rows.push({ sheet, kind, name, category, box: { left, top, width, height } });
 
@@ -189,6 +195,16 @@ function isolate(data, width, height, keep) {
   return data;
 }
 for (const row of rows) {
+  // Reviewed repairs are authoritative. Never reapply the old coarse masks
+  // to these assets when rebuilding the reference catalog.
+  const fixed = repaired.get(row.kind);
+  if (fixed) {
+    const buffer = await readFile(resolve(destination, basename(fixed.src)));
+    if (createHash("sha256").update(buffer).digest("hex") !== fixed.repair.sha256) throw new Error(`Repaired sticker changed: ${row.kind}. Review before packaging.`);
+    const meta = await sharp(buffer).metadata();
+    catalog.push({ ...row, src: fixed.src, width: meta.width, height: meta.height, bytes: buffer.length, repair: fixed.repair });
+    continue;
+  }
   const source = resolve(sourceDirectory, `sheet-${row.sheet}.png`);
   const cleaned = row.kind === "pink-card" || row.kind === "kuromi";
   const filename = cleaned ? `${row.kind}-clean.webp` : `${row.kind}.webp`;
@@ -211,5 +227,5 @@ for (const row of rows) {
 const categories = ["Personajes", "Brillos", "Textos", "Música", "Accesorios"];
 const code = `// Reference cutouts supplied by the customer. See the packaging manifest for provenance.\nexport const STICKER_CATEGORIES = ${JSON.stringify(categories)} as const;\nexport const REFERENCE_STICKERS = [\n${catalog.map(({ kind, name, category, src }) => `  ${JSON.stringify({ kind, name, category, src })},`).join("\n")}\n] as const;\n`;
 await writeFile(resolve("src/websites/templates/pink-y2k/reference-stickers.ts"), code);
-await writeFile(resolve(destination, "manifest.json"), JSON.stringify({ method: "Built-in ImageGen background-extraction followed by lossless WebP asset packaging", prompt: "Remove only white whitespace and screenshot UI; preserve every sticker, logo, character, texture, lettering and intentional white inside artwork. Keep relative composition and true alpha transparency.", cleanupPrompts: { pinkCard: "Remove the black screenshot magnifier circle, sparkle and handle from the pink UNO card. Reconstruct occluded pink background and real white reverse arrows. Preserve the corner arrows, oval, shape, colors and transparent background.", kuromi: "Extract the full original Kuromi silhouette, remove the gray expand overlay and the black zoom circle and handle. Remove every background rectangle. Reconstruct the small white feet behind the magnifier and keep the real tail, face, pose, colors and alpha." }, sheets: ["codex-clipboard-ad1a1c48-8d85-4bf0-a1b5-2fd567ef2b57.png", "codex-clipboard-08d71123-eda4-43f4-9195-8f66314ef9c6.png", "codex-clipboard-e08ad23d-216b-43ef-9617-e077feaa2fd0.png"], assets: catalog }, null, 2));
+await writeFile(resolve(destination, "manifest.json"), JSON.stringify({ method: "Built-in ImageGen background-extraction followed by lossless WebP asset packaging", prompt: "Remove only white whitespace and screenshot UI; preserve every sticker, logo, character, texture, lettering and intentional white inside artwork. Keep relative composition and true alpha transparency.", cleanupPrompts: { pinkCard: "Remove the black screenshot magnifier circle, sparkle and handle from the pink UNO card. Reconstruct occluded pink background and real white reverse arrows. Preserve the corner arrows, oval, shape, colors and transparent background.", kuromi: "Extract the full original Kuromi silhouette, remove the gray expand overlay and the black zoom circle and handle. Remove every background rectangle. Reconstruct the small white feet behind the magnifier and keep the real tail, face, pose, colors and alpha." }, sheets: ["codex-clipboard-ad1a1c48-8d85-4bf0-a1b5-2fd567ef2b57.png", "codex-clipboard-08d71123-eda4-43f4-9195-8f66314ef9c6.png", "codex-clipboard-e08ad23d-216b-43ef-9617-e077feaa2fd0.png"], repairs: priorManifest?.repairs, assets: catalog }, null, 2));
 console.log(JSON.stringify({ count: catalog.length, bytes: catalog.reduce((total, art) => total + art.bytes, 0), destination }));

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { galleryImageSchema, galleryCategorySchema, media, safeLink } from "../../shared-config";
 import { websiteAssetSchema } from "../../media";
 import { contrastRatio } from "../../palettes";
+import type { WebsitePublicationOptions } from "../../publishing";
 import { stickersSchema } from "./stickers";
 const text = (max: number, fallback = "") =>
   z.string().trim().max(max).default(fallback);
@@ -129,8 +130,8 @@ export function validPinkPalette(config: PinkConfig) {
   const c = config.colors;
   return contrastRatio(c.accent, "#ffffff") >= 4.5 && contrastRatio(c.ink, c.background) >= 4.5 && contrastRatio(c.ink, c.surface) >= 4.5 && contrastRatio(c.accent, c.background) >= 4.5 && contrastRatio(c.accent, c.surface) >= 4.5;
 }
-export function pinkPublicationError(config: PinkConfig) {
-  if (!validPinkPalette(config)) return "La paleta necesita más contraste antes de publicar";
+export function pinkPublicationError(config: PinkConfig, options?: WebsitePublicationOptions) {
+  if (options?.ignoreContrast !== true && !validPinkPalette(config)) return "La paleta necesita más contraste antes de publicar";
   if (!config.heroImage || !config.headline.some(line => line.trim())) return "Agrega una portada y un titular antes de publicar";
   if (config.visibility.policies && (!config.policy.title || !config.policy.body)) return "Completa las condiciones de tu negocio o desactiva esa sección";
   return null;

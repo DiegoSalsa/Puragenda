@@ -18,6 +18,10 @@ import { effectiveWebsiteHeadline } from "@/websites/publishing";
 import { fixtureView } from "@/websites/fixtures/views";
 import { BELLA_PALETTES } from "@/websites/palettes";
 import { pinkFixtureView } from "@/websites/fixtures/pink-y2k";
+import { emptyMatchdayConfig } from "@/websites/templates/matchday/config";
+import { emptyRitualConfig } from "@/websites/templates/ritual/config";
+import { ritualTokens } from "@/websites/templates/ritual/palettes";
+import { resolveTemplate } from "@/websites/registry";
 import { Prisma } from "@prisma/client";
 
 describe("website draft, publication and ownership",()=>{
@@ -57,6 +61,42 @@ describe("website draft, publication and ownership",()=>{
   m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:{status:"ACTIVE",validUntil:new Date(Date.now()+86400000)},website:{id:"website-a",templateKey:"bella",templateVersion:1,revision:2,draftConfig:config}});
   const result=await publishWebsite(2);if(valid){expect(result).toBeUndefined();expect(m.publish.mock.calls[0][0].data.publishedConfig.customPalette).toEqual(customPalette);}else{expect(result).toMatchObject({error:expect.stringContaining("contraste")});expect(m.publish).not.toHaveBeenCalled();}
   expect(BELLA_PALETTES).toHaveLength(3);
+ });
+
+ it.each([
+  ["y2k", { ...pinkFixtureView().config, colors: { ...pinkFixtureView().config.colors, accent: "#e78eb8" } }],
+  ["bella", { ...fixtureView("a").config, paletteMode: "custom", customPalette: { primary: "#FFFFFF", text: "#FFFFFF", background: "#FFFFFF", ink: "#FFFFFF" } }],
+  ["matchday", { ...emptyMatchdayConfig(), heroImage: fixtureView("a").config.heroImage, headline: "Mi sitio", paletteMode: "custom", customPalette: { accent: "#FFFFFF", onAccent: "#FFFFFF", paper: "#FFFFFF", ink: "#FFFFFF" } }],
+  ["ritual", { ...emptyRitualConfig(), heroImage: fixtureView("a").config.heroImage, headline: "Mi sitio", paletteMode: "custom", customPalette: { ...ritualTokens(emptyRitualConfig()), accent: "#FFFFFF", accentContrast: "#FFFFFF" } }],
+ ])("requires explicit contrast acceptance before publishing %s without changing its colors", async (templateKey, config) => {
+  m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { id: "website-a", templateKey, templateVersion: 1, revision: 2, draftConfig: config } });
+  await expect(publishWebsite(2)).resolves.toEqual({ error: expect.stringContaining("contraste"), canPublishAnyway: true });
+  await expect(publishWebsite(2, { ignoreContrast: false })).resolves.toMatchObject({ canPublishAnyway: true });
+  expect(m.publish).not.toHaveBeenCalled();
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toBeUndefined();
+  expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "website-a", revision: 2 }, data: expect.objectContaining({ publishedTemplateKey: templateKey, publishedConfig: resolveTemplate(templateKey, 1).readConfig(config) }) }));
+ });
+
+ it.each([
+  ["hero", { heroImage: "" }, "portada"],
+  ["headline", { headline: ["", ""] }, "titular"],
+  ["policies", { policy: { ...pinkFixtureView().config.policy, body: "" } }, "condiciones"],
+ ])("keeps required Y2K %s validation when contrast is accepted", async (_name, change, expected) => {
+  const config = { ...pinkFixtureView().config, ...change, colors: { ...pinkFixtureView().config.colors, accent: "#e78eb8" } };
+  m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { id: "website-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config } });
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: expect.stringContaining(expected) });
+  expect(m.publish).not.toHaveBeenCalled();
+ });
+
+ it("keeps revision, entitlement and media ownership checks when contrast is accepted", async () => {
+  await expect(publishWebsite(1, { ignoreContrast: true })).resolves.toEqual({ error: "Recarga el borrador antes de publicar" });
+  m.business.mockResolvedValueOnce({ subscription: { status: "ACTIVE" }, websiteAddon: null });
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: "Activa el add-on y regulariza tu suscripción para publicar" });
+  const config = { ...pinkFixtureView().config, heroImage: "/website-media-qa/tenant-b/private.webp", colors: { ...pinkFixtureView().config.colors, accent: "#e78eb8" } };
+  m.media.mockResolvedValue([{ websiteId: "website-b", deletedAt: null }]);
+  m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { id: "website-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config } });
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: expect.stringContaining("no pertenece") });
+  expect(m.publish).not.toHaveBeenCalled();
  });
 
  it.each([

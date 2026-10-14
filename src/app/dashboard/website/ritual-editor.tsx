@@ -19,6 +19,7 @@ import RitualGalleryPanel from "./ritual-gallery-panel";
 import RitualCopyFields from "./ritual-copy-fields";
 import BillingPanel from "./billing-panel";
 import styles from "./website-builder.module.css";
+import EditorNotice from "./editor-notice";
 
 type Props = WebsiteEditorProps<RitualConfig>;
 const sections = [
@@ -38,6 +39,7 @@ type Section = typeof sections[number]["key"];
 
 export default function RitualEditor(props: Props) {
   const router = useRouter();
+  const [publishWarning, setPublishWarning] = useState("");
   const [config, setConfig] = useState(props.initial), [subdomain, setSubdomain] = useState(props.subdomain), [section, setSection] = useState<Section>("design"), [viewport, setViewport] = useState<"desktop" | "mobile">("desktop"), [message, setMessage] = useState(""), [pending, start] = useTransition(), [uploads, setUploads] = useState(0), [visualMedia, setVisualMedia] = useState<Record<string, string>>({});
   const [autosave] = useState(() => new DraftAutosave<{ config: RitualConfig; subdomain: string }>({ config: props.initial, subdomain: props.subdomain }, props.revision, async (draft, revision) => {
     const parsed = ritualConfigSchema.safeParse({ ...draft.config, ...(draft.config.mediaAssets ? { mediaAssets: referencedAssets(draft.config) } : {}) });
@@ -67,9 +69,13 @@ export default function RitualEditor(props: Props) {
     return <label className={styles.field}>{label}{multiline ? <textarea value={value} onFocus={() => focusField(key)} onChange={event => update(c => ({ ...c, [key]: event.target.value }))} /> : <input value={value} onFocus={() => focusField(key)} onChange={event => update(c => ({ ...c, [key]: event.target.value }))} />}</label>;
   }
   const run = (operation: () => Promise<unknown>, success: string) => start(async () => {
+    setPublishWarning("");
     try {
       const result = await operation();
-      if (result && typeof result === "object" && "error" in result && typeof result.error === "string") throw new Error(result.error);
+      if (result && typeof result === "object" && "error" in result && typeof result.error === "string") {
+        if ("canPublishAnyway" in result && result.canPublishAnyway === true) setPublishWarning(result.error);
+        throw new Error(result.error);
+      }
       setMessage(success);
       router.refresh();
     } catch (e) {
@@ -77,6 +83,7 @@ export default function RitualEditor(props: Props) {
     }
   });
 
+  function publish(ignoreContrast = false) { run(async () => { await autosave.flush(); return publishWebsite(autosave.getSnapshot().revision, { ignoreContrast }); }, "¡Tu sitio está publicado!"); }
   useEffect(() => {
     payload.current = { protocol: PREVIEW_PROTOCOL, type: "draft", sequence: ++sequence.current, config: visualConfig, ...(focus.current ? { focus: focus.current } : {}) };
     focus.current = undefined;
@@ -97,7 +104,7 @@ export default function RitualEditor(props: Props) {
       <div className={styles.title}><h1>Mi sitio</h1><p>Ritual · Masajes / Wellness / Terapias</p></div>
       <span className={styles.saveStatus}>{save.status === "saving" ? <LoaderCircle size={14} /> : <Check size={14} />}{save.status === "saving" ? "Guardando…" : "Guardado"}</span>
       {props.status === "PUBLISHED" ? <a className={styles.secondary} href={props.publicUrl} target="_blank" rel="noopener noreferrer">Ver sitio</a> : null}
-      <button className={styles.publish} disabled={pending || uploads > 0 || !active || !unpublished} onClick={() => run(async () => { await autosave.flush(); return publishWebsite(autosave.getSnapshot().revision); }, "¡Tu sitio está publicado!")}><Sparkles size={14} />Publicar cambios</button>
+      <button className={styles.publish} disabled={pending || uploads > 0 || !active || !unpublished} onClick={() => publish()}><Sparkles size={14} />Publicar cambios</button>
     </header>
     {!active ? <div className={styles.notice}>Tu contenido sigue guardado. Activa Sitio Web para publicar.<button onClick={() => setSection("billing")}>Ver suscripción</button></div> : null}
     <div className={styles.body}>
@@ -117,6 +124,6 @@ export default function RitualEditor(props: Props) {
       </div>
       <div className={styles.previewArea}><div className={styles.previewToolbar}><div className={styles.segmented}><button aria-pressed={viewport === "desktop"} onClick={() => setViewport("desktop")}><Monitor size={13} />Escritorio</button><button aria-pressed={viewport === "mobile"} onClick={() => setViewport("mobile")}><Smartphone size={13} />Móvil</button></div><span className={styles.previewCaption}>Vista previa en vivo · solo tú puedes verla</span></div><LivePreviewFrame mobile={viewport === "mobile"} frame={frame} onLoad={sendPreview} /></div>
     </div>
-    {message ? <div className={styles.notice} role="status">{message}</div> : null}
+    <EditorNotice message={message} onClose={() => setMessage("")} onPublishAnyway={publishWarning === message ? () => publish(true) : undefined} disabled={pending || uploads > 0 || !active || !unpublished} />
   </div>;
 }

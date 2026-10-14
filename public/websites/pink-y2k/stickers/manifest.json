@@ -118,10 +118,15 @@
         "width": 195,
         "height": 136
       },
-      "src": "/websites/pink-y2k/stickers/pink-batman.webp",
-      "width": 176,
-      "height": 122,
-      "bytes": 22728
+      "src": "/websites/pink-y2k/stickers/pink-batman-repaired.webp",
+      "width": 180,
+      "height": 126,
+      "bytes": 22778,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea suelta bajo el óvalo",
+        "sha256": "aee180bad49f7e31554d50f0b578c8e1a958b6ff4a6d7c9c08f411def0256c74"
+      }
     },
     {
       "sheet": 1,
@@ -150,10 +155,15 @@
         "width": 246,
         "height": 192
       },
-      "src": "/websites/pink-y2k/stickers/kitty-leopard-gold.webp",
-      "width": 231,
-      "height": 187,
-      "bytes": 67282
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-gold-repaired.webp",
+      "width": 222,
+      "height": 190,
+      "bytes": 65794,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Trazo negro ajeno sobre la cabeza",
+        "sha256": "be595592ff0d4fadfba0bd3690cd6321a1f97456df8d3b0f21e2b92a8a0ce027"
+      }
     },
     {
       "sheet": 1,
@@ -182,10 +192,15 @@
         "width": 145,
         "height": 103
       },
-      "src": "/websites/pink-y2k/stickers/pink-paw.webp",
-      "width": 122,
-      "height": 89,
-      "bytes": 14612
+      "src": "/websites/pink-y2k/stickers/pink-paw-repaired.webp",
+      "width": 126,
+      "height": 94,
+      "bytes": 15294,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Contorno cortado por la máscara anterior",
+        "sha256": "bf944269ab4d2483302cf104dacc47ec39eec33d1e6570869473a9a2a7b23b36"
+      }
     },
     {
       "sheet": 1,
@@ -198,10 +213,15 @@
         "width": 235,
         "height": 224
       },
-      "src": "/websites/pink-y2k/stickers/kitty-leopard-head.webp",
-      "width": 226,
-      "height": 210,
-      "bytes": 57976
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-head-repaired.webp",
+      "width": 245,
+      "height": 226,
+      "bytes": 60404,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Bigotes y borde inferior recortados",
+        "sha256": "69ef80027b6410a365109db7cb809d1171dda35d9cca532853c561852c1f497d"
+      }
     },
     {
       "sheet": 1,
@@ -230,10 +250,15 @@
         "width": 140,
         "height": 176
       },
-      "src": "/websites/pink-y2k/stickers/monster-claws.webp",
-      "width": 120,
-      "height": 172,
-      "bytes": 34724
+      "src": "/websites/pink-y2k/stickers/monster-claws-repaired.webp",
+      "width": 123,
+      "height": 167,
+      "bytes": 31400,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento de pedrería bajo las garras",
+        "sha256": "27fd82d909ad27fb73b8596a26fd476ca9ce549a540bf0272f9411b0e62a5241"
+      }
     },
     {
       "sheet": 1,
@@ -246,10 +271,15 @@
         "width": 169,
         "height": 162
       },
-      "src": "/websites/pink-y2k/stickers/leopard-domo.webp",
-      "width": 158,
-      "height": 160,
-      "bytes": 45540
+      "src": "/websites/pink-y2k/stickers/leopard-domo-repaired.webp",
+      "width": 154,
+      "height": 156,
+      "bytes": 43754,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento rosa bajo la esquina izquierda",
+        "sha256": "01aa7a29c34d109c891c8fe19c67a6081400d2e9f925b666e4aabedde36cdee0"
+      }
     },
     {
       "sheet": 1,
@@ -262,10 +292,15 @@
         "width": 140,
         "height": 136
       },
-      "src": "/websites/pink-y2k/stickers/betty-leopard-heart.webp",
-      "width": 130,
-      "height": 119,
-      "bytes": 22478
+      "src": "/websites/pink-y2k/stickers/betty-leopard-heart-repaired.webp",
+      "width": 117,
+      "height": 122,
+      "bytes": 20556,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Tira rosa lateral y puntos ajenos",
+        "sha256": "b4b7edeaf8090d62ad39b032e665c973821fe77386c661fbe9ea102d756aecfa"
+      }
     },
     {
       "sheet": 1,
@@ -278,10 +313,15 @@
         "width": 183,
         "height": 97
       },
-      "src": "/websites/pink-y2k/stickers/pink-cherries-banner.webp",
-      "width": 164,
-      "height": 89,
-      "bytes": 23478
+      "src": "/websites/pink-y2k/stickers/pink-cherries-banner-repaired.webp",
+      "width": 166,
+      "height": 87,
+      "bytes": 21984,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento dorado sobre la cinta",
+        "sha256": "7bddea8e6e249a339867d5e2daa8b95ae5fe15b258dc2366e15701bbea4cacde"
+      }
     },
     {
       "sheet": 1,
@@ -326,10 +366,15 @@
         "width": 199,
         "height": 264
       },
-      "src": "/websites/pink-y2k/stickers/kitty-handbag.webp",
-      "width": 191,
-      "height": 258,
-      "bytes": 64816
+      "src": "/websites/pink-y2k/stickers/kitty-handbag-repaired.webp",
+      "width": 193,
+      "height": 255,
+      "bytes": 62892,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea horizontal sobre la cabeza",
+        "sha256": "9d688db90f6c31daaedd15d9c68111055bb8e7666c9ae4e795059d04c84cbf2f"
+      }
     },
     {
       "sheet": 1,
@@ -342,10 +387,15 @@
         "width": 261,
         "height": 126
       },
-      "src": "/websites/pink-y2k/stickers/bite-me.webp",
-      "width": 261,
-      "height": 126,
-      "bytes": 40748
+      "src": "/websites/pink-y2k/stickers/bite-me-repaired.webp",
+      "width": 248,
+      "height": 111,
+      "bytes": 37604,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Restos sobre y bajo las palabras",
+        "sha256": "e9a70582560ba998f2c5ca1262dc741b70612f21d2af04ba000568bc53b441ba"
+      }
     },
     {
       "sheet": 1,
@@ -358,10 +408,15 @@
         "width": 236,
         "height": 298
       },
-      "src": "/websites/pink-y2k/stickers/black-gold-cross.webp",
-      "width": 228,
-      "height": 296,
-      "bytes": 66288
+      "src": "/websites/pink-y2k/stickers/black-gold-cross-repaired.webp",
+      "width": 231,
+      "height": 292,
+      "bytes": 63828,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Borde del celular vecino bajo la punta",
+        "sha256": "9bf27a1549db792af464962b27907639eb332ee61cca0f5ecc382c617aaa389f"
+      }
     },
     {
       "sheet": 1,
@@ -374,10 +429,15 @@
         "width": 254,
         "height": 136
       },
-      "src": "/websites/pink-y2k/stickers/bratz-logo.webp",
-      "width": 240,
-      "height": 135,
-      "bytes": 44524
+      "src": "/websites/pink-y2k/stickers/bratz-logo-repaired.webp",
+      "width": 226,
+      "height": 132,
+      "bytes": 41294,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento de cruz en el lateral derecho",
+        "sha256": "3efb55ac3441abe5a6d9934e40e3e36a13484ef973b1804c6a3e87e2a987f80c"
+      }
     },
     {
       "sheet": 1,
@@ -438,10 +498,15 @@
         "width": 211,
         "height": 212
       },
-      "src": "/websites/pink-y2k/stickers/circuit-heart.webp",
-      "width": 189,
-      "height": 191,
-      "bytes": 55564
+      "src": "/websites/pink-y2k/stickers/circuit-heart-repaired.webp",
+      "width": 191,
+      "height": 201,
+      "bytes": 57464,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Borde superior cortado por la máscara anterior",
+        "sha256": "010dfdf0162628fa87a85199dafe5f794d9787eeaa362b3a1ad20e232ef5ef3f"
+      }
     },
     {
       "sheet": 1,
@@ -454,10 +519,15 @@
         "width": 160,
         "height": 161
       },
-      "src": "/websites/pink-y2k/stickers/puma-heart.webp",
-      "width": 146,
-      "height": 149,
-      "bytes": 16554
+      "src": "/websites/pink-y2k/stickers/puma-heart-repaired.webp",
+      "width": 149,
+      "height": 144,
+      "bytes": 15868,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Tira diagonal bajo el corazón",
+        "sha256": "e6d5ccb788a7387dccc536a015d2117a0bdd4633b06a036187893f1988393f46"
+      }
     },
     {
       "sheet": 1,
@@ -486,10 +556,15 @@
         "width": 151,
         "height": 258
       },
-      "src": "/websites/pink-y2k/stickers/pink-phone.webp",
-      "width": 119,
+      "src": "/websites/pink-y2k/stickers/pink-phone-repaired.webp",
+      "width": 121,
       "height": 248,
-      "bytes": 45662
+      "bytes": 44638,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Punta de la cruz vecina sobre el celular",
+        "sha256": "4a1a0bc1fd5f421ec6e931908f951599061b2dbd5a25457df48ac734530610fd"
+      }
     },
     {
       "sheet": 1,
@@ -502,10 +577,15 @@
         "width": 262,
         "height": 185
       },
-      "src": "/websites/pink-y2k/stickers/monster-high.webp",
-      "width": 245,
-      "height": 164,
-      "bytes": 54202
+      "src": "/websites/pink-y2k/stickers/monster-high-repaired.webp",
+      "width": 238,
+      "height": 168,
+      "bytes": 52128,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Triángulo rosa en el lateral derecho",
+        "sha256": "cba0bea066a50eddf6da1fd0211e87ef3fdd75f44f88752a39c511771cc984d1"
+      }
     },
     {
       "sheet": 1,
@@ -518,10 +598,15 @@
         "width": 257,
         "height": 251
       },
-      "src": "/websites/pink-y2k/stickers/pink-glitter-star.webp",
-      "width": 237,
-      "height": 223,
-      "bytes": 46462
+      "src": "/websites/pink-y2k/stickers/pink-glitter-star-repaired.webp",
+      "width": 225,
+      "height": 226,
+      "bytes": 44950,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento oscuro junto a la punta derecha",
+        "sha256": "d15966077584dd5f8a0c1ac51ee6fb95815c8b72aaaf208b9506e89c9171d962"
+      }
     },
     {
       "sheet": 1,
@@ -534,10 +619,15 @@
         "width": 285,
         "height": 315
       },
-      "src": "/websites/pink-y2k/stickers/bunny-skull-tiara.webp",
-      "width": 269,
-      "height": 303,
-      "bytes": 92260
+      "src": "/websites/pink-y2k/stickers/bunny-skull-tiara-repaired.webp",
+      "width": 273,
+      "height": 299,
+      "bytes": 90760,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Aro de la oreja cortado y restos del lazo vecino",
+        "sha256": "4577d53901c80be4438f760c9dee71cbed391917af83f1fedcd75be219786408"
+      }
     },
     {
       "sheet": 1,
@@ -614,10 +704,15 @@
         "width": 194,
         "height": 206
       },
-      "src": "/websites/pink-y2k/stickers/pink-bow.webp",
-      "width": 177,
-      "height": 192,
-      "bytes": 26418
+      "src": "/websites/pink-y2k/stickers/pink-bow-repaired.webp",
+      "width": 180,
+      "height": 196,
+      "bytes": 26928,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento rosa superior y mandíbula cortada",
+        "sha256": "2149d4a2134a651a977a72a2f7e89a392fc4133951e74918b14a12c950ebb01d"
+      }
     },
     {
       "sheet": 1,
@@ -630,10 +725,15 @@
         "width": 221,
         "height": 183
       },
-      "src": "/websites/pink-y2k/stickers/pink-dragon-crest-alt.webp",
-      "width": 209,
-      "height": 169,
-      "bytes": 52434
+      "src": "/websites/pink-y2k/stickers/pink-dragon-crest-alt-repaired.webp",
+      "width": 188,
+      "height": 173,
+      "bytes": 44478,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Arco del corazón vecino en el lateral derecho",
+        "sha256": "fa5e4aeb8e4317964361532c6f1e70205a6ceb8f9730c083921f45eb1c54d58a"
+      }
     },
     {
       "sheet": 1,
@@ -646,10 +746,15 @@
         "width": 244,
         "height": 190
       },
-      "src": "/websites/pink-y2k/stickers/ribs-heart.webp",
-      "width": 221,
-      "height": 181,
-      "bytes": 54758
+      "src": "/websites/pink-y2k/stickers/ribs-heart-repaired.webp",
+      "width": 208,
+      "height": 184,
+      "bytes": 54188,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Punto y línea ajenos a la izquierda",
+        "sha256": "259598c65736437d2225c1a5d1685bd3886f8fe841d5df87eb7cab318a941d74"
+      }
     },
     {
       "sheet": 1,
@@ -710,10 +815,15 @@
         "width": 196,
         "height": 245
       },
-      "src": "/websites/pink-y2k/stickers/laced-heart.webp",
-      "width": 183,
-      "height": 237,
-      "bytes": 42546
+      "src": "/websites/pink-y2k/stickers/laced-heart-repaired.webp",
+      "width": 187,
+      "height": 225,
+      "bytes": 40606,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento rosa bajo los cordones",
+        "sha256": "1a3cac31a5925d4a2f5f49d95da35e5adb00e050f00149a046b533794c7c11eb"
+      }
     },
     {
       "sheet": 2,
@@ -758,10 +868,15 @@
         "width": 220,
         "height": 205
       },
-      "src": "/websites/pink-y2k/stickers/message-phone.webp",
-      "width": 195,
-      "height": 193,
-      "bytes": 41420
+      "src": "/websites/pink-y2k/stickers/message-phone-repaired.webp",
+      "width": 199,
+      "height": 195,
+      "bytes": 42322,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Esquina inferior derecha del celular cortada",
+        "sha256": "4b959ff50025bf071cad95a8fdab81839d8fbb962ba553cdb6ad6ebf8131f08a"
+      }
     },
     {
       "sheet": 2,
@@ -1094,10 +1209,15 @@
         "width": 233,
         "height": 214
       },
-      "src": "/websites/pink-y2k/stickers/yass-wifi.webp",
-      "width": 233,
-      "height": 210,
-      "bytes": 64670
+      "src": "/websites/pink-y2k/stickers/yass-wifi-repaired.webp",
+      "width": 212,
+      "height": 203,
+      "bytes": 62526,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea horizontal bajo el recuadro",
+        "sha256": "af9ec7cfa8dd8d6e105476d05fd772c1f2c601c4effbf5373f424c0f8efb2155"
+      }
     },
     {
       "sheet": 2,
@@ -1158,10 +1278,15 @@
         "width": 137,
         "height": 136
       },
-      "src": "/websites/pink-y2k/stickers/leopard-paw.webp",
-      "width": 122,
-      "height": 128,
-      "bytes": 25966
+      "src": "/websites/pink-y2k/stickers/leopard-paw-repaired.webp",
+      "width": 119,
+      "height": 121,
+      "bytes": 22616,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea horizontal bajo la huella",
+        "sha256": "e2ca23a0f4888d4713a3bdb1ecfd58b210e1419c9aeedbd53a936570221b382b"
+      }
     },
     {
       "sheet": 2,
@@ -1238,10 +1363,15 @@
         "width": 236,
         "height": 189
       },
-      "src": "/websites/pink-y2k/stickers/i-love-me.webp",
-      "width": 209,
-      "height": 166,
-      "bytes": 30104
+      "src": "/websites/pink-y2k/stickers/i-love-me-repaired.webp",
+      "width": 172,
+      "height": 170,
+      "bytes": 29412,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Trazos sueltos a la derecha del texto",
+        "sha256": "e37ace42de350803d7ac410661e08a52b456ec5e4a9a5e6cd904a7b3ac6faeac"
+      }
     },
     {
       "sheet": 2,
@@ -1318,10 +1448,15 @@
         "width": 183,
         "height": 115
       },
-      "src": "/websites/pink-y2k/stickers/planet.webp",
-      "width": 169,
-      "height": 100,
-      "bytes": 14578
+      "src": "/websites/pink-y2k/stickers/planet-repaired.webp",
+      "width": 173,
+      "height": 98,
+      "bytes": 13592,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea suelta bajo el anillo",
+        "sha256": "6fd8624e1225359a9724be29625f27c724b1c5ff3fdc86ce48704654c138cd49"
+      }
     },
     {
       "sheet": 3,
@@ -1350,10 +1485,15 @@
         "width": 252,
         "height": 213
       },
-      "src": "/websites/pink-y2k/stickers/cute-100.webp",
-      "width": 252,
-      "height": 204,
-      "bytes": 83102
+      "src": "/websites/pink-y2k/stickers/cute-100-repaired.webp",
+      "width": 243,
+      "height": 200,
+      "bytes": 77126,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento del juguete vecino bajo el texto",
+        "sha256": "5035b2a6e13c4711aa4a1eeb9688a3fe0b23df5c5791909d80cc4030f3194672"
+      }
     },
     {
       "sheet": 3,
@@ -1366,10 +1506,15 @@
         "width": 439,
         "height": 427
       },
-      "src": "/websites/pink-y2k/stickers/avril-magazines.webp",
-      "width": 320,
-      "height": 302,
-      "bytes": 134368
+      "src": "/websites/pink-y2k/stickers/avril-magazines-repaired.webp",
+      "width": 318,
+      "height": 306,
+      "bytes": 131052,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento rosa a la izquierda de las revistas",
+        "sha256": "b7bd150c70dbe2da6de763a06ef81fa5738ba7b402304b886b8ac2db2fbd46e1"
+      }
     },
     {
       "sheet": 3,
@@ -1382,10 +1527,15 @@
         "width": 200,
         "height": 185
       },
-      "src": "/websites/pink-y2k/stickers/leopard-heart.webp",
-      "width": 184,
-      "height": 180,
-      "bytes": 50882
+      "src": "/websites/pink-y2k/stickers/leopard-heart-repaired.webp",
+      "width": 188,
+      "height": 173,
+      "bytes": 49080,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Arco del anillo vecino sobre el corazón",
+        "sha256": "8d29aede03e7f2700a0e953466da8d0b94ab17c27fdcdba023f6c30650a68ce2"
+      }
     },
     {
       "sheet": 3,
@@ -1398,10 +1548,15 @@
         "width": 239,
         "height": 181
       },
-      "src": "/websites/pink-y2k/stickers/bunny-duo.webp",
-      "width": 226,
-      "height": 173,
-      "bytes": 31402
+      "src": "/websites/pink-y2k/stickers/bunny-duo-repaired.webp",
+      "width": 228,
+      "height": 161,
+      "bytes": 30268,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Rectángulo rosa bajo el conejo negro",
+        "sha256": "e6a7286bba25f939cb6e436e2b2462c89b9704507ebf48d4c15d1bb42fd596d8"
+      }
     },
     {
       "sheet": 3,
@@ -1446,10 +1601,15 @@
         "width": 395,
         "height": 176
       },
-      "src": "/websites/pink-y2k/stickers/juicy.webp",
-      "width": 320,
-      "height": 149,
-      "bytes": 65504
+      "src": "/websites/pink-y2k/stickers/juicy-repaired.webp",
+      "width": 310,
+      "height": 142,
+      "bytes": 52048,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmentos rosas arriba y a la derecha del texto",
+        "sha256": "cd05d4d3ebcf78f70be7e72e851e3f2c644954bbdb57e128578bec73130c5757"
+      }
     },
     {
       "sheet": 3,
@@ -1478,10 +1638,15 @@
         "width": 209,
         "height": 231
       },
-      "src": "/websites/pink-y2k/stickers/zebra-star.webp",
-      "width": 209,
-      "height": 228,
-      "bytes": 41374
+      "src": "/websites/pink-y2k/stickers/zebra-star-repaired.webp",
+      "width": 208,
+      "height": 232,
+      "bytes": 40612,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Línea vertical al lado derecho de la estrella",
+        "sha256": "fef0bf4ff64cd2917d4c1560f38c6d4975c6066d39c4f50aaf492e06b09ec0ab"
+      }
     },
     {
       "sheet": 3,
@@ -1494,10 +1659,15 @@
         "width": 159,
         "height": 176
       },
-      "src": "/websites/pink-y2k/stickers/pink-exclamation.webp",
-      "width": 153,
-      "height": 160,
-      "bytes": 22266
+      "src": "/websites/pink-y2k/stickers/pink-exclamation-repaired.webp",
+      "width": 145,
+      "height": 162,
+      "bytes": 21098,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Triángulo rosa junto al signo de exclamación",
+        "sha256": "1098afa601b83834c1274d0ee603d1ee826823863d43afb01a286a5f6d3d8c9c"
+      }
     },
     {
       "sheet": 3,
@@ -1526,10 +1696,15 @@
         "width": 239,
         "height": 213
       },
-      "src": "/websites/pink-y2k/stickers/chrome-star.webp",
-      "width": 205,
-      "height": 206,
-      "bytes": 20750
+      "src": "/websites/pink-y2k/stickers/chrome-star-repaired.webp",
+      "width": 209,
+      "height": 210,
+      "bytes": 20140,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento rosa retirado y punta cromada completada",
+        "sha256": "7df06476456a03f4d1749cc094b7a271d6757fbf7cfbe038e9e33c7c89042c56"
+      }
     },
     {
       "sheet": 3,
@@ -1574,10 +1749,15 @@
         "width": 200,
         "height": 310
       },
-      "src": "/websites/pink-y2k/stickers/pink-monkey.webp",
-      "width": 192,
-      "height": 295,
-      "bytes": 62652
+      "src": "/websites/pink-y2k/stickers/pink-monkey-repaired.webp",
+      "width": 214,
+      "height": 299,
+      "bytes": 64246,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Oreja izquierda cortada por el borde de la lámina",
+        "sha256": "be295a37777e27bf777e813ee6d56db970ebbedbc0ffec2a2fc0ae06b2a2b79c"
+      }
     },
     {
       "sheet": 3,
@@ -1622,10 +1802,15 @@
         "width": 211,
         "height": 150
       },
-      "src": "/websites/pink-y2k/stickers/kitty-glitter.webp",
-      "width": 201,
-      "height": 139,
-      "bytes": 35194
+      "src": "/websites/pink-y2k/stickers/kitty-glitter-repaired.webp",
+      "width": 205,
+      "height": 136,
+      "bytes": 34188,
+      "repair": {
+        "method": "Original-pixel alpha cleanup",
+        "issue": "Fragmento plateado sobre la oreja izquierda",
+        "sha256": "a595836fd7ed6706402758353aac330e6c5a1b270e943ad379c5df1f13827964"
+      }
     },
     {
       "sheet": 3,
@@ -1691,5 +1876,10 @@
       "height": 320,
       "bytes": 55798
     }
-  ]
+  ],
+  "repairs": {
+    "reviewed": 105,
+    "repaired": 37,
+    "report": "output/sticker-repair/index.html"
+  }
 }

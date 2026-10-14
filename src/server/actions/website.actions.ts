@@ -15,6 +15,7 @@ import { templateSwitchDraft, storedTemplateConfigs, templateSnapshotKey } from 
 import { storedMediaUrls } from "@/websites/stored-media";
 import { websiteAssetSchema } from "@/websites/media";
 import { websitePriceTier } from "@/websites/offers";
+import type { WebsitePublicationOptions } from "@/websites/publishing";
 
 async function uploadWebsiteImageImpl(formData: FormData) {
   return storeWebsiteImage(formData);
@@ -34,9 +35,9 @@ async function saveWebsiteDraftImpl(input: unknown, revision: number, subdomain:
   if (result.count !== 1) throw new WebsiteError("El borrador cambió en otra sesión. Recarga antes de guardar.");
   return { revision: revision + 1 };
 }
-async function publishWebsiteImpl(revision: number) {
+async function publishWebsiteImpl(revision: number, options?: WebsitePublicationOptions) {
   const { business } = await requireWebsiteManager();
-  await prisma.$transaction(async tx => {
+  const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     const current = await tx.business.findUniqueOrThrow({ where: { id: business.id }, include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true, website: true } });
     if (current.deletedAt || !hasWebsiteEntitlement(current.websiteAddon, new Date(), current.websiteOfferEligibility) || !hasOperationalSubscriptionAccess(current.subscription)) throw new WebsiteError("Activa el add-on y regulariza tu suscripción para publicar");
@@ -44,13 +45,18 @@ async function publishWebsiteImpl(revision: number) {
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);
     const config = template.readConfig(site.draftConfig);
-    const publicationError = template.publicationError(config);
-    if (publicationError) throw new WebsiteError(publicationError);
+    const publicationError = template.publicationError(config, { ignoreContrast: options?.ignoreContrast === true });
+    if (publicationError) {
+      const requiredContentError = template.publicationError(config, { ignoreContrast: true });
+      if (requiredContentError) throw new WebsiteError(requiredContentError);
+      return { error: publicationError, canPublishAnyway: true } as const;
+    }
     await validateWebsiteAssets(tx, site.id, config, site.draftConfig);
     const published = await tx.businessWebsite.updateMany({ where: { id: site.id, revision }, data: { publishedConfig: config, publishedTemplateKey: site.templateKey, publishedTemplateVersion: site.templateVersion, publishedRevision: revision, publishedAt: new Date(), status: "PUBLISHED" } });
     if (published.count !== 1) throw new WebsiteError("El borrador cambió. Revisa y publica nuevamente.");
     await tx.websiteCommercialEvent?.upsert?.({ where: { key: `${site.id}:website_published:${revision}` }, create: { key: `${site.id}:website_published:${revision}`, businessId: business.id, event: "website_published", priceTier: websitePriceTier(current.websiteOfferEligibility) }, update: {} });
   });
+  if (result) return result;
   revalidatePath("/dashboard/website");
 }
 async function suspendWebsiteImpl() {
@@ -120,7 +126,7 @@ export async function switchWebsiteTemplate(key: string, version: number, revisi
     return { revision: revision + 1 };
   });
 }
-export async function publishWebsite(revision: number) { return safeAction(() => publishWebsiteImpl(revision)); }
+export async function publishWebsite(revision: number, options?: WebsitePublicationOptions) { return safeAction(() => publishWebsiteImpl(revision, options)); }
 export async function suspendWebsite() { return safeAction(() => suspendWebsiteImpl()); }
 export async function connectWebsiteDomain(hostname: string) { return safeAction(() => connectWebsiteDomainImpl(hostname)); }
 export async function checkWebsiteDomain(id: string) { return safeAction(() => checkWebsiteDomainImpl(id)); }
