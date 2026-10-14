@@ -1,11 +1,12 @@
 import type { WebsiteLaunchContext } from "./launch";
 import { hasWebsitePaidAccess } from "./policy";
 
-// Monday 5 October, midnight to midnight in America/Santiago (UTC-3).
+// Launch on 9 October in Santiago; give owners a week to discover their web.
+// This window controls the invitation, never the duration or eligibility of a trial.
 export const WEBSITE_TRIAL_REMINDER = {
-  id: "website-trial-reminder-2026-10-05",
-  startsAt: "2026-10-05T00:00:00-03:00",
-  endsAt: "2026-10-06T00:00:00-03:00",
+  id: "website-trial-reminder-2026-10-09",
+  startsAt: "2026-10-09T00:00:00-03:00",
+  endsAt: "2026-10-16T00:00:00-03:00",
 } as const;
 
 export type WebsiteTrialReminderContext = WebsiteLaunchContext & { businessName: string; dismissalKey: string };

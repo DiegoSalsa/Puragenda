@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Children, isValidElement } from "react";
 import { hasExistingWebsiteBillingLifecycle } from "@/websites/billing-lifecycle";
 import { hasWebsitePaidAccess } from "@/websites/policy";
 
@@ -59,7 +60,12 @@ describe("Website billing lifecycle is separate from public acquisition", () => 
     m.operation.mockResolvedValue({ providerStatus: "pending" });
   });
   afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
-  async function editorProps() { const page = await WebsitePage(); return page.props.children[1].props; }
+  async function editorProps() {
+    const page = await WebsitePage();
+    const editor = Children.toArray(page.props.children).find(child => isValidElement<{ templateKey?: string }>(child) && child.props.templateKey === "bella");
+    if (!isValidElement<{ price: { enabled: boolean } }>(editor)) throw new Error("Website editor missing from the page");
+    return editor.props;
+  }
   it.each(cases)("$name", async ({ addon, intent, founder, allowed }) => {
     m.addon.mockResolvedValue(addon); if (intent === false) m.intent.mockResolvedValue(null);
     if (founder) m.offer.mockResolvedValue({ offerCode: "BETA_FOUNDER" });

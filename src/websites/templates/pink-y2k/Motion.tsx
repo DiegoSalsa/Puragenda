@@ -6,16 +6,17 @@ import m from "./motion.module.css";
 
 // Text stays in normal document flow. Only the visual copy is split; the
 // containing heading supplies its complete accessible name.
-export function JellyLetters({ text, line }: { text: string; line: number }) {
+export function JellyLetters({ text, line, connected = false, finish = "jelly", font = "bubble" }: { text: string; line: number; connected?: boolean; finish?: "jelly" | "pink-chrome" | "silver-chrome"; font?: "bubble" | "script" }) {
   let index = 0;
   return (
-    <span className={m.letterLine} aria-hidden="true">
+    <span className={m.letterLine} data-title-finish={finish} data-title-font={font} aria-hidden="true">
       {text.split(/(\s+)/).map((word, wordIndex) =>
         /^\s+$/.test(word) ? word : (
           <span className={m.word} key={wordIndex}>
-            {Array.from(word).map((letter, letterIndex) => (
+            {connected ? <span data-pink-glyph="" data-pink-text={word} style={{ "--pink-delay": `${wordIndex * 45 + line * 130}ms` } as CSSProperties}>{word}</span> : Array.from(word).map((letter, letterIndex) => (
               <span
                 data-pink-glyph=""
+                data-pink-text={letter}
                 key={letterIndex}
                 style={{
                   "--pink-delay": `${Math.min(index++, 24) * 25 + line * 130}ms`,

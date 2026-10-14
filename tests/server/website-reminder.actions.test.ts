@@ -14,7 +14,7 @@ describe("website reminder dismissal", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-10-05T12:00:00-03:00"));
+    vi.setSystemTime(new Date("2026-10-09T12:00:00-03:00"));
     mocks.manager.mockResolvedValue({ business: { id: "tenant-a" }, user: { email: "owner@example.test" } });
     mocks.offer.mockResolvedValue({ offerCode: "BETA_FOUNDER" });
   });
@@ -25,9 +25,9 @@ describe("website reminder dismissal", () => {
     expect(mocks.manager).toHaveBeenCalledWith(true);
     expect(mocks.offer).toHaveBeenCalledWith({ where: { businessId: "tenant-a" } });
     expect(mocks.upsert).toHaveBeenCalledWith({
-      where: { key: "tenant-a:website-trial-reminder-2026-10-05" },
+      where: { key: "tenant-a:website-trial-reminder-2026-10-09" },
       create: {
-        key: "tenant-a:website-trial-reminder-2026-10-05",
+        key: "tenant-a:website-trial-reminder-2026-10-09",
         businessId: "tenant-a",
         event: "website_trial_reminder_dismissed",
         priceTier: "BETA_FOUNDER",
@@ -49,11 +49,11 @@ describe("website reminder dismissal", () => {
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
 
-  it("does not write for the demo or outside Monday", async () => {
+  it("does not write for the demo or outside the campaign", async () => {
     mocks.manager.mockResolvedValue({ business: { id: "demo" }, user: { email: "vale@esteticabella.cl" } });
     expect(await dismissWebsiteTrialReminder()).toEqual({ success: true });
     mocks.manager.mockResolvedValue({ business: { id: "tenant-a" }, user: { email: "owner@example.test" } });
-    vi.setSystemTime(new Date("2026-10-04T12:00:00-03:00"));
+    vi.setSystemTime(new Date("2026-10-08T12:00:00-03:00"));
     expect(await dismissWebsiteTrialReminder()).toEqual({ success: true });
     expect(mocks.upsert).not.toHaveBeenCalled();
   });

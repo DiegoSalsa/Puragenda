@@ -18,9 +18,13 @@ import {
 import { contrastRatio } from "../../palettes";
 import { dateKey } from "../../booking/validation";
 import type { WebsiteView } from "../../types";
-import { pinkConfigSchema, type PinkConfig } from "./config";
+import { pinkConfigSchema, pinkPatternColor, type PinkConfig } from "./config";
 import PinkY2k, { pinkTokens } from "./PinkY2k";
 import s from "./pink.module.css";
+import Y2kAppearancePanel from "@/app/dashboard/website/y2k-appearance-panel";
+import Y2kStickersPanel from "@/app/dashboard/website/y2k-stickers-panel";
+import { applyStickerEdit, type PinkSticker, type StickerViewport, type StickerEdit } from "./stickers";
+import stickersStyle from "./stickers.module.css";
 
 export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
   const [config, setConfig] = useState(view.config),
@@ -30,6 +34,25 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
     [error, setError] = useState(""),
     [revision, setRevision] = useState(0);
   const [json, setJson] = useState(JSON.stringify(view.config, null, 2));
+  const [stickerEditing, setStickerEditing] = useState(false), [selectedSticker, setSelectedSticker] = useState<string>(), [stickerViewport, setStickerViewport] = useState<StickerViewport>("desktop");
+  function stickerEdit(edit: StickerEdit) {
+    setSelectedSticker(edit.action === "delete" ? undefined : edit.id);
+    setConfig(previous => ({ ...previous, stickers: applyStickerEdit(previous.stickers, edit) }));
+  }
+  function selectSticker(id?: string, items?: PinkSticker[]) {
+    setSelectedSticker(id);
+    if (!id) return;
+    const next = pinkConfigSchema.safeParse({ ...draft, stickers: items ?? draft.stickers });
+    if (!next.success) return;
+    const colors = next.data.colors;
+    if (contrastRatio(colors.ink, colors.background) < 4.5 || contrastRatio(colors.ink, colors.surface) < 4.5 || contrastRatio("#ffffff", colors.accent) < 4.5) {
+      setError("Aumenta el contraste antes de aplicar tus cambios.");
+      return;
+    }
+    setConfig(next.data); setDraft(next.data); setOpen(false);
+    setStickerEditing(true);
+    if (window.innerWidth <= 600) setStickerViewport("mobile");
+  }
   const [today] = useState(() =>
     dateKey(new Date(), view.catalog.business.timezone),
   );
@@ -153,7 +176,8 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
           Personalizar<span className={s.previewDetail}> prototipo</span>
         </button>
       </div>
-      <PinkY2k key={revision} view={{ ...view, config }} today={today} />
+      {stickerEditing ? <div className={stickersStyle.banner}>Modo stickers · Arrastra para colocar. Flechas para ajustar.<button type="button" onClick={() => setStickerEditing(false)}>Terminar de colocar</button></div> : null}
+      <PinkY2k key={revision} view={{ ...view, config }} today={today} stickerEditor={{ enabled: stickerEditing, selectedId: selectedSticker, viewport: stickerViewport }} onStickerEdit={stickerEdit}/>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className={`${s.root} ${s.editor}`}
@@ -175,7 +199,7 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
             publica un negocio.
           </DialogDescription>
           <div className={s.editorTabs}>
-            {["Marca", "Álbum", "Love Pocket", "Contenido", "JSON"].map(
+            {["Marca", "Estilo", "Stickers", "Álbum", "Love Pocket", "Contenido", "JSON"].map(
               (name) => (
                 <button
                   key={name}
@@ -305,6 +329,8 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
                 </fieldset>
               </div>
             ) : null}
+            {tab === "Estilo" ? <Y2kAppearancePanel value={draft.appearance} patternColor={pinkPatternColor(draft.appearance, draft.colors)} onChange={appearance => update("appearance", appearance)} /> : null}
+            {tab === "Stickers" ? <Y2kStickersPanel items={draft.stickers} onChange={items => update("stickers", items)} selectedId={selectedSticker} onSelect={selectSticker} editing={stickerEditing} onToggleEditing={() => { apply(); setStickerEditing(!stickerEditing); }} viewport={stickerViewport} onViewport={setStickerViewport} onBusy={() => {}} allowUploads={false}/> : null}
             {tab === "Álbum" ? (
               <>
                 <p className={s.editorNote}>

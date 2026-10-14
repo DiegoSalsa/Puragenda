@@ -115,7 +115,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
     onNavigate={async () => {
       setReminderHandled(true);
       setChangelogOpen(false);
-      await markChangelogSeenAction(LATEST_CHANGELOG_VERSION);
+      void markChangelogSeenAction(LATEST_CHANGELOG_VERSION).catch(() => {});
       router.push("/dashboard/website");
       router.refresh();
     }}

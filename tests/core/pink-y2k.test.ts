@@ -2,7 +2,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { pinkPrototypeAllowed } from "@/websites/templates/pink-y2k/access";
-import { emptyPinkConfig, pinkConfigSchema, pinkPublicationError } from "@/websites/templates/pink-y2k/config";
+import { emptyPinkConfig, pinkConfigSchema, pinkPatternColor, pinkPublicationError, PINK_STYLE_PRESETS } from "@/websites/templates/pink-y2k/config";
 import { parsePinkPreview } from "@/websites/templates/pink-y2k/preview";
 import { PREVIEW_PROTOCOL } from "@/websites/preview-transport";
 import { resolveTemplate } from "@/websites/registry";
@@ -127,13 +127,31 @@ describe("pink renderer isolation and empty states", () => {
     const view = pinkFixtureView();
     view.config.displayName = "Otro estudio";
     view.catalog.services = [
-      { ...view.catalog.services[0], name: "Servicio exclusivo tenant B" },
+      { ...view.catalog.services[0], name: "Servicio exclusivo tenant B", category: "Categoría exclusiva tenant B", categoryId: "tenant-b" },
     ];
     const html = render(view);
     expect(html).toContain("Otro estudio");
-    expect(html).toContain("Servicio exclusivo tenant B");
+    expect(html).toContain("Categoría exclusiva tenant B");
+    expect(html).not.toContain("Servicio exclusivo tenant B");
     expect(html).not.toContain("Kapping unicolor");
     expect(html).not.toContain("Instagram de Y2K");
+  });
+  it("starts a large catalog with categories inside the page instead of a second booking screen", () => {
+    const view = pinkFixtureView();
+    view.catalog.services = Array.from({ length: 24 }, (_, index) => ({
+      ...view.catalog.services[0], id: `service-${index}`, name: `Tratamiento ${index}`,
+      category: index < 20 ? "Uñas" : "Pestañas", categoryId: index < 20 ? "unas" : "pestanas", categoryPosition: index < 20 ? 0 : 1,
+    }));
+    const html = render(view);
+    expect(html).toContain('aria-label="Reserva tu hora"');
+    expect(html).toContain('data-booking-presentation="embedded"');
+    expect(html).toContain("Primero, elige una categoría");
+    expect(html).toContain("Uñas");
+    expect(html).toContain("Pestañas");
+    expect(html).toContain("20 servicios");
+    expect(html).toContain("4 servicios");
+    expect(html).not.toContain("Tratamiento 0");
+    expect(html).not.toContain('role="dialog"');
   });
   it("handles an empty catalog and empty album without injecting fallback fixtures", () => {
     const view = pinkFixtureView();
@@ -180,6 +198,86 @@ describe("pink renderer isolation and empty states", () => {
 });
 
 describe("Y2K native template", () => {
+  it("keeps both headline lines independent through previews and saved template switches", () => {
+    const config = pinkConfigSchema.parse({ ...pinkFixtureView().config, appearance: { titleTopFinish: "silver-chrome", titleTopFont: "script", titleFinish: "pink-chrome", titleFont: "bubble", background: "leopard", patternColor: "#c49a6c" } });
+    const away = templateSwitchDraft({ templateKey: "y2k", templateVersion: 1, draftConfig: config, templateConfigs: {} }, "bella", 1);
+    const back = templateSwitchDraft({ templateKey: "bella", templateVersion: 1, draftConfig: away.config, templateConfigs: away.snapshots }, "y2k", 1);
+    expect(pinkConfigSchema.parse(back.config).appearance).toEqual(config.appearance);
+    const preview = parsePinkPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config }, "http://localhost:3005");
+    expect(preview.success && preview.data.config.appearance).toEqual(config.appearance);
+    const html = renderToStaticMarkup(React.createElement(PinkY2k, { view: { ...pinkFixtureView(), config }, today: "2026-10-13" }));
+    expect(html).toContain('data-title-finish="silver-chrome" data-title-font="script"');
+    expect(html).toContain('data-title-finish="pink-chrome" data-title-font="bubble"');
+    expect(html).toContain('data-pink-text="uñas,"');
+    expect(html).toContain("--pink-pattern-color:#c49a6c");
+    expect(pinkPublicationError(config)).toBeNull();
+  });
+  it("preserves older headline settings and only decouples the frame when a color is chosen", () => {
+    const config = pinkConfigSchema.parse({ ...pinkFixtureView().config, appearance: { titleFinish: "pink-chrome", background: "leopard" } });
+    expect(config.appearance).toMatchObject({ titleTopFinish: "jelly", titleTopFont: "bubble", titleFinish: "pink-chrome", patternColor: "" });
+    expect(pinkPatternColor(config.appearance, config.colors)).not.toBe(pinkPatternColor(config.appearance, { accent: "#000000", background: "#ffffff" }));
+    const custom = { ...config.appearance, patternColor: "#c49a6c" };
+    expect(pinkPatternColor(custom, config.colors)).toBe("#c49a6c");
+    expect(pinkPatternColor(custom, { accent: "#000000", background: "#ffffff" })).toBe("#c49a6c");
+    for (const patch of [{ patternColor: "red" }, { patternColor: "url(https://evil.test)" }, { titleTopFont: "Comic Sans" }, { titleTopFinish: "custom" }]) expect(pinkConfigSchema.safeParse({ ...config, appearance: { ...config.appearance, ...patch } }).success).toBe(false);
+  });
+  it("reads existing drafts with the original appearance and defaults partial settings", () => {
+    const config = pinkFixtureView().config;
+    const { appearance: _appearance, ...legacy } = config;
+    expect(_appearance).toEqual(PINK_STYLE_PRESETS[0].appearance);
+    expect(pinkConfigSchema.parse(legacy).appearance).toEqual(PINK_STYLE_PRESETS[0].appearance);
+    expect(pinkConfigSchema.parse({ ...legacy, appearance: { titleFinish: "silver-chrome" } }).appearance).toEqual({ ...PINK_STYLE_PRESETS[0].appearance, titleFinish: "silver-chrome" });
+    expect(pinkConfigSchema.safeParse({ ...config, appearance: { ...config.appearance, background: "url(https://evil.test)" } }).success).toBe(false);
+    expect(pinkConfigSchema.safeParse({ ...config, appearance: { ...config.appearance, css: "body{display:none}" } }).success).toBe(false);
+  });
+  it("keeps chosen finishes through draft switching, trusted previews and publication", () => {
+    for (const preset of PINK_STYLE_PRESETS) {
+      const config = { ...pinkFixtureView().config, appearance: { ...preset.appearance } };
+      const selected = templateSwitchDraft({ templateKey: "y2k", templateVersion: 1, draftConfig: config, templateConfigs: {} }, "bella", 1);
+      const restored = templateSwitchDraft({ templateKey: "bella", templateVersion: 1, draftConfig: selected.config, templateConfigs: selected.snapshots }, "y2k", 1);
+      expect(pinkConfigSchema.parse(restored.config).appearance).toEqual(preset.appearance);
+      const preview = parsePinkPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config }, "http://localhost:3007");
+      expect(preview.success && preview.data.config.appearance).toEqual(preset.appearance);
+      expect(pinkPublicationError(config)).toBeNull();
+      const html = renderToStaticMarkup(React.createElement(PinkY2k, { view: { ...pinkFixtureView(), config }, today: "2026-10-13" }));
+      expect(html).toContain(`data-title-finish="${preset.appearance.titleFinish}"`);
+      expect(html).toContain(`data-background="${preset.appearance.background}"`);
+      expect(html).toContain('aria-label="Tus uñas, tu universo."');
+      expect(html).toContain('aria-label="Reserva tu hora"');
+      if (preset.appearance.titleFont === "script") expect(html).toContain('data-pink-text="universo."');
+    }
+  });
+  it("preserves a bounded pattern amount and reads older appearance settings", () => {
+    const config = pinkFixtureView().config;
+    const { patternCoverage, ...oldAppearance } = config.appearance;
+    expect(patternCoverage).toBe(20);
+    expect(pinkConfigSchema.parse({ ...config, appearance: oldAppearance }).appearance.patternCoverage).toBe(20);
+    for (const amount of [0, 20, 63, 100]) {
+      const input = { ...config, appearance: { ...config.appearance, background: "leopard", patternCoverage: amount } };
+      const parsed = pinkConfigSchema.parse(input);
+      const preview = parsePinkPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 1, config: parsed }, "http://localhost:3007");
+      expect(preview.success && preview.data.config.appearance.patternCoverage).toBe(amount);
+      const html = renderToStaticMarkup(React.createElement(PinkY2k, { view: { ...pinkFixtureView(), config: parsed }, today: "2026-10-13" }));
+      expect(html).toContain(`data-pattern-coverage="${amount}"`);
+      expect(pinkPublicationError(parsed)).toBeNull();
+    }
+    for (const amount of [-1, 101, 1.5, "50", NaN]) expect(pinkConfigSchema.safeParse({ ...config, appearance: { ...config.appearance, patternCoverage: amount } }).success).toBe(false);
+  });
+  it("defaults older pattern settings to the full page and preserves the chosen scope", () => {
+    const config = pinkFixtureView().config;
+    const { patternScope, ...oldAppearance } = config.appearance;
+    expect(patternScope).toBe("page");
+    expect(pinkConfigSchema.parse({ ...config, appearance: oldAppearance }).appearance.patternScope).toBe("page");
+    for (const scope of ["hero", "page"] as const) {
+      const next = { ...config, appearance: { ...config.appearance, background: "leopard" as const, patternScope: scope } };
+      const preview = parsePinkPreview({ protocol: PREVIEW_PROTOCOL, type: "draft", sequence: 5, config: next }, "http://localhost:3005");
+      expect(preview.success && preview.data.config.appearance.patternScope).toBe(scope);
+      const away = templateSwitchDraft({ templateKey: "y2k", templateVersion: 1, draftConfig: next, templateConfigs: {} }, "bella", 1);
+      const restored = templateSwitchDraft({ templateKey: "bella", templateVersion: 1, draftConfig: away.config, templateConfigs: away.snapshots }, "y2k", 1);
+      expect(pinkConfigSchema.parse(restored.config).appearance.patternScope).toBe(scope);
+    }
+    expect(pinkConfigSchema.safeParse({ ...config, appearance: { ...config.appearance, patternScope: "custom-css" } }).success).toBe(false);
+  });
   it("registers an empty, generic template without fixture media or business contact", () => {
     const template = resolveTemplate("y2k", 1), config = emptyPinkConfig();
     expect(template.name).toBe("Y2K");

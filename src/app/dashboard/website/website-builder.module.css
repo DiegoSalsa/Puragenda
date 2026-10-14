@@ -92,6 +92,7 @@
 .dns th:first-child { width:18%; }
 .copy { display:inline-flex; border:0; background:#f1f5f2; padding:4px; border-radius:4px; margin-left:4px; }
 .mobileTabs { display:none; }
+.stickerDock { display:none; }
 .visuallyHidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .spin { animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -113,6 +114,14 @@
   .builder[data-mode=preview] .previewArea { display:flex; flex:1; }
   .frameArea { padding:0; } .frameArea[data-mobile=true] .frame { width:min(390px,100%); border:0; border-radius:0; min-height:400px; }
   .previewToolbar { height:48px; } .notice { font-size:10px; }
+  .builder[data-sticker-editing=true] .previewToolbar { display:none; }
+  .builder[data-sticker-editing=true] .frameArea[data-mobile=true] .frame { min-height:0; }
+  .stickerDock { display:flex; flex-direction:column; gap:7px; padding:9px 12px max(10px, env(safe-area-inset-bottom)); border-top:1px solid #dce4df; background:#fff; flex-shrink:0; }
+  .stickerDock p { margin:0; text-align:center; color:#61746c; font-size:11px; }
+  .stickerDock > div { display:flex; gap:7px; }
+  .stickerDock button { min-height:44px; flex:1; border:1px solid #d9e0dc; background:#fff; color:#34443c; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; padding:8px; }
+  .stickerDock button:last-child { flex:0; background:#39786b; border-color:#39786b; color:white; padding-inline:16px; }
+  :global(body):has(.builder[data-sticker-editing=true]) :global(.cookie-launcher) { bottom:auto !important; top:max(.5rem, env(safe-area-inset-top)); right:calc(max(.75rem, env(safe-area-inset-right)) + 56px) !important; width:40px; height:40px; }
 }
 @media (prefers-reduced-motion:reduce) { .spin { animation:none; } }
 .paletteGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.paletteGrid .field{font-size:11px;text-transform:capitalize}.paletteGrid input[type=color]{width:100%;height:34px;padding:2px}.toggleGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}.checkbox{display:flex;align-items:center;gap:8px;font-size:12px}.checkbox input{accent-color:var(--builder-accent,#6a4b3b)}

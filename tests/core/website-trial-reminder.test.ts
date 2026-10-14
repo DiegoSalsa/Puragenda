@@ -2,23 +2,23 @@ import { describe, expect, it } from "vitest";
 import type { WebsiteLaunchContext } from "@/websites/launch";
 import { isWebsiteTrialReminderActive, shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
 
-const monday = new Date("2026-10-05T12:00:00-03:00");
+const launchDay = new Date("2026-10-09T12:00:00-03:00");
 const context: WebsiteLaunchContext = { offer: { offerCode: "BETA_FOUNDER" }, addon: null, canManage: true };
 const show = (overrides: Partial<Parameters<typeof shouldShowWebsiteTrialReminder>[0]> = {}) =>
-  shouldShowWebsiteTrialReminder({ context, enabled: true, demoAccount: false, now: monday, ...overrides });
+  shouldShowWebsiteTrialReminder({ context, enabled: true, demoAccount: false, now: launchDay, ...overrides });
 
-describe("Monday website trial reminder", () => {
-  it("uses the full Monday in Santiago rather than UTC midnight", () => {
-    expect(isWebsiteTrialReminderActive(new Date("2026-10-05T02:59:59.999Z"))).toBe(false);
-    expect(isWebsiteTrialReminderActive(new Date("2026-10-05T03:00:00Z"))).toBe(true);
-    expect(isWebsiteTrialReminderActive(new Date("2026-10-06T02:59:59.999Z"))).toBe(true);
-    expect(isWebsiteTrialReminderActive(new Date("2026-10-06T03:00:00Z"))).toBe(false);
+describe("9 October website discovery campaign", () => {
+  it("uses the campaign week in Santiago rather than UTC midnight", () => {
+    expect(isWebsiteTrialReminderActive(new Date("2026-10-09T02:59:59.999Z"))).toBe(false);
+    expect(isWebsiteTrialReminderActive(new Date("2026-10-09T03:00:00Z"))).toBe(true);
+    expect(isWebsiteTrialReminderActive(new Date("2026-10-16T02:59:59.999Z"))).toBe(true);
+    expect(isWebsiteTrialReminderActive(new Date("2026-10-16T03:00:00Z"))).toBe(false);
   });
 
   it("reaches eligible owners independently of the changelog seen version", () => {
     expect(show()).toBe(true);
-    expect(show({ now: new Date("2026-10-04T12:00:00-03:00") })).toBe(false);
-    expect(show({ now: new Date("2026-10-06T12:00:00-03:00") })).toBe(false);
+    expect(show({ now: new Date("2026-10-08T12:00:00-03:00") })).toBe(false);
+    expect(show({ now: new Date("2026-10-16T12:00:00-03:00") })).toBe(false);
   });
 
   it("excludes the demo, disabled acquisition and dismissed reminders", () => {
@@ -44,7 +44,8 @@ describe("Monday website trial reminder", () => {
   });
 
   it("keeps dismissal scoped to a business and this campaign", () => {
-    expect(websiteTrialReminderKey("business-a")).toBe("business-a:website-trial-reminder-2026-10-05");
+    expect(websiteTrialReminderKey("business-a")).toBe("business-a:website-trial-reminder-2026-10-09");
     expect(websiteTrialReminderKey("business-a")).not.toBe(websiteTrialReminderKey("business-b"));
+    expect(websiteTrialReminderKey("business-a")).not.toBe("business-a:website-trial-reminder-2026-10-05");
   });
 });

@@ -18,6 +18,7 @@ import { getDashboardPaymentWallReason } from "@/lib/dashboard/subscription-gate
 import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { PuriAssistant } from "@/components/dashboard/puri-assistant";
 import { shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
+import { getDashboardWebsiteLaunch } from "@/server/websites/launch-context";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -70,12 +71,7 @@ export default async function DashboardLayout({
   }
 
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
-  const launchEnabled = process.env.WEBSITE_LAUNCH_ENABLED === "1" && !!business && business.ownerId === user.id;
-  const [websiteOffer, websiteAddon] = launchEnabled ? await Promise.all([
-    prisma.websiteOfferEligibility.findUnique({ where: { businessId: business!.id } }),
-    prisma.websiteAddon.findUnique({ where: { businessId: business!.id } }),
-  ]) : [null, null];
-  const websiteLaunch = launchEnabled ? { offer: websiteOffer, addon: websiteAddon, canManage: true } : null;
+  const websiteLaunch = await getDashboardWebsiteLaunch();
   const reminderCandidate = shouldShowWebsiteTrialReminder({
     context: websiteLaunch,
     enabled: process.env.WEBSITE_CHECKOUT_ENABLED === "1",

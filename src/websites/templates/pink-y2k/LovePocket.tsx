@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { PinkConfig } from "./config";
 import s from "./pink.module.css";
 import m from "./motion.module.css";
+import controls from "./pocket-controls.module.css";
 
 export default function LovePocket({
   config,
@@ -22,7 +23,7 @@ export default function LovePocket({
     <div className={`${s.pocketGroup} ${m.pocketArrival} ${m.loop}`} data-pink-loop="pocket">
       <span className={s.pocketHint}>psst… ¡toca mis botones!</span>
       <div
-        className={`${s.pocket} ${m.pocketFloat}`}
+        className={`${s.pocket} ${m.pocketFloat} ${controls.device}`}
         aria-label={`${config.name}, dispositivo interactivo`}
       >
         <svg className={s.pocketShell} viewBox="0 0 280 350" aria-hidden="true">
@@ -135,15 +136,17 @@ export default function LovePocket({
             ))}
           </span>
         </div>
-        <div className={s.pocketButtons}>
+        <div className={controls.controls} data-pocket-controls="">
           <button
+            className={controls.button}
             type="button"
             aria-label="Mensaje anterior del Love Pocket"
             onClick={() => changeMessage(-1)}
           >
-            ‹
+            <span className={controls.face} aria-hidden="true">‹</span>
           </button>
           <button
+            className={controls.button}
             type="button"
             aria-label="Reservar desde Love Pocket"
             onClick={() => {
@@ -151,14 +154,15 @@ export default function LovePocket({
               reserve();
             }}
           >
-            ♡
+            <span className={controls.face} aria-hidden="true">♡</span>
           </button>
           <button
+            className={controls.button}
             type="button"
             aria-label="Mensaje siguiente del Love Pocket"
             onClick={() => changeMessage(1)}
           >
-            ›
+            <span className={controls.face} aria-hidden="true">›</span>
           </button>
         </div>
         <span className={s.pocketButtonNote}>EXPLORA · RESERVA · EXPLORA</span>

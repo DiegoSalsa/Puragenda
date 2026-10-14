@@ -1,0 +1,1695 @@
+{
+  "method": "Built-in ImageGen background-extraction followed by lossless WebP asset packaging",
+  "prompt": "Remove only white whitespace and screenshot UI; preserve every sticker, logo, character, texture, lettering and intentional white inside artwork. Keep relative composition and true alpha transparency.",
+  "cleanupPrompts": {
+    "pinkCard": "Remove the black screenshot magnifier circle, sparkle and handle from the pink UNO card. Reconstruct occluded pink background and real white reverse arrows. Preserve the corner arrows, oval, shape, colors and transparent background.",
+    "kuromi": "Extract the full original Kuromi silhouette, remove the gray expand overlay and the black zoom circle and handle. Remove every background rectangle. Reconstruct the small white feet behind the magnifier and keep the real tail, face, pose, colors and alpha."
+  },
+  "sheets": [
+    "codex-clipboard-ad1a1c48-8d85-4bf0-a1b5-2fd567ef2b57.png",
+    "codex-clipboard-08d71123-eda4-43f4-9195-8f66314ef9c6.png",
+    "codex-clipboard-e08ad23d-216b-43ef-9617-e077feaa2fd0.png"
+  ],
+  "assets": [
+    {
+      "sheet": 1,
+      "kind": "leopard-gold-star",
+      "name": "Estrella de leopardo dorada",
+      "category": "Brillos",
+      "box": {
+        "left": 44,
+        "top": 12,
+        "width": 140,
+        "height": 140
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-gold-star.webp",
+      "width": 128,
+      "height": 124,
+      "bytes": 18626
+    },
+    {
+      "sheet": 1,
+      "kind": "hot-psychotic",
+      "name": "Hot in psychotic",
+      "category": "Textos",
+      "box": {
+        "left": 188,
+        "top": 28,
+        "width": 187,
+        "height": 127
+      },
+      "src": "/websites/pink-y2k/stickers/hot-psychotic.webp",
+      "width": 171,
+      "height": 110,
+      "bytes": 28250
+    },
+    {
+      "sheet": 1,
+      "kind": "cant-afford-me",
+      "name": "You can't afford me",
+      "category": "Textos",
+      "box": {
+        "left": 385,
+        "top": 36,
+        "width": 207,
+        "height": 228
+      },
+      "src": "/websites/pink-y2k/stickers/cant-afford-me.webp",
+      "width": 193,
+      "height": 214,
+      "bytes": 64224
+    },
+    {
+      "sheet": 1,
+      "kind": "bunny-banknote",
+      "name": "Billete rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 604,
+        "top": 40,
+        "width": 195,
+        "height": 137
+      },
+      "src": "/websites/pink-y2k/stickers/bunny-banknote.webp",
+      "width": 173,
+      "height": 114,
+      "bytes": 35660
+    },
+    {
+      "sheet": 1,
+      "kind": "floral-cross",
+      "name": "Cruz de flores",
+      "category": "Brillos",
+      "box": {
+        "left": 788,
+        "top": 28,
+        "width": 161,
+        "height": 224
+      },
+      "src": "/websites/pink-y2k/stickers/floral-cross.webp",
+      "width": 161,
+      "height": 206,
+      "bytes": 42740
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-pass",
+      "name": "Pase rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 39,
+        "top": 144,
+        "width": 118,
+        "height": 141
+      },
+      "src": "/websites/pink-y2k/stickers/pink-pass.webp",
+      "width": 91,
+      "height": 126,
+      "bytes": 14238
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-batman",
+      "name": "Batman rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 183,
+        "top": 150,
+        "width": 195,
+        "height": 136
+      },
+      "src": "/websites/pink-y2k/stickers/pink-batman.webp",
+      "width": 176,
+      "height": 122,
+      "bytes": 22728
+    },
+    {
+      "sheet": 1,
+      "kind": "chrome-heart",
+      "name": "Corazón de cristal",
+      "category": "Brillos",
+      "box": {
+        "left": 619,
+        "top": 175,
+        "width": 174,
+        "height": 156
+      },
+      "src": "/websites/pink-y2k/stickers/chrome-heart.webp",
+      "width": 146,
+      "height": 131,
+      "bytes": 29586
+    },
+    {
+      "sheet": 1,
+      "kind": "kitty-leopard-gold",
+      "name": "Hello Kitty leopardo dorado",
+      "category": "Personajes",
+      "box": {
+        "left": 37,
+        "top": 275,
+        "width": 246,
+        "height": 192
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-gold.webp",
+      "width": 231,
+      "height": 187,
+      "bytes": 67282
+    },
+    {
+      "sheet": 1,
+      "kind": "leopard-pink-lips",
+      "name": "Labios rosa y leopardo",
+      "category": "Brillos",
+      "box": {
+        "left": 272,
+        "top": 275,
+        "width": 256,
+        "height": 153
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-pink-lips.webp",
+      "width": 233,
+      "height": 145,
+      "bytes": 60600
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-paw",
+      "name": "Huella rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 236,
+        "top": 390,
+        "width": 145,
+        "height": 103
+      },
+      "src": "/websites/pink-y2k/stickers/pink-paw.webp",
+      "width": 122,
+      "height": 89,
+      "bytes": 14612
+    },
+    {
+      "sheet": 1,
+      "kind": "kitty-leopard-head",
+      "name": "Hello Kitty leopardo",
+      "category": "Personajes",
+      "box": {
+        "left": 430,
+        "top": 350,
+        "width": 235,
+        "height": 224
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-head.webp",
+      "width": 226,
+      "height": 210,
+      "bytes": 57976
+    },
+    {
+      "sheet": 1,
+      "kind": "skull-zebra-star",
+      "name": "Estrella cebra con calavera",
+      "category": "Brillos",
+      "box": {
+        "left": 646,
+        "top": 269,
+        "width": 303,
+        "height": 326
+      },
+      "src": "/websites/pink-y2k/stickers/skull-zebra-star.webp",
+      "width": 292,
+      "height": 315,
+      "bytes": 128084
+    },
+    {
+      "sheet": 1,
+      "kind": "monster-claws",
+      "name": "Garras Monster",
+      "category": "Personajes",
+      "box": {
+        "left": 48,
+        "top": 447,
+        "width": 140,
+        "height": 176
+      },
+      "src": "/websites/pink-y2k/stickers/monster-claws.webp",
+      "width": 120,
+      "height": 172,
+      "bytes": 34724
+    },
+    {
+      "sheet": 1,
+      "kind": "leopard-domo",
+      "name": "Domo rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 183,
+        "top": 492,
+        "width": 169,
+        "height": 162
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-domo.webp",
+      "width": 158,
+      "height": 160,
+      "bytes": 45540
+    },
+    {
+      "sheet": 1,
+      "kind": "betty-leopard-heart",
+      "name": "Corazón Betty Boop",
+      "category": "Personajes",
+      "box": {
+        "left": 343,
+        "top": 491,
+        "width": 140,
+        "height": 136
+      },
+      "src": "/websites/pink-y2k/stickers/betty-leopard-heart.webp",
+      "width": 130,
+      "height": 119,
+      "bytes": 22478
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-cherries-banner",
+      "name": "Cherry girl",
+      "category": "Textos",
+      "box": {
+        "left": 381,
+        "top": 578,
+        "width": 183,
+        "height": 97
+      },
+      "src": "/websites/pink-y2k/stickers/pink-cherries-banner.webp",
+      "width": 164,
+      "height": 89,
+      "bytes": 23478
+    },
+    {
+      "sheet": 1,
+      "kind": "gangsta-girl",
+      "name": "Gangsta girl",
+      "category": "Textos",
+      "box": {
+        "left": 552,
+        "top": 573,
+        "width": 173,
+        "height": 127
+      },
+      "src": "/websites/pink-y2k/stickers/gangsta-girl.webp",
+      "width": 157,
+      "height": 109,
+      "bytes": 29244
+    },
+    {
+      "sheet": 1,
+      "kind": "no-rhinestones",
+      "name": "No! de pedrería",
+      "category": "Textos",
+      "box": {
+        "left": 33,
+        "top": 610,
+        "width": 159,
+        "height": 128
+      },
+      "src": "/websites/pink-y2k/stickers/no-rhinestones.webp",
+      "width": 150,
+      "height": 125,
+      "bytes": 21058
+    },
+    {
+      "sheet": 1,
+      "kind": "kitty-handbag",
+      "name": "Hello Kitty con bolso",
+      "category": "Personajes",
+      "box": {
+        "left": 157,
+        "top": 644,
+        "width": 199,
+        "height": 264
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-handbag.webp",
+      "width": 191,
+      "height": 258,
+      "bytes": 64816
+    },
+    {
+      "sheet": 1,
+      "kind": "bite-me",
+      "name": "Bite Me!",
+      "category": "Textos",
+      "box": {
+        "left": 340,
+        "top": 668,
+        "width": 261,
+        "height": 126
+      },
+      "src": "/websites/pink-y2k/stickers/bite-me.webp",
+      "width": 261,
+      "height": 126,
+      "bytes": 40748
+    },
+    {
+      "sheet": 1,
+      "kind": "black-gold-cross",
+      "name": "Cruz negra y dorada",
+      "category": "Brillos",
+      "box": {
+        "left": 713,
+        "top": 561,
+        "width": 236,
+        "height": 298
+      },
+      "src": "/websites/pink-y2k/stickers/black-gold-cross.webp",
+      "width": 228,
+      "height": 296,
+      "bytes": 66288
+    },
+    {
+      "sheet": 1,
+      "kind": "bratz-logo",
+      "name": "Bratz",
+      "category": "Textos",
+      "box": {
+        "left": 363,
+        "top": 783,
+        "width": 254,
+        "height": 136
+      },
+      "src": "/websites/pink-y2k/stickers/bratz-logo.webp",
+      "width": 240,
+      "height": 135,
+      "bytes": 44524
+    },
+    {
+      "sheet": 1,
+      "kind": "floral-cross-small",
+      "name": "Cruz floral rosa",
+      "category": "Brillos",
+      "box": {
+        "left": 597,
+        "top": 735,
+        "width": 180,
+        "height": 214
+      },
+      "src": "/websites/pink-y2k/stickers/floral-cross-small.webp",
+      "width": 176,
+      "height": 213,
+      "bytes": 46400
+    },
+    {
+      "sheet": 1,
+      "kind": "burn-book",
+      "name": "Burn Book",
+      "category": "Accesorios",
+      "box": {
+        "left": 39,
+        "top": 740,
+        "width": 123,
+        "height": 169
+      },
+      "src": "/websites/pink-y2k/stickers/burn-book.webp",
+      "width": 116,
+      "height": 153,
+      "bytes": 28604
+    },
+    {
+      "sheet": 1,
+      "kind": "leopard-letter-i",
+      "name": "Letra I de leopardo",
+      "category": "Textos",
+      "box": {
+        "left": 58,
+        "top": 911,
+        "width": 93,
+        "height": 218
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-letter-i.webp",
+      "width": 74,
+      "height": 194,
+      "bytes": 25332
+    },
+    {
+      "sheet": 1,
+      "kind": "circuit-heart",
+      "name": "Corazón circuito rosa",
+      "category": "Brillos",
+      "box": {
+        "left": 139,
+        "top": 895,
+        "width": 211,
+        "height": 212
+      },
+      "src": "/websites/pink-y2k/stickers/circuit-heart.webp",
+      "width": 189,
+      "height": 191,
+      "bytes": 55564
+    },
+    {
+      "sheet": 1,
+      "kind": "puma-heart",
+      "name": "Corazón Puma",
+      "category": "Brillos",
+      "box": {
+        "left": 344,
+        "top": 913,
+        "width": 160,
+        "height": 161
+      },
+      "src": "/websites/pink-y2k/stickers/puma-heart.webp",
+      "width": 146,
+      "height": 149,
+      "bytes": 16554
+    },
+    {
+      "sheet": 1,
+      "kind": "sparkles",
+      "name": "Estrellas delineadas",
+      "category": "Brillos",
+      "box": {
+        "left": 522,
+        "top": 901,
+        "width": 140,
+        "height": 124
+      },
+      "src": "/websites/pink-y2k/stickers/sparkles.webp",
+      "width": 114,
+      "height": 121,
+      "bytes": 11566
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-phone",
+      "name": "Celular rosa Y2K",
+      "category": "Accesorios",
+      "box": {
+        "left": 766,
+        "top": 847,
+        "width": 151,
+        "height": 258
+      },
+      "src": "/websites/pink-y2k/stickers/pink-phone.webp",
+      "width": 119,
+      "height": 248,
+      "bytes": 45662
+    },
+    {
+      "sheet": 1,
+      "kind": "monster-high",
+      "name": "Monster High",
+      "category": "Personajes",
+      "box": {
+        "left": 38,
+        "top": 1121,
+        "width": 262,
+        "height": 185
+      },
+      "src": "/websites/pink-y2k/stickers/monster-high.webp",
+      "width": 245,
+      "height": 164,
+      "bytes": 54202
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-glitter-star",
+      "name": "Estrella rosa glitter",
+      "category": "Brillos",
+      "box": {
+        "left": 276,
+        "top": 1048,
+        "width": 257,
+        "height": 251
+      },
+      "src": "/websites/pink-y2k/stickers/pink-glitter-star.webp",
+      "width": 237,
+      "height": 223,
+      "bytes": 46462
+    },
+    {
+      "sheet": 1,
+      "kind": "bunny-skull-tiara",
+      "name": "Orejas de conejo y calaveras",
+      "category": "Personajes",
+      "box": {
+        "left": 471,
+        "top": 978,
+        "width": 285,
+        "height": 315
+      },
+      "src": "/websites/pink-y2k/stickers/bunny-skull-tiara.webp",
+      "width": 269,
+      "height": 303,
+      "bytes": 92260
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-youtube",
+      "name": "YouTube rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 751,
+        "top": 1099,
+        "width": 179,
+        "height": 179
+      },
+      "src": "/websites/pink-y2k/stickers/pink-youtube.webp",
+      "width": 158,
+      "height": 160,
+      "bytes": 28436
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-dragon-crest",
+      "name": "Dragón rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 32,
+        "top": 1290,
+        "width": 212,
+        "height": 159
+      },
+      "src": "/websites/pink-y2k/stickers/pink-dragon-crest.webp",
+      "width": 185,
+      "height": 150,
+      "bytes": 48540
+    },
+    {
+      "sheet": 1,
+      "kind": "kitty-leopard-button",
+      "name": "Hello Kitty botón leopardo",
+      "category": "Personajes",
+      "box": {
+        "left": 232,
+        "top": 1308,
+        "width": 127,
+        "height": 135
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-button.webp",
+      "width": 110,
+      "height": 108,
+      "bytes": 20788
+    },
+    {
+      "sheet": 1,
+      "kind": "cage-crown",
+      "name": "Corona rosa de pedrería",
+      "category": "Brillos",
+      "box": {
+        "left": 359,
+        "top": 1295,
+        "width": 165,
+        "height": 153
+      },
+      "src": "/websites/pink-y2k/stickers/cage-crown.webp",
+      "width": 143,
+      "height": 142,
+      "bytes": 34884
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-bow",
+      "name": "Calavera con lazo",
+      "category": "Personajes",
+      "box": {
+        "left": 508,
+        "top": 1264,
+        "width": 194,
+        "height": 206
+      },
+      "src": "/websites/pink-y2k/stickers/pink-bow.webp",
+      "width": 177,
+      "height": 192,
+      "bytes": 26418
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-dragon-crest-alt",
+      "name": "Dragón rosa ornamental",
+      "category": "Personajes",
+      "box": {
+        "left": 44,
+        "top": 1440,
+        "width": 221,
+        "height": 183
+      },
+      "src": "/websites/pink-y2k/stickers/pink-dragon-crest-alt.webp",
+      "width": 209,
+      "height": 169,
+      "bytes": 52434
+    },
+    {
+      "sheet": 1,
+      "kind": "ribs-heart",
+      "name": "Corazón glitter y costillas",
+      "category": "Brillos",
+      "box": {
+        "left": 227,
+        "top": 1455,
+        "width": 244,
+        "height": 190
+      },
+      "src": "/websites/pink-y2k/stickers/ribs-heart.webp",
+      "width": 221,
+      "height": 181,
+      "bytes": 54758
+    },
+    {
+      "sheet": 1,
+      "kind": "pink-card",
+      "name": "Carta rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 752,
+        "top": 1388,
+        "width": 179,
+        "height": 251
+      },
+      "src": "/websites/pink-y2k/stickers/pink-card-clean.webp",
+      "width": 204,
+      "height": 320,
+      "bytes": 56190
+    },
+    {
+      "sheet": 2,
+      "kind": "domo-glitter",
+      "name": "Domo leopardo glitter",
+      "category": "Personajes",
+      "box": {
+        "left": 38,
+        "top": 17,
+        "width": 233,
+        "height": 230
+      },
+      "src": "/websites/pink-y2k/stickers/domo-glitter.webp",
+      "width": 207,
+      "height": 213,
+      "bytes": 80050
+    },
+    {
+      "sheet": 2,
+      "kind": "swag",
+      "name": "#SWAG",
+      "category": "Textos",
+      "box": {
+        "left": 274,
+        "top": 25,
+        "width": 242,
+        "height": 164
+      },
+      "src": "/websites/pink-y2k/stickers/swag.webp",
+      "width": 235,
+      "height": 150,
+      "bytes": 32036
+    },
+    {
+      "sheet": 2,
+      "kind": "laced-heart",
+      "name": "Corazón negro con cordones",
+      "category": "Brillos",
+      "box": {
+        "left": 510,
+        "top": 9,
+        "width": 196,
+        "height": 245
+      },
+      "src": "/websites/pink-y2k/stickers/laced-heart.webp",
+      "width": 183,
+      "height": 237,
+      "bytes": 42546
+    },
+    {
+      "sheet": 2,
+      "kind": "zebra-cross",
+      "name": "Cruz cebra rosa",
+      "category": "Brillos",
+      "box": {
+        "left": 706,
+        "top": 28,
+        "width": 93,
+        "height": 144
+      },
+      "src": "/websites/pink-y2k/stickers/zebra-cross.webp",
+      "width": 83,
+      "height": 122,
+      "bytes": 17096
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-music-tile",
+      "name": "Nota de leopardo",
+      "category": "Música",
+      "box": {
+        "left": 808,
+        "top": 11,
+        "width": 174,
+        "height": 171
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-music-tile.webp",
+      "width": 149,
+      "height": 144,
+      "bytes": 45528
+    },
+    {
+      "sheet": 2,
+      "kind": "message-phone",
+      "name": "Celular con mensaje",
+      "category": "Accesorios",
+      "box": {
+        "left": 38,
+        "top": 245,
+        "width": 220,
+        "height": 205
+      },
+      "src": "/websites/pink-y2k/stickers/message-phone.webp",
+      "width": 195,
+      "height": 193,
+      "bytes": 41420
+    },
+    {
+      "sheet": 2,
+      "kind": "zebra-pink-star",
+      "name": "Estrella cebra rosa",
+      "category": "Brillos",
+      "box": {
+        "left": 215,
+        "top": 189,
+        "width": 190,
+        "height": 189
+      },
+      "src": "/websites/pink-y2k/stickers/zebra-pink-star.webp",
+      "width": 174,
+      "height": 165,
+      "bytes": 24124
+    },
+    {
+      "sheet": 2,
+      "kind": "kitty-leopard-head-small",
+      "name": "Hello Kitty lazo fucsia",
+      "category": "Personajes",
+      "box": {
+        "left": 399,
+        "top": 190,
+        "width": 141,
+        "height": 120
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-leopard-head-small.webp",
+      "width": 122,
+      "height": 108,
+      "bytes": 27052
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-lips",
+      "name": "Labios leopardo",
+      "category": "Brillos",
+      "box": {
+        "left": 532,
+        "top": 237,
+        "width": 155,
+        "height": 143
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-lips.webp",
+      "width": 148,
+      "height": 132,
+      "bytes": 32844
+    },
+    {
+      "sheet": 2,
+      "kind": "black-earbuds",
+      "name": "Auriculares negros",
+      "category": "Música",
+      "box": {
+        "left": 404,
+        "top": 302,
+        "width": 126,
+        "height": 113
+      },
+      "src": "/websites/pink-y2k/stickers/black-earbuds.webp",
+      "width": 98,
+      "height": 93,
+      "bytes": 8206
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-facebook",
+      "name": "Facebook leopardo",
+      "category": "Accesorios",
+      "box": {
+        "left": 687,
+        "top": 269,
+        "width": 160,
+        "height": 155
+      },
+      "src": "/websites/pink-y2k/stickers/pink-facebook.webp",
+      "width": 142,
+      "height": 141,
+      "bytes": 32896
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-swirl",
+      "name": "Espiral rosa y negra",
+      "category": "Brillos",
+      "box": {
+        "left": 845,
+        "top": 279,
+        "width": 137,
+        "height": 133
+      },
+      "src": "/websites/pink-y2k/stickers/pink-swirl.webp",
+      "width": 118,
+      "height": 117,
+      "bytes": 18278
+    },
+    {
+      "sheet": 2,
+      "kind": "sale-tag",
+      "name": "Etiqueta $9.99",
+      "category": "Accesorios",
+      "box": {
+        "left": 30,
+        "top": 447,
+        "width": 141,
+        "height": 87
+      },
+      "src": "/websites/pink-y2k/stickers/sale-tag.webp",
+      "width": 131,
+      "height": 72,
+      "bytes": 16088
+    },
+    {
+      "sheet": 2,
+      "kind": "skull-guitar",
+      "name": "Guitarra con calavera",
+      "category": "Música",
+      "box": {
+        "left": 164,
+        "top": 431,
+        "width": 124,
+        "height": 107
+      },
+      "src": "/websites/pink-y2k/stickers/skull-guitar.webp",
+      "width": 108,
+      "height": 91,
+      "bytes": 11950
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-note",
+      "name": "Nota rosa de leopardo",
+      "category": "Música",
+      "box": {
+        "left": 286,
+        "top": 378,
+        "width": 155,
+        "height": 163
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-note.webp",
+      "width": 144,
+      "height": 145,
+      "bytes": 42718
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-saxophone",
+      "name": "Saxofón rosa",
+      "category": "Música",
+      "box": {
+        "left": 547,
+        "top": 370,
+        "width": 80,
+        "height": 84
+      },
+      "src": "/websites/pink-y2k/stickers/pink-saxophone.webp",
+      "width": 62,
+      "height": 66,
+      "bytes": 5464
+    },
+    {
+      "sheet": 2,
+      "kind": "treble-clef",
+      "name": "Clave de sol rosa",
+      "category": "Música",
+      "box": {
+        "left": 632,
+        "top": 363,
+        "width": 73,
+        "height": 132
+      },
+      "src": "/websites/pink-y2k/stickers/treble-clef.webp",
+      "width": 51,
+      "height": 115,
+      "bytes": 10676
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-white-star",
+      "name": "Estrella blanca de leopardo",
+      "category": "Brillos",
+      "box": {
+        "left": 440,
+        "top": 380,
+        "width": 177,
+        "height": 181
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-white-star.webp",
+      "width": 177,
+      "height": 179,
+      "bytes": 25850
+    },
+    {
+      "sheet": 2,
+      "kind": "jewel-headphones",
+      "name": "Auriculares de pedrería",
+      "category": "Música",
+      "box": {
+        "left": 590,
+        "top": 466,
+        "width": 103,
+        "height": 99
+      },
+      "src": "/websites/pink-y2k/stickers/jewel-headphones.webp",
+      "width": 87,
+      "height": 82,
+      "bytes": 9856
+    },
+    {
+      "sheet": 2,
+      "kind": "bronze-music-note",
+      "name": "Nota musical dorada",
+      "category": "Música",
+      "box": {
+        "left": 701,
+        "top": 423,
+        "width": 112,
+        "height": 110
+      },
+      "src": "/websites/pink-y2k/stickers/bronze-music-note.webp",
+      "width": 90,
+      "height": 96,
+      "bytes": 8382
+    },
+    {
+      "sheet": 2,
+      "kind": "double-pink-hearts",
+      "name": "Corazones rosas",
+      "category": "Brillos",
+      "box": {
+        "left": 815,
+        "top": 405,
+        "width": 149,
+        "height": 117
+      },
+      "src": "/websites/pink-y2k/stickers/double-pink-hearts.webp",
+      "width": 128,
+      "height": 107,
+      "bytes": 15776
+    },
+    {
+      "sheet": 2,
+      "kind": "music-poster",
+      "name": "The life without music",
+      "category": "Música",
+      "box": {
+        "left": 22,
+        "top": 533,
+        "width": 440,
+        "height": 391
+      },
+      "src": "/websites/pink-y2k/stickers/music-poster.webp",
+      "width": 320,
+      "height": 282,
+      "bytes": 119982
+    },
+    {
+      "sheet": 2,
+      "kind": "treble-clef-gloss",
+      "name": "Clave de sol brillante",
+      "category": "Música",
+      "box": {
+        "left": 458,
+        "top": 611,
+        "width": 66,
+        "height": 136
+      },
+      "src": "/websites/pink-y2k/stickers/treble-clef-gloss.webp",
+      "width": 52,
+      "height": 122,
+      "bytes": 10538
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-music-note",
+      "name": "Nota musical rosa",
+      "category": "Música",
+      "box": {
+        "left": 677,
+        "top": 640,
+        "width": 60,
+        "height": 75
+      },
+      "src": "/websites/pink-y2k/stickers/pink-music-note.webp",
+      "width": 52,
+      "height": 59,
+      "bytes": 4920
+    },
+    {
+      "sheet": 2,
+      "kind": "glitter-lips-small",
+      "name": "Labios glitter",
+      "category": "Brillos",
+      "box": {
+        "left": 498,
+        "top": 711,
+        "width": 115,
+        "height": 90
+      },
+      "src": "/websites/pink-y2k/stickers/glitter-lips-small.webp",
+      "width": 101,
+      "height": 66,
+      "bytes": 12524
+    },
+    {
+      "sheet": 2,
+      "kind": "heart-headphones",
+      "name": "Auriculares con corazón",
+      "category": "Música",
+      "box": {
+        "left": 470,
+        "top": 791,
+        "width": 136,
+        "height": 119
+      },
+      "src": "/websites/pink-y2k/stickers/heart-headphones.webp",
+      "width": 109,
+      "height": 107,
+      "bytes": 14502
+    },
+    {
+      "sheet": 2,
+      "kind": "yass-wifi",
+      "name": "Yass WiFi",
+      "category": "Textos",
+      "box": {
+        "left": 735,
+        "top": 524,
+        "width": 233,
+        "height": 214
+      },
+      "src": "/websites/pink-y2k/stickers/yass-wifi.webp",
+      "width": 233,
+      "height": 210,
+      "bytes": 64670
+    },
+    {
+      "sheet": 2,
+      "kind": "brat-leopard",
+      "name": "Brat leopardo",
+      "category": "Textos",
+      "box": {
+        "left": 607,
+        "top": 728,
+        "width": 384,
+        "height": 331
+      },
+      "src": "/websites/pink-y2k/stickers/brat-leopard.webp",
+      "width": 320,
+      "height": 290,
+      "bytes": 148478
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-equalizer",
+      "name": "Ecualizador rosa",
+      "category": "Música",
+      "box": {
+        "left": 32,
+        "top": 925,
+        "width": 576,
+        "height": 205
+      },
+      "src": "/websites/pink-y2k/stickers/pink-equalizer.webp",
+      "width": 320,
+      "height": 108,
+      "bytes": 27572
+    },
+    {
+      "sheet": 2,
+      "kind": "kitty-pink-stamp",
+      "name": "Love Hello Kitty",
+      "category": "Personajes",
+      "box": {
+        "left": 607,
+        "top": 1057,
+        "width": 236,
+        "height": 143
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-pink-stamp.webp",
+      "width": 223,
+      "height": 136,
+      "bytes": 47134
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-paw",
+      "name": "Huella de leopardo",
+      "category": "Brillos",
+      "box": {
+        "left": 854,
+        "top": 1065,
+        "width": 137,
+        "height": 136
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-paw.webp",
+      "width": 122,
+      "height": 128,
+      "bytes": 25966
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-pink-stars",
+      "name": "Leopardo con estrellas rosas",
+      "category": "Brillos",
+      "box": {
+        "left": 11,
+        "top": 1165,
+        "width": 592,
+        "height": 377
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-pink-stars.webp",
+      "width": 320,
+      "height": 197,
+      "bytes": 125056
+    },
+    {
+      "sheet": 2,
+      "kind": "pink-whatsapp",
+      "name": "WhatsApp rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 609,
+        "top": 1194,
+        "width": 116,
+        "height": 114
+      },
+      "src": "/websites/pink-y2k/stickers/pink-whatsapp.webp",
+      "width": 102,
+      "height": 98,
+      "bytes": 18966
+    },
+    {
+      "sheet": 2,
+      "kind": "leopard-camera-icon",
+      "name": "Cámara leopardo",
+      "category": "Accesorios",
+      "box": {
+        "left": 722,
+        "top": 1195,
+        "width": 109,
+        "height": 113
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-camera-icon.webp",
+      "width": 100,
+      "height": 104,
+      "bytes": 20456
+    },
+    {
+      "sheet": 2,
+      "kind": "zebra-music-note",
+      "name": "Nota musical cebra",
+      "category": "Música",
+      "box": {
+        "left": 841,
+        "top": 1188,
+        "width": 153,
+        "height": 147
+      },
+      "src": "/websites/pink-y2k/stickers/zebra-music-note.webp",
+      "width": 128,
+      "height": 134,
+      "bytes": 26700
+    },
+    {
+      "sheet": 2,
+      "kind": "i-love-me",
+      "name": "I love me",
+      "category": "Textos",
+      "box": {
+        "left": 610,
+        "top": 1307,
+        "width": 236,
+        "height": 189
+      },
+      "src": "/websites/pink-y2k/stickers/i-love-me.webp",
+      "width": 209,
+      "height": 166,
+      "bytes": 30104
+    },
+    {
+      "sheet": 2,
+      "kind": "monster-claws-zebra",
+      "name": "Garras cebra rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 835,
+        "top": 1320,
+        "width": 153,
+        "height": 188
+      },
+      "src": "/websites/pink-y2k/stickers/monster-claws-zebra.webp",
+      "width": 116,
+      "height": 162,
+      "bytes": 29146
+    },
+    {
+      "sheet": 3,
+      "kind": "rawr",
+      "name": "Rawr",
+      "category": "Textos",
+      "box": {
+        "left": 7,
+        "top": 72,
+        "width": 351,
+        "height": 133
+      },
+      "src": "/websites/pink-y2k/stickers/rawr.webp",
+      "width": 320,
+      "height": 121,
+      "bytes": 64756
+    },
+    {
+      "sheet": 3,
+      "kind": "butterfly",
+      "name": "Mariposa",
+      "category": "Brillos",
+      "box": {
+        "left": 353,
+        "top": 36,
+        "width": 271,
+        "height": 225
+      },
+      "src": "/websites/pink-y2k/stickers/butterfly.webp",
+      "width": 253,
+      "height": 198,
+      "bytes": 51284
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-pistol",
+      "name": "Pistola rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 720,
+        "top": 19,
+        "width": 273,
+        "height": 181
+      },
+      "src": "/websites/pink-y2k/stickers/pink-pistol.webp",
+      "width": 256,
+      "height": 162,
+      "bytes": 38238
+    },
+    {
+      "sheet": 3,
+      "kind": "planet",
+      "name": "Planeta plateado",
+      "category": "Brillos",
+      "box": {
+        "left": 4,
+        "top": 210,
+        "width": 183,
+        "height": 115
+      },
+      "src": "/websites/pink-y2k/stickers/planet.webp",
+      "width": 169,
+      "height": 100,
+      "bytes": 14578
+    },
+    {
+      "sheet": 3,
+      "kind": "pixel-bear",
+      "name": "Osito pixel rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 198,
+        "top": 202,
+        "width": 179,
+        "height": 204
+      },
+      "src": "/websites/pink-y2k/stickers/pixel-bear.webp",
+      "width": 159,
+      "height": 179,
+      "bytes": 35490
+    },
+    {
+      "sheet": 3,
+      "kind": "cute-100",
+      "name": "100% cute",
+      "category": "Textos",
+      "box": {
+        "left": 377,
+        "top": 252,
+        "width": 252,
+        "height": 213
+      },
+      "src": "/websites/pink-y2k/stickers/cute-100.webp",
+      "width": 252,
+      "height": 204,
+      "bytes": 83102
+    },
+    {
+      "sheet": 3,
+      "kind": "avril-magazines",
+      "name": "Revistas Y2K",
+      "category": "Accesorios",
+      "box": {
+        "left": 615,
+        "top": 157,
+        "width": 439,
+        "height": 427
+      },
+      "src": "/websites/pink-y2k/stickers/avril-magazines.webp",
+      "width": 320,
+      "height": 302,
+      "bytes": 134368
+    },
+    {
+      "sheet": 3,
+      "kind": "leopard-heart",
+      "name": "Corazón leopardo",
+      "category": "Brillos",
+      "box": {
+        "left": 4,
+        "top": 303,
+        "width": 200,
+        "height": 185
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-heart.webp",
+      "width": 184,
+      "height": 180,
+      "bytes": 50882
+    },
+    {
+      "sheet": 3,
+      "kind": "bunny-duo",
+      "name": "Conejitos blanco y negro",
+      "category": "Personajes",
+      "box": {
+        "left": 0,
+        "top": 504,
+        "width": 239,
+        "height": 181
+      },
+      "src": "/websites/pink-y2k/stickers/bunny-duo.webp",
+      "width": 226,
+      "height": 173,
+      "bytes": 31402
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-tamagotchi",
+      "name": "Tamagotchi rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 239,
+        "top": 410,
+        "width": 244,
+        "height": 260
+      },
+      "src": "/websites/pink-y2k/stickers/pink-tamagotchi.webp",
+      "width": 230,
+      "height": 247,
+      "bytes": 61560
+    },
+    {
+      "sheet": 3,
+      "kind": "crown",
+      "name": "Tiara",
+      "category": "Brillos",
+      "box": {
+        "left": 483,
+        "top": 478,
+        "width": 271,
+        "height": 180
+      },
+      "src": "/websites/pink-y2k/stickers/crown.webp",
+      "width": 252,
+      "height": 157,
+      "bytes": 59462
+    },
+    {
+      "sheet": 3,
+      "kind": "juicy",
+      "name": "Juicy de pedrería",
+      "category": "Textos",
+      "box": {
+        "left": 343,
+        "top": 658,
+        "width": 395,
+        "height": 176
+      },
+      "src": "/websites/pink-y2k/stickers/juicy.webp",
+      "width": 320,
+      "height": 149,
+      "bytes": 65504
+    },
+    {
+      "sheet": 3,
+      "kind": "heart-skull",
+      "name": "Calavera con corazones",
+      "category": "Personajes",
+      "box": {
+        "left": 850,
+        "top": 583,
+        "width": 220,
+        "height": 172
+      },
+      "src": "/websites/pink-y2k/stickers/heart-skull.webp",
+      "width": 205,
+      "height": 157,
+      "bytes": 24356
+    },
+    {
+      "sheet": 3,
+      "kind": "zebra-star",
+      "name": "Estrella cebra",
+      "category": "Brillos",
+      "box": {
+        "left": 0,
+        "top": 675,
+        "width": 209,
+        "height": 231
+      },
+      "src": "/websites/pink-y2k/stickers/zebra-star.webp",
+      "width": 209,
+      "height": 228,
+      "bytes": 41374
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-exclamation",
+      "name": "¡? rosa",
+      "category": "Textos",
+      "box": {
+        "left": 190,
+        "top": 662,
+        "width": 159,
+        "height": 176
+      },
+      "src": "/websites/pink-y2k/stickers/pink-exclamation.webp",
+      "width": 153,
+      "height": 160,
+      "bytes": 22266
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-glitter-bunny",
+      "name": "Conejo rosa glitter",
+      "category": "Personajes",
+      "box": {
+        "left": 706,
+        "top": 646,
+        "width": 162,
+        "height": 204
+      },
+      "src": "/websites/pink-y2k/stickers/pink-glitter-bunny.webp",
+      "width": 142,
+      "height": 194,
+      "bytes": 36496
+    },
+    {
+      "sheet": 3,
+      "kind": "chrome-star",
+      "name": "Estrella cromada",
+      "category": "Brillos",
+      "box": {
+        "left": 789,
+        "top": 778,
+        "width": 239,
+        "height": 213
+      },
+      "src": "/websites/pink-y2k/stickers/chrome-star.webp",
+      "width": 205,
+      "height": 206,
+      "bytes": 20750
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-glitter-lips",
+      "name": "Labios rosa glitter",
+      "category": "Brillos",
+      "box": {
+        "left": 155,
+        "top": 827,
+        "width": 310,
+        "height": 220
+      },
+      "src": "/websites/pink-y2k/stickers/pink-glitter-lips.webp",
+      "width": 289,
+      "height": 211,
+      "bytes": 98372
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-camera",
+      "name": "Cámara digital rosa",
+      "category": "Accesorios",
+      "box": {
+        "left": 462,
+        "top": 827,
+        "width": 322,
+        "height": 226
+      },
+      "src": "/websites/pink-y2k/stickers/pink-camera.webp",
+      "width": 305,
+      "height": 213,
+      "bytes": 82072
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-monkey",
+      "name": "Mono rosa",
+      "category": "Personajes",
+      "box": {
+        "left": 0,
+        "top": 905,
+        "width": 200,
+        "height": 310
+      },
+      "src": "/websites/pink-y2k/stickers/pink-monkey.webp",
+      "width": 192,
+      "height": 295,
+      "bytes": 62652
+    },
+    {
+      "sheet": 3,
+      "kind": "suck-at-life",
+      "name": "I suck at life",
+      "category": "Textos",
+      "box": {
+        "left": 258,
+        "top": 1045,
+        "width": 415,
+        "height": 152
+      },
+      "src": "/websites/pink-y2k/stickers/suck-at-life.webp",
+      "width": 320,
+      "height": 115,
+      "bytes": 62198
+    },
+    {
+      "sheet": 3,
+      "kind": "sleeping-bear",
+      "name": "Osito dormido",
+      "category": "Personajes",
+      "box": {
+        "left": 675,
+        "top": 1050,
+        "width": 286,
+        "height": 140
+      },
+      "src": "/websites/pink-y2k/stickers/sleeping-bear.webp",
+      "width": 275,
+      "height": 115,
+      "bytes": 27552
+    },
+    {
+      "sheet": 3,
+      "kind": "kitty-glitter",
+      "name": "Hello Kitty glitter",
+      "category": "Personajes",
+      "box": {
+        "left": 847,
+        "top": 954,
+        "width": 211,
+        "height": 150
+      },
+      "src": "/websites/pink-y2k/stickers/kitty-glitter.webp",
+      "width": 201,
+      "height": 139,
+      "bytes": 35194
+    },
+    {
+      "sheet": 3,
+      "kind": "leopard-heart-pink",
+      "name": "Corazón leopardo fucsia",
+      "category": "Brillos",
+      "box": {
+        "left": 0,
+        "top": 1235,
+        "width": 218,
+        "height": 199
+      },
+      "src": "/websites/pink-y2k/stickers/leopard-heart-pink.webp",
+      "width": 207,
+      "height": 184,
+      "bytes": 46626
+    },
+    {
+      "sheet": 3,
+      "kind": "love-note",
+      "name": "Mensaje cuddle",
+      "category": "Accesorios",
+      "box": {
+        "left": 228,
+        "top": 1196,
+        "width": 377,
+        "height": 263
+      },
+      "src": "/websites/pink-y2k/stickers/love-note.webp",
+      "width": 320,
+      "height": 199,
+      "bytes": 60360
+    },
+    {
+      "sheet": 3,
+      "kind": "pink-cd",
+      "name": "Disco Bratz rosa",
+      "category": "Música",
+      "box": {
+        "left": 607,
+        "top": 1194,
+        "width": 259,
+        "height": 252
+      },
+      "src": "/websites/pink-y2k/stickers/pink-cd.webp",
+      "width": 239,
+      "height": 236,
+      "bytes": 59922
+    },
+    {
+      "sheet": 3,
+      "kind": "kuromi",
+      "name": "Kuromi",
+      "category": "Personajes",
+      "box": {
+        "left": 825,
+        "top": 1193,
+        "width": 233,
+        "height": 243
+      },
+      "src": "/websites/pink-y2k/stickers/kuromi-clean.webp",
+      "width": 303,
+      "height": 320,
+      "bytes": 55798
+    }
+  ]
+}

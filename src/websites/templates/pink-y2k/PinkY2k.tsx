@@ -1,7 +1,6 @@
 "use client";
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -26,22 +25,19 @@ import {
 } from "@/components/ui/dialog";
 import { BellaProvider } from "../bella/Context";
 import { bellaConfigSchema } from "../../config";
-import { money } from "../../booking/validation";
 import type { WebsiteView } from "../../types";
-import type { PinkConfig } from "./config";
+import { usePreviewBooking } from "../../use-preview-booking";
+import { pinkPatternColor, type PinkConfig } from "./config";
 import LovePocket from "./LovePocket";
 import { JellyLetters, MotionWords, usePinkMotion } from "./Motion";
 import bella from "../bella/studio.module.css";
 import s from "./pink.module.css";
 import m from "./motion.module.css";
-
-const BookingFlow = dynamic(() => import("../bella/_components/BookingFlow"), {
-  loading: () => (
-    <p role="status" className={s.loading}>
-      ♡ Preparando tu agenda…
-    </p>
-  ),
-});
+import a from "./appearance.module.css";
+import StickerCanvas from "./StickerCanvas";
+import stickersStyle from "./stickers.module.css";
+import type { StickerEditorState, StickerEdit } from "./stickers";
+import BookingFlow from "../bella/_components/BookingFlow";
 const cx = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");
 export const pinkTokens = (config: PinkConfig) =>
@@ -50,6 +46,8 @@ export const pinkTokens = (config: PinkConfig) =>
     "--pink-ink": config.colors.ink,
     "--pink-paper": config.colors.background,
     "--pink-surface": config.colors.surface,
+    "--pink-pattern-ratio": String(config.appearance.patternCoverage / 100),
+    "--pink-pattern-color": pinkPatternColor(config.appearance, config.colors),
   }) as CSSProperties;
 
 function Photo({
@@ -86,7 +84,8 @@ function Photo({
     />
   );
 }
-function GlossStar({ className, animated = false }: { className?: string; animated?: boolean }) {
+function GlossStar({ className, animated = false, chrome = false, heart = false }: { className?: string; animated?: boolean; chrome?: boolean; heart?: boolean }) {
+  const gradientId = useId();
   return (
     <svg
       className={cx(className, animated && m.loop, animated && m.starGlint)}
@@ -95,17 +94,18 @@ function GlossStar({ className, animated = false }: { className?: string; animat
       aria-hidden="true"
     >
       <defs>
-        <radialGradient id="pink-star" cx=".3" cy=".25" r=".85">
+        <radialGradient id={gradientId} cx=".3" cy=".25" r=".85">
           <stop stopColor="white" />
-          <stop offset=".28" stopColor="#f8e6ff" />
-          <stop offset=".5" stopColor="#cf9ae4" />
-          <stop offset=".8" stopColor="#866293" />
-          <stop offset="1" stopColor="#f5dcff" />
+          <stop offset=".28" stopColor={chrome ? "#f5f6fa" : "#f8e6ff"} />
+          <stop offset=".48" stopColor={chrome ? "#6e7387" : "#cf9ae4"} />
+          <stop offset=".56" stopColor={chrome ? "#fff" : "#e3bde9"} />
+          <stop offset=".8" stopColor={chrome ? "#484553" : "#866293"} />
+          <stop offset="1" stopColor={chrome ? "#e5e8f1" : "#f5dcff"} />
         </radialGradient>
       </defs>
       <path
-        d="M50 2C56 34 66 44 98 50 66 56 56 66 50 98 44 66 34 56 2 50 34 44 44 34 50 2Z"
-        fill="url(#pink-star)"
+        d={heart ? "M50 88 13 53C-9 27 23-3 50 23 77-3 109 27 87 53Z" : chrome ? "M50 4 62 35 96 38 70 60 79 94 50 75 21 94 30 60 4 38 38 35Z" : "M50 2C56 34 66 44 98 50 66 56 56 66 50 98 44 66 34 56 2 50 34 44 44 34 50 2Z"}
+        fill={`url(#${gradientId})`}
         stroke="#fff"
         strokeWidth="2"
       />
@@ -153,9 +153,13 @@ function WindowBar({
 export default function PinkY2k({
   view,
   today,
+  stickerEditor,
+  onStickerEdit,
 }: {
   view: WebsiteView<PinkConfig>;
   today: string;
+  stickerEditor?: StickerEditorState;
+  onStickerEdit?: (edit: StickerEdit) => void;
 }) {
   const { catalog, business } = view;
   const c = useMemo(() => ({ ...view.config, displayName: view.config.displayName || business.name, logo: view.config.logo || business.logo || "" }), [view.config, business.name, business.logo]);
@@ -165,12 +169,16 @@ export default function PinkY2k({
     [filter, setFilter] = useState("");
   const [lightbox, setLightbox] = useState<number | null>(null);
   usePinkMotion(root, c, filter);
-  const [booking, setBooking] = useState<{
-    id: number;
-    serviceId?: string;
-  } | null>(null);
-  const serial = useRef(0),
-    pointerStart = useRef<number | null>(null);
+  const bookingPanel = useRef<HTMLDivElement>(null);
+  const [bookingInView, setBookingInView] = useState(false);
+  useEffect(() => {
+    const panel = bookingPanel.current;
+    if (!panel) return;
+    const observer = new IntersectionObserver(([entry]) => setBookingInView(entry.isIntersecting));
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, []);
+  const pointerStart = useRef<number | null>(null);
   const usesCategoryIds = c.galleryCategories.length > 0 || c.gallery.some(row => row.categoryIds !== undefined);
   const categories = usesCategoryIds ? c.galleryCategories.filter(cat => c.gallery.some(row => row.categoryIds?.includes(cat.id))).map(cat => ({ id: cat.id, label: cat.label })) : [...new Set(c.gallery.map(row => row.category).filter(Boolean))].map(label => ({ id: label, label }));
   const activeFilter = categories.some(cat => cat.id === filter) ? filter : "";
@@ -180,10 +188,12 @@ export default function PinkY2k({
   const lightboxPhoto = lightbox === -1
     ? { image: c.heroImage, name: c.heroCaption || `Portada de ${c.displayName}`, alt: `Portada de ${c.displayName}` }
     : lightbox !== null ? c.gallery[lightbox] : undefined;
-  const reserve = (serviceId?: string) => {
+  const reserve = () => {
     setMenu(false);
-    setBooking({ id: ++serial.current, serviceId });
+    bookingPanel.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    bookingPanel.current?.focus({ preventScroll: true });
   };
+  usePreviewBooking(view.preview && view.previewExperience === "booking", reserve);
   const nextPhoto = (direction: number) =>
     setLightbox((index) =>
       index === null || index === -1 || !c.gallery.length
@@ -207,13 +217,13 @@ export default function PinkY2k({
   const bookButton = (
     className: string,
     label = c.copy.reserve,
-    serviceId?: string,
   ) => (
     <button
       type="button"
       className={cx(className, m.glossButton)}
+      data-pink-reserve
       disabled={!canBook}
-      onClick={() => reserve(serviceId)}
+      onClick={reserve}
     >
       {label}
       <ArrowUpRight size={19} />
@@ -224,16 +234,26 @@ export default function PinkY2k({
     <div
       id="studio-root"
       ref={root}
-      className={cx(s.root, motionPaused && m.motionPaused)}
+      className={cx(s.root, a.canvas, stickersStyle.host, motionPaused && m.motionPaused)}
       style={pinkTokens(c)}
+      data-title-finish={c.appearance.titleFinish}
+      data-title-font={c.appearance.titleFont}
+      data-background={c.appearance.background}
+      data-decorations={c.appearance.decorations}
+      data-texture-strength={c.appearance.textureStrength}
+      data-pattern-coverage={c.appearance.patternCoverage}
+      data-pattern-scope={c.appearance.patternScope}
+      data-pattern-color={c.appearance.patternColor ? "custom" : undefined}
     >
       <a href="#services" className={s.skip}>
-        Ir a servicios y precios
+        Ir a servicios y reserva
       </a>
-      <header className={s.header} id="top">
+      <div className={a.pageSurface} data-pink-page-surface>
+      <header className={cx(s.header, a.readableSurface)} id="top" data-sticker-region="header">
         <a
           href="#top"
           className={s.brand}
+          data-pink-brand
           aria-label={`${c.displayName}, inicio`}
         >
           {c.logo ? (
@@ -291,7 +311,7 @@ export default function PinkY2k({
         </nav>
       ) : null}
       <main>
-        <section className={s.hero} aria-labelledby="pink-heading">
+        <section className={cx(s.hero, a.readableSurface, a.heroSurface)} aria-labelledby="pink-heading" data-sticker-region="hero">
           <div className={s.heroMeta}>
             <span>
               <i /> {c.copy.eyebrow}
@@ -301,13 +321,13 @@ export default function PinkY2k({
             </span>
           </div>
           <div className={s.heroStage}>
-            <div className={s.orbit} aria-hidden="true" />
-            <h1 id="pink-heading" className={s.headline} aria-label={c.headline.join(" ")}>
-              <JellyLetters text={c.headline[0]} line={0} />
-              <JellyLetters text={c.headline[1]} line={1} />
+            <div className={s.orbit} data-pink-orbit="" aria-hidden="true" />
+            <h1 id="pink-heading" className={s.headline} data-pink-headline="" aria-label={c.headline.join(" ")}>
+              <JellyLetters text={c.headline[0]} line={0} connected={c.appearance.titleTopFont === "script"} finish={c.appearance.titleTopFinish} font={c.appearance.titleTopFont} />
+              <JellyLetters text={c.headline[1]} line={1} connected={c.appearance.titleFont === "script"} finish={c.appearance.titleFinish} font={c.appearance.titleFont} />
             </h1>
-            <GlossStar className={s.heroStar} animated />
-            <GlossStar className={s.heroStarSmall} animated />
+            <GlossStar className={s.heroStar} animated chrome={c.appearance.decorations !== "classic"} heart={c.appearance.decorations === "hearts"} />
+            <GlossStar className={s.heroStarSmall} animated chrome={c.appearance.decorations !== "classic"} heart={c.appearance.decorations === "hearts"} />
             <button
               className={cx(s.heroPhoto, m.heroPhotoEntry)}
               type="button"
@@ -344,7 +364,7 @@ export default function PinkY2k({
                 {c.copy.heroNote}
               </span>
             </div>
-            <div className={s.sticker} aria-hidden="true">
+            <div className={s.sticker} data-pink-sticker="" aria-hidden="true">
               <span>{c.copy.sticker}</span>
               <svg viewBox="0 0 90 32">
                 <path
@@ -367,7 +387,7 @@ export default function PinkY2k({
             </div>
           </div>
         </section>
-        <div className={s.ribbon}>
+        <div className={s.ribbon} data-sticker-region="ribbon">
           <div className={cx(m.marqueeTrack, m.loop)} data-pink-loop="marquee" aria-hidden="true">
             {[0, 1].map((group) => (
               <div className={m.marqueeGroup} key={group} data-pink-marquee-group="">
@@ -391,8 +411,9 @@ export default function PinkY2k({
         </div>
 
         <section
-          className={s.services}
+          className={cx(s.services, a.readableSurface)}
           id="services"
+          data-sticker-region="services"
           aria-labelledby="pink-services-title"
         >
           <div className={s.serviceIntro}>
@@ -416,50 +437,30 @@ export default function PinkY2k({
             </div>
           </div>
           <div className={cx(s.priceWindow, m.windowOpen)} data-pink-reveal="">
-            <WindowBar title="servicios_y_precios.txt" />
+            <WindowBar title="reserva_tu_hora.exe" />
             <div className={s.notepadMenu}>
-              <span>Archivo</span>
-              <span>Edición</span>
+              <span>Tu servicio</span>
+              <span>Tu momento</span>
               <span>Mucho amor ♡</span>
             </div>
-            <div className={s.priceList}>
-              <div className={s.priceListHeader}>
-                <span>ELIGE TU TÉCNICA</span>
-                <span>{catalog.business.currency}</span>
-              </div>
-              {catalog.services.length ? (
-                catalog.services.map((row, i) => (
-                  <button
-                    type="button"
-                    key={row.id}
-                    className={s.priceRow}
-                    onClick={() => reserve(row.id)}
-                    disabled={!canBook}
-                  >
-                    <span className={s.priceNumber}>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className={s.priceName}>
-                      <strong>{row.name}</strong>
-                      <small>{row.description}</small>
-                    </span>
-                    <span className={s.priceValue}>
-                      {money(row.price, catalog.business.currency)}
-                      <ArrowUpRight size={18} />
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <p className={s.empty} role="status">
-                  Los servicios aparecerán aquí cuando estén configurados en la
-                  agenda.
-                </p>
-              )}
-              <p className={s.priceNote}>
-                <span>♡</span>
-                {c.copy.servicesNote}
-              </p>
+            <div ref={bookingPanel} tabIndex={-1} role="region" aria-label="Reserva tu hora" className={cx(bella.root, s.inlineBooking)} style={{
+              "--red": c.colors.accent,
+              "--red-text": c.colors.accent,
+              "--ink": c.colors.ink,
+              "--paper": c.colors.surface,
+              "--gray": "color-mix(in srgb, var(--pink-accent) 7%, var(--pink-surface))",
+              "--line": "color-mix(in srgb, var(--pink-accent) 25%, var(--pink-surface))",
+              "--bella-display": "var(--font-sans)",
+              "--bella-body": "var(--font-sans)",
+            } as CSSProperties}>
+              {canBook ? <>
+                {view.preview ? <p className={s.inlineNotice}>Vista previa · No se crean citas ni se realizan cobros.</p> : null}
+                <BellaProvider view={bookingView}>
+                  <BookingFlow catalog={catalog} today={today} presentation="embedded" />
+                </BellaProvider>
+              </> : <p className={s.empty} role="status">{catalog.services.length ? "La agenda estará disponible cuando el estudio configure su ubicación." : "Los servicios aparecerán aquí cuando estén configurados en la agenda."}</p>}
             </div>
+            <p className={s.priceNote}><span>♡</span>{c.copy.servicesNote}</p>
             <div className={s.windowStatus}>
               <span>
                 {catalog.mode === "demo"
@@ -475,6 +476,7 @@ export default function PinkY2k({
           <section
             className={s.gallerySection}
             id="gallery"
+            data-sticker-region="gallery"
             aria-labelledby="pink-gallery-title"
           >
             <div className={s.sectionHeading}>
@@ -572,8 +574,9 @@ export default function PinkY2k({
         ) : null}
 
         <section
-          className={s.guide}
+          className={cx(s.guide, a.readableSurface)}
           id="guide"
+          data-sticker-region="guide"
           aria-labelledby="pink-guide-title"
         >
           <div className={s.sectionHeading}>
@@ -582,7 +585,7 @@ export default function PinkY2k({
               <h2 id="pink-guide-title" className={m.guideTitle} data-pink-reveal="">{c.copy.guideTitle}</h2>
               <p>{c.copy.guideIntro}</p>
             </div>
-            <GlossStar className={s.guideStar} />
+            <GlossStar className={s.guideStar} chrome={c.appearance.decorations !== "classic"} heart={c.appearance.decorations === "hearts"} />
           </div>
           <div className={s.steps}>
             {c.copy.steps.map((row, i) => (
@@ -621,7 +624,7 @@ export default function PinkY2k({
           ) : null}
         </section>
 
-        <section className={s.final} aria-labelledby="pink-final-title">
+        <section className={s.final} aria-labelledby="pink-final-title" data-sticker-region="final">
           <span className={s.finalHeart} aria-hidden="true">
             ♡
           </span>
@@ -636,7 +639,7 @@ export default function PinkY2k({
           </div>
         </section>
       </main>
-      <footer className={s.footer} id="pink-contact">
+      <footer className={cx(s.footer, a.readableSurface)} id="pink-contact" data-sticker-region="footer">
         <a href="#top" className={s.footerBrand}>
           {c.displayName}
           <Heart size={20} />
@@ -667,8 +670,11 @@ export default function PinkY2k({
           Reservas con <strong>puragenda</strong> ♡
         </span>
       </footer>
+      </div>
       <div
         className={s.mobileBooking}
+        data-pink-booking-dock
+        hidden={bookingInView}
         role="region"
         aria-label="Reserva rápida"
       >
@@ -749,51 +755,7 @@ export default function PinkY2k({
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={booking !== null}
-        onOpenChange={(open) => !open && setBooking(null)}
-      >
-        <DialogContent
-          className={cx(bella.root, s.bookingDialog)}
-          style={
-            {
-              ...pinkTokens(c),
-              "--red": c.colors.accent,
-              "--red-text": c.colors.accent,
-              "--ink": c.colors.ink,
-              "--paper": c.colors.surface,
-              "--bella-display": "var(--font-sans)",
-              "--bella-body": "var(--font-sans)",
-            } as CSSProperties
-          }
-          showCloseButton={false}
-        >
-          <div className={s.bookingTitlebar}>
-            <DialogTitle>
-              {c.displayName} ·{" "}
-              {view.preview ? "Agenda de muestra" : "Reserva tu hora"}
-            </DialogTitle>
-            <DialogClose className={s.roundButton} aria-label="Cerrar reserva">
-              <X size={21} />
-            </DialogClose>
-          </div>
-          <DialogDescription className={s.bookingNotice}>
-            {view.preview
-              ? "Demostración privada: precios y horarios de ejemplo. No se crean citas, no se envían datos y no se realizan cobros."
-              : "Elige tu servicio, profesional y horario disponible."}
-          </DialogDescription>
-          {booking ? (
-            <BellaProvider view={bookingView}>
-              <BookingFlow
-                key={booking.id}
-                catalog={catalog}
-                today={today}
-                initialServiceId={booking.serviceId}
-              />
-            </BellaProvider>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      <StickerCanvas root={root} stickers={c.stickers} editor={view.preview ? stickerEditor : undefined} onEdit={view.preview ? onStickerEdit : undefined}/>
     </div>
   );
 }

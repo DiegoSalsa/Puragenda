@@ -1,6 +1,7 @@
 import type { AvailabilityQuery, BookingProvider, Catalog, StudioService } from "../booking/types";
-import { addDays, dateKey, quoteService, validateSelection } from "../templates/bella/_lib/puragenda/validation";
+import { addDays, dateKey, validateSelection } from "../templates/bella/_lib/puragenda/validation";
 import { BookingError } from "../templates/bella/_lib/puragenda/errors";
+import { quoteBookingSelection } from "@/core/booking-selection";
 
 const locationIds = ["bella-demo"];
 const service = (id: string, name: string, duration: number, price: number, description: string, image: string, category = "Uñas"): StudioService => ({ id, name, duration, price, description, image, category, categoryId: category.toLowerCase(), categoryPosition: 0, locationIds, optionCategories: [] });
@@ -28,14 +29,21 @@ export const demoCatalog: Catalog = {
 
 /** Demo-only fixtures; deliberately NOT an implementation of Puragenda scheduling. */
 export function demoAvailability(query: AvailabilityQuery, now = new Date(), catalog = demoCatalog) {
-  const service = validateSelection(catalog, query);
+  const selectedIds = query.serviceIds?.length ? query.serviceIds : [query.serviceId];
+  const selectionCatalog = { ...catalog, staff: catalog.staff.map(person => person.serviceIds.length ? person : { ...person, serviceIds: catalog.services.map(item => item.id) }) };
+  const selected = selectedIds.map(id => {
+    const service = catalog.services.find(item => item.id === id);
+    if (!service) throw new BookingError("VALIDATION", "Este tratamiento ya no está disponible.");
+    const options = service.optionCategories.flatMap(category => category.alternatives.map(item => item.id));
+    return validateSelection(selectionCatalog, { ...query, serviceId: id, optionIds: query.optionIds.filter(option => options.includes(option)) });
+  });
   const today = dateKey(now, catalog.business.timezone);
   if (query.date <= today || query.date > addDays(today, 90)) throw new BookingError("VALIDATION", "Elige un día dentro de los próximos tres meses.");
   const weekday = new Date(`${query.date}T12:00:00Z`).getUTCDay();
-  const { duration } = quoteService(service, query.optionIds);
+  const { duration } = quoteBookingSelection(selected, query.optionIds);
   // Fixed UTC fixtures. Labels derived in Santiago; no imitation of real scheduling rules.
   const hours = weekday === 0 ? [] : [13, 14, 15, 17, 18, 19, 20];
-  const staff = query.staffId === "any" ? catalog.staff.find((item) => item.serviceIds.includes(service.id))!.id : query.staffId;
+  const staff = query.staffId === "any" ? catalog.staff.find(item => item.locationIds.includes(query.locationId) && selectedIds.every(id => !item.serviceIds.length || item.serviceIds.includes(id)))?.id ?? "" : query.staffId;
   const slots = hours.filter((_, index) => (index + weekday + (staff === "camila" ? 1 : 0)) % 4 !== 0).map((hour) => {
     const start = new Date(`${query.date}T${String(hour).padStart(2, "0")}:00:00Z`);
     return { startTime: start.toISOString(), endTime: new Date(start.getTime() + duration * 60000).toISOString(), staffId: staff, label: new Intl.DateTimeFormat("es-CL", { timeZone: catalog.business.timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(start) };

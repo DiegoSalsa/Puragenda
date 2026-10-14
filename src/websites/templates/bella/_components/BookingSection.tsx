@@ -7,13 +7,18 @@ import { useBella } from "../Context";
 import { bellaCopy } from "../copy";
 import { bookingEvent } from "./booking-events";
 import styles from "../studio.module.css";
+import { usePreviewBooking } from "../../../use-preview-booking";
 const BookingFlow = dynamic(() => import("./BookingFlow"), { loading: () => <div className={styles.bookingLoading} role="status">Preparando tu momento…</div> });
 export default function BookingSection({ catalog: initial, error: initialError, today, fallbackUrl }: { catalog: Catalog | null; error: string | null; today: string; fallbackUrl: string | null }) {
-  const { api: studioApi, business, preview, config } = useBella(); const copy = bellaCopy(config, business.name);
+  const { api: studioApi, business, preview, previewExperience, config } = useBella(); const copy = bellaCopy(config, business.name);
   const [catalog, setCatalog] = useState(initial);
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<{ id: number; serviceId?: string } | null>(null);
+  usePreviewBooking(preview && previewExperience === "booking" && !!catalog?.services.length && !!catalog.locations.length, () => {
+    setSession({ id: 1 });
+    document.getElementById("agenda")?.scrollIntoView({ block: "start", behavior: "instant" });
+  });
   useEffect(() => {
     const open = (event: Event) => {
       if (!catalog?.services.length || !catalog.locations.length) return;

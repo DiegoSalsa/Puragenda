@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ExternalLink, Globe, Heart, Scissors, Images, LayoutTemplate, LoaderCircle, Monitor, Palette, Phone, Smartphone, Sparkles } from "lucide-react";
-import { pinkConfigSchema, validPinkPalette, type PinkConfig } from "@/websites/templates/pink-y2k/config";
+import { CheckCircle2, ExternalLink, Globe, Heart, Scissors, Images, LayoutTemplate, LoaderCircle, Monitor, Palette, Phone, Plus, Smartphone, Sparkles } from "lucide-react";
+import { pinkConfigSchema, pinkPatternColor, validPinkPalette, type PinkConfig } from "@/websites/templates/pink-y2k/config";
 import type { WebsiteEditorProps } from "@/websites/editor-types";
 import TemplateSelector from "./template-selector";
 import type { WebsiteAsset } from "@/websites/media";
@@ -19,11 +19,14 @@ import LivePreviewFrame from "./live-preview-frame";
 import MediaLibrary from "./media-library";
 import DomainPanel from "./domain-panel";
 import BillingPanel from "./billing-panel";
+import Y2kAppearancePanel from "./y2k-appearance-panel";
+import Y2kStickersPanel from "./y2k-stickers-panel";
+import { applyStickerEdit, stickerEditMessageSchema, type PinkSticker } from "@/websites/templates/pink-y2k/stickers";
 import styles from "./website-builder.module.css";
 type Props = WebsiteEditorProps<PinkConfig>;
 const sections = [
   { key: "design", name: "Diseño", icon: Palette }, { key: "hero", name: "Portada", icon: LayoutTemplate },
-  { key: "services", name: "Servicios", icon: Scissors }, { key: "gallery", name: "Galería", icon: Images }, { key: "business", name: "Mi negocio", icon: Heart },
+  { key: "services", name: "Servicios", icon: Scissors }, { key: "stickers", name: "Stickers", icon: Sparkles }, { key: "gallery", name: "Galería", icon: Images }, { key: "business", name: "Mi negocio", icon: Heart },
   { key: "contact", name: "Contacto", icon: Phone }, { key: "domain", name: "Dominio", icon: Globe },
 ] as const;
 type Section = typeof sections[number]["key"];
@@ -33,10 +36,14 @@ type TextKey = "displayName" | "intro" | "heroCaption" | "city" | "about" | "pho
 export default function WebsiteEditor(props: Props) {
   const router = useRouter();
   const [config, setConfig] = useState(props.initial), [subdomain, setSubdomain] = useState(props.subdomain);
-  const [section, setSection] = useState<Section>("design"), [viewport, setViewport] = useState<"desktop" | "mobile">("desktop"), [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [section, setSection] = useState<Section>("design"), [viewport, setViewport] = useState<"desktop" | "mobile">(), [mode, setMode] = useState<"edit" | "preview">("edit");
   const [customizeGoogle, setCustomizeGoogle] = useState(Boolean(config.seoTitle || config.seoDescription));
   const [message, setMessage] = useState(""), [pending, start] = useTransition(), [uploadCount, setUploadCount] = useState(0);
   const [visualMedia, setVisualMedia] = useState<Record<string, string>>({});
+  const [stickerEditing, setStickerEditing] = useState(false), [selectedSticker, setSelectedSticker] = useState<string>();
+  const phoneScreen = useSyncExternalStore(subscribePhoneScreen, phoneScreenSnapshot, () => false);
+  const previewViewport = viewport ?? (phoneScreen ? "mobile" : "desktop");
+  const placingStickers = section === "stickers" && stickerEditing;
   const [autosave] = useState(() => new DraftAutosave<Draft>({ config: props.initial, subdomain: props.subdomain }, props.revision, async (draft, revision) => {
     const result = pinkConfigSchema.safeParse({ ...draft.config, ...(draft.config.mediaAssets ? { mediaAssets: referencedAssets(draft.config) } : {}) });
     if (!result.success) return { error: "Revisa los datos de contacto o espera a que termine la foto." };
@@ -53,9 +60,19 @@ export default function WebsiteEditor(props: Props) {
     else visualConfig[key as ImageKey] = value;
   }
   function sendPreview() { if (payload.current) frame.current?.contentWindow?.postMessage(payload.current, window.location.origin); }
-  useEffect(() => { payload.current = { protocol: PREVIEW_PROTOCOL, type: "draft", sequence: ++sequence.current, config: visualConfig, ...(focus.current ? { focus: focus.current } : {}) }; focus.current = undefined; sendPreview(); });
+  useEffect(() => { payload.current = { protocol: PREVIEW_PROTOCOL, type: "draft", sequence: ++sequence.current, config: visualConfig, stickerEditor: { enabled: placingStickers, selectedId: selectedSticker, viewport: previewViewport }, ...(focus.current ? { focus: focus.current } : {}) }; focus.current = undefined; sendPreview(); });
   useEffect(() => {
-    function ready(event: MessageEvent) { if (event.origin === window.location.origin && event.source === frame.current?.contentWindow && event.data?.protocol === PREVIEW_PROTOCOL && event.data?.type === "ready") sendPreview(); }
+    function ready(event: MessageEvent) {
+      if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow || event.data?.protocol !== PREVIEW_PROTOCOL) return;
+      if (event.data?.type === "ready") { sendPreview(); return; }
+      if (event.data?.type === "stickers-done") { setStickerEditing(false); return; }
+      const parsed = stickerEditMessageSchema.safeParse(event.data);
+      if (!parsed.success) return;
+      if (!(payload.current as { stickerEditor?: { enabled?: boolean } } | null)?.stickerEditor?.enabled) return;
+      const edit = parsed.data;
+      setSelectedSticker(edit.action === "delete" ? undefined : edit.id);
+      setConfig(previous => ({ ...previous, stickers: applyStickerEdit(previous.stickers, edit) }));
+    }
     window.addEventListener("message", ready); return () => window.removeEventListener("message", ready);
   }, []);
   useEffect(() => { autosave.update({ config, subdomain }); }, [config, subdomain, autosave]);
@@ -82,6 +99,20 @@ export default function WebsiteEditor(props: Props) {
   function change<K extends keyof PinkConfig>(key: K, value: PinkConfig[K]) { update(previous => ({ ...previous, [key]: value })); }
   function localPreview(key: string, url: string | null) { setVisualMedia(previous => { const next = { ...previous }; if (url) next[key] = url; else delete next[key]; return next; }); }
   function busy(value: boolean) { setUploadCount(previous => Math.max(0, previous + (value ? 1 : -1))); }
+  function changeStickers(stickers: PinkSticker[], asset?: WebsiteAsset) { update(previous => ({ ...previous, stickers, ...(asset ? { mediaAssets: [...(previous.mediaAssets ?? []).filter(item => item.id !== asset.id), asset] } : {}) })); }
+  function selectSticker(id?: string) {
+    setSelectedSticker(id);
+    if (!id) return;
+    setStickerEditing(true);
+    if (phoneScreen) setMode("preview");
+  }
+  function showStickerLibrary(owned = false) {
+    setMode("edit");
+    requestAnimationFrame(() => {
+      if (owned) controls.current?.querySelector("[data-my-stickers]")?.scrollIntoView({ block: "start" });
+      else controls.current?.scrollTo(0, 0);
+    });
+  }
   function applyImage(key: ImageKey, url: string, asset?: WebsiteAsset) { update(previous => ({ ...previous, [key]: url, ...(asset ? { mediaAssets: [...(previous.mediaAssets ?? []).filter(item => item.id !== asset.id), asset] } : {}) })); }
   const media = (key: ImageKey, label: string, usage: "hero" | "about" | "logo" | "favicon" | "social") => <MediaPicker label={label} value={config[key]} usage={usage} onChange={(url, asset) => applyImage(key, url, asset)} onBusy={busy} onLocalPreview={url => localPreview(key, url)} onFocus={() => highlight(key === "socialImage" || key === "favicon" ? "heroImage" : key)} />;
   const field = (key: TextKey, label: string, multiline = false, helper?: string) => {
@@ -99,23 +130,24 @@ export default function WebsiteEditor(props: Props) {
     start(async () => { try { const result = await operation(); if (result && typeof result === "object" && "error" in result) throw new Error(String(result.error)); setMessage(success); router.refresh(); } catch (error) { setMessage(error instanceof Error ? error.message : "No pudimos completar el cambio"); } });
   }
   const unpublished = props.status !== "PUBLISHED" || save.revision !== props.publishedRevision || save.dirty;
-  return <div className={styles.builder} data-mode={mode}>
+  return <div className={styles.builder} data-mode={mode} data-sticker-editing={placingStickers}>
     <header className={styles.topbar}>
       <div className={styles.title}><h1>Mi sitio</h1><p>{props.status === "PUBLISHED" ? unpublished ? "Publicado · cambios pendientes" : "Tu sitio está publicado" : props.status === "SUSPENDED" ? "Tu sitio está pausado" : "Tu próximo sitio empieza aquí"}</p></div>
       <span className={styles.saveStatus} data-error={save.status === "error"} role="status">{save.status === "saving" || uploadCount ? <LoaderCircle size={14} className={styles.spin} /> : save.status === "saved" ? <CheckCircle2 size={14} /> : null}{uploadCount ? "Preparando fotos" : save.status === "saving" ? "Guardando…" : save.status === "pending" ? "Cambios pendientes" : save.status === "error" ? "No se pudo guardar" : "Guardado"}</span>
       {props.status === "PUBLISHED" ? <a className={styles.secondary} href={props.publicUrl} target="_blank" rel="noopener noreferrer">Ver sitio<ExternalLink size={13} /></a> : null}
       <button className={styles.publish} disabled={pending || uploadCount > 0 || !active || !unpublished} onClick={() => run(async () => { await autosave.flush(); return publishWebsite(autosave.getSnapshot().revision); }, "¡Tu sitio está publicado!")}>{pending ? <LoaderCircle size={14} className={styles.spin} /> : <Sparkles size={14} />}Publicar cambios</button>
     </header>
-    <div className={styles.mobileTabs}><button aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button><button aria-pressed={mode === "preview"} onClick={() => { setViewport("mobile"); setMode("preview"); }}>Vista previa</button></div>
+    <div className={styles.mobileTabs}><button aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button><button aria-pressed={mode === "preview"} onClick={() => { setViewport("mobile"); if (section === "stickers") setStickerEditing(true); setMode("preview"); }}>Vista previa</button></div>
     {save.status === "error" ? <div className={styles.notice} role="alert">{save.error}<button onClick={() => run(() => autosave.flush(), "Cambios guardados")}>Reintentar</button><button onClick={() => { if (window.confirm("Recargar recupera la última versión guardada y descarta los cambios locales. ¿Continuar?")) window.location.reload(); }}>Recargar</button></div> : null}
     {message ? <div className={styles.notice} role="status">{message}<button aria-label="Cerrar aviso" onClick={() => setMessage("")}>Cerrar</button></div> : null}
     {!active ? <div className={styles.notice}>Puedes preparar tu sitio. Activa Sitio Web para publicarlo.<button onClick={() => { setSection("business"); window.setTimeout(() => document.getElementById("website-billing")?.scrollIntoView({ behavior: "smooth" }), 100); }}>Ver suscripción</button></div> : null}
     <div className={styles.body}>
-      <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.map(item => <button key={item.key} id={`website-tab-${item.key}`} role="tab" aria-selected={section === item.key} aria-controls={`website-panel-${item.key}`} onClick={() => { setSection(item.key); controls.current?.scrollTo(0, 0); if (item.key === "hero") highlight("headline"); if (item.key === "gallery") highlight("gallery"); if (item.key === "business") highlight("about"); if (item.key === "contact") highlight("contact"); }}><item.icon size={19} strokeWidth={1.6} />{item.name}</button>)}</nav>
+      <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.map(item => <button key={item.key} id={`website-tab-${item.key}`} role="tab" aria-selected={section === item.key} aria-controls={`website-panel-${item.key}`} onClick={() => { setSection(item.key); controls.current?.scrollTo(0, 0); if (item.key === "stickers") { setStickerEditing(true); if (phoneScreen && config.stickers.length) setMode("preview"); } if (item.key === "hero") highlight("headline"); if (item.key === "gallery") highlight("gallery"); if (item.key === "business") highlight("about"); if (item.key === "contact") highlight("contact"); }}><item.icon size={19} strokeWidth={1.6} />{item.name}</button>)}</nav>
       <div className={styles.controls} ref={controls}>
         <section className={styles.panel} hidden={section !== "design"} id="website-panel-design" role="tabpanel" aria-labelledby="website-tab-design">
           <div className={styles.panelHeading}><h2>Diseño</h2><p className={styles.helper}>Y2K · Nail art con personalidad</p></div>
           <TemplateSelector active={props.templateKey} flush={async () => { await autosave.flush(); }} revision={() => autosave.getSnapshot().revision} disabled={pending || uploadCount > 0} />
+          <div className={styles.divider}><Y2kAppearancePanel value={config.appearance} patternColor={pinkPatternColor(config.appearance, config.colors)} onChange={appearance => { highlight("headline"); change("appearance", appearance); }} /></div>
           <div className={styles.divider}><h3>Los colores de tu sitio</h3>{(["accent", "ink", "background", "surface"] as const).map(token => <label className={styles.field} key={token}>{{ accent: "Acento", ink: "Texto", background: "Fondo", surface: "Ventanas y tarjetas" }[token]}<span className={styles.row}><input type="color" aria-label={`Color ${token}`} value={config.colors[token]} onChange={e => update(c => ({ ...c, colors: { ...c.colors, [token]: e.target.value } }))} /><span>{config.colors[token]}</span></span></label>)}{!validPinkPalette(config) ? <p className={styles.helper} role="alert">Aumenta el contraste entre texto y fondo antes de publicar.</p> : null}</div>
           <div className={styles.divider}><h3>Secciones visibles</h3>{(["gallery", "pocket", "policies"] as const).map(key => <label key={key} className={styles.field}><span><input type="checkbox" checked={config.visibility[key]} onChange={e => update(c => ({ ...c, visibility: { ...c.visibility, [key]: e.target.checked } }))} /> {{ gallery: "Galería", pocket: "Love Pocket", policies: "Condiciones antes de la cita" }[key]}</span></label>)}</div>
         </section>
@@ -135,6 +167,10 @@ export default function WebsiteEditor(props: Props) {
           {props.view.catalog.services.map(service => <div className={styles.divider} key={service.id}><h3>{service.name}</h3><p className={styles.helper}>{service.duration} min · {new Intl.NumberFormat("es-CL", { style: "currency", currency: props.view.catalog.business.currency }).format(service.price)}</p></div>)}
           <a className={styles.secondary} href="/dashboard/services">Administrar servicios</a>
         </section>
+        <section className={styles.panel} hidden={section !== "stickers"} id="website-panel-stickers" role="tabpanel" aria-labelledby="website-tab-stickers">
+          <div className={styles.panelHeading}><h2>Stickers</h2><p className={styles.helper}>Decora tu sitio con una composición propia.</p></div>
+          <Y2kStickersPanel items={config.stickers} onChange={changeStickers} selectedId={selectedSticker} onSelect={selectSticker} editing={placingStickers} viewport={previewViewport} onViewport={setViewport} onBusy={busy} onToggleEditing={() => { setStickerEditing(!placingStickers); if (!placingStickers && phoneScreen) setMode("preview"); }}/>
+        </section>
         <section className={styles.panel} hidden={section !== "gallery"} id="website-panel-gallery" role="tabpanel" aria-labelledby="website-tab-gallery">
           <div className={styles.panelHeading}><h2>Galería</h2></div>{copyText("galleryTitle", "Título")}{copyText("galleryIntro", "Introducción")}{copyText("albumAll", "Filtro de todas las fotos")}
           <MatchdayGalleryPanel config={config} update={update} busy={busy} uploadCount={uploadCount} onLocal={localPreview} helper="Sube tus trabajos, ordénalos y agrúpalos por categoría. Las fotos de la demo no se incorporan a tu negocio." />
@@ -153,11 +189,17 @@ export default function WebsiteEditor(props: Props) {
           <div className={styles.googlePreview}><p className={styles.helper}>Cómo aparecerá tu negocio en Google</p><strong>{google.title}</strong><p>{google.description}</p></div><label className={styles.field}><span><input type="checkbox" checked={customizeGoogle} onChange={e => setCustomizeGoogle(e.target.checked)} /> Personalizar vista de Google</span></label>{customizeGoogle ? <>{field("seoTitle", "Título de Google")}{field("seoDescription", "Descripción", true)}{media("socialImage", "Imagen al compartir", "social")}</> : null}
           <MediaLibrary before={async () => { await autosave.flush(); }} disabled={pending || uploadCount > 0} />
         </section>
-        <section hidden={section !== "domain"} id="website-panel-domain" role="tabpanel" aria-labelledby="website-tab-domain"><DomainPanel subdomain={subdomain} rootDomain={props.rootDomain} domains={props.domains} requests={props.requests} onSubdomain={setSubdomain} canManage={props.canManageDomains} /></section>
+        <section hidden={section !== "domain"} id="website-panel-domain" role="tabpanel" aria-labelledby="website-tab-domain">{section === "domain" ? <DomainPanel subdomain={subdomain} rootDomain={props.rootDomain} domains={props.domains} requests={props.requests} onSubdomain={setSubdomain} canManage={props.canManageDomains} /> : null}</section>
       </div>
-      <div className={styles.previewArea}><div className={styles.previewToolbar}><div className={styles.segmented}><button aria-pressed={viewport === "desktop"} onClick={() => setViewport("desktop")}><Monitor size={13} />Escritorio</button><button aria-pressed={viewport === "mobile"} onClick={() => setViewport("mobile")}><Smartphone size={13} />Móvil</button></div><span className={styles.previewCaption}>Vista previa en vivo · solo tú puedes verla</span></div><LivePreviewFrame mobile={viewport === "mobile"} frame={frame} onLoad={sendPreview} /></div>
+      <div className={styles.previewArea}><div className={styles.previewToolbar}><div className={styles.segmented}><button aria-pressed={previewViewport === "desktop"} onClick={() => setViewport("desktop")}><Monitor size={13} />Escritorio</button><button aria-pressed={previewViewport === "mobile"} onClick={() => setViewport("mobile")}><Smartphone size={13} />Móvil</button></div><span className={styles.previewCaption}>{placingStickers ? "Arrastra los stickers sobre tu página" : "Vista previa en vivo · solo tú puedes verla"}</span></div><LivePreviewFrame mobile={previewViewport === "mobile"} frame={frame} onLoad={sendPreview} />{placingStickers ? <div className={styles.stickerDock}><p>Arrastra con el dedo para colocarlo</p><div><button type="button" onClick={() => showStickerLibrary()}><Plus size={16}/>Añadir sticker</button><button type="button" onClick={() => showStickerLibrary(true)}>Mis stickers</button><button type="button" onClick={() => setStickerEditing(false)}>Listo</button></div></div> : null}</div>
     </div>
   </div>;
+}
+function phoneScreenSnapshot() { return window.matchMedia("(max-width: 767px)").matches; }
+function subscribePhoneScreen(listener: () => void) {
+  const query = window.matchMedia("(max-width: 767px)");
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
 }
 function SocialField({ network, value, onChange, onFocus }: { network: "instagram" | "facebook"; value: string; onChange: (value: string) => void; onFocus: () => void }) {
   const [raw, setRaw] = useState(value), [error, setError] = useState("");

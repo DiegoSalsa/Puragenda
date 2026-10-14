@@ -9,6 +9,8 @@ import { getExistingBusinessMarketplacePrompt } from "@/server/services/marketpl
 import { loadTodayDashboard } from "@/server/services/today-dashboard.service";
 import { MarketplaceConsentPrompt } from "./marketplace-consent-prompt";
 import { TodayScreen } from "./today-screen";
+import { getDashboardWebsiteLaunch } from "@/server/websites/launch-context";
+import { WebsiteDiscoveryCard } from "@/components/dashboard/website-discovery-card";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +60,7 @@ export default async function DashboardPage({
     redirect(`/dashboard/agenda?${query.toString()}`);
   }
 
-  const [data, marketplacePrompt] = await Promise.all([
+  const [data, marketplacePrompt, websiteLaunch] = await Promise.all([
     loadTodayDashboard({
       user,
       business,
@@ -69,11 +71,13 @@ export default async function DashboardPage({
     permissions.includes(DASHBOARD_PERMISSIONS.SETTINGS_MANAGE)
       ? getExistingBusinessMarketplacePrompt(business.id)
       : Promise.resolve(null),
+    getDashboardWebsiteLaunch(),
   ]);
 
   return (
     <div className="space-y-6">
       <SubscriptionBanner businessId={business.id} timezone={business.timezone} countryCode={business.countryCode} hideHealthyStatus />
+      {websiteLaunch ? <WebsiteDiscoveryCard context={websiteLaunch} /> : null}
       {marketplacePrompt ? <MarketplaceConsentPrompt prompt={marketplacePrompt} /> : null}
       <TodayScreen data={data} userName={user.name} />
     </div>

@@ -41,7 +41,7 @@ export const templateRegistry = {
     key: "y2k", name: "Y2K", version: 1,
     industries: ["uñas", "nail art", "manicura", "belleza", "estética"],
     capabilities: { gallery: true, nativeBooking: true, multiLocation: true, controlledTheme: true, staffEditorial: false, process: false },
-    editor: { category: "Nail art / Y2K", sections: ["design", "hero", "services", "gallery", "business", "contact", "domain"], palettes: [], customControls: ["pocket", "policies", "visibility", "customPalette"] },
+    editor: { category: "Nail art / Y2K", sections: ["design", "hero", "services", "stickers", "gallery", "business", "contact", "domain"], palettes: [], customControls: ["appearance", "stickers", "pocket", "policies", "visibility", "customPalette"] },
     preview: { thumbnail: "/websites/previews/y2k.svg", desktop: "/website-preview?template=y2k", mobile: "/website-preview?template=y2k&viewport=mobile" },
     configSchema: pinkConfigSchema, defaultConfig: emptyPinkConfig, readConfig: readPinkConfig, parseDraft: pinkConfigSchema.parse,
     publicationError: pinkPublicationError,

@@ -2,9 +2,36 @@ import { z } from "zod";
 import { galleryImageSchema, galleryCategorySchema, media, safeLink } from "../../shared-config";
 import { websiteAssetSchema } from "../../media";
 import { contrastRatio } from "../../palettes";
+import { stickersSchema } from "./stickers";
 const text = (max: number, fallback = "") =>
   z.string().trim().max(max).default(fallback);
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+export const pinkAppearanceSchema = z.object({
+  titleTopFinish: z.enum(["jelly", "pink-chrome", "silver-chrome"]).default("jelly"),
+  titleTopFont: z.enum(["bubble", "script"]).default("bubble"),
+  titleFinish: z.enum(["jelly", "pink-chrome", "silver-chrome"]).default("jelly"),
+  titleFont: z.enum(["bubble", "script"]).default("bubble"),
+  background: z.enum(["grid", "satin", "glitter", "leopard", "zebra"]).default("grid"),
+  decorations: z.enum(["classic", "chrome", "hearts"]).default("classic"),
+  textureStrength: z.enum(["soft", "bold"]).default("soft"),
+  patternCoverage: z.number().int().min(0).max(100).default(20),
+  patternScope: z.enum(["hero", "page"]).default("page"),
+  patternColor: z.union([z.literal(""), hex]).default(""),
+}).strict();
+export type PinkAppearance = z.infer<typeof pinkAppearanceSchema>;
+export const PINK_STYLE_PRESETS = [
+  { name: "Original", description: "Letras de caramelo y fondo suave.", appearance: { titleFinish: "jelly", titleFont: "bubble", background: "grid", decorations: "classic", textureStrength: "soft", patternCoverage: 20, patternScope: "page" } },
+  { name: "Pink Rocket", description: "Cromado rosa, cursiva y satén.", appearance: { titleFinish: "pink-chrome", titleFont: "script", background: "satin", decorations: "chrome", textureStrength: "bold", patternCoverage: 20, patternScope: "page" } },
+  { name: "Pop star", description: "Cromo plateado y leopardo con brillo.", appearance: { titleFinish: "silver-chrome", titleFont: "bubble", background: "leopard", decorations: "chrome", textureStrength: "bold", patternCoverage: 20, patternScope: "page" } },
+  { name: "Cyber pink", description: "Rosa metálico, cebra y corazones.", appearance: { titleFinish: "pink-chrome", titleFont: "bubble", background: "zebra", decorations: "hearts", textureStrength: "bold", patternCoverage: 20, patternScope: "page" } },
+].map(preset => ({ ...preset, appearance: pinkAppearanceSchema.parse(preset.appearance) }));
+
+export function pinkPatternColor(appearance: PinkAppearance, colors: { accent: string; background: string }) {
+  if (appearance.patternColor) return appearance.patternColor;
+  // Match the original sRGB mix for drafts saved before independent frame colors.
+  return `#${[1, 3, 5].map(offset => Math.round(parseInt(colors.accent.slice(offset, offset + 2), 16) * .32 + parseInt(colors.background.slice(offset, offset + 2), 16) * .68).toString(16).padStart(2, "0")).join("")}`;
+}
 
 /** Y2K template settings. Business content and stock demo assets stay separate. */
 export const pinkConfigSchema = z
@@ -14,6 +41,8 @@ export const pinkConfigSchema = z
     logo: media,
     favicon: media,
     headline: z.tuple([text(55), text(55)]).default(["Tus uñas,", "tu universo."]),
+    appearance: pinkAppearanceSchema.prefault({}),
+    stickers: stickersSchema,
     intro: text(600),
     city: text(100),
     heroImage: media,

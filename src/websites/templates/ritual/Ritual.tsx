@@ -14,6 +14,7 @@ import Media from "./Media";
 import Rail from "./Rail";
 import Lightbox from "./Lightbox";
 import { Provider } from "./Context";
+import { usePreviewBooking } from "../../use-preview-booking";
 import s from "./ritual.module.css";
 const Booking = dynamic(() => import("./Booking"));
 const display = Cormorant_Garamond({ subsets: ["latin"], variable: "--ritual-display", display: "swap", preload: false, weight: ["400", "500", "600"] });
@@ -41,6 +42,7 @@ function Page({ view }: { view: View }) {
   useEffect(() => { const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.setAttribute("data-seen", "true"); observer.unobserve(entry.target); } }), { threshold: .1 }); document.querySelectorAll("[data-ritual-reveal]").forEach(el => observer.observe(el)); setSeen(true); return () => observer.disconnect(); }, []);
   const styles = { "--ritual-background": t.background, "--ritual-surface": t.surface, "--ritual-text": t.text, "--ritual-muted": t.muted, "--ritual-accent": t.accent, "--ritual-accent-contrast": t.accentContrast, "--ritual-line": t.line, "--ritual-warm": t.warm, "--ritual-dark": t.dark } as CSSProperties;
   const reserve = (id?: string) => { setBookingService(id); setBookingOpen(true); requestAnimationFrame(() => document.getElementById("booking")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })); };
+  usePreviewBooking(view.preview && view.previewExperience === "booking", reserve);
   const nav = [{ id: "services", label: copy.nav.services, show: !!catalog.services.length }, { id: "staff", label: copy.nav.staff, show: c.visibility.showStaff && !!staff.length }, { id: "gallery", label: copy.nav.gallery, show: c.visibility.showGallery && !!gallery.length }, { id: "about", label: copy.nav.about, show: c.visibility.showAbout && (!!c.about || !!c.aboutImage) }, { id: "faq", label: copy.nav.faq, show: c.visibility.showFaq && !!c.faq.length }];
   return <main id="studio-root" className={`${s.root} ${display.variable} ${body.variable}`} style={styles} data-ready={seen}>
     <header className={s.header}><a className={s.brand} href="#top">{c.logo || b.logo ? <Media src={c.logo || b.logo!} alt={c.displayName || c.brandTitle || b.name} width={140} height={42} /> : c.displayName || c.brandTitle || b.name}</a><nav className={s.nav} aria-label="Navegación principal">{nav.filter(x => x.show).map(x => <a key={x.id} href={`#${x.id}`}>{x.label}</a>)}</nav><button className={s.action} onClick={() => reserve()}>{copy.nav.reserve}</button></header>

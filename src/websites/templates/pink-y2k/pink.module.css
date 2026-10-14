@@ -566,58 +566,6 @@
 .screenDots i[data-active="true"] {
   background: #823552;
 }
-.pocketButtons {
-  position: absolute;
-  left: 22%;
-  right: 22%;
-  top: 72.5%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 7px;
-}
-.pocketButtons button {
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  border: 1px solid #bd4b85;
-  background: radial-gradient(
-    ellipse at 35% 20%,
-    #fff 0%,
-    #f5dfed 24%,
-    #d796bb 70%,
-    #b56794 100%
-  );
-  box-shadow:
-    inset 0 2px 2px #fff,
-    0 4px 0 #a34178,
-    0 5px 7px #9b2f6b66;
-  color: #8f2b60;
-  font-size: 25px;
-  font-weight: bold;
-  display: grid;
-  place-items: center;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-}
-.pocketButtons button:nth-child(2) {
-  background: radial-gradient(
-    ellipse at 35% 20%,
-    #ffe2f3,
-    #da4b96 55%,
-    #a52266
-  );
-  color: #fff;
-  width: 49px;
-  height: 49px;
-}
-.pocketButtons button:active {
-  transform: translateY(3px);
-  box-shadow:
-    inset 0 1px 3px #b3457c,
-    0 1px 0 #a34178;
-}
 .pocketButtonNote {
   position: absolute;
   top: 88%;
@@ -668,6 +616,7 @@
   padding: 105px 30px 100px;
   align-items: center;
 }
+.services > * { min-width: 0; max-width: 100%; }
 .eyebrow {
   font:
     9px var(--font-sans),
@@ -714,6 +663,8 @@
   transform: rotate(-12deg);
 }
 .priceWindow {
+  min-width: 0;
+  max-width: 100%;
   background: var(--pink-surface);
   border: 1px solid #bd6c91;
   border-radius: 9px 9px 4px 4px;
@@ -721,7 +672,45 @@
     7px 7px 0 #efbdd4,
     8px 8px 0 #cb8caa;
   overflow: hidden;
-  transform: rotate(1deg);
+  align-self: start;
+  scroll-margin-top: 24px;
+}
+.priceWindow .inlineBooking {
+  min-height: 0;
+  padding: 24px;
+  background: var(--pink-surface);
+  scroll-margin-top: 24px;
+}
+.mobileBooking[hidden] { display: none; }
+.inlineBooking:focus { outline: none; }
+.inlineNotice { font-size: 10px; padding-bottom: 16px; }
+.inlineBooking [class*="bookingLayout"] { display: flex; flex-direction: column; gap: 20px; }
+.inlineBooking [class*="bookingPanel"] { order: 1; width: 100%; min-height: 0; padding: 0; background: transparent; scroll-margin-top: 24px; }
+.inlineBooking [class*="bookingPanel"] h3 { font-family: var(--font-sans), sans-serif; font-size: clamp(24px, 2.2vw, 30px); letter-spacing: -1px; line-height: 1.2; }
+.inlineBooking [class*="steps"] { margin-bottom: 24px; gap: 6px; }
+.inlineBooking [class*="steps"] button { min-height: 44px; }
+.inlineBooking [class*="stepName"] { font-size: 10px; }
+.inlineBooking [class*="stepActions"] { margin-top: 20px; padding-top: 18px; flex-wrap: wrap; }
+.inlineBooking [class*="action"], .inlineBooking [class*="outlineButton"] { border-radius: 24px; min-height: 44px; }
+.inlineBooking [class*="action"] { background: var(--pink-accent); color: #fff; }
+.inlineBooking [class*="action"]:hover { background: color-mix(in srgb, var(--pink-accent) 85%, var(--pink-ink)); }
+.inlineBooking [class*="bookingAside"] { order: 2; width: 100%; display: block; border-top: 1px dashed var(--line); padding-top: 16px; }
+.inlineBooking [data-has-selection="false"] [class*="bookingAside"] { display: none; }
+.inlineBooking [class*="bookingAside"] > h2, .inlineBooking [class*="bookingMode"], .inlineBooking [class*="bookingPreview"], .inlineBooking [class*="bookingDisclaimer"] { display: none; }
+.inlineBooking [class*="bookingAside"] > h3 { margin: 0 0 6px; font-size: 14px; letter-spacing: 0; }
+.inlineBooking [class*="bookingAside"] > p, .inlineBooking [class*="summaryDetails"] { font-size: 12px; }
+.inlineBooking [class*="summaryDetails"] { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 8px; }
+.inlineBooking [class*="days"] { padding-block: 6px 12px; }
+.inlineBooking [class*="times"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.inlineBooking [class*="calendarHeader"] { gap: 6px; }
+.inlineBooking [class*="calendarHeader"] strong { font-size: 12px; text-align: center; }
+.inlineBooking [class*="reviewList"] > div { grid-template-columns: 85px minmax(0, 1fr); }
+@media (max-width: 600px) {
+  .priceWindow .inlineBooking { padding: 20px 14px; }
+  .inlineBooking [class*="stepActions"] button { padding: 12px 14px; font-size: 12px; }
+  .inlineBooking [class*="steps"] li { padding-bottom: 10px; }
+  .inlineBooking [class*="steps"] button { width: 100%; }
+  .inlineBooking [class*="reviewList"] > div { grid-template-columns: 70px minmax(0, 1fr); }
 }
 .windowBar {
   background: linear-gradient(180deg, #ffd6e9, #f7b2d1);
@@ -755,79 +744,7 @@
   padding: 7px 17px;
   color: #8b4966;
 }
-.priceList {
-  padding: 19px 23px 0;
-}
-.priceListHeader {
-  display: flex;
-  justify-content: space-between;
-  font:
-    8px "Courier New",
-    monospace;
-  letter-spacing: 1.3px;
-  color: #8b4966;
-  margin-bottom: 12px;
-}
-.priceRow {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-top: 1px dashed #e7c4d4;
-  padding: 18px 0;
-  gap: 13px;
-  color: var(--pink-ink);
-  transition: background 0.18s, translate 0.18s;
-}
-.priceRow:hover {
-  background: #ffe3f0;
-}
-.priceRow:active {
-  translate: 0 2px;
-}
-.priceValue svg {
-  transition: transform 180ms ease-out;
-}
-@media (hover: hover) and (pointer: fine) {
-  .priceRow:hover .priceValue svg {
-    transform: translate(2px, -2px);
-  }
-}
-.priceNumber {
-  font:
-    10px "Courier New",
-    monospace;
-  color: #ad5b7d;
-  align-self: flex-start;
-  margin-top: 4px;
-}
-.priceName {
-  display: block;
-  flex: 1;
-  min-width: 0;
-}
-.priceName strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 650;
-}
-.priceName small {
-  display: block;
-  font-size: 9px;
-  margin-top: 4px;
-  color: #824260;
-}
-.priceValue {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--pink-accent);
-}
+
 .priceNote {
   font-size: 9px;
   line-height: 1.7;
@@ -1261,76 +1178,7 @@
     12px "Courier New",
     monospace;
 }
-.bookingDialog {
-  width: min(1110px, calc(100vw - 30px)) !important;
-  max-width: none !important;
-  max-height: 94dvh !important;
-  padding: 0 24px 24px !important;
-  gap: 0 !important;
-  overflow-y: auto !important;
-  border-radius: 12px !important;
-  border: 1px solid #b96b90 !important;
-  background: var(--pink-paper) !important;
-}
-.bookingTitlebar {
-  position: sticky;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  background: var(--pink-paper);
-  padding: 12px 0;
-  z-index: 5;
-}
-.bookingTitlebar [data-slot="dialog-title"] {
-  font-size: 13px;
-}
-.bookingNotice {
-  font-size: 10px !important;
-  color: var(--pink-ink) !important;
-  padding: 12px 15px;
-  margin: 0 0 20px !important;
-  background: #f9d7e6;
-  border: 1px solid #e6acc6;
-}
-.bookingDialog [class*="bookingLayout"] {
-  gap: 30px;
-}
-.bookingDialog [class*="bookingPanel"] {
-  padding: 24px;
-  border-radius: 7px;
-  min-height: 440px;
-  background: var(--pink-surface);
-}
-.bookingDialog [class*="bookingAside"] > h2 {
-  font-size: 40px;
-  letter-spacing: -1.8px;
-  font-family: var(--font-sans), sans-serif;
-}
-.bookingDialog [class*="bookingPreview"] {
-  max-height: 150px;
-  overflow: hidden;
-}
-.bookingDialog [class*="bookingPanel"] h3 {
-  font-family: var(--font-sans), sans-serif;
-  font-size: 32px !important;
-}
-.bookingDialog [class*="bookingPanel"] button,
-.bookingDialog input,
-.bookingDialog select {
-  min-height: 44px;
-}
-.bookingDialog [class*="steps"] button {
-  font-size: 11px;
-}
-.bookingDialog [class*="action"] {
-  border-radius: 35px;
-}
-.loading {
-  padding: 50px;
-  text-align: center;
-}
+
 .missingImage {
   display: flex;
   align-items: center;
@@ -1588,14 +1436,6 @@
     right: -1%;
     top: 266px;
   }
-  .pocketButtons button {
-    width: 40px;
-    height: 44px;
-  }
-  .pocketButtons button:nth-child(2) {
-    width: 44px;
-    height: 46px;
-  }
   .pocketScreen strong {
     font-size: 9px;
   }
@@ -1737,19 +1577,6 @@
   .pocketScreen > span:not(.screenDots) {
     font-size: 6.5px;
   }
-  .pocketButtons {
-    left: 20%;
-    right: 20%;
-    gap: 3px;
-  }
-  .pocketButtons button {
-    width: 39px;
-    height: 44px;
-  }
-  .pocketButtons button:nth-child(2) {
-    width: 44px;
-    height: 46px;
-  }
   .pocketName {
     font-size: 9px;
   }
@@ -1758,25 +1585,7 @@
     padding: 75px 30px;
     grid-template-columns: 0.7fr 1.3fr;
   }
-  .priceList {
-    padding: 15px 15px 0;
-  }
-  .priceRow {
-    gap: 8px;
-  }
-  .priceName strong {
-    font-size: 12px;
-  }
-  .priceName small {
-    font-size: 8px;
-  }
-  .priceValue {
-    font-size: 12px;
-    gap: 6px;
-  }
-  .priceNumber {
-    display: none;
-  }
+
   .serviceIntro > p {
     font-size: 12px;
   }
@@ -1825,29 +1634,7 @@
   .footer p {
     display: none;
   }
-  .bookingDialog [class*="bookingLayout"] {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .bookingDialog [class*="bookingAside"] {
-    width: 100%;
-  }
-  .bookingDialog [class*="bookingPreview"] {
-    display: none;
-  }
-  .bookingDialog [class*="bookingAside"] > h2 {
-    font-size: 28px;
-  }
-  .bookingDialog [class*="bookingAside"] > .bookingMode {
-    font-size: 9px;
-  }
-  .bookingDialog [class*="bookingAside"] > p {
-    font-size: 11px;
-  }
-  .bookingDialog [class*="bookingPanel"] {
-    width: 100%;
-  }
+
 }
 @media (max-width: 600px) {
   .previewBar {
@@ -2063,25 +1850,6 @@
   .pocketScreen {
     border-width: 1px;
   }
-  .pocketButtons {
-    left: 17%;
-    right: 17%;
-    gap: 0;
-    top: 72%;
-  }
-  .pocketButtons button {
-    width: 36px;
-    height: 44px;
-    font-size: 21px;
-    box-shadow:
-      inset 0 2px 2px #fff,
-      0 3px 0 #a34178,
-      0 4px 7px #9b2f6b66;
-  }
-  .pocketButtons button:nth-child(2) {
-    width: 40px;
-    height: 45px;
-  }
   .pocketButtonNote {
     font-size: 4.5px;
     top: 90%;
@@ -2163,7 +1931,6 @@
     max-width: 270px;
   }
   .priceWindow {
-    transform: rotate(0.5deg);
     box-shadow:
       4px 5px 0 #efbdd4,
       5px 6px 0 #cb8caa;
@@ -2180,31 +1947,7 @@
     font-size: 9px;
     padding: 7px 12px;
   }
-  .priceList {
-    padding: 15px 13px 0;
-  }
-  .priceListHeader {
-    font-size: 7px;
-  }
-  .priceRow {
-    padding: 17px 0;
-    gap: 9px;
-    min-height: 70px;
-  }
-  .priceName strong {
-    font-size: 12px;
-  }
-  .priceName small {
-    font-size: 8px;
-    max-width: 180px;
-  }
-  .priceValue {
-    font-size: 12px;
-    gap: 8px;
-  }
-  .priceValue svg {
-    width: 15px;
-  }
+
   .priceNote {
     font-size: 8px;
     padding: 10px;
@@ -2410,54 +2153,7 @@
     font-size: 7px;
     color: #74304f;
   }
-  .bookingDialog {
-    width: calc(100vw - 16px) !important;
-    max-height: 96dvh !important;
-    padding: 0 12px 17px !important;
-  }
-  .bookingDialog [class*="bookingPanel"] {
-    padding: 17px 12px;
-    min-height: 420px;
-  }
-  .bookingDialog [class*="bookingAside"] > h2 {
-    font-size: 26px;
-  }
-  .bookingDialog [class*="bookingLayout"] {
-    gap: 12px;
-  }
-  .bookingTitlebar {
-    padding: 9px 0;
-  }
-  .bookingTitlebar [data-slot="dialog-title"] {
-    font-size: 11px;
-    max-width: 240px;
-    line-height: 1.5;
-  }
-  .bookingNotice {
-    font-size: 9px !important;
-    margin-bottom: 13px !important;
-    padding: 9px;
-  }
-  .bookingDialog [class*="bookingPanel"] h3 {
-    font-size: 26px !important;
-  }
-  .bookingDialog [class*="bookingServiceList"] strong {
-    font-size: 12px;
-  }
-  .bookingDialog [class*="treatmentThumb"] {
-    width: 34px;
-    height: 44px;
-  }
-  .bookingDialog [class*="bookingServiceList"] > button {
-    gap: 7px;
-  }
-  .bookingDialog [class*="stepActions"] {
-    gap: 10px;
-  }
-  .bookingDialog [class*="stepActions"] button {
-    font-size: 11px;
-    padding: 10px 17px;
-  }
+
   .editor {
     padding: 15px !important;
     max-height: 96dvh;
@@ -2579,14 +2275,6 @@
   .pocketHint {
     font-size: 17px;
   }
-  .pocketButtons button {
-    width: 33px;
-    height: 44px;
-  }
-  .pocketButtons button:nth-child(2) {
-    width: 36px;
-    height: 44px;
-  }
   .pixelHeart {
     width: 23px;
     min-height: 17px;
@@ -2595,19 +2283,7 @@
   .services {
     padding-inline: 20px;
   }
-  .priceValue {
-    font-size: 11px;
-    gap: 5px;
-  }
-  .priceName strong {
-    font-size: 11px;
-  }
-  .priceName small {
-    font-size: 7.5px;
-  }
-  .priceList {
-    padding-inline: 11px;
-  }
+
   .guide,
   .gallerySection {
     padding-inline: 20px;
@@ -2628,19 +2304,6 @@
     scroll-behavior: auto !important;
   }
 }
-.pocketButtons button {
-  flex-shrink: 0;
-}
-.pocketButtons button,
-.pocketButtons button:nth-child(2) {
-  min-width: 44px;
-  min-height: 44px;
-}
-.pocketButtons {
-  left: 12%;
-  right: 12%;
-  gap: 4px;
-}
 .root {
   overflow-x: clip;
 }
@@ -2659,22 +2322,11 @@
   width: calc(100% - 8px);
   margin: 0 auto;
 }
-.priceNumber {
-  color: #a44c70;
-}
+
 @media (max-width: 600px) {
   .heroPocket {
     right: 2%;
     width: 49%;
-  }
-  .pocketButtons {
-    left: 5%;
-    right: 5%;
-  }
-  .pocketButtons button,
-  .pocketButtons button:nth-child(2) {
-    width: 44px;
-    height: 44px;
   }
   .pocketScreen > span:not(.screenDots) {
     font-size: 8px;
@@ -2713,33 +2365,7 @@
   }
 }
 @media (max-width: 600px) {
-  .bookingDialog [class*="bookingAside"] > h2,
-  .bookingDialog [class*="bookingMode"],
-  .bookingDialog [class*="bookingDisclaimer"] {
-    display: none;
-  }
-  .bookingDialog [class*="bookingAside"] {
-    display: block !important;
-  }
-  .bookingDialog [class*="bookingAside"] > h3 {
-    font-size: 15px;
-    margin: 0 0 5px;
-  }
-  .bookingDialog [class*="bookingAside"] > p {
-    font-size: 11px;
-    margin: 0;
-  }
-  .bookingDialog [class*="summaryDetails"] {
-    margin-top: 8px;
-    font-size: 10px;
-    gap: 10px;
-  }
-  .bookingDialog [class*="bookingPanel"] {
-    min-height: 390px;
-  }
-  .bookingDialog [class*="bookingAside"] {
-    padding: 0 2px 5px;
-  }
+
   .brand {
     max-width: 47%;
   }

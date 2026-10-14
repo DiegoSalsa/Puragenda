@@ -10,6 +10,7 @@ import { PREVIEW_PROTOCOL, trustedPreviewSender } from "../../preview-transport"
 import { parseMatchdayPreview } from "./preview";
 import { dateKey, money } from "../../booking/validation";
 import { Provider } from "./Context";
+import { usePreviewBooking } from "../../use-preview-booking";
 import Media from "./Media";
 import s from "./matchday.module.css";
 const Booking = dynamic(() => import("./Booking"));
@@ -47,6 +48,7 @@ function Page({ view, fontClass }: { view: View; fontClass: string }) {
   const visibleGallery = filter === "all" ? gallery : gallery.filter(item => item.categoryIds?.includes(filter));
   const staff = catalog.staff.filter(person => c.staffEditorial[person.id]?.visible !== false);
   const reserve = (id?: string) => { setBookingService(id); setBookingOpen(true); requestAnimationFrame(() => document.getElementById("booking")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })); };
+  usePreviewBooking(view.preview && view.previewExperience === "booking", reserve);
   useEffect(() => {
     const observer = new IntersectionObserver(entries => { for (const e of entries) if (e.isIntersecting) { e.target.setAttribute("data-seen", "true"); observer.unobserve(e.target); } }, { threshold: .12 });
     document.querySelectorAll('[data-matchday-reveal]').forEach(el => observer.observe(el));
@@ -60,9 +62,13 @@ function Page({ view, fontClass }: { view: View; fontClass: string }) {
     <section id="top" className={s.hero} data-website-field="brandTitle" data-long-name={name.length > 35}>
       <div className={s.heroMeta}><span data-website-field="brandEyebrow">{c.brandEyebrow}</span><span>{b.address}</span></div>
       <h1 className={s.name}>{name}</h1>
-      {c.heroImage ? <figure className={s.heroPhoto} data-website-field="heroImage"><Media src={c.heroImage} alt={c.heroCaption || c.displayName || b.name} fill sizes="(max-width: 600px) 75vw, 45vw" loading="eager" fetchPriority="high" /><figcaption>{c.heroCaption}</figcaption></figure> : null}
-      <div className={s.heroStatement} data-website-field="headline"><h2>{c.headline}</h2>{c.graphicPhrase ? <span className={s.graphic}>{c.graphicPhrase}</span> : null}</div>
-      <div className={s.heroBottom}><p data-website-field="intro">{c.intro}</p><div><button className={s.action} onClick={() => reserve()}>{copy.reserve}<Arrow /></button>{gallery.length ? <a className={s.textLink} href="#gallery">{copy.secondary}<Arrow /></a> : null}</div></div>
+      <div className={s.heroComposition}>
+        {c.heroImage ? <figure className={s.heroPhoto} data-website-field="heroImage"><div className={s.heroImage}><Media src={c.heroImage} alt={c.heroCaption || c.displayName || b.name} fill sizes="(max-width: 700px) 90vw, 48vw" loading="eager" fetchPriority="high" /></div>{c.heroCaption ? <figcaption>{c.heroCaption}</figcaption> : null}</figure> : null}
+        <div className={s.heroCopy}>
+          <div className={s.heroStatement} data-website-field="headline"><h2>{c.headline}</h2>{c.graphicPhrase ? <span className={s.graphic}>{c.graphicPhrase}</span> : null}</div>
+          <div className={s.heroBottom}><p data-website-field="intro">{c.intro}</p><div><button className={s.action} onClick={() => reserve()}>{copy.reserve}<Arrow /></button>{gallery.length ? <a className={s.textLink} href="#gallery">{copy.secondary}<Arrow /></a> : null}</div></div>
+        </div>
+      </div>
     </section>
     {c.showMarquee ? <div className={s.marquee} aria-label={(c.marquee.length ? c.marquee : DEFAULT_MATCHDAY_MARQUEE).join(" · ")}><button className={s.marqueePause} aria-pressed={marqueePaused} onClick={() => setMarqueePaused(!marqueePaused)}>{marqueePaused ? "Reanudar movimiento" : "Pausar movimiento"}</button><div aria-hidden="true" style={{ animationPlayState: marqueePaused ? "paused" : "running" }}>{[0, 1].map(i => <span key={i}>{(c.marquee.length ? c.marquee : DEFAULT_MATCHDAY_MARQUEE).map((phrase, j) => <span key={j}>{phrase}<i> / </i></span>)}</span>)}</div></div> : null}
     {catalog.services.length ? <section id="services" className={s.section} data-website-field="servicesTitle" data-matchday-reveal><SectionHeading number={c.showNumbers ? "01" : ""} title={copy.servicesTitle} note={copy.servicesNote} /><div className={s.services}><div className={s.serviceIndex}>{catalog.services.map((item, i) => <button key={item.id} aria-pressed={item.id === service?.id} onClick={() => setActiveService(item.id)}><span>{c.showNumbers ? String(i + 1).padStart(2, "0") : ""}</span><strong>{item.name}</strong><small>{item.duration} min<br />{money(item.price, catalog.business.currency)}</small><Arrow /></button>)}</div>{service ? <div className={s.serviceFeature} key={service.id}>{service.image ? <div className={s.servicePhoto}><Media src={service.image} alt={service.name} fill sizes="(max-width: 700px) 100vw, 42vw" /></div> : <div className={s.serviceType} aria-hidden="true">{service.name}</div>}<div className={s.serviceDetail} aria-live="polite"><h3>{service.name}</h3><p>{service.description}</p><p>{service.duration} min · {money(service.price, catalog.business.currency)}</p><button className={s.action} onClick={() => reserve(service.id)}>{copy.serviceAction}<Arrow /></button></div></div> : null}</div></section> : null}
