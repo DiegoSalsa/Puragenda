@@ -250,7 +250,7 @@ export default function ManicureSoftwareLandingPage() {
 
       <PricingSection
         id="precios"
-        title="Planes de Puragenda para tu forma de trabajar"
+        title="Cuánto cuesta un software de agenda para manicure o un salón de uñas"
         individual={{
           name: PRICING.INDIVIDUAL.name,
           price: formatLandingClp(PRICING.INDIVIDUAL.monthly),

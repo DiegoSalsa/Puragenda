@@ -1,10 +1,8 @@
 import { expansionGuides, type GuideDetail } from "./expansion-guides";
+import type { ContentSection } from "./seo-expansion";
+import { BOOKING_COMPARISON_REVIEWED_AT, bookingSystemComparison, bookingSystemByOperation } from "./booking-system-comparison";
 
-export type GuideSection = {
-  heading: string;
-  paragraphs: string[];
-  bullets?: string[];
-};
+export type GuideSection = ContentSection;
 
 export type Guide = {
   slug: string;
@@ -12,6 +10,7 @@ export type Guide = {
   description: string;
   eyebrow: string;
   updatedAt: string;
+  publishedAt?: string;
   readingMinutes: number;
   sections: GuideSection[];
   faq: { question: string; answer: string }[];
@@ -233,10 +232,11 @@ export const guides: Guide[] = [...expansionGuides,
     slug: "como-elegir-sistema-reservas-chile",
     title: "Cómo elegir un sistema de reservas online en Chile",
     description:
-      "Criterios verificables para comparar agendas digitales, pagos, soporte, costos y experiencia del cliente antes de contratar.",
+      "Compara sistemas de reservas online en Chile: planes, profesionales, abonos y recordatorios. Elige según trabajes solo, con un equipo o con encargos.",
     eyebrow: "Comparación de software",
-    updatedAt: "2026-08-31",
-    readingMinutes: 9,
+    updatedAt: BOOKING_COMPARISON_REVIEWED_AT,
+    publishedAt: "2026-08-31",
+    readingMinutes: 12,
     sections: [
       {
         heading: "Empieza por el flujo real de tu negocio",
@@ -275,6 +275,10 @@ export const guides: Guide[] = [...expansionGuides,
           "Las plataformas amplias pueden ser convenientes para operaciones con muchos módulos. Una solución más enfocada puede encajar mejor en un negocio pequeño que prioriza configuración simple, soporte directo y precio predecible. Si trabajas con encargos, confirma expresamente que el producto maneje meses de anticipación, cupos de producción y abonos; una agenda de citas tradicional puede no servir.",
         ],
       },
+      {
+        ...bookingSystemComparison,
+      },
+      bookingSystemByOperation,
       {
         heading: "Prueba de compra antes de decidir",
         paragraphs: [

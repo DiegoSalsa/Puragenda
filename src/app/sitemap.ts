@@ -7,8 +7,18 @@ import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { getAllFeatureSolutions } from "@/lib/data/feature-solutions";
 import { alternatives } from "@/lib/data/alternatives";
 import { CASE_STUDIES_PATH, caseStudyPath, getIndexableCaseStudyPaths, getPublishedCaseStudies } from "@/lib/data/case-studies";
+import { BOOKING_COMPARISON_REVIEWED_AT } from "@/lib/data/booking-system-comparison";
 
 const contentUpdatedAt = new Date("2026-09-01T00:00:00-04:00");
+const searchConsoleContentUpdatedAt = new Date(`${BOOKING_COMPARISON_REVIEWED_AT}T00:00:00-03:00`);
+const searchConsoleUpdatedPaths = new Set([
+  "/alternativa-agendapro",
+  "/software-agenda-barberias",
+  "/software-agenda-psicologos",
+  "/software-agenda-estetica",
+  "/software-agenda-manicure",
+  "/funciones/reservas-online-con-abono",
+]);
 
 function sitemapUrl(path: string) {
   // Homepage canonical is https://www.puragenda.cl (no trailing slash).
@@ -44,7 +54,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(([path]) => isSitemapEligible(path as string))
     .map(([path, changeFrequency, priority]) => ({
       url: sitemapUrl(path as string),
-      lastModified: contentUpdatedAt,
+      lastModified: searchConsoleUpdatedPaths.has(path as string) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
       changeFrequency: changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"],
       priority: priority as number,
     }));
@@ -74,7 +84,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(({ path }) => isSitemapEligible(path))
     .map(({ feature, path }) => ({
       url: sitemapUrl(path),
-      lastModified: feature.detail ? new Date(`${feature.detail.updatedAt}T00:00:00-03:00`) : contentUpdatedAt,
+      lastModified: feature.detail ? new Date(`${feature.detail.updatedAt}T00:00:00-03:00`) : searchConsoleUpdatedPaths.has(path) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.9,
     }));

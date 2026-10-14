@@ -91,9 +91,18 @@ describe("SEO expansion batch 01", () => {
     expect(expansionMetadata({ ...input, title: input.title + " | Puragenda" })).toEqual(expansionMetadata(input));
   });
 
-  it("preserves audited feature content except for removing title branding", () => {
+  it("preserves audited feature content with the approved corporate Gift Cards addition", () => {
     const approved = originalData("src/lib/data/expansion-features.ts", "expansionFeatureSolutions", "26d8b035958d02f943f9d13b56347649a2ab2223") as typeof expansionFeatureSolutions;
-    expect(expansionFeatureSolutions).toEqual(approved.map((feature) => ({ ...feature, title: feature.title.replace(/ \| Puragenda$/, "") })));
+    const previousGift = approved.find((feature) => feature.slug === "gift-cards")!;
+    const normalized = expansionFeatureSolutions.map((feature) => feature.slug === "gift-cards" ? {
+      ...feature,
+      detail: {
+        ...feature.detail,
+        updatedAt: previousGift.detail.updatedAt,
+        sections: feature.detail.sections.filter((section) => section.heading !== "Gift cards para empresas: qué puede ofrecer un negocio de servicios"),
+      },
+    } : feature);
+    expect(normalized).toEqual(approved.map((feature) => ({ ...feature, title: feature.title.replace(/ \| Puragenda$/, "") })));
     for (const feature of expansionFeatureSolutions) expect(feature.title).not.toContain("Puragenda");
   });
 
@@ -180,8 +189,18 @@ describe("SEO expansion batch 01", () => {
       const current = createHash("sha256").update(source).digest("hex");
       expect(current, path).toBe(hash);
     }
-    expect(featureSolutions).toEqual(originalData("src/lib/data/feature-solutions.ts", "featureSolutions"));
-    expect(guides.filter((guide) => !guide.detail)).toEqual(originalData("src/lib/data/guides.ts", "guides"));
+    // The Search Console content task authorizes expansion of the deposit
+    // page and Chile selection guide. Keep every other legacy item frozen.
+    const previousFeatures = originalData("src/lib/data/feature-solutions.ts", "featureSolutions") as typeof featureSolutions;
+    expect(featureSolutions.filter((feature) => feature.slug !== "reservas-online-con-abono")).toEqual(previousFeatures.filter((feature) => feature.slug !== "reservas-online-con-abono"));
+    const previousDeposit = previousFeatures.find((feature) => feature.slug === "reservas-online-con-abono")!;
+    const { sections: depositSections, ...currentDeposit } = featureSolutions.find((feature) => feature.slug === "reservas-online-con-abono")!;
+    expect(depositSections?.length).toBeGreaterThan(0);
+    expect({ ...currentDeposit, faq: currentDeposit.faq.filter((item) => previousDeposit.faq.some((previous) => previous.question === item.question)) }).toEqual(previousDeposit);
+    const previousGuides = originalData("src/lib/data/guides.ts", "guides") as typeof guides;
+    expect(guides.filter((guide) => !guide.detail && guide.slug !== "como-elegir-sistema-reservas-chile")).toEqual(previousGuides.filter((guide) => guide.slug !== "como-elegir-sistema-reservas-chile"));
+    const previousSelection = previousGuides.find((guide) => guide.slug === "como-elegir-sistema-reservas-chile")!;
+    expect(getGuide(previousSelection.slug)!.sections.filter((section) => previousSelection.sections.some((previous) => previous.heading === section.heading))).toEqual(previousSelection.sections);
     expect(getAllFeatureSolutions().filter((feature) => !feature.detail)).toEqual(featureSolutions);
   });
 

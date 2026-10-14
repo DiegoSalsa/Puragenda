@@ -45,11 +45,11 @@
     "src/app/para/x7k9m2v4q8/layout.tsx": "0326eea7ebc31a4f37b4b555443177c820978e5fdb9197fbcff215cfeb4346d0",
     "src/app/para/x7k9m2v4q8/login/admin-login-form.tsx": "2b9fe63b8ceac32c73722fe8cb19d908a35ea5766310e743bd5ad7572111db0e",
     "src/app/para/x7k9m2v4q8/login/page.tsx": "36acfe71815166b0f596d0d6291a43c5ec7c6bb7d19b9eb898ba3b1208428589",
-    "src/app/software-agenda-barberias/page.tsx": "8e03dbc576c390f607b4018e53c691b5a0ad159f861ac8142444e5c59a492f2d",
-    "src/app/software-agenda-estetica/page.tsx": "93444926ec0767bfb3be02130e8fb60573af7d4c3d46852a9450e16ae7db96ff",
-    "src/app/software-agenda-manicure/page.tsx": "2e1ecfea145eaa1bdeac4216da192486947216a4c63d674d69af78e68b5afba3",
+    "src/app/software-agenda-barberias/page.tsx": "b19f84e24351155ea433ed6daed2107e232fb8f49601fe59a3421de2550c65bb",
+    "src/app/software-agenda-estetica/page.tsx": "e2e88565b9e9da8890fc45c9b0b95c32d1508cff5394a41341269847fc622624",
+    "src/app/software-agenda-manicure/page.tsx": "e581198559add16f690b226f7be71cc6d35a8bfcd3b07dda7de8c1c0266fe02d",
     "src/app/software-agenda-peluquerias/page.tsx": "7cefb58cf69e4b68bf0452bc90fdc214a94c37701cf719243f012ea71016c757",
-    "src/app/software-agenda-psicologos/page.tsx": "b9c917d2a1ab5f990809403ba2d08eb04c161a0c12a66215060c82cbe4de8ea3",
+    "src/app/software-agenda-psicologos/page.tsx": "45d27710fdb50e8b0b330653d1b958347e65bed347cda74b44cfdd4bda55db87",
     "src/app/soluciones/page.tsx": "d8ce365fd13624969eb59b6a184317baac021c4aa458c0deecc3a8779ddb2f35",
     "src/components/analytics/analytics-provider.tsx": "5207fd9881cf0f20408e3fbd8b6dde994d4a09bf4552e3f7ec89525203b0e763",
     "src/components/analytics/google-analytics.tsx": "1539e78c8695f4ff32eee26590df0bc33a0b2e222ed5ce7c4b6f9cd02af9408a",
@@ -199,7 +199,7 @@
     "src/i18n/marketing-messages.ts": "9979e06a8839dca2c15c541ad26e93ab0bb971ac80bf3f9a84e5b965605e51ca",
     "src/i18n/request.ts": "09a04a8d7a3427ad7db3d70a2cd339f09a0505a9323296b6b310d4f5a217bc2a",
     "src/lib/crawler-policy.ts": "d3db36c7bcdc33e4826cb2c2bd5369dea22847c3f7566f6c632ece37e2a3f662",
-    "src/lib/data/aesthetics-software-landing.ts": "f760d03f57b4623f73ee545f0d4bcf19d9f1266e9e6394231d1d57621b114c37",
+    "src/lib/data/aesthetics-software-landing.ts": "52d6405067cbd5d84a8a44f92e9685079cbcdde28680438f18550714f0a3b938",
     "src/lib/data/barbershop-software-landing.ts": "61cddf7f1a2024b8bb051ffbe6a2ac126564e2b5da389f3057c8b21ee37590d1",
     "src/lib/data/case-studies.ts": "f4997656183c0c3a4595678bbf8cda1abe25bf1203199499383bacabb22d6245",
     "src/lib/data/industries.ts": "b8d49c107d629209bd2cb86c0483ecbae2b0040899e5a443f1a6d8f0a54fca2c",
@@ -210,5 +210,16 @@
     "src/lib/json-ld.ts": "e3fc7c41ece4310a7a6c5a1e0c88733be4718bf357065752434207e163ae4a97",
     "src/lib/seo.ts": "8e584ae1af3364a924d3e113aa50b52d3a385c1a9ab05f81cb22c00019c778c3",
     "src/lib/site.ts": "96203c16ecdb251f7236292889adca0415ffd1c6002be80c67b19104ebd00fdc"
+  },
+  "approvedContentUpdate": {
+    "date": "2026-10-14",
+    "reason": "User-authorized implementation of the Search Console content recommendations",
+    "paths": [
+      "src/app/software-agenda-barberias/page.tsx",
+      "src/app/software-agenda-estetica/page.tsx",
+      "src/app/software-agenda-manicure/page.tsx",
+      "src/app/software-agenda-psicologos/page.tsx",
+      "src/lib/data/aesthetics-software-landing.ts"
+    ]
   }
 }

@@ -33,11 +33,12 @@ export function expansionSchema(input: {
   faq: { question: string; answer: string }[];
   parent: { name: string; path: string };
   article?: boolean;
+  publishedAt?: string;
 }) {
   return jsonLdGraph([
     input.article ? articleNode({
       headline: input.title, description: input.description, url: absoluteUrl(input.path),
-      datePublished: input.date, dateModified: input.date,
+      datePublished: input.publishedAt ?? input.date, dateModified: input.date,
     }) : {
       "@type": "WebPage", "@id": absoluteUrl(input.path) + "#webpage",
       url: absoluteUrl(input.path), name: input.title, description: input.description,

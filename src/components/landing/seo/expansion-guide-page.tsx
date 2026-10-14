@@ -6,13 +6,14 @@ import { LandingCtaGroup } from "./landing-cta-group";
 import { seo } from "./styles";
 import { ExpansionFaq, ExpansionLinks, ExpansionSources, formatContentDate } from "./expansion-content";
 import type { Guide } from "@/lib/data/guides";
+import { ContentSectionExtras } from "./content-section-extras";
 import type { GuideDetail } from "@/lib/data/expansion-guides";
 import { expansionSchema } from "@/lib/seo-expansion";
 
 export function ExpansionGuidePage({ guide, detail }: { guide: Guide; detail: GuideDetail }) {
   const path = "/guias/" + guide.slug;
   return <LandingLayout>
-    <JsonLd data={expansionSchema({ path, title: guide.title, description: guide.description, date: guide.updatedAt, faq: guide.faq, parent: { name: "Guías", path: "/guias" }, article: true })} />
+    <JsonLd data={expansionSchema({ path, title: guide.title, description: guide.description, date: guide.updatedAt, publishedAt: guide.publishedAt, faq: guide.faq, parent: { name: "Guías", path: "/guias" }, article: true })} />
     <article data-seo-content={guide.slug} data-seo-cluster="guide">
       <header className={seo.section + " pb-8"}>
         <LandingBreadcrumb items={[{ label: "Inicio", href: "/" }, { label: "Guías", href: "/guias" }, { label: guide.title }]} />
@@ -35,6 +36,7 @@ export function ExpansionGuidePage({ guide, detail }: { guide: Guide; detail: Gu
             <h2 className={seo.h2 + " text-2xl sm:text-3xl"}>{section.heading}</h2>
             <div className="mt-5 space-y-5">{section.paragraphs.map((p) => <p key={p} className={seo.body}>{p}</p>)}</div>
             {section.bullets ? <ul className="mt-6 list-disc space-y-3 rounded-xl bg-[#FFF5BA] py-5 pr-5 pl-10 text-base font-semibold leading-7 text-black">{section.bullets.map((b) => <li key={b}>{b}</li>)}</ul> : null}
+            <ContentSectionExtras section={section} />
           </section>)}</div>
           <p className="mt-10 text-sm leading-6 opacity-70">Guía del Equipo Puragenda. Los ejemplos son ilustrativos. <Link href="/sobre-nosotros" className={seo.link}>Conoce al equipo</Link> o <Link href="/contacto" className={seo.link}>reporta una corrección</Link>.</p>
           {detail.sources ? <ExpansionSources sources={detail.sources} /> : null}

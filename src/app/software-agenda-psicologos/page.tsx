@@ -29,6 +29,7 @@ import {
   psychologistsWorkflow,
 } from "@/lib/data/psychologists-software-landing";
 import { cn } from "@/lib/utils";
+import { ContentSectionExtras } from "@/components/landing/seo/content-section-extras";
 
 export const revalidate = 3600;
 export const metadata: Metadata = {
@@ -153,6 +154,30 @@ export default function PsychologistsSoftwareLandingPage() {
         <p className={cn(seo.body, "mt-6")}>
           Si el miércoles existe un bloqueo ficticio de 13:00 a 15:00, esas horas no se ofrecen aunque formen parte de la jornada de Profesional A. La agenda aplica las reglas administrativas configuradas.
         </p>
+      </section>
+
+      <section className={seo.section} aria-labelledby="metodos-agenda-psicologos">
+        <SectionIntro id="metodos-agenda-psicologos" title="Agenda para psicólogos: papel, Google Calendar o sistema de reservas">
+          <p>Elige según cómo coordinas las citas de la consulta. Si tú acuerdas cada hora, una agenda manual puede bastar. Si quieres que la persona reserve por su cuenta, compara cómo se publica la disponibilidad y cómo se eligen el tipo de cita y el profesional.</p>
+          <p>Google Calendar también permite crear un calendario de citas. Algunas funciones dependen de la cuenta o suscripción; prueba el recorrido que tengas disponible antes de sustituirlo o combinarlo con otra herramienta.</p>
+        </SectionIntro>
+        <ContentSectionExtras section={{
+          heading: "Métodos de agenda para psicólogos", paragraphs: [],
+          table: {
+            caption: "Comparación de la coordinación administrativa de citas de una consulta",
+            columns: ["Método", "Cómo se acuerda la cita", "Qué revisar antes de elegir"],
+            rows: [
+              ["Papel o planilla", "La persona encargada confirma y registra cada hora.", "Quién actualiza el registro y cómo se comunican ausencias o cambios."],
+              ["Google Calendar", "Puedes coordinar eventos o compartir la página de un calendario de citas.", "Funciones de tu cuenta, calendarios ocupados, duración y acceso del equipo."],
+              ["Puragenda", "La persona elige tipo de cita, profesional cuando corresponde y una hora disponible.", "Catálogo, jornadas, bloqueos, reglas de cambio y abono opcional de tu consulta."],
+            ],
+          },
+          links: [
+            { href: "/guias/google-calendar-vs-sistema-reservas", label: "Google Calendar frente a un sistema de reservas" },
+            { href: "https://support.google.com/calendar/answer/10729749?hl=es", label: "Cómo crear un calendario de citas: ayuda oficial de Google" },
+          ],
+        }} />
+        <p className={cn(seo.body, "mt-6")}>Esta comparación se refiere a la organización de horas y cambios. La documentación de la atención profesional sigue en la herramienta que la consulta utilice para ese propósito.</p>
       </section>
 
       <section className={seo.section} aria-labelledby="flujo">

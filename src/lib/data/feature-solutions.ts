@@ -1,4 +1,5 @@
 import { expansionFeatureSolutions, type FeatureDetail } from "./expansion-features";
+import type { ContentSection } from "./seo-expansion";
 
 export type FeatureSolution = {
   slug: string;
@@ -11,6 +12,7 @@ export type FeatureSolution = {
   benefits: Array<{ title: string; description: string }>;
   steps: Array<{ title: string; description: string }>;
   faq: Array<{ question: string; answer: string }>;
+  sections?: ContentSection[];
   detail?: FeatureDetail;
 };
 
@@ -33,11 +35,41 @@ export const featureSolutions: FeatureSolution[] = [
       { title: "El cliente reserva", description: "Selecciona servicio, profesional y horario desde tu enlace o sitio web." },
       { title: "Paga y confirma", description: "Completa el pago y recibe la confirmación con el resumen de la reserva." },
     ],
+    sections: [
+      {
+        heading: "Cómo cancelar o reagendar una reserva con abono",
+        paragraphs: [
+          "Si el abono ya está aprobado, el cliente debe contactar directamente al negocio para solicitar un cambio o una cancelación. Puragenda no permite resolver esa cita automáticamente desde el enlace de autogestión; el negocio debe revisar el pago y acordar con el cliente cómo continuar.",
+          "Antes de cobrar, comunica el plazo para avisar, cómo solicitar un cambio y qué condiciones aplican al anticipo. Una solicitud de cancelación no equivale a una devolución: el traslado o reintegro del abono requiere una gestión y un acuerdo específicos. Si el abono no está aprobado, las acciones disponibles dependen del estado de la cita y de las reglas de reserva del negocio.",
+        ],
+        links: [{ href: "/guias/cobrar-abonos-reservas-online", label: "Cómo comunicar el abono y sus condiciones" }],
+      },
+      {
+        heading: "Qué pasa si el pago del abono queda pendiente o es rechazado",
+        paragraphs: [
+          "En una reserva con Mercado Pago, abrir el pago o volver a la página del negocio no basta para confirmar el abono. Puragenda verifica el estado del pago: una aprobación confirma la reserva activa y registra el anticipo; un estado pendiente todavía necesita resolución.",
+          "Si el pago se rechaza o se cancela, no se registra como abono aprobado. Revisa el estado de tu cita y contacta al negocio antes de iniciar otra reserva o pagar por segunda vez. Si ves un cobro pero tu reserva sigue pendiente, facilita al negocio el comprobante y los datos de la cita para que pueda revisarlos.",
+          "Cuando el negocio utiliza un enlace de pago externo y validación manual, sigue sus indicaciones para enviar el comprobante y confirmar el anticipo. La confirmación automática de Mercado Pago corresponde al recorrido integrado, no a cualquier enlace de pago.",
+        ],
+        table: {
+          caption: "Cómo interpretar el estado de un abono en el recorrido integrado con Mercado Pago",
+          columns: ["Estado", "Qué significa", "Qué debe hacer el cliente"],
+          rows: [
+            ["Aprobado", "El anticipo se registra y la reserva activa se confirma.", "Conserva el resumen de la cita y revisa el saldo pendiente."],
+            ["Pendiente", "La aprobación del anticipo todavía no está verificada.", "Revisa el estado y consulta al negocio si ya ves un cobro."],
+            ["Rechazado o cancelado", "Ese intento de pago no se registra como abono aprobado.", "Consulta cómo continuar con la cita antes de duplicar la reserva."],
+          ],
+        },
+        links: [{ href: "/contacto", label: "Consultar el flujo de abonos para tu negocio" }],
+      },
+    ],
     faq: [
       { question: "¿Puragenda cobra comisión por cada abono?", answer: "Puragenda no agrega una comisión por reserva. El proveedor de pago puede aplicar sus tarifas de procesamiento vigentes." },
       { question: "¿Puedo cobrar abonos distintos según el servicio?", answer: "Sí. El monto se configura por servicio, de modo que una cita breve puede no requerirlo y un tratamiento largo sí." },
       { question: "¿El cliente sabe cuánto queda pendiente?", answer: "Sí. El flujo puede mostrar precio total, abono pagado y saldo pendiente para evitar que el anticipo se confunda con el pago completo." },
       { question: "¿Funciona para encargos con entrega futura?", answer: "Sí. El modo Encargos combina cupos por período, archivos de referencia, fecha estimada y abono." },
+      { question: "¿Puedo cancelar o reagendar online si ya pagué el abono?", answer: "Una cita con abono aprobado requiere contactar directamente al negocio. El enlace de autogestión no resuelve automáticamente su cambio, cancelación ni devolución. El negocio revisa el anticipo y acuerda cómo continuar." },
+      { question: "¿Un pago pendiente confirma la reserva con abono?", answer: "No. En el recorrido integrado con Mercado Pago, Puragenda verifica que el pago esté aprobado antes de confirmar la reserva activa. Si el estado sigue pendiente o el intento se rechaza, revisa la cita y consulta al negocio antes de repetir el pago." },
     ],
   },
   {

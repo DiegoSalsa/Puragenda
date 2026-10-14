@@ -3,7 +3,14 @@ export const SEO_EXPANSION_BATCH = "seo-expansion-2026-10-b01";
 export type SeoCluster = "feature" | "guide" | "alternative";
 export type ContentLink = { href: string; label: string; description?: string };
 export type ContentSource = { label: string; url: string; consultedAt: string };
-export type ContentSection = { heading: string; paragraphs: string[]; bullets?: string[] };
+export type ContentTable = { caption: string; columns: string[]; rows: string[][] };
+export type ContentSection = {
+  heading: string;
+  paragraphs: string[];
+  bullets?: string[];
+  table?: ContentTable;
+  links?: ContentLink[];
+};
 
 export const seoExpansionPages = [
   { path: "/funciones/recordatorios-citas-email", id: "recordatorios-citas-email", cluster: "feature", intent: "recordatorios-email" },

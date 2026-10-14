@@ -8,14 +8,19 @@ import { absoluteUrl } from "@/lib/site";
 import { createPageMetadata } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
 import { articleNode, faqPageNode, jsonLdGraph, organizationRef } from "@/lib/json-ld";
+import { ContentSectionExtras } from "@/components/landing/seo/content-section-extras";
+import { formatContentDate } from "@/components/landing/seo/expansion-content";
+import { AGENDAPRO_PLANS_URL, BOOKING_COMPARISON_REVIEWED_AT, agendaproPlansTable } from "@/lib/data/booking-system-comparison";
 
 export const metadata: Metadata = createPageMetadata({
   title: "AgendaPro: precios y alternativa para reservas",
   description:
-    "¿Cuánto cuesta AgendaPro? Revisa qué comparar en precios, reservas, abonos, soporte y datos antes de elegir AgendaPro o una alternativa en Chile.",
+    "Consulta los planes y precios publicados de AgendaPro en Chile, con IVA y profesionales incluidos. Compara reservas, abonos y costo total con Puragenda.",
   path: "/alternativa-agendapro",
   keywords: ["AgendaPro precios", "cuánto cuesta AgendaPro", "alternativa AgendaPro", "AgendaPro Chile"],
   type: "article",
+  publishedTime: "2026-07-23",
+  modifiedTime: BOOKING_COMPARISON_REVIEWED_AT,
 });
 
 export const revalidate = 3600;
@@ -24,7 +29,7 @@ const criteria = [
   {
     label: "Precio publicado",
     puragenda: "Individual $12.990 CLP/mes y Equipo $29.990 CLP/mes.",
-    competitor: "Revisar los planes y la cotización vigente directamente con AgendaPro.",
+    competitor: "Individual $15.900 CLP/mes + IVA para un profesional, según la página oficial revisada el 14 de octubre de 2026. Otros planes varían con el equipo.",
   },
   {
     label: "Prueba del producto",
@@ -56,7 +61,7 @@ const criteria = [
 const faq = [
   {
     question: "¿Cuánto cuesta AgendaPro?",
-    answer: "Los precios y condiciones de AgendaPro pueden cambiar según el plan y el negocio. Para comparar correctamente, solicita su cotización vigente y confirma qué funciones, usuarios y cobros adicionales incluye. Puragenda publica planes desde $12.990 CLP al mes.",
+    answer: "En Chile, la página oficial de AgendaPro revisada el 14 de octubre de 2026 publica Individual a $15.900 CLP/mes + IVA para un profesional; Básico a $34.900 para la selección de dos; Premium a $54.900 para cinco; y Pro a $249.900 para diez. El precio puede cambiar al modificar profesionales, periodicidad o productos adicionales. Confirma la configuración al contratar.",
   },
   {
     question: "¿Qué alternativa a AgendaPro existe en Chile?",
@@ -80,7 +85,7 @@ export default function AlternativaAgendaProPage() {
               "Criterios verificables para comparar Puragenda, AgendaPro y otras plataformas de reservas.",
             url: absoluteUrl("/alternativa-agendapro"),
             datePublished: "2026-07-23",
-            dateModified: "2026-08-31",
+            dateModified: BOOKING_COMPARISON_REVIEWED_AT,
           }),
           faqPageNode(faq),
         ])}
@@ -90,7 +95,7 @@ export default function AlternativaAgendaProPage() {
         <header className="mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center gap-2 border-2 border-black bg-[#FFF5BA] px-4 py-1 text-sm font-black uppercase text-black shadow-[4px_4px_0_#000] dark:border-white">
             <SearchCheck className="h-4 w-4" />
-            <LocalizedText id="PpOqzBFB-3yd" />
+            Comparación revisada el <time dateTime={BOOKING_COMPARISON_REVIEWED_AT}>{formatContentDate(BOOKING_COMPARISON_REVIEWED_AT)}</time>
           </div>
           <h1 className="mt-8 text-4xl font-black uppercase tracking-tighter sm:text-6xl">
             <LocalizedText id="g4b57whrUrpi" />
@@ -104,11 +109,18 @@ export default function AlternativaAgendaProPage() {
           <p className="text-sm font-black uppercase tracking-wider">Respuesta breve</p>
           <h2 id="precio-agendapro" className="mt-2 text-3xl font-black uppercase tracking-tight">¿Cuánto cuesta AgendaPro?</h2>
           <p className="mt-4 text-lg font-bold leading-8">
-            AgendaPro puede adaptar sus precios y condiciones al plan contratado. Para obtener una cifra comparable, pide una cotización vigente y confirma qué incluye. Puragenda publica planes desde <strong>$12.990 CLP al mes</strong>, con 30 días de prueba sin tarjeta y reservas ilimitadas.
+            AgendaPro publica el plan Individual en Chile a <strong>$15.900 CLP al mes + IVA</strong> para un profesional, según su página oficial revisada el 14 de octubre de 2026. Los demás planes cambian según el equipo y la configuración. Puragenda publica planes desde <strong>$12.990 CLP al mes</strong>, con 30 días de prueba sin tarjeta y reservas ilimitadas.
           </p>
           <Link href="/pricing" className="mt-6 inline-flex items-center gap-2 font-black underline decoration-2 underline-offset-4">
             Ver precios publicados de Puragenda <ArrowRight className="h-4 w-4" />
           </Link>
+        </section>
+
+        <section className="mx-auto mt-16 min-w-0 max-w-4xl" aria-labelledby="planes-agendapro">
+          <h2 id="planes-agendapro" className="text-3xl font-black uppercase tracking-tight">Planes de AgendaPro en Chile: precios y profesionales incluidos</h2>
+          <p className="mt-5 text-lg font-medium leading-8 opacity-80">Estos valores corresponden a la modalidad mensual y a las selecciones de profesionales mostradas en la fuente. Revisa el importe al cambiar la cantidad de integrantes; los productos adicionales y el procesamiento de pagos pueden sumar otros cargos.</p>
+          <ContentSectionExtras section={{ heading: "Planes de AgendaPro", paragraphs: [], table: agendaproPlansTable, links: [{ href: AGENDAPRO_PLANS_URL, label: "Consultar los planes oficiales de AgendaPro en Chile" }] }} />
+          <p className="mt-6 font-medium leading-7 opacity-80">Para comparar el costo total, utiliza la misma cantidad de profesionales y el mismo período de pago. Confirma el tratamiento de impuestos, los mensajes necesarios y las tarifas de cobro antes de calcular una diferencia entre proveedores.</p>
         </section>
 
         <section className="mt-16" aria-labelledby="comparison-heading">

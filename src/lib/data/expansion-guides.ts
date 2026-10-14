@@ -139,7 +139,8 @@ export const expansionGuides: (Guide & { detail: GuideDetail })[] = [
     title: "Cómo organizar la agenda de varios profesionales",
     description: "Define jornadas, servicios, descansos, bloqueos y permisos del equipo. Una guía práctica para centralizar varias agendas sin perder la disponibilidad individual.",
     eyebrow: "Guía operativa para equipos",
-    updatedAt: "2026-10-03", readingMinutes: 7,
+    updatedAt: "2026-10-14", readingMinutes: 8,
+    publishedAt: "2026-10-03",
     sections: [
       { heading: "Haz una matriz de personas y atenciones antes de abrir horas", paragraphs: [
         "Comienza por una lista de integrantes y de servicios. Para cada atención, identifica quién la realiza, cuánto dura y dónde puede ofrecerse. El objetivo es evitar que una hora aparentemente libre termine asignada a alguien que no realiza ese trabajo.",
@@ -154,6 +155,16 @@ export const expansionGuides: (Guide & { detail: GuideDetail })[] = [
         "El horario de apertura indica cuándo funciona el local; la jornada individual indica cuándo atiende cada integrante. Copiar la apertura a todo el equipo puede publicar horas que alguien nunca podrá atender. Registra jornadas reales, incluidos cambios habituales entre días de la semana.",
         "Si una persona trabaja en más de una ubicación, define qué parte de la jornada corresponde a cada local. Deja tiempo para el traslado y para tareas que no son atención al cliente. Una agenda centralizada no debe confundirse con disponibilidad permanente.",
       ] },
+      { heading: "Cómo organizar una agenda multiprofesional en varias sucursales", paragraphs: [
+        "Relaciona cada profesional con los locales donde atiende, los servicios que realiza allí y su jornada en cada ubicación. La disponibilidad de una persona en el local Centro no implica que pueda recibir la misma cita a esa hora en el local Norte.",
+        "Ejemplo ficticio: una profesional atiende en Centro de 9:00 a 13:00 y en Norte de 15:00 a 18:00. Define cada tramo en su ubicación y deja el intervalo necesario para traslado y descanso. Si una atención solo se ofrece en Centro, comprueba que no aparezca al elegir Norte.",
+        "Antes de compartir el enlace, prueba el mismo servicio en ambas sucursales y revisa las citas ya comprometidas. Puragenda relaciona ubicaciones, servicios, profesionales y horarios; el equipo debe organizar los traslados. La agenda no calcula por sí sola cuánto tarda una persona en llegar al otro local.",
+      ], bullets: [
+        "Local: nombre, dirección, horario y servicios ofrecidos.",
+        "Profesional: asignaciones y jornada en cada ubicación.",
+        "Traslado: tiempo reservado por el negocio entre atenciones de distintos locales.",
+        "Reserva de prueba: sucursal, servicio, profesional y hora compatibles.",
+      ], links: [{ href: "/funciones/agenda-multiples-sucursales", label: "Cómo funciona la reserva por sucursal en Puragenda" }] },
       { heading: "Registra descansos, vacaciones y excepciones con anticipación", paragraphs: [
         "Un descanso repetido puede formar parte de la jornada. Una ausencia puntual necesita un bloqueo o una excepción para esa fecha. Decide quién registra vacaciones y quién verifica que las horas dejaron de ofrecerse antes de que el cliente encuentre una opción que no podrán atender.",
         "Cuando una ausencia afecta citas existentes, revisa cada reserva y contacta a los clientes que necesitan un cambio. Bloquear un tramo futuro no significa que las citas ya creadas se reasignen por sí solas ni que las personas hayan aceptado otro horario.",

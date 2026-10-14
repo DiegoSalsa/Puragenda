@@ -267,7 +267,7 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
     detail: {
       preview: "gift", previewTitle: "Ejemplo de Gift Card de servicio",
       previewRows: [{ label: "Tipo", value: "Servicio del catálogo" }, { label: "Destinatario", value: "Persona que recibe el regalo" }, { label: "Mensaje", value: "Un momento para ti" }, { label: "Canje", value: "Tarjeta reclamada en el portal del cliente" }],
-      updatedAt: "2026-10-03",
+      updatedAt: "2026-10-14",
       sections: [
         { heading: "Elige qué podrá utilizar quien recibe el regalo", paragraphs: [
           "Una Gift Card de saldo y una de servicios responden a decisiones distintas. El saldo deja un monto disponible para una reserva compatible. La de servicios identifica atenciones concretas y su cantidad; resulta útil cuando el regalo busca una experiencia definida del catálogo.",
@@ -280,6 +280,15 @@ export const expansionFeatureSolutions: (FeatureSolution & { detail: FeatureDeta
         { heading: "Del correo de regalo a la reserva", paragraphs: [
           "Cuando el comprador elige regalarla, informa quién la recibirá y a qué correo se enviará, junto con su nombre como remitente y un mensaje opcional. La entrega presenta el código y el acceso para reclamar la tarjeta. Conviene comprobar el email del destinatario antes de completar la compra.",
           "El destinatario reclama la tarjeta en su cuenta del portal. Al reservar, el sistema verifica negocio, titular y disponibilidad de saldo o servicios. Esto es distinto del flujo ordinario de reserva sin cuenta: explica ese paso adicional para que el regalo no sorprenda a quien lo recibe.",
+        ] },
+        { heading: "Gift cards para empresas: qué puede ofrecer un negocio de servicios", paragraphs: [
+          "Una empresa puede querer regalar a su equipo una atención de un salón, una barbería u otro negocio de servicios. El negocio emisor puede ofrecer una Gift Card por monto o por un servicio de su propio catálogo y acordar con quien compra qué recibe cada destinatario.",
+          "Antes de comprar regalos corporativos, compara el servicio incluido, dónde se utiliza, la forma de entrega, los horarios disponibles y el soporte para quien recibe el código. En Puragenda, la persona destinataria reclama la tarjeta en su cuenta del portal y después reserva una atención compatible del negocio que la emitió.",
+          "Una tarjeta de ese negocio no es una gift card para una red de comercios. Si la empresa necesita varias tarjetas, entrega de documentos comerciales o condiciones particulares, debe acordar el procedimiento con el negocio; este recorrido no promete emisión masiva ni facturación corporativa automática.",
+        ], bullets: [
+          "Confirma si el regalo cubre un monto o una atención concreta y qué extras quedan fuera.",
+          "Revisa los datos de cada destinatario y cómo recibirá y reclamará su tarjeta.",
+          "Consulta disponibilidad, condiciones comunicadas por el emisor y ayuda para el canje.",
         ] },
         { heading: "Qué gestionar después de la venta", paragraphs: [
           "El panel reúne plantillas, ventas y tarjetas emitidas. Puedes revisar el estado de la compra y reenviar el correo cuando corresponde. La configuración de una plantilla y la tarjeta ya vendida son objetos distintos: no atribuyas a una edición posterior condiciones que no se comunicaron al comprador.",

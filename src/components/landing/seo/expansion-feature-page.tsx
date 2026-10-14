@@ -8,6 +8,7 @@ import { ExpansionFaq, ExpansionLinks } from "./expansion-content";
 import type { FeatureSolution } from "@/lib/data/feature-solutions";
 import type { FeatureDetail } from "@/lib/data/expansion-features";
 import { expansionSchema } from "@/lib/seo-expansion";
+import { ContentSectionExtras } from "./content-section-extras";
 
 function FeaturePreview({ detail }: { detail: FeatureDetail }) {
   const rows = detail.previewRows;
@@ -74,6 +75,8 @@ export function ExpansionFeaturePage({ solution, detail }: { solution: FeatureSo
       <div className={seo.section + " grid gap-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"}>
         <div className="min-w-0 space-y-12">{detail.sections.map((section) => <section key={section.heading}>
           <h2 className={seo.h2 + " text-2xl sm:text-3xl"}>{section.heading}</h2><div className="mt-5 space-y-4">{section.paragraphs.map((p) => <p key={p} className={seo.body}>{p}</p>)}</div>
+          {section.bullets ? <ul className="mt-5 list-disc space-y-2 pl-6 text-base leading-7">{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul> : null}
+          <ContentSectionExtras section={section} />
         </section>)}</div>
         <aside className="min-w-0 self-start rounded-2xl border-2 border-black bg-[#BFFCC6] p-6 text-black shadow-[5px_5px_0_#000] lg:sticky lg:top-28">
           <p className="text-xs font-black uppercase tracking-widest">Caso ilustrativo</p><h2 className="mt-4 text-2xl font-black">{detail.example.heading}</h2>

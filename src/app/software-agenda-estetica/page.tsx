@@ -200,7 +200,7 @@ export default function AestheticsSoftwareLandingPage() {
 
       <section className={seo.band} aria-labelledby="alcance">
         <div className={seo.section}>
-          <SectionIntro id="alcance" title="Puragenda organiza la agenda del centro">
+          <SectionIntro id="alcance" title="Agenda para centros y clínicas de estética: qué cubre Puragenda">
             <ScopeComparison
               left={{
                 title: "Lo que organiza",
@@ -213,6 +213,7 @@ export default function AestheticsSoftwareLandingPage() {
             />
             <p className="mt-6">El alcance es la organización de citas para servicios estéticos no clínicos. El centro mantiene por separado cualquier proceso médico, evaluación profesional o administración de recursos físicos.</p>
           </SectionIntro>
+          <p className={cn(seo.body, "mt-6")}>Si buscas una agenda para una clínica de estética, distingue la coordinación de horas de la gestión clínica. El recorrido descrito aquí organiza reservas de servicios estéticos no clínicos por profesional; las fichas, indicaciones médicas y recursos compartidos requieren su propio control.</p>
         </div>
       </section>
 
@@ -235,9 +236,13 @@ export default function AestheticsSoftwareLandingPage() {
           ),
         }}
         footer={
+          <>
           <p>
             La prueba dura {TRIAL_DURATION_DAYS} días. Estos son los planes generales de Puragenda; consulta las condiciones vigentes en <Link href="/pricing" className={seo.link}>Precios</Link> y el resumen de <Link href="/caracteristicas" className={seo.link}>características</Link>.
           </p>
+          <h3 className={cn(seo.h3, "mt-8")}>¿Hay una agenda para estética gratis?</h3>
+          <p className={cn(seo.body, "mt-3")}>Puedes probar Puragenda durante {TRIAL_DURATION_DAYS} días sin tarjeta. Es una prueba gratuita de la plataforma; para continuar después, eliges un plan de pago. Antes de contratar, configura tus servicios y verifica la reserva como si fueras una clienta.</p>
+          </>
         }
       />
 

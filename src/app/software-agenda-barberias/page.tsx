@@ -153,6 +153,29 @@ export default async function BarbershopSoftwareLandingPage() {
         </div>
       </section>
 
+      <section className={seo.section} aria-labelledby="pasar-agenda-online">
+        <SectionIntro id="pasar-agenda-online" kicker="Transición del local" title="Cómo pasar tu agenda de barbería del papel o WhatsApp a una agenda online">
+          <p>Prepara el cambio con las citas que ya prometiste a tus clientes. El objetivo es que el enlace público y recepción trabajen con la misma disponibilidad desde el primer día.</p>
+        </SectionIntro>
+        <ol className="mt-8 grid gap-6 md:grid-cols-2">
+          {[
+            { title: "Reúne las citas futuras", text: "Revisa papel, mensajes y calendarios. Para cada cita, identifica cliente, servicio, duración, barbero y hora; confirma los datos dudosos antes de trasladarlos." },
+            { title: "Registra los compromisos en la agenda", text: "Añade las citas ya acordadas desde el panel y comprueba su profesional y duración. Registra también los bloqueos necesarios para que el enlace no ofrezca horas que ya están comprometidas." },
+            { title: "Prueba antes de compartir", text: "Abre el enlace desde un teléfono. Verifica que una hora ocupada no se ofrezca, que cada barbero muestre su jornada y que corte, barba y combos reserven el bloque correcto." },
+            { title: "Usa el mismo registro para todos los canales", text: "Comparte el enlace para las nuevas reservas y registra en el panel las citas que sigas recibiendo por teléfono o en el local. Así los cambios dejan de depender de revisar conversaciones separadas." },
+          ].map((step, index) => <li key={step.title} className="border-t-2 border-black/15 pt-5 dark:border-white/20">
+            <p className="font-black text-[#7C3AED]">{index + 1}.</p>
+            <h3 className={cn(seo.h3, "mt-2")}>{step.title}</h3>
+            <p className={cn(seo.body, "mt-3 text-base")}>{step.text}</p>
+          </li>)}
+        </ol>
+        <div className="mt-8 max-w-3xl rounded-2xl border-2 border-black/15 bg-[#F3E8FF] p-6 text-black">
+          <h3 className={seo.h3}>Un mensaje para orientar a tus clientes</h3>
+          <p className="mt-4 text-base font-medium leading-7">Puedes adaptar este texto y añadir tu enlace: «Para tus próximas horas, elige corte o barba, tu barbero y un horario disponible en nuestra agenda online. Si ya tienes una cita acordada, la mantenemos; para cambiarla, escríbenos antes de hacer otra reserva».</p>
+        </div>
+        <p className={cn(seo.body, "mt-7")}><Link href="/guias/dejar-de-agendar-por-whatsapp" className={seo.link}>Consulta la guía para dejar de coordinar cada hora por WhatsApp</Link> y aplica una transición gradual con tu equipo.</p>
+      </section>
+
       <section className={seo.section} aria-labelledby="funciones-barberia">
         <SectionIntro id="funciones-barberia" kicker="Del problema a la función" title="Qué usa una barbería dentro de Puragenda">
           <p>

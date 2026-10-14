@@ -11,6 +11,8 @@ import { createPageMetadata } from "@/lib/seo";
 import { expansionMetadata } from "@/lib/seo-expansion";
 import { ExpansionGuidePage } from "@/components/landing/seo/expansion-guide-page";
 import { JsonLd } from "@/components/json-ld";
+import { ContentSectionExtras } from "@/components/landing/seo/content-section-extras";
+import { formatContentDate } from "@/components/landing/seo/expansion-content";
 import {
   articleNode,
   breadcrumbListNode,
@@ -39,7 +41,7 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
     description: guide.description,
     path: `/guias/${guide.slug}`,
     type: "article",
-    publishedTime: guide.updatedAt,
+    publishedTime: guide.publishedAt ?? guide.updatedAt,
     modifiedTime: guide.updatedAt,
   });
 }
@@ -64,7 +66,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
             headline: guide.title,
             description: guide.description,
             url: guideUrl,
-            datePublished: guide.updatedAt,
+            datePublished: guide.publishedAt ?? guide.updatedAt,
             dateModified: guide.updatedAt,
           }),
           faqPageNode(guide.faq),
@@ -96,7 +98,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
             <div className="mt-7 flex flex-wrap gap-5 text-sm font-black uppercase opacity-65">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4" />
-                Actualizado <time dateTime={guide.updatedAt}>31 de agosto de 2026</time>
+                Actualizado <time dateTime={guide.updatedAt}>{formatContentDate(guide.updatedAt)}</time>
               </span>
               <span className="flex items-center gap-2">
                 <Clock3 className="h-4 w-4" />
@@ -123,7 +125,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
             ) : null}
           </div>
 
-          <div className="mx-auto mt-12 max-w-3xl space-y-14">
+          <div className="mx-auto mt-12 min-w-0 max-w-3xl space-y-14">
             {guide.sections.map((section) => (
               <section key={section.heading}>
                 <h2 className="text-3xl font-black uppercase tracking-tight">{section.heading}</h2>
@@ -144,6 +146,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
                     ))}
                   </ul>
                 )}
+                <ContentSectionExtras section={section} />
               </section>
             ))}
           </div>

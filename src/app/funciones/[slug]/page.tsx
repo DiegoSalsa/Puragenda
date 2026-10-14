@@ -16,6 +16,7 @@ import {
   softwareApplicationNode,
 } from "@/lib/json-ld";
 import { TrackedLink } from "@/components/analytics/tracked-link";
+import { ContentSectionExtras } from "@/components/landing/seo/content-section-extras";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -101,6 +102,14 @@ export default async function FeatureSolutionPage({ params }: Props) {
           </ol>
         </div>
       </section>
+
+      {solution.sections ? <div className="mx-auto w-full min-w-0 max-w-4xl space-y-14 px-6 pt-16">
+        {solution.sections.map((section) => <section key={section.heading}>
+          <h2 className="text-3xl font-black uppercase tracking-tight">{section.heading}</h2>
+          <div className="mt-5 space-y-5">{section.paragraphs.map((paragraph) => <p key={paragraph} className="text-lg font-medium leading-8 opacity-85">{paragraph}</p>)}</div>
+          <ContentSectionExtras section={section} />
+        </section>)}
+      </div> : null}
 
       <section className="mx-auto max-w-4xl px-6 py-20">
         <h2 className="text-center text-4xl font-black uppercase">Preguntas frecuentes</h2>
