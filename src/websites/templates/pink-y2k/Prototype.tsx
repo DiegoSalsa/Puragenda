@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ChangeEvent } from "react";
+import { useState, useSyncExternalStore, type ChangeEvent } from "react";
 import {
   SlidersHorizontal,
   LockKeyhole,
@@ -34,7 +34,9 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
     [error, setError] = useState(""),
     [revision, setRevision] = useState(0);
   const [json, setJson] = useState(JSON.stringify(view.config, null, 2));
-  const [stickerEditing, setStickerEditing] = useState(false), [selectedSticker, setSelectedSticker] = useState<string>(), [stickerViewport, setStickerViewport] = useState<StickerViewport>("desktop");
+  const [stickerEditing, setStickerEditing] = useState(false), [selectedSticker, setSelectedSticker] = useState<string>(), [chosenStickerViewport, setStickerViewport] = useState<StickerViewport>();
+  const mobile = useSyncExternalStore(subscribeMobile, mobileSnapshot, () => false);
+  const stickerViewport = chosenStickerViewport ?? (mobile ? "mobile" : "desktop");
   function stickerEdit(edit: StickerEdit) {
     setSelectedSticker(edit.action === "delete" ? undefined : edit.id);
     setConfig(previous => ({ ...previous, stickers: applyStickerEdit(previous.stickers, edit) }));
@@ -51,7 +53,6 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
     }
     setConfig(next.data); setDraft(next.data); setOpen(false);
     setStickerEditing(true);
-    if (window.innerWidth <= 600) setStickerViewport("mobile");
   }
   const [today] = useState(() =>
     dateKey(new Date(), view.catalog.business.timezone),
@@ -578,4 +579,10 @@ export default function Prototype({ view }: { view: WebsiteView<PinkConfig> }) {
       </Dialog>
     </>
   );
+}
+function mobileSnapshot() { return window.matchMedia("(max-width: 600px)").matches; }
+function subscribeMobile(listener: () => void) {
+  const query = window.matchMedia("(max-width: 600px)");
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
 }

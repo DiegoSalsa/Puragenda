@@ -21,7 +21,7 @@ import DomainPanel from "./domain-panel";
 import BillingPanel from "./billing-panel";
 import Y2kAppearancePanel from "./y2k-appearance-panel";
 import Y2kStickersPanel from "./y2k-stickers-panel";
-import { applyStickerEdit, stickerEditMessageSchema, type PinkSticker } from "@/websites/templates/pink-y2k/stickers";
+import { applyStickerEdit, stickerEditMessageSchema, stickersForViewport, type PinkSticker, type StickerEditorState } from "@/websites/templates/pink-y2k/stickers";
 import styles from "./website-builder.module.css";
 import EditorNotice from "./editor-notice";
 type Props = WebsiteEditorProps<PinkConfig>;
@@ -70,7 +70,8 @@ export default function WebsiteEditor(props: Props) {
       if (event.data?.type === "stickers-done") { setStickerEditing(false); return; }
       const parsed = stickerEditMessageSchema.safeParse(event.data);
       if (!parsed.success) return;
-      if (!(payload.current as { stickerEditor?: { enabled?: boolean } } | null)?.stickerEditor?.enabled) return;
+      const editor = (payload.current as { stickerEditor?: StickerEditorState } | null)?.stickerEditor;
+      if (!editor?.enabled || parsed.data.viewport !== editor.viewport) return;
       const edit = parsed.data;
       setSelectedSticker(edit.action === "delete" ? undefined : edit.id);
       setConfig(previous => ({ ...previous, stickers: applyStickerEdit(previous.stickers, edit) }));
@@ -140,12 +141,12 @@ export default function WebsiteEditor(props: Props) {
       {props.status === "PUBLISHED" ? <a className={styles.secondary} href={props.publicUrl} target="_blank" rel="noopener noreferrer">Ver sitio<ExternalLink size={13} /></a> : null}
       <button className={styles.publish} disabled={pending || uploadCount > 0 || !active || !unpublished} onClick={() => publish()}>{pending ? <LoaderCircle size={14} className={styles.spin} /> : <Sparkles size={14} />}Publicar cambios</button>
     </header>
-    <div className={styles.mobileTabs}><button aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button><button aria-pressed={mode === "preview"} onClick={() => { setViewport("mobile"); if (section === "stickers") setStickerEditing(true); setMode("preview"); }}>Vista previa</button></div>
+    <div className={styles.mobileTabs}><button aria-pressed={mode === "edit"} onClick={() => setMode("edit")}>Editar</button><button aria-pressed={mode === "preview"} onClick={() => { if (section === "stickers") setStickerEditing(true); setMode("preview"); }}>Vista previa</button></div>
     {save.status === "error" ? <div className={styles.notice} role="alert">{save.error}<button onClick={() => run(() => autosave.flush(), "Cambios guardados")}>Reintentar</button><button onClick={() => { if (window.confirm("Recargar recupera la última versión guardada y descarta los cambios locales. ¿Continuar?")) window.location.reload(); }}>Recargar</button></div> : null}
     <EditorNotice message={message} onClose={() => setMessage("")} onPublishAnyway={publishWarning === message ? () => publish(true) : undefined} disabled={pending || uploadCount > 0 || !active || !unpublished} />
     {!active ? <div className={styles.notice}>Puedes preparar tu sitio. Activa Sitio Web para publicarlo.<button onClick={() => { setSection("business"); window.setTimeout(() => document.getElementById("website-billing")?.scrollIntoView({ behavior: "smooth" }), 100); }}>Ver suscripción</button></div> : null}
     <div className={styles.body}>
-      <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.map(item => <button key={item.key} id={`website-tab-${item.key}`} role="tab" aria-selected={section === item.key} aria-controls={`website-panel-${item.key}`} onClick={() => { setSection(item.key); controls.current?.scrollTo(0, 0); if (item.key === "stickers") { setStickerEditing(true); if (phoneScreen && config.stickers.length) setMode("preview"); } if (item.key === "hero") highlight("headline"); if (item.key === "gallery") highlight("gallery"); if (item.key === "business") highlight("about"); if (item.key === "contact") highlight("contact"); }}><item.icon size={19} strokeWidth={1.6} />{item.name}</button>)}</nav>
+      <nav className={styles.navigation} role="tablist" aria-label="Editar mi sitio">{sections.map(item => <button key={item.key} id={`website-tab-${item.key}`} role="tab" aria-selected={section === item.key} aria-controls={`website-panel-${item.key}`} onClick={() => { setSection(item.key); controls.current?.scrollTo(0, 0); if (item.key === "stickers") { setStickerEditing(true); if (phoneScreen && stickersForViewport(config.stickers, previewViewport).length) setMode("preview"); } if (item.key === "hero") highlight("headline"); if (item.key === "gallery") highlight("gallery"); if (item.key === "business") highlight("about"); if (item.key === "contact") highlight("contact"); }}><item.icon size={19} strokeWidth={1.6} />{item.name}</button>)}</nav>
       <div className={styles.controls} ref={controls}>
         <section className={styles.panel} hidden={section !== "design"} id="website-panel-design" role="tabpanel" aria-labelledby="website-tab-design">
           <div className={styles.panelHeading}><h2>Diseño</h2><p className={styles.helper}>Y2K · Nail art con personalidad</p></div>

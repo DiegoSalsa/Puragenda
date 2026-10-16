@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type RefObject } from "react";
 import StickerArt from "./StickerArt";
-import { placementAtPoint, stickerName, type PinkSticker, type StickerEdit, type StickerEditorState, type StickerPlacement, type StickerRegionBox } from "./stickers";
+import { placementAtPoint, stickerName, stickersForViewport, type PinkSticker, type StickerEdit, type StickerEditorState, type StickerPlacement, type StickerRegionBox, type StickerViewport } from "./stickers";
 import s from "./stickers.module.css";
 
 function measure(root: HTMLDivElement) {
@@ -15,11 +15,15 @@ export default function StickerCanvas({ root, stickers, editor, onEdit }: {
   root: RefObject<HTMLDivElement | null>; stickers: PinkSticker[]; editor?: StickerEditorState; onEdit?: (edit: StickerEdit) => void;
 }) {
   const [metrics, setMetrics] = useState({ width: 0, height: 0, regions: [] as StickerRegionBox[] });
-  const drag = useRef<{ id: string; pointerId: number; offsetX: number; offsetY: number; clientX: number; clientY: number; placement: StickerPlacement } | null>(null);
+  const drag = useRef<{ id: string; viewport: StickerViewport; pointerId: number; offsetX: number; offsetY: number; clientX: number; clientY: number; placement: StickerPlacement } | null>(null);
   const scrollFrame = useRef<number | null>(null);
   const enabled = !!editor?.enabled && !!onEdit;
-  const viewport = enabled ? editor!.viewport : metrics.width <= 600 ? "mobile" : "desktop";
-  useEffect(() => () => { drag.current = null; if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current); }, []);
+  const viewport = editor?.viewport ?? (metrics.width <= 600 ? "mobile" : "desktop");
+  useEffect(() => () => {
+    drag.current = null;
+    if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = null;
+  }, [enabled, viewport]);
   useEffect(() => {
     const element = root.current;
     if (!element || !stickers.length) return;
@@ -43,7 +47,7 @@ export default function StickerCanvas({ root, stickers, editor, onEdit }: {
   };
   if (!stickers.length || !metrics.width) return null;
   return <div className={s.canvas} data-editing={enabled} data-sticker-width={metrics.width} data-sticker-viewport={viewport} aria-hidden={enabled ? undefined : true}>
-    {stickers.map(item => {
+    {stickersForViewport(stickers, viewport).map(item => {
       const placement = item[viewport], region = metrics.regions.find(box => box.region === placement.region);
       if (!region) return null;
       const angle = placement.rotation * Math.PI / 180;
@@ -60,7 +64,7 @@ export default function StickerCanvas({ root, stickers, editor, onEdit }: {
           if (event.button !== 0) return;
           event.preventDefault(); event.currentTarget.focus({ preventScroll: true });
           const bounds = event.currentTarget.getBoundingClientRect();
-          drag.current = { id: item.id, pointerId: event.pointerId, offsetX: event.clientX - (bounds.left + bounds.width / 2), offsetY: event.clientY - (bounds.top + bounds.height / 2), clientX: event.clientX, clientY: event.clientY, placement };
+          drag.current = { id: item.id, viewport, pointerId: event.pointerId, offsetX: event.clientX - (bounds.left + bounds.width / 2), offsetY: event.clientY - (bounds.top + bounds.height / 2), clientX: event.clientX, clientY: event.clientY, placement };
           event.currentTarget.setPointerCapture(event.pointerId);
           onEdit!({ id: item.id, viewport, action: "select" });
           const autoScroll = () => {
@@ -72,7 +76,7 @@ export default function StickerCanvas({ root, stickers, editor, onEdit }: {
               if (window.scrollY !== before) {
                 const bounds = element.getBoundingClientRect(), layout = measure(element);
                 const next = placementAtPoint(current.placement, current.clientX - bounds.left - current.offsetX, current.clientY - bounds.top - current.offsetY, layout.width, layout.regions);
-                onEdit!({ id: current.id, viewport, action: "move", placement: next });
+                onEdit!({ id: current.id, viewport: current.viewport, action: "move", placement: next });
               }
             }
             scrollFrame.current = requestAnimationFrame(autoScroll);
@@ -82,10 +86,10 @@ export default function StickerCanvas({ root, stickers, editor, onEdit }: {
         }}
         onPointerMove={event => {
           const current = drag.current;
-          if (current?.id !== item.id || current.pointerId !== event.pointerId) return;
+          if (current?.id !== item.id || current.pointerId !== event.pointerId || current.viewport !== viewport) return;
           current.clientX = event.clientX; current.clientY = event.clientY;
           const next = point(event, current.placement, current.offsetX, current.offsetY);
-          onEdit!({ id: item.id, viewport, action: "move", placement: next });
+          onEdit!({ id: item.id, viewport: current.viewport, action: "move", placement: next });
         }}
         onPointerUp={event => { if (drag.current?.pointerId === event.pointerId) drag.current = null; }}
         onPointerCancel={() => { drag.current = null; }}
