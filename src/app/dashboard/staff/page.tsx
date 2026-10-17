@@ -6,7 +6,7 @@ import { prisma } from "@/server/db/prisma";
 import { ShieldCheck, Users } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { StaffList } from "./staff-list";
-import { getStaffLimitInfo } from "@/server/actions/dashboard.actions";
+import { getStaffLimitInfo } from "@/server/services/staff-capacity.service";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";

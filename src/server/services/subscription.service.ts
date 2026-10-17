@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma";
-import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER, STAFF_LIMITS } from "@/core/constants";
+import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER } from "@/core/constants";
+import { getStaffLimit } from "@/core/subscription-plan";
 import type { SubscriptionPlan, BillingCycle } from "@/core/entities";
 
 /**
@@ -8,19 +9,12 @@ import type { SubscriptionPlan, BillingCycle } from "@/core/entities";
 export function canAddStaff(
   plan: SubscriptionPlan,
   currentStaffCount: number,
-  extraStaffCount: number
+  extraStaffCount: number,
+  staffLimitOverride?: number | null,
 ): { allowed: boolean; reason?: string } {
-  if (plan === "INDIVIDUAL") {
-    if (currentStaffCount >= STAFF_LIMITS.INDIVIDUAL) {
-      return { allowed: false, reason: "El plan Individual permite máximo 1 profesional. Sube a Equipo para añadir más." };
-    }
-    return { allowed: true };
-  }
-
-  // EQUIPO: base included + extras purchased
-  const maxAllowed = STAFF_LIMITS.EQUIPO + extraStaffCount;
+  const maxAllowed = getStaffLimit({ plan, extraStaffCount, staffLimitOverride });
   if (currentStaffCount >= maxAllowed) {
-    return { allowed: false, reason: `Has alcanzado el límite de ${maxAllowed} profesional(es). Compra slots adicionales desde Configuración.` };
+    return { allowed: false, reason: `Has alcanzado el límite de ${maxAllowed} profesional(es) activos de tu suscripción.` };
   }
   return { allowed: true };
 }

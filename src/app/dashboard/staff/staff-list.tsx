@@ -177,6 +177,7 @@ export function StaffList({
   const [savingLocationAssignment, setSavingLocationAssignment] = useState<string | null>(null);
   const [scheduleErrors, setScheduleErrors] = useState<Record<string, string>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [staffError, setStaffError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [staffServices, setStaffServices] = useState<Record<string, string[]>>(() => {
@@ -230,7 +231,9 @@ export function StaffList({
 
   async function handleToggle(id: string) {
     setTogglingId(id);
-    await toggleStaffActiveAction(id);
+    setStaffError("");
+    const result = await toggleStaffActiveAction(id);
+    if (result.error) setStaffError(result.error);
     setTogglingId(null);
     router.refresh();
   }
@@ -376,6 +379,7 @@ export function StaffList({
   return (
     <>
       <div className="min-w-0 max-w-full space-y-4" data-tour="staff-list">
+        {staffError && <p role="alert" className="text-sm text-red-500">{staffError}</p>}
         {/* Limit indicator */}
         <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-3">
           <div><p className="text-2xl font-black text-foreground">{limitInfo.currentCount}<span className="text-sm text-muted-foreground">/{limitInfo.maxAllowed}</span></p><p className="text-xs text-muted-foreground"><LocalizedText id="9tjpfWpFfEqb" /> {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</p></div>
@@ -516,7 +520,7 @@ export function StaffList({
                   </button>
                   {menuId === s.id && (
                     <div className="absolute right-4 top-16 z-50 w-52 rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-                      <button onClick={() => { handleToggle(s.id); setMenuId(null); }} disabled={togglingId === s.id} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted">
+                        <button onClick={() => { handleToggle(s.id); setMenuId(null); }} disabled={togglingId === s.id || (!s.isActive && atLimit)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted disabled:opacity-50">
                         {s.isActive ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}{s.isActive ? "Desactivar" : "Activar"}
                       </button>
                       <button onClick={() => { setDeleteTarget(s); setMenuId(null); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">

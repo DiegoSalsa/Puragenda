@@ -135,6 +135,10 @@ export async function processMercadoPagoInvoice(
     return { handled: false as const, reason: "subscription_not_found" };
   }
 
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return { handled: false as const, reason: "manual_transfer_subscription" };
+  }
+
   const activityAt = invoiceActivityAt(invoice, now);
   const retryCount = Math.max(invoice.retry_attempt ?? 0, 0);
   const paymentId = invoice.payment?.id?.toString() ?? null;
@@ -497,6 +501,7 @@ export async function runBillingReconciliation(now = new Date()) {
 
   const subscriptions = await prisma.subscription.findMany({
     where: {
+      paymentMethod: "AUTOMATIC",
       mpSubscriptionId: { not: null },
       OR: [
         { status: "PAST_DUE" },
@@ -532,6 +537,7 @@ export async function runBillingReconciliation(now = new Date()) {
 
   const unsentNotices = await prisma.subscription.findMany({
     where: {
+      paymentMethod: "AUTOMATIC",
       status: "PAST_DUE",
       dunningEmailSentAt: null,
       gracePeriodEndsAt: { gt: now },
@@ -581,6 +587,7 @@ export async function runBillingReconciliation(now = new Date()) {
 
   const expiringGrace = await prisma.subscription.findMany({
     where: {
+      paymentMethod: "AUTOMATIC",
       status: "PAST_DUE",
       graceExpiryWarningSentAt: null,
       gracePeriodEndsAt: { gt: now, lte: addHours(now, 6) },

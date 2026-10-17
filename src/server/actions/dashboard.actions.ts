@@ -7,7 +7,8 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { SALT_ROUNDS, STAFF_LIMITS } from "@/core/constants";
+import { SALT_ROUNDS } from "@/core/constants";
+import { assertStaffCapacity, StaffLimitError, withStaffCapacityLock } from "@/server/services/staff-capacity.service";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { sendStaffInviteEmail } from "@/server/email/send";
 import { resolveLocale } from "@/i18n/config";
@@ -152,18 +153,6 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
 
 // â”€â”€â”€ Staff CRUD â”€â”€â”€
 
-export async function getStaffLimitInfo(businessId: string) {
-  const [subscription, currentCount] = await Promise.all([
-    prisma.subscription.findUnique({ where: { businessId } }),
-    prisma.staff.count({ where: { businessId } }),
-  ]);
-  const plan = subscription?.plan || "INDIVIDUAL";
-  const baseLimit = STAFF_LIMITS[plan as keyof typeof STAFF_LIMITS] ?? STAFF_LIMITS.INDIVIDUAL;
-  const extras = subscription?.extraStaffCount || 0;
-  const maxAllowed = baseLimit + extras;
-  return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
-}
-
 export async function createStaffAction(data: { name: string; email: string; role?: "ADMIN" | "RECEPTIONIST" | "STAFF"; serviceIds?: string[] }) {
   const user = await getCurrentSessionUser();
   if (!user) return { error: "No autenticado" };
@@ -200,13 +189,6 @@ export async function createStaffAction(data: { name: string; email: string; rol
     }
   }
 
-  // Enforce staff limit
-  const limitInfo = await getStaffLimitInfo(business.id);
-  if (!limitInfo.canAdd) {
-    const planLabels: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo" };
-    return { error: `Has alcanzado el límite de ${limitInfo.maxAllowed} profesional(es) del plan ${planLabels[limitInfo.plan] || limitInfo.plan}. Mejora tu plan para añadir más.` };
-  }
-
   // Check if user with this email already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -224,7 +206,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
       : undefined;
 
     // Create User + Staff in a transaction
-    await prisma.$transaction(async (tx) => {
+    await withStaffCapacityLock(business.id, async (tx) => {
+      await assertStaffCapacity(business.id, tx);
       const staffUser = await tx.user.create({
         data: {
           email,
@@ -249,7 +232,8 @@ export async function createStaffAction(data: { name: string; email: string; rol
 
     // Send invite email with temporary password (fire and forget)
     sendStaffInviteEmail(email, data.name.trim(), business.name, tempPassword, resolveLocale(business.locale)).catch(() => {});
-  } catch {
+  } catch (error) {
+    if (error instanceof StaffLimitError) return { error: error.message };
     return { error: "Error al crear. ¿Email duplicado?" };
   }
 
@@ -265,9 +249,19 @@ export async function toggleStaffActiveAction(staffId: string) {
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.STAFF_MANAGE))) {
     return { error: "No tienes permisos para administrar profesionales" };
   }
-  const staff = await prisma.staff.findFirst({ where: { id: staffId, businessId: business.id } });
-  if (!staff) return { error: "Staff no encontrado" };
-  await prisma.staff.update({ where: { id: staffId }, data: { isActive: !staff.isActive } });
+  try {
+    const result = await withStaffCapacityLock(business.id, async (tx) => {
+      const staff = await tx.staff.findFirst({ where: { id: staffId, businessId: business.id } });
+      if (!staff) return { error: "Staff no encontrado" };
+      if (!staff.isActive) await assertStaffCapacity(business.id, tx);
+      await tx.staff.update({ where: { id: staff.id }, data: { isActive: !staff.isActive } });
+      return { success: true };
+    });
+    if ("error" in result) return result;
+  } catch (error) {
+    if (error instanceof StaffLimitError) return { error: error.message };
+    throw error;
+  }
   revalidatePath("/dashboard/staff");
   return { success: true };
 }
