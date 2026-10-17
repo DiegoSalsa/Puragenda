@@ -48,6 +48,21 @@ SHA-256, con reloj de PostgreSQL. Límites por minuto salvo indicación:
 - OAuth/IP/acción: 10 registros y 40 demás solicitudes; cliente: 120;
   decisiones por usuario: 20.
 - Aprobación por recibo: 10.
+- Disponibilidad pública: además de IP/herramienta, 60 por negocio/minuto entre
+  todos los solicitantes, antes de cargar/calcular disponibilidad.
+- Preparaciones públicas nuevas: 30 por negocio/hora, 5 por email/negocio/hora
+  y 5 por teléfono normalizado/negocio/hora. Las claves se almacenan hasheadas;
+  el replay con la misma operationKey recupera la preparación sin consumir esos
+  cupos adicionales. Un intento inválido nuevo puede consumir cupo.
+
+Las reservas públicas están deshabilitadas por defecto mediante
+`MCP_PUBLIC_BOOKING_ENABLED=false`. La participación del negocio permite
+descubrimiento, pero no habilita escrituras por sí sola. Catálogo, preparación
+y ejecución respetan el flag; desactivarlo después de aprobar también bloquea
+la ejecución. Sólo el fixture controlado lo habilita para comprobar el flujo.
+Los límites reducen carga/spam; no verifican email/teléfono y un atacante puede
+variar contactos o agotar el cupo compartido. No habilitarlo para público general
+hasta contar con controles de identidad y abuso validados.
 
 ## Datos y retención implementada
 
@@ -98,6 +113,7 @@ sus operadores. Revocar bloquea futuras llamadas; no retira respuestas previas.
 - Una aprobación pública es una capability temporal accesible a quien tiene su
   URL. No demuestra identidad de email/teléfono. Los datos son visibles en la
   página para revisión del cliente y las reservas mantienen su estado real.
+  Por eso el canal de escritura pública queda deshabilitado por defecto.
 - La política de retención del proveedor de hosting debe excluir/redactar
   query strings OAuth y rutas de recibos. El código MCP no los registra, pero
   el proxy y los logs HTTP del hosting son una frontera adicional.

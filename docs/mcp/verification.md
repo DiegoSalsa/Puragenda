@@ -1,5 +1,10 @@
 # Informe de implementación y verificación
 
+**Registro histórico de la iteración 1 (1.0.0, HEAD `76c9c44`).** Los resultados
+actuales y el bloqueo de automatización del navegador de la iteración 2 están en
+[el informe 1.0.1](iteration-2/report.md). Las capturas/pruebas de navegador de
+este archivo no se reutilizan como evidencia de ChatGPT real ni de la iteración 2.
+
 Fecha: 17 de octubre de 2026. Entorno Windows, Node 25.2.1, PostgreSQL 17 local,
 Next 16.3.8, Prisma 7.10.0, MCP SDK 1.32.1 y Node OAuth 5.3.1. No se usaron
 datos de clientes ni una base productiva para estas pruebas.

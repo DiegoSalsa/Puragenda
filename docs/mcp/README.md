@@ -1,14 +1,17 @@
 # Puragenda para ChatGPT y Codex
 
-Implementación 1.0.0 preparada para conexión y revisión. No está publicada ni
+Implementación 1.0.1 preparada para pruebas de conexión y revisión. No está publicada ni
 aprobada por OpenAI. El endpoint propuesto es `https://www.puragenda.cl/mcp`;
 su disponibilidad productiva requiere un despliegue autorizado.
 
 - [Despliegue, revisión y rollback](deployment.md)
-- [Verificación ejecutada y límites de la evidencia](verification.md)
+- [Resultado de la iteración 2: HTTPS y bloqueo de acceso a ChatGPT](iteration-2/report.md)
+- [Justificación individual de las 30 herramientas](iteration-2/tool-annotations.md)
+- [Pruebas y pasos exactos para ChatGPT y el revisor](iteration-2/reviewer-guide.md)
+- [Verificación histórica de la iteración 1](verification.md)
 - [Decisiones de seguridad y privacidad](security.md)
 - [Documentación oficial consultada](sources.md)
-- Paquete: `plugins/puragenda/`; distribución: `dist/puragenda-plugin-1.0.0.zip`.
+- Paquete: `plugins/puragenda/`; distribución actual: `dist/puragenda-plugin-1.0.1.zip`.
 
 ## Arquitectura
 
@@ -78,8 +81,11 @@ verificado: el login actual no demuestra esos requisitos.
 Todas tienen schemas de entrada estrictos. Las lecturas son `readOnlyHint=true`,
 `destructiveHint=false`. Las preparaciones guardan estado; no se anuncian como
 lecturas. Los ejecutores privados declaran `destructiveHint=true`. Las seis
-públicas declaran `noauth` y `openWorldHint=true`; las privadas, OAuth y
-`openWorldHint=false`. Las anotaciones no sustituyen las comprobaciones servidor.
+públicas declaran `noauth` y `openWorldHint=true`; las privadas requieren OAuth.
+`create_appointment` declara también `openWorldHint=true` por los correos a
+destinatarios aportados; las demás privadas actúan dentro de la cuenta y declaran
+`false`. Los ejecutores de creación pública y privada son destructivos por sus
+efectos irreversibles. Las anotaciones no sustituyen las comprobaciones servidor.
 
 | Herramientas | Scope / condición |
 | --- | --- |
@@ -93,7 +99,7 @@ públicas declaran `noauth` y `openWorldHint=true`; las privadas, OAuth y
 | `prepare_appointment_reschedule`, `reschedule_appointment` | `appointments:write`, cita sencilla elegible |
 | `prepare_appointment_cancellation`, `cancel_appointment` | `appointments:write`, cita elegible sin pago aprobado |
 | `search_public_businesses`, `get_public_business_details`, `get_public_service_catalog`, `get_public_availability` | Participación pública explícita y suscripción operativa |
-| `prepare_public_booking`, `confirm_public_booking` | Participación pública, servicio completamente gratuito, sin abonos y aprobación del cliente |
+| `prepare_public_booking`, `confirm_public_booking` | Deshabilitadas por defecto; pruebas controladas con flag explícito, opt-in, gratuidad, sin abonos y aprobación |
 
 Los agregados CRM/fidelización existentes cubren todo el negocio; por eso se
 deniegan a empleados hasta disponer de filtros canónicos de sucursal. Nunca se
@@ -145,7 +151,9 @@ mensajes es/en; el resto de idiomas usa el fallback inglés existente.
 
 Las políticas consultadas limitan el comercio a bienes físicos. El conector no
 vende planes, no procesa abonos ni devuelve checkout para vender servicios.
-Las reservas públicas son exclusivamente gratuitas; el catálogo puede mostrar
+Las reservas públicas están deshabilitadas por defecto porque la aprobación no
+verifica la identidad del solicitante. En pruebas controladas son exclusivamente
+gratuitas; el catálogo puede mostrar
 servicios pagados como información, marcados como no reservables por MCP.
 La gestión privada administra citas de una cuenta existente, sin realizar
 transacciones de pago. La revisión OpenAI debe confirmar este alcance.

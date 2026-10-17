@@ -1,0 +1,93 @@
+{
+  "recordedAt": "2026-10-17T06:16:17.196369+00:00",
+  "classification": "VALIDADO LOCALMENTE",
+  "baseline": "76c9c44",
+  "connectorVersion": "1.0.1",
+  "npmCi": {
+    "status": "PASS",
+    "packagesAdded": 831,
+    "initialFailure": "Windows EPERM on a DLL held by the task preview; stopped only that preview and retried successfully"
+  },
+  "prismaGenerate": "PASS",
+  "prismaValidate": "PASS",
+  "typecheck": {
+    "status": "PASS",
+    "errors": 0
+  },
+  "lint": {
+    "errors": 0,
+    "inheritedWarnings": 32
+  },
+  "generalSuite": {
+    "passed": 1269,
+    "failed": 0,
+    "skipped": 105,
+    "filesPassed": 196,
+    "filesSkipped": 5
+  },
+  "isolatedMcpSuite": {
+    "passed": 28,
+    "failed": 0,
+    "contractTests": 7,
+    "postgresIntegrationTests": 21,
+    "baselinePassed": 25,
+    "addedIntegrationTests": 3
+  },
+  "postgresFullSuite": {
+    "passed": 1290,
+    "failed": 0,
+    "skipped": 84,
+    "filesPassed": 198,
+    "filesSkipped": 3
+  },
+  "productionBuild": {
+    "status": "PASS",
+    "runtime": "next start on 127.0.0.1:3108",
+    "database": "loopback-only disposable schema",
+    "realProviderConnections": false
+  },
+  "sdkHttps": {
+    "status": "PASS",
+    "toolsDiscovered": 30,
+    "toolsSuccessfullyInvoked": 30,
+    "realChatGPT": false
+  },
+  "inspectorHttps": {
+    "status": "PASS",
+    "version": "2.11.0",
+    "toolsDiscovered": 30
+  },
+  "skillValidation": "PASS",
+  "translationsAfterCopyChange": {
+    "passed": 4,
+    "failed": 0
+  },
+  "pluginPackage": {
+    "status": "PASS",
+    "path": "dist/puragenda-plugin-1.0.1.zip",
+    "sha256": "c3444aaca3f18e3aa81f8c64640aba23ce431c095f450bb0402172cabf3c9d5e",
+    "uploadedToOpenAI": false
+  },
+  "auditProduction": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "auditAll": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 9,
+    "critical": 0,
+    "total": 9
+  },
+  "browserThisIteration": "BLOCKED",
+  "realChatGPT": "BLOCKED",
+  "portalToolScan": "NOT_EXECUTED",
+  "deploymentToProduction": false,
+  "productionMigrations": false,
+  "mergeToMain": false
+}

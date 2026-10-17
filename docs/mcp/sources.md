@@ -13,6 +13,8 @@ Actions. Las versiones de librerías quedan fijadas en el lockfile.
 | [Submission](https://developers.openai.com/plugins/deploy/submission) | Builder, dominio, metadatos, demo y presentación |
 | [Plugin guidelines](https://developers.openai.com/plugins/plugin-guidelines) | Privacidad, utilidad, no manipulación y límites de comercio de servicios |
 | [App review](https://developers.openai.com/plugins/deploy/app-review) | Cuenta ficticia accesible, escenarios y validación externa |
+| [Connect and test your plugin](https://developers.openai.com/plugins/deploy/connect-chatgpt) | Alta custom por URL, selección @plugin, refresco y pruebas directas/indirectas/seguimiento |
+| [Secure MCP Tunnels](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels) | Acceso de organización/workspace y límite de alcance al servidor MCP; no publica automáticamente el Authorization Server |
 | [Submission errors](https://developers.openai.com/plugins/deploy/submission-errors) | Validación builder y campos pendientes; no confundir ZIP válido con publicación |
 | [Agent Plugins plugin schema 1.0.0](https://agent-plugins.org/schemas/1.0.0/plugin.schema.json) | Snapshot exacto en `schemas/plugin.schema.json` |
 | [Agent Plugins MCP schema 1.0.0](https://agent-plugins.org/schemas/1.0.0/mcp.schema.json) | Snapshot exacto en `schemas/mcp.schema.json`; `additionalProperties:false` por servidor |
@@ -21,6 +23,8 @@ Actions. Las versiones de librerías quedan fijadas en el lockfile.
 | [Node OAuth documentation](https://node-oauthoauth2-server.readthedocs.io/en/master/) | Adaptador de modelos y motor PKCE mantenido 5.3.1 |
 | [Codex OAuth implementation](https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/perform_oauth_login.rs) | Callback local y variantes con ID; conservar coincidencia exacta al autorizar e intercambiar |
 | [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) | Tablas nuevas privadas, RLS y grants revocados |
+| [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) | HTTPS efímero de prueba, sin garantía de uptime ni soporte SSE |
+| [MCP Inspector](https://github.com/modelcontextprotocol/inspector) | CLI oficial 2.11.0: descubrimiento de las 30 herramientas por HTTPS |
 
 También se leyeron las guías incluidas en Next 16.3.8 en
 `node_modules/next/dist/docs/`, especialmente Route Handlers, headers/CSP y
@@ -32,3 +36,7 @@ Hay una discrepancia observable entre los ejemplos avanzados de auth OpenAI
 validez del schema y se documentó la configuración mixta en el portal. La
 resolución definitiva de ese caso depende de su validador real, no accesible
 mediante una prueba local. No se afirma que el portal ya aceptó el paquete.
+En la iteración 2 se descargaron otra vez las cinco guías OpenAI solicitadas,
+la guía de empaquetado y el schema MCP. [La prueba actual](iteration-2/schema-compatibility.md)
+incluye validación positiva y negativa; el informe distingue SDK, local y acceso
+externo pendiente. Las copias completas de guías permanecen en artifacts ignorados.

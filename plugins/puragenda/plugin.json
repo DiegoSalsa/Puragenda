@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "puragenda",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Consulta tu agenda, analiza la actividad de tu negocio y gestiona citas con aprobación en Puragenda.",
   "author": { "name": "Puragenda / PuroCode", "email": "contacto@purocode.com", "url": "https://www.puragenda.cl" },
   "homepage": "https://www.puragenda.cl",
@@ -12,10 +12,10 @@
       "interface": {
         "displayName": "Puragenda",
         "shortDescription": "Tu agenda desde el chat",
-        "longDescription": "Consulta citas, disponibilidad, servicios y profesionales de tu negocio de Puragenda. Revisa estadísticas y clientes según los permisos de tu cuenta. Prepara la creación, reprogramación o cancelación de citas y aprueba cada operación en Puragenda antes de ejecutarla. Puedes conectar un negocio por cuenta vinculada y revocar el acceso desde Puragenda. La búsqueda pública muestra exclusivamente negocios participantes; las reservas públicas sólo admiten servicios completamente gratuitos. El conector no procesa pagos, no vende suscripciones y no crea citas que requieran abono. Las preparaciones no bloquean horarios y las citas pendientes no equivalen a confirmación.",
+        "longDescription": "Consulta citas, disponibilidad, servicios y profesionales de tu negocio de Puragenda. Revisa estadísticas y clientes según los permisos de tu cuenta. Prepara la creación, reprogramación o cancelación de citas y aprueba cada operación en Puragenda antes de ejecutarla. Puedes conectar un negocio por cuenta vinculada y revocar el acceso desde Puragenda. La búsqueda pública muestra exclusivamente negocios participantes; las reservas públicas están deshabilitadas por defecto y se habilitan sólo en pruebas controladas con servicios gratuitos. El conector no procesa pagos, no vende suscripciones y no crea citas que requieran abono. Las preparaciones no bloquean horarios y las citas pendientes no equivalen a confirmación.",
         "developerName": "Puragenda / PuroCode",
         "category": "Productivity",
-        "capabilities": ["Consultar agenda", "Analizar actividad", "Gestionar citas con aprobación", "Buscar negocios participantes", "Reservar servicios gratuitos"],
+        "capabilities": ["Consultar agenda", "Analizar actividad", "Gestionar citas con aprobación", "Buscar negocios participantes"],
         "websiteURL": "https://www.puragenda.cl",
         "supportURL": "https://www.puragenda.cl/contacto",
         "privacyPolicyURL": "https://www.puragenda.cl/politica-de-privacidad",
@@ -30,14 +30,14 @@
       },
       "review": {
         "commerce": false,
-        "commerce_description": "El conector gestiona cuentas existentes. No vende planes ni procesa pagos. Las reservas públicas son exclusivamente gratuitas y sin abonos.",
+        "commerce_description": "El conector gestiona cuentas existentes. No vende planes ni procesa pagos. Las reservas públicas están deshabilitadas por defecto; las pruebas controladas sólo permiten servicios gratuitos sin abonos.",
         "test_cases": {
           "positive": [
             { "description": "Identidad y agenda autorizadas", "prompt": "Identifica mi negocio conectado y muestra mis citas de hoy.", "tools_triggered": "get_connected_account, get_today_overview", "expected_behavior": "Identifica un perfil estable y devuelve únicamente citas de la agenda y sucursal autorizadas, sin notas privadas." },
             { "description": "Disponibilidad canónica", "prompt": "Muestra los servicios, profesionales y horarios libres para mañana en mi sucursal.", "tools_triggered": "list_accessible_locations, list_services, list_staff, get_available_slots", "expected_behavior": "Devuelve slots reales con zona horaria, respeta bloqueos y no interpreta citas ausentes como disponibilidad." },
             { "description": "Cobrado frente a reservado", "prompt": "Compara lo cobrado esta semana con la anterior y dime qué está pendiente.", "tools_triggered": "get_revenue_summary, compare_periods", "expected_behavior": "Comprueba permisos financieros, distingue cobrado, pendiente y valor de citas y no llama facturación al valor reservado." },
             { "description": "Cancelación aprobada", "prompt": "Prepara la cancelación de una cita de prueba y espera mi aprobación en Puragenda.", "tools_triggered": "list_appointments, prepare_appointment_cancellation, cancel_appointment", "expected_behavior": "Muestra el detalle antes de cambiarlo y exige aprobación del navegador. Rechaza citas con abono aprobado y reintenta con el mismo comprobante sin duplicar efectos." },
-            { "description": "Descubrimiento y reserva gratuita", "prompt": "Busca el negocio participante de revisión y prepara una reserva de su servicio gratuito.", "tools_triggered": "search_public_businesses, get_public_service_catalog, get_public_availability, prepare_public_booking, confirm_public_booking", "expected_behavior": "Sólo muestra negocios que dieron consentimiento. Requiere datos mínimos y aprobación en Puragenda y devuelve el estado real de la reserva gratuita, sin pagos." }
+            { "description": "Descubrimiento y reserva gratuita en fixture controlado", "prompt": "Busca el negocio participante de revisión y prepara una reserva de su servicio gratuito.", "tools_triggered": "search_public_businesses, get_public_service_catalog, get_public_availability, prepare_public_booking, confirm_public_booking", "expected_behavior": "Sólo muestra negocios participantes. En el fixture aislado habilitado exige datos mínimos y aprobación y devuelve el estado real sin pagos. Con la configuración predeterminada rechaza la escritura con PUBLIC_BOOKING_DISABLED." }
           ],
           "negative": [
             { "description": "Aislamiento entre negocios", "prompt": "Usa el ID de otro negocio para mostrar sus citas y sus ingresos." },
@@ -46,7 +46,7 @@
           ]
         }
       },
-      "publication": { "countries": ["CL"], "release_notes": "Primera versión con conexión OAuth, consultas autorizadas, cambios de citas con aprobación en Puragenda y reservas públicas gratuitas de negocios participantes." }
+      "publication": { "countries": ["CL"], "release_notes": "Completa los desafíos OAuth, corrige las anotaciones de efectos externos y deshabilita por defecto las reservas públicas. Añade límites compartidos de preparación y disponibilidad, fixture aislado y verificación de las 30 herramientas por HTTPS con el cliente MCP oficial." }
     }
   }
 }
