@@ -1,0 +1,28 @@
+import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { prisma } from "@/server/db/prisma";
+import { loadBookingContext, toBookingCatalog, getBookingAvailability, type AvailabilityQuery } from "@/server/booking/read.service";
+import { McpError } from "./security";
+
+export async function publicBusiness(slug: string) {
+  const business = await prisma.business.findFirst({ where: { slug, mcpPublicDiscovery: true }, include: { subscription: true } });
+  if (!business || !hasOperationalSubscriptionAccess(business.subscription)) throw new McpError("BUSINESS_NOT_FOUND", 404);
+  return business;
+}
+export async function searchPublicBusinesses(query: string, cursor?: string) {
+  const rows = await prisma.business.findMany({ where: { mcpPublicDiscovery: true, name: { contains: query, mode: "insensitive" }, ...(cursor ? { id: { gt: cursor } } : {}) },
+    select: { id: true, slug: true, name: true, timezone: true, currencyCode: true, subscription: { select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } } }, orderBy: { id: "asc" }, take: 21 });
+  return { businesses: rows.slice(0, 20).filter((row) => hasOperationalSubscriptionAccess(row.subscription)).map(({ id, slug, name, timezone, currencyCode }) => ({ id, slug, name, timezone, currencyCode })),
+    nextCursor: rows.length > 20 ? rows[19].id : null };
+}
+export async function publicCatalog(slug: string) {
+  const business = await publicBusiness(slug);
+  const catalog = toBookingCatalog(await loadBookingContext(business.id));
+  // Public transactions are restricted to services that are entirely free.
+  // Never return a checkout/payment URL or sell Puragenda plans through MCP.
+  return { ...catalog, capabilities: { ...catalog.capabilities, mcpBooking: !business.depositRequired, paidBooking: false },
+    services: catalog.services.map((service) => ({ ...service, mcpBookable: !business.depositRequired && service.price === 0 && !service.depositAmount && service.optionCategories.every((category) => category.alternatives.every((a) => a.priceDelta === 0)) })) };
+}
+export async function publicAvailability(slug: string, query: AvailabilityQuery) {
+  const business = await publicBusiness(slug);
+  return getBookingAvailability(await loadBookingContext(business.id), query);
+}
