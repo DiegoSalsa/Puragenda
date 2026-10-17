@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-Rama: `commercial/cinnamon-equipo`, creada desde `main` en un worktree independiente. El checkout original y sus cambios previos se conservan. No se hizo merge, push, despliegue ni escritura de datos de producción.
+Rama: `commercial/cinnamon-equipo`, creada desde `main` en un worktree independiente. El checkout original y sus cambios previos se conservan. El operador aprobó posteriormente merge, despliegue, migración y configuración de producción. Las observaciones siguientes corresponden a la auditoría previa; el [informe operativo](cinnamon-production-runbook.md) contiene la secuencia autorizada y la entrega/PR recoge su ejecución.
 
 Auditoría de producción en modo lectura el 17 de octubre de 2026:
 
