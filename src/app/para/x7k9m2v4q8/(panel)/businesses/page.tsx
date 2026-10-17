@@ -1,24 +1,15 @@
 import { prisma } from "@/server/db/prisma";
 import { BusinessesClient } from "./businesses-client";
+import { getAdminSubscriptionReport } from "@/server/services/admin-subscription-report";
 
 export const dynamic = "force-dynamic";
 
 export default async function BusinessesPage() {
   const businesses = await prisma.business.findMany({
-    include: {
+    select: {
+      id: true, name: true, slug: true, countryCode: true, currencyCode: true, createdAt: true,
       owner: { select: { name: true, email: true } },
-      subscription: {
-        select: {
-          id: true,
-          plan: true,
-          status: true,
-          isTrial: true,
-          trialEndsAt: true,
-          currentPeriodEnd: true,
-          mpSubscriptionId: true,
-          paddleSubscriptionId: true,
-        },
-      },
+      subscription: true,
       affiliate: {
         select: {
           referralCode: true,
@@ -39,6 +30,15 @@ export default async function BusinessesPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  return <BusinessesClient businesses={businesses} />;
+  return <BusinessesClient businesses={businesses.map(business => ({
+    ...business,
+    subscription: business.subscription ? {
+      id: business.subscription.id, plan: business.subscription.plan, status: business.subscription.status,
+      isTrial: business.subscription.isTrial, trialEndsAt: business.subscription.trialEndsAt,
+      currentPeriodEnd: business.subscription.currentPeriodEnd, mpSubscriptionId: business.subscription.mpSubscriptionId,
+      paddleSubscriptionId: business.subscription.paddleSubscriptionId, paymentMethod: business.subscription.paymentMethod,
+    } : null,
+    billingReport: business.subscription ? getAdminSubscriptionReport(business.subscription, business) : null,
+  }))} />;
 }
 

@@ -24,6 +24,7 @@ import { ADMIN_SECRET_PATH } from "@/core/constants";
 import { getCountryName } from "@/core/countries";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 import { extendTrialAction } from "@/server/actions/admin.actions";
+import type { AdminSubscriptionReport } from "@/server/services/admin-subscription-report";
 
 type Business = {
   id: string;
@@ -31,6 +32,7 @@ type Business = {
   slug: string;
   countryCode: string;
   createdAt: Date;
+  billingReport: AdminSubscriptionReport | null;
   owner: { name: string; email: string } | null;
   subscription: {
     id: string;
@@ -41,6 +43,7 @@ type Business = {
     currentPeriodEnd: Date | null;
     mpSubscriptionId: string | null;
     paddleSubscriptionId: string | null;
+    paymentMethod: "AUTOMATIC" | "BANK_TRANSFER";
   } | null;
   affiliate: {
     referralCode: string;
@@ -95,7 +98,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
   }, [businesses, search, planFilter, statusFilter]);
 
   function downloadCSV() {
-    const headers = ["Nombre", "Slug", "Pais", "Dueno", "Email", "Plan", "Estado", "Proximo pago o vencimiento", "Staff", "Servicios", "Citas", "Fecha de registro"];
+    const headers = ["Nombre", "Slug", "Pais", "Dueno", "Email", "Plan", "Estado", "Proximo pago o vencimiento", "Staff", "Servicios", "Citas", "Fecha de registro", "Modalidad de pago", "Tarifa", "Ciclo", "Limite de profesionales activos"];
     const rows = filtered.map((biz) => {
       const subscriptionEnd = resolveSubscriptionEndDate(biz.subscription).date;
       return [
@@ -111,9 +114,13 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
         biz._count.services,
         biz._count.appointments,
         format(new Date(biz.createdAt), "dd/MM/yyyy"),
+        biz.billingReport?.methodLabel || "",
+        biz.billingReport?.baseAmountLabel || "",
+        biz.billingReport?.cycleLabel || "",
+        biz.billingReport?.staffLimit ?? "",
       ];
     });
-    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -231,7 +238,8 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                 <span className="font-bold text-black/40">{biz.owner?.name || legacy("ccvM499wENUT")}</span>
                 <span className="font-bold text-black/40">{biz._count.staff}<LocalizedText id="wtPweAXxxFPk" /> {biz._count.services}<LocalizedText id="J_56giO82IOd" /> {biz._count.appointments}c</span>
               </div>
-              <div className="flex items-center gap-2 border-t-2 border-black/10 pt-2 text-xs">
+              {biz.billingReport && <p className="text-xs font-bold text-black">{biz.billingReport.methodLabel} · {biz.billingReport.baseAmountLabel} {biz.billingReport.cycleLabel} · máximo {biz.billingReport.staffLimit} profesionales activos{biz.billingReport.hasCustomPrice ? " · IVA incluido" : ""}</p>}
+              <div className="flex flex-wrap items-center gap-2 border-t-2 border-black/10 pt-2 text-xs">
                 <Clock className="h-3.5 w-3.5 text-black/50" />
                 <span className="font-black uppercase text-black/50">Próximo pago / vencimiento</span>
                 <span className="font-black text-black">
@@ -312,6 +320,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                         ? "Individual"
                         : sub?.plan || "N/A"}
                     </span>
+                    {biz.billingReport && <div className="mt-2 space-y-1 text-xs font-bold text-black"><p>{biz.billingReport.methodLabel}</p><p>{biz.billingReport.baseAmountLabel} · {biz.billingReport.cycleLabel}</p><p>Máximo {biz.billingReport.staffLimit} activos{biz.billingReport.hasCustomStaffLimit ? " · personalizado" : ""}</p></div>}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-col gap-1">

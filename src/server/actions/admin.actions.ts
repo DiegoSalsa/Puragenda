@@ -172,6 +172,13 @@ export async function updateSubscriptionAction(
   await requireSuperAdmin();
 
   try {
+    const current = await prisma.subscription.findUnique({ where: { id: subscriptionId } });
+    if (current?.paymentMethod === "BANK_TRANSFER" && (
+      (data.plan !== undefined && data.plan !== current.plan) ||
+      (data.billingCycle !== undefined && data.billingCycle !== current.billingCycle) ||
+      (data.extraStaffCount !== undefined && data.extraStaffCount !== current.extraStaffCount) ||
+      data.isTrial === true || data.status === "TRIALING"
+    )) return { error: "Conserva las condiciones del acuerdo de transferencia. Este formulario permite cambiar su estado, no reemplazar el acuerdo." };
     await prisma.subscription.update({
       where: { id: subscriptionId },
       data: {
@@ -183,8 +190,8 @@ export async function updateSubscriptionAction(
       },
     });
 
-    await syncMercadoPagoSubscriptionAmount(subscriptionId);
-    revalidatePath("/para/x7k9m2v4q8");
+    if (current?.paymentMethod !== "BANK_TRANSFER") await syncMercadoPagoSubscriptionAmount(subscriptionId);
+    revalidateSubscriptionAdmin(subscriptionId);
     return { success: true };
   } catch (err) {
     console.error("[Admin] Error updating subscription:", err);
@@ -320,7 +327,16 @@ const BENEFIT_PRESETS: Record<SubscriptionBenefitPreset, {
 function revalidateSubscriptionAdmin(subscriptionId?: string) {
   revalidatePath("/para/x7k9m2v4q8");
   revalidatePath("/para/x7k9m2v4q8/subscriptions");
+  revalidatePath("/para/x7k9m2v4q8/businesses");
+  revalidatePath("/para/x7k9m2v4q8/businesses/[id]", "page");
   if (subscriptionId) revalidatePath(`/para/x7k9m2v4q8/subscriptions/${subscriptionId}`);
+}
+
+async function automaticBillingOnly(subscriptionId: string) {
+  const subscription = await prisma.subscription.findUnique({ where: { id: subscriptionId }, select: { paymentMethod: true } });
+  return subscription?.paymentMethod === "BANK_TRANSFER"
+    ? { error: "Esta suscripción se renueva por transferencia. Los beneficios y la sincronización automática no modifican su acuerdo." }
+    : null;
 }
 
 export async function applySubscriptionBenefitPresetAction(
@@ -331,6 +347,8 @@ export async function applySubscriptionBenefitPresetAction(
 
   const config = BENEFIT_PRESETS[preset];
   if (!config) return { error: "Beneficio invalido" };
+  const manualError = await automaticBillingOnly(subscriptionId);
+  if (manualError) return manualError;
 
   try {
     await prisma.subscription.update({
@@ -368,6 +386,8 @@ export async function updateSubscriptionBillingRulesAction(
   }
 ) {
   await requireSuperAdmin();
+  const manualError = await automaticBillingOnly(subscriptionId);
+  if (manualError) return manualError;
 
   const freeMonths = Math.max(0, Math.min(36, Math.floor(Number(data.promoFreeMonthsRemaining ?? 0))));
   const discountMonths = Math.max(0, Math.min(36, Math.floor(Number(data.promoDiscountMonthsRemaining ?? 0))));
@@ -413,6 +433,8 @@ export async function updateSubscriptionBillingRulesAction(
 
 export async function clearSubscriptionBenefitAction(subscriptionId: string) {
   await requireSuperAdmin();
+  const manualError = await automaticBillingOnly(subscriptionId);
+  if (manualError) return manualError;
 
   try {
     await prisma.subscription.update({
@@ -445,6 +467,8 @@ export async function clearSubscriptionBenefitAction(subscriptionId: string) {
 
 export async function syncSubscriptionBillingAction(subscriptionId: string) {
   await requireSuperAdmin();
+  const manualError = await automaticBillingOnly(subscriptionId);
+  if (manualError) return manualError;
 
   const sync = await syncMercadoPagoSubscriptionAmount(subscriptionId);
   revalidateSubscriptionAdmin(subscriptionId);

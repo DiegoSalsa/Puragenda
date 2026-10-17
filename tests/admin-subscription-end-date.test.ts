@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 
 describe("resolveSubscriptionEndDate", () => {
+  it("does not ask to synchronize a retained provider reference for a manual account", () => {
+    expect(resolveSubscriptionEndDate({ paymentMethod: "BANK_TRANSFER", isTrial: false, trialEndsAt: null, currentPeriodEnd: null, mpSubscriptionId: "retained", paddleSubscriptionId: null })).toMatchObject({ date: null, context: "Falta registrar el período de transferencia" });
+  });
   it("uses the paid period end instead of the subscription creation date", () => {
     const result = resolveSubscriptionEndDate({
       isTrial: false,
