@@ -302,6 +302,7 @@ enum BookingFeedbackRating {
 }
 
 model User {
+  mcpProfiles McpProfile[]
   id              String    @id @default(cuid())
   email           String    @unique
   password        String
@@ -583,6 +584,9 @@ model WebsitePurchaseIntent {
 }
 
 model Business {
+  mcpPublicDiscovery Boolean @default(false)
+  mcpProfiles McpProfile[]
+  mcpOperations McpOperation[]
   id                                           String             @id @default(cuid())
   name                                         String
   slug                                         String             @unique
@@ -2399,4 +2403,108 @@ model MarketplaceListingCategory {
 
   @@id([listingId, categoryId])
   @@index([categoryId, listingId])
+}
+
+// MCP credentials are random opaque values; only SHA-256 digests are stored.
+model McpOAuthClient {
+  id String @id @default(uuid())
+  name String
+  redirectUris String[]
+  createdAt DateTime @default(now())
+  requests McpOAuthRequest[]
+  connections McpConnection[]
+}
+
+model McpOAuthRequest {
+  id String @id @default(uuid())
+  clientId String
+  redirectUri String
+  scopes String[]
+  state String
+  challenge String
+  resource String
+  csrfHash String
+  expiresAt DateTime
+  consumedAt DateTime?
+  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+  @@index([clientId])
+}
+
+model McpProfile {
+  id String @id @default(uuid())
+  userId String
+  businessId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  connections McpConnection[]
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+model McpConnection {
+  id String @id @default(uuid())
+  profileId String
+  clientId String
+  scopes String[]
+  tokenVersion Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  profile McpProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  client McpOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  codes McpOAuthCode[]
+  tokens McpOAuthToken[]
+  operations McpOperation[]
+  @@index([profileId, revokedAt])
+  @@index([clientId])
+  @@index([expiresAt])
+}
+
+model McpOAuthCode {
+  hash String @id
+  connectionId String
+  redirectUri String
+  challenge String
+  expiresAt DateTime
+  consumedAt DateTime?
+  connection McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+  @@index([connectionId])
+}
+
+model McpOAuthToken {
+  id String @id @default(uuid())
+  connectionId String
+  accessHash String @unique
+  refreshHash String @unique
+  issuer String
+  resource String
+  scopes String[]
+  accessExpiresAt DateTime
+  refreshExpiresAt DateTime
+  refreshUsedAt DateTime?
+  connection McpConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@index([connectionId])
+}
+
+model McpOperation {
+  id String @id @default(uuid())
+  requestKey String @unique
+  tokenHash String @unique
+  connectionId String?
+  businessId String
+  kind String
+  encryptedPayload String
+  snapshotHash String
+  state String @default("PREPARED")
+  result Json?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  approvedAt DateTime?
+  connection McpConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+  @@index([connectionId])
+  @@index([businessId])
 }
