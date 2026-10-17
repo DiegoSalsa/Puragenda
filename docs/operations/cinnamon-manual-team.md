@@ -24,6 +24,8 @@ El operador confirmó durante el trabajo: «se lo acabamos de activar ya que nos
 
 La lectura de la preaprobación en Mercado Pago devolvió HTTP 400, `the preapprovalId is not valid for callerId`. Esto **no demuestra que la autorización esté cancelada**. Debe verificarse en la cuenta/credencial que la creó antes de resolver el vínculo. No se imprimieron credenciales ni se realizó ninguna llamada de modificación al proveedor.
 
+La revisión operativa posterior distinguió esta preaprobación de la conexión de abonos: `Business.mpUserId=1156754359` y sus credenciales OAuth pertenecen al negocio y respondieron correctamente a una consulta GET de identidad. Se conservaron íntegramente. La preaprobación `7bdf9b9051ef460a8a3904b41e52efc8` no es ese identificador de vendedor y tampoco pudo leerse con su token. El token local de Puragenda corresponde a otra cuenta (`786219474`). En Vercel se recuperó la sesión de lectura, pero el secreto de producción está marcado `sensitive` y su valor no fue entregado por la API. Se requiere verificar la preaprobación desde su cuenta cobradora. Véase el [informe operativo y secuencia de producción](cinnamon-production-runbook.md).
+
 ## Auditoría de la arquitectura
 
 - `core/constants.ts` define Individual (1 profesional, $12.990), Equipo (5, $29.990) y Test (1), además de cupos extra, límites de marketing y precios anuales. No se cambian estos valores.
@@ -57,7 +59,7 @@ La configuración modifica únicamente los cuatro campos mostrados arriba y el `
 
 Si existe una fecha de período pagado, el cron la respeta y solo pasa a INACTIVE al vencer. Conserva la fecha y las condiciones comerciales. No genera un cobro ni una factura de renovación. Si la fecha es NULL, la deja NULL y no inventa un vencimiento; esto refleja el registro real actual de Cinnamon Nails.
 
-Al confirmar una transferencia futura, la operación de renovación debe actualizar únicamente `status=ACTIVE` y `currentPeriodEnd` a la fecha pagada verificada. El plan, el límite, la modalidad manual y el precio se conservan. No se usa `advanceBillingBenefitAfterAuthorized` para una transferencia. La aceptación de cambios comerciales futuros se gestiona fuera de este script; una propuesta no debe aplicarse como precio acordado.
+Al confirmar una transferencia futura, `scripts/record-manual-subscription-payment.ts` revisa y registra el período confirmado. Actualiza únicamente `status=ACTIVE`, `currentPeriodEnd` y el `updatedAt` de Prisma; registra la evidencia en `AuditLog` dentro de la misma transacción. Exige inicio, término exclusivo, zona horaria, referencia bancaria, monto y fin de período actual esperado. No calcula fechas. Deduplica referencias repetidas, impide solapamientos y rechaza una revisión desactualizada. El plan, el límite, la modalidad manual, el precio y la conexión del negocio para abonos se conservan. No se usa `advanceBillingBenefitAfterAuthorized` para una transferencia. La aceptación de cambios comerciales futuros se gestiona fuera del script; una propuesta no debe aplicarse como precio acordado.
 
 ## Migración y configuración, pendientes de aprobación
 
@@ -83,8 +85,8 @@ Confirmar por separado la fecha hasta la que cubre el pago recibido. El script n
 - Capacidad: `src/core/subscription-plan.ts`; `src/server/services/staff-capacity.service.ts`; `src/server/services/subscription.service.ts`; `src/server/services/staff.service.ts`; `src/server/actions/dashboard.actions.ts`; `src/app/dashboard/staff/page.tsx`; `src/app/dashboard/staff/staff-list.tsx`.
 - Facturación: `src/server/services/subscription-billing.service.ts`; `src/server/services/subscription-dunning.service.ts`; `src/server/services/discount.service.ts`; `src/app/api/billing/subscribe/route.ts`; `src/app/api/billing/verify/route.ts`; `src/app/api/billing/recovery/route.ts`; `src/app/api/webhooks/mercadopago/route.ts`; `src/app/api/cron/trial-expiry/route.ts`.
 - Presentación: `src/app/dashboard/settings/page.tsx`; `src/components/dashboard/subscription-banner.tsx`.
-- Operación: `src/server/services/commercial-subscription.service.ts`; `scripts/configure-manual-team.ts`; este documento.
-- Pruebas: `tests/core/subscription-plan.test.ts`; `tests/server/manual-transfer-billing.test.ts`; `tests/server/commercial-subscription.integration.test.ts`; `tests/server/trial-expiry-international.test.ts`.
+- Operación: `src/server/services/commercial-subscription.service.ts`; `scripts/configure-manual-team.ts`; `scripts/record-manual-subscription-payment.ts`; este documento y `docs/operations/cinnamon-production-runbook.md`.
+- Pruebas: `tests/core/subscription-plan.test.ts`; `tests/server/manual-transfer-billing.test.ts`; `tests/server/commercial-subscription.integration.test.ts`; `tests/server/manual-subscription-merchant-deposits.test.ts`; `tests/server/trial-expiry-international.test.ts`.
 
 ## Validación
 
@@ -97,9 +99,9 @@ $env:COMMERCIAL_SUBSCRIPTION_TEST_DATABASE_URL='postgresql://cinnamon_qa@127.0.0
 npm test
 ```
 
-Las once pruebas de integración cubren aplicación y revisión sin escrituras; conservación exacta de las reservas, clientes, profesionales, servicios y horarios; períodos sin fecha; funciones de Equipo; alta y bloqueo del tercer profesional desde el servidor; reactivación; concurrencia entre altas y reactivaciones; planes normales; nueva conexión de Prisma; vencimiento y renovación manual; bloqueo ante proveedor existente o exceso de profesionales; y compatibilidad de la migración con datos previos.
+Las 19 pruebas de integración cubren aplicación y revisión sin escrituras; conservación exacta de las reservas, clientes, profesionales, servicios, horarios y credenciales de abonos ficticias; períodos sin fecha; funciones de Equipo; alta y bloqueo del tercer profesional desde el servidor; reactivación; concurrencia entre altas y reactivaciones; planes normales; nueva conexión de Prisma; vencimiento y renovación manual; bloqueo ante proveedor existente o exceso de profesionales; compatibilidad de la migración con datos previos; varios meses de renovación manual; reintentos idempotentes; estado INACTIVE; evidencia de pago y validación de fechas, montos y solapamientos.
 
-Resultado de la suite completa: **198 archivos aprobados, 1.293 pruebas aprobadas; 4 archivos / 84 pruebas omitidos por las condiciones existentes de la suite**. Las once pruebas locales de esta entrega sí se ejecutaron.
+Resultado de la suite completa en la revisión operativa: **199 archivos aprobados, 1.302 pruebas aprobadas; 4 archivos / 84 pruebas omitidos por las condiciones existentes de la suite**. Las 19 pruebas locales de esta entrega sí se ejecutaron. Una prueba específica de abonos verifica que la modalidad manual de Puragenda no impide crear la preferencia de una reserva con el token propio del negocio; el SDK está simulado y no crea cobros reales.
 
 `npm run typecheck` y `npx prisma validate`: aprobados. `npm run lint`: código de salida 0, sin errores y con 32 advertencias. `npm run build`: aprobado con Next.js 16.3.8, compilación y chequeo de TypeScript correctos y 147 páginas estáticas generadas. `git diff --check`: sin problemas. Las copias Prisma/Supabase de la migración tienen el mismo SHA-256.
 

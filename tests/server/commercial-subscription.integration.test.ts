@@ -48,7 +48,7 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     prefix = `commercial-${randomUUID()}`;
     const owner = await db.user.create({ data: { email: `owner@${prefix}.invalid`, name: "Owner", password: "local-fixture-only", role: "ADMIN" } });
     ownerId = owner.id;
-    const business = await db.business.create({ data: { id: prefix, name: "Cinnamon Nails fixture", slug: prefix, apiKey: prefix, ownerId, countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago" } });
+    const business = await db.business.create({ data: { id: prefix, name: "Cinnamon Nails fixture", slug: prefix, apiKey: prefix, ownerId, countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", mpUserId: "merchant-fixture", mpAccessToken: "dummy-merchant-token", mpRefreshToken: "dummy-merchant-refresh", mpTokenExpiresAt: paidThrough, depositRequired: true } });
     context.business = { ...context.business, id: business.id, ownerId, slug: business.slug };
     await db.subscription.create({ data: { businessId: business.id, plan: "INDIVIDUAL", status: "ACTIVE", billingCycle: "MONTHLY", isTrial: false, currentPeriodEnd: paidThrough } });
     const service = await db.service.create({ data: { businessId: business.id, name: "Manicure", duration: 60, price: 20000 } });
@@ -63,6 +63,7 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
 
   afterEach(async () => {
     if (!db || !ownerId) return;
+    await db.auditLog.deleteMany({ where: { action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: { contains: prefix } } });
     await db.business.deleteMany({ where: { ownerId } });
     await db.user.deleteMany({ where: { email: { endsWith: `@${prefix}.invalid` } } });
   });
@@ -175,6 +176,69 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     await db.staff.createMany({ data: [{ businessId: prefix, name: "Second" }, { businessId: prefix, name: "Third" }] });
     await expect(configure()).rejects.toThrow("más profesionales activos");
     expect(await db.staff.count({ where: { businessId: prefix, isActive: true } })).toBe(3);
+  });
+
+  function renewal(overrides: Partial<import("@/server/services/commercial-subscription.service").ManualSubscriptionPayment> = {}) {
+    return {
+      businessId: prefix, reference: `transfer-${prefix}`, amountClp: 17990,
+      paidFrom: paidThrough.toISOString(), paidThrough: "2099-12-17T03:00:00.000Z",
+      expectedPeriodEnd: paidThrough.toISOString(), ...overrides,
+    };
+  }
+
+  it("previews a manual renewal without writes, then renews several months without changing the plan, price, cap or merchant connection", async () => {
+    await configure();
+    const before = await db.subscription.findUniqueOrThrow({ where: { businessId: prefix } });
+    const operations = await snapshotOperations();
+    expect(await commercial.recordManualSubscriptionPayment(renewal())).toMatchObject({ applied: false, blockers: [] });
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toEqual(before);
+    expect(await db.auditLog.count({ where: { details: { contains: prefix } } })).toBe(0);
+    await commercial.recordManualSubscriptionPayment(renewal(), true);
+    await commercial.recordManualSubscriptionPayment(renewal({ reference: "next-month", paidFrom: "2099-12-17T03:00:00.000Z", paidThrough: "2100-01-17T03:00:00.000Z", expectedPeriodEnd: "2099-12-17T03:00:00.000Z" }), true);
+    const after = await db.subscription.findUniqueOrThrow({ where: { businessId: prefix } });
+    expect(after).toEqual({ ...before, status: "ACTIVE", currentPeriodEnd: new Date("2100-01-17T03:00:00.000Z"), updatedAt: after.updatedAt });
+    expect(await db.auditLog.count({ where: { action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: { contains: prefix } } })).toBe(2);
+    expect(await db.subscriptionPaymentNotification.count({ where: { subscriptionId: before.id } })).toBe(0);
+    expect(await snapshotOperations()).toEqual(operations);
+  });
+
+  it("records an explicitly confirmed initial period without using activation or trial dates", async () => {
+    await configure();
+    await db.subscription.update({ where: { businessId: prefix }, data: { currentPeriodEnd: null } });
+    expect(await commercial.recordManualSubscriptionPayment(renewal({ expectedPeriodEnd: null, paidFrom: "2099-10-17T00:00:00-03:00", paidThrough: "2099-11-17T00:00:00-03:00" }), true)).toMatchObject({ applied: true });
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toMatchObject({ currentPeriodEnd: paidThrough, staffLimitOverride: 2, paymentMethod: "BANK_TRANSFER" });
+  });
+
+  it("reactivates an expired manual subscription using the confirmed paid range", async () => {
+    await configure();
+    await db.subscription.update({ where: { businessId: prefix }, data: { status: "INACTIVE", currentPeriodEnd: new Date("2000-01-01T00:00:00Z") } });
+    await commercial.recordManualSubscriptionPayment(renewal({ expectedPeriodEnd: "2000-01-01T00:00:00Z" }), true);
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toMatchObject({ status: "ACTIVE", staffLimitOverride: 2, paymentMethod: "BANK_TRANSFER", customMonthlyPriceClp: 17990 });
+  });
+
+  it("deduplicates simultaneous retries of the same bank reference", async () => {
+    await configure();
+    const results = await Promise.all([commercial.recordManualSubscriptionPayment(renewal(), true), commercial.recordManualSubscriptionPayment(renewal(), true)]);
+    expect(results.filter(result => result.applied)).toHaveLength(1);
+    expect(results.filter(result => result.alreadyRecorded)).toHaveLength(1);
+    expect(await db.auditLog.count({ where: { details: { contains: prefix } } })).toBe(1);
+    await expect(commercial.recordManualSubscriptionPayment(renewal({ paidThrough: "2100-01-17T03:00:00Z" }), true)).rejects.toThrow("otros datos");
+  });
+
+  it("rejects a stale preview, overlapping range, wrong amount and an unresolved provider without writing", async () => {
+    await configure();
+    const before = await db.subscription.findUnique({ where: { businessId: prefix } });
+    for (const input of [renewal({ expectedPeriodEnd: null }), renewal({ amountClp: 29990 }), renewal({ paidFrom: "2099-11-16T03:00:00Z" })]) {
+      await expect(commercial.recordManualSubscriptionPayment(input, true)).rejects.toThrow();
+    }
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toEqual(before);
+    await db.subscription.update({ where: { businessId: prefix }, data: { mpSubscriptionId: "unresolved-historical-preapproval" } });
+    await expect(commercial.recordManualSubscriptionPayment(renewal(), true)).rejects.toThrow("proveedor");
+    expect(await db.auditLog.count({ where: { details: { contains: prefix } } })).toBe(0);
+  });
+
+  it.each(["2099-11-17", "2099-02-30T03:00:00Z", "2099-11-17T03:00:00"])("requires valid explicit instants rather than inventing timezone or date: %s", async (paidFrom) => {
+    await expect(commercial.recordManualSubscriptionPayment(renewal({ paidFrom }), true)).rejects.toThrow();
   });
 
   it("applies the migration additively to legacy data and rejects invalid limits", async () => {
