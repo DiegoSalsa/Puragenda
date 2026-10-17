@@ -2,6 +2,9 @@ import pg from "pg";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { randomBytes } from "node:crypto";
+
+const mcpPreview = process.argv.includes("--mcp-preview");
 
 // No .env loading: an accidental production connection is rejected before SQL.
 const url = new URL(process.env.PURAGENDA_BOOKING_TEST_DATABASE_URL || "postgresql://postgres@127.0.0.1:5432/puragenda_booking_api_test");
@@ -21,9 +24,11 @@ url.searchParams.set("schema", schema);
 url.searchParams.set("options", `-csearch_path=${schema},public`);
 const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toString(), PURAGENDA_BOOKING_TEST_DATABASE_URL: url.toString(),
   ...(process.argv.includes("--all") ? { TEST_DATABASE_URL: url.toString() } : {}),
-  RESEND_API_KEY: "", AUTH_SECRET: "local-booking-test-only",
-  NEXT_PUBLIC_APP_URL: process.argv.includes("--all") ? "http://localhost:3000" : "http://localhost:3107",
-  LOCAL_PAYMENT_SIMULATOR: process.argv.includes("--preview") || process.argv.includes("--build") ? "true" : "" };
+  RESEND_API_KEY: "", AUTH_SECRET: "local-booking-test-only-at-least-32-characters",
+  NEXT_PUBLIC_APP_URL: mcpPreview ? "http://localhost:3108" : process.argv.includes("--all") ? "http://localhost:3000" : "http://localhost:3107",
+  ...(mcpPreview ? { MCP_ORIGIN: "http://localhost:3108", MCP_OAUTH_ALLOW_LOOPBACK: "true", MCP_OPERATION_ENCRYPTION_KEY: randomBytes(32).toString("base64") } : {}),
+  PURAGENDA_MCP_TEST: process.argv.includes("--mcp") ? "1" : "",
+  LOCAL_PAYMENT_SIMULATOR: mcpPreview || process.argv.includes("--preview") || process.argv.includes("--build") ? "true" : "" };
 function run(args) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { stdio: "inherit", env });
@@ -48,11 +53,25 @@ try {
     await client.query('DROP TABLE "BookingOperation"');
     await client.query(fs.readFileSync(new URL("../prisma/migrations/20260930120000_public_booking_operations/migration.sql", import.meta.url), "utf8"));
     await client.query(fs.readFileSync(new URL("../prisma/migrations/20261001121000_booking_operation_fk_update/migration.sql", import.meta.url), "utf8"));
-    if (process.argv.includes("--preview") || process.argv.includes("--build")) {
+    if (process.argv.includes("--mcp") || mcpPreview) {
+      // Recreate connector tables from the versioned migration, so tests cover
+      // real FKs, indexes, grants and RLS rather than db push alone.
+      await client.query('DROP TABLE "McpOperation", "McpOAuthToken", "McpOAuthCode", "McpConnection", "McpProfile", "McpOAuthRequest", "McpOAuthClient" CASCADE');
+      await client.query('ALTER TABLE "Business" DROP COLUMN "mcpPublicDiscovery"');
+      const folder = fs.readdirSync(new URL("../prisma/migrations/", import.meta.url)).find((name) => name.endsWith("_mcp_oauth_connector"));
+      if (!folder) throw new Error("MCP migration missing");
+      await client.query(fs.readFileSync(new URL(`../prisma/migrations/${folder}/migration.sql`, import.meta.url), "utf8"));
+    }
+    if (mcpPreview || process.argv.includes("--preview") || process.argv.includes("--build")) {
       const { PrismaClient } = await import("@prisma/client");
       const { PrismaPg } = await import("@prisma/adapter-pg");
       const previewDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: url.toString() }, { schema }) });
+      if (mcpPreview) {
+        const bcrypt = (await import("bcrypt")).default;
+        await previewDb.user.create({ data: { id: "preview-owner", email: "review@example.invalid", name: "Revisión MCP", password: await bcrypt.hash("Mcp-Local-Review-Only-2026!", 10) } });
+      }
       await previewDb.business.create({ data: { id: "preview-business", slug: "booking-api-fixture", name: "Booking API Fixture", apiKey: "local-public-fixture-key", allowSameDayBookings: true, slotInterval: 30,
+        ...(mcpPreview ? { ownerId: "preview-owner", mcpPublicDiscovery: true } : {}),
         subscription: { create: { plan: "EQUIPO", status: "ACTIVE" } },
         locations: { create: { id: "preview-location", name: "Local de pruebas", slug: "principal", timezone: "America/Santiago", isPrimary: true, isActive: true,
           hours: { create: Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, isOpen: true, startTime: "09:00", endTime: "18:00", breakStart: "13:00", breakEnd: "14:00" })) } } },
@@ -62,15 +81,21 @@ try {
       } });
       await previewDb.locationService.create({ data: { locationId: "preview-location", serviceId: "preview-service" } });
       await previewDb.staff.create({ data: { id: "preview-staff", name: "Profesional de prueba", businessId: "preview-business", services: { connect: { id: "preview-service" } }, locations: { create: { locationId: "preview-location" } } } });
+      if (mcpPreview) {
+        await previewDb.service.create({ data: { id: "preview-free-service", businessId: "preview-business", name: "Orientación gratuita", duration: 30, price: 0, locations: { create: { locationId: "preview-location" } }, staff: { connect: { id: "preview-staff" } } } });
+        await previewDb.business.create({ data: { id: "preview-private-business", slug: "mcp-private-fixture", name: "Negocio privado de revisión", ownerId: "preview-owner", apiKey: "local-private-fixture-key", subscription: { create: { plan: "EQUIPO", status: "ACTIVE" } }, locations: { create: { name: "Sucursal privada", slug: "principal", timezone: "America/Santiago", isPrimary: true, isActive: true } } } });
+        console.log("MCP review is local-only: http://localhost:3108/mcp; login review@example.invalid / Mcp-Local-Review-Only-2026!");
+      }
       await previewDb.$disconnect();
       const nextBin = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
       if (process.argv.includes("--build")) code = await run([nextBin, "build"]);
       else {
-        console.log("Preview local: http://localhost:3107/widget/booking-api-fixture (sin reservas reales)");
-        code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", "3107"]);
+        const port = mcpPreview ? "3108" : "3107";
+        console.log(`Preview local: http://localhost:${port}/widget/booking-api-fixture (sin reservas reales)`);
+        code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", port]);
       }
     } else {
-      const files = process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
       code = await run([vitestBin, "run", ...files]);
     }
   }
