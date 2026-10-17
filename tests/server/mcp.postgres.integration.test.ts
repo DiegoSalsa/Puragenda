@@ -91,6 +91,7 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     vi.stubEnv("MCP_ORIGIN", origin); vi.stubEnv("AUTH_SECRET", "local-mcp-auth-secret-at-least-32-characters");
     vi.stubEnv("MCP_OPERATION_ENCRYPTION_KEY", randomBytes(32).toString("base64"));
     vi.stubEnv("MCP_OAUTH_REDIRECT_URIS", redirectUri);
+    vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "true");
     providers.notify.mockResolvedValue(undefined); providers.sync.mockResolvedValue({ synced: true }); providers.busy.mockResolvedValue([]);
     await prisma.business.deleteMany({ where: { id: { startsWith: "mcp-business-" } } });
     await prisma.user.deleteMany({ where: { id: { startsWith: "mcp-" } } });
@@ -339,8 +340,72 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     expect(await executeOperation(free.receipt, "public_create", null)).toMatchObject({ httpStatus: 201, booking: { price: 0 } });
     const availability = await publicAvailability("mcp-fixture-a", { date: "2026-10-01", serviceId: "mcp-service-a", staffId: "mcp-staff-a", selectedOptionAlternativeIds: [] });
     expect(availability.slots.some((s) => s.startTime === startTime)).toBe(false);
+    await prisma.apiRateLimitBucket.update({ where: { key: digest("mcp:public-availability:business:mcp-business-a") }, data: { count: 60 } });
+    await expect(publicAvailability("mcp-fixture-a", { date: "2026-10-01", serviceId: "mcp-service-a", staffId: "mcp-staff-a", selectedOptionAlternativeIds: [] })).rejects.toThrow("RATE_LIMITED");
     await prisma.business.update({ where: { id: "mcp-business-a" }, data: { depositRequired: true } });
     await expect(prepareCreation(creationSchema.parse({ ...creation, operationKey: randomUUID(), startTime: "2026-10-01T14:00:00Z" }), null, "mcp-fixture-a")).rejects.toThrow("DEPOSIT_BOOKING_UNAVAILABLE");
+  });
+  it("executes every one of the 30 tools through the official HTTP MCP client", async () => {
+    const linked = await link();
+    await prisma.client.create({ data: { id: "mcp-readable-client", businessId: "mcp-business-a", name: "Cliente ficticio", email: "fixture@example.invalid" } });
+    await prisma.appointment.create({ data: { id: "mcp-readable-appointment", businessId: "mcp-business-a", locationId: "mcp-location-a", serviceId: "mcp-service-a", staffId: "mcp-staff-a", clientId: "mcp-readable-client",
+      customerName: "Cliente ficticio", customerEmail: "fixture@example.invalid", status: "CONFIRMED", startTime: new Date("2026-09-30T15:00:00Z"), endTime: new Date("2026-09-30T16:00:00Z"), totalPrice: 10000 } });
+    const sdk = new Client({ name: "all-tools-regression", version: "1" });
+    await sdk.connect(new StreamableHTTPClientTransport(new URL(`${origin}/mcp`), { requestInit: { headers: { Authorization: `Bearer ${linked.token.access_token}` } } }));
+    const exercised = new Set<string>();
+    const invoke = async (name: string, args: Record<string, unknown> = {}) => {
+      const result = await sdk.callTool({ name, arguments: args });
+      expect(result.isError, `${name}: ${JSON.stringify(result.content)}`).not.toBe(true);
+      expect(result.structuredContent).toBeTypeOf("object"); exercised.add(name);
+      return result.structuredContent as Record<string, unknown>;
+    };
+    try {
+      const inputs: Record<string, Record<string, unknown>> = {
+        get_connected_account: {}, get_business_profile: {}, list_accessible_locations: {}, get_today_overview: {},
+        list_appointments: { period: "today" }, get_appointment_details: { appointmentId: "mcp-readable-appointment" },
+        get_available_slots: { date: "2026-10-01", serviceId: "mcp-service-a", staffId: "mcp-staff-a" }, list_services: {}, list_staff: {},
+        search_clients: { query: "Cliente" }, get_client_summary: { clientId: "mcp-readable-client" }, get_client_activity: { sort: "frequent" },
+        get_revenue_summary: { period: "this_month" }, compare_periods: { current: "this_month", previous: "previous_month" },
+        get_popular_services: { period: "this_month" }, get_staff_performance: { period: "this_month" }, get_loyalty_summary: {}, get_gift_cards_summary: {},
+      };
+      for (const [name, args] of Object.entries(inputs)) await invoke(name, args);
+      const prepared = await invoke("prepare_appointment_creation", { ...creation, operationKey: randomUUID() }); await approve(String(prepared.receipt), "mcp-owner-a");
+      const created = await invoke("create_appointment", { receipt: prepared.receipt });
+      const move = await invoke("prepare_appointment_reschedule", { operationKey: randomUUID(), appointmentId: created.id, locationId: "mcp-location-a", startTime: "2026-10-01T14:00:00Z" }); await approve(String(move.receipt), "mcp-owner-a");
+      await invoke("reschedule_appointment", { receipt: move.receipt });
+      const cancellation = await invoke("prepare_appointment_cancellation", { operationKey: randomUUID(), appointmentId: created.id, locationId: "mcp-location-a" }); await approve(String(cancellation.receipt), "mcp-owner-a");
+      expect(await invoke("cancel_appointment", { receipt: cancellation.receipt })).toMatchObject({ status: "CANCELLED" });
+      await prisma.business.update({ where: { id: "mcp-business-a" }, data: { mcpPublicDiscovery: true } }); await prisma.service.update({ where: { id: "mcp-service-a" }, data: { price: 0 } });
+      await invoke("search_public_businesses", { query: "MCP" }); await invoke("get_public_business_details", { slug: "mcp-fixture-a" }); await invoke("get_public_service_catalog", { slug: "mcp-fixture-a" });
+      await invoke("get_public_availability", { slug: "mcp-fixture-a", date: "2026-10-01", serviceId: "mcp-service-a", staffId: "mcp-staff-a" });
+      const publicPrepared = await invoke("prepare_public_booking", { ...creation, operationKey: randomUUID(), slug: "mcp-fixture-a", startTime: "2026-10-01T17:00:00Z" }); await approve(String(publicPrepared.receipt));
+      expect(await invoke("confirm_public_booking", { receipt: publicPrepared.receipt })).toMatchObject({ httpStatus: 201 });
+      expect([...exercised].sort()).toEqual((await sdk.listTools()).tools.map((t) => t.name).sort());
+    } finally { await sdk.close(); }
+  }, 30000);
+  it("keeps public writes disabled by default and rechecks the switch after browser approval", async () => {
+    await prisma.business.update({ where: { id: "mcp-business-a" }, data: { mcpPublicDiscovery: true } });
+    await prisma.service.update({ where: { id: "mcp-service-a" }, data: { price: 0 } });
+    vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "");
+    expect((await publicCatalog("mcp-fixture-a")).capabilities.mcpBooking).toBe(false);
+    expect((await searchPublicBusinesses("MCP")).businesses).toHaveLength(1);
+    await expect(prepareCreation(creationSchema.parse(creation), null, "mcp-fixture-a")).rejects.toThrow("PUBLIC_BOOKING_DISABLED");
+    vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "true");
+    const prepared = await prepareCreation(creationSchema.parse(creation), null, "mcp-fixture-a"); await approve(prepared.receipt);
+    vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "false");
+    await expect(executeOperation(prepared.receipt, "public_create", null)).rejects.toThrow("PUBLIC_BOOKING_DISABLED");
+    expect(await prisma.appointment.count({ where: { businessId: "mcp-business-a" } })).toBe(0);
+  });
+  it("bounds public preparations per contact across caller IPs without charging idempotent preparation retries", async () => {
+    await prisma.business.update({ where: { id: "mcp-business-a" }, data: { mcpPublicDiscovery: true } });
+    await prisma.service.update({ where: { id: "mcp-service-a" }, data: { price: 0 } });
+    const firstArgs = creationSchema.parse(creation);
+    const first = await prepareCreation(firstArgs, null, "mcp-fixture-a");
+    for (let n = 0; n < 8; n++) expect(await prepareCreation(firstArgs, null, "mcp-fixture-a")).toEqual(first);
+    for (let n = 1; n < 5; n++) await prepareCreation({ ...firstArgs, operationKey: randomUUID() }, null, "mcp-fixture-a");
+    await expect(prepareCreation({ ...firstArgs, operationKey: randomUUID(), customerPhone: "+56922222222" }, null, "mcp-fixture-a")).rejects.toThrow("RATE_LIMITED");
+    await expect(prepareCreation({ ...firstArgs, operationKey: randomUUID(), customerEmail: "other@example.invalid" }, null, "mcp-fixture-a")).rejects.toThrow("RATE_LIMITED");
+    expect(await prepareCreation({ ...firstArgs, operationKey: randomUUID(), customerEmail: "other@example.invalid", customerPhone: "+56922222222" }, null, "mcp-fixture-a")).toHaveProperty("receipt");
   });
   it("uses shared durable rate limits, clears expired encrypted payloads, and enables database RLS", async () => {
     await limit("fixture", 1); await expect(limit("fixture", 1)).rejects.toThrow("RATE_LIMITED");
