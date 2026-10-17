@@ -5,7 +5,8 @@ aprobada por OpenAI. El endpoint propuesto es `https://www.puragenda.cl/mcp`;
 su disponibilidad productiva requiere un despliegue autorizado.
 
 - [Despliegue, revisión y rollback](deployment.md)
-- [Resultado de la iteración 2: HTTPS y bloqueo de acceso a ChatGPT](iteration-2/report.md)
+- [Conexión real de ChatGPT confirmada por el usuario](iteration-2/chatgpt-real-confirmation.md)
+- [Cierre inicial de la iteración 2 y pruebas HTTPS/SDK](iteration-2/report.md)
 - [Justificación individual de las 30 herramientas](iteration-2/tool-annotations.md)
 - [Pruebas y pasos exactos para ChatGPT y el revisor](iteration-2/reviewer-guide.md)
 - [Verificación histórica de la iteración 1](verification.md)

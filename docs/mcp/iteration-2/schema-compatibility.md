@@ -29,12 +29,18 @@ herramienta incluyen metadata, scope, error y error_description.
 herramientas sobre HTTPS; el SDK completó DCR, OAuth y las llamadas. Esto
 comprueba el protocolo, no la interpretación del importer de OpenAI.
 
-**PENDIENTE DE ACCESO EXTERNO**: el control de navegador devolvió
-`Local browser use is disabled in Work settings`; no se pudo observar el alta
-real, el importer del ZIP ni el tool scan. Se conserva el manifiesto portátil
+**Actualización posterior: VALIDADO EN CHATGPT REAL** para la vía de conexión
+directa por URL. El usuario completó OAuth y obtuvo agenda privada; el backend
+confirma código canjeado, tokens y llamadas.
+[Evidencia y límites](chatgpt-real-confirmation.md). Esto demuestra esa vía
+operativa, sin probar la importación de `mcp.json` desde el ZIP.
+
+**PENDIENTE DE ACCESO EXTERNO** para el importer del ZIP y tool scan: el control de navegador devolvió
+`Local browser use is disabled in Work settings`; el agente no pudo manejar el
+alta, el importer del ZIP ni el tool scan. Se conserva el manifiesto portátil
 válido y se entrega la configuración explícita por URL para terminar esa prueba.
 No se afirma que el ZIP por sí solo configure autenticación mixta en ChatGPT,
-ni que la discrepancia esté resuelta en el cliente. No se inventaron IDs de
+ni que la discrepancia del importer esté resuelta. No se inventaron IDs de
 registro, archivos `.app.json` ni propiedades fuera del schema.
 
 Antes de publicar: comprobar el alta por URL, inspeccionar herramientas/auth,

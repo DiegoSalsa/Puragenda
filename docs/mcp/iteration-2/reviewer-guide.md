@@ -1,8 +1,11 @@
 # Prueba de ChatGPT y guía de revisión
 
-Estado al 17 de octubre de 2026: **PENDIENTE DE ACCESO EXTERNO**.
-No se creó un plugin en ChatGPT ni un borrador en el portal durante esta
-iteración. El fallo observado al vincular la pestaña autenticada fue
+**Actualización:** el usuario completó posteriormente la conexión real y una
+consulta de agenda. [Evidencia y alcance](chatgpt-real-confirmation.md).
+Las instrucciones siguientes permiten continuar C–J y el trabajo externo pendiente.
+
+En el cierre inicial el agente no creó un plugin en ChatGPT ni un borrador en el
+portal. El fallo observado al vincular la pestaña autenticada fue
 `Local browser use is disabled in Work settings`. No demuestra un problema
 de login, plan ni permisos de la cuenta OpenAI. No hubo bypass de sesión/MFA.
 
@@ -69,13 +72,15 @@ oficial sin ampliar redirects ni debilitar issuer/resource/PKCE/CSRF.
 
 ## Evaluación A–J
 
-En **ChatGPT real todos están pendientes**, sin fallos funcionales del cliente
-demostrados. La columna SDK es una ejecución guionada sobre HTTPS, con IDs y
+En **ChatGPT real se observaron resultados de identificación y agenda** mediante
+captura del usuario y backend. Los prompts literales/argumentos no se retuvieron;
+C–J y la batería adicional siguen pendientes. La columna SDK es una ejecución
+guionada sobre HTTPS, con IDs y
 contactos ficticios suministrados por el script; no mide selección del modelo.
 Fecha del fixture registrado: 17-10-2026, America/Santiago; mañana 18-10 y viernes
 23-10. Leer el fixture actualizado si se reinicia otro día.
 
-| Caso / petición | Herramientas esperadas (no observadas en ChatGPT) | Resultado verificado mediante SDK |
+| Caso / petición | Herramientas esperadas | Resultado verificado mediante SDK |
 | --- | --- | --- |
 | A. «¿Qué negocio tengo conectado a Puragenda?» | get_connected_account | PASS: Booking API Fixture, perfil estable al reconectar. |
 | B. «Muéstrame todas las citas que tengo mañana.» | list_appointments, list_accessible_locations si falta sucursal | PASS: 2 en principal, Carolina 10:00 confirmada y orientación 12:00 pendiente; excluye cita secundaria. ChatGPT debe recorrer sucursales autorizadas si se pide todo el negocio, o aclarar ámbito. |

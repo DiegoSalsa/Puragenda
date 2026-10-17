@@ -2,7 +2,12 @@
 
 17 de octubre de 2026 · conector 1.0.1 · baseline `76c9c44`.
 
-**Estado de conexión con ChatGPT real: BLOQUEADO.** La pestaña autenticada se
+**Actualización posterior: conexión real SÍ, confirmada por el usuario y el
+backend.** [Alcance: OAuth, refresh, identidad y lectura de agenda](chatgpt-real-confirmation.md).
+Las cifras y el estado bloqueado que siguen describen el cierre inicial anterior
+a esa confirmación; no sustituyen la evidencia posterior ni sus límites.
+
+**Estado de conexión con ChatGPT real en el cierre inicial: BLOQUEADO.** La pestaña autenticada se
 intentó vincular con la herramienta de navegador; devolvió
 `Local browser use is disabled in Work settings`, incluso después de que el
 usuario avisó que estaba habilitada. No se pudo manejar ChatGPT/Platform ni
