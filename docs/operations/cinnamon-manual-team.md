@@ -77,7 +77,7 @@ El script toma la conexión exclusivamente de variables de entorno. Sin `--apply
 
 Solo con aprobación para actualizar producción, ejecutar el mismo comando agregando `--apply`. La configuración se escribe en la suscripción existente, nunca crea otra suscripción, y puede repetirse conservando los mismos términos.
 
-Confirmar por separado la fecha hasta la que cubre el pago recibido. El script no la cambia; completar ese dato requerirá autorización para la actualización correspondiente.
+El operador confirmó posteriormente el pago del 17/10/2026 y una cobertura de 30 días. Se preparó el período por días completos de Santiago: 17/10 a 15/11 inclusive, con término exclusivo el 16/11/2026 a las 00:00 (`2026-11-16T03:00:00.000Z`). El configurador no cambia esa fecha; el comando separado de registro del pago la escribirá únicamente después de aprobar la operación de producción. Los argumentos completos figuran en el informe operativo.
 
 ## Archivos
 

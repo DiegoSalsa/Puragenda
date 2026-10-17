@@ -21,9 +21,23 @@ La conexión de abonos de `Business` **no participa en esa desvinculación**: no
 
 Referencias oficiales consultadas: [GET de suscripción de Mercado Pago](https://www.mercadopago.cl/developers/es/reference/online-payments/subscriptions/get-preapproval/get), [API de suscripciones](https://www.mercadopago.cl/developers/en/reference/online-payments/subscriptions/overview), [lectura de variables de Vercel](https://vercel.com/docs/rest-api/projects/retrieve-the-environment-variables-of-a-project-by-id-or-name).
 
-## 2. Período pagado: falta confirmación de fechas
+## 2. Período pagado confirmado: 30 días desde el 17 de octubre
 
-El operador confirmó la recepción de $17.990 por transferencia y la activación de Equipo con dos profesionales. Eso prueba el pago informado, pero no establece por sí solo la fecha de inicio ni la fecha de vencimiento convenida.
+El operador confirmó la recepción de $17.990 por transferencia y la activación de Equipo con dos profesionales. Después precisó: «pago hoy 17/10, la sub es de 30 dias como todas, 1 mes». La fecha de pago y el período de 30 días quedan confirmados para este caso.
+
+El registro se prepara por días completos de Santiago, con inicio del día local como convención de representación; esa hora no se atribuye al comprobante bancario:
+
+| Campo | Valor preparado |
+| --- | --- |
+| Pago confirmado | $17.990 CLP, transferencia, 17/10/2026 |
+| Inicio incluido | 17/10/2026 00:00 America/Santiago |
+| Último día incluido | 15/11/2026 |
+| Término exclusivo / próxima renovación | 16/11/2026 00:00 America/Santiago |
+| `paidFrom` | `2026-10-17T00:00:00-03:00` = `2026-10-17T03:00:00.000Z` |
+| `paidThrough` / `currentPeriodEnd` previsto | `2026-11-16T00:00:00-03:00` = `2026-11-16T03:00:00.000Z` |
+| Duración verificada | 30 días |
+
+Se utiliza la duración explícita de 30 días indicada por el operador. El checkout automático existente usa meses calendario (`frequency_type: months` y `addMonths`); no se modifica esa regla global ni se interpreta como evidencia distinta para esta transferencia manual.
 
 Evidencia persistida revisada:
 
@@ -33,7 +47,7 @@ Evidencia persistida revisada:
 - Los registros de auditoría encontrados se refieren a reservas/directorio; ninguno documenta el período de esta transferencia.
 - `Subscription.updatedAt=2026-10-17T16:26:24.646Z` registra una actualización, no una fecha de cobertura contractual. `trialEndsAt` corresponde a la prueba antigua y no debe reutilizarse.
 
-Se pidió al operador confirmar **inicio y término del período** y si el día final está incluido. No se ha asignado una fecha por defecto. El script exige un término **exclusivo**, como el resto de las comparaciones por instante: si el acuerdo cubre un día completo, el término es el comienzo del día siguiente, con su zona correcta, una vez confirmado ese acuerdo. No agregar un mes a la fecha de activación ni a la fecha actual como sustituto de esa confirmación.
+La confirmación del operador resuelve el pendiente de fechas; no se derivan de `updatedAt`, del trial ni de la fecha en que finalmente se ejecute el despliegue. La base aún no se actualizó. El comando conserva el término exclusivo: el 15 de noviembre queda cubierto completo y el siguiente período comienza el 16 de noviembre.
 
 ## 3. Operación mensual sin cambios de código
 
@@ -62,7 +76,7 @@ La migración comercial es aditiva. Se conserva una copia idéntica en Prisma y 
 
 ## 5. Secuencia exacta, para ejecutar solo tras aprobación
 
-1. **Cerrar las dos confirmaciones operativas.** Obtener el estado verificable de la preaprobación en su cuenta cobradora y el período exacto del pago de $17.990. Mientras falte cualquiera, detener la configuración definitiva. Una autorización activa requiere una aprobación separada para su cancelación y una consulta posterior que confirme el resultado.
+1. **Cerrar la verificación de Mercado Pago.** Obtener el estado verificable de la preaprobación en su cuenta cobradora. El pago y los 30 días desde el 17/10/2026 ya están confirmados en el apartado 2. Mientras falte la verificación del proveedor, detener la configuración definitiva. Una autorización activa requiere una aprobación separada para su cancelación y una consulta posterior que confirme el resultado.
 2. **Preparar el checkout limpio de liberación.** Mantener los cambios previos del checkout original intactos. Incluir la rama comercial y reconciliar los dos archivos históricos indicados arriba, verificando sus checksums con `_prisma_migrations`. Confirmar que la única migración nueva sigue siendo la comercial.
 3. **Cerrar la revisión del código de liberación.** Ejecutar `npm ci`, `npx prisma generate`, tests, typecheck, lint y build en el entorno de revisión/local. Revisar el diff final y obtener aprobación explícita para merge/deploy, migración y actualización de la suscripción. La aprobación conceptual anterior no se trató como permiso de producción.
 4. **Guardar una fotografía previa mínima.** Registrar la fila de `Subscription`, los recuentos de datos operativos y una huella de la configuración del negocio, sin imprimir credenciales. Verificar de nuevo que Cinnamon sigue siendo `cmstm3108000104js2e9vfl0l` / suscripción `cmstm314n000j04jsxolzycw3`.
@@ -75,12 +89,12 @@ La migración comercial es aditiva. Se conserva una copia idéntica en Prisma y 
    ```
 
    Comprobar `blockers=[]`, la identidad y los cambios propuestos. Después, con la aprobación de datos ya concedida, ejecutar el mismo comando agregando `--apply`. Deben quedar EQUIPO, BANK_TRANSFER, límite 2 y $17.990. El período todavía se conserva tal como estaba.
-8. **Registrar el período confirmado de la transferencia recibida.** Sustituir las variables siguientes **solo con datos confirmados**; no son fechas sugeridas:
+8. **Registrar el período confirmado de la transferencia recibida.** Los siguientes valores preparan los 30 días confirmados. La referencia es una clave interna estable de esta confirmación del operador, no un supuesto folio bancario; conservarla en todos los reintentos de este mismo registro:
 
    ```powershell
-   $cinnamonPaymentReference = '<REFERENCIA_BANCARIA_CONFIRMADA>'
-   $cinnamonPaidFrom = '<INICIO_ISO_CON_ZONA_CONFIRMADO>'
-   $cinnamonPaidThrough = '<TERMINO_EXCLUSIVO_ISO_CON_ZONA_CONFIRMADO>'
+   $cinnamonPaymentReference = 'confirmacion-operador-cinnamon-20261017-17990'
+   $cinnamonPaidFrom = '2026-10-17T00:00:00-03:00'
+   $cinnamonPaidThrough = '2026-11-16T00:00:00-03:00'
    $cinnamonExpectedPeriodEnd = 'none' # solo si la lectura inmediata sigue mostrando NULL
 
    npx tsx scripts/record-manual-subscription-payment.ts --business-id cmstm3108000104js2e9vfl0l --reference $cinnamonPaymentReference --amount-clp 17990 --paid-from $cinnamonPaidFrom --paid-through $cinnamonPaidThrough --expected-period-end $cinnamonExpectedPeriodEnd
@@ -102,4 +116,4 @@ Si se revierte la aplicación antes de configurar la cuenta, las columnas aditiv
 - Se ejecutó además el CLI real contra una cuenta local desechable, desde procesos separados: revisión sin escritura, primer período, reintento idempotente y segundo mes. Se verificaron por SQL con conversión UTC explícita el período resultante, los dos registros de auditoría y la conservación del precio, límite y credencial ficticia del vendedor. La cuenta de prueba se eliminó al terminar.
 - La lectura de control de producción conserva `Subscription.updatedAt=2026-10-17T16:26:24.646Z`, `Business.updatedAt=2026-10-03T14:05:26.762Z`, el mismo `mpSubscriptionId`, el mismo vendedor de abonos y `currentPeriodEnd=NULL`. Los instantes se verificaron con `AT TIME ZONE 'UTC'`: el lector SQL genérico había interpretado inicialmente los campos `timestamp without time zone` en la zona local del proceso. Se corrigió la lectura de auditoría; no se modificaron esos datos ni se derivó de ellos un período de pago.
 
-**Pendientes externos:** credencial/verificación de la cuenta cobradora y confirmación del período. **Pendientes de liberación:** reconciliación revisada de la historia de migraciones y aprobación explícita de las operaciones de producción. Ninguna de esas operaciones se ejecutó.
+**Pendiente externo:** credencial/verificación de la cuenta cobradora. El período de 30 días ya quedó confirmado y preparado, sin escritura en producción. **Pendientes de liberación:** reconciliación revisada de la historia de migraciones y aprobación explícita de las operaciones de producción. Ninguna de esas operaciones se ejecutó.
