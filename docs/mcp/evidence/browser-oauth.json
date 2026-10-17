@@ -1,0 +1,12 @@
+{
+  "browserConsent": true,
+  "pkce": true,
+  "issuerValidated": true,
+  "discoveredTools": 30,
+  "profile": {
+    "id": "2c6b64fb-bbd8-41ea-9c93-122b45d86afb",
+    "name": "Revisión MCP",
+    "nickname": "Booking API Fixture"
+  },
+  "verifiedAt": "2026-10-17T02:30:30.703Z"
+}

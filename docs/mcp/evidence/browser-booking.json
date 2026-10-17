@@ -1,0 +1,25 @@
+{
+  "browserApproval": true,
+  "idempotentReplay": true,
+  "result": {
+    "id": "cmvbs731a00055wtcvfr847o5",
+    "code": null,
+    "status": "PENDING",
+    "booking": {
+      "price": 0,
+      "state": "pending",
+      "endTime": "2026-10-17T12:30:00.000Z",
+      "staffId": "preview-staff",
+      "version": "1",
+      "currency": "CLP",
+      "duration": 30,
+      "startTime": "2026-10-17T12:00:00.000Z",
+      "locationId": "preview-location",
+      "depositAmount": 0
+    },
+    "message": "El estado de booking refleja el resultado real; crear no significa pagar ni confirmar.",
+    "httpStatus": 201,
+    "operationStatus": null
+  },
+  "verifiedAt": "2026-10-17T02:32:43.994Z"
+}
