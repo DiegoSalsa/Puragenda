@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import type { AppointmentStatus, Prisma } from "@prisma/client";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
-import { checkpointBookingOperation, fenceBookingOperation, bookingContractContext } from "@/server/booking/idempotency";
+import { checkpointBookingOperation, fenceBookingOperation, bookingContractContext, bookingExpectedQuoteContext } from "@/server/booking/idempotency";
 import { BookingSelectionError } from "@/core/booking-selection";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { format } from "date-fns";
@@ -147,6 +147,11 @@ export async function createAppointment(data: {
   if (bookingContractContext.getStore()) {
     const { getBookingAvailability, loadBookingContext } = await import("@/server/booking/read.service");
     const current = await loadBookingContext(data.businessId, db);
+    const approvedQuote = bookingExpectedQuoteContext.getStore();
+    if (approvedQuote?.requirePublicParticipation && !current.mcpPublicDiscovery) throw new BookingSelectionError("El negocio ya no participa", "BUSINESS_NOT_FOUND", 404);
+    if (approvedQuote && (approvedQuote.price !== data.totalPrice || approvedQuote.duration !== data.totalDuration || (approvedQuote.forbidDeposit && current.depositRequired))) {
+      throw new BookingSelectionError("La selección cambió; prepara y aprueba una nueva operación", "SELECTION_CHANGED", 409);
+    }
     const subscription = await db.subscription.findUnique({ where: { businessId: data.businessId } });
     if (!hasOperationalSubscriptionAccess(subscription)) throw new BookingSelectionError("Las reservas online no están disponibles temporalmente", "SUBSCRIPTION_INACTIVE", 403);
     const location = current.locations.find((item) => item.id === data.locationId);

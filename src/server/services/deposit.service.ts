@@ -367,6 +367,8 @@ export async function cancelAppointmentUnlessDepositApproved(input: {
   appointmentId: string;
   businessId: string;
   eligibility?: DepositCancellationEligibility;
+  tx?: Prisma.TransactionClient;
+  expectedUpdatedAt?: Date;
   extraData?: {
     actionToken?: null;
     customerActionTokenHash?: null;
@@ -374,18 +376,19 @@ export async function cancelAppointmentUnlessDepositApproved(input: {
     customerActionTokenUsedAt?: Date;
   };
 }): Promise<DashboardCancelResult> {
-  const cancelled = await prisma.$transaction(async (tx) => {
+  const transition = async (tx: Prisma.TransactionClient) => {
     const result = await tx.appointment.updateMany({
-      where: depositSafeCancellationWhere(input),
+      where: { ...depositSafeCancellationWhere(input), ...(input.expectedUpdatedAt ? { updatedAt: input.expectedUpdatedAt } : {}) },
       data: { status: "CANCELLED", ...input.extraData },
     });
     if (result.count > 0) await releaseGiftCardRedemptions({ appointmentIds: [input.appointmentId], reason: "Cita cancelada" }, tx);
     return result;
-  });
+  };
+  const cancelled = input.tx ? await transition(input.tx) : await prisma.$transaction(transition);
 
   if (cancelled.count > 0) return { ok: true };
 
-  const current = await prisma.appointment.findFirst({
+  const current = await (input.tx ?? prisma).appointment.findFirst({
     where: { id: input.appointmentId, businessId: input.businessId },
     select: { status: true, paymentStatus: true },
   });
