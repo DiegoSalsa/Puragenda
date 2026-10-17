@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
   try {
     const now = new Date();
-    const results = { warned: 0, expired: 0, promoExpired: 0, errors: [] as string[] };
+    const results = { warned: 0, expired: 0, promoExpired: 0, manualExpired: 0, errors: [] as string[] };
 
     // ═══════════════════════════════════════════
     // 1. WARN: trials expiring in 3 days
@@ -130,6 +130,7 @@ export async function GET(req: Request) {
 
     const expiredNoCardPromos = await prisma.subscription.findMany({
       where: {
+        paymentMethod: "AUTOMATIC",
         status: "ACTIVE",
         mpSubscriptionId: null,
         currentPeriodEnd: { lte: now },
@@ -151,6 +152,7 @@ export async function GET(req: Request) {
         const transitioned = await prisma.subscription.updateMany({
           where: {
             id: sub.id,
+            paymentMethod: "AUTOMATIC",
             status: "ACTIVE",
             mpSubscriptionId: null,
             currentPeriodEnd: { lte: now },
@@ -181,6 +183,18 @@ export async function GET(req: Request) {
         results.errors.push(`promo-expire-${sub.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
+
+    // Manual payments never renew automatically. Preserve the paid-through date
+    // and commercial terms, and leave undated legacy periods untouched.
+    const manualExpired = await prisma.subscription.updateMany({
+      where: {
+        paymentMethod: "BANK_TRANSFER",
+        status: "ACTIVE",
+        currentPeriodEnd: { lte: now },
+      },
+      data: { status: "INACTIVE" },
+    });
+    results.manualExpired = manualExpired.count;
 
     let billingReconciliation = null;
     try {

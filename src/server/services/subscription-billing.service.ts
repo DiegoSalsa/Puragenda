@@ -48,6 +48,8 @@ export type BillingSubscriptionInput = {
   status?: "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
   billingCycle: BillingCycle;
   extraStaffCount: number;
+  paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
+  customMonthlyPriceClp?: number | null;
   pendingDiscountPercentage?: number | null;
   freeMonthsRemaining?: number | null;
   promoName?: string | null;
@@ -73,7 +75,12 @@ export function calculateSubscriptionBaseAmount(subscription: {
   plan: BillingPlan;
   billingCycle: BillingCycle;
   extraStaffCount: number;
+  paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
+  customMonthlyPriceClp?: number | null;
 }) {
+  if (subscription.paymentMethod === "BANK_TRANSFER" && subscription.customMonthlyPriceClp != null) {
+    return subscription.customMonthlyPriceClp;
+  }
   const planPricing = PRICING[subscription.plan] ?? PRICING.INDIVIDUAL;
   let monthlyAmount = planPricing.monthly;
 
@@ -90,6 +97,18 @@ export function calculateNextBillingPreview(subscription: BillingSubscriptionInp
   const baseAmount = calculateSubscriptionBaseAmount(subscription);
   const overrideAmount = subscription.nextBillingOverrideAmount;
   const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return {
+      baseAmount,
+      amountDue: baseAmount,
+      mpAmount: 0,
+      discountPercentage: null,
+      reason: "Transferencia bancaria manual, sin cobro automático",
+      hasBenefit: false,
+      usesMercadoPagoMinimum: false,
+    };
+  }
 
   if (
     subscription.status === "ACTIVE" &&
@@ -199,6 +218,10 @@ export async function syncMercadoPagoSubscriptionAmount(subscriptionId: string) 
 
   const preview = calculateNextBillingPreview(subscription);
 
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return { success: true as const, skipped: true, preview };
+  }
+
   if (!subscription.mpSubscriptionId) {
     await prisma.subscription.update({
       where: { id: subscription.id },
@@ -255,6 +278,10 @@ export async function advanceBillingBenefitAfterAuthorized(subscriptionId: strin
   });
 
   if (!subscription) return { success: false as const, error: "Suscripcion no encontrada" };
+
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return { success: true as const, skipped: true };
+  }
 
   const nextFreeMonthsRemaining = Math.max((subscription.freeMonthsRemaining ?? 0) - 1, 0);
   const nextPromoFreeMonthsRemaining = Math.max((subscription.promoFreeMonthsRemaining ?? 0) - 1, 0);

@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    if (subscription?.paymentMethod === "BANK_TRANSFER") {
+      return NextResponse.json({ status: subscription.status, provider: "bank_transfer", currentPeriodEnd: subscription.currentPeriodEnd });
+    }
     if (subscription?.paddleSubscriptionId) {
       return NextResponse.json({
         status: subscription.status,

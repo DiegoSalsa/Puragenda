@@ -23,6 +23,10 @@ export async function applyDiscount(businessId: string, percentage: number) {
     return { success: false, error: "No se encontró una suscripción activa." };
   }
 
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return { success: false, error: "Las condiciones de transferencia bancaria se gestionan manualmente." };
+  }
+
   if (!subscription.mpSubscriptionId) {
     return { success: false, error: "La suscripción no está enlazada con MercadoPago." };
   }

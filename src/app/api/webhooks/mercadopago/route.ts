@@ -36,6 +36,10 @@ async function processPreapproval(resourceId: string) {
     return { handled: false, reason: "subscription_not_found" };
   }
 
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    return { handled: false, reason: "manual_transfer_subscription" };
+  }
+
   if (mpSubscription.status === "authorized") {
     // An authorized preapproval only proves that the recurring agreement is
     // active. It must never clear a PAST_DUE state; invoice notifications do.

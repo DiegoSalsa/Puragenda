@@ -133,7 +133,10 @@ describe("trial expiry", () => {
     expect(findSubscriptions).toHaveBeenNthCalledWith(2, expect.objectContaining({
       where: expect.objectContaining({ trialEndsAt: { lte: now } }),
     }));
-    expect(updateSubscriptions).not.toHaveBeenCalled();
+    expect(updateSubscriptions).toHaveBeenCalledExactlyOnceWith({
+      where: { paymentMethod: "BANK_TRANSFER", status: "ACTIVE", currentPeriodEnd: { lte: now } },
+      data: { status: "INACTIVE" },
+    });
     expect(sendTrialExpiredEmail).not.toHaveBeenCalled();
   });
 
@@ -162,6 +165,7 @@ describe("trial expiry", () => {
       .mockResolvedValueOnce([] as never);
     updateSubscriptions
       .mockResolvedValueOnce({ count: 1 } as never)
+      .mockResolvedValueOnce({ count: 0 } as never) // manual expiry sweep
       .mockResolvedValueOnce({ count: 0 } as never);
 
     const first = await GET(cronRequest());

@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import { assertStaffCapacity, withStaffCapacityLock } from "./staff-capacity.service";
 
 /**
  * Get all active staff for a business.
@@ -31,13 +32,16 @@ export async function createStaff(data: {
   businessId: string;
   userId?: string;
 }) {
-  return prisma.staff.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      businessId: data.businessId,
-      userId: data.userId,
-      isActive: true,
-    },
+  return withStaffCapacityLock(data.businessId, async (tx) => {
+    await assertStaffCapacity(data.businessId, tx);
+    return tx.staff.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        businessId: data.businessId,
+        userId: data.userId,
+        isActive: true,
+      },
+    });
   });
 }

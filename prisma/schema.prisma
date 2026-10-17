@@ -471,6 +471,11 @@ enum BillingCycle {
   ANNUAL
 }
 
+enum SubscriptionPaymentMethod {
+  AUTOMATIC
+  BANK_TRANSFER
+}
+
 enum RecurringMode {
   FIXED_DAYS // El negocio fija exactamente que dias (ej: L/M/V)
   DAYS_WITH_REST // N dias/semana con minimo de descanso entre sesiones
@@ -503,6 +508,11 @@ model Subscription {
   isTrial                      Boolean            @default(false)
   trialEndsAt                  DateTime?
   extraStaffCount              Int                @default(0)
+  // Absolute active-professional cap; purchased extras do not increase it.
+  staffLimitOverride           Int?
+  paymentMethod                SubscriptionPaymentMethod @default(AUTOMATIC)
+  // Agreed manual monthly price in CLP, VAT included; never sent to a provider.
+  customMonthlyPriceClp        Int?
   pendingDiscountPercentage    Int?
   hasCountedAsPaidReferral     Boolean            @default(false)
   trialWarningEmailSent        Boolean            @default(false)
