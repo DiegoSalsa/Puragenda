@@ -7,7 +7,7 @@ import { Eye, EyeOff, Loader2, LogIn } from "@/components/icons/hover-icons";
 import { useTranslations } from "next-intl";
 import { track } from "@/lib/analytics/client";
 
-export function LoginForm() {
+export function LoginForm({ returnTo = "/dashboard" }: { returnTo?: string }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -40,7 +40,7 @@ export function LoginForm() {
       }
 
       track("login_completed");
-      router.push("/dashboard");
+      router.push(returnTo);
       router.refresh();
     } catch {
       setError(t("connectionError"));

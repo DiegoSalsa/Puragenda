@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TerminosPage() {
+  const mcp = await getTranslations("mcp");
   const notice = getTermsNotice(await getLocale());
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-[#7C3AED]/30">
@@ -130,6 +132,8 @@ export default async function TerminosPage() {
               <p>
                 <LocalizedText id="4X4EZZxNRueh" /> <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
+              <h2>{mcp("termsTitle")}</h2>
+              <p>{mcp("terms")}</p>
             </article>
           </div>
         </div>

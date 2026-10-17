@@ -40,6 +40,8 @@ export const ROBOTS_DISALLOW_PREFIXES = [
   "/responder/",
   "/para/x7k9m2v4q8",
   "/s/",
+  "/oauth/",
+  "/mcp/confirm/",
 ] as const;
 
 /**
@@ -47,6 +49,7 @@ export const ROBOTS_DISALLOW_PREFIXES = [
  * Includes both robots-disallowed internals and linked app surfaces.
  */
 export const NOINDEX_HEADER_SOURCES = [
+  "/integraciones/chatgpt/conexiones",
   "/website-preview",
   "/website-demo/:path*",
   "/dashboard/:path*",

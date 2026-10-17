@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import createNextIntlPlugin from "next-intl/plugin";
 import { NOINDEX_HEADER_SOURCES } from "./src/lib/crawler-policy";
 import { marketplaceAliasRedirects } from "./src/lib/marketplace/taxonomy";
+import { oauthFormActions } from "./src/server/mcp/config";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -89,6 +90,15 @@ const nextConfig: NextConfig = {
         ],
       },
       // Only authenticated internal previews may embed in their own origin.
+      {
+        source: "/oauth/consent",
+        headers: [{ key: "Content-Security-Policy", value: securityPolicy.replace("form-action 'self'", `form-action 'self' ${oauthFormActions()}`) }],
+      },
+      ...["/oauth/:path*", "/mcp/:path*"].map((source) => ({ source, headers: [
+        { key: "Cache-Control", value: "private, no-store" },
+        { key: "Referrer-Policy", value: "same-origin" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+      ] })),
       {
         source: "/website-preview",
         headers: [

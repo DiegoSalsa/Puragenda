@@ -4,11 +4,13 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { LoginForm } from "./login-form";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ mcpRequest?: string }> }) {
+  const { mcpRequest } = await searchParams;
+  const returnTo = mcpRequest && /^[a-f0-9-]{36}$/.test(mcpRequest) ? `/oauth/consent?id=${encodeURIComponent(mcpRequest)}` : "/dashboard";
   const user = await getCurrentSessionUser();
 
   if (user) {
-    redirect("/dashboard");
+    redirect(returnTo);
   }
 
   return (
@@ -25,7 +27,7 @@ export default async function LoginPage() {
           <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda Logo" className="h-16 w-auto -my-3" />
         </Link>
 
-        <LoginForm />
+        <LoginForm returnTo={returnTo} />
       </div>
     </main>
   );
