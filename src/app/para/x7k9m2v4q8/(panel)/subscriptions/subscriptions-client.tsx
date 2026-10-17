@@ -9,6 +9,8 @@ import { es } from "date-fns/locale";
 import { AlertTriangle, XCircle, Clock, TrendingUp, RefreshCw, Gift, Percent, Save, Trash2, Zap } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import type { AdminSubscriptionReport, getAdminRevenueSummary } from "@/server/services/admin-subscription-report";
+import { SubscriptionBillingDetails } from "@/components/admin/subscription-billing-details";
 import {
   applySubscriptionBenefitPresetAction,
   clearSubscriptionBenefitAction,
@@ -37,6 +39,7 @@ type Sub = {
   mpSubscriptionId: string | null;
   lastBillingSyncAt: Date | null;
   lastBillingSyncError: string | null;
+  billingReport: AdminSubscriptionReport;
   nextBillingPreview: {
     baseAmount: number;
     amountDue: number;
@@ -58,12 +61,6 @@ type BillingEditState = {
   billingNotes: string;
 };
 
-// Prices in CLP (whole numbers, not cents). Annual = monthly * 10 (pay 10, get 12).
-const PLAN_PRICES: Record<string, Record<string, number>> = {
-  INDIVIDUAL: { MONTHLY: 12990, ANNUAL: 129900 },
-  EQUIPO: { MONTHLY: 29990, ANNUAL: 299900 },
-};
-
 function formatCLP(amount: number) {
   return "$" + amount.toLocaleString("es-CL");
 }
@@ -73,11 +70,13 @@ export function SubscriptionsClient({
   cancelled,
   active,
   allSubscriptions,
+  revenue,
 }: {
   expiringSoon: Sub[];
   cancelled: Sub[];
   active: Sub[];
   allSubscriptions: Sub[];
+  revenue: ReturnType<typeof getAdminRevenueSummary>;
 }) {
   const legacy = useTranslations("legacy");
   const [extending, setExtending] = useState<string | null>(null);
@@ -89,11 +88,6 @@ export function SubscriptionsClient({
   const now = new Date();
 
   const trialing = allSubscriptions.filter((s) => s.status === "TRIALING");
-  const mrr = active.reduce((acc, s) => {
-    const baseAmount = s.nextBillingPreview.baseAmount;
-    return acc + (s.billingCycle === "ANNUAL" ? Math.round(baseAmount / 12) : baseAmount);
-  }, 0);
-  const nextCycleRevenue = active.reduce((acc, s) => acc + s.nextBillingPreview.amountDue, 0);
 
   function ensureBillingEdit(subscription: Sub) {
     setExpandedBillingId((current) => current === subscription.id ? null : subscription.id);
@@ -136,7 +130,7 @@ export function SubscriptionsClient({
     setBillingMessage(null);
     startTransition(async () => {
       const result = await applySubscriptionBenefitPresetAction(subscriptionId, preset);
-      setBillingMessage(result.error || result.warning || "Beneficio aplicado y sincronizado.");
+      setBillingMessage(("error" in result ? result.error : result.warning) || "Beneficio aplicado y sincronizado.");
       setBillingAction(null);
     });
   }
@@ -156,7 +150,7 @@ export function SubscriptionsClient({
         nextBillingOverrideAmount: edit.nextBillingOverrideAmount ? Number(edit.nextBillingOverrideAmount) : null,
         billingNotes: edit.billingNotes,
       });
-      setBillingMessage(result.error || result.warning || "Reglas guardadas y sincronizadas.");
+      setBillingMessage("error" in result ? result.error : result.warning || "Reglas guardadas y sincronizadas.");
       setBillingAction(null);
     });
   }
@@ -166,7 +160,7 @@ export function SubscriptionsClient({
     setBillingMessage(null);
     startTransition(async () => {
       const result = await clearSubscriptionBenefitAction(subscriptionId);
-      setBillingMessage(result.error || result.warning || "Beneficio limpiado.");
+      setBillingMessage("error" in result ? result.error : result.warning || "Beneficio limpiado.");
       setBillingAction(null);
     });
   }
@@ -176,7 +170,7 @@ export function SubscriptionsClient({
     setBillingMessage(null);
     startTransition(async () => {
       const result = await syncSubscriptionBillingAction(subscriptionId);
-      setBillingMessage(result.error || legacy("L9jrE-02w0wr"));
+      setBillingMessage(("error" in result ? result.error : null) || legacy("L9jrE-02w0wr"));
       setBillingAction(null);
     });
   }
@@ -190,10 +184,11 @@ export function SubscriptionsClient({
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {[
-          { label: "MRR aprox.", value: formatCLP(mrr), bg: "bg-[#BFFCC6]" },
-          { label: "Proximo ciclo", value: formatCLP(nextCycleRevenue), bg: "bg-[#E9D5FF]" },
+          { label: "MRR contratado CLP", value: formatCLP(revenue.monthlyRevenueClp), bg: "bg-[#BFFCC6]" },
+          { label: "Transferencias previstas CLP", value: formatCLP(revenue.nextTransferClp), bg: "bg-[#E9D5FF]" },
+          { label: "Cobros automáticos previstos CLP", value: formatCLP(revenue.nextAutomaticClp), bg: "bg-[#E9D5FF]" },
           { label: "Activas", value: active.length, bg: "bg-[#85E3FF]" },
           { label: "En trial", value: trialing.length, bg: "bg-[#FFF5BA]" },
           { label: "Canceladas", value: cancelled.length, bg: "bg-[#FFB5E8]" },
@@ -204,6 +199,7 @@ export function SubscriptionsClient({
           </div>
         ))}
       </div>
+      <p className="text-xs font-bold text-black/60">Tarifas vigentes mensualizadas y próximos importes de Chile; no equivalen a pagos recibidos. Las promociones se reflejan en el próximo importe. {revenue.internationalCount > 0 ? `${revenue.internationalCount} cuenta(s) internacional(es): consultar importes en su proveedor, fuera de los totales CLP.` : ""}</p>
 
       {/* Billing control */}
       <section>
@@ -230,7 +226,7 @@ export function SubscriptionsClient({
                 <th className="px-5 py-3"><LocalizedText id="B8s6yKMYEqy_" /></th>
                 <th className="px-4 py-3"><LocalizedText id="CFBVcrG_9ncY" /></th>
                 <th className="px-4 py-3"><LocalizedText id="u-CL4GYIztCu" /></th>
-                <th className="px-4 py-3"><LocalizedText id="OHWtjcFBNX8d" /></th>
+                <th className="px-4 py-3">Modalidad y período</th>
                 <th className="px-4 py-3"><LocalizedText id="gCByBuhF6XGt" /></th>
               </tr>
             </thead>
@@ -238,8 +234,8 @@ export function SubscriptionsClient({
               {allSubscriptions.map((s) => {
                 const preview = s.nextBillingPreview;
                 const edit = billingEdits[s.id];
-                const activeBenefit = [
-                  !s.mpSubscriptionId && s.currentPeriodEnd && new Date(s.currentPeriodEnd).getTime() > now.getTime()
+                const activeBenefit = s.billingReport.isManual ? (s.billingReport.hasCustomPrice ? "Precio mensual acordado" : "Transferencia manual") : [
+                  s.billingReport.isCourtesy && s.currentPeriodEnd
                     ? `Cortesia hasta ${format(new Date(s.currentPeriodEnd), "dd/MM/yyyy")}`
                     : null,
                   s.freeMonthsRemaining > 0 ? `${s.freeMonthsRemaining} mes(es) gratis premio` : null,
@@ -264,10 +260,10 @@ export function SubscriptionsClient({
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-lg font-black text-black">{formatCLP(preview.amountDue)}</p>
-                      <p className="text-xs font-bold text-black/50"><LocalizedText id="e0c2Gq0Zu0g6" /> {formatCLP(preview.baseAmount)}</p>
-                      <p className="mt-1 text-xs font-bold text-black/60">{preview.reason}</p>
-                      {preview.usesMercadoPagoMinimum && (
+                      <p className="text-lg font-black text-black">{s.billingReport.amountLabel}</p>
+                      <p className="text-xs font-bold text-black/50">Importe {s.billingReport.cycleLabel} · {s.billingReport.baseAmountLabel}</p>
+                      {s.billingReport.currencyCode === "CLP" && <p className="mt-1 text-xs font-bold text-black/60">{preview.reason}</p>}
+                      {s.billingReport.currencyCode === "CLP" && preview.usesMercadoPagoMinimum && (
                         <p className="mt-1 border border-black bg-[#FFF5BA] px-2 py-1 text-[10px] font-black text-black">
                           <LocalizedText id="VH5G-medcI9K" /> {formatCLP(preview.mpAmount)}
                         </p>
@@ -277,24 +273,23 @@ export function SubscriptionsClient({
                       <p className="max-w-[230px] text-xs font-bold text-black">
                         {activeBenefit || legacy("jOU1S2HsyWeu")}
                       </p>
-                      {s.promoName && <p className="mt-1 text-xs font-black text-black/60">{s.promoName}</p>}
+                      {!s.billingReport.isManual && s.promoName && <p className="mt-1 text-xs font-black text-black/60">{s.promoName}</p>}
                       {s.billingNotes && <p className="mt-1 max-w-[230px] text-[11px] font-bold text-black/40">{s.billingNotes}</p>}
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`border-2 border-black px-2 py-0.5 text-[10px] font-black ${s.mpSubscriptionId ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
-                        {s.mpSubscriptionId ? "Enlazada" : legacy("YC6rvtyt7ihv")}
-                      </span>
-                      {s.lastBillingSyncAt && (
+                      <SubscriptionBillingDetails report={s.billingReport} />
+                      <p className="mt-2 text-xs font-bold">{s.billingReport.isManual ? "Renovación manual" : "Fin de período"}: {s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString("es-CL", { timeZone: "America/Santiago" }) : "Sin fecha registrada"}</p>
+                      {!s.billingReport.isManual && s.lastBillingSyncAt && (
                         <p className="mt-1 text-[10px] font-bold text-black/40">
                           <LocalizedText id="jSYaNy_eFGHM" /> {format(new Date(s.lastBillingSyncAt), "dd/MM HH:mm")}
                         </p>
                       )}
-                      {s.lastBillingSyncError && (
+                      {!s.billingReport.isManual && s.lastBillingSyncError && (
                         <p className="mt-1 max-w-[180px] text-[10px] font-black text-red-700">{s.lastBillingSyncError}</p>
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
+                      {s.billingReport.isManual ? <Link className="text-xs font-black underline" href={`${ADMIN_SECRET_PATH}/businesses/${s.business.id}`}>Ver acuerdo de transferencia</Link> : <div className="flex flex-wrap gap-2">
                         {[
                           ["PRIZE_12", "12M"],
                           ["PRIZE_6", "6M"],
@@ -327,9 +322,9 @@ export function SubscriptionsClient({
                           <RefreshCw className="h-3 w-3" />
                           {billingAction === `${s.id}:sync` ? "..." : "Sync"}
                         </button>
-                      </div>
+                      </div>}
 
-                      {expandedBillingId === s.id && edit && (
+                      {!s.billingReport.isManual && expandedBillingId === s.id && edit && (
                         <div className="mt-3 grid gap-2 border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000] sm:grid-cols-2">
                           <input
                             value={edit.promoName}
@@ -546,16 +541,16 @@ export function SubscriptionsClient({
             { plan: "EQUIPO", cycle: "MONTHLY", label: "Equipo Mensual" },
             { plan: "EQUIPO", cycle: "ANNUAL", label: "Equipo Anual" },
           ].map((row) => {
-            const count = active.filter((s) => s.plan === row.plan && s.billingCycle === row.cycle).length;
-            const unitPrice = PLAN_PRICES[row.plan]?.[row.cycle] ?? 0;
-            const mrrContrib = row.cycle === "ANNUAL" ? Math.round(unitPrice / 12) : unitPrice;
+            const matching = active.filter((s) => s.plan === row.plan && s.billingCycle === row.cycle && s.billingReport.currencyCode === "CLP");
+            const count = matching.length;
+            const mrrContrib = Math.round(matching.reduce((sum, s) => sum + s.billingReport.monthlyRevenueClp, 0));
             return (
               <div key={`${row.plan}-${row.cycle}`} className="flex items-center justify-between border-b-2 border-black/10 py-3 last:border-0">
                 <span className="text-sm font-black uppercase text-black">{row.label}</span>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                   <span className="text-sm font-bold text-black/60">{count} <LocalizedText id="_Go9D_-TOWKv" /></span>
                   <span className="w-28 text-right text-sm font-black text-black">
-                    {formatCLP(mrrContrib * count)} <LocalizedText id="anUC14rjj--1" />
+                    {formatCLP(mrrContrib)} <LocalizedText id="anUC14rjj--1" />
                   </span>
                 </div>
               </div>
@@ -564,7 +559,7 @@ export function SubscriptionsClient({
           <div className="flex items-center justify-between pt-4">
             <span className="text-sm font-black uppercase text-black"><LocalizedText id="YZg7V0A6QUlh" /></span>
             <span className="border-2 border-black bg-[#BFFCC6] px-3 py-1 text-sm font-black text-black">
-              {formatCLP(mrr)} <LocalizedText id="anUC14rjj--1" />
+              {formatCLP(revenue.monthlyRevenueClp)} <LocalizedText id="anUC14rjj--1" />
             </span>
           </div>
         </div>

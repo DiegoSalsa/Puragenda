@@ -6,6 +6,7 @@ export type SubscriptionEndDateInput = {
   currentPeriodEnd: DateValue;
   mpSubscriptionId: string | null;
   paddleSubscriptionId: string | null;
+  paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
 };
 
 function validDate(value: DateValue) {
@@ -19,7 +20,7 @@ export function resolveSubscriptionEndDate(subscription: SubscriptionEndDateInpu
     return { date: null, context: "Sin suscripción" } as const;
   }
 
-  const hasPaymentProvider = Boolean(
+  const hasPaymentProvider = subscription.paymentMethod !== "BANK_TRANSFER" && Boolean(
     subscription.mpSubscriptionId || subscription.paddleSubscriptionId,
   );
   const currentPeriodEnd = validDate(subscription.currentPeriodEnd);
@@ -40,7 +41,7 @@ export function resolveSubscriptionEndDate(subscription: SubscriptionEndDateInpu
 
   return {
     date: null,
-    context: hasPaymentProvider
+    context: subscription.paymentMethod === "BANK_TRANSFER" ? "Falta registrar el período de transferencia" : hasPaymentProvider
       ? "Pendiente de sincronizar"
       : "Sin fecha registrada",
   } as const;

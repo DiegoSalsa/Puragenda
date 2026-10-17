@@ -1,8 +1,8 @@
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
-import { PRICING } from "@/core/constants";
-import { format, differenceInDays, startOfWeek, endOfWeek, startOfMonth, subMonths } from "date-fns";
+import { format, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
+import { getAdminSubscriptionReport, getAdminRevenueSummary } from "@/server/services/admin-subscription-report";
 import { es } from "date-fns/locale";
 import {
   Building2,
@@ -26,8 +26,6 @@ export default async function AdminDashboardPage() {
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-  const lastMonthStart = startOfMonth(subMonths(now, 1));
-  const lastMonthEnd = startOfMonth(now);
 
   const [
     totalBusinesses,
@@ -38,7 +36,6 @@ export default async function AdminDashboardPage() {
     recentBusinesses,
     weeklyAppointments,
     topBusinessesByAppointments,
-    lastMonthSubs,
   ] = await Promise.all([
     prisma.business.count(),
     prisma.subscription.findMany({
@@ -48,6 +45,8 @@ export default async function AdminDashboardPage() {
             name: true,
             slug: true,
             createdAt: true,
+            countryCode: true,
+            currencyCode: true,
             owner: { select: { name: true, email: true } },
           },
         },
@@ -83,15 +82,6 @@ export default async function AdminDashboardPage() {
         subscription: { select: { plan: true, status: true } },
       },
     }),
-    prisma.subscription.findMany({
-      where: {
-        plan: { in: ["INDIVIDUAL", "EQUIPO"] },
-        status: "ACTIVE",
-        isTrial: false,
-        createdAt: { gte: lastMonthStart, lt: lastMonthEnd },
-      },
-      select: { plan: true },
-    }),
   ]);
 
   const activeBusinesses = subscriptions.filter(
@@ -108,16 +98,9 @@ export default async function AdminDashboardPage() {
     (s) => s.plan === "EQUIPO" && s.status === "ACTIVE" && !s.isTrial
   ).length;
 
-  const estimatedMRR =
-    paidIndividual * PRICING.INDIVIDUAL.monthly +
-    paidEquipo * PRICING.EQUIPO.monthly;
-
-  const lastMonthIndividual = lastMonthSubs.filter((s) => s.plan === "INDIVIDUAL").length;
-  const lastMonthEquipo = lastMonthSubs.filter((s) => s.plan === "EQUIPO").length;
-  const lastMonthMRR =
-    lastMonthIndividual * PRICING.INDIVIDUAL.monthly +
-    lastMonthEquipo * PRICING.EQUIPO.monthly;
-  const mrrDelta = estimatedMRR - lastMonthMRR;
+  const billingReports = subscriptions.map(s => getAdminSubscriptionReport(s, s.business, now));
+  const revenue = getAdminRevenueSummary(billingReports);
+  const estimatedMRR = revenue.monthlyRevenueClp;
 
   const paidActive = paidIndividual + paidEquipo;
   const everConverted = subscriptions.filter(
@@ -167,11 +150,9 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
           {
-            label: "MRR Estimado",
+            label: "MRR contratado CLP",
             value: `$${estimatedMRR.toLocaleString("es-CL")}`,
-            sub: mrrDelta >= 0
-              ? `+$${mrrDelta.toLocaleString("es-CL")} vs mes anterior`
-              : `-$${Math.abs(mrrDelta).toLocaleString("es-CL")} vs mes anterior`,
+            sub: "Tarifas vigentes de Chile, mensualizadas",
             icon: DollarSign,
             bg: "bg-[#BFFCC6]",
           },
@@ -256,8 +237,8 @@ export default async function AdminDashboardPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { name: "Individual", count: paidIndividual, price: PRICING.INDIVIDUAL.monthly, bg: "bg-[#FFF5BA]" },
-              { name: "Plan Equipo", count: paidEquipo, price: PRICING.EQUIPO.monthly, bg: "bg-[#B28DFF]" },
+              { name: "Individual", plan: "INDIVIDUAL", count: paidIndividual, bg: "bg-[#FFF5BA]" },
+              { name: "Plan Equipo", plan: "EQUIPO", count: paidEquipo, bg: "bg-[#B28DFF]" },
             ].map((item) => (
               <div
                 key={item.name}
@@ -266,11 +247,11 @@ export default async function AdminDashboardPage() {
                 <div>
                   <p className="text-sm font-black text-black">{item.name}</p>
                   <p className="text-xs font-bold text-black/50">
-                    {item.count} <LocalizedText id="AwdhISD-lGxr" />{item.price.toLocaleString("es-CL")}
+                    {item.count} cuentas activas · importes CLP mensualizados
                   </p>
                 </div>
                 <p className="font-black text-lg text-black">
-                  ${(item.count * item.price).toLocaleString("es-CL")}
+                  ${getAdminRevenueSummary(billingReports.filter(report => report.plan === item.plan)).monthlyRevenueClp.toLocaleString("es-CL")}
                 </p>
               </div>
             ))}
@@ -281,6 +262,7 @@ export default async function AdminDashboardPage() {
               </p>
             </div>
           </div>
+          <p className="text-xs font-bold text-black/50">No equivale a pagos recibidos. Próximas transferencias: ${revenue.nextTransferClp.toLocaleString("es-CL")} CLP. Cobros automáticos: ${revenue.nextAutomaticClp.toLocaleString("es-CL")} CLP. {revenue.internationalCount > 0 && "Los importes internacionales se consultan en su proveedor."}</p>
         </div>
 
         <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000] space-y-4">
