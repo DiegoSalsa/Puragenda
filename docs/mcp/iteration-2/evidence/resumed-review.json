@@ -1,0 +1,19 @@
+{
+  "classification": "VALIDADO MEDIANTE CLIENTE MCP",
+  "realChatGPT": false,
+  "origin": "https://previews-ships-enable-phd.trycloudflare.com",
+  "checkedAt": "2026-10-17T20:20:41.028Z",
+  "metadataAndIssuer": "PASS",
+  "preservedLogin": "PASS",
+  "oauthDcrPkce": "PASS",
+  "toolsDiscovered": 30,
+  "preservedAppointment": {
+    "id": "cmvc20hsj000jkotcst1ybhvi",
+    "status": "PENDING",
+    "startTime": "2026-10-18T19:00:00.000Z",
+    "endTime": "2026-10-18T20:00:00.000Z",
+    "timezone": "America/Santiago"
+  },
+  "appointmentWritesByThisSmoke": 0,
+  "onlySmokeGrantRevoked": true
+}

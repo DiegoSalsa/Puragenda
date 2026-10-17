@@ -81,6 +81,47 @@ Los proveedores de correo están desactivados y no hay calendarios reales en la
 base de prueba. Detener el proceso de Next permite al runner eliminar su schema.
 El archivo privado local debe eliminarse cuando termine la revisión.
 
+### Reanudar después de cerrar los procesos
+
+El host de Quick Tunnel desaparece al terminar su proceso. Un equipo encendido
+no garantiza que `next start` y `cloudflared` sigan activos. Si ambos se cerraron,
+crear otro túnel y configurar la nueva URL en ChatGPT; las conexiones anteriores
+no cambian de issuer/resource automáticamente.
+
+Si el schema ficticio sigue presente, **no ejecutar el runner de seed para
+reanudarlo**: crearía otro fixture. El comando siguiente conserva usuarios,
+contraseñas, citas y concesiones del schema existente, sin migrar, sembrar ni
+eliminar tablas. Sólo acepta la base loopback de pruebas, dos usuarios ficticios
+y los negocios esperados, sin conexiones de calendario externas.
+
+```powershell
+# Crear un nuevo Quick Tunnel como arriba y copiar su origen exacto.
+node scripts/resume-mcp-review.mjs --schema booking_api_test_TIMESTAMP --origin https://HOST.trycloudflare.com --check
+node scripts/resume-mcp-review.mjs --schema booking_api_test_TIMESTAMP --origin https://HOST.trycloudflare.com --build
+```
+
+La primera reanudación guarda secretos nuevos en
+`artifacts/mcp/review-runtime.json` (privado e ignorado por Git). Conserva las
+contraseñas de `review-access.json`, cuya URL actualiza sin imprimirlas. Al
+detenerlo no elimina el schema. Con ese mismo túnel todavía activo, un arranque
+posterior puede usar `node scripts/resume-mcp-review.mjs`; con otro origen,
+volver a pasar `--origin ... --build`. El build es necesario al cambiar origen.
+El script rechaza archivos `.env*` del worktree e inicia Next sin heredar claves
+de proveedores de la sesión. Email está desactivado y el simulador local activo.
+El flag de reservas públicas sólo se habilita en este fixture ficticio validado.
+
+Los secretos del proceso original no se guardaron: no pueden recuperarse de
+hashes ni de los payloads cifrados. La primera reanudación exige volver a iniciar
+sesión; los recibos cifrados con la clave anterior no son recuperables. Las citas
+canónicas persisten y pueden administrarse con preparaciones nuevas después de
+reconectar. Nunca reconstruir un recibo ni editar issuer/resource de tokens viejos.
+Los siguientes reinicios del script sí reutilizan el archivo privado de runtime.
+
+Comprobar la metadata, el login ficticio y `initialize/tools/list` antes de
+reconectar ChatGPT. No volver a ejecutar el script completo de pruebas HTTPS
+sobre el fixture ya usado: crea/mueve/cancela citas de prueba y espera su estado
+inicial. Para reanudar una revisión en curso basta un smoke test de sólo lectura.
+
 Para terminar en ChatGPT seguir [los pasos del revisor](iteration-2/reviewer-guide.md).
 La exposición HTTPS y el OAuth del SDK no prueban que ChatGPT lo haya instalado.
 
