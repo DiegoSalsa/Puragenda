@@ -5,8 +5,8 @@ Inspector sobre HTTPS; 30 herramientas invocadas con éxito en el fixture.
 [Descriptores y schemas completos](evidence/tools.json),
 [llamadas y argumentos saneados](evidence/https-client.json).
 **VALIDADO EN CHATGPT REAL**, con captura aportada por el usuario y backend:
-`get_connected_account` y `list_appointments`.
-[Alcance exacto](chatgpt-real-confirmation.md). La evaluación completa de selección
+las nueve herramientas enumeradas en [las pruebas posteriores](chatgpt-user-trials.md).
+[Primera confirmación](chatgpt-real-confirmation.md). La evaluación completa de selección
 y tool scan siguen pendientes externamente.
 
 Se aplican los criterios actuales de

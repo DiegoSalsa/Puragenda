@@ -3,6 +3,10 @@
 **Estado: SÍ. VALIDADO EN CHATGPT REAL**, con el alcance descrito aquí.
 Actualización posterior al [cierre inicial](report.md), el 17 de octubre de 2026.
 
+**Actualización adicional:** [disponibilidad, ingresos, comparación y preparación
+aprobada](chatgpt-user-trials.md), con siete nuevas capturas y verificación del
+backend. Los párrafos siguientes conservan el alcance de la primera confirmación.
+
 El usuario completó la conexión en su navegador de ChatGPT y aportó una captura
 de una respuesta obtenida con **Puragenda (Revisión MCP)**. El agente no controló
 esa pestaña: la herramienta sigue deshabilitada. La confirmación se corroboró

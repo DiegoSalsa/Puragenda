@@ -2,7 +2,8 @@
 
 **Actualización:** el usuario completó posteriormente la conexión real y una
 consulta de agenda. [Evidencia y alcance](chatgpt-real-confirmation.md).
-Las instrucciones siguientes permiten continuar C–J y el trabajo externo pendiente.
+Después verificó [C, D, E y la preparación/aprobación de F](chatgpt-user-trials.md).
+Falta ejecutar la creación y completar G–J y el trabajo externo pendiente.
 
 En el cierre inicial el agente no creó un plugin en ChatGPT ni un borrador en el
 portal. El fallo observado al vincular la pestaña autenticada fue
@@ -74,7 +75,9 @@ oficial sin ampliar redirects ni debilitar issuer/resource/PKCE/CSRF.
 
 En **ChatGPT real se observaron resultados de identificación y agenda** mediante
 captura del usuario y backend. Los prompts literales/argumentos no se retuvieron;
-C–J y la batería adicional siguen pendientes. La columna SDK es una ejecución
+C/D/E y la preparación/aprobación de F se corroboraron después en
+[la evidencia adicional](chatgpt-user-trials.md). La ejecución de F, G–J y la
+batería restante siguen pendientes. La columna SDK es una ejecución
 guionada sobre HTTPS, con IDs y
 contactos ficticios suministrados por el script; no mide selección del modelo.
 Fecha del fixture registrado: 17-10-2026, America/Santiago; mañana 18-10 y viernes
