@@ -48,3 +48,11 @@ export function oauthFormActions() {
 export const noStore = { "Cache-Control": "no-store", Pragma: "no-cache", "Referrer-Policy": "same-origin", "X-Content-Type-Options": "nosniff" };
 export const oauthCookie = "puragenda_mcp_oauth";
 export const cookieOptions = () => ({ httpOnly: true, secure: mcpConfig().origin.startsWith("https:"), sameSite: "lax" as const, path: "/oauth", maxAge: 600 });
+
+export function oauthChallenge(scope = "account:read", insufficientScope = false) {
+  return `Bearer resource_metadata="${mcpConfig().origin}/.well-known/oauth-protected-resource/mcp", scope="${scope}", error="${insufficientScope ? "insufficient_scope" : "invalid_token"}", error_description="${insufficientScope ? "Reconnect Puragenda to grant the required permissions" : "Connect your Puragenda account to continue"}"`;
+}
+
+// Discovery consent does not verify a public customer's identity. Keep writes
+// off unless an operator explicitly enables this channel for controlled testing.
+export const publicBookingEnabled = () => process.env.MCP_PUBLIC_BOOKING_ENABLED === "true";

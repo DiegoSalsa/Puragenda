@@ -1,7 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpServer } from "@/server/mcp/server";
 import { authenticateBearer } from "@/server/mcp/access";
-import { mcpConfig, noStore } from "@/server/mcp/config";
+import { mcpConfig, noStore, oauthChallenge } from "@/server/mcp/config";
 import { limit, McpError } from "@/server/mcp/security";
 
 export const runtime = "nodejs";
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     console.warn(JSON.stringify({ event: "mcp_http_error", phase, code: error instanceof McpError ? error.code : error instanceof Error ? error.name : "UnknownError" }));
     const status = error instanceof McpError ? error.status : 503;
     return Response.json({ error: status === 401 ? "invalid_token" : status === 429 ? "rate_limited" : "request_unavailable" }, { status, headers: {
-      ...noStore, ...(status === 401 ? { "WWW-Authenticate": `Bearer resource_metadata="${mcpConfig().origin}/.well-known/oauth-protected-resource/mcp"` } : {}),
+      ...noStore, ...(status === 401 ? { "WWW-Authenticate": oauthChallenge() } : {}),
       ...(status === 429 || status === 503 ? { "Retry-After": "60" } : {}) } });
   } finally { await server?.close(); }
 }

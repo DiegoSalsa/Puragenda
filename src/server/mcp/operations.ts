@@ -12,8 +12,8 @@ import { syncAppointmentToGoogle } from "@/server/services/google-calendar.servi
 import { appointmentScope, requireAgenda } from "@/server/puri/context";
 import { bookingSchema } from "@/server/validations/booking";
 import { authorizedContext, requireWrite, type McpIdentity } from "./access";
-import { mcpConfig } from "./config";
-import { digest, secret, encrypt, decrypt, McpError } from "./security";
+import { mcpConfig, publicBookingEnabled } from "./config";
+import { digest, secret, encrypt, decrypt, McpError, limit } from "./security";
 import { publicBusiness } from "./public";
 import { id } from "./read-tools";
 
@@ -57,6 +57,7 @@ function preparedResult(payload: Payload, expiresAt: Date) {
 }
 
 export async function prepareCreation(args: z.infer<typeof creationSchema>, identity: McpIdentity | null, publicSlug?: string) {
+  if (publicSlug && !publicBookingEnabled()) throw new McpError("PUBLIC_BOOKING_DISABLED");
   const context = publicSlug ? null : await authorizedContext(identity, "appointments:write", args.locationId);
   const business = publicSlug ? await publicBusiness(publicSlug) : context!.access.business;
   if (context) requireWrite(context, args.staffId);
@@ -70,6 +71,11 @@ export async function prepareCreation(args: z.infer<typeof creationSchema>, iden
     return preparedResult(payload, previous.expiresAt);
   }
   if (business.depositRequired) throw new McpError("DEPOSIT_BOOKING_UNAVAILABLE", 409);
+  if (publicSlug) {
+    await limit(`public-preparation:business:${business.id}`, 30, 3600000);
+    await limit(`public-preparation:email:${business.id}:${args.customerEmail.trim().toLowerCase()}`, 5, 3600000);
+    await limit(`public-preparation:phone:${business.id}:${args.customerPhone.replace(/\D/g, "")}`, 5, 3600000);
+  }
   const current = await loadBookingContext(business.id);
   const location = current.locations.find((l) => l.id === args.locationId);
   if (!location) throw new McpError("LOCATION_FORBIDDEN");
@@ -127,6 +133,7 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
   const { operation: op, payload } = await loadOperation(receipt);
   if (op.kind !== kind || (kind !== "public_create" && op.connectionId !== identity?.connection.id)) throw new McpError("OPERATION_FORBIDDEN");
   if (kind === "public_create") {
+    if (!publicBookingEnabled()) throw new McpError("PUBLIC_BOOKING_DISABLED");
     if ((await publicBusiness(payload.publicSlug!)).id !== op.businessId) throw new McpError("OPERATION_FORBIDDEN");
   } else {
     const c = await authorizedContext(identity, "appointments:write", String(payload.request.locationId));

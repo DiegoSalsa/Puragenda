@@ -1,7 +1,8 @@
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { prisma } from "@/server/db/prisma";
 import { loadBookingContext, toBookingCatalog, getBookingAvailability, type AvailabilityQuery } from "@/server/booking/read.service";
-import { McpError } from "./security";
+import { McpError, limit } from "./security";
+import { publicBookingEnabled } from "./config";
 
 export async function publicBusiness(slug: string) {
   const business = await prisma.business.findFirst({ where: { slug, mcpPublicDiscovery: true }, include: { subscription: true } });
@@ -19,10 +20,11 @@ export async function publicCatalog(slug: string) {
   const catalog = toBookingCatalog(await loadBookingContext(business.id));
   // Public transactions are restricted to services that are entirely free.
   // Never return a checkout/payment URL or sell Puragenda plans through MCP.
-  return { ...catalog, capabilities: { ...catalog.capabilities, mcpBooking: !business.depositRequired, paidBooking: false },
-    services: catalog.services.map((service) => ({ ...service, mcpBookable: !business.depositRequired && service.price === 0 && !service.depositAmount && service.optionCategories.every((category) => category.alternatives.every((a) => a.priceDelta === 0)) })) };
+  return { ...catalog, capabilities: { ...catalog.capabilities, mcpBooking: publicBookingEnabled() && !business.depositRequired, paidBooking: false },
+    services: catalog.services.map((service) => ({ ...service, mcpBookable: publicBookingEnabled() && !business.depositRequired && service.price === 0 && !service.depositAmount && service.optionCategories.every((category) => category.alternatives.every((a) => a.priceDelta === 0)) })) };
 }
 export async function publicAvailability(slug: string, query: AvailabilityQuery) {
   const business = await publicBusiness(slug);
+  await limit(`public-availability:business:${business.id}`, 60);
   return getBookingAvailability(await loadBookingContext(business.id), query);
 }
