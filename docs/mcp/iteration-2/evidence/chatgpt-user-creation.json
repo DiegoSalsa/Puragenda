@@ -1,0 +1,134 @@
+{
+  "classification": "VALIDADO EN CHATGPT REAL",
+  "recordedAt": "2026-10-17T07:08:49.875Z",
+  "source": "User-provided ChatGPT screenshot corroborated by read-only isolated PostgreSQL and tool-name logs. No browser automation or scripted approval used for this operation.",
+  "screenshot": {
+    "name": "codex-clipboard-cfb05f26-54d4-4a21-b614-7a29c051d028.png",
+    "sha256": "35ce849c75d97d30dd27ca3b71f6909374e238cfc8a5714628fa731e3899a5f5",
+    "originalRetainedInChat": true,
+    "copiedToGit": false
+  },
+  "scenarioF": "PASS: original preparation approved in Puragenda, executed via ChatGPT, HTTP 201 and subsequent appointment read",
+  "created": {
+    "kind": "create",
+    "operationState": "DONE",
+    "approved": true,
+    "httpStatus": "201",
+    "appointmentId": "cmvc20hsj000jkotcst1ybhvi",
+    "appointmentStatus": "PENDING",
+    "startUtc": "2026-10-18T19:00:00Z",
+    "endUtc": "2026-10-18T20:00:00Z",
+    "price": 20000,
+    "depositAmount": null,
+    "paymentStatus": "NONE",
+    "primaryLocation": true,
+    "expectedStaff": true,
+    "expectedService": true,
+    "canonicalCheckpointCount": 1
+  },
+  "activeAppointmentsAtRequestedStaffAndTime": 1,
+  "duplicateCreationObserved": false,
+  "replayFromChatGPTProven": false,
+  "replayLimitation": "One persisted appointment and one canonical checkpoint prove no duplicate in this observed execution; this does not prove a deliberate ChatGPT replay test.",
+  "observedDistinctTools": [
+    "get_connected_account",
+    "list_appointments",
+    "list_services",
+    "list_staff",
+    "list_accessible_locations",
+    "get_available_slots",
+    "get_revenue_summary",
+    "get_popular_services",
+    "prepare_appointment_creation",
+    "create_appointment",
+    "get_appointment_details"
+  ],
+  "backendToolCalls": [
+    {
+      "tool": "get_connected_account",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "get_connected_account",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_services",
+      "status": "ok"
+    },
+    {
+      "tool": "list_staff",
+      "status": "ok"
+    },
+    {
+      "tool": "list_accessible_locations",
+      "status": "ok"
+    },
+    {
+      "tool": "get_available_slots",
+      "status": "ok"
+    },
+    {
+      "tool": "get_revenue_summary",
+      "status": "ok"
+    },
+    {
+      "tool": "get_popular_services",
+      "status": "ok"
+    },
+    {
+      "tool": "get_popular_services",
+      "status": "ok"
+    },
+    {
+      "tool": "get_available_slots",
+      "status": "ok"
+    },
+    {
+      "tool": "prepare_appointment_creation",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "create_appointment",
+      "status": "ok"
+    },
+    {
+      "tool": "get_appointment_details",
+      "status": "ok"
+    }
+  ],
+  "pendingInRealChatGPT": [
+    "reschedule",
+    "cancel",
+    "revocation",
+    "tenant-isolation",
+    "public-booking"
+  ],
+  "runtimeChanged": false,
+  "databaseMutatedByThisVerification": false,
+  "secretsOrCustomerContactsStored": false
+}

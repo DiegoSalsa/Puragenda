@@ -6,7 +6,7 @@ su disponibilidad productiva requiere un despliegue autorizado.
 
 - [Despliegue, revisión y rollback](deployment.md)
 - [Conexión real de ChatGPT confirmada por el usuario](iteration-2/chatgpt-real-confirmation.md)
-- [Pruebas reales: disponibilidad, estadísticas y preparación aprobada](iteration-2/chatgpt-user-trials.md)
+- [Pruebas reales: disponibilidad, estadísticas y creación con aprobación](iteration-2/chatgpt-user-trials.md)
 - [Cierre inicial de la iteración 2 y pruebas HTTPS/SDK](iteration-2/report.md)
 - [Justificación individual de las 30 herramientas](iteration-2/tool-annotations.md)
 - [Pruebas y pasos exactos para ChatGPT y el revisor](iteration-2/reviewer-guide.md)
