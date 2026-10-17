@@ -28,8 +28,10 @@ export async function configureManualTeamSubscription(input: ManualTeamTerms, ap
     if (business.countryCode !== "CL" || subscription.billingCycle !== "MONTHLY") {
       blockers.push("Esta configuración requiere Chile y ciclo mensual");
     }
-    if (subscription.mpSubscriptionId || subscription.paddleSubscriptionId) {
-      blockers.push("Resuelve y verifica el vínculo existente con el proveedor antes de configurar transferencia; este script nunca cancela ni desvincula suscripciones");
+    // The operator explicitly configures manual billing. Keep any Mercado Pago
+    // reference as history; neither its presence nor this change authorizes a charge.
+    if (subscription.paddleSubscriptionId) {
+      blockers.push("La suscripción internacional debe gestionarse en su flujo correspondiente");
     }
     if (subscription.status !== "ACTIVE" || subscription.isTrial) {
       blockers.push("Confirma el pago y activa la suscripción existente antes de aplicar condiciones comerciales");
@@ -114,7 +116,7 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
     if (business.countryCode !== "CL" || subscription.billingCycle !== "MONTHLY" || subscription.paymentMethod !== "BANK_TRANSFER" || subscription.isTrial) {
       blockers.push("Se requiere una suscripción mensual pagada por transferencia de Chile, fuera de prueba");
     }
-    if (subscription.mpSubscriptionId || subscription.paddleSubscriptionId) blockers.push("El vínculo con el proveedor aún no está resuelto");
+    if (subscription.paddleSubscriptionId) blockers.push("La suscripción internacional debe gestionarse en su flujo correspondiente");
     if (!["ACTIVE", "INACTIVE"].includes(subscription.status)) blockers.push("Revisa el estado de la suscripción antes de renovarla manualmente");
     if (subscription.customMonthlyPriceClp !== input.amountClp) blockers.push("El monto recibido no coincide con el precio mensual configurado");
     if ((subscription.currentPeriodEnd?.getTime() ?? null) !== (expectedPeriodEnd?.getTime() ?? null)) {

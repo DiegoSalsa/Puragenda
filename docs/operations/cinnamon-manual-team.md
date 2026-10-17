@@ -22,9 +22,9 @@ Auditoría de producción en modo lectura el 17 de octubre de 2026:
 
 El operador confirmó durante el trabajo: «se lo acabamos de activar ya que nos pagó los 17990 por el equipo con 2 profesionales». Por ello se prepara el precio manual de $17.990 CLP mensuales, IVA incluido, como pago confirmado por el operador. El código y el script no contactan a la clienta, generan una factura ni ejecutan un cobro.
 
-La lectura de la preaprobación en Mercado Pago devolvió HTTP 400, `the preapprovalId is not valid for callerId`. Esto **no demuestra que la autorización esté cancelada**. Debe verificarse en la cuenta/credencial que la creó antes de resolver el vínculo. No se imprimieron credenciales ni se realizó ninguna llamada de modificación al proveedor.
+La lectura inicial de la preaprobación en Mercado Pago devolvió HTTP 400, `the preapprovalId is not valid for callerId`. No se imprimieron credenciales ni se realizó ninguna llamada de modificación al proveedor. El operador aclaró después que Cinnamon nunca ha pagado el plan por Mercado Pago y que se gestiona por transferencia. Con esa aclaración, se retiró la verificación/desvinculación como requisito para configurar el acuerdo; se conserva la referencia existente.
 
-La revisión operativa posterior distinguió esta preaprobación de la conexión de abonos: `Business.mpUserId=1156754359` y sus credenciales OAuth pertenecen al negocio y respondieron correctamente a una consulta GET de identidad. Se conservaron íntegramente. La preaprobación `7bdf9b9051ef460a8a3904b41e52efc8` no es ese identificador de vendedor y tampoco pudo leerse con su token. El token local de Puragenda corresponde a otra cuenta (`786219474`). En Vercel se recuperó la sesión de lectura, pero el secreto de producción está marcado `sensitive` y su valor no fue entregado por la API. Se requiere verificar la preaprobación desde su cuenta cobradora. Véase el [informe operativo y secuencia de producción](cinnamon-production-runbook.md).
+La revisión operativa distinguió esa referencia de la conexión de abonos: `Business.mpUserId=1156754359` y sus credenciales OAuth pertenecen al negocio y respondieron correctamente a una consulta GET de identidad. Se conservaron íntegramente. La referencia `7bdf9b9051ef460a8a3904b41e52efc8` también permanece íntegra; su presencia no bloquea la configuración o renovación manual ni autoriza cobros desde Puragenda. No se requieren más credenciales para completar este cambio. Véase el [informe operativo y secuencia de producción](cinnamon-production-runbook.md).
 
 ## Auditoría de la arquitectura
 
@@ -71,9 +71,9 @@ Una vez migrado y desplegado el cambio aprobado, usar el script sin `--apply` pa
 npx tsx scripts/configure-manual-team.ts --business-id cmstm3108000104js2e9vfl0l --staff-limit 2 --monthly-price-clp 17990
 ```
 
-El script toma la conexión exclusivamente de variables de entorno. Sin `--apply` no escribe. Comprueba país, ciclo, estado pagado, profesionales activos y vínculos con proveedores. Se niega a desactivar profesionales o a borrar/desvincular una suscripción del proveedor.
+El script toma la conexión exclusivamente de variables de entorno. Sin `--apply` no escribe. Comprueba país, ciclo, estado pagado y profesionales activos; conserva la restricción del flujo internacional. Se niega a desactivar profesionales o a borrar/desvincular referencias de proveedor.
 
-**Bloqueo actual esperado:** Cinnamon Nails todavía conserva `mpSubscriptionId`. Verificar su estado en Mercado Pago con la cuenta correcta. Si fuera una autorización activa, su cancelación requiere una aprobación específica; marcar una cuenta como manual en Puragenda no detiene por sí solo cobros que un proveedor ya haya programado. Una vez resuelto y auditado ese vínculo, volver a obtener la revisión.
+**Aclaración resuelta:** la presencia de `mpSubscriptionId` ya no bloquea el acuerdo manual. El configurador y las renovaciones conservan tanto ese ID como `mpCustomerId`; no verifican, cancelan ni modifican la autorización externa y no tocan la conexión de abonos.
 
 Solo con aprobación para actualizar producción, ejecutar el mismo comando agregando `--apply`. La configuración se escribe en la suscripción existente, nunca crea otra suscripción, y puede repetirse conservando los mismos términos.
 
@@ -99,9 +99,9 @@ $env:COMMERCIAL_SUBSCRIPTION_TEST_DATABASE_URL='postgresql://cinnamon_qa@127.0.0
 npm test
 ```
 
-Las 19 pruebas de integración cubren aplicación y revisión sin escrituras; conservación exacta de las reservas, clientes, profesionales, servicios, horarios y credenciales de abonos ficticias; períodos sin fecha; funciones de Equipo; alta y bloqueo del tercer profesional desde el servidor; reactivación; concurrencia entre altas y reactivaciones; planes normales; nueva conexión de Prisma; vencimiento y renovación manual; bloqueo ante proveedor existente o exceso de profesionales; compatibilidad de la migración con datos previos; varios meses de renovación manual; reintentos idempotentes; estado INACTIVE; evidencia de pago y validación de fechas, montos y solapamientos.
+Las pruebas de integración cubren aplicación y revisión sin escrituras; conservación exacta de las reservas, clientes, profesionales, servicios, horarios y credenciales de abonos ficticias; períodos sin fecha; funciones de Equipo; alta y bloqueo del tercer profesional desde el servidor; reactivación; concurrencia entre altas y reactivaciones; planes normales; nueva conexión de Prisma; vencimiento y renovación manual conservando referencias previas de Mercado Pago; restricción del flujo internacional; exceso de profesionales; compatibilidad de la migración con datos previos; varios meses de renovación manual; reintentos idempotentes; estado INACTIVE; evidencia de pago y validación de fechas, montos y solapamientos.
 
-Resultado de la suite completa en la revisión operativa: **199 archivos aprobados, 1.302 pruebas aprobadas; 4 archivos / 84 pruebas omitidos por las condiciones existentes de la suite**. Las 19 pruebas locales de esta entrega sí se ejecutaron. Una prueba específica de abonos verifica que la modalidad manual de Puragenda no impide crear la preferencia de una reserva con el token propio del negocio; el SDK está simulado y no crea cobros reales.
+Resultado de la suite completa tras conservar la referencia de Mercado Pago: **199 archivos aprobados, 1.303 pruebas aprobadas; 4 archivos / 84 pruebas omitidos por las condiciones existentes de la suite**. Las 20 pruebas locales de esta entrega sí se ejecutaron. Una prueba específica de abonos verifica que la modalidad manual de Puragenda no impide crear la preferencia de una reserva con el token propio del negocio; el SDK está simulado y no crea cobros reales.
 
 `npm run typecheck` y `npx prisma validate`: aprobados. `npm run lint`: código de salida 0, sin errores y con 32 advertencias. `npm run build`: aprobado con Next.js 16.3.8, compilación y chequeo de TypeScript correctos y 147 páginas estáticas generadas. `git diff --check`: sin problemas. Las copias Prisma/Supabase de la migración tienen el mismo SHA-256.
 

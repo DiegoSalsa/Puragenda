@@ -164,11 +164,24 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     expect(await capacity.getStaffLimitInfo(prefix)).toMatchObject({ maxAllowed: 2 });
   });
 
-  it("refuses provider-linked accounts without modifying them", async () => {
-    await db.subscription.update({ where: { businessId: prefix }, data: { mpSubscriptionId: "unresolved-provider-id" } });
+  it("retains a Mercado Pago reference during manual configuration and renewal without touching merchant credentials", async () => {
+    await db.subscription.update({ where: { businessId: prefix }, data: { mpSubscriptionId: "retained-provider-reference", mpCustomerId: "retained-payer-reference" } });
+    const before = await db.subscription.findUniqueOrThrow({ where: { businessId: prefix } });
+    const operations = await snapshotOperations();
+    expect((await configure(false)).blockers).toEqual([]);
+    expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toEqual(before);
+    await configure();
+    expect(await commercial.recordManualSubscriptionPayment(renewal(), true)).toMatchObject({ applied: true, blockers: [] });
+    const after = await db.subscription.findUniqueOrThrow({ where: { businessId: prefix } });
+    expect(after).toEqual({ ...before, plan: "EQUIPO", staffLimitOverride: 2, paymentMethod: "BANK_TRANSFER", customMonthlyPriceClp: 17990, currentPeriodEnd: new Date("2099-12-17T03:00:00.000Z"), updatedAt: after.updatedAt });
+    expect(await snapshotOperations()).toEqual(operations);
+  });
+
+  it("keeps the international provider restriction without making provider calls", async () => {
+    await db.subscription.update({ where: { businessId: prefix }, data: { paddleSubscriptionId: `international-${prefix}` } });
     const before = await db.subscription.findUnique({ where: { businessId: prefix } });
     expect((await configure(false)).blockers).toHaveLength(1);
-    await expect(configure()).rejects.toThrow("vínculo existente");
+    await expect(configure()).rejects.toThrow("suscripción internacional");
     expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toEqual(before);
   });
 
@@ -225,15 +238,13 @@ localSuite("commercial subscriptions with real local PostgreSQL", () => {
     await expect(commercial.recordManualSubscriptionPayment(renewal({ paidThrough: "2100-01-17T03:00:00Z" }), true)).rejects.toThrow("otros datos");
   });
 
-  it("rejects a stale preview, overlapping range, wrong amount and an unresolved provider without writing", async () => {
+  it("rejects a stale preview, overlapping range and wrong amount without writing", async () => {
     await configure();
     const before = await db.subscription.findUnique({ where: { businessId: prefix } });
     for (const input of [renewal({ expectedPeriodEnd: null }), renewal({ amountClp: 29990 }), renewal({ paidFrom: "2099-11-16T03:00:00Z" })]) {
       await expect(commercial.recordManualSubscriptionPayment(input, true)).rejects.toThrow();
     }
     expect(await db.subscription.findUnique({ where: { businessId: prefix } })).toEqual(before);
-    await db.subscription.update({ where: { businessId: prefix }, data: { mpSubscriptionId: "unresolved-historical-preapproval" } });
-    await expect(commercial.recordManualSubscriptionPayment(renewal(), true)).rejects.toThrow("proveedor");
     expect(await db.auditLog.count({ where: { details: { contains: prefix } } })).toBe(0);
   });
 
