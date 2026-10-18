@@ -9,6 +9,7 @@ import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
 import { getLocale } from "next-intl/server";
 import { getTermsNotice } from "@/lib/privacy/tracking-notice";
+import { mcpEnabled } from "@/server/mcp/config";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
@@ -132,8 +133,10 @@ export default async function TerminosPage() {
               <p>
                 <LocalizedText id="4X4EZZxNRueh" /> <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
+              {mcpEnabled() && <>
               <h2>{mcp("termsTitle")}</h2>
               <p>{mcp("terms")}</p>
+              </>}
             </article>
           </div>
         </div>

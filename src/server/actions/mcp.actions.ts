@@ -6,8 +6,10 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS as P } from "@/core/permissions";
+import { requireMcpEnabled } from "@/server/mcp/config";
 
 export async function revokeMcpConnection(form: FormData) {
+  requireMcpEnabled();
   const user = await getCurrentSessionUser();
   if (!user) throw new Error("No autenticado");
   const connectionId = z.string().uuid().parse(form.get("connectionId"));
@@ -21,6 +23,7 @@ export async function revokeMcpConnection(form: FormData) {
   revalidatePath("/integraciones/chatgpt/conexiones");
 }
 export async function updateMcpPublicDiscovery(form: FormData) {
+  requireMcpEnabled();
   const user = await getCurrentSessionUser();
   if (!user) throw new Error("No autenticado");
   const business = await getBusinessForUser(user.id);

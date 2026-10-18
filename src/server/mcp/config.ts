@@ -49,6 +49,13 @@ export const noStore = { "Cache-Control": "no-store", Pragma: "no-cache", "Refer
 export const oauthCookie = "puragenda_mcp_oauth";
 export const cookieOptions = () => ({ httpOnly: true, secure: mcpConfig().origin.startsWith("https:"), sameSite: "lax" as const, path: "/oauth", maxAge: 600 });
 
+// Server-only rollout switch: merging/deploying does not launch the integration.
+export const mcpEnabled = () => process.env.MCP_ENABLED === "true";
+export const mcpUnavailableResponse = () => new Response(null, { status: 404, headers: noStore });
+export function requireMcpEnabled() {
+  if (!mcpEnabled()) throw new Error("MCP_DISABLED");
+}
+
 export function oauthChallenge(scope = "account:read", insufficientScope = false) {
   return `Bearer resource_metadata="${mcpConfig().origin}/.well-known/oauth-protected-resource/mcp", scope="${scope}", error="${insufficientScope ? "insufficient_scope" : "invalid_token"}", error_description="${insufficientScope ? "Reconnect Puragenda to grant the required permissions" : "Connect your Puragenda account to continue"}"`;
 }

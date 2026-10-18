@@ -1,0 +1,98 @@
+{
+  "classification": "VALIDADO LOCALMENTE",
+  "verifiedAt": "2026-10-18T00:16:24.784Z",
+  "mcpEnabled": false,
+  "productionBuild": true,
+  "routes": [
+    {
+      "path": "/mcp",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/mcp",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/mcp",
+      "method": "DELETE",
+      "status": 404
+    },
+    {
+      "path": "/oauth/authorize",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/oauth/register",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/oauth/decision",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/oauth/token",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/oauth/revoke",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/.well-known/oauth-protected-resource",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/.well-known/oauth-protected-resource/mcp",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/.well-known/openai-apps-challenge",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/oauth/consent",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/mcp/confirm/invalid",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/mcp/confirm/invalid",
+      "method": "POST",
+      "status": 404
+    },
+    {
+      "path": "/integraciones/chatgpt",
+      "method": "GET",
+      "status": 404
+    },
+    {
+      "path": "/integraciones/chatgpt/conexiones",
+      "method": "GET",
+      "status": 404
+    }
+  ],
+  "authenticatedSettingsStatus": 200,
+  "mcpCardRendered": false,
+  "mcpLegalSectionsRendered": false,
+  "existingLoginWorks": true,
+  "productionEnvironmentChanged": false
+}

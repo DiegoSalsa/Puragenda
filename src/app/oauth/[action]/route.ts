@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { startAuthorization, decideAuthorization, exchangeToken, registerClient, revokeToken, assertUnique } from "@/server/mcp/oauth";
-import { cookieOptions, noStore, oauthCookie, mcpConfig } from "@/server/mcp/config";
+import { cookieOptions, noStore, oauthCookie, mcpConfig, mcpEnabled, mcpUnavailableResponse } from "@/server/mcp/config";
 import { limit, McpError, readLimited, requireSameOrigin } from "@/server/mcp/security";
 
 export const runtime = "nodejs";
@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 async function handle(request: NextRequest, action: string) {
+  if (!mcpEnabled()) return mcpUnavailableResponse();
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     await limit(`oauth:${action}:${ip}`, action === "register" ? 10 : 40);

@@ -1,11 +1,13 @@
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { revokeMcpConnection } from "@/server/actions/mcp.actions";
+import { mcpEnabled } from "@/server/mcp/config";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Conexiones autorizadas · Puragenda", robots: { index: false, follow: false } };
 export default async function ConnectionsPage() {
+  if (!mcpEnabled()) notFound();
   const user = await getCurrentSessionUser();
   if (!user) redirect("/login");
   const t = await getTranslations("mcp");

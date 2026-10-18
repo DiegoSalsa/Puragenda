@@ -1,7 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpServer } from "@/server/mcp/server";
 import { authenticateBearer } from "@/server/mcp/access";
-import { mcpConfig, noStore, oauthChallenge } from "@/server/mcp/config";
+import { mcpConfig, noStore, oauthChallenge, mcpEnabled, mcpUnavailableResponse } from "@/server/mcp/config";
 import { limit, McpError } from "@/server/mcp/security";
 
 export const runtime = "nodejs";
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  if (!mcpEnabled()) return mcpUnavailableResponse();
   let server: ReturnType<typeof createMcpServer> | undefined;
   let phase = "authorization";
   try {
@@ -36,5 +37,5 @@ export async function POST(request: Request) {
   } finally { await server?.close(); }
 }
 // Stateless Streamable HTTP does not require an idle SSE connection or sessions.
-export function GET() { return new Response(null, { status: 405, headers: { ...noStore, Allow: "POST" } }); }
-export function DELETE() { return new Response(null, { status: 405, headers: { ...noStore, Allow: "POST" } }); }
+export function GET() { return mcpEnabled() ? new Response(null, { status: 405, headers: { ...noStore, Allow: "POST" } }) : mcpUnavailableResponse(); }
+export function DELETE() { return mcpEnabled() ? new Response(null, { status: 405, headers: { ...noStore, Allow: "POST" } }) : mcpUnavailableResponse(); }

@@ -65,7 +65,7 @@ if (options.check) {
   Object.assign(env, { NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1", DATABASE_URL: databaseUrl.toString(), DIRECT_URL: databaseUrl.toString(),
     AUTH_SECRET: state.authSecret, RESEND_API_KEY: "", NEXT_PUBLIC_APP_URL: origin.origin, MCP_ORIGIN: origin.origin,
     MCP_OAUTH_ALLOW_LOOPBACK: "true", MCP_OPERATION_ENCRYPTION_KEY: state.operationEncryptionKey,
-    MCP_PUBLIC_BOOKING_ENABLED: "true", LOCAL_PAYMENT_SIMULATOR: "true" });
+    MCP_ENABLED: "true", MCP_PUBLIC_BOOKING_ENABLED: "true", LOCAL_PAYMENT_SIMULATOR: "true" });
   const nextBin = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
   const run = (nextArgs) => new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [nextBin, ...nextArgs], { cwd: fileURLToPath(root), env, stdio: "inherit" });

@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { mcpEnabled } from "@/server/mcp/config";
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Conectar Puragenda con ChatGPT y Codex", description: "Conexión MCP, permisos y revocación de acceso a Puragenda." };
 export default function Page() {
+  if (!mcpEnabled()) notFound();
   return <main className="mx-auto max-w-2xl space-y-6 px-6 py-16"><Link href="/" className="text-brand-foreground">Puragenda</Link><h1 className="text-3xl font-bold">Puragenda en ChatGPT y Codex</h1>
     <p>Esta integración permite consultar tu agenda y estadísticas con los permisos de tu cuenta, y preparar cambios de citas que apruebas en Puragenda. Su disponibilidad en el directorio depende de la revisión y publicación.</p>
     <ol className="list-decimal space-y-3 pl-6"><li>En la configuración de plugins o conexiones de tu cliente, añade el servidor MCP de Puragenda que te indique tu administrador.</li><li>Inicia sesión en Puragenda, selecciona el negocio y revisa los permisos solicitados.</li><li>Consulta primero la cuenta conectada para comprobar el negocio. Para conectar otro negocio, añade otra conexión.</li><li>Al crear, cancelar o reprogramar una cita, abre el enlace de preparación, revisa los datos y aprueba. Luego vuelve al chat para ejecutar y verificar el resultado.</li></ol>

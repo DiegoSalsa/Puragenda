@@ -1,13 +1,14 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { authorizationRequest } from "@/server/mcp/oauth";
-import { oauthCookie, SCOPES, type McpScope } from "@/server/mcp/config";
+import { oauthCookie, SCOPES, mcpEnabled, type McpScope } from "@/server/mcp/config";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Conectar Puragenda", robots: { index: false, follow: false } };
 export default async function ConsentPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+  if (!mcpEnabled()) notFound();
   const { id = "" } = await searchParams;
   const csrf = (await cookies()).get(oauthCookie)?.value || "";
   const request = await authorizationRequest(id, csrf).catch(() => null);

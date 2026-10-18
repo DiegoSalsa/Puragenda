@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+if (process.env.MCP_ENABLED !== "true") {
+  console.log("MCP rollout disabled: integration UI and endpoints stay unavailable. Migration/database checks remain required for deployment.");
+  process.exit(0);
+}
 const origin = new URL(process.env.MCP_ORIGIN || "https://www.puragenda.cl");
 assert(origin.protocol === "https:" && origin.pathname === "/" && !origin.search && !origin.hash && !origin.username && !origin.password, "MCP_ORIGIN must be a public HTTPS origin");
 assert(Buffer.from(process.env.MCP_OPERATION_ENCRYPTION_KEY || "", "base64").length === 32, "MCP_OPERATION_ENCRYPTION_KEY must encode exactly 32 random bytes");

@@ -92,6 +92,7 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     vi.stubEnv("MCP_OPERATION_ENCRYPTION_KEY", randomBytes(32).toString("base64"));
     vi.stubEnv("MCP_OAUTH_REDIRECT_URIS", redirectUri);
     vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "true");
+    vi.stubEnv("MCP_ENABLED", "true");
     providers.notify.mockResolvedValue(undefined); providers.sync.mockResolvedValue({ synced: true }); providers.busy.mockResolvedValue([]);
     await prisma.business.deleteMany({ where: { id: { startsWith: "mcp-business-" } } });
     await prisma.user.deleteMany({ where: { id: { startsWith: "mcp-" } } });

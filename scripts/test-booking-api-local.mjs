@@ -32,6 +32,7 @@ const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toSt
   ...(process.argv.includes("--all") ? { TEST_DATABASE_URL: url.toString() } : {}),
   RESEND_API_KEY: "", AUTH_SECRET: mcpPreview ? randomBytes(32).toString("base64url") : "local-booking-test-only-at-least-32-characters",
   NEXT_PUBLIC_APP_URL: mcpPreview ? reviewOrigin : process.argv.includes("--all") ? "http://localhost:3000" : "http://localhost:3107",
+  MCP_ENABLED: mcpPreview || process.argv.includes("--mcp") ? "true" : "false",
   ...(mcpPreview ? { MCP_ORIGIN: reviewOrigin, MCP_OAUTH_ALLOW_LOOPBACK: "true", MCP_OPERATION_ENCRYPTION_KEY: randomBytes(32).toString("base64"), MCP_PUBLIC_BOOKING_ENABLED: "true" } : {}),
   PURAGENDA_MCP_TEST: process.argv.includes("--mcp") ? "1" : "",
   LOCAL_PAYMENT_SIMULATOR: mcpPreview || process.argv.includes("--preview") || process.argv.includes("--build") ? "true" : "" };
@@ -112,7 +113,7 @@ try {
         } else code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", port]);
       }
     } else {
-      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
       code = await run([vitestBin, "run", ...files]);
     }
   }

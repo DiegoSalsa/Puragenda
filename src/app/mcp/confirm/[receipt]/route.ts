@@ -4,7 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { authorizedContext, type McpIdentity } from "@/server/mcp/access";
 import { loadOperation } from "@/server/mcp/operations";
 import { publicBusiness } from "@/server/mcp/public";
-import { noStore, mcpConfig } from "@/server/mcp/config";
+import { noStore, mcpConfig, mcpEnabled, mcpUnavailableResponse } from "@/server/mcp/config";
 import { digest, secret, McpError, readLimited, requireSameOrigin, limit } from "@/server/mcp/security";
 
 export const runtime = "nodejs";
@@ -25,6 +25,7 @@ async function checked(request: NextRequest, receipt: string) {
   return loaded;
 }
 export async function GET(request: NextRequest, context: { params: Promise<{ receipt: string }> }) {
+  if (!mcpEnabled()) return mcpUnavailableResponse();
   try {
     const { receipt } = await context.params;
     const { operation, payload } = await checked(request, receipt);
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ rec
   }
 }
 export async function POST(request: NextRequest, context: { params: Promise<{ receipt: string }> }) {
+  if (!mcpEnabled()) return mcpUnavailableResponse();
   try {
     requireSameOrigin(request);
     const { receipt } = await context.params;

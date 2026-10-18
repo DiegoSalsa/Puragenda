@@ -5,6 +5,11 @@ expuso únicamente un fixture local aislado por HTTPS temporal. Estos pasos se e
 en el entorno autorizado por su responsable. El ZIP configura un cliente remoto;
 no publica el backend ni concede acceso a datos.
 
+Para incorporar el código manteniéndolo oculto, dejar `MCP_ENABLED=false` (o
+ausente) en producción. [Comportamiento, pruebas y efecto de las migraciones](hidden-rollout.md).
+Los runners aislados lo habilitan explícitamente; el flag de reserva pública
+no sustituye este interruptor general.
+
 ## Entorno aislado reproducible
 
 Requisitos: dependencias del lockfile, Python para empaquetado y PostgreSQL local.
@@ -132,6 +137,7 @@ las variables nuevas son de servidor, sin prefijo `NEXT_PUBLIC_`.
 
 | Variable | Configuración |
 | --- | --- |
+| `MCP_ENABLED` | Apagado si falta o no es exactamente `true`: oculta UI y bloquea rutas MCP/OAuth/metadata/aprobaciones y acciones. Habilitar explícitamente sólo en el entorno previsto |
 | `MCP_ORIGIN` | Origen HTTPS canónico sin path; producción propuesta `https://www.puragenda.cl`. Debe coincidir exactamente en issuer, resource, cookies y callbacks de autorización |
 | `MCP_OAUTH_REDIRECT_URIS` | URLs HTTPS exactas separadas por comas. Default estable ChatGPT: `https://chatgpt.com/connector_platform_oauth_redirect` |
 | `MCP_OAUTH_ALLOW_LOOPBACK` | `true` sólo si se habilita Codex desktop/CLI por callback local. Admite loopback `/callback` o `/callback/ID` con puerto variable al registrar; luego exige coincidencia exacta con ese registro |

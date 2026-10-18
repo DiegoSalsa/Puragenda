@@ -8,6 +8,7 @@ su disponibilidad productiva requiere un despliegue autorizado.
 - [Conexión real de ChatGPT confirmada por el usuario](iteration-2/chatgpt-real-confirmation.md)
 - [Pruebas reales: disponibilidad, estadísticas y creación con aprobación](iteration-2/chatgpt-user-trials.md)
 - [Reanudación del servidor conservando cuentas y citas](iteration-2/resumed-review.md)
+- [Integración oculta al incorporar el código: MCP_ENABLED](hidden-rollout.md)
 - [Cierre inicial de la iteración 2 y pruebas HTTPS/SDK](iteration-2/report.md)
 - [Justificación individual de las 30 herramientas](iteration-2/tool-annotations.md)
 - [Pruebas y pasos exactos para ChatGPT y el revisor](iteration-2/reviewer-guide.md)
