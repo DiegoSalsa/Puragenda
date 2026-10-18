@@ -19,6 +19,8 @@ import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { PuriAssistant } from "@/components/dashboard/puri-assistant";
 import { shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
 import { getDashboardWebsiteLaunch } from "@/server/websites/launch-context";
+import { getCurrentAdminSessionUser } from "@/server/auth/admin-session";
+import { exitImpersonationAction } from "@/server/actions/impersonate.actions";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -38,6 +40,13 @@ export default async function DashboardLayout({
 
   const business = await getBusinessForUser(user.id);
   const permissions = business ? await getEffectiveBusinessPermissions(user, business) : [];
+  const adminSession = await getCurrentAdminSessionUser();
+  const impersonationBanner = adminSession && adminSession.id !== user.id ? (
+    <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-black/20 bg-[#FFF5BA] px-4 py-3 text-xs font-bold text-black">
+      <p>Sesión de soporte: <strong>{user.name}</strong> · permisos de {user.role}</p>
+      <form action={exitImpersonationAction}><button type="submit" className="rounded border border-black px-3 py-1.5 font-black">Volver al Superadmin</button></form>
+    </div>
+  ) : null;
 
   // Operational access is time-aware: an expired trial is blocked even before cron runs.
   if (business && user.role !== "SUPERADMIN") {
@@ -53,6 +62,7 @@ export default async function DashboardLayout({
       return (
         <RequestIntlProvider>
         <>
+        {impersonationBanner}
         {business.ownerId === user.id && await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }) && <Link href="/onboarding/website" className="block bg-[#FFF5BA] p-4 text-center font-bold text-black underline">Continuar contratación de Puragenda + Sitio Web</Link>}
         <PaymentWall 
           userEmail={user.email} 
@@ -99,6 +109,7 @@ export default async function DashboardLayout({
           permissions={permissions}
         />
         <div className="flex min-w-0 flex-1 flex-col">
+          {impersonationBanner}
           <header className="hidden h-14 shrink-0 items-center justify-end border-b border-border/70 bg-background/95 px-5 backdrop-blur md:flex">
             <ContextualHelpButton />
           </header>

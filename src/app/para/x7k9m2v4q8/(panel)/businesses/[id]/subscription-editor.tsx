@@ -9,6 +9,8 @@ import { CreditCard, Loader2, CheckCircle2, Save } from "@/components/icons/hove
 import { updateSubscriptionAction } from "@/server/actions/admin.actions";
 import { STAFF_LIMITS } from "@/core/constants";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
+import { SubscriptionBillingDetails } from "@/components/admin/subscription-billing-details";
+import type { AdminSubscriptionReport } from "@/server/services/admin-subscription-report";
 
 interface SubscriptionData {
   id: string;
@@ -21,10 +23,12 @@ interface SubscriptionData {
   mpSubscriptionId: string | null;
   paddleSubscriptionId: string | null;
   extraStaffCount: number;
+  staffLimitOverride: number | null;
+  paymentMethod: "AUTOMATIC" | "BANK_TRANSFER";
   createdAt: string;
 }
 
-export function SubscriptionEditor({ subscription }: { subscription: SubscriptionData }) {
+export function SubscriptionEditor({ subscription, billingReport, activeStaff }: { subscription: SubscriptionData; billingReport: AdminSubscriptionReport; activeStaff: number }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
   const [plan, setPlan] = useState(subscription.plan);
@@ -73,11 +77,12 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
       </h3>
 
       <div className="space-y-4">
+        <SubscriptionBillingDetails report={billingReport} activeStaff={activeStaff} />
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="-o7Qvavda8sc" /></label>
-          <select value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
-            <option value="INDIVIDUAL">Individual ($12.990/mes)</option>
-            <option value="EQUIPO">Equipo ($29.990/mes)</option>
+          <select disabled={billingReport.isManual} value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
+            <option value="INDIVIDUAL">Individual</option>
+            <option value="EQUIPO">Equipo</option>
           </select>
         </div>
 
@@ -94,7 +99,7 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
 
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="54jNtp3o_hzy" /></label>
-          <select value={billingCycle} onChange={(e) => setBillingCycle(e.target.value)} className={selectClass}>
+          <select disabled={billingReport.isManual} value={billingCycle} onChange={(e) => setBillingCycle(e.target.value)} className={selectClass}>
             <option value="MONTHLY">Mensual</option>
             <option value="ANNUAL">Anual</option>
           </select>
@@ -106,11 +111,12 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
             type="number"
             min={0}
             max={50}
+            disabled={subscription.staffLimitOverride !== null}
             value={extraStaff}
             onChange={(e) => setExtraStaff(parseInt(e.target.value) || 0)}
             className="w-full border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black outline-none"
           />
-          {plan === "EQUIPO" && (
+          {subscription.staffLimitOverride !== null ? <p className="text-xs font-bold text-black/50">El acuerdo permite {subscription.staffLimitOverride} profesionales activos en total. Los cupos extra no aumentan ese límite.</p> : plan === "EQUIPO" && (
             <p className="text-xs font-bold text-black/50">
               <LocalizedText id="fEkJPD20uVSY" /> {STAFF_LIMITS.EQUIPO}<LocalizedText id="fy_ghNZ9TscP" /> {STAFF_LIMITS.EQUIPO + 1}.
             </p>
@@ -131,12 +137,13 @@ export function SubscriptionEditor({ subscription }: { subscription: Subscriptio
           </p>
           <p className="text-sm font-black text-black">
             {subscriptionEnd.date
-              ? subscriptionEnd.date.toLocaleDateString("es-CL")
+              ? subscriptionEnd.date.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })
               : "Sin fecha registrada"}
           </p>
           <p className="text-[10px] font-bold text-black/40">
             {subscriptionEnd.context}
           </p>
+          {billingReport.isManual && <p className="mt-1 text-xs font-bold">La fecha indica el término exclusivo del período pagado. Las transferencias se registran al confirmar su recepción.</p>}
         </div>
 
         {error && (

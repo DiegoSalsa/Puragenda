@@ -21,6 +21,7 @@ import { SubscriptionEditor } from "./subscription-editor";
 import { DeleteBusinessButton } from "./delete-business-button";
 import { ImpersonateButton } from "./impersonate-button";
 import { absoluteUrl } from "@/lib/site";
+import { getAdminSubscriptionReport, readManualPaymentEvidence } from "@/server/services/admin-subscription-report";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
       owner: { select: { id: true, name: true, email: true, role: true, createdAt: true } },
       subscription: true,
       staff: {
-        select: { id: true, name: true, email: true, isActive: true },
+        select: { id: true, name: true, email: true, isActive: true, user: { select: { id: true, role: true, isSuperAdmin: true, deletedAt: true } }, accessProfile: { select: { name: true } } },
         orderBy: { createdAt: "asc" },
       },
       services: {
@@ -71,6 +72,11 @@ export default async function BusinessDetailPage({ params }: PageProps) {
   if (!business) notFound();
 
   const sub = business.subscription;
+  const lastTransfer = sub?.paymentMethod === "BANK_TRANSFER" ? await prisma.auditLog.findFirst({
+    where: { action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: { contains: `"subscriptionId":"${sub.id}"` } },
+    orderBy: { createdAt: "desc" }, select: { details: true },
+  }) : null;
+  const paymentEvidence = readManualPaymentEvidence(lastTransfer?.details ?? null);
 
   // Recent appointments
   const recentAppointments = await prisma.appointment.findMany({
@@ -88,7 +94,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       {/* Header */}
       <div>
         <Link
@@ -107,7 +113,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               <p className="font-mono text-sm font-bold text-black/40">/{business.slug}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`${ADMIN_SECRET_PATH}/marketplace/${business.id}`}
               className="inline-flex items-center gap-2 border-2 border-black bg-white px-3 py-2 text-xs font-black uppercase shadow-[3px_3px_0_#000]"
@@ -121,9 +127,9 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left column */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {/* Owner */}
           <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
             <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black">
@@ -137,9 +143,9 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   { label: "Rol", value: business.owner.role },
                   { label: "Registrado", value: format(new Date(business.owner.createdAt), "dd/MM/yyyy HH:mm", { locale: es }) },
                 ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between border-b border-black/10 pb-2">
+                  <div key={row.label} className="flex min-w-0 flex-col gap-1 border-b border-black/10 pb-2 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs font-black uppercase text-black/40">{row.label}</span>
-                    <span className="text-sm font-bold text-black">{row.value}</span>
+                    <span className="min-w-0 break-all text-sm font-bold text-black sm:text-right">{row.value}</span>
                   </div>
                 ))}
               </div>
@@ -155,14 +161,18 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             </h3>
             <div className="space-y-2">
               {business.staff.map((s) => (
-                <div key={s.id} className="flex items-center justify-between border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000]">
-                  <div>
+                <div key={s.id} className="flex min-w-0 flex-col gap-3 border-2 border-black bg-[#FFFAEB] p-3 shadow-[2px_2px_0_#000] sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <p className="text-sm font-black text-black">{s.name}</p>
-                    <p className="text-xs font-bold text-black/40">{s.email || "Sin email"}</p>
+                    <p className="break-all text-xs font-bold text-black/40">{s.email || "Sin email"}</p>
                   </div>
-                  <span className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${s.isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>
-                    {s.isActive ? "Activo" : "Inactivo"}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <span className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${s.isActive ? "bg-[#BFFCC6]" : "bg-[#FFB5E8]"}`}>{s.isActive ? "Activo" : "Inactivo"}</span>
+                    {s.user && <span className="text-xs font-bold text-black/60">{s.accessProfile?.name || s.user.role}</span>}
+                    {s.isActive && s.user && !s.user.deletedAt && !s.user.isSuperAdmin && s.user.role !== "SUPERADMIN" ? (
+                      <ImpersonateButton businessId={business.id} staffId={s.id} name={s.name} />
+                    ) : <span className="text-xs font-bold text-black/50">{!s.user ? "Sin cuenta de acceso" : "Acceso no disponible"}</span>}
+                  </div>
                 </div>
               ))}
               {business.staff.length === 0 && <p className="py-4 text-center text-sm font-bold text-black/40"><LocalizedText id="dzZ1MpWkNLPc" /></p>}
@@ -219,7 +229,14 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         </div>
 
         {/* Right column */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
+          {paymentEvidence && <div className="space-y-2 border-4 border-black bg-[#BFFCC6] p-5 shadow-[4px_4px_0_#000] text-black">
+            <h3 className="text-xs font-black uppercase">Última transferencia registrada</h3>
+            <p className="text-xl font-black">${paymentEvidence.amountClp.toLocaleString("es-CL")} CLP</p>
+            <p className="text-xs font-bold">Inicio: {new Date(paymentEvidence.paidFrom).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</p>
+            <p className="text-xs font-bold">Término exclusivo: {new Date(paymentEvidence.paidThrough).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</p>
+            <p className="break-all text-xs font-bold">Referencia: {paymentEvidence.reference}</p>
+          </div>}
           {sub ? (
             <SubscriptionEditor subscription={{
               id: sub.id,
@@ -232,8 +249,10 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               mpSubscriptionId: sub.mpSubscriptionId,
               paddleSubscriptionId: sub.paddleSubscriptionId,
               extraStaffCount: sub.extraStaffCount,
+              staffLimitOverride: sub.staffLimitOverride,
+              paymentMethod: sub.paymentMethod,
               createdAt: sub.createdAt.toISOString(),
-            }} />
+            }} billingReport={getAdminSubscriptionReport(sub, business)} activeStaff={business.staff.filter(s => s.isActive).length} />
           ) : (
             <div className="border-4 border-black bg-white p-6 shadow-[4px_4px_0_#000]">
               <p className="text-sm font-bold text-black/40"><LocalizedText id="FihAURvq5ieW" /></p>
@@ -273,9 +292,9 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   <span className="font-mono text-xs font-bold text-black">{business.primaryColor}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between border-b border-black/10 pb-2">
+              <div className="flex min-w-0 flex-col gap-1 border-b border-black/10 pb-2">
                 <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="S-XlACNsnZRw" /></span>
-                <a href={absoluteUrl(`/widget/${business.slug}`)} target="_blank" rel="noreferrer" className="font-mono text-xs font-bold text-black underline decoration-2 underline-offset-2">{absoluteUrl(`/widget/${business.slug}`)}</a>
+                <a href={absoluteUrl(`/widget/${business.slug}`)} target="_blank" rel="noreferrer" className="min-w-0 break-all font-mono text-xs font-bold text-black underline decoration-2 underline-offset-2">{absoluteUrl(`/widget/${business.slug}`)}</a>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase text-black/40"><LocalizedText id="IxidVfaXPyzl" /></span>

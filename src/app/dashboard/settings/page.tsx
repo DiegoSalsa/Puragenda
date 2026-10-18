@@ -75,10 +75,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
 
   const planName = subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
-  const planPrice = subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
+  const isManualTransfer = subscription?.paymentMethod === "BANK_TRANSFER";
+  const planPrice = isManualTransfer && subscription.customMonthlyPriceClp != null
+    ? subscription.customMonthlyPriceClp
+    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
   const isActive = subscription?.status === "ACTIVE";
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
+    !isManualTransfer &&
     business.countryCode === "CL" &&
     subscription?.status !== "PAST_DUE" &&
     (!subscription ||
@@ -188,6 +192,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 {business.countryCode === "CL"
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
                   : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
+                  {isManualTransfer && " · IVA incluido · Transferencia bancaria"}
                 {subscription?.currentPeriodEnd && (
                   <> <LocalizedText id="U34Bfej7YVY-" /> {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}

@@ -27,6 +27,19 @@ export async function SubscriptionBanner({
   const isUrgent = daysLeft <= 5;
   const planLabel = plan === "INDIVIDUAL" ? "Individual" : "Equipo";
 
+  if (subscription.paymentMethod === "BANK_TRANSFER") {
+    if (hideHealthyStatus && status === "ACTIVE") return null;
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 text-sm">
+        <p className="font-semibold">Plan {planLabel} · Transferencia bancaria</p>
+        <p className="text-muted-foreground">
+          {status === "ACTIVE" ? "Tu plan está activo. " : "Contacta a administración para confirmar tu renovación. "}
+          La renovación se gestiona manualmente por transferencia bancaria.
+        </p>
+      </div>
+    );
+  }
+
   if (status === "PAST_DUE") {
     const graceEndsAt = subscription.gracePeriodEndsAt;
     const hoursLeft = graceEndsAt

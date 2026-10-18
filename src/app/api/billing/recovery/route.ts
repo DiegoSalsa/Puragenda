@@ -29,6 +29,9 @@ async function getAuthenticatedSubscription(request: NextRequest) {
   const subscription = await prisma.subscription.findUnique({
     where: { businessId: business.id },
   });
+  if (subscription?.paymentMethod === "BANK_TRANSFER") {
+    return { error: "Tu suscripción se renueva por transferencia bancaria con administración", status: 409 } as const;
+  }
   if (!subscription?.mpSubscriptionId) {
     return {
       error: "No hay una suscripción de Mercado Pago enlazada",

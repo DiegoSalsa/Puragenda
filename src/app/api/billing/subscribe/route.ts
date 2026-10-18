@@ -87,6 +87,12 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    if (subscription?.paymentMethod === "BANK_TRANSFER") {
+      return NextResponse.json(
+        { error: "Tu suscripción se paga por transferencia bancaria. Contacta a administración para renovarla.", code: "MANUAL_TRANSFER_SUBSCRIPTION" },
+        { status: 409 },
+      );
+    }
     const purchaseIntent = business.countryCode === "CL" ? await prisma.websitePurchaseIntent.findUnique({ where: { businessId: business.id } }) : null;
     if (purchaseIntent && business.ownerId !== user.id) return NextResponse.json({ error: "Solo el propietario puede contratar." }, { status: 403 });
     if (purchaseIntent) requestedExtraStaffCount = subscription?.extraStaffCount ?? 0;

@@ -2,6 +2,7 @@ import { prisma } from "@/server/db/prisma";
 import { SubscriptionsClient } from "./subscriptions-client";
 import { differenceInDays } from "date-fns";
 import { calculateNextBillingPreview } from "@/server/services/subscription-billing.service";
+import { getAdminSubscriptionReport, getAdminRevenueSummary } from "@/server/services/admin-subscription-report";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function SubscriptionsPage() {
   const subscriptions = await prisma.subscription.findMany({
     include: {
       business: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, slug: true, countryCode: true, currencyCode: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -20,6 +21,7 @@ export default async function SubscriptionsPage() {
   const subscriptionsWithBilling = subscriptions.map((subscription) => ({
     ...subscription,
     nextBillingPreview: calculateNextBillingPreview(subscription),
+    billingReport: getAdminSubscriptionReport(subscription, subscription.business, now),
   }));
 
   const expiringSoon = subscriptionsWithBilling
@@ -47,6 +49,7 @@ export default async function SubscriptionsPage() {
       cancelled={cancelled}
       active={active}
       allSubscriptions={subscriptionsWithBilling}
+      revenue={getAdminRevenueSummary(subscriptionsWithBilling.map(s => s.billingReport))}
     />
   );
 }
