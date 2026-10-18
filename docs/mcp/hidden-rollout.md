@@ -57,21 +57,34 @@ Antes de integrar:
    de negocio que Configuración no tiene tarjeta y las rutas MCP/OAuth retornan
    404. Mantener el preview separado habilitado para la revisión de OpenAI.
 
-Este documento no afirma un merge ni un despliegue ya ejecutados. El encendido
-público y el envío a revisión se autorizan aparte de incorporar el código oculto.
+La integración todavía no se ha fusionado a `main` ni desplegado a producción.
+El encendido público y el envío a revisión se autorizan aparte de incorporar el
+código oculto.
 
 ## Validación local del interruptor
 
+La rama incorpora `origin/main` en `84bdb63`, incluidos los cambios comerciales
+y de administración. Se repitieron los controles sobre esa combinación.
+
 - Typecheck y lint correctos; lint mantiene 32 advertencias existentes.
 - 32 pruebas MCP/OAuth correctas, incluidas cuatro de apagado/encendido.
-- Suite general: 1.273 correctas y 105 omitidas; con PostgreSQL aislado:
-  1.294 correctas y 84 omitidas, sin fallos.
+- Suite general: 1.335 correctas y 125 omitidas; con PostgreSQL aislado:
+  1.356 correctas y 104 omitidas, sin fallos.
 - Build de producción correcto con `MCP_ENABLED=false`, en un directorio de
   salida separado del preview habilitado.
 - Smoke HTTP del build: 17 combinaciones de ruta/método devuelven 404.
   El login del negocio ficticio funciona y Configuración responde 200 sin
   renderizar la tarjeta; tampoco aparecen las secciones legales MCP.
+- Control de encendido con el mismo build: `MCP_ENABLED=true` vuelve a exponer
+  metadata, instrucciones y la tarjeta de conexiones en Configuración.
 
 Evidencia sin credenciales: [hidden-rollout-http.json](iteration-2/evidence/hidden-rollout-http.json).
 La comprobación HTTP es local; no afirma una inspección visual del navegador ni
 verifica las variables o el estado de un despliegue de producción.
+
+La auditoría de dependencias de producción no detecta vulnerabilidades. La
+auditoría completa conserva nueve entradas high de herramientas de desarrollo
+(`braces` y sus dependientes); se comprobó el mismo resultado con el lockfile
+del main `84bdb63`. El workflow `Security checks` ejecuta la auditoría completa,
+por lo que este bloqueo heredado debe resolverse antes de considerar el PR con
+CI verde. No se han bajado versiones de Next ni relajado el workflow para omitirlo.

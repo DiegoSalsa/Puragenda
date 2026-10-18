@@ -1,6 +1,6 @@
 {
   "classification": "VALIDADO LOCALMENTE",
-  "verifiedAt": "2026-10-18T00:16:24.784Z",
+  "verifiedAt": "2026-10-18T00:24:37.144Z",
   "mcpEnabled": false,
   "productionBuild": true,
   "routes": [
@@ -94,5 +94,14 @@
   "mcpCardRendered": false,
   "mcpLegalSectionsRendered": false,
   "existingLoginWorks": true,
-  "productionEnvironmentChanged": false
+  "productionEnvironmentChanged": false,
+  "baseMainCommit": "84bdb635a78d621922d487e8eab274bc87d86e70",
+  "enabledControl": {
+    "sameProductionBuild": true,
+    "mcpGetStatus": 405,
+    "authorizationMetadataStatus": 200,
+    "instructionsStatus": 200,
+    "authenticatedSettingsStatus": 200,
+    "mcpCardRendered": true
+  }
 }
