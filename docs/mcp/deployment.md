@@ -1,14 +1,13 @@
 # Conexión, despliegue y revisión
 
-No se ejecutó despliegue, merge ni migración productiva. En la iteración 2 se
-expuso únicamente un fixture local aislado por HTTPS temporal. Estos pasos se ejecutan
-en el entorno autorizado por su responsable. El ZIP configura un cliente remoto;
-no publica el backend ni concede acceso a datos.
+La fase actual prepara la revisión con el negocio de pruebas Estética Bella
+en el entorno productivo autorizado. El acceso de los demás negocios permanece
+cerrado hasta que un superadmin registre la aprobación de OpenAI y lo habilite.
+Ver [controles, configuración y migraciones](hidden-rollout.md). El ZIP configura
+un cliente remoto; no publica el backend ni concede acceso por sí mismo.
 
-Para incorporar el código manteniéndolo oculto, dejar `MCP_ENABLED=false` (o
-ausente) en producción. [Comportamiento, pruebas y efecto de las migraciones](hidden-rollout.md).
-Los runners aislados lo habilitan explícitamente; el flag de reserva pública
-no sustituye este interruptor general.
+Las secciones de la iteración 2 que siguen documentan el fixture local y su
+evidencia histórica. No deben usarse para sembrar o restablecer producción.
 
 ## Entorno aislado reproducible
 

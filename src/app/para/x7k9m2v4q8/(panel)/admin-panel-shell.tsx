@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: `${ADMIN_SECRET_PATH}/websites`, icon: Building2, label: "Sitios web" },
   { href: `${ADMIN_SECRET_PATH}/tracking`, icon: BarChart3, label: "Tracking" },
   { href: `${ADMIN_SECRET_PATH}/puri`, icon: BarChart3, label: "Puri" },
+  { href: `${ADMIN_SECRET_PATH}/integrations`, icon: ShieldCheck, label: "Integraciones" },
   { href: `${ADMIN_SECRET_PATH}/feedback`, icon: Star, label: "Feedback" },
   { href: `${ADMIN_SECRET_PATH}/privacy-requests`, icon: ShieldCheck, label: "Solicitudes de privacidad" },
   { href: `${ADMIN_SECRET_PATH}/discounts`, icon: Tag, label: "Descuentos" },

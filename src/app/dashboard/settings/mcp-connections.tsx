@@ -3,9 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/server/db/prisma";
 import { revokeMcpConnection, updateMcpPublicDiscovery } from "@/server/actions/mcp.actions";
 import { mcpEnabled } from "@/server/mcp/config";
+import { mcpAccessAllowed } from "@/server/mcp/rollout";
 
 export async function McpConnections({ userId, businessId, owner, publicDiscovery }: { userId: string; businessId: string; owner: boolean; publicDiscovery: boolean }) {
   if (!mcpEnabled()) return null;
+  if (!await mcpAccessAllowed(userId, businessId)) return null;
   const t = await getTranslations("mcp");
   const connections = await prisma.mcpConnection.findMany({ where: { profile: { businessId, ...(!owner ? { userId } : {}) }, revokedAt: null, expiresAt: { gt: new Date() } },
     include: { client: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 });

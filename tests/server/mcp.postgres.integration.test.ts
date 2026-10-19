@@ -7,7 +7,9 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import type { AddressInfo } from "node:net";
 import pg from "pg";
 
-const providers = vi.hoisted(() => ({ notify: vi.fn(), sync: vi.fn(), busy: vi.fn() }));
+const providers = vi.hoisted(() => ({ notify: vi.fn(), sync: vi.fn(), busy: vi.fn(), adminCookies: new Map<string, string>() }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => providers.adminCookies.has(name) ? { value: providers.adminCookies.get(name) } : undefined }) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/email/send", () => ({ sendBookingNotifications: providers.notify }));
 vi.mock("@/server/services/google-calendar.service", () => ({ syncAppointmentToGoogle: providers.sync, getGoogleCalendarBusySlots: providers.busy }));
 vi.mock("@/server/services/mercadopago-oauth.service", () => ({ getValidMercadoPagoAccessToken: async () => null }));
@@ -27,6 +29,9 @@ import { publicCatalog, publicAvailability, searchPublicBusinesses } from "@/ser
 import { SCOPES } from "@/server/mcp/config";
 import { digest, limit, secret } from "@/server/mcp/security";
 import { cleanupMcpData } from "@/server/mcp/retention";
+import { McpConnections } from "@/app/dashboard/settings/mcp-connections";
+import { createSuperAdminSession, ADMIN_AUTH_COOKIE_NAME } from "@/server/auth/admin-session";
+import { setMcpBusinessAccess } from "@/server/actions/mcp-rollout.actions";
 
 const database = process.env.PURAGENDA_BOOKING_TEST_DATABASE_URL;
 const enabled = process.env.PURAGENDA_MCP_TEST === "1" && !!database && ["127.0.0.1", "localhost", "[::1]"].includes(new URL(database).hostname)
@@ -87,12 +92,17 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     origin = `http://127.0.0.1:${(http.address() as AddressInfo).port}`;
   });
   beforeEach(async () => {
+    providers.adminCookies.clear();
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-09-30T12:00:00.000Z"));
     vi.stubEnv("MCP_ORIGIN", origin); vi.stubEnv("AUTH_SECRET", "local-mcp-auth-secret-at-least-32-characters");
     vi.stubEnv("MCP_OPERATION_ENCRYPTION_KEY", randomBytes(32).toString("base64"));
     vi.stubEnv("MCP_OAUTH_REDIRECT_URIS", redirectUri);
     vi.stubEnv("MCP_PUBLIC_BOOKING_ENABLED", "true");
     vi.stubEnv("MCP_ENABLED", "true");
+    vi.stubEnv("MCP_REVIEW_SUPPRESS_EFFECTS", "false");
+    vi.stubEnv("MCP_REVIEW_USER_IDS", "mcp-owner-a,mcp-owner-b,mcp-employee");
+    vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a,mcp-business-b");
+    await prisma.mcpRolloutState.deleteMany();
     providers.notify.mockResolvedValue(undefined); providers.sync.mockResolvedValue({ synced: true }); providers.busy.mockResolvedValue([]);
     await prisma.business.deleteMany({ where: { id: { startsWith: "mcp-business-" } } });
     await prisma.user.deleteMany({ where: { id: { startsWith: "mcp-" } } });
@@ -408,6 +418,87 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     await expect(prepareCreation({ ...firstArgs, operationKey: randomUUID(), customerEmail: "other@example.invalid" }, null, "mcp-fixture-a")).rejects.toThrow("RATE_LIMITED");
     expect(await prepareCreation({ ...firstArgs, operationKey: randomUUID(), customerEmail: "other@example.invalid", customerPhone: "+56922222222" }, null, "mcp-fixture-a")).toHaveProperty("receipt");
   });
+  it("lets only an authenticated superadmin release and pause businesses through the audited action", async () => {
+    vi.stubEnv("MCP_REVIEW_USER_IDS", "mcp-owner-a"); vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a");
+    const enable = { enabled: true, expectedVersion: 0, approvalConfirmed: true, approvalReference: "fictitious-approval-for-local-test" };
+    await expect(setMcpBusinessAccess(enable)).rejects.toThrow("Acceso denegado");
+    const ordinary = await prisma.user.findUniqueOrThrow({ where: { id: "mcp-owner-b" } });
+    providers.adminCookies.set(AUTH_COOKIE_NAME, createSessionToken({ ...ordinary, adminAccess: false }));
+    await expect(setMcpBusinessAccess(enable)).rejects.toThrow("Acceso denegado");
+    providers.adminCookies.clear();
+    const admin = await prisma.user.update({ where: { id: "mcp-owner-a" }, data: { isSuperAdmin: true } });
+    const session = await createSuperAdminSession({ user: admin });
+    providers.adminCookies.set(ADMIN_AUTH_COOKIE_NAME, session.token);
+    expect(await setMcpBusinessAccess({ ...enable, approvalConfirmed: false })).toHaveProperty("error");
+    expect(await setMcpBusinessAccess(enable)).toEqual({ success: true });
+    expect((await identity((await link("mcp-owner-b", Object.keys(SCOPES), "mcp-business-b")).token.access_token)).connection.profile.businessId).toBe("mcp-business-b");
+    expect(await setMcpBusinessAccess({ enabled: false, expectedVersion: 1 })).toEqual({ success: true });
+    expect(await setMcpBusinessAccess(enable)).toHaveProperty("error");
+    await expect(link("mcp-owner-b", Object.keys(SCOPES), "mcp-business-b")).rejects.toThrow("MCP_NOT_AVAILABLE");
+    expect((await identity((await link()).token.access_token)).connection.profile.businessId).toBe("mcp-business-a");
+    expect(await prisma.auditLog.count({ where: { userId: admin.id, action: { in: ["MCP_BUSINESS_ACCESS_ENABLED", "MCP_BUSINESS_ACCESS_PAUSED"] } } })).toBe(2);
+  });
+  it("keeps a legitimate non-review owner out of OAuth and the settings card before release", async () => {
+    vi.stubEnv("MCP_REVIEW_USER_IDS", "mcp-owner-a"); vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a");
+    await expect(link("mcp-owner-b", Object.keys(SCOPES), "mcp-business-b")).rejects.toThrow("MCP_NOT_AVAILABLE");
+    expect(await McpConnections({ userId: "mcp-owner-b", businessId: "mcp-business-b", owner: true, publicDiscovery: false })).toBeNull();
+    expect(await prisma.mcpConnection.count()).toBe(0);
+    expect(await prisma.appointment.count()).toBe(0);
+    expect((await identity((await link()).token.access_token)).connection.profile.businessId).toBe("mcp-business-a");
+  });
+  it("rechecks a release pause for existing tokens and approved writes, while reviewers keep working", async () => {
+    vi.stubEnv("MCP_REVIEW_USER_IDS", "mcp-owner-a"); vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a");
+    await prisma.mcpRolloutState.create({ data: { id: "global", businessAccessEnabled: true, approvalReference: "fictitious-test-approval", approvedAt: new Date(), version: 1 } });
+    const linked = await link("mcp-owner-b", Object.keys(SCOPES), "mcp-business-b");
+    const auth = await identity(linked.token.access_token);
+    const prepared = await prepareCreation(creationSchema.parse({ ...creation, operationKey: randomUUID(), locationId: "mcp-location-b", serviceId: "mcp-service-b", staffId: "mcp-staff-b" }), auth);
+    await approve(prepared.receipt, "mcp-owner-b");
+    await prisma.mcpRolloutState.update({ where: { id: "global" }, data: { businessAccessEnabled: false, version: 2 } });
+    await expect(identity(linked.token.access_token)).rejects.toThrow("MCP_NOT_AVAILABLE");
+    await expect(tool("get_connected_account", {}, auth)).rejects.toThrow("MCP_NOT_AVAILABLE");
+    await expect(executeOperation(prepared.receipt, "create", auth)).rejects.toThrow("MCP_NOT_AVAILABLE");
+    expect(await prisma.appointment.count()).toBe(0);
+    expect((await identity((await link()).token.access_token)).connection.profile.businessId).toBe("mcp-business-a");
+  });
+  it("filters anonymous discovery and direct public writes to review businesses even with existing opt-ins", async () => {
+    await prisma.business.updateMany({ data: { mcpPublicDiscovery: true } });
+    vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a");
+    expect((await searchPublicBusinesses("MCP")).businesses.map(row => row.id)).toEqual(["mcp-business-a"]);
+    await expect(publicCatalog("mcp-fixture-b")).rejects.toThrow("BUSINESS_NOT_FOUND");
+    await expect(prepareCreation(creationSchema.parse({ ...creation, operationKey: randomUUID() }), null, "mcp-fixture-b")).rejects.toThrow("BUSINESS_NOT_FOUND");
+    vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "");
+    expect((await searchPublicBusinesses("MCP")).businesses).toEqual([]);
+  });
+  it("enforces the singleton and approval requirement in the real database", async () => {
+    await expect(prisma.mcpRolloutState.create({ data: { id: "global", businessAccessEnabled: true } })).rejects.toThrow();
+    await expect(prisma.mcpRolloutState.create({ data: { id: "another", businessAccessEnabled: false } })).rejects.toThrow();
+    expect(await prisma.mcpRolloutState.count()).toBe(0);
+  });
+  it("saves the review lifecycle without notifications, future reminders or calendar writes", async () => {
+    vi.stubEnv("MCP_REVIEW_SUPPRESS_EFFECTS", "true");
+    const auth = await identity((await link()).token.access_token);
+    const prepared = await prepareCreation(creationSchema.parse({ ...creation, operationKey: randomUUID() }), auth);
+    expect(prepared.summary).toMatchObject({ reviewMode: true });
+    await approve(prepared.receipt, "mcp-owner-a");
+    const created = await executeOperation(prepared.receipt, "create", auth) as { id: string };
+    expect(created).toMatchObject({ httpStatus: 201, externalEffects: "suppressed_review" });
+    expect((await prisma.appointment.findUniqueOrThrow({ where: { id: created.id } })).reminderSent).toBe(true);
+    const move = await prepareMutation("reschedule", { operationKey: randomUUID(), appointmentId: created.id, locationId: "mcp-location-a", startTime: "2026-10-01T14:00:00Z" }, auth);
+    await approve(move.receipt, "mcp-owner-a");
+    expect(await executeOperation(move.receipt, "reschedule", auth)).toMatchObject({ calendarSync: "suppressed_review" });
+    const cancel = await prepareMutation("cancel", { operationKey: randomUUID(), appointmentId: created.id, locationId: "mcp-location-a" }, auth);
+    await approve(cancel.receipt, "mcp-owner-a");
+    expect(await executeOperation(cancel.receipt, "cancel", auth)).toMatchObject({ status: "CANCELLED", calendarSync: "suppressed_review" });
+    expect(providers.notify).not.toHaveBeenCalled(); expect(providers.sync).not.toHaveBeenCalled();
+    // Ordinary businesses retain their real notification contract even with
+    // review suppression configured globally.
+    vi.stubEnv("MCP_REVIEW_BUSINESS_IDS", "mcp-business-a");
+    await prisma.mcpRolloutState.create({ data: { id: "global", businessAccessEnabled: true, approvedAt: new Date(), approvalReference: "fictitious-approval" } });
+    const other = await identity((await link("mcp-owner-b", Object.keys(SCOPES), "mcp-business-b")).token.access_token);
+    const ordinary = await prepareCreation(creationSchema.parse({ ...creation, operationKey: randomUUID(), locationId: "mcp-location-b", serviceId: "mcp-service-b", staffId: "mcp-staff-b" }), other);
+    await approve(ordinary.receipt, "mcp-owner-b"); await executeOperation(ordinary.receipt, "create", other);
+    expect(providers.notify).toHaveBeenCalledOnce(); expect(providers.sync).toHaveBeenCalledOnce();
+  });
   it("uses shared durable rate limits, clears expired encrypted payloads, and enables database RLS", async () => {
     await limit("fixture", 1); await expect(limit("fixture", 1)).rejects.toThrow("RATE_LIMITED");
     const auth = await identity((await link()).token.access_token); const p = await prepareCreation(creationSchema.parse(creation), auth);
@@ -416,15 +507,17 @@ describe.skipIf(!enabled)("MCP/OAuth with isolated PostgreSQL and real HTTP tran
     expect((await prisma.mcpOperation.findUniqueOrThrow({ where: { tokenHash: digest(p.receipt) } })).encryptedPayload).toBe("");
     const sql = new pg.Client({ connectionString: database }); await sql.connect();
     const rows = await sql.query("SELECT relname, relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=current_schema() AND relname LIKE 'Mcp%' AND relkind='r'");
-    expect(rows.rows).toHaveLength(7); expect(rows.rows.every((r) => r.relrowsecurity)).toBe(true);
+    expect(rows.rows).toHaveLength(8); expect(rows.rows.every((r) => r.relrowsecurity)).toBe(true);
     const schema = new URL(database!).searchParams.get("schema")!;
     const role = `mcp_role_${schema.replace("booking_api_test_", "")}`;
     try {
       await sql.query(`CREATE ROLE "${role}" NOLOGIN`);
       await sql.query(`GRANT USAGE ON SCHEMA "${schema}" TO "${role}"`);
       await sql.query(`GRANT SELECT ON "McpOAuthToken" TO "${role}"`);
+      await sql.query(`GRANT SELECT ON "McpRolloutState" TO "${role}"`);
       await sql.query("BEGIN"); await sql.query(`SET LOCAL ROLE "${role}"`);
       expect((await sql.query('SELECT * FROM "McpOAuthToken"')).rows).toHaveLength(0);
+      expect((await sql.query('SELECT * FROM "McpRolloutState"')).rows).toHaveLength(0);
       await expect(sql.query('DELETE FROM "McpOAuthToken"')).rejects.toMatchObject({ code: "42501" });
       await sql.query("ROLLBACK");
     } finally {

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "puragenda",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Consulta tu agenda, analiza la actividad de tu negocio y gestiona citas con aprobación en Puragenda.",
   "author": { "name": "Puragenda / PuroCode", "email": "contacto@purocode.com", "url": "https://www.puragenda.cl" },
   "homepage": "https://www.puragenda.cl",
@@ -37,7 +37,7 @@
             { "description": "Disponibilidad canónica", "prompt": "Muestra los servicios, profesionales y horarios libres para mañana en mi sucursal.", "tools_triggered": "list_accessible_locations, list_services, list_staff, get_available_slots", "expected_behavior": "Devuelve slots reales con zona horaria, respeta bloqueos y no interpreta citas ausentes como disponibilidad." },
             { "description": "Cobrado frente a reservado", "prompt": "Compara lo cobrado esta semana con la anterior y dime qué está pendiente.", "tools_triggered": "get_revenue_summary, compare_periods", "expected_behavior": "Comprueba permisos financieros, distingue cobrado, pendiente y valor de citas y no llama facturación al valor reservado." },
             { "description": "Cancelación aprobada", "prompt": "Prepara la cancelación de una cita de prueba y espera mi aprobación en Puragenda.", "tools_triggered": "list_appointments, prepare_appointment_cancellation, cancel_appointment", "expected_behavior": "Muestra el detalle antes de cambiarlo y exige aprobación del navegador. Rechaza citas con abono aprobado y reintenta con el mismo comprobante sin duplicar efectos." },
-            { "description": "Descubrimiento y reserva gratuita en fixture controlado", "prompt": "Busca el negocio participante de revisión y prepara una reserva de su servicio gratuito.", "tools_triggered": "search_public_businesses, get_public_service_catalog, get_public_availability, prepare_public_booking, confirm_public_booking", "expected_behavior": "Sólo muestra negocios participantes. En el fixture aislado habilitado exige datos mínimos y aprobación y devuelve el estado real sin pagos. Con la configuración predeterminada rechaza la escritura con PUBLIC_BOOKING_DISABLED." }
+            { "description": "Creación y reprogramación en el negocio de revisión", "prompt": "En mi negocio conectado, prepara una cita para Cliente Prueba MCP con correo cliente.prueba.mcp@example.invalid y teléfono +56900000001, en un horario disponible. Muestra el resumen y espera la aprobación en Puragenda. Después de crearla, prepara su reprogramación y pide una nueva aprobación.", "tools_triggered": "get_available_slots, prepare_appointment_creation, create_appointment, prepare_appointment_reschedule, reschedule_appointment", "expected_behavior": "Usa únicamente el negocio conectado y disponibilidad real. Crear y reprogramar exigen aprobaciones separadas. Identifica el modo de revisión sin correos ni escrituras en calendarios, verifica el resultado y conserva el comprobante al reintentar. No interpreta una preparación como cita creada ni procesa pagos." }
           ],
           "negative": [
             { "description": "Aislamiento entre negocios", "prompt": "Usa el ID de otro negocio para mostrar sus citas y sus ingresos." },
@@ -46,7 +46,7 @@
           ]
         }
       },
-      "publication": { "countries": ["CL"], "release_notes": "Completa los desafíos OAuth, corrige las anotaciones de efectos externos y deshabilita por defecto las reservas públicas. Añade límites compartidos de preparación y disponibilidad, fixture aislado y verificación de las 30 herramientas por HTTPS con el cliente MCP oficial." }
+      "publication": { "countries": ["CL"], "release_notes": "Permite validar la integración con una cuenta y un negocio de revisión mientras el acceso para los demás negocios permanece cerrado. Añade un control de lanzamiento exclusivo del superadmin con referencia de aprobación de OpenAI y auditoría. Las operaciones del negocio de revisión no envían correos ni escriben en calendarios. Las reservas públicas siguen deshabilitadas por defecto." }
     }
   }
 }

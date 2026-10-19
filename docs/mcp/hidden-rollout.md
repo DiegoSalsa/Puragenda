@@ -1,90 +1,91 @@
-# Incorporar el código sin lanzar la integración
+# Revisión privada y lanzamiento para negocios
 
-`MCP_ENABLED` es un interruptor exclusivo del servidor, **apagado por defecto**.
-La ausencia de la variable equivale a `false`; sólo el texto exacto `true`
-habilita la integración. No existe una variable pública que permita activarla
-desde el navegador. Incorporar la rama no requiere lanzar el conector a usuarios.
+El servidor puede estar disponible para validar ChatGPT sin permitir que los
+demás negocios activen la integración. Son dos controles independientes:
 
-## Producción apagada
+- `MCP_ENABLED=false` o ausente apaga MCP/OAuth, recibos y su interfaz. Las
+  rutas devuelven 404 antes de consultar tablas MCP. La limpieza autenticada
+  sigue disponible para cumplir la retención.
+- Con `MCP_ENABLED=true`, la ausencia de `McpRolloutState.global` equivale a
+  acceso cerrado para negocios. Sólo acceden los usuarios y negocios cuyos
+  IDs coinciden con ambas listas privadas `MCP_REVIEW_USER_IDS` y
+  `MCP_REVIEW_BUSINESS_IDS`.
 
-Con `MCP_ENABLED=false` o sin la variable:
+La política se comprueba en Configuración, consentimiento, perfiles, acceso a
+herramientas, refresh de tokens, aprobación y ejecución de operaciones. Un
+token antiguo no permite eludir una pausa. La búsqueda pública aplica la misma
+restricción a negocios, además del opt-in individual; no basta conocer un ID.
+No hay variables públicas ni parámetros HTTP para cambiar esta política.
 
-- Configuración no renderiza la tarjeta ChatGPT/Codex, conexiones ni opt-in.
-  El componente retorna antes de consultar las tablas MCP.
-- Las páginas de instrucciones, conexiones propias y consentimiento devuelven
-  not-found. No se anuncian las secciones nuevas del conector en los textos
-  legales renderizados.
-- MCP, OAuth, metadata y challenge de dominio devuelven 404 sin consultar sesión,
-  límites, operaciones o concesiones. También se bloquean aprobaciones por recibo.
-- Las acciones servidor para cambios de participación y revocación rechazan
-  `MCP_DISABLED` antes de leer sesión o escribir en base.
-- La limpieza autenticada sigue disponible para cumplir retención si se apaga
-  una integración previamente utilizada. No aparece en la interfaz de negocios.
-- `MCP_PUBLIC_BOOKING_ENABLED` sigue apagado por defecto e independiente; no basta
-  por sí solo para abrir el canal mientras el interruptor general esté apagado.
+## Revisión con Estética Bella
 
-Las pruebas comprueban tanto que la interfaz no se renderiza como que las URLs
-y acciones no permiten usar el backend oculto. No se depende sólo de esconder enlaces.
-La autenticación, permisos y funciones existentes de Puri siguen su flujo actual.
+El responsable autorizó usar producción y el negocio existente Estética Bella
+como cuenta de pruebas. No se crea una base ni una cuenta nueva, ni se ejecutan
+seeds, resets o `db push` en producción. Los IDs y credenciales se configuran
+exclusivamente en el servidor y en el campo privado del portal de revisión.
 
-## Entorno de pruebas
+Configurar las dos listas con un único usuario y negocio, `MCP_ENABLED=true`,
+`MCP_ORIGIN=https://www.puragenda.cl`, una clave de operaciones aleatoria de 32
+bytes y `MCP_PUBLIC_BOOKING_ENABLED=false`. No reutilizar claves del fixture
+local. Cambiar variables de Vercel requiere un nuevo despliegue.
 
-Los runners `--mcp`, `--mcp-preview` y `resume-mcp-review.mjs` establecen
-`MCP_ENABLED=true` únicamente en sus procesos aislados. No modifican variables
-de Vercel. Los otros modos de regresión/build del runner lo fuerzan a `false`.
-Cambiar variables de entorno de un despliegue requiere desplegarlo de nuevo;
-el cambio no publica el plugin en el directorio de OpenAI.
+`MCP_REVIEW_SUPPRESS_EFFECTS=true` evita correos, recordatorios y escrituras en
+Google Calendar exclusivamente para las operaciones MCP de los negocios de
+revisión. El calendario puede consultarse para comprobar conflictos. Las citas
+se guardan realmente con el motor canónico y se pueden reprogramar o cancelar
+con su aprobación; la página de aprobación identifica el modo de revisión.
+Las reservas habituales conservan sus notificaciones y sincronización.
 
-## Qué implica integrar en main
+Mantener el acceso global cerrado durante toda la revisión. La disponibilidad
+del endpoint y el ZIP del plugin no acreditan aprobación ni publicación en OpenAI.
 
-El build configurado en `vercel.json` usa `scripts/vercel-build.mjs`. En
-`VERCEL_ENV=production` valida el entorno y ejecuta `prisma migrate deploy`
-antes del build. La migración MCP añade `Business.mcpPublicDiscovery` con
-default false y siete tablas privadas, con FK, índices y RLS. El flag **no
-omite ni reemplaza esa migración**: las consultas Prisma compartidas deben
-corresponder al schema desplegado aunque la integración permanezca apagada.
+## Botón de lanzamiento
 
-Antes de integrar:
+En el panel de superadmin, **Integraciones → ChatGPT y Codex**, el control
+**Habilitar para negocios** requiere sesión de superadmin, verificación reciente,
+confirmación de haber verificado la aprobación de OpenAI y su referencia.
+El servidor guarda el cambio y la auditoría en una misma transacción y rechaza
+cambios sobre una versión antigua del estado. La base también exige una
+referencia y fecha de aprobación para permitir el estado habilitado.
 
-1. Revisar todos los commits/migraciones pendientes contra el main vigente.
-   No ejecutar seed ni `db push` sobre producción. El runner de pruebas sí usa
-   schemas locales desechables y aplica el SQL MCP real para verificarlo.
-2. Mantener `MCP_ENABLED` ausente/false y reservas públicas apagadas en el
-   entorno de producción. No copiar variables/secretos del fixture.
-3. Revisar el PR y el efecto del despliegue/migración. El trabajo de esta fase
-   prepara la rama y pruebas; no cambia producción ni configura Vercel.
-4. Tras un merge/despliegue expresamente autorizado, comprobar con la cuenta
-   de negocio que Configuración no tiene tarjeta y las rutas MCP/OAuth retornan
-   404. Mantener el preview separado habilitado para la revisión de OpenAI.
+Al habilitar, cada negocio debe conectar su propia cuenta y autorizar los scopes;
+esto no conecta cuentas automáticamente ni publica el plugin en OpenAI. El botón
+**Deshabilitar para negocios** vuelve a cerrar el acceso inmediatamente para
+conexiones nuevas y existentes; los revisores configurados conservan el acceso.
+No se debe pulsar el botón de lanzamiento durante las pruebas.
 
-La integración todavía no se ha fusionado a `main` ni desplegado a producción.
-El encendido público y el envío a revisión se autorizan aparte de incorporar el
-código oculto.
+## Migración y despliegue
 
-## Validación local del interruptor
+`scripts/vercel-build.mjs` ejecuta `prisma migrate deploy` únicamente en producción.
+Las migraciones pendientes de esta integración son:
 
-La rama incorpora `origin/main` en `84bdb63`, incluidos los cambios comerciales
-y de administración. Se repitieron los controles sobre esa combinación.
+1. `20261017021050_mcp_oauth_connector`: siete tablas privadas y
+   `Business.mcpPublicDiscovery=false`.
+2. `20261018055923_mcp_rollout_control`: tabla privada de control global,
+   restricciones de aprobación y singleton. No inserta ningún estado habilitado.
 
-- Typecheck y lint correctos; lint mantiene 32 advertencias existentes.
-- 32 pruebas MCP/OAuth correctas, incluidas cuatro de apagado/encendido.
-- Suite general: 1.335 correctas y 125 omitidas; con PostgreSQL aislado:
-  1.356 correctas y 104 omitidas, sin fallos.
-- Build de producción correcto con `MCP_ENABLED=false`, en un directorio de
-  salida separado del preview habilitado.
-- Smoke HTTP del build: 17 combinaciones de ruta/método devuelven 404.
-  El login del negocio ficticio funciona y Configuración responde 200 sin
-  renderizar la tarjeta; tampoco aparecen las secciones legales MCP.
-- Control de encendido con el mismo build: `MCP_ENABLED=true` vuelve a exponer
-  metadata, instrucciones y la tarjeta de conexiones en Configuración.
+Las ocho tablas MCP tienen RLS y privilegios revocados a PUBLIC, anon y
+authenticated. Las migraciones son aditivas. El preflight compara el historial
+productivo con la rama y sólo admite las cuatro diferencias históricas de checksum
+ya documentadas en `docs/operations/cinnamon-production-runbook.md`; no altera
+sus archivos ni sus checksums. Los previews no ejecutan migraciones.
 
-Evidencia sin credenciales: [hidden-rollout-http.json](iteration-2/evidence/hidden-rollout-http.json).
-La comprobación HTTP es local; no afirma una inspección visual del navegador ni
-verifica las variables o el estado de un despliegue de producción.
+## Validación
 
-La auditoría de dependencias de producción no detecta vulnerabilidades. La
-auditoría completa conserva nueve entradas high de herramientas de desarrollo
-(`braces` y sus dependientes); se comprobó el mismo resultado con el lockfile
-del main `84bdb63`. El workflow `Security checks` ejecuta la auditoría completa,
-por lo que este bloqueo heredado debe resolverse antes de considerar el PR con
-CI verde. No se han bajado versiones de Next ni relajado el workflow para omitirlo.
+Se comprueban el apagado total, aislamiento por pares usuario/negocio, permisos
+actuales, consentimiento, tokens existentes tras pausa, descubrimiento público,
+restricciones SQL y acceso denegado a roles de la Data API. Las pruebas del
+control de lanzamiento usan también una sesión real firmada de superadmin.
+La revisión crea, reprograma y cancela citas sin efectos externos, y verifica
+que una reserva normal sigue notificando.
+
+Los resultados actuales están en
+[review-rollout-validation.json](iteration-2/evidence/review-rollout-validation.json).
+La evidencia HTTP de la fase anterior con el interruptor general apagado permanece
+en [hidden-rollout-http.json](iteration-2/evidence/hidden-rollout-http.json).
+Los resultados locales no se presentan como pruebas ejecutadas desde ChatGPT.
+
+GitHub Actions no pudo iniciar los jobs por un bloqueo de facturación de la
+cuenta. La auditoría de producción no detectó vulnerabilidades; la auditoría
+completa conserva nueve entradas high de herramientas de desarrollo, reproducidas
+con el lockfile del main anterior. No se han relajado esos workflows.

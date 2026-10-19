@@ -2416,6 +2416,15 @@ model MarketplaceListingCategory {
 }
 
 // MCP credentials are random opaque values; only SHA-256 digests are stored.
+model McpRolloutState {
+  id                    String   @id
+  businessAccessEnabled Boolean  @default(false)
+  approvalReference     String?
+  approvedAt            DateTime?
+  version               Int      @default(0)
+  updatedAt             DateTime @updatedAt
+}
+
 model McpOAuthClient {
   id String @id @default(uuid())
   name String

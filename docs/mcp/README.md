@@ -1,6 +1,6 @@
 # Puragenda para ChatGPT y Codex
 
-Implementación 1.0.1 preparada para pruebas de conexión y revisión. No está publicada ni
+Paquete 1.0.2 preparado para revisión privada con acceso controlado. No está publicado ni
 aprobada por OpenAI. El endpoint propuesto es `https://www.puragenda.cl/mcp`;
 su disponibilidad productiva requiere un despliegue autorizado.
 
@@ -15,7 +15,7 @@ su disponibilidad productiva requiere un despliegue autorizado.
 - [Verificación histórica de la iteración 1](verification.md)
 - [Decisiones de seguridad y privacidad](security.md)
 - [Documentación oficial consultada](sources.md)
-- Paquete: `plugins/puragenda/`; distribución actual: `dist/puragenda-plugin-1.0.1.zip`.
+- Paquete: `plugins/puragenda/`; distribución actual: `dist/puragenda-plugin-1.0.2.zip`.
 
 ## Arquitectura
 

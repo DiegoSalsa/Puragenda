@@ -8,6 +8,9 @@ export const BOOKING_KEY_TTL_MS = 24 * 3600000;
 export const BOOKING_LEASE_MS = 120000;
 export const bookingOperationContext = new AsyncLocalStorage<{ id: string; ownerToken: string; currency: string }>();
 export const bookingContractContext = new AsyncLocalStorage<boolean>();
+// Only a trusted server adapter can suppress external effects for a review.
+// This value is never populated from HTTP headers, bodies or tool arguments.
+export const bookingReviewContext = new AsyncLocalStorage<boolean>();
 // Trusted server adapters may bind a user-approved quote. Never populated from
 // an HTTP body. The canonical writer verifies it again inside the capacity lock.
 export const bookingExpectedQuoteContext = new AsyncLocalStorage<{ price: number; duration: number; forbidDeposit: boolean; requirePublicParticipation?: boolean }>();

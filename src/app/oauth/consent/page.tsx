@@ -4,6 +4,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { authorizationRequest } from "@/server/mcp/oauth";
 import { oauthCookie, SCOPES, mcpEnabled, type McpScope } from "@/server/mcp/config";
+import { mcpUserAllowed, mcpBusinessFilter } from "@/server/mcp/rollout";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Conectar Puragenda", robots: { index: false, follow: false } };
@@ -15,7 +16,8 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
   if (!request) return <main className="mx-auto max-w-lg p-8">La solicitud venció o no es válida. Inicia la conexión nuevamente desde ChatGPT o Codex.</main>;
   const user = await getCurrentSessionUser();
   if (!user) redirect(`/login?mcpRequest=${encodeURIComponent(id)}`);
-  const businesses = await prisma.business.findMany({ where: { OR: [{ ownerId: user.id }, { staff: { some: { userId: user.id, isActive: true } } }] }, select: { id: true, name: true }, take: 100 });
+  if (!await mcpUserAllowed(user.id)) notFound();
+  const businesses = await prisma.business.findMany({ where: { ...await mcpBusinessFilter(), OR: [{ ownerId: user.id }, { staff: { some: { userId: user.id, isActive: true } } }] }, select: { id: true, name: true }, take: 100 });
   return <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12"><div className="w-full space-y-6 rounded-2xl border border-border bg-card p-6">
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img src="/logos/logoPuragendaSVG.svg" alt="Puragenda" className="h-14 w-auto" />

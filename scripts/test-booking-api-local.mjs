@@ -33,6 +33,8 @@ const env = { ...process.env, DATABASE_URL: url.toString(), DIRECT_URL: url.toSt
   RESEND_API_KEY: "", AUTH_SECRET: mcpPreview ? randomBytes(32).toString("base64url") : "local-booking-test-only-at-least-32-characters",
   NEXT_PUBLIC_APP_URL: mcpPreview ? reviewOrigin : process.argv.includes("--all") ? "http://localhost:3000" : "http://localhost:3107",
   MCP_ENABLED: mcpPreview || process.argv.includes("--mcp") ? "true" : "false",
+  MCP_REVIEW_USER_IDS: mcpPreview ? "preview-owner,preview-employee" : "",
+  MCP_REVIEW_BUSINESS_IDS: mcpPreview ? "preview-business,preview-private-business" : "",
   ...(mcpPreview ? { MCP_ORIGIN: reviewOrigin, MCP_OAUTH_ALLOW_LOOPBACK: "true", MCP_OPERATION_ENCRYPTION_KEY: randomBytes(32).toString("base64"), MCP_PUBLIC_BOOKING_ENABLED: "true" } : {}),
   PURAGENDA_MCP_TEST: process.argv.includes("--mcp") ? "1" : "",
   LOCAL_PAYMENT_SIMULATOR: mcpPreview || process.argv.includes("--preview") || process.argv.includes("--build") ? "true" : "" };
@@ -68,6 +70,8 @@ try {
       const folder = fs.readdirSync(new URL("../prisma/migrations/", import.meta.url)).find((name) => name.endsWith("_mcp_oauth_connector"));
       if (!folder) throw new Error("MCP migration missing");
       await client.query(fs.readFileSync(new URL(`../prisma/migrations/${folder}/migration.sql`, import.meta.url), "utf8"));
+      await client.query('DROP TABLE "McpRolloutState"');
+      await client.query(fs.readFileSync(new URL("../prisma/migrations/20261018055923_mcp_rollout_control/migration.sql", import.meta.url), "utf8"));
     }
     if (mcpPreview || process.argv.includes("--preview") || process.argv.includes("--build")) {
       const { PrismaClient } = await import("@prisma/client");
@@ -113,7 +117,7 @@ try {
         } else code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", port]);
       }
     } else {
-      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.release.test.ts", "tests/server/mcp-rollout.actions.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
       code = await run([vitestBin, "run", ...files]);
     }
   }

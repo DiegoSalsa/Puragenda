@@ -1,6 +1,6 @@
 # Puragenda
 
-Versión del conector: 1.0.1. No está aprobado ni publicado por OpenAI.
+Versión del paquete: 1.0.2. No está aprobado ni publicado por OpenAI.
 
 Paquete portátil Agent Plugins 1.0.0 para ChatGPT y Codex. Incluye el endpoint
 remoto y una habilidad de uso. No contiene servidor local, credenciales ni hooks.
@@ -22,9 +22,11 @@ La verificación del schema vigente y su rechazo de la extensión están registr
 en el repositorio, `docs/mcp/iteration-2/schema-compatibility.md`. La importación
 real del ZIP en OpenAI sigue pendiente de acceso externo.
 
-Las reservas públicas están deshabilitadas por defecto. El catálogo informa esa
-capacidad; únicamente el entorno ficticio de revisión habilita la preparación y
-ejecución gratuitas para evaluar el flujo. La aprobación no verifica identidad.
+Las reservas públicas están deshabilitadas por defecto. La revisión productiva
+usa únicamente la cuenta y el negocio de pruebas autorizados; los demás negocios
+permanecen bloqueados hasta su lanzamiento por el superadmin. Los cambios MCP de
+revisión se guardan sin correos ni escrituras en calendarios. El fixture local
+puede habilitar reservas públicas gratuitas para pruebas adicionales.
 
 No está aprobado ni publicado en el directorio. El portal requiere identidad
 verificada, dominio, scan del endpoint, cuenta ficticia de revisión, grabación de

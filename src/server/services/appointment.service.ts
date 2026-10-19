@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import type { AppointmentStatus, Prisma } from "@prisma/client";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
-import { checkpointBookingOperation, fenceBookingOperation, bookingContractContext, bookingExpectedQuoteContext } from "@/server/booking/idempotency";
+import { checkpointBookingOperation, fenceBookingOperation, bookingContractContext, bookingExpectedQuoteContext, bookingReviewContext } from "@/server/booking/idempotency";
 import { BookingSelectionError } from "@/core/booking-selection";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { format } from "date-fns";
@@ -134,7 +134,7 @@ export async function createAppointment(data: {
     if (external.hasCollision) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
     try {
       const result = await prisma.$transaction((tx) => createAppointment(data, { tx, syncGoogle: false }));
-      if (result.success && options?.syncGoogle !== false) await syncAppointmentToGoogle(result.appointment.id);
+      if (result.success && options?.syncGoogle !== false && !bookingReviewContext.getStore()) await syncAppointmentToGoogle(result.appointment.id);
       return result;
     } catch (error) {
       if (isAppointmentCapacityConflict(error)) return { success: false as const, error: "El horario seleccionado ya está ocupado. Por favor selecciona otro horario.", code: "SLOT_CONFLICT" };
@@ -235,6 +235,7 @@ export async function createAppointment(data: {
       depositPaymentUrl: data.depositRequired ? (data.depositPaymentUrl || null) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",
       internalNotes: data.internalNotes?.trim() || null,
+      ...(bookingReviewContext.getStore() ? { reminderSent: true } : {}),
       storyCampaignId: data.storyCampaignId,
     },
     include: { service: true },

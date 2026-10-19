@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { loadBookingContext, getBookingAvailability } from "@/server/booking/read.service";
 import { executeBooking } from "@/server/booking/create-http";
-import { bookingExpectedQuoteContext } from "@/server/booking/idempotency";
+import { bookingExpectedQuoteContext, bookingReviewContext } from "@/server/booking/idempotency";
 import { cancelAppointmentUnlessDepositApproved } from "@/server/services/deposit.service";
 import { validateAppointmentReschedule, rescheduleAppointmentWithinTransaction } from "@/server/services/appointment-management.service";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
@@ -16,6 +16,7 @@ import { mcpConfig, publicBookingEnabled } from "./config";
 import { digest, secret, encrypt, decrypt, McpError, limit } from "./security";
 import { publicBusiness } from "./public";
 import { id } from "./read-tools";
+import { mcpReviewSuppressesEffects } from "./rollout";
 
 export const creationSchema = z.object({ operationKey: z.string().uuid(), locationId: id, serviceId: id, staffId: id.optional(),
   startTime: z.string().datetime({ offset: true }), selectedOptionAlternativeIds: z.array(id).max(50).default([]),
@@ -23,7 +24,7 @@ export const creationSchema = z.object({ operationKey: z.string().uuid(), locati
   customerPhone: z.string().trim().regex(/^\+?[0-9\s()-]{8,18}$/), customerAddress: z.string().trim().max(300).optional() }).strict();
 export const mutationSchema = z.object({ operationKey: z.string().uuid(), appointmentId: id, locationId: id, startTime: z.string().datetime({ offset: true }).optional() }).strict();
 export type OperationKind = "create" | "public_create" | "reschedule" | "cancel";
-type Summary = { action: OperationKind; business: string; service: string; location: string; staffId?: string; staffName?: string; startTime: string; endTime: string; duration: number; price: number; currency: string; timezone: string; customerName?: string };
+type Summary = { action: OperationKind; business: string; service: string; location: string; staffId?: string; staffName?: string; startTime: string; endTime: string; duration: number; price: number; currency: string; timezone: string; customerName?: string; reviewMode?: boolean };
 type Payload = { receipt: string; request: Record<string, unknown>; summary: Summary; appointmentId?: string; updatedAt?: string; appointmentHash?: string; inputHash?: string; publicSlug?: string };
 const appointmentHash = (appointment: object) => digest(JSON.stringify(appointment));
 
@@ -90,7 +91,8 @@ export async function prepareCreation(args: z.infer<typeof creationSchema>, iden
   const request = bookingSchema.parse({ ...input, startTime: slot.startTime, endTime: slot.endTime });
   const summary: Summary = { action: publicSlug ? "public_create" : "create", business: business.name, service: service.name,
     location: location.name, staffId: args.staffId, staffName: current.staff.find((s) => s.id === args.staffId)?.name, startTime: slot.startTime, endTime: slot.endTime,
-    duration: availability.selection.duration, price: availability.selection.price, currency: business.currencyCode, timezone: location.timezone, customerName: args.customerName };
+    duration: availability.selection.duration, price: availability.selection.price, currency: business.currencyCode, timezone: location.timezone, customerName: args.customerName,
+    ...(mcpReviewSuppressesEffects(business.id) ? { reviewMode: true } : {}) };
   return saveOperation({ key: operationKey, kind: summary.action, businessId: business.id, connectionId: context?.identity.connection.id,
     payload: { request, summary, inputHash, ...(publicSlug ? { publicSlug } : {}) } });
 }
@@ -116,7 +118,8 @@ export async function prepareMutation(kind: "cancel" | "reschedule", args: z.inf
   const staff = a.staffId ? await prisma.staff.findFirst({ where: { id: a.staffId, businessId: c.business.id }, select: { name: true } }) : null;
   const summary: Summary = { action: kind, business: c.business.name, service: a.service.name, location: c.location!.name,
     staffId: a.staffId ?? undefined, staffName: staff?.name, startTime: start.toISOString(), endTime: end.toISOString(), duration,
-    price: a.totalPrice ?? a.service.price, currency: c.business.currencyCode, timezone: c.location!.timezone, customerName: a.customerName };
+    price: a.totalPrice ?? a.service.price, currency: c.business.currencyCode, timezone: c.location!.timezone, customerName: a.customerName,
+    ...(mcpReviewSuppressesEffects(c.business.id) ? { reviewMode: true } : {}) };
   return saveOperation({ key: args.operationKey, kind, businessId: c.business.id, connectionId: c.identity.connection.id,
     payload: { request: { locationId: c.location!.id, startTime: start.toISOString(), endTime: end.toISOString() }, summary, appointmentId: a.id, updatedAt: a.updatedAt.toISOString(), appointmentHash: appointmentHash(a) } });
 }
@@ -159,10 +162,11 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
     const request = new NextRequest(`${mcpConfig().origin}/api/business/${encodeURIComponent(business.slug)}/book`, { method: "POST",
       headers: { "Content-Type": "application/json", "Puragenda-Booking-Version": "1", "Idempotency-Key": `mcp-${op.id}` }, body: JSON.stringify(payload.request) });
     const response = await bookingExpectedQuoteContext.run({ price: payload.summary.price, duration: payload.summary.duration, forbidDeposit: true, requirePublicParticipation: kind === "public_create" },
-      () => executeBooking(request, { params: Promise.resolve({ slug: business.slug }) }, op.businessId));
+      () => bookingReviewContext.run(mcpReviewSuppressesEffects(op.businessId), () => executeBooking(request, { params: Promise.resolve({ slug: business.slug }) }, op.businessId)));
     const body = await response.json();
     const result = { id: body.id ?? null, status: body.status ?? null, booking: body.booking ?? null, operationStatus: body.operationStatus ?? null,
-      code: body.code ?? null, httpStatus: response.status, message: response.status === 202 ? "Reserva creada; requiere revisión de efectos pendientes. No repitas con una clave nueva." : "El estado de booking refleja el resultado real; crear no significa pagar ni confirmar." };
+      code: body.code ?? null, httpStatus: response.status, ...(mcpReviewSuppressesEffects(op.businessId) ? { reviewMode: true, externalEffects: "suppressed_review" } : {}),
+      message: response.status === 202 ? "Reserva creada; requiere revisión de efectos pendientes. No repitas con una clave nueva." : "El estado de booking refleja el resultado real; crear no significa pagar ni confirmar." };
     if (response.status >= 500 || body.code === "BOOKING_IN_PROGRESS") return { ...result, retryWithSameReceipt: true };
     await prisma.$transaction(async (db) => {
       await db.mcpOperation.update({ where: { id: op.id }, data: { state: "DONE", result } });
@@ -188,7 +192,8 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
       await rescheduleAppointmentWithinTransaction(db, current, start, end, context.location!.id);
     }
     const outcome = { id: current.id, status: kind === "cancel" ? "CANCELLED" : current.status, startTime: start.toISOString(), endTime: end.toISOString(),
-      calendarSync: "pending", message: "Cambio guardado en Puragenda. La sincronización de calendario se verifica por separado." };
+      calendarSync: mcpReviewSuppressesEffects(op.businessId) ? "suppressed_review" : "pending",
+      message: mcpReviewSuppressesEffects(op.businessId) ? "Cambio de prueba guardado en Puragenda sin correos ni sincronización de calendarios." : "Cambio guardado en Puragenda. La sincronización de calendario se verifica por separado." };
     await db.mcpOperation.update({ where: { id: op.id }, data: { state: "DONE", result: outcome } });
     await db.auditLog.create({ data: { userId: context.user.id, action: `MCP_APPOINTMENT_${kind.toUpperCase()}`, details: JSON.stringify({ businessId: op.businessId, operationId: op.id, appointmentId: current.id }) } });
     return { result: outcome, executed: true };
@@ -196,6 +201,7 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
   // The durable result is committed before any external effect; never repeat a
   // calendar mutation on replay or mistake provider failure for a failed change.
   if (!result.executed) return result.result;
+  if (mcpReviewSuppressesEffects(op.businessId)) return result.result;
   try {
     const sync = await syncAppointmentToGoogle(payload.appointmentId!);
     if (sync.synced || sync.reason === "connection_not_found") {

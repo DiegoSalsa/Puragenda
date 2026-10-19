@@ -6,8 +6,10 @@ import { getEffectiveBusinessPermissions } from "@/server/services/permissions.s
 import type { PuriContext } from "@/server/puri/types";
 import { digest, McpError } from "./security";
 import { mcpConfig, type McpScope } from "./config";
+import { requireMcpAccess } from "./rollout";
 
 export async function membership(userId: string, businessId: string, tokenVersion?: number) {
+  await requireMcpAccess(userId, businessId);
   const [user, business, staff] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
     prisma.business.findUnique({ where: { id: businessId }, include: { subscription: true } }),

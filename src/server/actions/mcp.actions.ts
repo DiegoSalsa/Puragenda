@@ -7,6 +7,7 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS as P } from "@/core/permissions";
 import { requireMcpEnabled } from "@/server/mcp/config";
+import { requireMcpAccess } from "@/server/mcp/rollout";
 
 export async function revokeMcpConnection(form: FormData) {
   requireMcpEnabled();
@@ -28,6 +29,7 @@ export async function updateMcpPublicDiscovery(form: FormData) {
   if (!user) throw new Error("No autenticado");
   const business = await getBusinessForUser(user.id);
   if (!business || !(await hasBusinessPermission(user, business, P.SETTINGS_MANAGE))) throw new Error("Sin permisos");
+  await requireMcpAccess(user.id, business.id);
   const enabled = form.get("enabled") === "on";
   await prisma.$transaction(async (db) => {
     await db.business.update({ where: { id: business.id }, data: { mcpPublicDiscovery: enabled } });

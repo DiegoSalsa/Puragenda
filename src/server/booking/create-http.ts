@@ -28,7 +28,7 @@ import { operationalSubscriptionDeniedResponse } from "@/server/http/subscriptio
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
 import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
 import { bookingJson } from "@/server/booking/response";
-import { bookingContractContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
+import { bookingContractContext, bookingReviewContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
 
 function isBookingV1(request: NextRequest) {
   return request.headers.get("Puragenda-Booking-Version") === "1" || request.headers.has("Idempotency-Key");
@@ -152,7 +152,7 @@ async function createAppointmentWithOptionalReward(
       });
       return created;
     });
-    await syncAppointmentToGoogle(result.appointment.id);
+    if (!bookingReviewContext.getStore()) await syncAppointmentToGoogle(result.appointment.id);
     return result;
   } catch (error) {
     if (error instanceof RewardClaimError) return { success: false as const, error: error.message };
@@ -944,7 +944,7 @@ async function handleBooking(
         }
         throw error;
       }
-      await Promise.all(createdAppointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
+      if (!bookingReviewContext.getStore()) await Promise.all(createdAppointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
 
       let paymentUrl: string | null = depositRequired && usesManualPaymentLink
         ? await createManualDepositPageUrl(createdAppointments.map((appointment) => appointment.id))
@@ -1011,7 +1011,7 @@ async function handleBooking(
         }
       }
 
-      if (!depositRequired) {
+      if (!depositRequired && !bookingReviewContext.getStore()) {
         for (const appointment of createdAppointments) {
           const appointmentWithRelations = await prisma.appointment.findUnique({
             where: { id: appointment.id },
@@ -1155,7 +1155,7 @@ async function handleBooking(
     await checkpointBookingResponse(result.appointment, business.currencyCode, paymentUrl);
     // Send email notifications asynchronously (don't block the response)
     // Only send if no deposit required (otherwise wait for payment)
-    if (!depositRequired) {
+    if (!depositRequired && !bookingReviewContext.getStore()) {
       const appointmentWithRelations = await prisma.appointment.findUnique({
         where: { id: result.appointment.id },
         include: {

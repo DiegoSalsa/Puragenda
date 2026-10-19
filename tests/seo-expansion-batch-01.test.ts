@@ -193,6 +193,9 @@ describe("SEO expansion batch 01", () => {
         .replace('  "/oauth/",\n', "")
         .replace('  "/mcp/confirm/",\n', "")
         .replace('  "/integraciones/chatgpt/conexiones",\n', "");
+      // The MCP launch control adds exactly one superadmin navigation item.
+      // Continue checking every other byte of the protected admin shell.
+      if (path === "src/app/para/x7k9m2v4q8/(panel)/admin-panel-shell.tsx") source = source.replace('  { href: `${ADMIN_SECRET_PATH}/integrations`, icon: ShieldCheck, label: "Integraciones" },\n', "");
       const current = createHash("sha256").update(source).digest("hex");
       expect(current, path).toBe(hash);
     }
