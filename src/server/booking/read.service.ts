@@ -14,7 +14,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
   const data = await db.business.findUniqueOrThrow({
     where: { id: businessId },
     select: {
-      id: true, slug: true, name: true, timezone: true, currencyCode: true,
+      id: true, slug: true, name: true, timezone: true, currencyCode: true, mcpPublicDiscovery: true,
       slotInterval: true, minAdvanceBookingMinutes: true, allowSameDayBookings: true,
       depositRequired: true, depositPaymentMode: true, mpAccessToken: true, maxServicesPerBooking: true,
       subscription: { select: { plan: true } },

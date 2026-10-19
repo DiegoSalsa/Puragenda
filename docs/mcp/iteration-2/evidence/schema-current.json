@@ -1,0 +1,87 @@
+{
+  "checkedAt": "2026-10-17T06:08:44.075Z",
+  "classification": "VALIDADO LOCALMENTE",
+  "schemaUrl": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "guideUrl": "https://developers.openai.com/plugins/build/plugins",
+  "downloadedSchemaSha256": "6539175bfcdf43085855183e86da40ea94b166547a72b47ae9a0a390516d3acb",
+  "matchesVendoredSchemaSemantically": true,
+  "portableManifestAccepted": true,
+  "documentedAuthExtensionAccepted": false,
+  "guideDescribesServerAuth": true,
+  "extensionValidationErrors": [
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/$defs/stdioServer/required",
+      "keyword": "required",
+      "params": {
+        "missingProperty": "command"
+      },
+      "message": "must have required property 'command'"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/$defs/stdioServer/additionalProperties",
+      "keyword": "additionalProperties",
+      "params": {
+        "additionalProperty": "url"
+      },
+      "message": "must NOT have additional properties"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/$defs/stdioServer/additionalProperties",
+      "keyword": "additionalProperties",
+      "params": {
+        "additionalProperty": "extensions"
+      },
+      "message": "must NOT have additional properties"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda/type",
+      "schemaPath": "#/$defs/stdioServer/properties/type/const",
+      "keyword": "const",
+      "params": {
+        "allowedValue": "stdio"
+      },
+      "message": "must be equal to constant"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/additionalProperties",
+      "keyword": "additionalProperties",
+      "params": {
+        "additionalProperty": "extensions"
+      },
+      "message": "must NOT have additional properties"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/additionalProperties",
+      "keyword": "additionalProperties",
+      "params": {
+        "additionalProperty": "extensions"
+      },
+      "message": "must NOT have additional properties"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda/type",
+      "schemaPath": "#/properties/type/const",
+      "keyword": "const",
+      "params": {
+        "allowedValue": "sse"
+      },
+      "message": "must be equal to constant"
+    },
+    {
+      "instancePath": "/mcpServers/puragenda",
+      "schemaPath": "#/oneOf",
+      "keyword": "oneOf",
+      "params": {
+        "passingSchemas": null
+      },
+      "message": "must match exactly one schema in oneOf"
+    }
+  ],
+  "realOpenAIImporterTested": false,
+  "resolution": "The current published schema still rejects the documented per-server auth extension. Keep the portable manifest valid. Use the documented custom-MCP URL setup with separately configured Mixed auth and discovery; its actual OpenAI UI behavior remains pending external access."
+}

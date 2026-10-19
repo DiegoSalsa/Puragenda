@@ -6,8 +6,9 @@ import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getTrackingNotice } from "@/lib/privacy/tracking-notice";
+import { mcpEnabled } from "@/server/mcp/config";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 
 export default async function PrivacidadPage() {
   const locale = await getLocale();
+  const mcp = await getTranslations("mcp");
   const notice = getTrackingNotice(locale);
   const controllerName = process.env.PRIVACY_CONTROLLER_NAME || "PuroCode / Puragenda";
   const controllerId = process.env.PRIVACY_CONTROLLER_ID;
@@ -230,6 +232,13 @@ export default async function PrivacidadPage() {
                 <LocalizedText id="YsoWWonoNMp6" />{" "}
                 <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
+              {mcpEnabled() && <>
+              <h2>{mcp("privacyTitle")}</h2>
+              <p>{mcp("privacyAccess")}</p>
+              <p>{mcp("privacyData")}</p>
+              <p>{mcp("privacyRetention")}</p>
+              <p>{mcp("privacyPublic")}</p>
+              </>}
             </article>
           </div>
         </div>

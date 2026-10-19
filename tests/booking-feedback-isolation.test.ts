@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 describe("booking feedback isolation and success-screen safety", () => {
   it("issues a feedback token from booking without persisting feedback in the same request", () => {
-    const source = readFileSync(join(process.cwd(), "src/app/api/business/[slug]/book/route.ts"), "utf8");
+    const source = readFileSync(join(process.cwd(), "src/server/booking/create-http.ts"), "utf8");
     expect(source).toContain("signBookingFeedbackToken");
     expect(source).toContain("feedbackToken");
     expect(source).not.toContain("upsertBookingFeedback");

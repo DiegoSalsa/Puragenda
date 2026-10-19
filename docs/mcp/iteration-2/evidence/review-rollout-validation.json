@@ -1,0 +1,42 @@
+{
+  "classification": "VALIDADO LOCALMENTE",
+  "baseMainCommit": "84bdb635a78d621922d487e8eab274bc87d86e70",
+  "checkedAt": "2026-10-19T04:16:03.337Z",
+  "typecheck": "PASS",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 32
+  },
+  "mcpTests": {
+    "passed": 53,
+    "failed": 0
+  },
+  "generalTests": {
+    "passed": 1350,
+    "skipped": 131,
+    "failed": 0
+  },
+  "isolatedPostgresTests": {
+    "passed": 1371,
+    "skipped": 110,
+    "failed": 0
+  },
+  "productionBuildWithMcpDisabled": "PASS",
+  "productionDependencyVulnerabilities": 0,
+  "policyChecks": [
+    "master switch",
+    "paired review account/business allowlist",
+    "live permission and rollout checks on existing tokens",
+    "public discovery filtering",
+    "signed superadmin session and recent authentication",
+    "approval reference required by action and SQL",
+    "optimistic version and atomic audit",
+    "review creation/reschedule/cancellation suppress effects",
+    "ordinary bookings keep notifications",
+    "eight MCP tables denied to Data API roles"
+  ],
+  "ordinaryBusinessesEnabled": false,
+  "openaiApprovalRecorded": false,
+  "remoteCi": "Jobs did not start: GitHub account billing lock. Local results above.",
+  "productionDeploymentEvidence": "Recorded separately after deployment; this report certifies local checks only."
+}

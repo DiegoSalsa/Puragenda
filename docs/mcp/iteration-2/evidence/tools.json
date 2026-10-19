@@ -1,0 +1,1372 @@
+{
+  "classification": "VALIDADO MEDIANTE CLIENTE MCP",
+  "realChatGPT": false,
+  "inspector": {
+    "version": "2.11.0",
+    "method": "tools/list",
+    "transport": "streamable-http",
+    "url": "https://acer-identifier-gray-nations.trycloudflare.com/mcp",
+    "exitCode": 0,
+    "authenticated": false,
+    "warning": "OAuth cache lock parent directory absent; discovery succeeded without stored credentials."
+  },
+  "tools": [
+    {
+      "name": "get_connected_account",
+      "title": "get_connected_account",
+      "description": "Identifica la cuenta y el negocio autorizados por esta conexión. No recibe IDs de negocio.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nickname": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "account:read"
+            ]
+          }
+        ],
+        "openai/profile": true
+      }
+    },
+    {
+      "name": "get_business_profile",
+      "title": "get_business_profile",
+      "description": "Consulta nombre, zona horaria y moneda del negocio conectado.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "account:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_accessible_locations",
+      "title": "list_accessible_locations",
+      "description": "Lista únicamente las sucursales activas autorizadas para esta cuenta.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "account:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_today_overview",
+      "title": "get_today_overview",
+      "description": "Consulta el resumen de hoy en la zona horaria de la sucursal. Diferencia cobrado, pendiente y proyectado cuando están autorizados.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_appointments",
+      "title": "list_appointments",
+      "description": "Lista hasta 50 citas del período en la sucursal y agenda permitidas. Usa nextCursor como cursor para la siguiente página. No calcula disponibilidad.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "AWAITING_PAYMENT",
+              "CONFIRMED",
+              "CANCELLED",
+              "CHECKED_IN",
+              "COMPLETED",
+              "NO_SHOW"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_appointment_details",
+      "title": "get_appointment_details",
+      "description": "Consulta fecha, servicio, profesional y estado de una cita autorizada, sin notas, datos clínicos ni credenciales.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "appointmentId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_available_slots",
+      "title": "get_available_slots",
+      "description": "Calcula horarios reales del motor de reservas v1, entre hoy y 90 días. Una lista vacía significa que no hay disponibilidad.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "staffId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "firstAvailable": {
+            "type": "boolean"
+          },
+          "selectedOptionAlternativeIds": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "required": [
+          "date",
+          "serviceId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_services",
+      "title": "list_services",
+      "description": "Lista servicios de citas publicados en la sucursal, con precios y opciones del catálogo canónico.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_staff",
+      "title": "list_staff",
+      "description": "Lista profesionales habilitados de la sucursal; una cuenta con agenda propia sólo ve su profesional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "agenda:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_clients",
+      "title": "search_clients",
+      "description": "Busca hasta 10 clientes por nombre, email o teléfono. Requiere acceso al CRM de todo el negocio; excluye notas privadas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "clients:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_client_summary",
+      "title": "get_client_summary",
+      "description": "Consulta visitas y actividad no sensible de un cliente del negocio autorizado. Importes sólo con permiso financiero y scope adicional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "clientId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "clients:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_client_activity",
+      "title": "get_client_activity",
+      "description": "Resume hasta 10 clientes frecuentes, inactivos o con ausencias durante los últimos 90 días, dentro del negocio autorizado. Requiere acceso global al CRM.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sort": {
+            "type": "string",
+            "enum": [
+              "frequent",
+              "inactive",
+              "no_show"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "sort"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "clients:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_revenue_summary",
+      "title": "get_revenue_summary",
+      "description": "Calcula cobrado, pendiente y valor de citas del período; se agrupa por fecha de cita, no por fecha contable de pago. No es un libro de facturación.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "analytics:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "compare_periods",
+      "title": "compare_periods",
+      "description": "Compara cobros y citas de dos períodos calculados por Puragenda en la sucursal y agenda autorizadas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "previous": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "current",
+          "previous"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "analytics:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_popular_services",
+      "title": "get_popular_services",
+      "description": "Resume reservas por servicio y valor reservado del período. El valor reservado no equivale a dinero cobrado.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "analytics:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_staff_performance",
+      "title": "get_staff_performance",
+      "description": "Resume citas y valor reservado por profesional de la sucursal. Requiere permiso de agenda global y finanzas del negocio.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "today",
+              "tomorrow",
+              "yesterday",
+              "this_week",
+              "next_week",
+              "previous_week",
+              "this_month",
+              "previous_month"
+            ]
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "period"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "analytics:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_loyalty_summary",
+      "title": "get_loyalty_summary",
+      "description": "Resume sellos y recompensas del negocio. Nombres de clientes sólo si también se autorizó clients:read.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "loyalty:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_gift_cards_summary",
+      "title": "get_gift_cards_summary",
+      "description": "Resume cantidades y saldos de gift cards por moneda. No devuelve códigos ni permite comprar o canjear tarjetas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "loyalty:read"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_public_businesses",
+      "title": "search_public_businesses",
+      "description": "Busca hasta 20 negocios participantes que autorizaron explícitamente aparecer en el conector. No busca negocios privados ni inicia pagos.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_public_business_details",
+      "title": "get_public_business_details",
+      "description": "Consulta nombre, sucursales públicas, zona horaria y moneda de un negocio participante, sin datos privados.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_public_service_catalog",
+      "title": "get_public_service_catalog",
+      "description": "Consulta servicios, opciones y precios publicados por un negocio participante. Las reservas de pago no se ejecutan desde el conector.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "slug"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_public_availability",
+      "title": "get_public_availability",
+      "description": "Consulta horarios libres reales de un negocio participante entre hoy y 90 días; nunca devuelve citas privadas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "staffId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "firstAvailable": {
+            "type": "boolean"
+          },
+          "selectedOptionAlternativeIds": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "date",
+          "serviceId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "prepare_public_booking",
+      "title": "prepare_public_booking",
+      "description": "Prepara una reserva exclusivamente gratuita, sin abonos. Guarda datos necesarios cifrados durante la preparación. Requiere aprobación del cliente en Puragenda y no asegura el horario.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationKey": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "staffId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "selectedOptionAlternativeIds": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "customerName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "customerEmail": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "customerPhone": {
+            "type": "string",
+            "pattern": "^\\+?[0-9\\s()-]{8,18}$"
+          },
+          "customerAddress": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "operationKey",
+          "locationId",
+          "serviceId",
+          "startTime",
+          "customerName",
+          "customerEmail",
+          "customerPhone",
+          "slug"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "confirm_public_booking",
+      "title": "confirm_public_booking",
+      "description": "Ejecuta una reserva gratuita preparada y aprobada en Puragenda. El comprobante por sí solo no autoriza: se verifica aprobación, vigencia, participación y disponibilidad. Reintenta con el mismo comprobante.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": [
+          "receipt"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "noauth"
+          }
+        ]
+      }
+    },
+    {
+      "name": "prepare_appointment_creation",
+      "title": "prepare_appointment_creation",
+      "description": "Prepara una cita del negocio vinculado sin abono. Calcula duración y precio canónicos y solicita aprobación en Puragenda. operationKey debe conservarse al reintentar.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationKey": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "serviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "staffId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "selectedOptionAlternativeIds": {
+            "default": [],
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "customerName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "customerEmail": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "customerPhone": {
+            "type": "string",
+            "pattern": "^\\+?[0-9\\s()-]{8,18}$"
+          },
+          "customerAddress": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "operationKey",
+          "locationId",
+          "serviceId",
+          "startTime",
+          "customerName",
+          "customerEmail",
+          "customerPhone"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "prepare_appointment_reschedule",
+      "title": "prepare_appointment_reschedule",
+      "description": "Prepara la reprogramación de una cita autorizada. Muestra datos finales y exige aprobación en Puragenda. Rechaza citas con abonos aprobados, recurrentes o selecciones no soportadas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationKey": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "appointmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "operationKey",
+          "appointmentId",
+          "locationId",
+          "startTime"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "prepare_appointment_cancellation",
+      "title": "prepare_appointment_cancellation",
+      "description": "Prepara la cancelación de una cita autorizada. Muestra datos finales y exige aprobación en Puragenda. Rechaza citas con abonos aprobados, recurrentes o selecciones no soportadas.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operationKey": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "appointmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "locationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "operationKey",
+          "appointmentId",
+          "locationId"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_appointment",
+      "title": "create_appointment",
+      "description": "Ejecuta el cambio de cita preparado sólo después de aprobación en Puragenda. Verifica comprobante vinculado a esta conexión, permisos actuales, estado, disponibilidad e idempotencia. No acepta confirmaciones declaradas por el modelo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": [
+          "receipt"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "reschedule_appointment",
+      "title": "reschedule_appointment",
+      "description": "Ejecuta el cambio de cita preparado sólo después de aprobación en Puragenda. Verifica comprobante vinculado a esta conexión, permisos actuales, estado, disponibilidad e idempotencia. No acepta confirmaciones declaradas por el modelo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": [
+          "receipt"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "cancel_appointment",
+      "title": "cancel_appointment",
+      "description": "Ejecuta el cambio de cita preparado sólo después de aprobación en Puragenda. Verifica comprobante vinculado a esta conexión, permisos actuales, estado, disponibilidad e idempotencia. No acepta confirmaciones declaradas por el modelo.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "receipt": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": [
+          "receipt"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "appointments:write"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

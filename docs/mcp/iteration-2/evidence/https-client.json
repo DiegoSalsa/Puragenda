@@ -1,0 +1,659 @@
+{
+  "classification": "VALIDADO MEDIANTE CLIENTE MCP",
+  "realChatGPT": false,
+  "selectionSource": "scripted",
+  "origin": "https://acer-identifier-gray-nations.trycloudflare.com",
+  "toolCalls": [
+    {
+      "tool": "get_connected_account",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "name",
+        "nickname"
+      ]
+    },
+    {
+      "tool": "get_business_profile",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "name",
+        "timezone",
+        "currency"
+      ]
+    },
+    {
+      "tool": "list_accessible_locations",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "locations"
+      ]
+    },
+    {
+      "tool": "get_today_overview",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "date",
+        "timezone",
+        "appointments",
+        "counts",
+        "availability",
+        "finished",
+        "attention",
+        "nextAppointment",
+        "canSeeMoney"
+      ]
+    },
+    {
+      "tool": "list_appointments",
+      "arguments": {
+        "period": "tomorrow"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "period",
+        "dateStart",
+        "dateEnd",
+        "timezone",
+        "hasMore",
+        "nextCursor",
+        "appointments"
+      ]
+    },
+    {
+      "tool": "get_appointment_details",
+      "arguments": {
+        "appointmentId": "preview-carolina-tomorrow"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "customerName",
+        "startTime",
+        "endTime",
+        "status",
+        "service",
+        "staff",
+        "timezone",
+        "currency"
+      ]
+    },
+    {
+      "tool": "list_services",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "services",
+        "currency"
+      ]
+    },
+    {
+      "tool": "list_staff",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "staff"
+      ]
+    },
+    {
+      "tool": "get_available_slots",
+      "arguments": {
+        "date": "2026-10-23",
+        "serviceId": "preview-service",
+        "staffId": "preview-staff",
+        "selectedOptionAlternativeIds": [
+          "preview-option-local"
+        ]
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "version",
+        "date",
+        "timezone",
+        "locationId",
+        "selection",
+        "slots"
+      ]
+    },
+    {
+      "tool": "get_revenue_summary",
+      "arguments": {
+        "period": "this_month"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "period",
+        "currencyCode",
+        "due",
+        "collected",
+        "pending",
+        "appointments",
+        "completed",
+        "averageTicket"
+      ]
+    },
+    {
+      "tool": "compare_periods",
+      "arguments": {
+        "current": "this_month",
+        "previous": "previous_month"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "current",
+        "previous",
+        "changes"
+      ]
+    },
+    {
+      "tool": "get_popular_services",
+      "arguments": {
+        "period": "this_month"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "period",
+        "services"
+      ]
+    },
+    {
+      "tool": "get_popular_services",
+      "arguments": {
+        "period": "previous_month"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "period",
+        "services"
+      ]
+    },
+    {
+      "tool": "get_staff_performance",
+      "arguments": {
+        "period": "this_month"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "period",
+        "staff"
+      ]
+    },
+    {
+      "tool": "search_clients",
+      "arguments": {
+        "query": "Carolina"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "clients"
+      ]
+    },
+    {
+      "tool": "get_client_summary",
+      "arguments": {
+        "clientId": "preview-carolina"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "name",
+        "email",
+        "visits",
+        "lastVisit",
+        "nextAppointment",
+        "noShowCount",
+        "currentStamps",
+        "totalSpent",
+        "recurring"
+      ]
+    },
+    {
+      "tool": "get_client_activity",
+      "arguments": {
+        "sort": "frequent"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "sort",
+        "periodDays",
+        "clients"
+      ]
+    },
+    {
+      "tool": "get_loyalty_summary",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "participants",
+        "stampsDelivered",
+        "rewardsGenerated",
+        "stampsRequired",
+        "nearRewardCount",
+        "nearReward"
+      ]
+    },
+    {
+      "tool": "get_gift_cards_summary",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "issued",
+        "active",
+        "used",
+        "balances"
+      ]
+    },
+    {
+      "tool": "prepare_appointment_creation",
+      "arguments": {
+        "operationKey": "[REDACTED]",
+        "locationId": "preview-location",
+        "serviceId": "preview-service",
+        "staffId": "preview-staff",
+        "startTime": "2026-10-18T19:00:00.000Z",
+        "selectedOptionAlternativeIds": [
+          "preview-option-local"
+        ],
+        "customerName": "[REDACTED]",
+        "customerEmail": "[REDACTED]",
+        "customerPhone": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "receipt",
+        "summary",
+        "expiresAt",
+        "requiresBrowserApproval",
+        "approvalUrl",
+        "message"
+      ]
+    },
+    {
+      "tool": "create_appointment",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": true,
+      "errorCode": "BROWSER_APPROVAL_REQUIRED",
+      "returnedKeys": [
+        "error"
+      ]
+    },
+    {
+      "tool": "create_appointment",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "status",
+        "booking",
+        "operationStatus",
+        "code",
+        "httpStatus",
+        "message"
+      ]
+    },
+    {
+      "tool": "create_appointment",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "code",
+        "status",
+        "booking",
+        "message",
+        "httpStatus",
+        "operationStatus"
+      ]
+    },
+    {
+      "tool": "prepare_appointment_reschedule",
+      "arguments": {
+        "operationKey": "[REDACTED]",
+        "appointmentId": "cmvc04ems0003kotc0vbngspe",
+        "locationId": "preview-location",
+        "startTime": "2026-10-23T19:00:00.000Z"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "receipt",
+        "summary",
+        "expiresAt",
+        "requiresBrowserApproval",
+        "approvalUrl",
+        "message"
+      ]
+    },
+    {
+      "tool": "reschedule_appointment",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "status",
+        "startTime",
+        "endTime",
+        "calendarSync",
+        "message"
+      ]
+    },
+    {
+      "tool": "prepare_appointment_cancellation",
+      "arguments": {
+        "operationKey": "[REDACTED]",
+        "appointmentId": "cmvc04ems0003kotc0vbngspe",
+        "locationId": "preview-location"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "receipt",
+        "summary",
+        "expiresAt",
+        "requiresBrowserApproval",
+        "approvalUrl",
+        "message"
+      ]
+    },
+    {
+      "tool": "cancel_appointment",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "status",
+        "startTime",
+        "endTime",
+        "calendarSync",
+        "message"
+      ]
+    },
+    {
+      "tool": "get_appointment_details",
+      "arguments": {
+        "appointmentId": "foreign-appointment",
+        "locationId": "foreign-business-location"
+      },
+      "isError": true,
+      "errorCode": "LOCATION_FORBIDDEN",
+      "returnedKeys": [
+        "error"
+      ]
+    },
+    {
+      "tool": "get_revenue_summary",
+      "arguments": {
+        "period": "this_month"
+      },
+      "isError": true,
+      "errorCode": "FORBIDDEN",
+      "returnedKeys": [
+        "error"
+      ]
+    },
+    {
+      "tool": "get_appointment_details",
+      "arguments": {
+        "appointmentId": "preview-secondary-private",
+        "locationId": "preview-secondary"
+      },
+      "isError": true,
+      "errorCode": "LOCATION_FORBIDDEN",
+      "returnedKeys": [
+        "error"
+      ]
+    },
+    {
+      "tool": "get_connected_account",
+      "arguments": {},
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "name",
+        "nickname"
+      ]
+    },
+    {
+      "tool": "search_public_businesses",
+      "arguments": {
+        "query": "Booking"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "businesses",
+        "nextCursor"
+      ]
+    },
+    {
+      "tool": "get_public_business_details",
+      "arguments": {
+        "slug": "mcp-private-fixture"
+      },
+      "isError": true,
+      "errorCode": "BUSINESS_NOT_FOUND",
+      "returnedKeys": [
+        "error"
+      ]
+    },
+    {
+      "tool": "get_public_business_details",
+      "arguments": {
+        "slug": "booking-api-fixture"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "business",
+        "locations"
+      ]
+    },
+    {
+      "tool": "get_public_service_catalog",
+      "arguments": {
+        "slug": "booking-api-fixture"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "version",
+        "business",
+        "services",
+        "staff",
+        "locations",
+        "capabilities",
+        "rules"
+      ]
+    },
+    {
+      "tool": "get_public_availability",
+      "arguments": {
+        "slug": "booking-api-fixture",
+        "date": "2026-10-23",
+        "serviceId": "preview-free-service",
+        "staffId": "preview-staff"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "version",
+        "date",
+        "timezone",
+        "locationId",
+        "selection",
+        "slots"
+      ]
+    },
+    {
+      "tool": "prepare_public_booking",
+      "arguments": {
+        "operationKey": "[REDACTED]",
+        "locationId": "preview-location",
+        "serviceId": "preview-free-service",
+        "staffId": "preview-staff",
+        "startTime": "2026-10-23T12:00:00.000Z",
+        "selectedOptionAlternativeIds": [],
+        "customerName": "[REDACTED]",
+        "customerEmail": "[REDACTED]",
+        "customerPhone": "[REDACTED]",
+        "slug": "booking-api-fixture"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "receipt",
+        "summary",
+        "expiresAt",
+        "requiresBrowserApproval",
+        "approvalUrl",
+        "message"
+      ]
+    },
+    {
+      "tool": "confirm_public_booking",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "status",
+        "booking",
+        "operationStatus",
+        "code",
+        "httpStatus",
+        "message"
+      ]
+    },
+    {
+      "tool": "confirm_public_booking",
+      "arguments": {
+        "receipt": "[REDACTED]"
+      },
+      "isError": false,
+      "errorCode": null,
+      "returnedKeys": [
+        "id",
+        "code",
+        "status",
+        "booking",
+        "message",
+        "httpStatus",
+        "operationStatus"
+      ]
+    }
+  ],
+  "scenarios": {
+    "A": "PASS: linked fixture business",
+    "B": "PASS: two primary-location appointments for tomorrow",
+    "C": {
+      "status": "PASS",
+      "date": "2026-10-23",
+      "duration": 60,
+      "slots": 14
+    },
+    "D": {
+      "status": "PASS",
+      "due": 70000,
+      "collected": 5000,
+      "pending": 65000,
+      "currency": "CLP"
+    },
+    "E": {
+      "status": "PASS",
+      "currentServiceBookings": 3,
+      "previousServiceBookings": 1
+    },
+    "F": "PASS: required approval, created once, replayed same result",
+    "G": "PASS: approved reschedule to Friday",
+    "I": "PASS: foreign tenant target refused; model businessId rejected by strict schemas in local tests",
+    "J": "PASS: opt-in, free service, approval and idempotency",
+    "H": "PASS: revoked grant rejected over HTTPS"
+  },
+  "verifiedAt": "2026-10-17T06:14:26.210Z",
+  "discoveredTools": [
+    "get_connected_account",
+    "get_business_profile",
+    "list_accessible_locations",
+    "get_today_overview",
+    "list_appointments",
+    "get_appointment_details",
+    "get_available_slots",
+    "list_services",
+    "list_staff",
+    "search_clients",
+    "get_client_summary",
+    "get_client_activity",
+    "get_revenue_summary",
+    "compare_periods",
+    "get_popular_services",
+    "get_staff_performance",
+    "get_loyalty_summary",
+    "get_gift_cards_summary",
+    "search_public_businesses",
+    "get_public_business_details",
+    "get_public_service_catalog",
+    "get_public_availability",
+    "prepare_public_booking",
+    "confirm_public_booking",
+    "prepare_appointment_creation",
+    "prepare_appointment_reschedule",
+    "prepare_appointment_cancellation",
+    "create_appointment",
+    "reschedule_appointment",
+    "cancel_appointment"
+  ],
+  "reconnectionStableProfile": true,
+  "successfulTools": 30,
+  "oauth": {
+    "discovery": true,
+    "dcr": true,
+    "pkce": true,
+    "signedSessionLogin": true,
+    "scriptedConsent": true,
+    "issuerAndState": true,
+    "revocation": true,
+    "accessTokenLifetimeSeconds": 600
+  }
+}

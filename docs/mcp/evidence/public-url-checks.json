@@ -1,0 +1,27 @@
+[
+  {
+    "url": "https://www.puragenda.cl",
+    "status": 200,
+    "checkedAt": "2026-10-17T02:14:10.393Z"
+  },
+  {
+    "url": "https://www.puragenda.cl/contacto",
+    "status": 200,
+    "checkedAt": "2026-10-17T02:14:10.630Z"
+  },
+  {
+    "url": "https://www.puragenda.cl/politica-de-privacidad",
+    "status": 200,
+    "checkedAt": "2026-10-17T02:14:11.179Z"
+  },
+  {
+    "url": "https://www.puragenda.cl/terminos-y-condiciones",
+    "status": 200,
+    "checkedAt": "2026-10-17T02:14:11.573Z"
+  },
+  {
+    "url": "https://www.puragenda.cl/mcp",
+    "status": 404,
+    "checkedAt": "2026-10-17T02:14:11.813Z"
+  }
+]

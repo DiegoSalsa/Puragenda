@@ -86,12 +86,13 @@ export async function getTodayOverview(context: PuriContext) {
   };
 }
 
-export async function getAppointments(context: PuriContext, args: { period: PuriPeriod; status?: string }) {
+export async function getAppointments(context: PuriContext, args: { period: PuriPeriod; status?: string; cursor?: string }) {
   requireAgenda(context);
   const window = periodWindow(args.period, context.location?.timezone ?? context.business.timezone);
   const rows = await prisma.appointment.findMany({
     where: { ...appointmentWhere(context, window.start, window.end), ...(args.status ? { status: args.status as never } : {}) },
-    orderBy: { startTime: "asc" },
+    orderBy: [{ startTime: "asc" }, { id: "asc" }],
+    ...(args.cursor ? { cursor: { id: args.cursor }, skip: 1 } : {}),
     take: MAX_ROWS + 1,
     include: { service: { select: { name: true, price: true } }, staff: { select: { name: true } } },
   });
@@ -99,7 +100,7 @@ export async function getAppointments(context: PuriContext, args: { period: Puri
     ? hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_OWN) || hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS)
     : hasPermission(context, DASHBOARD_PERMISSIONS.ANALYTICS_VIEW_BUSINESS);
   const timezone = context.location?.timezone ?? context.business.timezone;
-  return { period: args.period, dateStart: window.dateKey, dateEnd: window.endKey, timezone, hasMore: rows.length > MAX_ROWS, appointments: rows.slice(0, MAX_ROWS).map((row) => {
+  return { period: args.period, dateStart: window.dateKey, dateEnd: window.endKey, timezone, hasMore: rows.length > MAX_ROWS, nextCursor: rows.length > MAX_ROWS ? rows[MAX_ROWS - 1].id : null, appointments: rows.slice(0, MAX_ROWS).map((row) => {
     const item = safeAppointment(row, timezone);
     return canSeeMoney ? item : { ...item, totalPrice: undefined };
   }) };
@@ -138,12 +139,12 @@ export async function searchClients(context: PuriContext, args: { query: string 
   return { clients: rows };
 }
 
-export async function getClientActivity(context: PuriContext, args: { sort: "frequent" | "inactive" | "no_show" }) {
+export async function getClientActivity(context: PuriContext, args: { sort: "frequent" | "inactive" | "no_show"; days?: 90 }) {
   requirePermission(context, DASHBOARD_PERMISSIONS.CLIENTS_MANAGE);
   const noShow = args.sort === "no_show";
   const rows = await prisma.appointment.groupBy({
     by: ["clientId"],
-    where: { businessId: context.business.id, clientId: { not: null }, status: noShow ? "NO_SHOW" : { in: ["CHECKED_IN", "COMPLETED"] } },
+    where: { businessId: context.business.id, clientId: { not: null }, status: noShow ? "NO_SHOW" : { in: ["CHECKED_IN", "COMPLETED"] }, ...(args.days ? { startTime: { gte: new Date(Date.now() - args.days * 86400000) } } : {}) },
     _count: { _all: true },
     _max: { startTime: true },
     orderBy: args.sort === "inactive" ? { _max: { startTime: "asc" } } : { _count: { clientId: "desc" } },
@@ -152,7 +153,7 @@ export async function getClientActivity(context: PuriContext, args: { sort: "fre
   const ids = rows.map((row) => row.clientId).filter((id): id is string => Boolean(id));
   const clients = await prisma.client.findMany({ where: { businessId: context.business.id, id: { in: ids } }, select: { id: true, name: true } });
   const names = new Map(clients.map((client) => [client.id, client.name]));
-  return { sort: args.sort, clients: rows.filter((row) => row.clientId && names.has(row.clientId)).map((row) => ({
+  return { sort: args.sort, ...(args.days ? { periodDays: args.days } : {}), clients: rows.filter((row) => row.clientId && names.has(row.clientId)).map((row) => ({
     id: row.clientId, name: names.get(row.clientId!), count: row._count._all, lastVisit: row._max.startTime ? zonedAppointmentTime(row._max.startTime, context.location?.timezone ?? context.business.timezone) : null,
   })) };
 }
@@ -187,7 +188,9 @@ async function revenue(context: PuriContext, period: PuriPeriod) {
   const rows = await prisma.appointment.findMany({
     where: { ...appointmentWhere(context, window.start, window.end), status: { in: ACTIVE as never[] } },
     select: { status: true, paymentStatus: true, depositAmount: true, totalPrice: true, settledAt: true, giftCardPaidAmount: true, service: { select: { price: true } }, posPayments: { where: { status: "APPROVED" }, select: { amount: true } } },
+    take: 5001,
   });
+  if (rows.length > 5000) throw new PuriAccessError("RESULT_TOO_LARGE");
   const totals = rows.reduce((sum, row) => {
     const money = appointmentMoney({ status: row.status, paymentStatus: row.paymentStatus, depositAmount: row.depositAmount, totalPrice: row.totalPrice, servicePrice: row.service.price, posPaidAmount: row.posPayments.reduce((value, payment) => value + payment.amount, 0), giftCardPaidAmount: row.giftCardPaidAmount, settledAt: row.settledAt });
     return { due: sum.due + money.due, collected: sum.collected + money.collected, pending: sum.pending + money.pending };
@@ -275,11 +278,11 @@ export const puriToolNames: PuriToolName[] = ["getTodayOverview", "getAppointmen
 export async function executePuriTool(name: string, args: unknown, context: PuriContext) {
   switch (name as PuriToolName) {
     case "getTodayOverview": return getTodayOverview(context);
-    case "getAppointments": return getAppointments(context, z.object({ period: periodSchema, status: statusSchema.nullish() }).parse(args) as { period: PuriPeriod; status?: string });
+    case "getAppointments": return getAppointments(context, z.object({ period: periodSchema, status: statusSchema.nullish(), cursor: z.string().min(1).max(100).optional() }).parse(args) as { period: PuriPeriod; status?: string; cursor?: string });
     case "getAvailability": return getAvailability(context, z.object({ date: z.string(), serviceId: z.string().nullish(), staffId: z.string().nullish() }).parse(args) as { date: string; serviceId?: string; staffId?: string });
     case "searchClients": return searchClients(context, z.object({ query: z.string().max(100) }).parse(args));
     case "getClientSummary": return getClientSummary(context, z.object({ clientId: z.string().min(1).max(100) }).parse(args));
-    case "getClientActivity": return getClientActivity(context, z.object({ sort: z.enum(["frequent", "inactive", "no_show"]) }).parse(args));
+    case "getClientActivity": return getClientActivity(context, z.object({ sort: z.enum(["frequent", "inactive", "no_show"]), days: z.literal(90).optional() }).parse(args));
     case "getRevenueSummary": return getRevenueSummary(context, z.object({ period: periodSchema }).parse(args));
     case "comparePeriods": return comparePeriods(context, z.object({ current: periodSchema, previous: periodSchema }).parse(args));
     case "getServicesSummary": return getServicesSummary(context, z.object({ period: periodSchema }).parse(args));

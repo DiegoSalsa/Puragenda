@@ -26,6 +26,7 @@ export default getRequestConfig(async () => {
       register: { ...siteMessages.register, ...marketplaceOnboardingMessages.register },
       legacy: legacyMessages,
       loyalty: loyaltyMessages,
+      mcp: (await import(`../../messages/mcp/${loyaltyLocale}.json`)).default,
       dashboard: {
         ...dashboardMessages,
         ...dashboardModulesMessages,

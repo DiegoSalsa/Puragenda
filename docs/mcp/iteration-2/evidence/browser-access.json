@@ -1,0 +1,12 @@
+{
+  "classification": "PENDIENTE DE ACCESO EXTERNO",
+  "recordedAt": "2026-10-17T06:16:17.196369+00:00",
+  "operation": "cua.getTab({url: \"https://chatgpt.com/\"}, {browser: \"iab\"})",
+  "toolResponse": "Local browser use is disabled in Work settings",
+  "realChatGPTConnectionCompleted": false,
+  "chatGPTInitiatedOAuthCompleted": false,
+  "newScreenshots": 0,
+  "portalToolScanExecuted": false,
+  "accountPlanOrPlatformPermissionsVerified": false,
+  "bypassAttempted": false
+}

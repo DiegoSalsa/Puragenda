@@ -81,3 +81,6 @@ next-env.d.ts
 /artifacts/
 /.next-pink-y2k/
 /output/pink-y2k/
+
+# Supabase CLI local cache
+/supabase/.temp/

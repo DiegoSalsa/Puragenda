@@ -1,0 +1,114 @@
+{
+  "classification": "VALIDADO EN CHATGPT REAL",
+  "recordedAt": "2026-10-17T06:33:17.799Z",
+  "evidenceSource": "User-operated authenticated ChatGPT browser; user-provided screenshot and confirmation, corroborated by isolated backend. The agent could not control the browser.",
+  "screenshot": {
+    "attachmentName": "codex-clipboard-1db96254-e5d8-45a2-9246-34a61d0c754c.png",
+    "sha256": "c80d5b2ee9a2e2cf2a9997b472a6666b3bceb1f57427bc50e7ebf60c75f0f6ec",
+    "originalRetainedInChat": true,
+    "copiedToGit": false,
+    "reason": "Keep the private ChatGPT conversation URL out of the repository."
+  },
+  "userConfirmation": "funciono al conectarme al api si, habia seleccionado mal error mio",
+  "connectorLabelVisible": "Puragenda (Revisión MCP)",
+  "businessVisible": "Revisión MCP / Booking API Fixture",
+  "observedAgenda": {
+    "today": "2026-10-17",
+    "todayAppointments": 0,
+    "tomorrow": "2026-10-18",
+    "timezoneExpectedFromFixture": "America/Santiago",
+    "appointments": [
+      {
+        "startTimeLocal": "10:00",
+        "endTimeLocal": "11:00",
+        "service": "Servicio de prueba",
+        "status": "CONFIRMED",
+        "value": 20000
+      },
+      {
+        "startTimeLocal": "12:00",
+        "endTimeLocal": "12:30",
+        "service": "Orientación gratuita",
+        "status": "PENDING",
+        "value": 0
+      }
+    ],
+    "currencyExpectedFromFixture": "CLP",
+    "matchesSeededFixture": true
+  },
+  "backendConnection": {
+    "business": "Booking API Fixture",
+    "client": "ChatGPT",
+    "scopes": [
+      "account:read",
+      "agenda:read",
+      "analytics:read",
+      "clients:read",
+      "loyalty:read",
+      "appointments:write"
+    ],
+    "notRevoked": true,
+    "exchangedCodes": 1,
+    "issuedTokenRows": 5,
+    "rotatedRefreshTokens": 4
+  },
+  "backendCallsAfterDocumentedSdkRun": [
+    {
+      "tool": "get_connected_account",
+      "status": "ok",
+      "durationMs": 5
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok",
+      "durationMs": 29
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok",
+      "durationMs": 22
+    },
+    {
+      "tool": "get_connected_account",
+      "status": "ok",
+      "durationMs": 5
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok",
+      "durationMs": 18
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok",
+      "durationMs": 11
+    }
+  ],
+  "observedDistinctPrivateTools": [
+    "get_connected_account",
+    "list_appointments"
+  ],
+  "actualChatGPTToolArgumentsRecorded": false,
+  "completeConversationTranscriptRecorded": false,
+  "realChatGPTDiscoveredToolCountObservedInUi": null,
+  "realChatGPTScenarios": {
+    "A": "OUTCOME OBSERVED: linked fixture identity is visible in the response; literal prompt not retained",
+    "B": "OUTCOME OBSERVED: today empty and two next-day primary appointments match fixture; literal prompt, arguments and full multi-location behavior not retained",
+    "C": "PENDING",
+    "D": "PENDING",
+    "E": "PENDING",
+    "F": "PENDING",
+    "G": "PENDING",
+    "H": "PENDING",
+    "I": "PENDING",
+    "J": "PENDING"
+  },
+  "connectionInitiatedFromChatGPT": true,
+  "oauthExchangeCompleted": true,
+  "privateReadCompleted": true,
+  "browserAutomationStillUnavailable": true,
+  "productionDataUsed": false,
+  "serverRestartedForThisConfirmation": false,
+  "provisionalCspChangeAppliedToServer": false,
+  "csrfError": "Earlier screenshot showed INVALID_CSRF. Its exact cause was not reproduced. The user subsequently completed the connection on the unchanged running build and reported an earlier selection mistake. No CSRF/CSP bypass or speculative fix was retained."
+}

@@ -39,6 +39,7 @@ function loadMessages(locale: string) {
     },
     legacy: JSON.parse(readFileSync(legacyFile, "utf8")) as MessageTree,
     loyalty: JSON.parse(readFileSync(loyaltyFile, "utf8")) as MessageTree,
+    mcp: JSON.parse(readFileSync(resolve(process.cwd(), "messages", "mcp", `${locale === "es" ? "es" : "en"}.json`), "utf8")) as MessageTree,
     dashboard: {
       ...dashboardMessages,
       ...(JSON.parse(readFileSync(dashboardModulesFile, "utf8")) as MessageTree),

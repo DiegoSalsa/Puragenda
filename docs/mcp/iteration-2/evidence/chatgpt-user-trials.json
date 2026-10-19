@@ -1,0 +1,232 @@
+{
+  "classification": "VALIDADO EN CHATGPT REAL",
+  "recordedAt": "2026-10-17T07:05:50.095Z",
+  "method": "User screenshots corroborated by read-only isolated fixture and tool-name/status logs. No operation receipts or argument payloads retained.",
+  "backendOperations": [
+    {
+      "kind": "create",
+      "state": "APPROVED",
+      "approved": true,
+      "expiresAtUtc": "2026-10-17T07:12:27.815Z",
+      "hasResult": false,
+      "expiredAtObservation": false
+    }
+  ],
+  "backendAppointments": [
+    {
+      "startUtc": "2026-09-15T13:00:00Z",
+      "endUtc": "2026-09-15T14:00:00Z",
+      "status": "COMPLETED",
+      "price": 20000,
+      "serviceFixtureId": "preview-service"
+    },
+    {
+      "startUtc": "2026-10-16T12:00:00Z",
+      "endUtc": "2026-10-16T13:00:00Z",
+      "status": "COMPLETED",
+      "price": 20000,
+      "serviceFixtureId": "preview-service"
+    },
+    {
+      "startUtc": "2026-10-16T14:00:00Z",
+      "endUtc": "2026-10-16T15:00:00Z",
+      "status": "CONFIRMED",
+      "price": 30000,
+      "serviceFixtureId": "preview-service"
+    },
+    {
+      "startUtc": "2026-10-18T13:00:00Z",
+      "endUtc": "2026-10-18T14:00:00Z",
+      "status": "CONFIRMED",
+      "price": 20000,
+      "serviceFixtureId": "preview-service"
+    },
+    {
+      "startUtc": "2026-10-18T15:00:00Z",
+      "endUtc": "2026-10-18T15:30:00Z",
+      "status": "PENDING",
+      "price": 0,
+      "serviceFixtureId": "preview-free-service"
+    },
+    {
+      "startUtc": "2026-10-23T12:00:00Z",
+      "endUtc": "2026-10-23T12:30:00Z",
+      "status": "PENDING",
+      "price": 0,
+      "serviceFixtureId": "preview-free-service"
+    },
+    {
+      "startUtc": "2026-10-23T19:00:00Z",
+      "endUtc": "2026-10-23T20:00:00Z",
+      "status": "CANCELLED",
+      "price": 20000,
+      "serviceFixtureId": "preview-service"
+    }
+  ],
+  "userObserved": {
+    "availability": {
+      "date": "2026-10-23",
+      "duration": 60,
+      "slots": 13,
+      "firstSlotLocal": "09:30",
+      "lastSlotLocal": "17:00",
+      "timezone": "America/Santiago"
+    },
+    "revenue": {
+      "month": "2026-10",
+      "collected": 5000,
+      "pending": 65000,
+      "due": 70000,
+      "appointments": 5,
+      "completed": 1,
+      "averageTicket": 14000,
+      "currency": "CLP"
+    },
+    "popularService": {
+      "name": "Servicio de prueba",
+      "currentMonthBookings": 3,
+      "previousMonthBookings": 1,
+      "increasePercent": 200
+    },
+    "creation": {
+      "stage": "APPROVED_NOT_EXECUTED_IN_BACKEND",
+      "date": "2026-10-18",
+      "startLocal": "16:00",
+      "endLocal": "17:00",
+      "price": 20000,
+      "browserApprovalPageShown": true,
+      "approvalConfirmedByBackend": true,
+      "executionConfirmedByBackend": false
+    },
+    "cancellation": {
+      "state": "NOT_PREPARED",
+      "reason": "ChatGPT checked existing appointments, detected the 16:00 appointment had only been prepared, and did not cancel another appointment."
+    }
+  },
+  "cases": {
+    "C": "PASS: availability and real tool invocation",
+    "D": "PASS: exact collected/pending/due values",
+    "E": "PASS: exact 3 vs 1 comparison",
+    "F": "PARTIAL: preparation and approval confirmed; creation execution pending",
+    "G": "PENDING",
+    "cancellationNegative": "PASS: no existing 16:00 appointment, no cancellation prepared",
+    "H": "PENDING",
+    "I": "PENDING",
+    "J": "PENDING"
+  },
+  "screenshots": [
+    {
+      "name": "codex-clipboard-d9860dcf-d660-40d6-a6e1-d1351df65071.png",
+      "sha256": "fa4e7e602ac1b6cc8b40f310fcdbd87c988bdcab4969d3c69ecac9e934ca223f"
+    },
+    {
+      "name": "codex-clipboard-b76d331f-8888-4391-a606-bd791aacd7b6.png",
+      "sha256": "4caf8c714d39eca2c3e9af814d2140722416b4d0a33952ac5803f5712bd17934"
+    },
+    {
+      "name": "codex-clipboard-7bff163a-14e7-4c47-992f-ad47c3cb9ba8.png",
+      "sha256": "fb4014b6ba6424e005d7814f729a73fac471fc0c5c2072f191b5b6eced5209ec"
+    },
+    {
+      "name": "codex-clipboard-edc0c9ce-bc76-48bd-bb97-a8896d1aa0e3.png",
+      "sha256": "62c4bf033474c310a30ba379d0b69e51e33993b3141869ee886dee8ac414e304"
+    },
+    {
+      "name": "codex-clipboard-8203e048-5807-4774-8d92-e39ac7e99c79.png",
+      "sha256": "24756d0e0a7c70a89fb41c727c70aa89be07abba280faa7e87c5b694ad71c3c4"
+    },
+    {
+      "name": "codex-clipboard-2a8ca9d3-c1ef-4ac4-ab81-d0ebb60a5696.png",
+      "sha256": "57a04eff4d6ac84d958cc878894b17d4e7af7b9c80180c729914cf9a2fa44cc5"
+    },
+    {
+      "name": "codex-clipboard-eac32803-2c02-4aaf-a861-e5f27adbff64.png",
+      "sha256": "de11d5206a4da576ad3cb6ff46df8bf9105be42d8405d60a047063b01ebd0b0c"
+    }
+  ],
+  "rawScreenshotsCopiedToGit": false,
+  "screenshotReason": "Approval screenshot contains a bearer-capability receipt; retain originals only in the user chat.",
+  "serverRestarted": false,
+  "databaseMutatedByThisVerification": false,
+  "backendToolCalls": [
+    {
+      "tool": "get_connected_account",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "get_connected_account",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_services",
+      "status": "ok"
+    },
+    {
+      "tool": "list_staff",
+      "status": "ok"
+    },
+    {
+      "tool": "list_accessible_locations",
+      "status": "ok"
+    },
+    {
+      "tool": "get_available_slots",
+      "status": "ok"
+    },
+    {
+      "tool": "get_revenue_summary",
+      "status": "ok"
+    },
+    {
+      "tool": "get_popular_services",
+      "status": "ok"
+    },
+    {
+      "tool": "get_popular_services",
+      "status": "ok"
+    },
+    {
+      "tool": "get_available_slots",
+      "status": "ok"
+    },
+    {
+      "tool": "prepare_appointment_creation",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    },
+    {
+      "tool": "list_appointments",
+      "status": "ok"
+    }
+  ],
+  "observedDistinctTools": [
+    "get_connected_account",
+    "list_appointments",
+    "list_services",
+    "list_staff",
+    "list_accessible_locations",
+    "get_available_slots",
+    "get_revenue_summary",
+    "get_popular_services",
+    "prepare_appointment_creation"
+  ]
+}

@@ -9,6 +9,8 @@ import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "@/components/icons/hover-icons";
 import { CopyButton } from "./copy-button";
+import { McpConnections } from "./mcp-connections";
+import { mcpEnabled } from "@/server/mcp/config";
 import { BusinessHoursEditor } from "./business-hours-editor";
 import { BusinessNameEditor } from "./business-name-editor";
 import { BusinessLocationEditor } from "./business-location-editor";
@@ -106,6 +108,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </div>
 
       {/* ── MP Connection Success/Error banners ── */}
+      {mcpEnabled() && <McpConnections userId={user.id} businessId={business.id} owner={business.ownerId === user.id} publicDiscovery={business.mcpPublicDiscovery} />}
       {mpConnectedSuccess && (
         <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-3 text-sm font-medium text-emerald-400">
           <CheckCircle2 className="h-5 w-5" />

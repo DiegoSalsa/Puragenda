@@ -59,6 +59,7 @@
   ],
   "exclude": [
     "node_modules",
+    ".next/dev/types/**",
     "marketing/reels/**/skills/**",
     "social/**",
     "scratch/**",

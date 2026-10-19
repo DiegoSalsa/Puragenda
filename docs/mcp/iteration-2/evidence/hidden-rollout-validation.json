@@ -1,0 +1,27 @@
+{
+  "classification": "VALIDADO LOCALMENTE",
+  "baseMainCommit": "84bdb635a78d621922d487e8eab274bc87d86e70",
+  "testedCodeCommit": "e5427ce",
+  "typecheck": "PASS",
+  "lint": { "errors": 0, "existingWarnings": 32 },
+  "mcpTests": { "passed": 32, "failed": 0 },
+  "generalTests": { "passed": 1335, "skipped": 125, "failed": 0 },
+  "isolatedPostgresTests": { "passed": 1356, "skipped": 104, "failed": 0 },
+  "productionBuildWithMcpDisabled": "PASS",
+  "httpEvidence": "hidden-rollout-http.json",
+  "pluginPackageValidation": "PASS",
+  "dependencyAudit": {
+    "productionVulnerabilities": 0,
+    "fullAuditHighEntries": 9,
+    "mainBaselineHighEntries": 9,
+    "affectedPackages": [
+      "@next/eslint-plugin-next", "@shadcn/registry", "@ts-morph/common",
+      "braces", "eslint-config-next", "fast-glob", "micromatch", "shadcn", "ts-morph"
+    ],
+    "fullAuditCiGate": "BLOCKED_BY_EXISTING_DEVELOPMENT_DEPENDENCIES"
+  },
+  "mergedToMain": false,
+  "productionChanged": false,
+  "productionEnvironmentVariablesVerified": false,
+  "productionMigrationExecuted": false
+}

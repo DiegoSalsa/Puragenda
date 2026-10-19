@@ -1,0 +1,19 @@
+{
+  "title": "ChatGPT and Codex",
+  "description": "Connect your account from your client to access your business with your current permissions. Appointment changes require approval in Puragenda.",
+  "instructions": "Connection instructions and permissions",
+  "revoke": "Revoke access",
+  "empty": "No active connections.",
+  "publicConsent": "Allow this business to appear in the connector's public search.",
+  "publicDetails": "Shares your business name, locations, catalog and public availability. Does not share appointments or customers. Bookings through this channel are disabled by default; controlled tests only allow free services without deposits.",
+  "save": "Save visibility",
+  "connections": "Your authorized connections",
+  "privacyTitle": "Connections with ChatGPT and Codex",
+  "privacyAccess": "When you link Puragenda through OAuth, you select a business and authorize access to identity, appointments, analytics, customers, loyalty or appointment changes. The connector also checks your current Puragenda permissions. It shares only the data needed for the requested tool with the connected client; it does not include private notes, clinical data, credentials or complete conversations.",
+  "privacyData": "ChatGPT or Codex receive the results you request, such as customer names, appointment dates or authorized aggregates. Preparing a booking uses a name, email, phone and, when needed, an address. Preparation data is encrypted. Approval expires after ten minutes; encrypted content becomes eligible for deletion after 24 hours through the configured daily cleanup. If cleanup fails, it remains until cleanup is restored. Appointments and their data follow the business's usual retention practices.",
+  "privacyRetention": "OAuth credentials are stored as hashes, with ten-minute access tokens and grants lasting up to 30 days. Profile, grant, operation and audit identifiers are retained to recognize connections, revoke access and prevent duplicates; revocation does not delete appointments or audits. You can revoke access in Puragenda Settings or through your connected client. Deactivating your membership or signing out all sessions also invalidates access. Subsequent processing by OpenAI and other connected clients follows their own terms and privacy controls.",
+  "privacyPublic": "Public search includes only businesses that explicitly enable visibility. It shares catalogs, locations and available times, never private appointments or customers. Public bookings are disabled by default; controlled tests only allow free services and do not process payments.",
+  "termsTitle": "Puragenda connector for ChatGPT and Codex",
+  "terms": "The connection provides existing account features within authorized permissions. It cannot purchase plans, process payments or access another business's data. Appointment changes require explicit review and approval in Puragenda and may be rejected if permissions, the catalog or availability change. Preparation does not hold a time slot. A pending appointment does not mean confirmation or payment. You can revoke the connection at any time in Settings.",
+  "scopes": { "account:read": "Identify the connected account and business", "agenda:read": "Read appointments, services and availability", "analytics:read": "Read authorized analytics", "clients:read": "Read customers without private notes", "loyalty:read": "Read loyalty and gift card summaries", "appointments:write": "Change appointments with approval in Puragenda" }
+}

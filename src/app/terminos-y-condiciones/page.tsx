@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
@@ -8,6 +9,7 @@ import { ChevronLeft } from "@/components/icons/hover-icons";
 import { absoluteUrl } from "@/lib/site";
 import { getLocale } from "next-intl/server";
 import { getTermsNotice } from "@/lib/privacy/tracking-notice";
+import { mcpEnabled } from "@/server/mcp/config";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones",
@@ -16,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TerminosPage() {
+  const mcp = await getTranslations("mcp");
   const notice = getTermsNotice(await getLocale());
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-[#7C3AED]/30">
@@ -130,6 +133,10 @@ export default async function TerminosPage() {
               <p>
                 <LocalizedText id="4X4EZZxNRueh" /> <a href="mailto:contacto@purocode.com">contacto@purocode.com</a>.
               </p>
+              {mcpEnabled() && <>
+              <h2>{mcp("termsTitle")}</h2>
+              <p>{mcp("terms")}</p>
+              </>}
             </article>
           </div>
         </div>

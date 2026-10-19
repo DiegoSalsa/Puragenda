@@ -1,0 +1,31 @@
+{
+  "timezone": "America/Santiago",
+  "today": "2026-10-17",
+  "tomorrow": "2026-10-18",
+  "friday": "2026-10-23",
+  "ownerBusinesses": [
+    "preview-business",
+    "preview-private-business"
+  ],
+  "primaryLocation": "preview-location",
+  "restrictedLocation": "preview-secondary",
+  "appointmentIds": [
+    "preview-collected",
+    "preview-outstanding",
+    "preview-carolina-tomorrow",
+    "preview-pending-tomorrow",
+    "preview-previous-month",
+    "preview-secondary-private"
+  ],
+  "primaryCurrentMonthBeforeMutations": {
+    "due": 70000,
+    "collected": 5000,
+    "pending": 65000,
+    "currencyCode": "CLP"
+  },
+  "primaryPaidServiceBookings": {
+    "currentMonth": 3,
+    "previousMonth": 1
+  },
+  "identity": "Fictitious review data only; no credentials in this file."
+}

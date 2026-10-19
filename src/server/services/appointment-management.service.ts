@@ -5,6 +5,43 @@ import { checkAppointmentCollision } from "@/server/services/appointment.service
 import type { ManagedAppointmentInput } from "@/server/validations/appointment-management";
 import { isServiceAvailableAtTime } from "@/core/service-availability";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
+import { formatInTimeZone } from "date-fns-tz";
+import { loadBookingContext, getBookingAvailability } from "@/server/booking/read.service";
+import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
+import { BookingSelectionError } from "@/core/booking-selection";
+import { z } from "zod";
+
+type RescheduleTarget = { id: string; businessId: string; serviceId: string; staffId: string | null; totalPrice: number | null; selectedOptions: unknown; totalDuration: number | null; service: { price: number; duration: number } };
+
+/** Shared slot validation for adapters that only move an existing appointment.
+ * Uses the public v1 schedule/selection engine; no alternate scheduling rules.
+ */
+export async function validateAppointmentReschedule(a: RescheduleTarget, start: Date, end: Date, locationId: string, db: Prisma.TransactionClient = prisma, checkGoogle = true) {
+  const fail = () => new BookingSelectionError("La cita o el horario cambió", "SLOT_CONFLICT", 409);
+  const data = await loadBookingContext(a.businessId, db);
+  const location = data.locations.find((l) => l.id === locationId);
+  if (!location) throw fail();
+  const options = z.array(z.object({ alternativeId: z.string() })).nullish().parse(a.selectedOptions) ?? [];
+  const available = await getBookingAvailability(data, { date: formatInTimeZone(start, location.timezone, "yyyy-MM-dd"), serviceId: a.serviceId,
+    staffId: a.staffId ?? undefined, locationId, selectedOptionAlternativeIds: options.map((o) => o.alternativeId) }, new Date(), { db, skipBusy: true });
+  if (available.selection.price !== (a.totalPrice ?? a.service.price) || available.selection.duration !== (a.totalDuration ?? a.service.duration)) throw new BookingSelectionError("La selección cambió", "SELECTION_CHANGED", 409);
+  if (!available.slots.some((s) => s.startTime === start.toISOString() && s.endTime === end.toISOString())) throw fail();
+  if ((await checkAppointmentCollision(a.businessId, start, end, a.staffId, a.id, locationId, db, checkGoogle)).hasCollision) throw fail();
+  const block = await db.scheduleBlock.findFirst({ where: { staff: { businessId: a.businessId }, ...(a.staffId ? { staffId: a.staffId } : {}),
+    OR: [{ locationId }, { locationId: null }], startTime: { lt: end }, endTime: { gt: start }, ...getPublicBlockingScheduleBlockWhere() }, select: { id: true } });
+  if (block) throw fail();
+}
+
+/** Caller owns the capacity lock and transaction, so receipt result and mutation
+ * commit together. Never changes customer, price, services or payment state.
+ */
+export async function rescheduleAppointmentWithinTransaction(db: Prisma.TransactionClient, appointment: RescheduleTarget & { updatedAt: Date }, start: Date, end: Date, locationId: string) {
+  await validateAppointmentReschedule(appointment, start, end, locationId, db, false);
+  const changed = await db.appointment.updateMany({ where: { id: appointment.id, businessId: appointment.businessId, updatedAt: appointment.updatedAt,
+    status: { in: ["PENDING", "CONFIRMED", "AWAITING_PAYMENT"] }, paymentStatus: { not: "APPROVED" }, recurringBookingId: null },
+    data: { startTime: start, endTime: end, customerActionTokenHash: null, customerActionTokenExpiresAt: null, customerActionTokenUsedAt: new Date() } });
+  if (changed.count !== 1) throw new BookingSelectionError("La cita cambió", "APPOINTMENT_CHANGED", 409);
+}
 
 type ResolvedManagedAppointment = {
   startTime: Date;

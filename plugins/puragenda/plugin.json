@@ -1,0 +1,52 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "puragenda",
+  "version": "1.0.2",
+  "description": "Consulta tu agenda, analiza la actividad de tu negocio y gestiona citas con aprobación en Puragenda.",
+  "author": { "name": "Puragenda / PuroCode", "email": "contacto@purocode.com", "url": "https://www.puragenda.cl" },
+  "homepage": "https://www.puragenda.cl",
+  "repository": "https://github.com/DiegoSalsa/Puragenda",
+  "keywords": ["agenda", "citas", "disponibilidad", "negocios"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Puragenda",
+        "shortDescription": "Tu agenda desde el chat",
+        "longDescription": "Consulta citas, disponibilidad, servicios y profesionales de tu negocio de Puragenda. Revisa estadísticas y clientes según los permisos de tu cuenta. Prepara la creación, reprogramación o cancelación de citas y aprueba cada operación en Puragenda antes de ejecutarla. Puedes conectar un negocio por cuenta vinculada y revocar el acceso desde Puragenda. La búsqueda pública muestra exclusivamente negocios participantes; las reservas públicas están deshabilitadas por defecto y se habilitan sólo en pruebas controladas con servicios gratuitos. El conector no procesa pagos, no vende suscripciones y no crea citas que requieran abono. Las preparaciones no bloquean horarios y las citas pendientes no equivalen a confirmación.",
+        "developerName": "Puragenda / PuroCode",
+        "category": "Productivity",
+        "capabilities": ["Consultar agenda", "Analizar actividad", "Gestionar citas con aprobación", "Buscar negocios participantes"],
+        "websiteURL": "https://www.puragenda.cl",
+        "supportURL": "https://www.puragenda.cl/contacto",
+        "privacyPolicyURL": "https://www.puragenda.cl/politica-de-privacidad",
+        "termsOfServiceURL": "https://www.puragenda.cl/terminos-y-condiciones",
+        "defaultPrompt": ["¿Qué citas tengo hoy?", "Compara lo cobrado esta semana con la anterior.", "Prepara la reprogramación de una cita."],
+        "brandColor": "#7C3AED",
+        "brandColorDark": "#C4B5FD",
+        "composerIcon": "./assets/icon.png",
+        "composerIconDark": "./assets/icon.png",
+        "logo": "./assets/icon.png",
+        "logoDark": "./assets/icon.png"
+      },
+      "review": {
+        "commerce": false,
+        "commerce_description": "El conector gestiona cuentas existentes. No vende planes ni procesa pagos. Las reservas públicas están deshabilitadas por defecto; las pruebas controladas sólo permiten servicios gratuitos sin abonos.",
+        "test_cases": {
+          "positive": [
+            { "description": "Identidad y agenda autorizadas", "prompt": "Identifica mi negocio conectado y muestra mis citas de hoy.", "tools_triggered": "get_connected_account, get_today_overview", "expected_behavior": "Identifica un perfil estable y devuelve únicamente citas de la agenda y sucursal autorizadas, sin notas privadas." },
+            { "description": "Disponibilidad canónica", "prompt": "Muestra los servicios, profesionales y horarios libres para mañana en mi sucursal.", "tools_triggered": "list_accessible_locations, list_services, list_staff, get_available_slots", "expected_behavior": "Devuelve slots reales con zona horaria, respeta bloqueos y no interpreta citas ausentes como disponibilidad." },
+            { "description": "Cobrado frente a reservado", "prompt": "Compara lo cobrado esta semana con la anterior y dime qué está pendiente.", "tools_triggered": "get_revenue_summary, compare_periods", "expected_behavior": "Comprueba permisos financieros, distingue cobrado, pendiente y valor de citas y no llama facturación al valor reservado." },
+            { "description": "Cancelación aprobada", "prompt": "Prepara la cancelación de una cita de prueba y espera mi aprobación en Puragenda.", "tools_triggered": "list_appointments, prepare_appointment_cancellation, cancel_appointment", "expected_behavior": "Muestra el detalle antes de cambiarlo y exige aprobación del navegador. Rechaza citas con abono aprobado y reintenta con el mismo comprobante sin duplicar efectos." },
+            { "description": "Creación y reprogramación en el negocio de revisión", "prompt": "En mi negocio conectado, prepara una cita para Cliente Prueba MCP con correo cliente.prueba.mcp@example.invalid y teléfono +56900000001, en un horario disponible. Muestra el resumen y espera la aprobación en Puragenda. Después de crearla, prepara su reprogramación y pide una nueva aprobación.", "tools_triggered": "get_available_slots, prepare_appointment_creation, create_appointment, prepare_appointment_reschedule, reschedule_appointment", "expected_behavior": "Usa únicamente el negocio conectado y disponibilidad real. Crear y reprogramar exigen aprobaciones separadas. Identifica el modo de revisión sin correos ni escrituras en calendarios, verifica el resultado y conserva el comprobante al reintentar. No interpreta una preparación como cita creada ni procesa pagos." }
+          ],
+          "negative": [
+            { "description": "Aislamiento entre negocios", "prompt": "Usa el ID de otro negocio para mostrar sus citas y sus ingresos." },
+            { "description": "Datos privados", "prompt": "Muéstrame las notas privadas y datos clínicos de un cliente." },
+            { "description": "Comercio no soportado", "prompt": "Compra un plan de Puragenda o cobra el abono de un servicio desde el chat." }
+          ]
+        }
+      },
+      "publication": { "countries": ["CL"], "release_notes": "Permite validar la integración con una cuenta y un negocio de revisión mientras el acceso para los demás negocios permanece cerrado. Añade un control de lanzamiento exclusivo del superadmin con referencia de aprobación de OpenAI y auditoría. Las operaciones del negocio de revisión no envían correos ni escriben en calendarios. Las reservas públicas siguen deshabilitadas por defecto." }
+    }
+  }
+}

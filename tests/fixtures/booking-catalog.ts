@@ -4,7 +4,7 @@ export function bookingFixture(): Awaited<ReturnType<typeof loadBookingContext>>
   const hours = Array.from({ length: 7 }, (_, dayOfWeek) => ({ dayOfWeek, startTime: "09:00", endTime: "18:00", isOpen: true, breakStart: "13:00", breakEnd: "14:00" }));
   return {
     id: "business-1", slug: "fixture", name: "Fixture", timezone: "America/Santiago", currencyCode: "CLP",
-    slotInterval: 30, minAdvanceBookingMinutes: 60, allowSameDayBookings: true, maxServicesPerBooking: 1,
+    slotInterval: 30, minAdvanceBookingMinutes: 60, allowSameDayBookings: true, maxServicesPerBooking: 1, mcpPublicDiscovery: false,
     depositRequired: false, depositPaymentMode: "MANUAL_LINK", mpAccessToken: "never-serialize", subscription: { plan: "EQUIPO" },
     businessHours: hours, scheduleOverrides: [],
     services: [{ id: "service-1", name: "Cita", description: null, imageUrl: null, price: 20000, duration: 60, depositAmount: 5000,

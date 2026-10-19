@@ -1,0 +1,116 @@
+{
+  "verifiedAtUtc": "2026-10-17 03:16:50 UTC",
+  "implementationRevision": "80a2b85783f57b0a2706aa169ea7a1809e1acdad",
+  "baseRevision": "685de216bf4cc65be6eef71069217ad8903cbe93",
+  "environment": {
+    "os": "Windows",
+    "node": "25.2.1",
+    "postgresql": "17 (loopback, disposable schemas)",
+    "next": "16.3.8",
+    "prisma": "7.10.0",
+    "mcpSdk": "1.32.1",
+    "nodeOAuth": "5.3.1"
+  },
+  "checks": {
+    "npmCi": {
+      "exitCode": 0,
+      "installedPackages": 831
+    },
+    "prismaGenerate": {
+      "exitCode": 0
+    },
+    "prismaValidate": {
+      "exitCode": 0
+    },
+    "versionedMigration": {
+      "exitCode": 0,
+      "rlsTables": 7,
+      "lowPrivilegeRoleVerified": true
+    },
+    "typecheck": {
+      "exitCode": 0
+    },
+    "eslint": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 32
+    },
+    "vitest": {
+      "command": "npm test",
+      "exitCode": 0,
+      "filesPassed": 196,
+      "filesSkipped": 5,
+      "passed": 1269,
+      "failed": 0,
+      "skipped": 102,
+      "total": 1371
+    },
+    "postgresFullSuite": {
+      "command": "node scripts/test-booking-api-local.mjs --all",
+      "exitCode": 0,
+      "filesPassed": 198,
+      "filesSkipped": 3,
+      "passed": 1290,
+      "failed": 0,
+      "skipped": 81,
+      "total": 1371
+    },
+    "mcp": {
+      "command": "npm run test:mcp:local",
+      "exitCode": 0,
+      "filesPassed": 2,
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "note": "7 boundary/security + 18 PostgreSQL integration tests; unit tests overlap with full suite."
+    },
+    "productionBuild": {
+      "command": "node scripts/test-booking-api-local.mjs --build",
+      "exitCode": 0,
+      "data": "isolated local fixture; external providers not validated"
+    },
+    "pluginPackage": {
+      "exitCode": 0,
+      "pluginSchema": "Agent Plugins 1.0.0",
+      "mcpSchema": "Agent Plugins 1.0.0",
+      "positiveCases": 5,
+      "negativeCases": 3,
+      "zipSha256": "a42650df17d498ddaba0327071522c848b4eccac499ec1e558a1802f2851a8e5"
+    },
+    "productionAudit": {
+      "vulnerabilities": 0
+    },
+    "fullAudit": {
+      "high": 9,
+      "critical": 0,
+      "scope": "inherited development dependency chain; documented residual risk"
+    },
+    "configSyntax": {
+      "exitCode": 0,
+      "credentials": "fictitious values only; no remote checks"
+    }
+  },
+  "earlierAttempts": [
+    {
+      "execution": "Two complete suites concurrent with production build",
+      "outcome": "SEO immutable source check exceeded its unchanged 5000 ms timeout."
+    },
+    {
+      "execution": "Same concurrent run",
+      "outcome": "Calendar PNG render exceeded its unchanged 15000 ms timeout."
+    }
+  ],
+  "resolution": "Both entire suites subsequently passed sequentially with original timeouts and no skipped-test additions.",
+  "skippedReason": "General suite skips opt-in PostgreSQL suites; --all runs booking/deposit suites. MCP integrations run separately. Two unrelated website purchase/billing suites require the separate websiteqa fixture and remain unvalidated.",
+  "externalPending": [
+    "Authorized HTTPS deployment and production migration",
+    "Real ChatGPT/Codex host linking and portal tool scan",
+    "Developer/domain verification, private review account and demo recording",
+    "Real Google Calendar/email/provider effects",
+    "Legal and OpenAI policy review",
+    "Supabase remote advisors and runtime/role validation"
+  ],
+  "deploymentPerformed": false,
+  "productionMigrationPerformed": false,
+  "mergePerformed": false
+}

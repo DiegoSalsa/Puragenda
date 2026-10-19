@@ -1,0 +1,257 @@
+# Conexión, despliegue y revisión
+
+La fase actual prepara la revisión con el negocio de pruebas Estética Bella
+en el entorno productivo autorizado. El acceso de los demás negocios permanece
+cerrado hasta que un superadmin registre la aprobación de OpenAI y lo habilite.
+Ver [controles, configuración y migraciones](hidden-rollout.md). El ZIP configura
+un cliente remoto; no publica el backend ni concede acceso por sí mismo.
+
+Las secciones de la iteración 2 que siguen documentan el fixture local y su
+evidencia histórica. No deben usarse para sembrar o restablecer producción.
+
+## Entorno aislado reproducible
+
+Requisitos: dependencias del lockfile, Python para empaquetado y PostgreSQL local.
+El runner no carga `.env`, rechaza hosts que no sean loopback y sólo acepta la
+base `puragenda_booking_api_test`. Crea un schema temporal, valida la migración
+MCP real y lo elimina al terminar normalmente. No apuntarlo a Supabase productivo.
+
+```powershell
+npm ci
+npx prisma generate
+npx prisma validate
+npm run typecheck
+npm run lint
+npm test
+npm run test:mcp:local
+node scripts/test-booking-api-local.mjs --all
+node scripts/test-booking-api-local.mjs --build
+npm run plugin:package
+npm run dev:mcp:review
+```
+
+Si PostgreSQL local requiere contraseña, proporcionar exclusivamente
+`PURAGENDA_BOOKING_TEST_DATABASE_URL` con esa base y host loopback. No reutilizar
+credenciales de clientes. Ejecutar las suites PostgreSQL MCP y `--all` separadas:
+otras pruebas de integración limpian fixtures y no deben compartir su schema.
+
+La revisión local abre `http://localhost:3108` y `/mcp`. El runner genera
+contraseñas aleatorias del dueño y profesional limitado en cada arranque. Se
+guardan sólo en `artifacts/mcp/iteration-2/review-access.json`, ignorado por Git.
+No copiar su contenido a logs, capturas, documentación ni al ZIP. Incluye dos
+negocios, dos sucursales en el principal, servicios pagados/gratuito, bloqueos,
+clientes y cifras ficticias; el resumen sin credenciales está en `fixture.json`.
+Los IDs `preview-*` y fechas se crean con el runner y `mcp-review-fixture.mjs`.
+Todo se calcula respecto al día de revisión en America/Santiago.
+
+Para un cliente compatible añadir un servidor remoto Streamable HTTP con la URL
+local, autenticación mixta y DCR. Recorrer registro → authorize con resource y
+PKCE → login → selección de negocio → consentimiento → callback → token →
+initialize/tools/list. Usar `account:read agenda:read` al principio; conectar de
+nuevo para probar los otros scopes. Los tests contienen el cliente oficial SDK
+y el flujo completo reproducible, sin tener que copiar access tokens a una UI.
+Un cliente en la nube no puede acceder al localhost de esta máquina.
+
+### HTTPS temporal de revisión (iteración 2)
+
+Se investigó Secure MCP Tunnel primero. Su creación y asociación al workspace
+requieren acceso a Platform/organización y permisos de túneles. Ese acceso no
+pudo verificarse: la automatización del navegador está deshabilitada y no había
+credenciales API configuradas. Esto no demuestra que la cuenta carezca de la
+función. Además, el túnel MCP no publica por sí mismo login/consent/token.
+
+Se usó la alternativa autorizada de Cloudflare Quick Tunnel con binario oficial
+2026.10.1 y digest verificado. Se tuneliza el servidor completo del fixture,
+incluido Authorization Server, bajo un único origen HTTPS. Se ejecuta el build
+de producción con `next start` en loopback; no se expone `next dev`.
+
+```powershell
+# En terminal 1: binario oficial descargado y checksum verificado.
+cloudflared tunnel --no-autoupdate --url http://127.0.0.1:3108 --protocol http2
+# En terminal 2: sustituir por el origen HTTPS exacto recién asignado.
+$env:PURAGENDA_MCP_REVIEW_ORIGIN = 'https://HOST.trycloudflare.com'
+node scripts/test-booking-api-local.mjs --mcp-preview --production
+# Con el servidor listo, terminal 3:
+node scripts/mcp-https-review.mjs
+node scripts/check-mcp-schema-current.mjs
+```
+
+El host registrado en [la evidencia](iteration-2/evidence/https-client.json) es
+temporal: no garantiza disponibilidad futura ni sirve para publicar en el
+directorio. Al cambiarlo hay que reiniciar el runner, volver a registrar el
+servidor/conexión y repetir OAuth; issuer/resource nunca se parchean parcialmente.
+Quick Tunnel no admite SSE; este servidor usa respuestas JSON stateless por POST.
+Los proveedores de correo están desactivados y no hay calendarios reales en la
+base de prueba. Detener el proceso de Next permite al runner eliminar su schema.
+El archivo privado local debe eliminarse cuando termine la revisión.
+
+### Reanudar después de cerrar los procesos
+
+El host de Quick Tunnel desaparece al terminar su proceso. Un equipo encendido
+no garantiza que `next start` y `cloudflared` sigan activos. Si ambos se cerraron,
+crear otro túnel y configurar la nueva URL en ChatGPT; las conexiones anteriores
+no cambian de issuer/resource automáticamente.
+
+Si el schema ficticio sigue presente, **no ejecutar el runner de seed para
+reanudarlo**: crearía otro fixture. El comando siguiente conserva usuarios,
+contraseñas, citas y concesiones del schema existente, sin migrar, sembrar ni
+eliminar tablas. Sólo acepta la base loopback de pruebas, dos usuarios ficticios
+y los negocios esperados, sin conexiones de calendario externas.
+
+```powershell
+# Crear un nuevo Quick Tunnel como arriba y copiar su origen exacto.
+node scripts/resume-mcp-review.mjs --schema booking_api_test_TIMESTAMP --origin https://HOST.trycloudflare.com --check
+node scripts/resume-mcp-review.mjs --schema booking_api_test_TIMESTAMP --origin https://HOST.trycloudflare.com --build
+```
+
+La primera reanudación guarda secretos nuevos en
+`artifacts/mcp/review-runtime.json` (privado e ignorado por Git). Conserva las
+contraseñas de `review-access.json`, cuya URL actualiza sin imprimirlas. Al
+detenerlo no elimina el schema. Con ese mismo túnel todavía activo, un arranque
+posterior puede usar `node scripts/resume-mcp-review.mjs`; con otro origen,
+volver a pasar `--origin ... --build`. El build es necesario al cambiar origen.
+El script rechaza archivos `.env*` del worktree e inicia Next sin heredar claves
+de proveedores de la sesión. Email está desactivado y el simulador local activo.
+El flag de reservas públicas sólo se habilita en este fixture ficticio validado.
+
+Los secretos del proceso original no se guardaron: no pueden recuperarse de
+hashes ni de los payloads cifrados. La primera reanudación exige volver a iniciar
+sesión; los recibos cifrados con la clave anterior no son recuperables. Las citas
+canónicas persisten y pueden administrarse con preparaciones nuevas después de
+reconectar. Nunca reconstruir un recibo ni editar issuer/resource de tokens viejos.
+Los siguientes reinicios del script sí reutilizan el archivo privado de runtime.
+
+Comprobar la metadata, el login ficticio y `initialize/tools/list` antes de
+reconectar ChatGPT. No volver a ejecutar el script completo de pruebas HTTPS
+sobre el fixture ya usado: crea/mueve/cancela citas de prueba y espera su estado
+inicial. Para reanudar una revisión en curso basta un smoke test de sólo lectura.
+
+Para terminar en ChatGPT seguir [los pasos del revisor](iteration-2/reviewer-guide.md).
+La exposición HTTPS y el OAuth del SDK no prueban que ChatGPT lo haya instalado.
+
+## Configuración por entorno
+
+No hay un client secret OAuth: se registran clientes públicos con PKCE. Todas
+las variables nuevas son de servidor, sin prefijo `NEXT_PUBLIC_`.
+
+| Variable | Configuración |
+| --- | --- |
+| `MCP_ENABLED` | Apagado si falta o no es exactamente `true`: oculta UI y bloquea rutas MCP/OAuth/metadata/aprobaciones y acciones. Habilitar explícitamente sólo en el entorno previsto |
+| `MCP_ORIGIN` | Origen HTTPS canónico sin path; producción propuesta `https://www.puragenda.cl`. Debe coincidir exactamente en issuer, resource, cookies y callbacks de autorización |
+| `MCP_OAUTH_REDIRECT_URIS` | URLs HTTPS exactas separadas por comas. Default estable ChatGPT: `https://chatgpt.com/connector_platform_oauth_redirect` |
+| `MCP_OAUTH_ALLOW_LOOPBACK` | `true` sólo si se habilita Codex desktop/CLI por callback local. Admite loopback `/callback` o `/callback/ID` con puerto variable al registrar; luego exige coincidencia exacta con ese registro |
+| `MCP_ALLOWED_ORIGINS` | Orígenes de navegador adicionales exactos separados por comas, sin comodines. Puragenda y `https://chatgpt.com` ya están permitidos |
+| `MCP_PUBLIC_BOOKING_ENABLED` | `false`/ausente por defecto. `true` sólo para pruebas controladas de reservas gratuitas; se revalida al preparar y ejecutar. No habilitar para público general mientras no exista protección de identidad suficiente |
+| `MCP_OPERATION_ENCRYPTION_KEY` | 32 bytes criptográficamente aleatorios en base64, persistentes y exclusivos del entorno; guardar en secret manager |
+| `OPENAI_APPS_CHALLENGE` | Texto exacto del desafío de dominio proporcionado por el portal; si falta, la ruta devuelve 404 |
+| `CRON_SECRET` | Secreto largo del cron Vercel; se exige Bearer con comparación de tiempo constante |
+| `DATABASE_URL`, `DIRECT_URL` | PostgreSQL servidor y conexión directa de migración del entorno aislado/autorizado |
+| `AUTH_SECRET` (o `NEXTAUTH_SECRET`) | Secreto de sesión existente robusto, al menos 32 caracteres |
+| `NEXT_PUBLIC_APP_URL` | URL de Puragenda correspondiente al entorno; variable existente, no contiene secretos |
+
+Después de inyectar los secretos en el proceso, `node scripts/check-mcp-config.mjs`
+valida presencia y sintaxis sin imprimirlos. No prueba conectividad, aleatoriedad,
+permisos de base ni verificación de dominio. No ejecutar con tracing de shell.
+La key de operaciones debe ser estable entre instancias; cambiarla invalida
+payloads pendientes. Para rotarla, drenar preparaciones, revocar las pendientes,
+esperar su eliminación y desplegar la key nueva de forma coordinada.
+
+## Migración y despliegue
+
+1. Elegir primero un preview con base independiente, secretos propios, correos
+   desactivados y proveedores sandbox o sin conexiones reales. La iteración 2
+   verificó PostgreSQL/Next local por HTTPS temporal; no creó hosting permanente.
+2. Verificar backup/restauración y estado de migraciones. No ejecutar `db push`
+   ni seed global sobre una base existente. Comparar el diff con la base real.
+3. Aplicar una sola fuente de migración. El proyecto Prisma usa
+   `npm run db:migrate:deploy`; revisar previamente todo pendiente. La copia en
+   `supabase/migrations/20261017021050_mcp_oauth_connector.sql` es el mismo SQL
+   para operadores que gestionan migraciones por Supabase. No aplicar ambas.
+4. Confirmar siete tablas MCP con RLS y sin grants cliente. El usuario SQL del
+   backend debe poder operar las tablas, sin entregar sus credenciales al cliente.
+   Revisar advisors reales de Supabase en el entorno elegido.
+5. Desplegar esta rama/commit aprobado con sus variables. Conservar el cron
+   diario `/api/cron/mcp-cleanup` a las 04:00 UTC y supervisar respuesta/errores.
+6. Configurar logs HTTP/proxy para no guardar códigos OAuth, query strings de
+   autorización, cabeceras Authorization ni rutas completas de recibos.
+7. Completar el smoke test siguiente antes de conectar usuarios reales.
+
+## Smoke test tras despliegue
+
+- HTTPS válido, host canónico y sin redirección entre apex/www durante OAuth.
+- `GET /.well-known/oauth-protected-resource/mcp` y el alias sin `/mcp`:
+  `resource` exacto `ORIGIN/mcp`, `authorization_servers=[ORIGIN]`.
+- `GET /.well-known/oauth-authorization-server`: issuer exacto, endpoints del
+  entorno, S256, DCR, `none`, revocación e issuer identification.
+- POST `/mcp`: SDK conecta, descubre 30 herramientas, perfil y seguridad mixta
+  visibles en el wire. GET 405 es esperado, no una prueba de caída.
+- Privada sin login → challenge; token inválido/vencido/revocado → 401.
+- OAuth real con ChatGPT y Codex: registro, state+iss, PKCE, selección de negocio,
+  consentimiento, perfil estable tras reconectar y refresh. Confirmar los
+  callbacks que realmente usa cada cliente; no permitir dominios amplios.
+- Dueño A/B y profesional limitado: IDs ajenos, sucursal ajena y permisos
+  financieros/CRM denegados. Retirar membresía y revocar conexión: acceso cesa.
+- Preparar/aprobar/ejecutar/repetir cita ficticia; cambiar precio/horario antes
+  de ejecutar y comprobar rechazo; revisar el estado real y auditoría.
+- Opt-in público desactivado → negocio no visible ni reservable. Servicio
+  gratuito → aprobación y una reserva; servicio pagado/abono → denegación.
+- Revocar en ajustes y en la página de conexiones propias. Verificar limpieza
+  y probar proveedores externos sólo con cuentas de prueba dedicadas.
+- Comprobar widget, reserva v1 e interfaz Puri en navegador, es/en y vista móvil.
+- Revisar visualmente privacidad/términos publicados: un HTTP 200 no garantiza
+  que se hayan desplegado los textos nuevos ni que traducciones se rendericen.
+
+## Portal OpenAI y paquete
+
+1. Verificar la cuenta de desarrollador/organización y los derechos de marca.
+2. Publicar el entorno HTTPS aprobado y las políticas revisadas legalmente.
+3. Crear el plugin en el builder y subir el ZIP validado; revisar nombre,
+   categoría Productivity, país CL, iconos oficiales, capacidades y ejemplos.
+4. Registrar el servidor `ORIGIN/mcp`, autenticación mixta y DCR con PKCE. El
+   `mcp.json` se volvió a validar contra el schema descargado en esta iteración:
+   aún rechaza la extensión de auth por servidor documentada por OpenAI.
+   [Resultado reproducible y límite del importer](iteration-2/schema-compatibility.md).
+   El alta oficial de servidor custom por URL configura la autenticación aparte.
+   Antes de publicar, confirmar el comportamiento real del builder/importer;
+   no añadir campos inválidos ni asumir que el ZIP configura auth en ese cliente.
+5. Copiar el desafío real a `OPENAI_APPS_CHALLENGE`, redeploy autorizado y
+   comprobar `GET /.well-known/openai-apps-challenge` antes de Verify domain.
+6. Crear una cuenta dedicada en ese entorno aislado con datos exclusivamente
+   ficticios: dos negocios, dueño y empleado limitado, sucursales, citas,
+   cobros ficticios, servicio gratuito y servicio no elegible. Usar contraseña
+   nueva secreta; entregar al revisor sólo por el canal privado del portal.
+   No introducir credenciales en Git/ZIP ni utilizar datos productivos. El fixture
+   temporal no tiene estabilidad suficiente para una revisión pública prolongada.
+7. Grabar el flujo en el cliente real: conectar, elegir negocio, consultar
+   agenda/ingresos, preparar/aprobar/ejecutar y demostrar rechazo de acceso ajeno
+   y comercio. Ocultar tokens/datos sensibles. Subir una URL accesible al revisor
+   y añadir el campo de demo exigido por el builder. No se ha inventado esa URL.
+8. Ejecutar tool scan del portal, los cinco casos positivos y tres negativos
+   incluidos en `plugin.json`, y pruebas manuales de refresh/revocación. Confirmar
+   que el alcance de gestión privada y reservas gratuitas cumple su revisión.
+9. Resolver los errores reales del builder; confirmar todas las declaraciones de
+   privacidad, permisos y commerce. Si exige dominio de email empresarial/OIDC,
+   este backend no lo anuncia: integrar y validar esa capacidad antes de enviarlo.
+10. Sólo con autorización expresa de envío público, enviar a revisión y esperar
+    su resultado. La validación local de schemas no
+    equivale a validación del portal, aprobación ni disponibilidad en directorio.
+
+La cuenta pública normal de Puragenda no se altera para simular una aprobación.
+No existe todavía enlace público del plugin. Las URL homepage/contacto/legal
+devolvieron 200; `/mcp` devolvía 404 en la comprobación previa al despliegue.
+
+## Actualización y rollback
+
+Versionar servidor, manifiestos y migración; ejecutar la misma batería con datos
+aislados, actualizar versión/release notes y regenerar ZIP. Confirmar compatibilidad
+de grants existentes y scopes; un permiso nuevo requiere nuevo consentimiento.
+Revisar de nuevo docs/políticas y tool scan del portal antes de actualizar allí.
+
+Ante fallo operativo, deshabilitar temporalmente la ruta MCP en el gateway o
+volver al despliegue anterior aprobado. Si se compromete una conexión, revocarla;
+si el incidente es general, revocar todas las concesiones con una operación
+administrativa autorizada. No borrar citas o tablas para revertir el transporte.
+La migración es aditiva: conservar tablas, perfiles y tombstones evita duplicados
+y permite volver a desplegar. Quitar cron sólo después de garantizar limpieza
+alternativa. No eliminar columnas/tablas ni restaurar una base productiva sin
+backup, evaluación de impacto y autorización explícita.

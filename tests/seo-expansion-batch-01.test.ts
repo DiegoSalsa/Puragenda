@@ -186,6 +186,16 @@ describe("SEO expansion batch 01", () => {
       if (path === "src/components/landing/ThemeNeoBrutalism.tsx") source = source
         .replace("{ user, business, commercialSection }: LandingIdentityProps & { commercialSection?: React.ReactNode }", "{ user, business }: LandingIdentityProps")
         .replace("        {commercialSection}\n", "");
+      // The MCP integration adds its own translation namespace. Preserve the
+      // complete previous loader apart from this one authorized insertion.
+      if (path === "src/i18n/request.ts") source = source.replace('      mcp: (await import(`../../messages/mcp/${loyaltyLocale}.json`)).default,\n', "");
+      if (path === "src/lib/crawler-policy.ts") source = source
+        .replace('  "/oauth/",\n', "")
+        .replace('  "/mcp/confirm/",\n', "")
+        .replace('  "/integraciones/chatgpt/conexiones",\n', "");
+      // The MCP launch control adds exactly one superadmin navigation item.
+      // Continue checking every other byte of the protected admin shell.
+      if (path === "src/app/para/x7k9m2v4q8/(panel)/admin-panel-shell.tsx") source = source.replace('  { href: `${ADMIN_SECRET_PATH}/integrations`, icon: ShieldCheck, label: "Integraciones" },\n', "");
       const current = createHash("sha256").update(source).digest("hex");
       expect(current, path).toBe(hash);
     }
