@@ -6,7 +6,9 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { canManageGoogleConnection } from "@/server/services/google-calendar-access.service";
 import {
   disconnectGoogleCalendarConnection,
-  listGoogleCalendars,
+  getGoogleCalendarReadSelections,
+  listGoogleCalendarsForAvailability,
+  setGoogleCalendarReadSelections,
   syncAppointmentToGoogle,
 } from "@/server/services/google-calendar.service";
 
@@ -24,18 +26,29 @@ async function authorizedConnection(request: NextRequest, connectionId: string) 
 
 export async function PATCH(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
-    | { connectionId?: string; calendarId?: string; includeCustomerAttendee?: boolean }
+    | { connectionId?: string; calendarId?: string; readCalendarIds?: string[]; includeCustomerAttendee?: boolean }
     | null;
   if (!body?.connectionId) return Response.json({ error: "Falta connectionId" }, { status: 400 });
+  if (body.readCalendarIds !== undefined && (!Array.isArray(body.readCalendarIds) || body.readCalendarIds.some((id) => typeof id !== "string" || id.length > 512))) {
+    return Response.json({ error: "La selección de calendarios no es válida" }, { status: 400 });
+  }
   const context = await authorizedConnection(request, body.connectionId);
   if ("error" in context) return context.error;
 
   let calendarName: string | undefined;
-  if (body.calendarId) {
-    const calendars = await listGoogleCalendars(context.connection);
-    const selected = calendars.find((calendar) => calendar.id === body.calendarId);
-    if (!selected) return Response.json({ error: "Calendario no válido o sin permisos de escritura" }, { status: 400 });
-    calendarName = selected.name;
+  const availableCalendars = await listGoogleCalendarsForAvailability(context.connection);
+  const destinationId = body.calendarId ?? context.connection.calendarId;
+  const destination = availableCalendars.find((calendar) => calendar.id === destinationId && calendar.canWrite);
+  if (!destination) return Response.json({ error: "El calendario de destino no permite escribir eventos" }, { status: 400 });
+  if (body.calendarId) calendarName = destination.name;
+  const existingReadSelections = await getGoogleCalendarReadSelections(context.connection.id);
+  const requestedReadIds = body.readCalendarIds ?? existingReadSelections.map((selection) => selection.calendarId);
+  const readCalendars = availableCalendars.filter((calendar) => requestedReadIds.includes(calendar.id));
+  if (requestedReadIds.some((id) => !availableCalendars.some((calendar) => calendar.id === id))) {
+    return Response.json({ error: "Uno o más calendarios no permiten consultar disponibilidad" }, { status: 400 });
+  }
+  if (body.readCalendarIds !== undefined && readCalendars.length === 0) {
+    return Response.json({ error: "Selecciona al menos un calendario para bloquear horarios" }, { status: 400 });
   }
   const connection = await prisma.googleCalendarConnection.update({
     where: { id: context.connection.id },
@@ -47,6 +60,11 @@ export async function PATCH(request: NextRequest) {
       lastSyncError: null,
     },
   });
+  if (readCalendars.length === 0) {
+    const destination = availableCalendars.find((calendar) => calendar.id === connection.calendarId);
+    if (destination) readCalendars.push(destination);
+  }
+  await setGoogleCalendarReadSelections(connection, readCalendars);
 
   const appointments = await prisma.appointment.findMany({
     where: {
@@ -60,7 +78,7 @@ export async function PATCH(request: NextRequest) {
     take: 100,
   });
   for (const appointment of appointments) await syncAppointmentToGoogle(appointment.id);
-  return Response.json({ connection });
+  return Response.json({ connection, readCalendarIds: readCalendars.map((calendar) => calendar.id) });
 }
 
 export async function DELETE(request: NextRequest) {

@@ -325,9 +325,18 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const [touched, setTouched] = useState<Record<keyof FormState, boolean>>({ name: false, email: false, phone: false, address: false });
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentExpiresAt, setPaymentExpiresAt] = useState<number | null>(null);
+  const [paymentClock, setPaymentClock] = useState(() => Date.now());
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const blockedRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (step !== "payment" || !paymentExpiresAt) return;
+    const timer = window.setInterval(() => setPaymentClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [paymentExpiresAt, step]);
 
   // ── Reward / Discount code state ──
   const [rewardCode, setRewardCode] = useState("");
@@ -952,7 +961,17 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
       // If deposit is required and we have a payment URL, redirect to MP
       if (paymentRequired) {
         track("booking_payment_required", { payment_mode: "external" }, { businessSlug: business.slug });
-        window.location.href = data.paymentUrl;
+        const expiresAt = typeof data.paymentHoldExpiresAt === "string"
+          ? Date.parse(data.paymentHoldExpiresAt)
+          : Number.NaN;
+        if (Number.isFinite(expiresAt)) {
+          setPaymentUrl(data.paymentUrl);
+          setPaymentExpiresAt(expiresAt);
+          setPaymentClock(Date.now());
+          setStep("payment");
+        } else {
+          window.location.href = data.paymentUrl;
+        }
         return;
       }
       setFeedbackToken(typeof data.feedbackToken === "string" ? data.feedbackToken : null);
@@ -1008,6 +1027,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     setRecurringTimes({});
     setHealthAnswers({}); setHealthExtra(""); setHealthTerms(false); setRut(""); setRecurringError(""); setRecurringSuccess(null);
     setFeedbackToken(null);
+    setPaymentUrl(null); setPaymentExpiresAt(null); setPaymentClock(Date.now());
   }
 
   // ── Recurring helpers ──
@@ -2377,6 +2397,38 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                   {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{previewMode ? previewText.finish : showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>
+            </div>
+          )}
+
+          {step === "payment" && (
+            <div className="animate-scale-in space-y-6 py-6 text-center">
+              {(() => {
+                const seconds = Math.max(0, Math.ceil(((paymentExpiresAt ?? paymentClock) - paymentClock) / 1000));
+                const expired = seconds === 0;
+                return (
+                  <>
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full" style={{ background: `${pc}15` }}>
+                      <Clock3 className="h-10 w-10" style={{ color: pc }} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold tracking-tight">{expired ? "La retención venció" : "Hora reservada temporalmente"}</h2>
+                      <p className="mx-auto mt-2 max-w-md text-sm" style={{ color: textSecondary }}>
+                        {expired
+                          ? "El pago ya no puede aplicarse a esta hora. Regresa a elegir otro horario disponible."
+                          : `Completa el pago dentro de ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}. El servidor confirma la reserva después de recibir el pago.`}
+                      </p>
+                    </div>
+                    {!expired && paymentUrl && (
+                      <button type="button" onClick={() => window.location.assign(paymentUrl)} className="mx-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold transition hover:opacity-90" style={{ background: pc, color: getContrastColor(pc) }}>
+                        Continuar al pago <ChevronRight className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button type="button" onClick={() => { setPaymentUrl(null); setPaymentExpiresAt(null); setSelectedSlot(null); setStep("datetime"); }} className="mx-auto block text-sm font-semibold underline underline-offset-4" style={{ color: pc }}>
+                      Elegir otra hora
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           )}
 

@@ -27,6 +27,7 @@ import { signBookingFeedbackToken } from "@/server/security/booking-feedback-tok
 import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
 import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
+import { paymentHoldExpiresAt } from "@/server/services/payment-hold.service";
 import { bookingJson } from "@/server/booking/response";
 import { bookingContractContext, bookingReviewContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
 
@@ -728,6 +729,11 @@ async function handleBooking(
     const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
       usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
     );
+    // Only the integrated Mercado Pago flow receives a short-lived hold. The
+    // deadline is calculated on the server and persisted with the appointment.
+    const paymentHoldDeadline = depositRequired && !!businessMpAccessToken && !usesManualPaymentLink
+      ? paymentHoldExpiresAt()
+      : null;
 
     if (hasStaffAssignments) {
       const assignmentServiceIds = new Set(staffAssignments.map((assignment) => assignment.serviceId));
@@ -925,6 +931,7 @@ async function handleBooking(
           depositRequired,
           depositAmount: groupDeposit,
           depositPaymentUrl: manualPaymentUrl,
+          paymentHoldExpiresAt: paymentHoldDeadline,
           storyCampaignId: storyCampaign?.id,
         }, { tx, syncGoogle: false });
 
@@ -978,6 +985,9 @@ async function handleBooking(
                 pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${primaryAppointmentId}&status=pending`,
               },
               ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
+              expires: true,
+              expiration_date_from: createdAppointments[0].createdAt.toISOString(),
+              expiration_date_to: paymentHoldDeadline?.toISOString(),
               external_reference: primaryAppointmentId,
               notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${business.id}`,
               statement_descriptor: "PURAGENDA",
@@ -1069,6 +1079,7 @@ async function handleBooking(
       depositRequired,
       depositAmount: totalDepositAmount,
       depositPaymentUrl: manualPaymentUrl,
+      paymentHoldExpiresAt: paymentHoldDeadline,
       status: giftCardPaidAmount > 0 && remainingAfterGiftCard === 0 ? "CONFIRMED" : undefined,
       storyCampaignId: storyCampaign?.id,
     }, appliedReward, giftCardQuote && portalAccount ? {
@@ -1116,6 +1127,9 @@ async function handleBooking(
               pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${result.appointment.id}&status=pending`,
             },
             ...(baseUrl.startsWith("https://") ? { auto_return: "approved" as const } : {}),
+            expires: true,
+            expiration_date_from: result.appointment.createdAt.toISOString(),
+            expiration_date_to: paymentHoldDeadline?.toISOString(),
             external_reference: result.appointment.id,
             notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${business.id}`,
             statement_descriptor: "PURAGENDA",

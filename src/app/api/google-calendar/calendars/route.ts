@@ -4,7 +4,7 @@ import { getApiSessionUser } from "@/server/auth/user-session";
 import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { canManageGoogleConnection } from "@/server/services/google-calendar-access.service";
-import { listGoogleCalendars } from "@/server/services/google-calendar.service";
+import { getGoogleCalendarReadSelections, listGoogleCalendarsForAvailability } from "@/server/services/google-calendar.service";
 
 export async function GET(request: NextRequest) {
   const user = await getApiSessionUser(request);
@@ -19,7 +19,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    return Response.json({ calendars: await listGoogleCalendars(connection) });
+    const [calendars, readSelections] = await Promise.all([
+      listGoogleCalendarsForAvailability(connection),
+      getGoogleCalendarReadSelections(connection.id),
+    ]);
+    return Response.json({
+      calendars,
+      readCalendarIds: readSelections.map((selection) => selection.calendarId),
+    });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : "No se pudieron cargar los calendarios" },

@@ -62,9 +62,10 @@ export async function fenceBookingOperation(tx: Prisma.TransactionClient) {
   if (!updated.count) throw new BookingSelectionError("La operación ya fue procesada o su plazo venció", "BOOKING_IN_PROGRESS", 409);
 }
 
-export function bookingResult(appointment: { id: string; status: string; startTime: Date; endTime: Date; staffId: string | null; locationId: string | null; totalPrice: number | null; totalDuration: number | null; depositAmount: number | null }, currency: string, paymentUrl: string | null = null) {
+export function bookingResult(appointment: { id: string; status: string; startTime: Date; endTime: Date; staffId: string | null; locationId: string | null; totalPrice: number | null; totalDuration: number | null; depositAmount: number | null; paymentHoldExpiresAt?: Date | null }, currency: string, paymentUrl: string | null = null) {
   return { id: appointment.id, status: appointment.status,
     depositRequired: appointment.status === "AWAITING_PAYMENT", paymentUrl,
+    ...(appointment.paymentHoldExpiresAt ? { paymentHoldExpiresAt: appointment.paymentHoldExpiresAt.toISOString() } : {}),
     booking: { version: "1", state: appointment.status === "CONFIRMED" ? "confirmed" : appointment.status === "AWAITING_PAYMENT" ? "awaiting_payment" : appointment.status === "CANCELLED" ? "cancelled" : "pending",
       startTime: appointment.startTime.toISOString(), endTime: appointment.endTime.toISOString(), staffId: appointment.staffId, locationId: appointment.locationId,
       price: appointment.totalPrice, duration: appointment.totalDuration, currency, depositAmount: appointment.depositAmount ?? 0 },
