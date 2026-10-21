@@ -22,6 +22,7 @@ type ConnectionSummary = {
   includeCustomerAttendee: boolean;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
+  readCalendars: Array<{ calendarId: string; calendarName: string | null }>;
 };
 
 export function GoogleCalendarCard({
@@ -47,8 +48,12 @@ export function GoogleCalendarCard({
     primary: boolean;
     accessRole: "writer" | "owner";
     shared: boolean;
+    canWrite: boolean;
   }> | null>(null);
   const [calendarId, setCalendarId] = useState(connection?.calendarId ?? "primary");
+  const [readCalendarIds, setReadCalendarIds] = useState<string[]>(
+    connection?.readCalendars.map((calendar) => calendar.calendarId) ?? [connection?.calendarId ?? "primary"],
+  );
   const [includeCustomer, setIncludeCustomer] = useState(
     connection?.includeCustomerAttendee ?? true,
   );
@@ -69,6 +74,7 @@ export function GoogleCalendarCard({
       return;
     }
     setCalendars(data.calendars);
+    setReadCalendarIds(data.readCalendarIds?.length ? data.readCalendarIds : [calendarId]);
   }
 
   async function saveSettings() {
@@ -81,6 +87,7 @@ export function GoogleCalendarCard({
       body: JSON.stringify({
         connectionId: connection.id,
         calendarId,
+        readCalendarIds,
         includeCustomerAttendee: includeCustomer,
       }),
     });
@@ -185,7 +192,7 @@ export function GoogleCalendarCard({
                 onChange={(event) => setCalendarId(event.target.value)}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm"
               >
-                {calendars.map((calendar) => (
+                {calendars.filter((calendar) => calendar.canWrite).map((calendar) => (
                   <option key={calendar.id} value={calendar.id}>
                     {calendar.name}
                     {calendar.primary ? " (principal)" : calendar.shared ? " (compartido)" : ""}
@@ -202,6 +209,29 @@ export function GoogleCalendarCard({
             >
               <RefreshCw className="h-4 w-4" /> <LocalizedText id="kYzHDot-sKiN" />
             </button>
+          )}
+
+          {calendars && (
+            <fieldset className="space-y-2 rounded-xl border border-border p-4">
+              <legend className="px-1 text-sm font-medium">Calendarios que bloquean horarios</legend>
+              <p className="text-xs text-muted-foreground">Solo se consultan intervalos ocupados; el contenido de los eventos no se almacena.</p>
+              <div className="grid gap-2 pt-1">
+                {calendars.map((calendar) => (
+                  <label key={calendar.id} className="flex items-center gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={readCalendarIds.includes(calendar.id)}
+                      onChange={(event) => setReadCalendarIds((current) => event.target.checked
+                        ? [...new Set([...current, calendar.id])]
+                        : current.filter((id) => id !== calendar.id))}
+                      className="h-4 w-4"
+                    />
+                    <span>{calendar.name}{calendar.primary ? " (principal)" : calendar.shared ? " (compartido)" : ""}</span>
+                    {!calendar.canWrite && <span className="text-xs text-muted-foreground">(solo disponibilidad)</span>}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           )}
 
           <label className="flex items-start gap-3 rounded-xl border border-border p-4 text-sm">

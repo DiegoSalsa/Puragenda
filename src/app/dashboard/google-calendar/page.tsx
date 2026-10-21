@@ -21,6 +21,7 @@ function connectionSummary(connection: {
   includeCustomerAttendee: boolean;
   lastSyncedAt: Date | null;
   lastSyncError: string | null;
+  readCalendars: Array<{ calendarId: string; calendarName: string | null }>;
 }) {
   return {
     ...connection,
@@ -56,6 +57,7 @@ export default async function GoogleCalendarPage({
         includeCustomerAttendee: true,
         lastSyncedAt: true,
         lastSyncError: true,
+        readCalendars: { select: { calendarId: true, calendarName: true }, orderBy: { calendarId: "asc" } },
       },
     }),
     prisma.staff.findMany({

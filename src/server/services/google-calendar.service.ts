@@ -66,6 +66,15 @@ type GoogleCalendarListEntry = {
   accessRole?: "freeBusyReader" | "reader" | "writer" | "owner";
 };
 
+export type GoogleCalendarAvailabilityOption = {
+  id: string;
+  name: string;
+  primary: boolean;
+  accessRole: "freeBusyReader" | "reader" | "writer" | "owner";
+  shared: boolean;
+  canWrite: boolean;
+};
+
 type GoogleEventResponse = {
   id?: string;
   htmlLink?: string;
@@ -359,6 +368,66 @@ export async function listGoogleCalendars(connection: GoogleCalendarConnection) 
     }));
 }
 
+/** Lists calendars that can be queried with FreeBusy, including read-only shares. */
+export async function listGoogleCalendarsForAvailability(connection: GoogleCalendarConnection): Promise<GoogleCalendarAvailabilityOption[]> {
+  const response = await googleApiRequest(
+    connection,
+    "/calendar/v3/users/me/calendarList?minAccessRole=freeBusyReader&maxResults=250",
+  );
+  const data = (await response.json()) as { items?: GoogleCalendarListEntry[] };
+  return (data.items ?? [])
+    .filter((calendar) => calendar.id && ["freeBusyReader", "reader", "writer", "owner"].includes(calendar.accessRole ?? ""))
+    .map((calendar) => {
+      const accessRole = calendar.accessRole as GoogleCalendarAvailabilityOption["accessRole"];
+      return {
+        id: calendar.id as string,
+        name: calendar.summary || calendar.id || "Calendario",
+        primary: Boolean(calendar.primary),
+        accessRole,
+        shared: Boolean(
+          calendar.dataOwner &&
+            calendar.dataOwner.trim().toLowerCase() !== connection.googleEmail.trim().toLowerCase(),
+        ),
+        canWrite: accessRole === "writer" || accessRole === "owner",
+      };
+    });
+}
+
+async function readCalendarSelections(connection: GoogleCalendarConnection) {
+  const model = (prisma as typeof prisma & {
+    googleCalendarReadSelection?: {
+      findMany: (args: unknown) => Promise<Array<{ calendarId: string; calendarName: string | null }>>;
+    };
+  }).googleCalendarReadSelection;
+  const rows = model
+    ? await model.findMany({ where: { connectionId: connection.id }, orderBy: { calendarId: "asc" }, select: { calendarId: true, calendarName: true } })
+    : [];
+  return rows.length > 0 ? rows : [{ calendarId: connection.calendarId, calendarName: connection.calendarName }];
+}
+
+export async function getGoogleCalendarReadSelections(connectionId: string) {
+  return prisma.googleCalendarReadSelection.findMany({
+    where: { connectionId },
+    orderBy: { calendarId: "asc" },
+    select: { calendarId: true, calendarName: true },
+  });
+}
+
+export async function setGoogleCalendarReadSelections(
+  connection: GoogleCalendarConnection,
+  calendars: Array<{ id: string; name: string }>,
+) {
+  await prisma.$transaction(async (tx) => {
+    await tx.googleCalendarReadSelection.deleteMany({ where: { connectionId: connection.id } });
+    if (calendars.length > 0) {
+      await tx.googleCalendarReadSelection.createMany({
+        data: calendars.map((calendar) => ({ connectionId: connection.id, calendarId: calendar.id, calendarName: calendar.name })),
+        skipDuplicates: true,
+      });
+    }
+  });
+}
+
 export async function saveGoogleCalendarConnection(input: {
   state: GoogleOAuthState;
   tokens: GoogleTokenResponse & { access_token: string };
@@ -407,7 +476,7 @@ export async function saveGoogleCalendarConnection(input: {
     calendars[0];
   if (!selected) throw new Error("No writable Google calendar was found");
 
-  return prisma.googleCalendarConnection.upsert({
+  const connection = await prisma.googleCalendarConnection.upsert({
     where: {
       businessId_scopeKey: {
         businessId: input.state.businessId,
@@ -439,6 +508,13 @@ export async function saveGoogleCalendarConnection(input: {
       lastSyncError: null,
     },
   });
+  const readModel = prisma.googleCalendarReadSelection;
+  await readModel.upsert({
+    where: { connectionId_calendarId: { connectionId: connection.id, calendarId: selected.id } },
+    create: { connectionId: connection.id, calendarId: selected.id, calendarName: selected.name },
+    update: { calendarName: selected.name },
+  });
+  return connection;
 }
 
 function googleEventId(appointmentId: string) {
@@ -725,26 +801,34 @@ export async function getGoogleCalendarBusySlots(
   staffId: string,
   timeMin: Date,
   timeMax: Date,
+  businessId?: string,
 ) {
-  const connection = await prisma.googleCalendarConnection.findFirst({
+  let connection = await prisma.googleCalendarConnection.findFirst({
     where: { staffId, scope: "STAFF", syncEnabled: true },
     orderBy: { updatedAt: "desc" },
   });
+  if (!connection && businessId) {
+    connection = await prisma.googleCalendarConnection.findFirst({
+      where: { businessId, scope: "BUSINESS", syncEnabled: true },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
   if (!connection) return [];
 
   try {
+    const selections = await readCalendarSelections(connection);
     const response = await googleApiRequest(connection, "/calendar/v3/freeBusy", {
       method: "POST",
       body: JSON.stringify({
         timeMin: timeMin.toISOString(),
         timeMax: timeMax.toISOString(),
-        items: [{ id: connection.calendarId }],
+        items: selections.map((calendar) => ({ id: calendar.calendarId })),
       }),
     });
     const data = (await response.json()) as {
       calendars?: Record<string, { busy?: Array<{ start?: string; end?: string }> }>;
     };
-    return (data.calendars?.[connection.calendarId]?.busy ?? [])
+    const ranges = selections.flatMap((calendar) => data.calendars?.[calendar.calendarId]?.busy ?? [])
       .filter((range) => range.start && range.end)
       .map((range) => ({
         startTime: new Date(range.start as string),
@@ -754,9 +838,22 @@ export async function getGoogleCalendarBusySlots(
         (range) =>
           Number.isFinite(range.startTime.getTime()) && Number.isFinite(range.endTime.getTime()),
       );
+    ranges.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    const merged: Array<{ startTime: Date; endTime: Date }> = [];
+    for (const range of ranges) {
+      const previous = merged[merged.length - 1];
+      if (previous && range.startTime <= previous.endTime) {
+        if (range.endTime > previous.endTime) previous.endTime = range.endTime;
+      } else {
+        merged.push({ ...range });
+      }
+    }
+    return merged;
   } catch (error) {
     await recordConnectionError(connection.id, error);
-    return [];
+    // A configured calendar is mandatory for availability. Failing closed
+    // prevents a provider outage from exposing every slot as free.
+    return [{ startTime: timeMin, endTime: timeMax }];
   }
 }
 
