@@ -162,6 +162,6 @@ El catálogo PURAGENDA/PURAGENDA+ y su fórmula acumulativa ya tienen una suite 
 Los cambios correctivos de integración se reservan para las fases posteriores. Esta iteración implementa únicamente el catálogo puro, sin alterar billing, checkout, UI pública, providers ni permisos efectivos.
 ## Reconciliación de Iteración 2
 
-La base de trabajo se actualizó desde el commit auditado 731582e6 hasta origin/main 34187de4. origin/main estaba 34 commits adelante y la rama promocional tenía 2 commits propios no presentes en origin/main. El nuevo HEAD incorpora payment holds/múltiples calendarios y el rollout MCP oculto ya mergeado. No se incorporaron las ramas de manual billing o MCP mediante merge adicional.
+La base de trabajo se alineó desde el commit auditado 731582e6 hasta origin/main 34187de4 mediante un reset controlado del puntero local. origin/main estaba 34 commits adelante y la rama promocional tenía 2 commits propios no presentes en origin/main, por lo que no correspondía un fast-forward. El nuevo HEAD incorpora payment holds/múltiples calendarios y el rollout MCP oculto ya mergeado. No se incorporaron las ramas de manual billing o MCP mediante merge adicional.
 
 El checkout original mantiene sus cambios no relacionados. El worktree de Puragenda Next conserva la documentación y el código de esta iteración de forma aislada.
