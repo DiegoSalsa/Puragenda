@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "db:migrate:deploy": "prisma migrate deploy",
     "seed": "npx prisma db seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "compare:commercial-catalog": "tsx scripts/compare-commercial-catalog.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
