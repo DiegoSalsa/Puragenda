@@ -29,6 +29,9 @@ export async function PATCH(request: NextRequest) {
     | { connectionId?: string; calendarId?: string; readCalendarIds?: string[]; includeCustomerAttendee?: boolean }
     | null;
   if (!body?.connectionId) return Response.json({ error: "Falta connectionId" }, { status: 400 });
+  if (body.readCalendarIds !== undefined && (!Array.isArray(body.readCalendarIds) || body.readCalendarIds.some((id) => typeof id !== "string" || id.length > 512))) {
+    return Response.json({ error: "La selección de calendarios no es válida" }, { status: 400 });
+  }
   const context = await authorizedConnection(request, body.connectionId);
   if ("error" in context) return context.error;
 
