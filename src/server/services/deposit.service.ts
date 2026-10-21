@@ -4,6 +4,7 @@ import { sendDepositConfirmedNotifications } from "@/server/email/send";
 import { createAuditLog } from "@/server/lib/audit";
 import { syncAppointmentToGoogle } from "@/server/services/google-calendar.service";
 import { commitGiftCardRedemptions, releaseGiftCardRedemptions } from "@/server/services/gift-card.service";
+import { releaseExpiredPaymentHolds } from "@/server/services/payment-hold.service";
 
 export type DepositPaymentSource = "webhook" | "return" | "simulator";
 
@@ -111,6 +112,10 @@ export async function confirmDepositPayment(input: {
   }
 
   const result = await prisma.$transaction(async (tx) => {
+    // Serialize payment confirmation with slot creation/expiry. A payment
+    // received after the server deadline is recorded as financial evidence but
+    // cannot reclaim a slot that may already have been reassigned.
+    await releaseExpiredPaymentHolds({ businessId: input.businessId, tx });
     const confirmed = await tx.appointment.updateManyAndReturn({
       where: {
         id: { in: appointmentIds },
@@ -200,6 +205,7 @@ export async function rejectDepositPayment(input: {
   if (appointmentIds.length === 0) return { rejectedIds: [] as string[] };
 
   const rejected = await prisma.$transaction(async (tx) => {
+    await releaseExpiredPaymentHolds({ businessId: input.businessId, tx });
     const rows = await tx.appointment.updateManyAndReturn({
       where: { id: { in: appointmentIds }, businessId: input.businessId, paymentStatus: "PENDING" },
       data: { paymentStatus: "REJECTED", mpPaymentId: input.paymentId },

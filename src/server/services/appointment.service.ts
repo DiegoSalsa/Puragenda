@@ -11,6 +11,7 @@ import {
   getGoogleCalendarBusySlots,
   syncAppointmentToGoogle,
 } from "@/server/services/google-calendar.service";
+import { releaseExpiredPaymentHolds } from "@/server/services/payment-hold.service";
 
 /**
  * Verifica si existe una cita que colisione con el rango de tiempo dado
@@ -35,12 +36,14 @@ export async function checkAppointmentCollision(
   hasCollision: boolean;
   conflictingAppointment?: { customerName: string; startTime: Date; endTime: Date };
 }> {
+  await releaseExpiredPaymentHolds({ businessId, tx: db });
   const subscription = await db.subscription.findUnique({ where: { businessId }, select: { plan: true } });
   const businessOnly = usesBusinessScheduleOnly(subscription?.plan);
   const conflicting = await db.appointment.findFirst({
     where: {
       businessId,
       status: { not: "CANCELLED" },
+      paymentStatus: { not: "REJECTED" },
       ...(!businessOnly && staffId
         ? { OR: [{ staffId }, { staffId: null, ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}) }] }
         : locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
@@ -61,10 +64,8 @@ export async function checkAppointmentCollision(
   }
 
   if (checkGoogle && (staffId || businessOnly)) {
-    const staffIds = businessOnly
-      ? (await db.staff.findMany({ where: { businessId, isActive: true, ...(locationId ? { locations: { some: { locationId, isActive: true } } } : {}) }, select: { id: true }, take: 100 })).map((item) => item.id)
-      : [staffId!];
-    const googleBusy = (await Promise.all(staffIds.map((id) => getGoogleCalendarBusySlots(id, startTime, endTime)))).flat();
+    const staffIds = businessOnly ? ["__business__"] : [staffId!];
+    const googleBusy = (await Promise.all(staffIds.map((id) => getGoogleCalendarBusySlots(id, startTime, endTime, businessId)))).flat();
     const ownGoogleEventRange = excludeAppointmentId
       ? await db.appointment.findUnique({
           where: { id: excludeAppointmentId },
@@ -121,6 +122,7 @@ export async function createAppointment(data: {
   depositRequired?: boolean;
   depositAmount?: number;
   depositPaymentUrl?: string | null;
+  paymentHoldExpiresAt?: Date | null;
   status?: AppointmentStatus;
   internalNotes?: string;
   allowPrioritySlots?: boolean;
@@ -234,6 +236,7 @@ export async function createAppointment(data: {
       depositAmount: data.depositRequired ? (data.depositAmount || 0) : null,
       depositPaymentUrl: data.depositRequired ? (data.depositPaymentUrl || null) : null,
       paymentStatus: data.depositRequired ? "PENDING" : "NONE",
+      paymentHoldExpiresAt: data.paymentHoldExpiresAt ?? null,
       internalNotes: data.internalNotes?.trim() || null,
       ...(bookingReviewContext.getStore() ? { reminderSent: true } : {}),
       storyCampaignId: data.storyCampaignId,
@@ -286,6 +289,7 @@ export async function getBlockedSlots(
   staffId?: string,
   locationId?: string,
 ) {
+  await releaseExpiredPaymentHolds({ businessId });
   const businessOnly = usesBusinessScheduleOnly((await prisma.subscription.findUnique({ where: { businessId }, select: { plan: true } }))?.plan);
   const effectiveStaffId = businessOnly ? undefined : staffId;
   // 1) Blocked by existing appointments
@@ -293,6 +297,7 @@ export async function getBlockedSlots(
     where: {
       businessId,
       status: { not: "CANCELLED" },
+      paymentStatus: { not: "REJECTED" },
       ...(effectiveStaffId
         ? { OR: [{ staffId: effectiveStaffId }, { staffId: null, ...(locationId ? { OR: [{ locationId }, { locationId: null }] } : {}) }] }
         : locationId ? { OR: [{ locationId }, { locationId: null }] } : {}),
@@ -319,14 +324,27 @@ export async function getBlockedSlots(
     : [];
 
   const internalStaffIds = businessOnly
-    ? (await prisma.staff.findMany({ where: { businessId, isActive: true, ...(locationId ? { locations: { some: { locationId, isActive: true } } } : {}) }, select: { id: true }, take: 100 })).map((item) => item.id)
+    ? []
     : effectiveStaffId ? [effectiveStaffId] : [];
-  const googleBusy = (await Promise.all(internalStaffIds.map((id) => getGoogleCalendarBusySlots(id, dateStart, dateEnd)))).flat();
+  const googleBusy = businessOnly
+    ? await getGoogleCalendarBusySlots("__business__", dateStart, dateEnd, businessId)
+    : (await Promise.all(internalStaffIds.map((id) => getGoogleCalendarBusySlots(id, dateStart, dateEnd, businessId)))).flat();
 
-  // Merge both lists
-  return [...appointments, ...scheduleBlocks, ...googleBusy].sort(
-    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+  // Merge every source so overlapping Google calendars and local blocks do
+  // not produce duplicate intervals in the public availability response.
+  const ranges = [...appointments, ...scheduleBlocks, ...googleBusy].sort(
+    (a, b) => a.startTime.getTime() - b.startTime.getTime(),
   );
+  const merged: Array<{ startTime: Date; endTime: Date }> = [];
+  for (const range of ranges) {
+    const previous = merged[merged.length - 1];
+    if (previous && range.startTime <= previous.endTime) {
+      if (range.endTime > previous.endTime) previous.endTime = range.endTime;
+    } else {
+      merged.push({ startTime: range.startTime, endTime: range.endTime });
+    }
+  }
+  return merged;
 }
 
 /**

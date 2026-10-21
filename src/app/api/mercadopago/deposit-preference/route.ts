@@ -9,6 +9,7 @@ import {
   localPaymentCheckoutUrl,
   localProviderId,
 } from "@/server/services/local-payment-simulator";
+import { releaseExpiredPaymentHolds } from "@/server/services/payment-hold.service";
 
 /**
  * POST /api/mercadopago/deposit-preference
@@ -37,6 +38,20 @@ export async function POST(request: NextRequest) {
 
     if (!appointment) {
       return Response.json({ error: "Cita no encontrada" }, { status: 404 });
+    }
+
+    if (appointment.paymentHoldExpiresAt && appointment.paymentHoldExpiresAt <= new Date()) {
+      await releaseExpiredPaymentHolds({ businessId: appointment.businessId });
+      return Response.json(
+        { error: "La retención de este horario venció. Selecciona otra hora disponible." },
+        { status: 409 },
+      );
+    }
+    if (appointment.paymentHoldExpiresAt && appointment.paymentStatus === "REJECTED") {
+      return Response.json(
+        { error: "Este intento de pago fue rechazado. Selecciona otra hora para crear una nueva reserva." },
+        { status: 409 },
+      );
     }
 
     // Check deposit is required (use appointment's stored deposit amount)
@@ -142,6 +157,13 @@ export async function POST(request: NextRequest) {
           pending: `${baseUrl}/api/mercadopago/deposit-return?appointmentId=${appointment.id}&status=pending`,
         },
         auto_return: "approved",
+        ...(appointment.paymentHoldExpiresAt
+          ? {
+              expires: true,
+              expiration_date_from: appointment.createdAt.toISOString(),
+              expiration_date_to: appointment.paymentHoldExpiresAt.toISOString(),
+            }
+          : {}),
         external_reference: appointment.id,
         notification_url: `${baseUrl}/api/webhooks/deposit?businessId=${appointment.business.id}`,
         statement_descriptor: "PURAGENDA",

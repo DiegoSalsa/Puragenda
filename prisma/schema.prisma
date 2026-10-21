@@ -1509,6 +1509,9 @@ model Appointment {
   depositAmount                Int? // Amount charged in the business currency
   depositPaymentUrl            String? // Snapshot of an external manual payment link
   paymentStatus                PaymentStatus        @default(NONE)
+  /// Server-issued deadline for an integrated Mercado Pago checkout hold.
+  /// Null for manual links, unpaid bookings without a deposit and other flows.
+  paymentHoldExpiresAt         DateTime?
   mpPaymentId                  String? // MercadoPago payment ID
   mpPreferenceId               String? // MercadoPago preference ID
   depositReceiptStatus         DepositReceiptStatus @default(NONE)
@@ -1555,6 +1558,7 @@ model Appointment {
   @@index([bookingDiscountCodeId])
   @@index([storyCampaignId])
   @@index([locationId, startTime, endTime])
+  @@index([businessId, status, paymentHoldExpiresAt])
   @@index([settledByUserId])
 }
 
@@ -1721,11 +1725,28 @@ model GoogleCalendarConnection {
   staff    Staff?                @relation(fields: [staffId], references: [id], onDelete: Cascade)
   user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   events   GoogleCalendarEvent[]
+  readCalendars GoogleCalendarReadSelection[]
 
   @@unique([businessId, scopeKey])
   @@index([businessId, scope, syncEnabled])
   @@index([staffId, syncEnabled])
   @@index([userId])
+}
+
+/// Calendars whose busy intervals are read for public availability.
+/// GoogleCalendarConnection.calendarId remains the single write destination.
+model GoogleCalendarReadSelection {
+  id           String   @id @default(cuid())
+  connectionId String
+  calendarId   String
+  calendarName String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  connection GoogleCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, calendarId])
+  @@index([connectionId])
 }
 
 model GoogleCalendarEvent {
