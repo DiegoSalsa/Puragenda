@@ -132,6 +132,25 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter);
     expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
   });
+  it("canonical cancellation revokes shadow access and a stale approval cannot restore it",async()=>{
+    const f=await fixture("MERCADO_PAGO");const op=await intent(f,"MERCADO_PAGO");const provider=uniqueMp();
+    await previewSandboxBillingOperation(op.id,provider.adapter);await executeSandboxBillingOperation(op.id,provider.adapter,"test@example.invalid");
+    provider.state.payment.transaction_amount=22990;provider.state.payment.date_last_updated=new Date().toISOString();
+    let raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));
+    await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter);
+    expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(true);
+    provider.state.sub.status="cancelled";
+    provider.state.sub.last_modified=new Date(Date.now()+1).toISOString();
+    const observedAt=()=>new Date(Math.max(Date.now(),new Date(provider.state.sub.last_modified).getTime()));
+    raw=mpNotification(randomUUID(),"subscription_preapproval",provider.state.sub.id);
+    expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({lifecycleUpdated:true});
+    expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({duplicate:true});
+    expect((await prisma.commercialSubscription.findUniqueOrThrow({where:{businessId:f.businessId}})).status).toBe("CANCELLED");
+    raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));
+    expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({outcome:"IGNORED"});
+    expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
+    expect(provider.state.calls).toBe(1);
+  });
   it("scheduled changes cannot execute early and do not change existing rights",async()=>{
     const f=await fixture("PADDLE",true);const provider=uniquePaddle();const effectiveAt=new Date(Date.now()+10000);
     await prisma.commercialSubscription.update({where:{businessId:f.businessId},data:{renewalAt:effectiveAt}});
