@@ -77,3 +77,9 @@ Superadmin debe ver snapshot, provider ID, último evento y excepción. El clien
 - Past due no recibe Plus ni cupos.
 - Flags permiten apagar el cutover sin borrar datos.
 - El reporte se reproduce con el mismo dataset anonimizado.
+
+## Iteración 3 — estado implementado, 22-10-2026
+
+Hay simulador de diez fixtures, backfill local idempotente y lotes reanudables con cursor. Se conservan condiciones y referencias históricas; importes desconocidos son null. La deriva posterior de Subscription/WebsiteAddon exige revisión y no reemplaza acuerdos. No existe migración automática, conversión de add-on a Plus ni cobro nuevo.
+
+Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).

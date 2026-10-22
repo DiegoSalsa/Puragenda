@@ -1,12 +1,12 @@
 # Puragenda Next — auditoría y plan maestro
 
-**Fecha de corte:** 21 de octubre de 2026 (America/Santiago)<br>
-**Estado:** auditoría documental completada; catálogo comercial V2 implementado de forma aislada<br>
+**Fecha de corte:** 22 de octubre de 2026 (America/Santiago)<br>
+**Estado:** catálogo V2 e infraestructura comercial interna implementados en sombra; billing V2 y lanzamiento pendientes<br>
 **Baseline auditado:** 731582e6098fd82d2538ab66500dfbc7147ea1c5 (reel/puragenda-publicitario-20261015)<br>
 **Rama de trabajo:** feature/puragenda-next<br>
 **Worktree:** C:\Users\diego\.codex\worktrees\puragenda-next-audit\agenda
 
-Este directorio es la fuente de referencia para las siguientes iteraciones. Describe el comportamiento comprobado en el código de la rama auditada, las decisiones comerciales recibidas, una arquitectura propuesta y las decisiones que aún requieren validación. No describe funcionalidades como implementadas.
+Este directorio es la fuente de referencia para las siguientes iteraciones. Describe el comportamiento comprobado en el código de la rama auditada, las decisiones comerciales recibidas, una arquitectura propuesta y las decisiones que aún requieren validación. Los documentos distinguen propuestas históricas, infraestructura ya comprobada y capacidades todavía pendientes; el estado de la iteración 3 se detalla en los documentos 11 y 12.
 
 ## Estado ejecutivo
 
@@ -42,6 +42,8 @@ El mayor riesgo es facturar o habilitar cupos/beneficios con una lectura vieja d
 8. [08 — Pruebas y seguridad](./08-pruebas-y-seguridad.md)
 9. [09 — Costos y rentabilidad](./09-costos-y-rentabilidad.md)
 10. [10 — Roadmap y lanzamiento](./10-roadmap-lanzamiento.md)
+11. [11 — Infraestructura comercial de iteración 3](./11-infraestructura-comercial-iteracion-3.md)
+12. [12 — Validación y entrega de iteración 3](./12-iteracion-3-validacion.md)
 
 ## Decisiones que bloquean la implementación
 
@@ -73,3 +75,7 @@ La rama de implementación se alineó de forma segura con un reset controlado de
 La base actual incluye el merge de payment holds/múltiples calendarios y el trabajo MCP ya integrado en origin/main. También conserva cambios de acuerdos manuales, límites persistentes de profesionales y reconciliación de billing. No se fusionaron ramas grandes adicionales. feature/puragenda-chatgpt-mcp, feature/payment-holds-multi-google-calendar y feat/manual-bank-transfer-billing se usaron como evidencia de divergencias, no como merges indiscriminados.
 
 En esta iteración se implementó únicamente el catálogo puro y sus pruebas. El billing, checkout, web pública, onboarding, providers, Puri operativo y permisos efectivos permanecen sin cambios.
+
+## Estado de Iteración 3
+
+Modelos expansivos, motor de cupos, ledger/reconciliación, entitlements sombra, backfill idempotente y contratos de billing están implementados y comprobados en PostgreSQL local. No hay conexión V2 a proveedores ni cambios de acceso en producción. La siguiente fase es aprobar políticas y verificar adaptadores en sandbox, junto con la estrategia de baseline de migraciones. Ver documentos 11 y 12.

@@ -224,3 +224,9 @@ La base de Git seleccionada es origin/main 34187de4. El único código nuevo de 
 - Para 2, 3 y 4 profesionales, el catálogo nuevo tiene precio válido, pero el modelo legacy no tiene una representación equivalente porque Individual solo admite un profesional y Equipo parte en cinco.
 
 La integración de billing y la sustitución de los calculadores legacy quedan para la siguiente fase.
+
+## Iteración 3 — estado implementado, 22-10-2026
+
+La infraestructura interna de la fase comercial está comprobada en PostgreSQL aislado. Billing V2 no está terminado: faltan adaptadores reales, prueba de firma/preview/conciliación con proveedores sandbox, política tributaria/prorrateo y migración voluntaria. Todos los flags efectivos permanecen cerrados. No se despliega ni se propone todavía activar permisos de clientes.
+
+Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).

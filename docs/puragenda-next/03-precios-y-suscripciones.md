@@ -83,3 +83,9 @@ Se agregó src/core/commercial-catalog.ts como motor puro, sin Prisma, providers
 El módulo valida enteros positivos seguros, ciclos mensuales, planes y versiones; rechaza decimales, negativos, infinitos, valores no numéricos y totales monetarios inseguros. La anualidad de los planes nuevos queda rechazada explícitamente como pendiente. quoteLegacyPlan solo sirve para el simulador y no sustituye las funciones que usa billing real.
 
 La función no se importa desde pricing, checkout, webhooks, entitlements ni suscripciones reales. No existe activación comercial de Puragenda+.
+
+## Iteración 3 — estado implementado, 22-10-2026
+
+El catálogo alimenta snapshots, cotizaciones de solicitudes e ítems con tramos marginales completos. Se rechaza anualidad V2; IVA sigue pendiente. Los borradores Paddle/MP siempre son no ejecutables. No se cambió ningún calculador de billing legacy ni monto externo. Evidencia local de aplicación usa importe completo; los cargos prorrateados requieren una fase posterior.
+
+Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).

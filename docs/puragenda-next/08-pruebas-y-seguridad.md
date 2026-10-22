@@ -68,3 +68,9 @@ Contact Flow conserva consentimiento por finalidad, baja inmediata y supresión 
 ## Criterios de no lanzamiento
 
 No aprobar si hay cálculos divergentes, UNKNOWN sin conciliar, duplicados, web inaccesible, cambio silencioso de precio, fuga de tenant, envío sin consentimiento, acción sensible de IA sin aprobación, costes sin métricas, falta de kill switch o provider sandbox sin validar.
+
+## Iteración 3 — estado implementado, 22-10-2026
+
+Las pruebas nuevas ejercitan Prisma y PostgreSQL 17.2 real para locks, solicitudes/Staff simultáneos, aplicación duplicada, timeout/reintento, orden de eventos, tenant, sucursales, RLS y grants. Las pruebas de autorización separan plan, rol y scope de sucursal. Los resultados exactos y las suites opt-in omitidas están en el documento 12. La cadena histórica de migraciones tiene un fallo de baseline documentado; la migración nueva se comprobó sobre el esquema legacy reconstruido.
+
+Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).

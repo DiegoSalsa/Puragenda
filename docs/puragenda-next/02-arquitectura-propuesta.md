@@ -159,3 +159,9 @@ Cada métrica debe tener correlation ID, business hash, event ID externo y reten
 - ventana y modelo de atribución;
 - retención de propuestas Puri+ y datos derivados;
 - contrato legal con Resend, OpenAI, Paddle, Mercado Pago, Cloudinary y hosting.
+
+## Iteración 3 — estado implementado, 22-10-2026
+
+Se implementaron los cinco modelos propuestos, servicios transaccionales y una proyección reconstruible de entitlements. Legacy sigue siendo autoridad para clientes actuales; V2 solo admite escrituras en base local desechable. El ledger concilia evidencia normalizada mediante una interfaz de verificación todavía sin transporte de proveedor. No hay dual-write productivo ni cutover.
+
+Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
