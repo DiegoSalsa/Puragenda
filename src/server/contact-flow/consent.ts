@@ -3,6 +3,8 @@ import type { Prisma, CfConsent } from "@prisma/client";
 import { commercialHash } from "@/server/services/commercial-internal";
 import { prisma } from "@/server/db/prisma";
 import { type GrowthScope } from "@/server/puri/growth/access";
+import { COMMERCIAL_CONSENT_TEXT } from "@/core/commercial-consent";
+export { COMMERCIAL_CONSENT_TEXT } from "@/core/commercial-consent";
 import {
   addressHash,
   contactLock,
@@ -23,9 +25,7 @@ const consentInput = z
     grantedAt: z.iso.datetime(),
   })
   .strict();
-export const COMMERCIAL_CONSENT_TEXT =
-  "Acepto recibir comunicaciones comerciales por correo de este negocio. Puedo retirar mi consentimiento mediante el enlace de baja. Esta autorización es independiente de las notificaciones necesarias de mis reservas.";
-function receiptHash(
+export function receiptHash(
   c: Pick<
     CfConsent,
     | "businessId"

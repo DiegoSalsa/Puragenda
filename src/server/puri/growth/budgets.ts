@@ -5,6 +5,7 @@ import {
   commercialInteger,
 } from "@/server/services/commercial-internal";
 import { estimatePuriCostUsd } from "../telemetry";
+import { PLUS_VERIFIED_PRICE } from "./pricing";
 import {
   assertGrowthSandbox,
   revalidateGrowthScope,
@@ -18,6 +19,7 @@ export type BudgetCategory =
   | "ANALYSIS_SQL"
   | "PROACTIVE_SQL";
 export class GrowthBudgetError extends Error {}
+const usesVerifiedPrice = (model: string) => process.env.PURI_PLUS_VERIFIED_PRICING_ENABLED === "1" && model === PLUS_VERIFIED_PRICE.model;
 export function budgetKeys(
   businessId: string,
   category: BudgetCategory,
@@ -194,7 +196,7 @@ export async function reserveGrowthUsage(input: {
 export type ModelUsage = {
   input_tokens?: number;
   output_tokens?: number;
-  input_tokens_details?: { cached_tokens?: number };
+  input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
 };
 export function knownModelMicros(
   model: string,
@@ -216,6 +218,11 @@ export function knownModelMicros(
     c > i
   )
     return null;
+  if (usesVerifiedPrice(model)) {
+    const writes = usage?.input_tokens_details?.cache_write_tokens;
+    if (writes === undefined || !Number.isSafeInteger(writes) || writes < 0 || writes + c > i || Date.now() >= Date.parse(PLUS_VERIFIED_PRICE.validUntil)) return null;
+    return Math.ceil((i - c - writes) * PLUS_VERIFIED_PRICE.input + c * PLUS_VERIFIED_PRICE.cachedInput + writes * PLUS_VERIFIED_PRICE.cacheWrite + o * PLUS_VERIFIED_PRICE.output);
+  }
   const usd = estimatePuriCostUsd({
     model,
     promptTokens: i!,
@@ -233,7 +240,7 @@ export function maximumModelMicros(
   const value = knownModelMicros(model, {
     input_tokens: requestBytes + 1024,
     output_tokens: outputTokens,
-    input_tokens_details: { cached_tokens: 0 },
+    input_tokens_details: { cached_tokens: 0, cache_write_tokens: usesVerifiedPrice(model) ? requestBytes + 1024 : 0 },
   });
   return value === null ? null : commercialInteger(Math.max(1, value), 1);
 }
@@ -281,6 +288,7 @@ export async function settleGrowthUsage(
         inputTokens: input.usage?.input_tokens,
         outputTokens: input.usage?.output_tokens,
         cachedTokens: input.usage?.input_tokens_details?.cached_tokens,
+        cacheWriteTokens: input.usage?.input_tokens_details?.cache_write_tokens,
         errorCode: input.errorCode,
         settledAt: new Date(),
       },
@@ -351,4 +359,39 @@ export async function recoverAbandonedGrowthUsage(
       errorCode: "WORKER_OUTCOME_UNKNOWN",
     });
   return { recovered: abandoned.length };
+}
+
+// A reported invoice/request cost is reconciled by an operator, never by Puri.
+// SQL and other businesses cannot use this method to release ambiguous spend.
+export async function reconcileGrowthUsage(input: {
+  reservationId: string; actorId: string; actualMicros: number; evidenceHash: string;
+}) {
+  assertGrowthSandbox();
+  commercialInteger(input.actualMicros);
+  if (!/^[a-f0-9]{64}$/.test(input.evidenceHash)) throw new GrowthBudgetError("COST_EVIDENCE_REQUIRED");
+  return prisma.$transaction(async tx => {
+    await lock(tx);
+    const actor = await tx.user.findUnique({ where: { id: input.actorId }, select: { isSuperAdmin: true, deletedAt: true } });
+    if (!actor?.isSuperAdmin || actor.deletedAt) throw new GrowthBudgetError("SUPERADMIN_REQUIRED");
+    const r = await tx.puriUsageReservation.findUniqueOrThrow({ where: { id: input.reservationId } });
+    const dedupeKey = commercialHash({ costReconciliation: r.id });
+    const previous = await tx.puriGrowthAudit.findUnique({ where: { dedupeKey } });
+    if (previous) {
+      const details = previous.details as { evidenceHash: string; actualMicros: number };
+      if (details.evidenceHash !== input.evidenceHash || details.actualMicros !== input.actualMicros) throw new GrowthBudgetError("COST_RECONCILIATION_CONFLICT");
+      return { reconciled: true, duplicate: true };
+    }
+    if (r.state !== "UNKNOWN") throw new GrowthBudgetError("UNKNOWN_USAGE_REQUIRED");
+    const committed = Math.max(r.reservedMicros, r.actualMicros ?? 0);
+    await tx.puriUsageReservation.update({ where: { id: r.id }, data: { state: "SETTLED", actualMicros: input.actualMicros, errorCode: null, settledAt: new Date() } });
+    for (const key of r.bucketKeys) {
+      const unresolved = await tx.puriUsageReservation.count({ where: { state: "UNKNOWN", bucketKeys: { has: key } } });
+      await tx.puriBudgetBucket.update({ where: { key }, data: { spentMicros: { increment: input.actualMicros - committed }, unknownCost: unresolved > 0 } });
+    }
+    await tx.puriGrowthAudit.create({ data: {
+      businessId: r.businessId, actorId: input.actorId, scopeKey: "BUDGET", event: "COST_RECONCILED", dedupeKey,
+      details: { reservationId: r.id, actualMicros: input.actualMicros, evidenceHash: input.evidenceHash },
+    } });
+    return { reconciled: true, duplicate: false };
+  });
 }

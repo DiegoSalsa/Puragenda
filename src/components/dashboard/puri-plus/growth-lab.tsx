@@ -202,7 +202,8 @@ function Evidence({ value }: { value: Record<string, unknown> }) {
     </div>
   );
 }
-export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
+export function GrowthLab({ initialData, dashboard = false }: { initialData: GrowthLabData; dashboard?: boolean }) {
+  const Container = dashboard ? "section" : "main";
   const router = useRouter();
   const [data, setData] = useState<GrowthLabData>(initialData),
     [busy, setBusy] = useState(false),
@@ -215,7 +216,7 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/internal/puri-plus", {
+      const response = await fetch(dashboard ? "/api/dashboard/puri-plus" : "/api/internal/puri-plus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -253,7 +254,7 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
       timeZone: data?.scope.timezone ?? "America/Santiago",
     }).format(new Date(s));
   return (
-    <main className="mx-auto min-h-screen max-w-6xl space-y-8 bg-[#FFFCF5] p-4 text-[#171717] sm:p-8">
+    <Container className="mx-auto min-h-screen max-w-6xl space-y-8 bg-[#FFFCF5] p-4 text-[#171717] sm:p-8">
       <header className="flex items-center gap-4 border-b-2 border-black pb-6">
         <PuriMascot
           variant={busy ? "thinking" : "greeting"}
@@ -261,7 +262,7 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
         />
         <div>
           <p className="text-xs font-black uppercase tracking-widest">
-            Puragenda+ · prueba interna
+            {dashboard ? "Puri+ · Inteligencia comercial" : "Puragenda+ · prueba interna"}
           </p>
           <h1 className="text-3xl font-black">
             Tu agenda se organiza.
@@ -295,7 +296,7 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
             disabled={busy}
             onChange={(e) =>
               router.push(
-                `/internal/puri-plus?location=${encodeURIComponent(e.target.value)}`,
+                `${dashboard ? "/dashboard/puri-plus" : "/internal/puri-plus"}?location=${encodeURIComponent(e.target.value)}`,
               )
             }
           >
@@ -553,6 +554,7 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
       {data.contactFlowEnabled && (
         <ContactFlowLab
           initialSnapshot={data.contactFlowSnapshot}
+          dashboard={dashboard}
           recommendations={data.recommendations}
           locationSlug={data.selectedLocationSlug}
           owner={data.contactFlowOwner === true}
@@ -604,6 +606,6 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
           )}
         </div>
       </section>
-    </main>
+    </Container>
   );
 }

@@ -47,6 +47,7 @@ export function createGrowthExtension(
   const requestId = randomUUID();
   const allowPrepare = scope.canPrepare && options.allowPrepare === true;
   let round = 0;
+  let operationMicros = 0;
   return {
     tier: allowPrepare ? "PURI_PLUS_PREPARE" : "PURI_PLUS",
     tools: growthToolDefinitions(scope, allowPrepare),
@@ -68,6 +69,9 @@ export function createGrowthExtension(
       if (bytes > 64000) throw new Error("MODEL_INPUT_LIMIT");
       const micros = maximumModelMicros(PURI_MODEL, bytes);
       if (micros === null) throw new Error("MODEL_PRICE_UNKNOWN");
+      const operationLimit = Number(process.env.PURI_PLUS_MAX_OPERATION_MICROS ?? 20000);
+      if (!Number.isSafeInteger(operationLimit) || operationLimit < 1 || operationLimit > 100000 || operationMicros + micros > operationLimit)
+        throw new GrowthBudgetError("OPERATION_BUDGET_EXHAUSTED");
       const client = options.transport ? null : getPuriOpenAI();
       const reserved = await reserveGrowthUsage({
         businessId: scope.businessId,
@@ -77,24 +81,26 @@ export function createGrowthExtension(
         micros,
       });
       if (reserved.duplicate) throw new Error("MODEL_ALREADY_ATTEMPTED");
+      operationMicros += micros;
       options.reservationIds?.push(reserved.reservation.id);
       try {
         // Same singleton and Responses API as standard Puri; no automatic retry after an ambiguous charge.
         const response = options.transport
-          ? await options.transport(params)
-          : await client!.responses.create(params, {
+          ? await options.transport({ ...params, service_tier: "default" })
+          : await client!.responses.create({ ...params, service_tier: "default" }, {
               maxRetries: 0,
               timeout: 20000,
             });
-        const cost = knownModelMicros(
+        const cost = response.service_tier === "default" || (options.transport && response.service_tier === undefined) ? knownModelMicros(
           response.model ?? PURI_MODEL,
           response.usage,
-        );
+        ) : null;
         await settleGrowthUsage(reserved.reservation.id, {
           actualMicros: cost,
           model: response.model ?? PURI_MODEL,
           usage: response.usage,
         });
+        if (cost !== null) operationMicros += cost - micros;
         return response;
       } catch (error) {
         await settleGrowthUsage(reserved.reservation.id, {

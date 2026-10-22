@@ -13,10 +13,12 @@ import {
   AUTH_COOKIE_NAME,
 } from "../src/server/auth/session";
 import { ANALYTICS_POLICY_VERSION } from "../src/lib/analytics/policy";
+import { CHANGELOG_DATA } from "../src/config/changelog";
 import { configureContactPolicy } from "../src/server/contact-flow/quotas";
 import { recordConsent } from "../src/server/contact-flow/consent";
 import { digest } from "../src/server/contact-flow/policy";
 import { syntheticContactPolicy } from "../tests/fixtures/contact-flow";
+import { createClientPortalAccountSession, CLIENT_PORTAL_COOKIE_NAME } from "../src/server/services/client-portal.service";
 
 async function main() {
   const require = createRequire(
@@ -67,6 +69,7 @@ async function main() {
   child.stderr.pipe(log);
   const origin = "http://127.0.0.1:3119";
   let browser;
+  let portalAccountId: string | undefined;
   try {
     const deadline = Date.now() + 90000;
     while (true) {
@@ -102,6 +105,7 @@ async function main() {
           : route.abort(),
     );
     await context.addCookies([
+      { name: "puragenda_changelog_seen", value: CHANGELOG_DATA[0].version, url: origin },
       {
         name: AUTH_COOKIE_NAME,
         value: createSessionToken({
@@ -351,6 +355,48 @@ async function main() {
           ).length,
       );
     assert.equal(unlabeled, 0);
+    // The commercial workspace is now part of the existing dashboard shell.
+    await page.setViewportSize({ width: 1440, height: 1050 });
+    await page.goto(origin + "/dashboard/puri-plus", { waitUntil: "networkidle" });
+    await page.getByRole("heading", { name: "Puri+ y Contact Flow", exact: true }).waitFor();
+    await page.getByText("$22.990 CLP · IVA incluido", { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    await page.screenshot({ path: "scratch/puri-plus-qa/dashboard-desktop.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+    await page.screenshot({ path: "scratch/puri-plus-qa/dashboard-mobile.png", fullPage: true });
+    await page.getByRole("link", { name: "Configuración y límites", exact: true }).click();
+    await page.getByRole("heading", { name: "Configuración comercial", exact: true }).waitFor();
+    await page.getByText("Envíos productivos: desactivados.", { exact: false }).waitFor();
+    const bookingPage = await context.newPage();
+    bookingPage.on("pageerror", (e: Error) => errors.push(e.message));
+    const widgetDate = f.day(-11).toISOString().slice(0, 10);
+    await bookingPage.goto(`${origin}/widget/${business.slug}?service=${f.service.id}&location=${f.location.slug}&date=${widgetDate}`, { waitUntil: "networkidle" });
+    await bookingPage.getByRole("button", { name: /^\d{2}:\d{2}$/ }).filter({ visible: true }).first().click();
+    await bookingPage.getByRole("button", { name: "Continuar con mis datos", exact: true }).click();
+    const optin = bookingPage.getByRole("checkbox", { name: /Acepto recibir comunicaciones comerciales/ });
+    assert.equal(await optin.isChecked(), false);
+    const portalEmail = `browser-consent-${f.businessId}@example.invalid`;
+    await bookingPage.getByPlaceholder("Alex Morgan", { exact: true }).fill("Synthetic consenting customer");
+    await bookingPage.locator('input[type="email"]').fill(portalEmail);
+    await bookingPage.locator('input[type="tel"]').fill("+56911111111");
+    const submit = bookingPage.getByRole("button", { name: "Confirmar reserva", exact: true });
+    assert.equal(await submit.isEnabled(), true); // Optional means unchecked can book.
+    await optin.check();
+    const created = bookingPage.waitForResponse((r: { url: () => string }) => r.url().endsWith(`/api/business/${business.slug}/book`));
+    await submit.click(); const bookingResponse = await created; assert.equal(bookingResponse.status(), 201, await bookingResponse.text());
+    const client = await prisma.client.findUniqueOrThrow({ where: { businessId_email: { businessId: f.businessId, email: portalEmail } } });
+    assert.equal((await prisma.cfConsent.findFirstOrThrow({ where: { businessId: f.businessId, clientId: client.id } })).state, "PENDING_VERIFICATION");
+    const portalAccount = await prisma.clientPortalAccount.create({ data: { name: "Synthetic verified account", email: portalEmail, passwordHash: "synthetic-no-login", emailVerifiedAt: new Date() } });
+    portalAccountId = portalAccount.id;
+    await context.addCookies([{ name: CLIENT_PORTAL_COOKIE_NAME, value: await createClientPortalAccountSession(portalEmail), url: origin }]);
+    await bookingPage.goto(origin + "/mi-agenda", { waitUntil: "domcontentloaded" });
+    await bookingPage.getByRole("button", { name: "Acepto recibir correos", exact: true }).click();
+    await bookingPage.getByText("Consentimiento registrado", { exact: true }).waitFor();
+    await bookingPage.getByRole("button", { name: "Retirar consentimiento", exact: true }).click();
+    await bookingPage.getByText("Baja o supresión vigente", { exact: true }).waitFor();
+    assert.equal(await prisma.cfSuppression.count({ where: { businessId: f.businessId, clientId: client.id } }), 1);
+    await bookingPage.screenshot({ path: "scratch/puri-plus-qa/portal-consent-mobile.png", fullPage: true });
     const standardContext = await browser.newContext();
     await standardContext.addCookies([
       {
@@ -409,6 +455,12 @@ async function main() {
         "BUTTON_ACCESSIBLE_NAMES",
         "DETERMINISTIC_CHAT_FALLBACK",
         "ZERO_PAGE_ERRORS",
+        "DASHBOARD_DESKTOP_AND_MOBILE",
+        "VAT_INCLUDED_PLAN_OFFER",
+        "OWNER_CONFIGURATION_AND_USAGE",
+        "REAL_WIDGET_OPTIONAL_UNCHECKED_CONSENT",
+        "BROWSER_BOOKING_PENDING_EMAIL_VERIFICATION",
+        "VERIFIED_PORTAL_OPTIN_AND_REVOCATION",
       ],
     };
     writeFileSync(
@@ -431,6 +483,7 @@ async function main() {
     });
     await deleteGrowthFixture(f);
     await deleteGrowthFixture(standard);
+    if (portalAccountId) await prisma.clientPortalAccount.delete({ where: { id: portalAccountId } });
     await prisma.$disconnect();
   }
 }

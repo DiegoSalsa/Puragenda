@@ -19,7 +19,8 @@ const run=(args)=>spawnSync(process.execPath,["node_modules/vitest/vitest.mjs","
 // Files share platform budget/policy rows. Serialize suites so one fixture's
 // temporary global limit cannot affect another suite. Worker races inside each
 // test still execute concurrently against real PostgreSQL.
-const postgresStatus=run([...(process.argv.includes("--contact-flow")?[postgresFiles[4]]:postgresFiles),"--no-file-parallelism"]);
+postgresFiles.push("tests/integration/commercial-launch-postgres.integration.test.ts");
+const postgresStatus=run([...(process.argv.includes("--contact-flow")?[postgresFiles[4]]:process.argv.includes("--launch")?[postgresFiles[5]]:postgresFiles),"--no-file-parallelism"]);
 if(postgresStatus!==0)process.exit(postgresStatus);
 if(process.argv.includes("--all"))process.exit(run(postgresFiles.flatMap(file=>["--exclude",file])));
 process.exit(0);

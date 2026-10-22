@@ -3417,6 +3417,7 @@ model PuriUsageReservation {
   inputTokens      Int?
   outputTokens     Int?
   cachedTokens     Int?
+  cacheWriteTokens Int?
   model            String?
   state            String @default("RESERVED")
   errorCode        String?
@@ -3444,4 +3445,18 @@ model PuriGrowthAudit {
   @@index([businessId, event, createdAt])
   @@index([recommendationId, businessId, scopeKey])
   @@index([createdAt])
+}
+
+// Global scheduler lease/cursor. Contains counts and error codes, never payloads.
+model CommercialWorkerState {
+  key           String   @id
+  leaseOwner    String?
+  leaseUntil    DateTime?
+  fence         Int      @default(0)
+  cursor        String   @default("")
+  lastStartedAt DateTime?
+  lastSuccessAt DateTime?
+  lastError     String?
+  summary       Json?
+  updatedAt     DateTime @updatedAt
 }

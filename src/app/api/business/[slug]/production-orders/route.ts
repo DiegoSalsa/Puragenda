@@ -1,3 +1,5 @@
+import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
+import { getClientPortalAccountFromRequest } from "@/server/services/client-portal.service";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
@@ -125,6 +127,7 @@ export async function POST(
       );
     }
 
+    const consentAccount = data.commercialConsent?.accepted && publicConsentEnabled() ? await getClientPortalAccountFromRequest(request) : null;
     const order = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${service.id}:${selectedWindow.key}`}))`;
 
@@ -157,6 +160,9 @@ export async function POST(
         },
       });
 
+      if (data.commercialConsent?.accepted && publicConsentEnabled()) {
+        await recordPublicConsent({ businessId: business.id, clientId: client.id, ...data.commercialConsent, verifiedAccount: consentAccount, tx });
+      }
       return tx.productionOrder.create({
         data: {
           orderNumber,

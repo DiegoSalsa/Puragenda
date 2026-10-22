@@ -24,6 +24,7 @@ export async function contactResults(scope: GrowthScope, campaignId: string) {
     accepted,
     confirmed,
     enrollments,
+    providers,
   ] = await Promise.all([
     prisma.cfMessage.groupBy({ by: ["state"], where, _count: true }),
     prisma.cfAttempt.count({ where: { message: where } }),
@@ -70,11 +71,13 @@ export async function contactResults(scope: GrowthScope, campaignId: string) {
       },
       _count: true,
     }),
+    prisma.cfMessage.groupBy({ by: ["provider"], where, _count: true }),
   ]);
   const financial = bookings[0];
   return {
     campaignId: c.id,
-    mode: "SIMULATED_ONLY",
+    mode: providers.some(p => p.provider === "RESEND") ? "CONTROLLED_RESEND_TEST" : "SIMULATED_ONLY",
+    providers: Object.fromEntries(providers.map(p => [p.provider, p._count])),
     states: Object.fromEntries(states.map((s) => [s.state, s._count])),
     attempts: attempted,
     accepted,

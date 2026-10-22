@@ -1,4 +1,6 @@
 "use client";
+import { CommercialConsentChoice } from "@/components/commercial-consent-choice";
+import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
@@ -123,6 +125,7 @@ interface Props {
   initialDate?: string;
   storyCampaignToken?: string;
   contactFlowToken?: string;
+  commercialConsentEnabled?: boolean;
   previewMode?: boolean;
   useBusinessScheduleOnly?: boolean;
   availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
@@ -242,7 +245,7 @@ function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: D
 /** Returns the shared accessible foreground for the business color. */
 const getContrastColor = getWidgetContrastColor;
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, contactFlowToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, contactFlowToken, commercialConsentEnabled = false, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -903,6 +906,8 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
     }
   }
 
+  const [commercialConsent, setCommercialConsent] = useState(false);
+
   async function handleConfirm(e: React.FormEvent) {
     e.preventDefault();
     setTouched({ name: true, email: true, phone: true, address: requiresHomeAddress });
@@ -949,6 +954,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
           storyCampaignToken,
           contactFlowToken,
+          commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
           giftCardId: selectedGiftCardId || undefined,
         }),
       });
@@ -1135,6 +1141,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           healthAnswers: Object.keys(healthAnswers).length > 0 ? healthAnswers : undefined,
           healthExtra: healthExtra || undefined,
           healthAccepted: healthTerms,
+          commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
         }),
       });
       const data = await res.json();
@@ -1594,6 +1601,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
               textColor={textColor}
               textSecondary={textSecondary}
               previewMode={previewMode}
+              commercialConsentEnabled={commercialConsentEnabled}
               onBack={() => {
                 setSelectedOptionByCategory({});
                 setSelectedService(null);
@@ -1984,6 +1992,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 )}
               </div>
 
+              {commercialConsentEnabled && <CommercialConsentChoice checked={commercialConsent} onChange={setCommercialConsent} />}
               {recurringError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{recurringError}</div>}
 
               <button type="button"
@@ -2387,6 +2396,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                     {selectedGiftCard && giftCardPreviewAmount > 0 && <div className="space-y-1 text-xs font-semibold" style={{ color: textSecondary }}><p className="flex justify-between"><span>Pagado con Gift Card</span><strong style={{ color: textColor }}>−{formatPrice(giftCardPreviewAmount, business.currencyCode)}</strong></p><p className="flex justify-between"><span>Pendiente</span><strong style={{ color: textColor }}>{formatPrice(remainingAfterGiftCard, business.currencyCode)}</strong></p></div>}
                   </div>
                 )}
+                {commercialConsentEnabled && <CommercialConsentChoice checked={commercialConsent} onChange={setCommercialConsent} />}
                 {/* Deposit notice */}
                 {showDeposit && !previewMode && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>

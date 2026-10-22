@@ -66,6 +66,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard/loyalty", label: "loyalty", icon: Stamp },
   { href: "/dashboard/gift-cards", label: "giftCards", icon: Gift },
   { href: "/dashboard/marketing", label: "marketing", icon: Mail },
+  { href: "/dashboard/puri-plus", label: "puriPlus", icon: BarChart3 },
   { href: "/dashboard/discounts", label: "discounts", icon: Percent },
   { href: "/dashboard/stories", label: "stories", icon: ImagePlus },
   {
@@ -105,6 +106,7 @@ const navSectionDefinitions = [
       "loyalty",
       "giftCards",
       "marketing",
+      "puriPlus",
       "discounts",
       "stories",
       "referrals",
@@ -195,6 +197,7 @@ function SidebarContent({
   userRole,
   permissions,
   productionOrdersEnabled,
+  puriPlusEnabled,
   collapsed,
   onClose,
   onToggleCollapsed,
@@ -204,6 +207,7 @@ function SidebarContent({
   userRole?: string;
   permissions?: string[];
   productionOrdersEnabled?: boolean;
+  puriPlusEnabled?: boolean;
   collapsed: boolean;
   onClose?: () => void;
   onToggleCollapsed?: () => void;
@@ -227,6 +231,7 @@ function SidebarContent({
           "href" in item && item.href
             ? item.href
             : (item.children?.[0]?.href ?? "");
+        if (href === "/dashboard/puri-plus" && !puriPlusEnabled) return false;
         if (href === "/dashboard/orders" && !productionOrdersEnabled)
           return false;
         if (permissions) {
@@ -255,6 +260,7 @@ function SidebarContent({
             "/dashboard/recurring": [DASHBOARD_PERMISSIONS.RECURRING_MANAGE],
             "/dashboard/loyalty": [DASHBOARD_PERMISSIONS.LOYALTY_MANAGE],
             "/dashboard/gift-cards": [DASHBOARD_PERMISSIONS.GIFT_CARDS_MANAGE],
+            "/dashboard/puri-plus": [DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_ALL, DASHBOARD_PERMISSIONS.APPOINTMENTS_VIEW_OWN],
             "/dashboard/marketing": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
             "/dashboard/discounts": [DASHBOARD_PERMISSIONS.MARKETING_MANAGE],
             "/dashboard/stories": [
@@ -289,7 +295,7 @@ function SidebarContent({
           return false;
         return true;
       }),
-    [permissions, productionOrdersEnabled, userRole],
+    [permissions, productionOrdersEnabled, puriPlusEnabled, userRole],
   );
 
   const visibleSections = useMemo(
@@ -341,12 +347,12 @@ function SidebarContent({
           <button
             onClick={() => setAppearanceOpen((open) => !open)}
             className={itemClass(isGroupActive)}
-            title={collapsed ? t(item.label) : undefined}
+            title={collapsed ? (item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label)) : undefined}
             aria-expanded={isOpen}
           >
             <item.icon className="h-4 w-4 shrink-0" />
             <NavLabel collapsed={collapsed}>
-              <span className="flex-1 text-left">{t(item.label)}</span>
+              <span className="flex-1 text-left">{(item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label))}</span>
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
               />
@@ -390,10 +396,10 @@ function SidebarContent({
         href={item.href}
         onClick={onClose}
         className={itemClass(active)}
-        title={collapsed ? t(item.label) : undefined}
+        title={collapsed ? (item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label)) : undefined}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        <NavLabel collapsed={collapsed}>{t(item.label)}</NavLabel>
+        <NavLabel collapsed={collapsed}>{(item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label))}</NavLabel>
       </Link>
     );
   };
@@ -542,12 +548,14 @@ export function DashboardSidebar({
   widgetSlug,
   userRole,
   productionOrdersEnabled,
+  puriPlusEnabled,
   permissions,
 }: {
   userName: string;
   widgetSlug?: string;
   userRole?: string;
   productionOrdersEnabled?: boolean;
+  puriPlusEnabled?: boolean;
   permissions?: string[];
 }) {
   const t = useTranslations("navigation");
@@ -668,6 +676,7 @@ export function DashboardSidebar({
               userRole={userRole}
               permissions={permissions}
               productionOrdersEnabled={productionOrdersEnabled}
+          puriPlusEnabled={puriPlusEnabled}
               collapsed={false}
               onClose={() => setMobileOpen(false)}
             />
@@ -687,6 +696,7 @@ export function DashboardSidebar({
           userRole={userRole}
           permissions={permissions}
           productionOrdersEnabled={productionOrdersEnabled}
+          puriPlusEnabled={puriPlusEnabled}
           collapsed={sidebarState.collapsed}
           onToggleCollapsed={toggleCollapsed}
         />

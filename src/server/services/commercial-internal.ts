@@ -6,11 +6,15 @@ export async function assertNoOpenCommercialMigration(tx: Prisma.TransactionClie
   if (await tx.commercialMigrationProposal.findFirst({ where: { businessId, status: { in: ACTIVE_COMMERCIAL_MIGRATION_STATES } }, select: { id: true } })) throw new Error("COMMERCIAL_MIGRATION_OPEN");
 }
 
-// This iteration deliberately has no production write switch. All writers
-// require the dedicated disposable database; normal booking never imports this.
+// Production has no write switch. Preview needs explicit staging opt-in AND an
+// exact connection fingerprint so copying ordinary app flags cannot open it.
 export function assertCommercialSandbox() {
   if (typeof window !== "undefined") throw new Error("SERVER_ONLY");
   const url = new URL(process.env.DATABASE_URL || "postgres://invalid/invalid");
+  const preview = process.env.VERCEL_ENV === "preview" && process.env.COMMERCIAL_V2_PREVIEW_ENABLED === "1" &&
+    /^[a-f0-9]{64}$/.test(process.env.COMMERCIAL_V2_PREVIEW_DATABASE_SHA256 ?? "") &&
+    createHash("sha256").update(url.href).digest("hex") === process.env.COMMERCIAL_V2_PREVIEW_DATABASE_SHA256;
+  if (preview && process.env.COMMERCIAL_V2_INTERNAL_WRITES === "1") return;
   if (process.env.NODE_ENV === "production" || process.env.COMMERCIAL_V2_INTERNAL_WRITES !== "1" ||
       !["127.0.0.1", "localhost"].includes(url.hostname) ||
       !/^\/puragenda_commercial_test(?:_[a-z0-9]+)?$/.test(url.pathname)) throw new Error("COMMERCIAL_WRITES_DISABLED");

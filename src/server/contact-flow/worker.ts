@@ -10,14 +10,14 @@ import {
   backoff,
   contactLock,
   requireContactScope,
-  syntheticAddress,
 } from "./policy";
+import { contactAddressAllowed, resendTestConfiguration } from "./resend-test";
 import { consentEligibility } from "./consent";
 import { reserveContactQuota, settleContactQuota } from "./quotas";
 import { enrollmentToken } from "./tokens";
 import { settleInterruptedDelivery } from "./interruption";
 import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
-import { SimulatedContactProvider, type DeliveryResult } from "./providers";
+import { SimulatedContactProvider, ResendContactProvider, type DeliveryResult } from "./providers";
 
 const includeJob = {
   message: {
@@ -134,6 +134,7 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
     !sub.periodStart ||
     sub.periodStart > now ||
     !sub.periodEnd ||
+    sub.periodEnd <= now ||
     sub.lastPaymentStatus !== "CONFIRMED" ||
     !sub.lastPaymentAt ||
     sub.lastPaymentAt > now ||
@@ -179,7 +180,7 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
     return "CATALOG_CHANGED";
   if (business.address !== v.businessAddress) return "CATALOG_CHANGED";
   if (
-    !syntheticAddress(e.client.email) ||
+    !contactAddressAllowed(m.businessId, e.client.email) ||
     addressHash(m.businessId, e.client.email) !== e.addressHash
   )
     return "ADDRESS_CHANGED";
@@ -476,19 +477,22 @@ export async function dispatchContactClaim(
         const base =
           process.env.CONTACT_FLOW_PUBLIC_ORIGIN ?? "http://127.0.0.1:3119";
         const origin = new URL(base);
-        if (
-          !["127.0.0.1", "localhost"].includes(origin.hostname) ||
-          origin.protocol !== "http:"
+        if (j.message.provider === "RESEND") {
+          if (origin.origin !== resendTestConfiguration().origin) throw new Error("CONTROLLED_HTTPS_ORIGIN_REQUIRED");
+        } else if (
+          !["127.0.0.1", "localhost"].includes(origin.hostname) || origin.protocol !== "http:"
         )
           throw new Error("LAB_ORIGIN_REQUIRED");
         const payload = {
           to: j.message.enrollment.client.email,
           from: v.senderEmail,
+          senderName: v.businessName,
           subject: v.subject,
           text: `${v.body}\nSolicitudes de baja: ${policy.senderEmail}`,
           unsubscribeUrl: `${origin.origin}/contact-flow/unsubscribe?token=${encodeURIComponent(unsub)}`,
           bookingUrl: `${origin.origin}/contact-flow/r?token=${encodeURIComponent(booking)}`,
         };
+        if (j.message.provider === "RESEND") return { payload, message: j.message };
         return {
           result: await new SimulatedContactProvider().send(
             tx,
@@ -503,7 +507,11 @@ export async function dispatchContactClaim(
     );
     if ("blocked" in delivery)
       return { state: "BLOCKED", code: delivery.blocked };
-    result = delivery.result;
+    // The external request runs after the short authorization transaction. A
+    // cancellation during an in-flight request preserves its ambiguous outcome.
+    result = "payload" in delivery && delivery.payload && delivery.message
+      ? await new ResendContactProvider().send(prisma, delivery.message, delivery.payload, number, AbortSignal.timeout(5000))
+      : delivery.result;
   } catch {
     result = {
       outcome: "UNKNOWN",
@@ -577,16 +585,18 @@ export async function dispatchContactClaim(
         where: { id: c.id, status: "RUNNING" },
         data: { status: "COMPLETED" },
       });
-    return { state, simulated: true, code: result.code };
+    return { state, simulated: m.provider === "SIMULATED", code: result.code };
   });
 }
 export async function runContactWorker(
-  options: { businessId?: string; limit?: number; now?: Date } = {},
+  options: { businessId?: string; limit?: number; now?: Date; maxDurationMs?: number } = {},
 ) {
   assertContactLab();
   const limit = Math.min(20, Math.max(1, options.limit ?? 5)),
     results = [];
+  const deadline = performance.now() + Math.max(100, Math.min(25000, options.maxDurationMs ?? 25000));
   for (let i = 0; i < limit; i++) {
+    if (performance.now() >= deadline || process.env.COMMERCIAL_WORKER_KILLED === "1") break;
     const claim = await claimContactJob(
       randomUUID(),
       options.now,
@@ -598,7 +608,29 @@ export async function runContactWorker(
   return {
     processed: results.length,
     results,
-    simulated: true,
+    simulated: results.every(r => !("simulated" in r) || r.simulated !== false),
     externalBlocked: true,
   };
+}
+
+export async function expireContactJobs(limit = 10, now = new Date()) {
+  assertContactLab();
+  return prisma.$transaction(async tx => {
+    await contactLock(tx);
+    const jobs = await tx.cfOutbox.findMany({ where: {
+      state: { in: ["PENDING", "LEASED", "SENDING"] }, message: { expiresAt: { lte: now } },
+      OR: [{ leaseUntil: null }, { leaseUntil: { lt: now } }],
+    }, orderBy: { id: "asc" }, take: Math.max(1, Math.min(25, limit)) });
+    for (const j of jobs) {
+      const past = await settleInterruptedDelivery(tx, j.messageId, now);
+      if (!past) {
+        await tx.cfMessage.update({ where: { id: j.messageId }, data: { state: "EXPIRED" } });
+        await settleContactQuota(tx, j.messageId, "RELEASED", now);
+      }
+      await tx.cfOutbox.update({ where: { id: j.id }, data: {
+        state: past === "UNKNOWN" ? "UNKNOWN" : "DONE", leaseUntil: null, lastError: "MESSAGE_EXPIRED",
+      } });
+    }
+    return { expired: jobs.length };
+  });
 }

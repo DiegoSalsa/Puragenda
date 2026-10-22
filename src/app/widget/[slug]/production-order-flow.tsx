@@ -1,4 +1,6 @@
 "use client";
+import { CommercialConsentChoice } from "@/components/commercial-consent-choice";
+import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
@@ -37,6 +39,7 @@ interface Props {
   textSecondary: string;
   onBack: () => void;
   previewMode?: boolean;
+  commercialConsentEnabled?: boolean;
 }
 
 type OrderResult = {
@@ -57,8 +60,10 @@ export function ProductionOrderFlow({
   textSecondary,
   onBack,
   previewMode = false,
+  commercialConsentEnabled = false,
 }: Props) {
   const legacy = useTranslations("legacy");
+  const [commercialConsent, setCommercialConsent] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [windows, setWindows] = useState<ProductionWindow[]>([]);
   const [loadingWeeks, setLoadingWeeks] = useState(true);
@@ -174,6 +179,7 @@ export function ProductionOrderFlow({
           productionWindowKey: selectedWindow.key,
           customerName: form.name,
           customerEmail: form.email,
+          commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
           customerPhone: form.phone,
           petName: form.petName,
           petDetails: form.petDetails,
@@ -354,6 +360,7 @@ export function ProductionOrderFlow({
 
       {error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">{error}</div>}
 
+      {commercialConsentEnabled && <CommercialConsentChoice checked={commercialConsent} onChange={setCommercialConsent} />}
       <button type="submit" disabled={submitting || uploading || loadingWeeks}
         className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all disabled:opacity-40"
         style={{ background: primaryColor, color: "#fff" }}>

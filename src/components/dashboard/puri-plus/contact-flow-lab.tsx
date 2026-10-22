@@ -24,6 +24,7 @@ type Campaign = {
     objective: string;
     subject: string;
     senderEmail: string;
+    timezone?: string;
     body: string;
     serviceName: string;
     servicePrice: number;
@@ -35,6 +36,7 @@ type Campaign = {
   };
 };
 export type ContactFlowSnapshot = {
+  mode?: "SIMULATED_ONLY" | "CONTROLLED_RESEND_TEST";
   campaigns: Campaign[];
   policy: {
     killed: boolean;
@@ -87,16 +89,22 @@ function localDate(date: Date) {
     .toISOString()
     .slice(0, 16);
 }
+function displayDate(value: string, timezone = "America/Santiago") {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(value));
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? "";
+  return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}`;
+}
 export function ContactFlowLab({
   recommendations,
   locationSlug,
   owner,
-  initialSnapshot,
+  initialSnapshot, dashboard = false,
 }: {
   recommendations: Recommendation[];
   locationSlug?: string;
   owner: boolean;
   initialSnapshot?: ContactFlowSnapshot;
+  dashboard?: boolean;
 }) {
   const [data, setData] = useState<ContactFlowSnapshot | null>(
       initialSnapshot ?? null,
@@ -118,7 +126,7 @@ export function ContactFlowLab({
       setError("");
       setNotice("");
       try {
-        const response = await fetch("/api/internal/contact-flow", {
+        const response = await fetch(dashboard ? "/api/dashboard/contact-flow" : "/api/internal/contact-flow", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action, locationSlug, ...extra }),
@@ -130,7 +138,7 @@ export function ContactFlowLab({
         if (action === "RESULTS") setResults(body.result);
         if (action !== "LOAD")
           setNotice(
-            "Operación registrada en el laboratorio. Los mensajes son simulados.",
+            body.mode === "CONTROLLED_RESEND_TEST" ? "Operación registrada en la prueba controlada de Resend. Sólo se admiten los destinatarios técnicos autorizados." : "Operación registrada en el laboratorio. Los mensajes son simulados.",
           );
         setChecked(null);
       } catch (e) {
@@ -139,7 +147,7 @@ export function ContactFlowLab({
         setBusy(false);
       }
     },
-    [locationSlug],
+    [locationSlug, dashboard],
   );
   const approved = recommendations.filter((r) => r.status === "APPROVED"),
     selected = approved.find((r) => r.id === (recId || approved[0]?.id));
@@ -155,7 +163,7 @@ export function ContactFlowLab({
     if (
       window.confirm(
         action === "RUN"
-          ? "¿Ejecutar hasta cinco trabajos con el proveedor simulado? No se enviarán correos reales."
+          ? data?.mode === "CONTROLLED_RESEND_TEST" ? "¿Ejecutar hasta cinco trabajos de prueba? Resend puede enviar correos reales a los destinatarios técnicos autorizados." : "¿Ejecutar hasta cinco trabajos con el proveedor simulado? No se enviarán correos reales."
           : "¿Confirmar esta acción de Contact Flow?",
       )
     )
@@ -179,7 +187,7 @@ export function ContactFlowLab({
         </button>
       </div>
       <p className="text-sm font-bold">
-        Laboratorio sintético · ejecución externa bloqueada por servidor
+        {data?.mode === "CONTROLLED_RESEND_TEST" ? "Prueba controlada de Resend · destinatarios técnicos autorizados · producción desactivada" : "Laboratorio sintético · ejecución externa bloqueada por servidor"}
       </p>
       <p className="text-sm">
         Aprobar una propuesta de Puri+ y autorizar su campaña son decisiones
@@ -371,8 +379,8 @@ export function ContactFlowLab({
                 {c.version.dailyLimit} al día.
               </p>
               <p className="text-sm">
-                Ventana: {new Date(c.version.startsAt).toLocaleString("es-CL")}{" "}
-                a {new Date(c.version.expiresAt).toLocaleString("es-CL")}.
+                Ventana: {displayDate(c.version.startsAt, c.version.timezone)}{" "}
+                a {displayDate(c.version.expiresAt, c.version.timezone)}.
               </p>
               {!!Object.keys(c.exclusions).length && (
                 <ul className="list-inside list-disc text-sm">
@@ -421,7 +429,7 @@ export function ContactFlowLab({
                 <div className="space-y-3">
                   <label className="flex items-start gap-2 text-sm">
                     <input
-                      aria-label="Autorizo ejecución simulada"
+                      aria-label={data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizo ejecución de prueba con Resend" : "Autorizo ejecución simulada"}
                       type="checkbox"
                       className="mt-1"
                       checked={checked === c.version.contentHash}
@@ -432,7 +440,7 @@ export function ContactFlowLab({
                       }
                     />
                     Revisé el correo, las exclusiones y los límites. Autorizo
-                    expresamente esta versión para ejecución simulada.
+                    expresamente esta versión para {data?.mode === "CONTROLLED_RESEND_TEST" ? "una prueba controlada con Resend" : "ejecución simulada"}.
                   </label>
                   <button
                     className={button + " bg-[#FFD84D]"}
@@ -448,7 +456,7 @@ export function ContactFlowLab({
                       })
                     }
                   >
-                    Autorizar ejecución simulada
+                    {data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizar prueba de Resend" : "Autorizar ejecución simulada"}
                   </button>
                 </div>
               )}
@@ -512,14 +520,14 @@ export function ContactFlowLab({
                 disabled={busy}
                 onClick={() => confirmAction("RUN")}
               >
-                Ejecutar laboratorio
+                {data?.mode === "CONTROLLED_RESEND_TEST" ? "Ejecutar prueba de Resend" : "Ejecutar laboratorio"}
               </button>
               <button
                 className={button}
                 disabled={busy}
                 onClick={() => confirmAction("RECONCILE")}
               >
-                Reconciliar entregas simuladas
+                {data?.mode === "CONTROLLED_RESEND_TEST" ? "Conciliar con Resend" : "Reconciliar entregas simuladas"}
               </button>
             </div>
           )}

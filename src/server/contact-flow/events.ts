@@ -8,6 +8,8 @@ import {
   signature,
   signatureMatches,
 } from "./policy";
+import { resendTestConfiguration } from "./resend-test";
+import { withProviderDeadline } from "./providers";
 import { suppress } from "./consent";
 import { settleContactQuota } from "./quotas";
 
@@ -69,7 +71,9 @@ export async function receiveResendEvent(
     "email.failed": "FAILED",
   };
   if (!kinds[event.type]) return { ignored: true };
-  const data = event.data as { email_id?: string };
+  const data = event.data as { email_id?: string; tags?: Record<string, string> };
+  const messageRef = data.tags?.cf_message;
+  const correlatedId = messageRef && signatureMatches(`resend:${messageRef}`, data.tags?.cf_proof ?? "") ? messageRef : undefined;
   return applyProviderEvent(
     "RESEND",
     eventSchema.parse({
@@ -80,6 +84,7 @@ export async function receiveResendEvent(
     }),
     digest(raw),
     now,
+    correlatedId,
   );
 }
 async function applyProviderEvent(
@@ -87,6 +92,7 @@ async function applyProviderEvent(
   input: z.infer<typeof eventSchema>,
   payloadHash: string,
   now: Date,
+  correlatedMessageId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     await contactLock(tx);
@@ -108,11 +114,12 @@ async function applyProviderEvent(
         provider,
         ...(receipt
           ? { id: receipt.messageId }
-          : { providerId: input.providerId }),
+          : correlatedMessageId ? { id: correlatedMessageId } : { providerId: input.providerId }),
       },
       include: { enrollment: { include: { version: true } } },
     });
     if (!message) throw new Error("PROVIDER_EVENT_NOT_CORRELATED"); // retry safely; don't store untrusted PII payloads
+    if (message.providerId && message.providerId !== input.providerId) throw new Error("PROVIDER_MESSAGE_CONFLICT");
     await tx.cfProviderEvent.create({
       data: {
         id: key,
@@ -186,6 +193,26 @@ async function applyProviderEvent(
       });
     return { accepted: true, simulated: provider === "SIMULATED" };
   });
+}
+
+export async function reconcileResendDeliveries(limit = 5) {
+  const config = resendTestConfiguration();
+  const client = new Resend(config.key);
+  const messages = await prisma.cfMessage.findMany({ where: {
+    businessId: config.businessId, provider: "RESEND", providerId: { not: null }, state: { in: ["ACCEPTED", "UNKNOWN"] },
+  }, orderBy: { createdAt: "asc" }, take: Math.max(1, Math.min(5, limit)) });
+  const kinds: Record<string, "ACCEPTED" | "DELIVERED" | "BOUNCED" | "COMPLAINED" | "FAILED"> = { sent: "ACCEPTED", delivered: "DELIVERED", bounced: "BOUNCED", complained: "COMPLAINED", failed: "FAILED", suppressed: "FAILED" };
+  let reconciled = 0;
+  for (const m of messages) {
+    const result = await withProviderDeadline(() => client.emails.get(m.providerId!), AbortSignal.timeout(3000));
+    if (!result.data || !kinds[result.data.last_event]) continue;
+    const tags = Object.fromEntries((result.data.tags ?? []).map(t => [t.name, t.value]));
+    if (tags.cf_message !== m.id || !signatureMatches(`resend:${m.id}`, tags.cf_proof ?? "")) throw new Error("PROVIDER_MESSAGE_CONFLICT");
+    const input = { id: `reconcile:${m.providerId}:${result.data.last_event}`, providerId: m.providerId!, kind: kinds[result.data.last_event], occurredAt: result.data.created_at };
+    const r = await applyProviderEvent("RESEND", input, digest(JSON.stringify(input)), new Date(), m.id);
+    if ("accepted" in r) reconciled++;
+  }
+  return { reconciled, simulated: false };
 }
 export async function reconcileSimulatedDeliveries(
   businessId: string,

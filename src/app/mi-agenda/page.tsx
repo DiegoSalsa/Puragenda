@@ -1,3 +1,5 @@
+import { publicConsentEnabled, portalCommercialPreferences } from "@/server/contact-flow/public-consent";
+import { CommercialPreferences } from "./commercial-preferences";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
@@ -193,6 +195,7 @@ export default async function ClientPortalPage({
           </div>
 
           <aside className="space-y-8">
+            {account && publicConsentEnabled() && <CommercialPreferences initial={await portalCommercialPreferences(account)} />}
             {profile
               ? <ClientPortalProfileEditor profile={profile} />
               : <ClientPortalActivationCard email={email} initialName={data.displayName === "Cliente" ? "" : data.displayName} />}

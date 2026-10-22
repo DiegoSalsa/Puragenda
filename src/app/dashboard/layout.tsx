@@ -1,3 +1,4 @@
+import { growthSandboxEnabled } from "@/server/puri/growth/access";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import Link from "next/link";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -107,6 +108,7 @@ export default async function DashboardLayout({
           userRole={user.role}
           productionOrdersEnabled={business?.productionOrdersEnabled}
           permissions={permissions}
+          puriPlusEnabled={growthSandboxEnabled()}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           {impersonationBanner}

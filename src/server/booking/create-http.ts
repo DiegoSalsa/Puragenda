@@ -28,6 +28,7 @@ import { operationalSubscriptionDeniedResponse } from "@/server/http/subscriptio
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
 import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
 import { paymentHoldExpiresAt } from "@/server/services/payment-hold.service";
+import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
 import { bookingJson } from "@/server/booking/response";
 import { bookingContractContext, bookingReviewContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
 
@@ -681,6 +682,13 @@ async function handleBooking(
         businessId: business.id,
       },
     });
+    if (parsed.data.commercialConsent?.accepted === true && publicConsentEnabled()) {
+      await recordPublicConsent({
+        businessId: business.id, clientId: client.id,
+        ...parsed.data.commercialConsent,
+        verifiedAccount: await getClientPortalAccountFromRequest(request),
+      });
+    }
     await updateClientPortalProfileFromBooking({
       sessionEmail: await getClientPortalEmailFromRequest(request),
       customerEmail,

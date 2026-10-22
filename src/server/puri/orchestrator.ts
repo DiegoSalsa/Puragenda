@@ -15,7 +15,7 @@ export type PuriCapabilityExtension = {
   tools: ResponseCreateParamsNonStreaming["tools"];
   instructions: string;
   execute: (name: string, args: unknown) => Promise<unknown>;
-  createResponse: (params: ResponseCreateParamsNonStreaming) => Promise<{ output: unknown[]; output_text?: string; model?: string; usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number } } }>;
+  createResponse: (params: ResponseCreateParamsNonStreaming) => Promise<{ output: unknown[]; output_text?: string; model?: string; service_tier?: string | null; usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number } } }>;
 };
 
 const MAX_HISTORY = 12;

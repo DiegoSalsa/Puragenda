@@ -3,6 +3,8 @@ import { createRecurringBookingAction } from "@/server/actions/recurring.actions
 import { NextRequest } from "next/server";
 import { recurringBookingRequestSchema } from "@/server/validations/booking";
 import { operationalSubscriptionDeniedResponse } from "@/server/http/subscription-access";
+import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
+import { getClientPortalAccountFromRequest } from "@/server/services/client-portal.service";
 
 /**
  * POST /api/widget/[slug]/book-recurring
@@ -111,6 +113,11 @@ export async function POST(
       return Response.json({ error: "Debes indicar la direccion para el servicio a domicilio" }, { status: 400 });
     }
 
+    if (parsed.data.commercialConsent?.accepted && publicConsentEnabled()) {
+      const email = customerEmail.trim().toLowerCase();
+      const client = await prisma.client.upsert({ where: { businessId_email: { businessId: business.id, email } }, update: {}, create: { businessId: business.id, name: customerName, email, phone: normalizedPhone } });
+      await recordPublicConsent({ businessId: business.id, clientId: client.id, ...parsed.data.commercialConsent, verifiedAccount: await getClientPortalAccountFromRequest(request) });
+    }
     const result = await createRecurringBookingAction({
       businessSlug: slug,
       serviceId,

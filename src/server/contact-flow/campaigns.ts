@@ -14,6 +14,7 @@ import {
 } from "./policy";
 import { consentEligibility } from "./consent";
 import { cohortClients } from "./cohort";
+import { contactAddressAllowed, contactProviderMode } from "./resend-test";
 import { settleContactQuota } from "./quotas";
 import { settleInterruptedDelivery } from "./interruption";
 
@@ -198,7 +199,7 @@ export async function prepareCampaign(
             createdAt: { gte: new Date(+now - policy.contactDays * 86400000) },
           },
         });
-        const exclusion = !syntheticAddress(c.email)
+        const exclusion = !contactAddressAllowed(scope.businessId, c.email)
           ? "INVALID_ADDRESS"
           : (eligibility.reason ??
             (recent
@@ -382,6 +383,7 @@ export async function authorizeCampaign(
         data: {
           businessId: scope.businessId,
           enrollmentId: e.id,
+          provider: syntheticAddress(e.client.email) ? "SIMULATED" : "RESEND",
           idempotencyKey: commercialHash({
             campaign: c.id,
             version,
@@ -409,7 +411,7 @@ export async function authorizeCampaign(
         details: {
           version,
           hash,
-          mode: "SIMULATED_ONLY",
+          mode: contactProviderMode(scope.businessId),
           volume: enrollments.length,
         },
       },
@@ -572,7 +574,7 @@ export async function contactSnapshot(scope: GrowthScope) {
     select: { killed: true, emailEnabled: true },
   });
   return {
-    mode: "SIMULATED_ONLY",
+    mode: contactProviderMode(scope.businessId),
     externalBlocked: true,
     policy,
     global,

@@ -1,3 +1,4 @@
+import { publicConsentEnabled } from "@/server/contact-flow/public-consent";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
@@ -379,6 +380,7 @@ export default async function WidgetPage({
       initialDate={sp.date}
       storyCampaignToken={sp.story}
       contactFlowToken={sp.cf_ref}
+      commercialConsentEnabled={publicConsentEnabled()}
       previewMode={previewMode}
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
       availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}

@@ -10,6 +10,11 @@ export async function settleInterruptedDelivery(
   const receipt = await tx.cfSimulatedReceipt.findUnique({
     where: { messageId },
   });
+  const message = await tx.cfMessage.findUnique({ where: { id: messageId }, select: { providerId: true, state: true, acceptedAt: true } });
+  if (message?.providerId && message.acceptedAt && ["ACCEPTED", "DELIVERED", "BOUNCED", "COMPLAINED"].includes(message.state)) {
+    await settleContactQuota(tx, messageId, "CONSUMED", now);
+    return message.state;
+  }
   const ambiguous =
     !receipt &&
     (await tx.cfAttempt.findFirst({

@@ -8,6 +8,7 @@ import { prisma } from "@/server/db/prisma";
 import { z } from "zod";
 import { dateKeyInTimezone } from "@/lib/date";
 import { assertContactLab, contactLock, syntheticAddress } from "./policy";
+import { contactSenderAllowed } from "./resend-test";
 
 const policyInput = z
   .object({
@@ -23,7 +24,7 @@ const policyInput = z
 export async function configureContactPolicy(key: string, input: unknown) {
   assertContactLab();
   const a = policyInput.parse(input);
-  if (!syntheticAddress(a.senderEmail))
+  if (!syntheticAddress(a.senderEmail) && !contactSenderAllowed(key, a.senderEmail))
     throw new Error("SYNTHETIC_SENDER_REQUIRED");
   return prisma.$transaction(async (tx) => {
     await contactLock(tx);

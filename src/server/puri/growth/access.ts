@@ -126,6 +126,9 @@ export async function createGrowthScope(
     !entitlements.capabilities.includes("puri.plus")
   )
     throw new PuriAccessError("PLUS_ENTITLEMENT_REQUIRED");
+  // Grace cannot extend premium capability beyond an actually paid period.
+  if (subscription.periodEnd <= now)
+    throw new PuriAccessError("PLUS_ENTITLEMENT_REQUIRED");
   const staffId =
     !allAgendas || context.ownAgenda ? (member?.id ?? null) : null;
   if ((!allAgendas || context.ownAgenda) && !staffId)

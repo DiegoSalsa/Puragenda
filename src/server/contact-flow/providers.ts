@@ -4,7 +4,9 @@ import {
   CONTACT_FLOW_EXTERNAL_RELEASE,
   assertContactLab,
   simulationSchema,
+  signature,
 } from "./policy";
+import { resendTestConfiguration } from "./resend-test";
 
 export type DeliveryPayload = {
   to: string;
@@ -13,6 +15,7 @@ export type DeliveryPayload = {
   text: string;
   unsubscribeUrl: string;
   bookingUrl: string;
+  senderName?: string;
 };
 export type DeliveryResult = {
   outcome: "ACCEPTED" | "TEMPORARY" | "PERMANENT" | "UNKNOWN";
@@ -127,7 +130,7 @@ export class SimulatedContactProvider implements ContactProvider {
 export function resendRequest(payload: DeliveryPayload, key: string) {
   return {
     body: {
-      from: payload.from,
+      from: payload.senderName ? `${payload.senderName.replace(/[<>\r\n"]/g, "")} <${payload.from}>` : payload.from,
       to: payload.to,
       subject: payload.subject,
       text: `${payload.text}\nReservar: ${payload.bookingUrl}\nBaja: ${payload.unsubscribeUrl}`,
@@ -151,17 +154,24 @@ export class ResendContactProvider implements ContactProvider {
     _attempt: number,
     signal: AbortSignal,
   ): Promise<DeliveryResult> {
-    if (!CONTACT_FLOW_EXTERNAL_RELEASE)
+    if (!CONTACT_FLOW_EXTERNAL_RELEASE && process.env.CONTACT_FLOW_RESEND_TEST_ENABLED !== "1")
       throw new Error("CONTACT_FLOW_EXTERNAL_DELIVERY_BLOCKED");
-    // Kept in the sealed adapter for future provider certification. Never reached
-    // in this release, including with production credentials and every env flag.
+    const config = resendTestConfiguration();
+    if (m.provider !== "RESEND" || m.businessId !== config.businessId || !config.recipients.includes(payload.to.toLowerCase()) || payload.from !== config.sender)
+      throw new Error("CONTROLLED_RECIPIENT_REQUIRED");
+    for (const link of [payload.unsubscribeUrl, payload.bookingUrl])
+      if (new URL(link).origin !== config.origin) throw new Error("CONTROLLED_HTTPS_ORIGIN_REQUIRED");
     if (signal.aborted)
       return { outcome: "UNKNOWN", code: "TIMEOUT", idempotent: true };
-    const key = process.env.RESEND_API_KEY;
-    if (!key) throw new Error("RESEND_CONFIGURATION_REQUIRED");
+    const client = new Resend(config.key);
+    const domain = await withProviderDeadline(() => client.domains.get(config.domainId), signal);
+    if (!domain.data || domain.data.status !== "verified" || payload.from.split("@")[1] !== domain.data.name)
+      throw new Error("COMMERCIAL_SENDER_DOMAIN_UNVERIFIED");
     const request = resendRequest(payload, m.idempotencyKey);
     const result = await withProviderDeadline(
-      () => new Resend(key).emails.send(request.body, request.options),
+      () => client.emails.send({ ...request.body, tags: [
+        { name: "cf_message", value: m.id }, { name: "cf_proof", value: signature(`resend:${m.id}`) },
+      ] }, request.options),
       signal,
     ).catch(() => null);
     // The SDK operation may still be accepted after our deadline. UNKNOWN is
