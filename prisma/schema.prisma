@@ -689,6 +689,7 @@ model CommercialSubscription {
   events             CommercialEvent[]
   seatChangeRequests SeatChangeRequest[]
   billingOperations CommercialBillingOperation[]
+  migrationProposals CommercialMigrationProposal[]
 
   @@unique([id, businessId])
   @@index([status, renewalAt])
@@ -889,6 +890,7 @@ model Business {
   clients                     Client[]
   subscription                Subscription?
   commercialBillingOperations CommercialBillingOperation[]
+  commercialMigrationProposals CommercialMigrationProposal[]
   commercialSubscription      CommercialSubscription?
   commercialEntitlements      CommercialEntitlement[]
   commercialEvents            CommercialEvent[]
@@ -2846,4 +2848,82 @@ model CommercialPaymentEvidence {
 
   @@unique([provider, paymentId])
   @@index([operationId, status])
+}
+
+// Immutable proposal payload; mutable workflow and verified evidence are separate.
+// These records have no production writer or public Data API policy.
+model CommercialMigrationProposal {
+  id                String @id @default(cuid())
+  businessId        String
+  subscriptionId    String
+  createdById       String
+  idempotencyKey    String @unique
+  inputHash         String
+  sourceFingerprint String
+  previewHash       String
+  preview           Json
+  targetPlanCode    String
+  professionalTotal Int
+  provider          CommercialBillingProvider
+  effectiveAt       DateTime
+  expiresAt         DateTime
+  status            String @default("AWAITING_APPROVAL")
+  approvedById      String?
+  approvedAt        DateTime?
+  appliedAt         DateTime?
+  reason            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription      CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+  websiteTransition CommercialWebsiteTransition?
+  evidence          CommercialMigrationEvidence[]
+
+  @@unique([id, businessId])
+  @@index([subscriptionId, businessId])
+  @@index([businessId, status, effectiveAt])
+}
+
+model CommercialWebsiteTransition {
+  id                    String @id @default(cuid())
+  proposalId            String @unique
+  businessId            String
+  addonId               String?
+  provider              String?
+  externalSubscriptionId String?
+  status                String
+  paidUntil             DateTime?
+  cancellationObservedAt DateTime?
+  lastResourceAt        DateTime?
+  origin                String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  proposal              CommercialMigrationProposal @relation(fields: [proposalId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([proposalId, businessId])
+  @@index([businessId, status])
+}
+
+model CommercialMigrationEvidence {
+  id                     String @id @default(cuid())
+  proposalId             String
+  businessId             String
+  provider               CommercialBillingProvider
+  eventId                String
+  payloadHash            String
+  origin                 String
+  state                  String
+  paymentId              String?
+  amountMinor            Int?
+  currencyCode           String
+  providerSubscriptionId String
+  periodStart            DateTime?
+  periodEnd              DateTime?
+  resourceUpdatedAt      DateTime
+  createdAt              DateTime @default(now())
+  proposal               CommercialMigrationProposal @relation(fields: [proposalId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([provider, eventId])
+  @@unique([provider, paymentId])
+  @@index([proposalId, businessId, state])
 }
