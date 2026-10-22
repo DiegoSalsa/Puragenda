@@ -230,3 +230,9 @@ La integración de billing y la sustitución de los calculadores legacy quedan p
 La infraestructura interna de la fase comercial está comprobada en PostgreSQL aislado. Billing V2 no está terminado: faltan adaptadores reales, prueba de firma/preview/conciliación con proveedores sandbox, política tributaria/prorrateo y migración voluntaria. Todos los flags efectivos permanecen cerrados. No se despliega ni se propone todavía activar permisos de clientes.
 
 Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+La capa de billing ahora tiene adaptadores SDK y operaciones persistentes verificables. La siguiente puerta es credenciales/precios V2, ciclo sandbox real, política tributaria/prorrateo y validación del corte de renovación. Después: migración voluntaria de clientes, inclusión de web y UX comercial, conservando el lanzamiento único.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).

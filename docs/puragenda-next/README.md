@@ -1,7 +1,7 @@
 # Puragenda Next — auditoría y plan maestro
 
 **Fecha de corte:** 22 de octubre de 2026 (America/Santiago)<br>
-**Estado:** catálogo V2 e infraestructura comercial interna implementados en sombra; billing V2 y lanzamiento pendientes<br>
+**Estado:** catálogo, infraestructura sombra, adaptadores SDK sandbox y baseline reproducible implementados; validación comercial real de proveedores y lanzamiento pendientes<br>
 **Baseline auditado:** 731582e6098fd82d2538ab66500dfbc7147ea1c5 (reel/puragenda-publicitario-20261015)<br>
 **Rama de trabajo:** feature/puragenda-next<br>
 **Worktree:** C:\Users\diego\.codex\worktrees\puragenda-next-audit\agenda
@@ -44,6 +44,8 @@ El mayor riesgo es facturar o habilitar cupos/beneficios con una lectura vieja d
 10. [10 — Roadmap y lanzamiento](./10-roadmap-lanzamiento.md)
 11. [11 — Infraestructura comercial de iteración 3](./11-infraestructura-comercial-iteracion-3.md)
 12. [12 — Validación y entrega de iteración 3](./12-iteracion-3-validacion.md)
+13. [13 — Billing V2 y proveedores](./13-billing-v2-y-proveedores.md)
+14. [14 — Validación y entrega de iteración 4](./14-iteracion-4-validacion.md)
 
 ## Decisiones que bloquean la implementación
 
@@ -79,3 +81,7 @@ En esta iteración se implementó únicamente el catálogo puro y sus pruebas. E
 ## Estado de Iteración 3
 
 Modelos expansivos, motor de cupos, ledger/reconciliación, entitlements sombra, backfill idempotente y contratos de billing están implementados y comprobados en PostgreSQL local. No hay conexión V2 a proveedores ni cambios de acceso en producción. La siguiente fase es aprobar políticas y verificar adaptadores en sandbox, junto con la estrategia de baseline de migraciones. Ver documentos 11 y 12.
+
+## Estado de Iteración 4
+
+Adaptadores concretos de SDK, operación externa durable y evidencia de pago separada están implementados y probados contractualmente con firmas reales y PostgreSQL. Bootstrap/actualización legacy usan baseline versionado y Prisma migrate deploy, sin reescribir archivos antiguos ni eliminar historial. La consulta real de catálogo Paddle mostró solo precios legacy USD; faltan credenciales SDK y precios V2 para validar un ciclo sandbox real. Ningún cliente ni flujo productivo se migró o activó.

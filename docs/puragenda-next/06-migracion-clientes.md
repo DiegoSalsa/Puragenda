@@ -83,3 +83,9 @@ Superadmin debe ver snapshot, provider ID, último evento y excepción. El clien
 Hay simulador de diez fixtures, backfill local idempotente y lotes reanudables con cursor. Se conservan condiciones y referencias históricas; importes desconocidos son null. La deriva posterior de Subscription/WebsiteAddon exige revisión y no reemplaza acuerdos. No existe migración automática, conversión de add-on a Plus ni cobro nuevo.
 
 Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+Hay procedimiento automático de bootstrap y adopción de un baseline exacto, restringido a PostgreSQL local. Se verificaron datos e historial legacy sin cambios tras upgrade y repetición. No se migran clientes; los contratos comerciales legacy se rechazan en los writers V2. Las bases con tablas/políticas no representadas necesitan revisión explícita.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).

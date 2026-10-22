@@ -147,3 +147,9 @@ El runner rechaza hosts remotos y nombres distintos, ignora las URLs de producci
 4. Inventariar acuerdos legacy/add-ons con datos anonimizados autorizados, revisar warnings y resolver deriva. No existe migración automática al catálogo V2.
 5. Preparar la sincronización/cutover con writer único, rollout cerrado y una copia de esquema productivo autorizada. Reparar la estrategia de baseline histórica antes de planear despliegue.
 6. Mantener cerrados pricing, permisos, Puri+, Contact Flow y correos comerciales hasta el lanzamiento único.
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+El estado descrito arriba corresponde a la entrega de iteración 3. La iteración 4 agrega adaptadores y un baseline versionado con dos procedimientos comprobados. No modifica las migraciones históricas ni activa el servicio sombra. Las nuevas URLs locales de pruebas admiten sufijos efímeros; ya no se borra el schema de una base existente para repetir el runner.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).

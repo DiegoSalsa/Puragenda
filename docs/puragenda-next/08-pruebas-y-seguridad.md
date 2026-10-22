@@ -74,3 +74,9 @@ No aprobar si hay cálculos divergentes, UNKNOWN sin conciliar, duplicados, web 
 Las pruebas nuevas ejercitan Prisma y PostgreSQL 17.2 real para locks, solicitudes/Staff simultáneos, aplicación duplicada, timeout/reintento, orden de eventos, tenant, sucursales, RLS y grants. Las pruebas de autorización separan plan, rol y scope de sucursal. Los resultados exactos y las suites opt-in omitidas están en el documento 12. La cadena histórica de migraciones tiene un fallo de baseline documentado; la migración nueva se comprobó sobre el esquema legacy reconstruido.
 
 Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+La suite completa con PostgreSQL aprobó 1.477 tests, con 131 omitidos y cero fallos. Hay 44 pruebas PostgreSQL comerciales y 22 contractuales/HTTP nuevas con firmas criptográficas de los SDK. TypeScript, ESLint y build aislado aprobados. No confundir estos fixtures con pruebas reales de transporte de proveedores.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).

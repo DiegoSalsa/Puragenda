@@ -156,3 +156,9 @@ Los logs, el clúster local y el respaldo del trabajo inicial están en `scratch
 ## Próxima fase
 
 Conservar la rama cerrada al público. Aprobar las decisiones monetarias y de vigencia, implementar los adaptadores de facturación/verificación en sandbox con firmas y preview, y comprobar el corte de renovación con datos de prueba. Después, preparar inventario anonimizado y una migración comercial voluntaria y auditada. No activar billing V2 ni permisos de clientes antes de completar esas validaciones y la estrategia de despliegue de migraciones.
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+Este informe conserva los resultados históricos de la iteración 3. La iteración 4 resuelve el procedimiento de instalación mediante baseline y añade verificación de adaptadores, operaciones y build aislado; no repara retrospectivamente el replay de archivos históricos incompletos.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).

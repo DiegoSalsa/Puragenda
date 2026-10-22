@@ -89,3 +89,9 @@ La función no se importa desde pricing, checkout, webhooks, entitlements ni sus
 El catálogo alimenta snapshots, cotizaciones de solicitudes e ítems con tramos marginales completos. Se rechaza anualidad V2; IVA sigue pendiente. Los borradores Paddle/MP siempre son no ejecutables. No se cambió ningún calculador de billing legacy ni monto externo. Evidencia local de aplicación usa importe completo; los cargos prorrateados requieren una fase posterior.
 
 Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
+
+## Iteración 4 — actualización de estado, 22-10-2026
+
+El importe recurrente y el cargo esperado del preview se persisten por separado. Los adaptadores SDK no convierten CLP a precios internacionales ni habilitan anualidad V2. El modo inmediato MP y los límites de renovación permanecen bloqueados por falta de prueba real. IVA y política comercial siguen pendientes.
+
+Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).
