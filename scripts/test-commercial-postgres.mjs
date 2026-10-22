@@ -12,6 +12,7 @@ try {
 source.pathname = `/${name}`;
 await deployCommercialMigrations(source.href);
 const env = { ...process.env, COMMERCIAL_V2_TEST_DATABASE_URL: source.href, DATABASE_URL: source.href,
-  DIRECT_URL: source.href, COMMERCIAL_V2_INTERNAL_WRITES: "1" };
-const result = spawnSync(process.execPath, ["node_modules/vitest/vitest.mjs", "run", ...(process.argv.includes("--all") ? [] : ["tests/integration/commercial-v2-postgres.integration.test.ts", "tests/integration/commercial-billing-postgres.integration.test.ts"]), "--reporter=dot"], { env, stdio: "inherit", windowsHide: true });
+  DIRECT_URL: source.href, COMMERCIAL_V2_INTERNAL_WRITES: "1", COMMERCIAL_V2_MIGRATION_WRITES: "1", COMMERCIAL_V2_MIGRATION_FIXTURES: "1" };
+console.log(`Isolated commercial PostgreSQL database: ${name}`);
+const result = spawnSync(process.execPath, ["node_modules/vitest/vitest.mjs", "run", ...(process.argv.includes("--all") ? [] : ["tests/integration/commercial-v2-postgres.integration.test.ts", "tests/integration/commercial-billing-postgres.integration.test.ts", "tests/integration/commercial-migration-postgres.integration.test.ts"]), "--reporter=dot"], { env, stdio: "inherit", windowsHide: true });
 process.exit(result.status ?? 1);
