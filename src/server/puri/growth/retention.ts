@@ -28,6 +28,7 @@ export async function purgeExpiredGrowthHistory(
     const recs = await tx.puriGrowthRecommendation.findMany({
       where: {
         ...tenant,
+        contactFlowCampaigns: { none: {} },
         expiresAt: { lt: cutoff },
         OR: [{ approvedAt: null }, { approvedAt: { lt: approvedCutoff } }],
       },

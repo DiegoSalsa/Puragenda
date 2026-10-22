@@ -244,7 +244,11 @@ async function handleBooking(
       );
     }
 
-    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, giftCardId } = parsed.data;
+    const { serviceId, serviceIds, selectedOptionAlternativeIds, customerName, customerEmail, customerPhone, customerAddress, startTime, endTime, staffId, staffAssignments, rewardCode, discountCode, promotionId, locationId, storyCampaignToken, contactFlowToken, giftCardId } = parsed.data;
+    if(contactFlowToken) {
+      const { contactLabEnabled }=await import("@/server/contact-flow/policy");
+      if(!contactLabEnabled() || (staffAssignments?.length??0)>1 || (serviceIds?.length??1)>1) return Response.json({code:"CONTACT_FLOW_ATTRIBUTION_UNAVAILABLE"},{status:400});
+    }
     if (isBookingV1(request) && selectedOptionAlternativeIds.length > 50) return bookingJson({ error: "Máximo 50 opciones por selección v1", code: "INVALID_REQUEST" }, 400);
     if (isBookingV1(request) && (rewardCode || discountCode || promotionId || giftCardId)) return bookingJson({ error: "El contrato v1 no admite incentivos", code: "UNSUPPORTED_CAPABILITY" }, 400);
 
@@ -933,6 +937,7 @@ async function handleBooking(
           depositPaymentUrl: manualPaymentUrl,
           paymentHoldExpiresAt: paymentHoldDeadline,
           storyCampaignId: storyCampaign?.id,
+          contactFlowToken,
         }, { tx, syncGoogle: false });
 
         if (!result.success) throw new BookingGroupError(result.error);
@@ -1082,6 +1087,7 @@ async function handleBooking(
       paymentHoldExpiresAt: paymentHoldDeadline,
       status: giftCardPaidAmount > 0 && remainingAfterGiftCard === 0 ? "CONFIRMED" : undefined,
       storyCampaignId: storyCampaign?.id,
+      contactFlowToken,
     }, appliedReward, giftCardQuote && portalAccount ? {
       id: giftCardQuote.card.id,
       accountId: portalAccount.id,

@@ -818,6 +818,11 @@ model WebsitePurchaseIntent {
 }
 
 model Business {
+  contactFlowAudits                            CfAudit[]
+  contactFlowCampaigns                         CfCampaign[]
+  contactFlowPolicies                          CfPolicy[]
+  contactFlowConsents                          CfConsent[]
+  contactFlowSuppressions                      CfSuppression[]
   mcpPublicDiscovery                           Boolean            @default(false)
   mcpProfiles                                  McpProfile[]
   mcpOperations                                McpOperation[]
@@ -940,6 +945,8 @@ model Business {
 // appointments happen. Keeping them separate lets one account share its
 // catalogue and subscription while operating independent calendars.
 model BusinessLocation {
+  contactFlowCampaigns CfCampaign[]
+  @@unique([id, businessId])
   id         String   @id @default(cuid())
   businessId String
   name       String
@@ -1292,6 +1299,8 @@ model BlockedDate {
 }
 
 model Staff {
+  contactFlowCampaigns CfCampaign[]
+  @@unique([id, businessId])
   id              String   @id @default(cuid())
   name            String
   email           String?
@@ -1380,6 +1389,8 @@ model ScheduleBlock {
 }
 
 model Service {
+  contactFlowVersions      CfVersion[]
+  @@unique([id, businessId])
   id                       String                  @id @default(cuid())
   name                     String
   position                 Int                     @default(0)
@@ -1704,6 +1715,8 @@ enum PosPaymentStatus {
 }
 
 model Appointment {
+  contactFlowAttribution       CfAttribution?
+  @@unique([id, businessId])
   id                           String               @id @default(cuid())
   customerName                 String
   customerEmail                String
@@ -2010,6 +2023,10 @@ model GoogleCalendarEvent {
 // ==========================================
 
 model Client {
+  contactFlowConsents     CfConsent[]
+  contactFlowSuppressions CfSuppression[]
+  contactFlowEnrollments  CfEnrollment[]
+  @@unique([id, businessId])
   id               String   @id @default(cuid())
   name             String
   email            String
@@ -2935,6 +2952,328 @@ model CommercialMigrationEvidence {
 }
 
 // Puri+ remains local-only. Evidence is aggregate data, never customer lists or prompts.
+// Contact Flow is private server-only infrastructure. Public SQL roles have no grants.
+model CfPolicy {
+  key          String    @id
+  businessId   String?
+  killed       Boolean   @default(true)
+  emailEnabled Boolean   @default(false)
+  dailyLimit   Int
+  monthlyLimit Int
+  contactDays  Int
+  senderEmail  String
+  updatedAt    DateTime  @updatedAt
+  business     Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model CfCampaign {
+  staff Staff? @relation(fields: [staffId,businessId],references:[id,businessId],onDelete:Restrict)
+  id               String                   @id @default(cuid())
+  businessId       String
+  scopeKey         String
+  locationId       String?
+  staffId          String?
+  recommendationId String
+  currentVersion   Int                      @default(1)
+  status           String                   @default("DRAFT")
+  createdById      String
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  business         Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location         BusinessLocation?        @relation(fields: [locationId, businessId], references: [id, businessId], onDelete: Restrict)
+  recommendation   PuriGrowthRecommendation @relation(fields: [recommendationId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Restrict)
+  versions         CfVersion[]
+  audits           CfAudit[]
+
+  @@unique([id, businessId])
+  @@unique([businessId, scopeKey, recommendationId])
+  @@index([businessId, scopeKey, status, createdAt])
+}
+
+model CfVersion {
+  timezone String
+  businessAddress String
+  senderEmail String
+  id                    String            @id @default(cuid())
+  campaignId            String
+  businessId            String
+  version               Int
+  recommendationVersion Int
+  recommendationHash    String
+  evidenceHash          String
+  evidence              Json
+  rules                 Json
+  objective             String
+  channel               String            @default("EMAIL")
+  purpose               String            @default("COMMERCIAL")
+  template              String
+  serviceId             String
+  serviceName           String
+  servicePrice          Float
+  businessName          String
+  businessSlug          String
+  currencyCode          String
+  subject               String
+  body                  String
+  cohortHash            String
+  contentHash           String
+  startsAt              DateTime
+  expiresAt             DateTime
+  maxContacts           Int
+  dailyLimit            Int
+  createdAt             DateTime          @default(now())
+  campaign              CfCampaign        @relation(fields: [campaignId, businessId], references: [id, businessId], onDelete: Cascade)
+  service               Service           @relation(fields: [serviceId, businessId], references: [id, businessId], onDelete: Restrict)
+  authorizations        CfAuthorization[]
+  enrollments           CfEnrollment[]
+
+  @@unique([id, businessId])
+  @@unique([campaignId, version])
+  @@index([businessId, expiresAt])
+}
+
+model CfAuthorization {
+  id          String    @id @default(cuid())
+  businessId  String
+  versionId   String
+  actorId     String
+  contentHash String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  version     CfVersion @relation(fields: [versionId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, versionId, revokedAt])
+}
+
+model CfConsent {
+  acceptedText String
+  evidenceSignature String
+  recordedById String
+  id           String         @id @default(cuid())
+  businessId   String
+  clientId     String
+  addressHash  String
+  purpose      String         @default("COMMERCIAL")
+  channel      String         @default("EMAIL")
+  source       String
+  textVersion  String
+  evidenceRef  String
+  evidenceHash String
+  grantedAt    DateTime
+  state        String         @default("GRANTED")
+  revokedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  business     Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client       Client         @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+  enrollments  CfEnrollment[]
+
+  @@unique([id, businessId])
+  @@unique([businessId, evidenceRef])
+  @@index([businessId, clientId, channel, purpose, state])
+}
+
+model CfSuppression {
+  id          String   @id @default(cuid())
+  businessId  String
+  clientId    String
+  addressHash String
+  purpose     String
+  channel     String
+  reason      String
+  sourceRef   String
+  createdAt   DateTime @default(now())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client      Client   @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+
+  @@unique([businessId, sourceRef])
+  @@index([businessId, clientId, channel, purpose])
+  @@index([businessId, addressHash, channel, purpose])
+}
+
+model CfEnrollment {
+  id          String         @id @default(cuid())
+  businessId  String
+  versionId   String
+  clientId    String
+  addressHash String
+  consentId   String?
+  eligible    Boolean
+  exclusion   String?
+  createdAt   DateTime       @default(now())
+  version     CfVersion      @relation(fields: [versionId, businessId], references: [id, businessId], onDelete: Cascade)
+  client      Client         @relation(fields: [clientId, businessId], references: [id, businessId], onDelete: Restrict)
+  consent     CfConsent?     @relation(fields: [consentId, businessId], references: [id, businessId], onDelete: Restrict)
+  message     CfMessage?
+  tokens      CfToken[]
+  attribution CfAttribution?
+
+  @@unique([id, businessId])
+  @@unique([versionId, clientId])
+  @@index([businessId, clientId, createdAt])
+}
+
+model CfMessage {
+  id             String              @id @default(cuid())
+  businessId     String
+  enrollmentId   String              @unique
+  idempotencyKey String              @unique
+  state          String              @default("QUEUED")
+  provider       String              @default("SIMULATED")
+  providerId     String?             @unique
+  simulation     String              @default("SUCCESS")
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  enrollment     CfEnrollment        @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Cascade)
+  outbox         CfOutbox?
+  attempts       CfAttempt[]
+  events         CfProviderEvent[]
+  reservation    CfQuotaReservation?
+  receipt        CfSimulatedReceipt?
+
+  @@unique([enrollmentId, businessId])
+  @@unique([id, businessId])
+  @@index([businessId, state, createdAt])
+}
+
+model CfOutbox {
+  id             String    @id @default(cuid())
+  businessId     String
+  messageId      String    @unique
+  state          String    @default("PENDING")
+  nextAttemptAt  DateTime  @default(now())
+  leaseUntil     DateTime?
+  leaseOwner     String?
+  fence          Int       @default(0)
+  attempts       Int       @default(0)
+  firstAttemptAt DateTime?
+  lastError      String?
+  message        CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, businessId])
+  @@index([state, nextAttemptAt, leaseUntil])
+  @@index([businessId, state])
+}
+
+model CfAttempt {
+  id         String    @id @default(cuid())
+  businessId String
+  messageId  String
+  number     Int
+  fence      Int
+  outcome    String
+  code       String?
+  createdAt  DateTime  @default(now())
+  message    CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, number])
+  @@index([businessId, createdAt])
+}
+
+model CfSimulatedReceipt {
+  id             String    @id @default(cuid())
+  businessId     String
+  messageId      String    @unique
+  idempotencyKey String    @unique
+  providerId     String    @unique
+  createdAt      DateTime  @default(now())
+  message        CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([messageId, businessId])
+}
+
+model CfProviderEvent {
+  id          String    @id
+  businessId  String
+  messageId   String
+  provider    String
+  providerId  String
+  kind        String
+  payloadHash String
+  occurredAt  DateTime
+  receivedAt  DateTime  @default(now())
+  message     CfMessage @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@index([businessId, messageId, occurredAt])
+}
+
+model CfQuotaBucket {
+  key         String              @id
+  businessId  String?
+  kind        String
+  period      String
+  limit       Int
+  reserved    Int                 @default(0)
+  consumed    Int                 @default(0)
+  allocations CfQuotaAllocation[]
+}
+
+model CfQuotaReservation {
+  id          String              @id @default(cuid())
+  businessId  String
+  messageId   String              @unique
+  state       String              @default("RESERVED")
+  createdAt   DateTime            @default(now())
+  settledAt   DateTime?
+  message     CfMessage           @relation(fields: [messageId, businessId], references: [id, businessId], onDelete: Cascade)
+  allocations CfQuotaAllocation[]
+
+  @@unique([messageId, businessId])
+}
+
+model CfQuotaAllocation {
+  reservationId String
+  bucketKey     String
+  reservation   CfQuotaReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  bucket        CfQuotaBucket      @relation(fields: [bucketKey], references: [key], onDelete: Restrict)
+
+  @@id([reservationId, bucketKey])
+}
+
+model CfToken {
+  id           String       @id
+  businessId   String
+  enrollmentId String
+  kind         String
+  expiresAt    DateTime
+  usedAt       DateTime?
+  enrollment   CfEnrollment @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([enrollmentId, kind])
+  @@index([expiresAt])
+}
+
+model CfAttribution {
+  id            String       @id @default(cuid())
+  businessId    String
+  enrollmentId  String       @unique
+  appointmentId String       @unique
+  tokenHash     String
+  createdAt     DateTime     @default(now())
+  enrollment    CfEnrollment @relation(fields: [enrollmentId, businessId], references: [id, businessId], onDelete: Restrict)
+  appointment   Appointment  @relation(fields: [appointmentId, businessId], references: [id, businessId], onDelete: Restrict)
+
+  @@unique([enrollmentId, businessId])
+  @@unique([appointmentId, businessId])
+  @@index([businessId, createdAt])
+}
+
+model CfAudit {
+  id         String      @id @default(cuid())
+  businessId String
+  campaignId String?
+  actorId    String?
+  event      String
+  key        String      @unique
+  details    Json?
+  createdAt  DateTime    @default(now())
+  campaign   CfCampaign? @relation(fields: [campaignId, businessId], references: [id, businessId], onDelete: Cascade)
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+}
+
 model PuriGrowthPolicy {
   businessId        String @id
   proactiveEnabled  Boolean @default(false)
@@ -3006,6 +3345,7 @@ model PuriGrowthSignal {
 }
 
 model PuriGrowthRecommendation {
+  contactFlowCampaigns CfCampaign[]
   id                  String @id @default(cuid())
   businessId          String
   scopeKey            String

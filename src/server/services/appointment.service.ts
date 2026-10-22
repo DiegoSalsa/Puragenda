@@ -127,6 +127,7 @@ export async function createAppointment(data: {
   internalNotes?: string;
   allowPrioritySlots?: boolean;
   storyCampaignId?: string;
+  contactFlowToken?: string;
 }, options?: { tx?: Prisma.TransactionClient; syncGoogle?: boolean }): Promise<
   { success: true; appointment: Prisma.AppointmentGetPayload<{ include: { service: true } }> }
   | { success: false; error: string; code?: string }
@@ -244,6 +245,10 @@ export async function createAppointment(data: {
     include: { service: true },
   });
 
+  if(data.contactFlowToken) {
+    const { attributeBooking }=await import("@/server/contact-flow/tokens");
+    await attributeBooking(db,data.contactFlowToken,appointment);
+  }
   await checkpointBookingOperation(db, appointment);
 
   return { success: true as const, appointment };
