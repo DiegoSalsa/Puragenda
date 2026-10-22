@@ -1,4 +1,5 @@
 import type { DashboardPermission } from "@/core/permissions";
+export type PuriCapabilityTier = "PURI_STANDARD" | "PURI_PLUS" | "PURI_PLUS_PREPARE";
 
 export type PuriContext = {
   user: { id: string; role: string };
