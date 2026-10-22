@@ -45,7 +45,7 @@ export async function materializeCommercialEntitlements(
     snapshot.status === "TRIALING" ? snapshot.trialEnd : null].filter((d): d is Date => Boolean(d));
   const validTo = boundaries.length ? new Date(Math.min(...boundaries.map(d => d.getTime()))) : null;
   for (const capability of evaluation.capabilities) {
-    const websiteUntil = terms?.websiteAddon?.validUntil ? new Date(terms.websiteAddon.validUntil) : null;
+    const websiteUntil = ["INDIVIDUAL", "EQUIPO", "TEST"].includes(snapshot.planCode) && terms?.websiteAddon?.validUntil ? new Date(terms.websiteAddon.validUntil) : null;
     const expiry = capability.startsWith("website.") && websiteUntil && (!validTo || websiteUntil < validTo) ? websiteUntil : validTo;
     const data = { status: "ACTIVE" as const, quantity: evaluation.quantities[capability] ?? 1,
       validFrom: now, validTo: expiry, reason: null, metadata: { commercialOnly: true, shadow: true } };
