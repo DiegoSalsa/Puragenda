@@ -28,6 +28,7 @@ import {
 import { growthPlatformMetrics } from "@/server/puri/growth/monitoring";
 import { PuriAccessError } from "@/server/puri/types";
 import { getApiAdminSessionUser } from "@/server/auth/admin-session";
+import { readContactText } from "@/server/contact-flow/http";
 
 const schema = z
   .object({
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ code: "NOT_FOUND" }, { status: 404 });
   const origin = requireSameOrigin(request);
   if (origin) return origin;
-  const parsed = schema.safeParse(await request.json().catch(() => null));
+  const parsed = schema.safeParse(await readContactText(request).then(JSON.parse).catch(() => null));
   if (!parsed.success)
     return Response.json({ code: "INVALID_REQUEST" }, { status: 400 });
   try {

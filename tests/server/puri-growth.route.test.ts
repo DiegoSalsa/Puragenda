@@ -74,6 +74,12 @@ describe("Puri+ internal API boundary", () => {
     mocks.auth.mockResolvedValue(null);
     expect((await POST(req({ action: "LOAD" }))).status).toBe(401);
   });
+  it("bounds the request stream before parsing or doing authentication/database work", async () => {
+    const large = req({ action: "CHAT", message: "x".repeat(20000) });
+    expect((await POST(large)).status).toBe(400);
+    expect(mocks.auth).not.toHaveBeenCalled();
+    expect(mocks.analyze).not.toHaveBeenCalled();
+  });
   it("requires the existing Superadmin session for platform metrics", async () => {
     mocks.admin.mockResolvedValue(null);
     expect((await POST(req({ action: "MONITOR" }))).status).toBe(403);
