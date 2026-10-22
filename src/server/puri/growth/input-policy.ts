@@ -16,6 +16,9 @@ export function growthInputPolicy(message: string, recommendationId?: string) {
     [/reten|recurrent|nuevos|retention/i, "RETENTION"],
     [/ingres|cobrad|revenue|collected/i, "RECORDED_REVENUE"],
     [/tendencia|demanda|reservas|trend|demand/i, "BOOKING_TRENDS"],
+    [/campañ|contact\s*flow|entregas/i, "CONTACT_CAMPAIGNS"],
+    [/cuotas/i, "CONTACT_QUOTAS"],
+    [/atribuci|resultados/i, "CONTACT_RESULTS"],
   ] as const;
   const selectedMetrics = metrics
     .filter(([pattern]) => pattern.test(message))

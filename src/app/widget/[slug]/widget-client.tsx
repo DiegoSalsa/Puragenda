@@ -122,6 +122,7 @@ interface Props {
   initialStaffId?: string;
   initialDate?: string;
   storyCampaignToken?: string;
+  contactFlowToken?: string;
   previewMode?: boolean;
   useBusinessScheduleOnly?: boolean;
   availableRewards?: { code: string; rewardName: string | null; rewardType: string; expiresAt: string | null }[];
@@ -241,7 +242,7 @@ function isStaffAvailableForSlot(staff: StaffMember, slot: { start: Date; end: D
 /** Returns the shared accessible foreground for the business color. */
 const getContrastColor = getWidgetContrastColor;
 
-export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
+export function WidgetClient({ business, services, primaryColor, businessHours, scheduleOverrides = [], staffMembers, maxServicesPerBooking = 1, groupServicesByCategory = false, depositRequired = false, allowSameDayBookings = false, slotInterval = 30, minAdvanceBookingMinutes = 120, promoBlocks = [], locations = [], initialLocationSlug, initialServiceId, initialStaffId, initialDate, storyCampaignToken, contactFlowToken, previewMode = false, useBusinessScheduleOnly = false, availableRewards = [], availableGiftCards = [], hasGiftCards = false }: Props) {
   const router = useRouter();
   const legacy = useTranslations("legacy");
   const t = useTranslations("widget");
@@ -947,6 +948,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           discountCode: discountCodeStatus === "valid" ? discountCode.trim().toUpperCase() : undefined,
           promotionId: promotionResult?.quote ? activePromotionId || undefined : undefined,
           storyCampaignToken,
+          contactFlowToken,
           giftCardId: selectedGiftCardId || undefined,
         }),
       });

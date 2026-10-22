@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { PuriMascot } from "@/components/brand/puri-mascot";
 import { PuriMessageText } from "@/components/dashboard/puri-message-text";
 import type { GrowthStrategy } from "@/server/puri/growth/contracts";
+import { ContactFlowLab, type ContactFlowSnapshot } from "./contact-flow-lab";
 type Signal = {
   id: string;
   kind: string;
@@ -25,6 +26,9 @@ type Recommendation = {
   evidence: Record<string, unknown>;
 };
 export type GrowthLabData = {
+  contactFlowEnabled?: boolean;
+  contactFlowSnapshot?: ContactFlowSnapshot;
+  contactFlowOwner?: boolean;
   signals: Signal[];
   recommendations: Recommendation[];
   budgets: {
@@ -223,6 +227,9 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
       const body = await response.json();
       if (!response.ok) throw new Error(body.code ?? "UNAVAILABLE");
       setData({
+        contactFlowEnabled: initialData.contactFlowEnabled,
+        contactFlowSnapshot: initialData.contactFlowSnapshot,
+        contactFlowOwner: initialData.contactFlowOwner,
         ...body,
         locations: data.locations,
         selectedLocationSlug: data.selectedLocationSlug,
@@ -543,6 +550,14 @@ export function GrowthLab({ initialData }: { initialData: GrowthLabData }) {
           </div>
         )}
       </section>
+      {data.contactFlowEnabled && (
+        <ContactFlowLab
+          initialSnapshot={data.contactFlowSnapshot}
+          recommendations={data.recommendations}
+          locationSlug={data.selectedLocationSlug}
+          owner={data.contactFlowOwner === true}
+        />
+      )}
       <section aria-labelledby="usage">
         <h2 id="usage" className="mb-3 text-xl font-black">
           Uso y límites del mes

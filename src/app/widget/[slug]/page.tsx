@@ -79,7 +79,7 @@ export default async function WidgetPage({
     bg?: string; text?: string; textSecondary?: string; fontSize?: string;
     radius?: string; shadow?: string; headerAlign?: string; location?: string;
     service?: string; staff?: string; date?: string; story?: string;
-    preview?: string;
+    preview?: string; cf_ref?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -378,6 +378,7 @@ export default async function WidgetPage({
       initialStaffId={sp.staff}
       initialDate={sp.date}
       storyCampaignToken={sp.story}
+      contactFlowToken={sp.cf_ref}
       previewMode={previewMode}
       useBusinessScheduleOnly={(business.subscription?.plan ?? "INDIVIDUAL") === "INDIVIDUAL"}
       availableRewards={availableRewards.map((reward) => ({ ...reward, expiresAt: reward.expiresAt?.toISOString() ?? null }))}

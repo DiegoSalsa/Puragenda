@@ -15,6 +15,8 @@ import { GrowthLab, type GrowthLabData } from "./growth-lab";
 import { PuriAccessError } from "@/server/puri/types";
 import { PRIVATE_PAGE_ROBOTS } from "@/lib/crawler-policy";
 import { prisma } from "@/server/db/prisma";
+import { contactLabEnabled } from "@/server/contact-flow/policy";
+import { contactSnapshot } from "@/server/contact-flow/campaigns";
 export const metadata = {
   title: "Puri+ · prueba interna",
   robots: { ...PRIVATE_PAGE_ROBOTS, googleBot: PRIVATE_PAGE_ROBOTS },
@@ -88,6 +90,13 @@ export default async function PuriPlusLab({
     });
     initialData = JSON.parse(
       JSON.stringify({
+        contactFlowEnabled:
+          contactLabEnabled() && scope.canPrepare && scope.canClients,
+        contactFlowOwner: scope.owner,
+        contactFlowSnapshot:
+          contactLabEnabled() && scope.canPrepare && scope.canClients
+            ? await contactSnapshot(scope)
+            : undefined,
         signals: await listGrowthSignals(scope),
         recommendations: await listGrowthRecommendations(scope),
         budgets: await growthBudgetSnapshot(scope),
