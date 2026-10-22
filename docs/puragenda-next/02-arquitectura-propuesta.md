@@ -171,3 +171,11 @@ Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iterac
 Hay un resolver web central de servidor, propuestas persistentes con payload inmutable, aprobación explícita y transición independiente del add-on. El lock de Business coordina migraciones, cupos y billing. Los entitlements se reconstruyen tras evidencia canónica; los gates legacy siguen siendo efectivos. No hay ejecutor externo ni cutover público.
 
 Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).
+
+## Iteración 6 — Puri+ interno implementado
+
+El orquestador existente admite una extensión de capacidades construida por servidor. Las consultas analíticas se autorizan antes de acceder a datos; SQL y disponibilidad pura producen evidencia persistida y señales independientes de IA. La preparación, revisión y aprobación humana tienen snapshots/versiones, auditoría y trigger de inmutabilidad, conservando `executable=false`.
+
+Las reservas de presupuesto usan una transacción con lock global corto; análisis y decisiones usan un lock por negocio/alcance y leases con token. No se adquieren locks largos de reservas operativas ni se llama a servicios que liberen retenciones. El scheduler es invocable únicamente en local y no está registrado como cron. Estándar conserva su ruta y herramientas.
+
+Ver [arquitectura real de Puri+](./17-puri-plus-inteligencia-comercial.md) y [validación A–N](./18-iteracion-6-validacion.md). El ejecutor Contact Flow y la activación productiva siguen pendientes.

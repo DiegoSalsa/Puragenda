@@ -86,3 +86,9 @@ Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación fin
 1.543 tests aprobados, 131 omitidos, cero fallos; 79 PostgreSQL comerciales y 31 unitarios nuevos. Se comprobaron propuestas inmutables, aprobación, obsolescencia, continuidad founder/web/dominios/media, doble cobro, UNKNOWN y concurrencia con cupos. TypeScript, Prisma, ESLint, migraciones y build aislado aprobados. Las firmas de SDK verifican fixtures explícitos; no certifican transporte real ni cutover productivo.
 
 Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).
+
+## Iteración 6 — cobertura y frontera de seguridad
+
+Pruebas Puri+ de reglas, ventanas/DST, disponibilidad, privacidad, Responses, salida inválida, prompt injection y API cerrada; integración PostgreSQL real para autorización, dinero observado/estimado/desconocido, cohortes, leases, supresión, retención, FKs/RLS y concurrencia de presupuestos/análisis/aprobación. La fixture de solapamiento histórico usa únicamente una transacción local de importación; no se modifica el guard operativo de reservas.
+
+El E2E de Chrome recorre análisis → propuesta → revisión → checkbox explícito → aprobación auditada, comprueba el rechazo de estándar y dos tamaños de pantalla. No usa proveedores externos con costo. La suite completa conserva pruebas/omisiones legacy. Los resultados y logs exactos están en [18 — validación A–N](./18-iteracion-6-validacion.md); los límites de inferencia y activación figuran en [17 — arquitectura](./17-puri-plus-inteligencia-comercial.md).

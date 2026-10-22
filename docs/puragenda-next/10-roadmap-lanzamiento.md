@@ -175,9 +175,9 @@ Todos deben ser server-side, auditados y con kill switch. Un flag de UI no puede
 | Aumento/reducción sin perder historia | Staff + contador, sin ledger | SeatChangeRequest y snapshots | 2 | concurrent changes |
 | Provider y prorrateo | MP update y Paddle checkout | adapters, preview, fecha efectiva | 2 | contract/provider |
 | Trial, descuentos, referidos | campos Subscription y PlatformDiscount | BenefitSnapshot y precedencia | 1, 2, 6 | benefits |
-| Puri estándar/Plus | Puri read-only y permisos | capability policy y recommendation workflow | 4 | permissions/cost |
-| SQL antes que IA | tools deterministas y telemetry | signals/projections/cache | 4 | fallback/cost |
-| Puri no ejecuta acciones | prompt V1 solo lectura | prepare/approve/execute separado | 4, 5 | double approval |
+| Puri estándar/Plus | Extensión interna del mismo orquestador; tres niveles y permisos efectivos | cutover tras políticas y evaluación real | 4 | puri-growth route/orchestrator/PostgreSQL |
+| SQL antes que IA | Motor de señales, snapshot, hashes y caché implementados localmente | carga real y límites comerciales pendientes | 4 | reglas, fallback, cohorts/occupancy/SQL |
+| Puri no ejecuta acciones | Propuestas, revisión y aprobación inmutables con executable=false | Contact Flow debe revalidar y ejecutar por separado | 4, 5 | aprobación concurrente y E2E Chrome |
 | Contact Flow configurable | campaña manual Resend | DSL, enrollment, outbox y worker | 5 | concurrency/retry |
 | Cuotas y protección Resend | 50/100 mensual, batch síncrono | diario/mensual/global + kill switch | 5 | quota/isolation |
 | Consentimiento y bajas | acceptsMarketing booleano | consent ledger, suppression, No Molestar | 5 | opt-out/webhook |
@@ -188,7 +188,7 @@ Todos deben ser server-side, auditados y con kill switch. Un flag de UI no puede
 | Propuesta voluntaria y aceptación | Payload inmutable, hash, propietario y expiración | UX Mi Plan y decisión de beneficios especiales pendientes | 3 | owned boundary, stale/approval races |
 | Fin de doble facturación web | Transición y lectura terminal canónica; no ejecutor externo | comprobar coordinación/corte real sandbox antes de ejecutar | 3 | activo, programado, UNKNOWN, pago/cancelación |
 | UX nuevos nombres | pricing actual Individual/Equipo | cards, selector y estados | 6 | mobile/a11y |
-| Rentabilidad | telemetry parcial; tarifas externas faltantes | budgets, cost dashboard, scenarios | 0, 4, 5, 7 | cost alerts |
+| Rentabilidad | Budgets global/negocio/categoría, reservas y estado desconocido; monitor interno | aprobar asignaciones, tarifas y conciliación real | 0, 4, 5, 7 | alertas, límites y concurrencia PostgreSQL |
 | Chile diciembre 2026 | privacidad y SERNAC existentes | legal gate y consent/versioning | 0, 5 | legal checklist |
 | Git aislado y no producción | checkout original dirty; worktree limpio | feature/puragenda-next y flags | 0, 7, 8 | git/preflight |
 | Lanzamiento único | flags web actuales | flag global y checklist | 7, 8 | smoke/rollback |
@@ -196,7 +196,7 @@ Todos deben ser server-side, auditados y con kill switch. Un flag de UI no puede
 | Webhooks duplicados/desordenados | guards MP/Paddle parciales | inbox/event ledger unificado | 2, 5 | contract/integration |
 | Separación entre negocios | getBusinessForUser/RLS | tenant scope en cada job/tool | todas | negative isolation |
 | Plan de pruebas completo | suites actuales provider/Puri/web | matriz unit/integration/contract/E2E | 7 | acceptance gate |
-| Documentación permanente | docs existentes por módulos | este directorio de 10 docs | 0 | link/inventory check |
+| Documentación permanente | Auditoría y entregas versionadas | documentos 01–18 y evidencia de validación | 0 | link/inventory check |
 
 ## Tareas siguientes de Codex
 
@@ -244,3 +244,11 @@ Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación fin
 La infraestructura de migración voluntaria y web Plus está implementada y comprobada en sombra. No habilita aún los gates productivos ni cambios externos. La siguiente fase desarrolla Puri+ sobre entitlements, permisos y señales deterministas, conservando propuestas/aprobación separadas de Contact Flow. Continúan los bloqueos de proveedores y decisiones monetarias de iteración 4.
 
 Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación A–J](./16-iteracion-5-validacion.md).
+
+## Iteración 6 — actualización de trazabilidad
+
+Puri+ queda funcional en aislamiento: SQL → señal persistente → recomendación → preparación → revisión → aprobación humana auditada, sin ejecución. Los servicios rechazan producción y no se registró un cron activo. Se probaron planes/roles/sucursales, costos conocidos/desconocidos, carreras reales y el flujo interno en móvil/escritorio.
+
+La próxima fase es Contact Flow: consentimiento y supresión por finalidad, outbox/worker idempotente, cuotas y presupuestos, entrega/webhooks, plantillas y atribución verificable. No debe reutilizar la campaña manual como ejecutor de propuestas. Antes del lanzamiento único siguen pendientes las decisiones comerciales, legales y de proveedores de las iteraciones previas.
+
+Ver [17 — implementación](./17-puri-plus-inteligencia-comercial.md) y [18 — informe A–N](./18-iteracion-6-validacion.md).

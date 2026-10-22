@@ -1,7 +1,7 @@
 # Puragenda Next — auditoría y plan maestro
 
 **Fecha de corte:** 22 de octubre de 2026 (America/Santiago)<br>
-**Estado:** catálogo, billing sandbox, baseline reproducible, política web Plus y migración comercial interna implementados en sombra; transporte comercial real, cutover y lanzamiento pendientes<br>
+**Estado:** catálogo, billing sandbox, baseline reproducible, web Plus, migración comercial y Puri+ interno implementados en sombra; Contact Flow ejecutor, cutover y lanzamiento pendientes<br>
 **Baseline auditado:** 731582e6098fd82d2538ab66500dfbc7147ea1c5 (reel/puragenda-publicitario-20261015)<br>
 **Rama de trabajo:** feature/puragenda-next<br>
 **Worktree:** C:\Users\diego\.codex\worktrees\puragenda-next-audit\agenda
@@ -14,7 +14,7 @@ El sistema actual es una aplicación Next.js App Router 16.3.8 con TypeScript, P
 
 La suscripción actual aún usa INDIVIDUAL, EQUIPO y TEST. El precio fuente es $12.990 para Individual, $29.990 para Equipo y $1.000 para Test; Equipo incluye cinco profesionales y cada extra cuesta $3.000, con un tope de 20 extras en los flujos públicos. La facturación chilena usa Mercado Pago; el flujo internacional usa Paddle. Hay estados de trial, pago pendiente, gracia, descuentos, premios, referidos, anualidad y overrides administrativos. Esto permite reutilizar bastante infraestructura, pero impide cambiar el catálogo sin una capa de compatibilidad.
 
-Puri es un único asistente con OpenAI Responses API, herramientas SQL deterministas, permisos por usuario/sucursal, historial limitado a la petición, rate limit compartido y telemetría de tokens, latencia, herramientas, errores y coste estimado. El código actual es una buena base para Puri+, pero no tiene recomendaciones proactivas, workflow de aprobación comercial ni herramientas de escritura/marketing.
+Puri es un único asistente con OpenAI Responses API, herramientas SQL deterministas, permisos por usuario/sucursal, historial limitado a la petición, rate limit compartido y telemetría de tokens, latencia, herramientas, errores y coste estimado. La iteración 6 añade una extensión interna de Puri+: señales SQL persistentes, scheduler preparado, recomendaciones, propuestas/aprobaciones y presupuestos. El Puri operativo productivo mantiene su comportamiento. La aprobación interna no ejecuta marketing ni Contact Flow.
 
 Marketing actual es una campaña manual por mes: obtiene una audiencia win-back, genera un lote síncrono y lo envía con resend.batch.send. No existe motor de automatizaciones, cola durable, cuota diaria, ledger de intentos, webhook de entrega, atribución de reservas ni supresión local. El acceso del cliente usa acceptsMarketing, cuyo valor por defecto en el esquema es true; esto debe revisarse antes de activar Contact Flow.
 
@@ -48,6 +48,8 @@ El mayor riesgo es facturar o habilitar cupos/beneficios con una lectura vieja d
 14. [14 — Validación y entrega de iteración 4](./14-iteracion-4-validacion.md)
 15. [15 — Web Plus y migración comercial](./15-web-plus-y-migracion-comercial.md)
 16. [16 — Validación de iteración 5](./16-iteracion-5-validacion.md)
+17. [17 — Puri+ e inteligencia comercial](./17-puri-plus-inteligencia-comercial.md)
+18. [18 — Validación de iteración 6, informe A–N](./18-iteracion-6-validacion.md)
 
 ## Decisiones que bloquean la implementación
 
@@ -91,3 +93,9 @@ Adaptadores concretos de SDK, operación externa durable y evidencia de pago sep
 ## Estado de Iteración 5
 
 Resolver web Plus/legacy, propuestas inmutables, aprobación de propietario y transiciones de add-ons funcionan en servicios aislados. La suite completa aprobó 1.543 tests y mantuvo 131 omitidos; 79 pruebas comerciales usan PostgreSQL real. Los datos web, dominios, founder y contratos legacy se conservan. No hay ejecutor externo ni cutover de gates: los permisos públicos y el checkout siguen usando legacy. Los documentos 15 y 16 distinguen implementación, evidencia contractual y dependencias pendientes.
+
+## Estado de Iteración 6
+
+El motor comercial detecta inactividad, capacidad disponible, caída de demanda y cambios de servicios mediante SQL y código puro. El mismo Puri puede explicar agregados y preparar propuestas; el propietario puede revisarlas y aprobarlas con hash/versión y evidencia actual. Las propuestas permanecen no ejecutables. Hay leases, supresión, retención local, presupuestos atómicos y observabilidad sin conversaciones ni listas de destinatarios.
+
+El laboratorio `/internal/puri-plus` fue comprobado con Chrome en escritorio/móvil y PostgreSQL sintético. Todos los flags nuevos están cerrados por defecto y todos los servicios rechazan producción. No se activaron cron, proveedores, campañas, checkout ni cambios del dashboard productivo. La fase siguiente es Contact Flow con consentimiento/supresión, outbox, cuotas, entregas y atribución, precedida de las decisiones comerciales y legales pendientes. Ver documentos 17 y 18 para límites y resultados exactos.

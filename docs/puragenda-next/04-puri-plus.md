@@ -89,3 +89,11 @@ Si se retoma la rama MCP, debe consultar el mismo servicio de entitlements y per
 - Un fallo de modelo conserva datos deterministas.
 - La cuota se registra aun con error.
 - La separación entre negocios y sucursales pasa pruebas negativas.
+
+## Iteración 6 — implementación comprobable
+
+Las propuestas anteriores se materializan en `src/server/puri/growth/` y en el laboratorio interno, reutilizando el orquestador y cliente existentes. Se implementaron cinco herramientas sin redundancia: señales agregadas, cohortes, desempeño de servicios, recomendaciones y preparación Contact Flow. Retención, ocupación y tendencias se incluyen en los agregados, sin crear otro chatbot.
+
+La evidencia distingue cobro registrado, nominal estimado y monto desconocido. No selecciona datos personales de clientes; el texto libre también se reduce a intenciones antes del modelo. Hay persistencia, caché, ejecución proactiva preparada, control atómico de presupuesto y decisiones humanas con hash/versión. La preparación conversacional requiere intención y permiso; la aprobación sólo existe en una operación humana explícita.
+
+No hay ejecución de automatizaciones, consentimiento promocional certificado, atribución ni cron activo. Los flags no conceden permisos y esta implementación rechaza producción. El estado vigente, reglas y límites reemplazan los nombres orientativos anteriores: [17 — Puri+](./17-puri-plus-inteligencia-comercial.md). Evidencia de pruebas: [18 — Validación](./18-iteracion-6-validacion.md).

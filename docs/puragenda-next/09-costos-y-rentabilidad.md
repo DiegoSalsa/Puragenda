@@ -104,3 +104,11 @@ No mostrar datos de un negocio a otro.
 - Puri degrada a SQL cuando la IA no está disponible.
 - El costo de web está separado de legacy add-on y Plus.
 - Finanzas aprueba inputs antes de publicación.
+
+## Iteración 6 — controles implementados en local
+
+Puri+ tiene reservas atómicas en tres niveles: global, negocio y categoría. Hay separación de SQL interactivo/proactivo, chat Plus, explicación de recomendaciones e infraestructura preparada para estándar. Las cuotas de estándar no alteran su ruta productiva actual. Alertas 50/80/100%, intentos denegados, costos desconocidos y uso reportado se conservan sin conversaciones ni listas de clientes.
+
+Sin presupuesto configurado o tarifa exacta no se inicia gasto IA. Un resultado ambiguo mantiene el compromiso máximo, bloquea nuevas llamadas del negocio y permite fallback SQL presupuestado. El global conserva el compromiso sin impedir por sí solo uso autorizado de otros negocios. No existe una tarifa de modelo inventada ni un margen CLP inferido de costos USD.
+
+Los límites de fixtures son sintéticos. Siguen pendientes la asignación mensual rentable para $22.990 CLP, tarifas verificadas, conversión/tributación aplicable, evaluación de carga y conciliación de facturas/costos desconocidos. No se activó gasto proactivo productivo. Ver [17 — presupuestos reales](./17-puri-plus-inteligencia-comercial.md) y [18 — validación](./18-iteracion-6-validacion.md).

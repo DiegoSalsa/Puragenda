@@ -1,0 +1,30 @@
+{
+  "flow": "SQL → signal → recommendation → proposal → review → explicit approval → durable audit",
+  "approved": 1,
+  "executable": false,
+  "standardDenied": true,
+  "realProviderCalls": 0,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1050
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "horizontalOverflow": false,
+  "pageErrors": [],
+  "checks": [
+    "APPROVED_SQL_FLOW_AND_AUDIT",
+    "EXPLICIT_APPROVAL_CHECKBOX",
+    "STANDARD_API_403_AND_ZERO_RUNS",
+    "DESKTOP_NO_OVERFLOW",
+    "MOBILE_NO_OVERFLOW",
+    "NOINDEX_METADATA",
+    "BUTTON_ACCESSIBLE_NAMES",
+    "DETERMINISTIC_CHAT_FALLBACK",
+    "ZERO_PAGE_ERRORS"
+  ]
+}
