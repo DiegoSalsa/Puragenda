@@ -27,6 +27,8 @@
     "test:commercial:postgres": "node scripts/test-commercial-postgres.mjs",
     "test:commercial:migrations": "node scripts/test-commercial-migrations.mjs",
     "test:puri-plus:browser": "node scripts/test-puri-plus-local.mjs",
+    "test:contact-flow:postgres": "node scripts/test-commercial-postgres.mjs --contact-flow",
+    "contact-flow:worker:local": "tsx scripts/run-contact-flow-local.ts",
     "db:commercial:bootstrap": "node scripts/commercial-migrations.mjs bootstrap",
     "db:commercial:legacy": "node scripts/commercial-migrations.mjs legacy",
     "build:commercial:isolated": "node scripts/build-commercial-isolated.mjs"

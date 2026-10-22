@@ -1,6 +1,6 @@
 # 05 — Contact Flow
 
-**Actualización de iteración 6:** Puri+ ya prepara, revisa y permite aprobar snapshots de estrategias en local, con reglas, evidencia, hash, versión y auditoría. El contrato `approvedGrowthHandoff` conserva `executable=false` y enumera comprobaciones pendientes. Contact Flow ejecutor, consentimiento/supresión verificables, cola, envíos y atribución siguen sin implementar. La campaña manual legacy descrita abajo no se conecta a estas propuestas. Ver [17 — contrato real](./17-puri-plus-inteligencia-comercial.md) y [18 — validación](./18-iteracion-6-validacion.md).
+**Actualización de iteración 7:** Contact Flow está implementado en laboratorio PostgreSQL: consentimiento firmado, supresiones, campañas/versiones, autorización separada, outbox con leases/fencing, cuotas, simulador durable, webhooks y atribución transaccional de reservas. El sello de ejecución externa permanece cerrado por código. `approvedGrowthHandoff` conserva `executable=false`: aprobar la propuesta no autoriza una campaña. El contrato vigente está en [19 — ejecución](./19-contact-flow-ejecucion.md) y [20 — validación](./20-iteracion-7-validacion.md). El resto de este documento conserva la auditoría y propuesta histórica; sus nombres de entidades no son el esquema implementado.
 
 ## Estado actual
 

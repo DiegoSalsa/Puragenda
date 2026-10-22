@@ -1,5 +1,7 @@
 # Iteración 6 — Puri+ e inteligencia comercial
 
+**Continuidad de iteración 7:** el contrato de propuestas de este documento se conserva. Contact Flow agrega campañas, consentimiento, autorización de ejecución, outbox y atribución en laboratorio; ver [19](./19-contact-flow-ejecucion.md) y [20](./20-iteracion-7-validacion.md). La aprobación de la propuesta sigue sin ser permiso de envío.
+
 Fecha: 22-10-2026. Estado: implementación interna en PostgreSQL desechable, sin activación productiva. «Tu agenda se organiza. Tu negocio crece.»
 
 ## Arquitectura implementada

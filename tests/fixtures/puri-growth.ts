@@ -32,6 +32,7 @@ export async function growthFixture(
     data: {
       id: businessId,
       name: "Synthetic growth business",
+      address:"Dirección sintética del laboratorio",
       slug: businessId,
       apiKey: randomUUID(),
       ownerId: user.id,
@@ -91,6 +92,7 @@ export async function growthFixture(
   const service = await prisma.service.create({
     data: { businessId, name: "Synthetic service", duration: 60, price: 10000 },
   });
+  await prisma.locationService.create({data:{locationId:location.id,serviceId:service.id}});
   const staff = options.team
     ? await prisma.staff.create({
         data: {

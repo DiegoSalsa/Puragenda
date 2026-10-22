@@ -16,6 +16,7 @@ Object.assign(env,{NODE_ENV:"production",DATABASE_URL:databaseUrl,DIRECT_URL:dat
   COMMERCIAL_V2_MIGRATION_WRITES:"0",COMMERCIAL_V2_MIGRATION_FIXTURES:"0",
   COMMERCIAL_V2_WEBSITE_GATES:"0",
   PURI_PLUS_INTERNAL_ENABLED:"0",PURI_PLUS_AI_ENABLED:"0",PURI_PLUS_PROACTIVE_ENABLED:"0",
+  CONTACT_FLOW_LAB_ENABLED:"0",
   MCP_ENABLED:"0",MCP_PUBLIC_BOOKING_ENABLED:"0",MCP_REVIEW_SUPPRESS_EFFECTS:"1"});
 console.log("Production compilation with isolated local database, no provider credentials, all commercial writers disabled.");
 const result=spawnSync(process.execPath,["node_modules/next/dist/bin/next","build"],{env,stdio:"inherit",windowsHide:true});

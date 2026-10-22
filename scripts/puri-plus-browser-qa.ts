@@ -13,6 +13,10 @@ import {
   AUTH_COOKIE_NAME,
 } from "../src/server/auth/session";
 import { ANALYTICS_POLICY_VERSION } from "../src/lib/analytics/policy";
+import { configureContactPolicy } from "../src/server/contact-flow/quotas";
+import { recordConsent } from "../src/server/contact-flow/consent";
+import { digest } from "../src/server/contact-flow/policy";
+import { syntheticContactPolicy } from "../tests/fixtures/contact-flow";
 
 async function main() {
   const require = createRequire(
@@ -26,6 +30,23 @@ async function main() {
   const log = createWriteStream("scratch/puri-plus-qa/next-dev.log");
   const f = await growthFixture(),
     standard = await growthFixture({ history: false });
+  await configureContactPolicy("GLOBAL", syntheticContactPolicy);
+  await configureContactPolicy(f.businessId, syntheticContactPolicy);
+  const syntheticClients = await prisma.client.findMany({
+    where: { businessId: f.businessId },
+    orderBy: { email: "asc" },
+    take: 4,
+  });
+  for (const c of syntheticClients)
+    await recordConsent(f.scope, {
+      clientId: c.id,
+      source: "SYNTHETIC_FORM",
+      accepted: true,
+      textVersion: "cf-commercial-email-v1",
+      evidenceRef: `synthetic:browser:${c.id}`,
+      evidenceHash: digest(`synthetic-accept:${c.id}`),
+      grantedAt: new Date(Date.now() - 60000).toISOString(),
+    });
   await prisma.commercialSubscription.update({
     where: { businessId: standard.businessId },
     data: { planCode: "PURAGENDA", basePriceClp: 12990, totalPriceClp: 12990 },
@@ -156,10 +177,155 @@ async function main() {
     await page
       .getByText(/Explicación determinista; IA no disponible/)
       .waitFor();
+    page.on(
+      "dialog",
+      (dialog: { accept: () => Promise<void> }) => void dialog.accept(),
+    );
+    async function contactClick(name: string) {
+      const done = page.waitForResponse(
+        (r: { url: () => string; request: () => { method: () => string } }) =>
+          r.url().endsWith("/api/internal/contact-flow") &&
+          r.request().method() === "POST",
+      );
+      await page.getByRole("button", { name, exact: true }).click();
+      const response = await done;
+      assert.equal(response.status(), 200, await response.text());
+      await page
+        .getByText("Verificando Contact Flow…", { exact: true })
+        .waitFor({ state: "hidden" });
+    }
+    await contactClick("Preparar campaña");
+    await page.getByText(/4 destinatarios elegibles · 1 excluidos/).waitFor();
+    assert.equal(
+      await page
+        .getByRole("button", {
+          name: "Autorizar ejecución simulada",
+          exact: true,
+        })
+        .isDisabled(),
+      true,
+    );
+    await page.getByText("Vista previa del correo", { exact: true }).click();
+    await page
+      .getByText("Darme de baja comercial (sin iniciar sesión)", {
+        exact: true,
+      })
+      .waitFor();
+    await page
+      .getByRole("checkbox", {
+        name: "Autorizo ejecución simulada",
+        exact: true,
+      })
+      .check();
+    await contactClick("Autorizar ejecución simulada");
+    assert.equal(
+      await prisma.cfAuthorization.count({
+        where: { businessId: f.businessId },
+      }),
+      1,
+    );
+    assert.equal(
+      await prisma.cfOutbox.count({ where: { businessId: f.businessId } }),
+      4,
+    );
+    await contactClick("Pausar campaña");
+    await page.getByText("Pausada", { exact: true }).waitFor();
+    await contactClick("Reanudar campaña");
+    await contactClick("Bloquear simulación del negocio");
+    assert.equal(
+      (
+        await prisma.cfPolicy.findUniqueOrThrow({
+          where: { key: f.businessId },
+        })
+      ).killed,
+      true,
+    );
+    await contactClick("Desbloquear simulación del negocio");
+    await contactClick("Ejecutar laboratorio");
+    assert.equal(
+      await prisma.cfMessage.count({
+        where: { businessId: f.businessId, state: "ACCEPTED" },
+      }),
+      4,
+    );
+    await page
+      .getByText("Aceptados por simulador: 4", { exact: true })
+      .waitFor();
+    await contactClick("Reconciliar entregas simuladas");
+    await page
+      .getByText("Entregas simuladas confirmadas: 4", { exact: true })
+      .waitFor();
+    const bookingToken = await prisma.cfToken.findFirstOrThrow({
+      where: { businessId: f.businessId, kind: "BOOKING" },
+      include: { enrollment: { include: { client: true } } },
+    });
+    const { signature } = await import("../src/server/contact-flow/policy");
+    const bookingValue = `${bookingToken.id}.${signature(`BOOKING:${bookingToken.id}:${bookingToken.expiresAt.toISOString()}`)}`;
+    const business = await prisma.business.findUniqueOrThrow({
+      where: { id: f.businessId },
+      select: { apiKey: true, slug: true },
+    });
+    const bookingStart = f.day(-10);
+    const booked = await context.request.post(
+      `${origin}/api/business/${business.slug}/book`,
+      {
+        headers: { Origin: origin, "x-api-key": business.apiKey },
+        data: {
+          serviceId: f.service.id,
+          serviceIds: [f.service.id],
+          locationId: f.location.id,
+          customerName: "Synthetic Contact Flow booking",
+          customerEmail: bookingToken.enrollment.client.email,
+          customerPhone: "+56000000000",
+          startTime: bookingStart.toISOString(),
+          endTime: new Date(+bookingStart + 3600000).toISOString(),
+          contactFlowToken: bookingValue,
+        },
+      },
+    );
+    assert.equal(booked.status(), 201, await booked.text());
+    const attributed = await prisma.cfAttribution.findFirstOrThrow({
+      where: { businessId: f.businessId },
+    });
+    await prisma.appointment.update({
+      where: { id: attributed.appointmentId },
+      data: { status: "COMPLETED", settledAt: new Date() },
+    });
+    await contactClick("Ver resultados verificables");
+    await page
+      .getByText("Atribución técnica verificable", { exact: true })
+      .waitFor();
+    await page.getByText(/Reservas asociadas: 1 · completadas: 1/).waitFor();
+    assert.equal(
+      (await page.content()).includes("private-0@example.invalid"),
+      false,
+    );
+    const unsubscribeToken = await prisma.cfToken.findFirstOrThrow({
+      where: { businessId: f.businessId, kind: "UNSUBSCRIBE" },
+    });
+    const value = `${unsubscribeToken.id}.${signature(`UNSUBSCRIBE:${unsubscribeToken.id}:${unsubscribeToken.expiresAt.toISOString()}`)}`;
+    const anonymous = await browser.newContext(),
+      optout = await anonymous.newPage();
+    await optout.goto(
+      `${origin}/contact-flow/unsubscribe?token=${encodeURIComponent(value)}`,
+    );
+    assert.equal((await optout.content()).includes("@example.invalid"), false);
+    await optout
+      .getByRole("button", { name: "Confirmar baja comercial" })
+      .click();
+    await optout.getByText(/La baja comercial quedó registrada/).waitFor();
+    assert.equal(
+      await prisma.cfSuppression.count({
+        where: { businessId: f.businessId, reason: "UNSUBSCRIBE" },
+      }),
+      1,
+    );
+    await anonymous.close();
     await page.screenshot({
       path: "scratch/puri-plus-qa/desktop.png",
       fullPage: true,
     });
+    await page.locator('section[aria-labelledby="contact-flow-title"]').screenshot({path:"scratch/puri-plus-qa/contact-flow-desktop.png"});
     const desktopOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     );
@@ -169,6 +335,7 @@ async function main() {
       path: "scratch/puri-plus-qa/mobile.png",
       fullPage: true,
     });
+    await page.locator('section[aria-labelledby="contact-flow-title"]').screenshot({path:"scratch/puri-plus-qa/contact-flow-mobile.png"});
     assert.equal(
       await page.evaluate(
         () => document.documentElement.scrollWidth > window.innerWidth,
@@ -208,11 +375,16 @@ async function main() {
     );
     assert.deepEqual(errors, []);
     const report = {
-      flow: "SQL → signal → recommendation → proposal → review → explicit approval → durable audit",
+      flow: "SQL → signal → recommendation → proposal approval → campaign → exclusions → execution authorization → durable outbox → simulated acceptance → authenticated reconciliation → results → anonymous unsubscribe",
       approved: 1,
       executable: false,
       standardDenied: true,
       realProviderCalls: 0,
+      simulatedAccepted:4,
+      simulatedDelivered:4,
+      attributedBookings:1,
+      completedBookings:1,
+      incrementalBookings:null,
       viewports: [
         { width: 1440, height: 1050 },
         { width: 390, height: 844 },
@@ -220,6 +392,14 @@ async function main() {
       horizontalOverflow: false,
       pageErrors: errors,
       checks: [
+        "CONTACT_PREVIEW_AND_CONSENT_EXCLUSIONS",
+        "SEPARATE_EXECUTION_AUTHORIZATION",
+        "PAUSE_RESUME_AND_BUSINESS_KILL_SWITCH",
+        "DURABLE_SIMULATED_ACCEPTANCE",
+        "AUTHENTICATED_DELIVERY_RECONCILIATION",
+        "TECHNICAL_ATTRIBUTION_RESULTS",
+        "SIGNED_ATTRIBUTION_THROUGH_REAL_BOOKING_HTTP",
+        "ANONYMOUS_SIGNED_UNSUBSCRIBE_NO_PII",
         "APPROVED_SQL_FLOW_AND_AUDIT",
         "EXPLICIT_APPROVAL_CHECKBOX",
         "STANDARD_API_403_AND_ZERO_RUNS",
@@ -241,6 +421,14 @@ async function main() {
     child.kill();
     await new Promise<void>((r) => child.once("exit", () => r()));
     log.end();
+    await prisma.cfAttribution.deleteMany({
+      where: { businessId: f.businessId },
+    });
+    await prisma.cfCampaign.deleteMany({ where: { businessId: f.businessId } });
+    await prisma.cfConsent.deleteMany({ where: { businessId: f.businessId } });
+    await prisma.cfSuppression.deleteMany({
+      where: { businessId: f.businessId },
+    });
     await deleteGrowthFixture(f);
     await deleteGrowthFixture(standard);
     await prisma.$disconnect();

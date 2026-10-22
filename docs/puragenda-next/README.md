@@ -1,7 +1,7 @@
 # Puragenda Next — auditoría y plan maestro
 
 **Fecha de corte:** 22 de octubre de 2026 (America/Santiago)<br>
-**Estado:** catálogo, billing sandbox, baseline reproducible, web Plus, migración comercial y Puri+ interno implementados en sombra; Contact Flow ejecutor, cutover y lanzamiento pendientes<br>
+**Estado:** catálogo, billing sandbox, baseline reproducible, web Plus, migración comercial y Puri+ interno implementados en sombra; Contact Flow sintético implementado; cutover y lanzamiento pendientes<br>
 **Baseline auditado:** 731582e6098fd82d2538ab66500dfbc7147ea1c5 (reel/puragenda-publicitario-20261015)<br>
 **Rama de trabajo:** feature/puragenda-next<br>
 **Worktree:** C:\Users\diego\.codex\worktrees\puragenda-next-audit\agenda
@@ -16,7 +16,7 @@ La suscripción actual aún usa INDIVIDUAL, EQUIPO y TEST. El precio fuente es $
 
 Puri es un único asistente con OpenAI Responses API, herramientas SQL deterministas, permisos por usuario/sucursal, historial limitado a la petición, rate limit compartido y telemetría de tokens, latencia, herramientas, errores y coste estimado. La iteración 6 añade una extensión interna de Puri+: señales SQL persistentes, scheduler preparado, recomendaciones, propuestas/aprobaciones y presupuestos. El Puri operativo productivo mantiene su comportamiento. La aprobación interna no ejecuta marketing ni Contact Flow.
 
-Marketing actual es una campaña manual por mes: obtiene una audiencia win-back, genera un lote síncrono y lo envía con resend.batch.send. No existe motor de automatizaciones, cola durable, cuota diaria, ledger de intentos, webhook de entrega, atribución de reservas ni supresión local. El acceso del cliente usa acceptsMarketing, cuyo valor por defecto en el esquema es true; esto debe revisarse antes de activar Contact Flow.
+Marketing actual es una campaña manual por mes: obtiene una audiencia win-back, genera un lote síncrono y lo envía con resend.batch.send. Ese flujo legacy carece de outbox y consentimiento verificable. La iteración 7 incorpora esos contratos en un motor separado de ejecución, integrado con el mismo Puri+, únicamente en laboratorio. El acceso del cliente usa acceptsMarketing, cuyo valor por defecto en el esquema es true; esto debe revisarse antes de activar Contact Flow.
 
 El módulo Web ya tiene editor, borrador/publicación, plantillas, medios, subdominio, dominios propios, reservas integradas y dos proveedores de billing. BusinessWebsite y WebsiteAddon están separados de Subscription; además existen ofertas founder, trial, operaciones de checkout, conciliación y flags de lanzamiento. Es reutilizable, pero la nueva inclusión de web dentro de Plus exige una política de entitlement y una migración comercial que preserve add-ons y webs existentes.
 
@@ -99,3 +99,9 @@ Resolver web Plus/legacy, propuestas inmutables, aprobación de propietario y tr
 El motor comercial detecta inactividad, capacidad disponible, caída de demanda y cambios de servicios mediante SQL y código puro. El mismo Puri puede explicar agregados y preparar propuestas; el propietario puede revisarlas y aprobarlas con hash/versión y evidencia actual. Las propuestas permanecen no ejecutables. Hay leases, supresión, retención local, presupuestos atómicos y observabilidad sin conversaciones ni listas de destinatarios.
 
 El laboratorio `/internal/puri-plus` fue comprobado con Chrome en escritorio/móvil y PostgreSQL sintético. Todos los flags nuevos están cerrados por defecto y todos los servicios rechazan producción. No se activaron cron, proveedores, campañas, checkout ni cambios del dashboard productivo. La fase siguiente es Contact Flow con consentimiento/supresión, outbox, cuotas, entregas y atribución, precedida de las decisiones comerciales y legales pendientes. Ver documentos 17 y 18 para límites y resultados exactos.
+
+## Estado de Iteración 7
+
+Contact Flow cierra el ciclo de propuesta aprobada, campaña versionada, consentimiento firmado y supresiones, autorización específica, outbox PostgreSQL, simulación durable, reconciliación autenticada y atribución transaccional de reservas. La prueba de navegador recorre también el endpoint real de reservas con datos sintéticos. El sello de envío externo es una constante de código y SQL sólo permite proveedor simulado. No hay activación productiva ni herramientas públicas MCP de campañas.
+
+Ver [19 — implementación y operación](./19-contact-flow-ejecucion.md) y [20 — validación completa](./20-iteracion-7-validacion.md). Los documentos anteriores describen el estado de sus respectivas iteraciones; no representan pendientes técnicos del laboratorio ya implementado.

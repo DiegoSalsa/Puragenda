@@ -12,7 +12,14 @@ try {
 source.pathname = `/${name}`;
 await deployCommercialMigrations(source.href);
 const env = { ...process.env, COMMERCIAL_V2_TEST_DATABASE_URL: source.href, DATABASE_URL: source.href,
-  DIRECT_URL: source.href, COMMERCIAL_V2_INTERNAL_WRITES: "1", COMMERCIAL_V2_MIGRATION_WRITES: "1", COMMERCIAL_V2_MIGRATION_FIXTURES: "1", PURI_PLUS_INTERNAL_ENABLED: "1" };
+  DIRECT_URL: source.href, COMMERCIAL_V2_INTERNAL_WRITES: "1", COMMERCIAL_V2_MIGRATION_WRITES: "1", COMMERCIAL_V2_MIGRATION_FIXTURES: "1", PURI_PLUS_INTERNAL_ENABLED: "1", CONTACT_FLOW_LAB_ENABLED:"1", CONTACT_FLOW_TOKEN_SECRET:randomUUID()+randomUUID() };
 console.log(`Isolated commercial PostgreSQL database: ${name}`);
-const result = spawnSync(process.execPath, ["node_modules/vitest/vitest.mjs", "run", ...(process.argv.includes("--all") ? [] : ["tests/integration/commercial-v2-postgres.integration.test.ts", "tests/integration/commercial-billing-postgres.integration.test.ts", "tests/integration/commercial-migration-postgres.integration.test.ts", "tests/integration/puri-growth-postgres.integration.test.ts"]), "--reporter=dot"], { env, stdio: "inherit", windowsHide: true });
-process.exit(result.status ?? 1);
+const postgresFiles=["tests/integration/commercial-v2-postgres.integration.test.ts","tests/integration/commercial-billing-postgres.integration.test.ts","tests/integration/commercial-migration-postgres.integration.test.ts","tests/integration/puri-growth-postgres.integration.test.ts","tests/integration/contact-flow-postgres.integration.test.ts"];
+const run=(args)=>spawnSync(process.execPath,["node_modules/vitest/vitest.mjs","run",...args,"--reporter=dot"],{env,stdio:"inherit",windowsHide:true}).status??1;
+// Files share platform budget/policy rows. Serialize suites so one fixture's
+// temporary global limit cannot affect another suite. Worker races inside each
+// test still execute concurrently against real PostgreSQL.
+const postgresStatus=run([...(process.argv.includes("--contact-flow")?[postgresFiles[4]]:postgresFiles),"--no-file-parallelism"]);
+if(postgresStatus!==0)process.exit(postgresStatus);
+if(process.argv.includes("--all"))process.exit(run(postgresFiles.flatMap(file=>["--exclude",file])));
+process.exit(0);
