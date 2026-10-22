@@ -89,3 +89,9 @@ Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iterac
 Hay procedimiento automático de bootstrap y adopción de un baseline exacto, restringido a PostgreSQL local. Se verificaron datos e historial legacy sin cambios tras upgrade y repetición. No se migran clientes; los contratos comerciales legacy se rechazan en los writers V2. Las bases con tablas/políticas no representadas necesitan revisión explícita.
 
 Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+Existen propuestas persistentes con fingerprint, precio/desglose, beneficios y fecha congelados, aprobación explícita y transición recuperable del add-on. Cambios obsoletos se invalidan; los especiales necesitan revisión. Solo evidencia canónica y período válido permiten aplicar el contrato sombra. No se migró ningún cliente real ni se ejecutaron cancelaciones/cobros externos.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).

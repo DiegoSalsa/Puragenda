@@ -182,9 +182,11 @@ Todos deben ser server-side, auditados y con kill switch. Un flag de UI no puede
 | Cuotas y protección Resend | 50/100 mensual, batch síncrono | diario/mensual/global + kill switch | 5 | quota/isolation |
 | Consentimiento y bajas | acceptsMarketing booleano | consent ledger, suppression, No Molestar | 5 | opt-out/webhook |
 | Atribución de reservas | no existe | signed token y attribution | 5 | E2E booking |
-| Web incluida en Plus | WebsiteAddon separado | entitlement combinado y grandfathering | 3 | web/double charge |
-| Webs existentes preservadas | BusinessWebsite snapshot/publication | expand-contract y soft suspension | 3 | published/rollback |
-| Dominios/media/hosting | módulos website actuales | reutilizar con policy Plus | 3 | domain/media |
+| Web incluida en Plus | Resolver sombra y bloqueo de compra independiente, iteración 5 | cutover conjunto de todos los gates aún pendiente | 3 | website-commercial-access, PostgreSQL migration |
+| Webs existentes preservadas | Datos web/founder/dominios/media comparados antes/después | suspensión comercial sombra sin borrar contenido | 3 | commercial-migration-postgres |
+| Dominios/media/hosting | módulos actuales intactos y host sombra por tenant verificado | integrar la política al lanzamiento único | 3 | domain/media legacy + host sombra |
+| Propuesta voluntaria y aceptación | Payload inmutable, hash, propietario y expiración | UX Mi Plan y decisión de beneficios especiales pendientes | 3 | owned boundary, stale/approval races |
+| Fin de doble facturación web | Transición y lectura terminal canónica; no ejecutor externo | comprobar coordinación/corte real sandbox antes de ejecutar | 3 | activo, programado, UNKNOWN, pago/cancelación |
 | UX nuevos nombres | pricing actual Individual/Equipo | cards, selector y estados | 6 | mobile/a11y |
 | Rentabilidad | telemetry parcial; tarifas externas faltantes | budgets, cost dashboard, scenarios | 0, 4, 5, 7 | cost alerts |
 | Chile diciembre 2026 | privacidad y SERNAC existentes | legal gate y consent/versioning | 0, 5 | legal checklist |
@@ -236,3 +238,9 @@ Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iterac
 La capa de billing ahora tiene adaptadores SDK y operaciones persistentes verificables. La siguiente puerta es credenciales/precios V2, ciclo sandbox real, política tributaria/prorrateo y validación del corte de renovación. Después: migración voluntaria de clientes, inclusión de web y UX comercial, conservando el lanzamiento único.
 
 Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+La infraestructura de migración voluntaria y web Plus está implementada y comprobada en sombra. No habilita aún los gates productivos ni cambios externos. La siguiente fase desarrolla Puri+ sobre entitlements, permisos y señales deterministas, conservando propuestas/aprobación separadas de Contact Flow. Continúan los bloqueos de proveedores y decisiones monetarias de iteración 4.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación A–J](./16-iteracion-5-validacion.md).

@@ -165,3 +165,9 @@ Cada métrica debe tener correlation ID, business hash, event ID externo y reten
 Se implementaron los cinco modelos propuestos, servicios transaccionales y una proyección reconstruible de entitlements. Legacy sigue siendo autoridad para clientes actuales; V2 solo admite escrituras en base local desechable. El ledger concilia evidencia normalizada mediante una interfaz de verificación todavía sin transporte de proveedor. No hay dual-write productivo ni cutover.
 
 Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iteracion-3.md) y [validación](./12-iteracion-3-validacion.md).
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+Hay un resolver web central de servidor, propuestas persistentes con payload inmutable, aprobación explícita y transición independiente del add-on. El lock de Business coordina migraciones, cupos y billing. Los entitlements se reconstruyen tras evidencia canónica; los gates legacy siguen siendo efectivos. No hay ejecutor externo ni cutover público.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).

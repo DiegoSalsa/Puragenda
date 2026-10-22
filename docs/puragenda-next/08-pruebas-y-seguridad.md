@@ -80,3 +80,9 @@ Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iterac
 La suite completa con PostgreSQL aprobó 1.477 tests, con 131 omitidos y cero fallos. Hay 44 pruebas PostgreSQL comerciales y 22 contractuales/HTTP nuevas con firmas criptográficas de los SDK. TypeScript, ESLint y build aislado aprobados. No confundir estos fixtures con pruebas reales de transporte de proveedores.
 
 Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+1.543 tests aprobados, 131 omitidos, cero fallos; 79 PostgreSQL comerciales y 31 unitarios nuevos. Se comprobaron propuestas inmutables, aprobación, obsolescencia, continuidad founder/web/dominios/media, doble cobro, UNKNOWN y concurrencia con cupos. TypeScript, Prisma, ESLint, migraciones y build aislado aprobados. Las firmas de SDK verifican fixtures explícitos; no certifican transporte real ni cutover productivo.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).

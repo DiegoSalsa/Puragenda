@@ -1,7 +1,7 @@
 # Puragenda Next — auditoría y plan maestro
 
 **Fecha de corte:** 22 de octubre de 2026 (America/Santiago)<br>
-**Estado:** catálogo, infraestructura sombra, adaptadores SDK sandbox y baseline reproducible implementados; validación comercial real de proveedores y lanzamiento pendientes<br>
+**Estado:** catálogo, billing sandbox, baseline reproducible, política web Plus y migración comercial interna implementados en sombra; transporte comercial real, cutover y lanzamiento pendientes<br>
 **Baseline auditado:** 731582e6098fd82d2538ab66500dfbc7147ea1c5 (reel/puragenda-publicitario-20261015)<br>
 **Rama de trabajo:** feature/puragenda-next<br>
 **Worktree:** C:\Users\diego\.codex\worktrees\puragenda-next-audit\agenda
@@ -46,6 +46,8 @@ El mayor riesgo es facturar o habilitar cupos/beneficios con una lectura vieja d
 12. [12 — Validación y entrega de iteración 3](./12-iteracion-3-validacion.md)
 13. [13 — Billing V2 y proveedores](./13-billing-v2-y-proveedores.md)
 14. [14 — Validación y entrega de iteración 4](./14-iteracion-4-validacion.md)
+15. [15 — Web Plus y migración comercial](./15-web-plus-y-migracion-comercial.md)
+16. [16 — Validación de iteración 5](./16-iteracion-5-validacion.md)
 
 ## Decisiones que bloquean la implementación
 
@@ -85,3 +87,7 @@ Modelos expansivos, motor de cupos, ledger/reconciliación, entitlements sombra,
 ## Estado de Iteración 4
 
 Adaptadores concretos de SDK, operación externa durable y evidencia de pago separada están implementados y probados contractualmente con firmas reales y PostgreSQL. Bootstrap/actualización legacy usan baseline versionado y Prisma migrate deploy, sin reescribir archivos antiguos ni eliminar historial. La consulta real de catálogo Paddle mostró solo precios legacy USD; faltan credenciales SDK y precios V2 para validar un ciclo sandbox real. Ningún cliente ni flujo productivo se migró o activó.
+
+## Estado de Iteración 5
+
+Resolver web Plus/legacy, propuestas inmutables, aprobación de propietario y transiciones de add-ons funcionan en servicios aislados. La suite completa aprobó 1.543 tests y mantuvo 131 omitidos; 79 pruebas comerciales usan PostgreSQL real. Los datos web, dominios, founder y contratos legacy se conservan. No hay ejecutor externo ni cutover de gates: los permisos públicos y el checkout siguen usando legacy. Los documentos 15 y 16 distinguen implementación, evidencia contractual y dependencias pendientes.

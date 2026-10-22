@@ -56,3 +56,9 @@ Aprobar IVA/precio final, trial, ausencia/presencia de tarjeta, profesionales il
 - Web no se anuncia incluida para Puragenda estándar.
 - Móvil conserva selector y CTA.
 - Pending, past_due y UNKNOWN no prometen activación.
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+La futura UX Mi Plan puede usar la fachada de servidor `commercial-migration/owned.ts`: preparación, lectura de preview/estado y aceptación por hash. La fachada deriva el negocio desde sesión, exige propietario y rechaza precio, evidencia o estado enviados por navegador. No se agregó UI pública ni se modificaron pricing/checkout. Las propuestas bloqueadas indican qué decisión o evidencia falta.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).

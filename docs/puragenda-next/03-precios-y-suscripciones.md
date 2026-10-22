@@ -95,3 +95,9 @@ Detalles y limitaciones: [infraestructura](./11-infraestructura-comercial-iterac
 El importe recurrente y el cargo esperado del preview se persisten por separado. Los adaptadores SDK no convierten CLP a precios internacionales ni habilitan anualidad V2. El modo inmediato MP y los límites de renovación permanecen bloqueados por falta de prueba real. IVA y política comercial siguen pendientes.
 
 Ver [billing y proveedores](./13-billing-v2-y-proveedores.md) y [validación final](./14-iteracion-4-validacion.md).
+
+## Iteración 5 — actualización de estado, 22-10-2026
+
+Las propuestas voluntarias usan el quote V2 único y distinguen tarifa nominal legacy, precio desconocido y cargo esperado del proveedor. Plus incluye web en el resolver sombra y rechaza otra compra web independiente; Puragenda estándar exige upgrade. IVA, anualidad, trials y beneficios especiales siguen bloqueados hasta revisión, sin alterar precios actuales.
+
+Ver [web y migración comercial](./15-web-plus-y-migracion-comercial.md) y [validación](./16-iteracion-5-validacion.md).
