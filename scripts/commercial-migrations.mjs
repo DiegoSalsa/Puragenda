@@ -78,6 +78,14 @@ export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap"
     const diff = run(["migrate", "diff", "--from-config-datasource", "--to-schema", resolve(root, "prisma/schema.prisma"), "--script"]);
     if (!diff.includes("This is an empty migration")) throw new Error("FINAL_SCHEMA_DRIFT");
     await verifyLegacySecurity(pool);
+    for (const table of ["PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit"]) {
+      const security=await pool.query('SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',[`"${table}"`]);
+      if(!security.rows[0]?.relrowsecurity) throw new Error(`GROWTH_RLS_MISSING:${table}`);
+      for(const role of ["anon","authenticated"]) {
+        const grants=await pool.query("SELECT has_table_privilege($1,$2,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') AS access",[role,`"${table}"`]);
+        if(grants.rows[0]?.access) throw new Error(`GROWTH_PUBLIC_GRANT:${table}:${role}`);
+      }
+    }
     return { mode, schemaMatches: true, baselineRecorded: true };
   } finally { await pool.end(); }
 }

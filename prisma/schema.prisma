@@ -891,6 +891,11 @@ model Business {
   subscription                Subscription?
   commercialBillingOperations CommercialBillingOperation[]
   commercialMigrationProposals CommercialMigrationProposal[]
+  puriGrowthRuns              PuriGrowthRun[]
+  puriGrowthPolicies          PuriGrowthPolicy?
+  puriBudgetBuckets           PuriBudgetBucket[]
+  puriUsageReservations       PuriUsageReservation[]
+  puriGrowthAudits             PuriGrowthAudit[]
   commercialSubscription      CommercialSubscription?
   commercialEntitlements      CommercialEntitlement[]
   commercialEvents            CommercialEvent[]
@@ -2383,6 +2388,7 @@ model PuriRequest {
   userId             String
   role               String
   model              String?
+  capabilityTier     String         @default("PURI_STANDARD")
   intent             String         @default("unknown")
   status             String         @default("PENDING")
   errorCode          String?
@@ -2926,4 +2932,176 @@ model CommercialMigrationEvidence {
   @@unique([provider, eventId])
   @@unique([provider, paymentId])
   @@index([proposalId, businessId, state])
+}
+
+// Puri+ remains local-only. Evidence is aggregate data, never customer lists or prompts.
+model PuriGrowthPolicy {
+  businessId        String @id
+  proactiveEnabled  Boolean @default(false)
+  everyHours        Int @default(24)
+  rules             Json
+  updatedAt         DateTime @updatedAt
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model PuriGrowthRun {
+  id              String @id @default(cuid())
+  businessId      String
+  scopeKey        String
+  locationId      String?
+  staffId         String?
+  analysisKey     String @unique
+  kind            String
+  ruleVersion     String
+  periodStart     DateTime
+  periodEnd       DateTime
+  status          String @default("RUNNING")
+  leaseToken      String
+  leaseUntil      DateTime
+  attempts        Int @default(1)
+  evidence        Json?
+  evidenceHash    String?
+  durationMs      Int?
+  cacheHits       Int @default(0)
+  proactiveCheckedAt DateTime?
+  errorCode       String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  signals         PuriGrowthSignal[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, status, periodEnd])
+  @@index([status, leaseUntil])
+  @@index([businessId, scopeKey, proactiveCheckedAt])
+  @@index([expiresAt])
+}
+
+model PuriGrowthSignal {
+  id              String @id @default(cuid())
+  businessId      String
+  scopeKey        String
+  runId           String
+  kind            String
+  ruleVersion     String
+  evidenceHash    String
+  materialHash    String
+  dedupeKey       String @unique
+  evidence        Json
+  confidence      String
+  priority        Int
+  status          String @default("DETECTED")
+  suppressedUntil DateTime?
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  run             PuriGrowthRun @relation(fields: [runId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+  recommendations PuriGrowthRecommendation[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, kind, materialHash])
+  @@index([businessId, scopeKey, status, expiresAt])
+  @@index([runId, businessId, scopeKey])
+  @@index([expiresAt])
+}
+
+model PuriGrowthRecommendation {
+  id                  String @id @default(cuid())
+  businessId          String
+  scopeKey            String
+  signalId            String
+  version             Int @default(1)
+  status              String @default("DRAFT")
+  dedupeKey           String @unique
+  title               String
+  explanation         String
+  evidenceHash        String
+  evidence            Json
+  strategy            Json?
+  contentHash         String
+  ruleVersion         String
+  model               String?
+  inputTokens         Int?
+  outputTokens        Int?
+  cachedTokens        Int?
+  costMicros          Int?
+  costKnown           Boolean @default(false)
+  generation          String @default("DETERMINISTIC")
+  approvedById        String?
+  approvedAt          DateTime?
+  approvedContentHash String?
+  rejectedById        String?
+  rejectedAt          DateTime?
+  executable          Boolean @default(false)
+  createdAt           DateTime @default(now())
+  expiresAt           DateTime
+  signal              PuriGrowthSignal @relation(fields: [signalId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+  audits              PuriGrowthAudit[]
+
+  @@unique([id, businessId, scopeKey])
+  @@index([businessId, scopeKey, status, createdAt])
+  @@index([signalId, businessId, scopeKey])
+  @@index([expiresAt])
+}
+
+model PuriBudgetBucket {
+  key             String @id
+  businessId      String?
+  category        String
+  periodStart     DateTime @db.Date
+  limitMicros     Int
+  limitUnits      Int
+  reservedMicros  Int @default(0)
+  spentMicros     Int @default(0)
+  reservedUnits   Int @default(0)
+  spentUnits      Int @default(0)
+  unknownCost     Boolean @default(false)
+  alertLevel      Int @default(0)
+  updatedAt       DateTime @updatedAt
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, category, periodStart])
+  @@index([periodStart])
+}
+
+model PuriUsageReservation {
+  id               String @id @default(cuid())
+  businessId       String
+  idempotencyKey   String @unique
+  inputHash        String
+  category         String
+  bucketKeys       String[]
+  reservedMicros   Int
+  reservedUnits    Int
+  actualMicros     Int?
+  inputTokens      Int?
+  outputTokens     Int?
+  cachedTokens     Int?
+  model            String?
+  state            String @default("RESERVED")
+  errorCode        String?
+  createdAt        DateTime @default(now())
+  settledAt        DateTime?
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, category, createdAt])
+  @@index([state, createdAt])
+}
+
+model PuriGrowthAudit {
+  id               String @id @default(cuid())
+  businessId       String
+  scopeKey         String
+  recommendationId String?
+  event            String
+  actorId          String?
+  dedupeKey        String @unique
+  details          Json?
+  createdAt        DateTime @default(now())
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  recommendation   PuriGrowthRecommendation? @relation(fields: [recommendationId, businessId, scopeKey], references: [id, businessId, scopeKey], onDelete: Cascade)
+
+  @@index([businessId, event, createdAt])
+  @@index([recommendationId, businessId, scopeKey])
+  @@index([createdAt])
 }
