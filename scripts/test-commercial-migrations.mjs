@@ -38,6 +38,10 @@ try {
     const oldHistory = (await legacy.query('SELECT * FROM _prisma_migrations')).rows;
     const readData = async () => Promise.all(["Business", "Subscription", "WebsiteAddon"].map(async table => (await legacy.query(`SELECT * FROM "${table}" ORDER BY id`)).rows));
     const before = await readData();
+    await legacy.query('CREATE POLICY fixture_untracked_policy ON "WidgetTheme" USING (true)');
+    await assert.rejects(deployCommercialMigrations(urls[1], "legacy"), /BASELINE_UNTRACKED_RLS_POLICY_REQUIRES_REVIEW/);
+    assert.deepEqual((await legacy.query('SELECT * FROM _prisma_migrations')).rows, oldHistory);
+    await legacy.query('DROP POLICY fixture_untracked_policy ON "WidgetTheme"');
     await deployCommercialMigrations(urls[1], "legacy");
     assert.deepEqual(await readData(), before);
     assert.deepEqual((await legacy.query('SELECT * FROM _prisma_migrations WHERE migration_name=$1', [oldHistory[0].migration_name])).rows, oldHistory);

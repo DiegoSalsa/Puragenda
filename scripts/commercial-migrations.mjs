@@ -33,6 +33,9 @@ export function prepareCommercialMigrationConfig(databaseUrl) {
   return { run, config };
 }
 export async function verifyLegacySecurity(pool) {
+  // No public RLS policies are present in the versioned baseline. Existing
+  // manual policies need review instead of being silently certified.
+  if ((await pool.query("SELECT 1 FROM pg_policies WHERE schemaname='public' LIMIT 1")).rowCount) throw new Error("BASELINE_UNTRACKED_RLS_POLICY_REQUIRES_REVIEW");
   for (const [name, value] of Object.entries(manifest.checks)) {
     const result = await pool.query('SELECT 1 FROM pg_constraint WHERE conname=$1 AND conrelid=$2::regclass AND contype=\'c\' AND convalidated', [name, `"${value.table}"`]);
     if (!result.rowCount) throw new Error(`BASELINE_CONSTRAINT_MISSING:${name}`);
