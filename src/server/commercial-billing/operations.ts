@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { CommercialBillingOperation, CommercialPaymentEvidence, Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { quoteCommercialPlan } from "@/core/commercial-catalog";
-import { assertCommercialSandbox, commercialHash } from "@/server/services/commercial-internal";
+import { assertCommercialSandbox, assertNoOpenCommercialMigration, commercialHash } from "@/server/services/commercial-internal";
 import { withCommercialCapacityLock } from "@/server/services/commercial-capacity.service";
 import { commercialJson, materializeCommercialEntitlements } from "@/server/services/commercial-subscription-v2.service";
 import { assertSandboxMutation, type BillingContext, type BillingProvider, type BillingStrategy, type ProviderPreview, type SandboxBillingAdapter } from "./contracts";
@@ -37,6 +37,7 @@ export async function prepareSandboxBillingOperation(input: {
   return withCommercialCapacityLock(input.businessId, async tx => {
     const existing = await tx.commercialBillingOperation.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
     if (existing) { if (existing.inputHash !== inputHash) throw new Error("BILLING_IDEMPOTENCY_CONFLICT"); return existing; }
+    await assertNoOpenCommercialMigration(tx, input.businessId);
     const snapshot = await tx.commercialSubscription.findUniqueOrThrow({ where: { businessId: input.businessId }, include: { items: true } });
     if (snapshot.legacySubscriptionId || (snapshot.termsSnapshot as { sandboxFixture?: boolean } | null)?.sandboxFixture !== true) throw new Error("SANDBOX_FIXTURE_REQUIRED_LEGACY_UNTOUCHED");
     if (snapshot.provider !== input.provider || snapshot.currencyCode !== "CLP") throw new Error("BILLING_CONTRACT_MISMATCH");

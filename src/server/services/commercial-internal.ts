@@ -1,4 +1,10 @@
 import { createHash } from "node:crypto";
+import type { Prisma } from "@prisma/client";
+
+export const ACTIVE_COMMERCIAL_MIGRATION_STATES = ["PENDING_PROVIDER_CHANGE", "PENDING_RECONCILIATION", "SCHEDULED", "UNKNOWN"];
+export async function assertNoOpenCommercialMigration(tx: Prisma.TransactionClient, businessId: string) {
+  if (await tx.commercialMigrationProposal.findFirst({ where: { businessId, status: { in: ACTIVE_COMMERCIAL_MIGRATION_STATES } }, select: { id: true } })) throw new Error("COMMERCIAL_MIGRATION_OPEN");
+}
 
 // This iteration deliberately has no production write switch. All writers
 // require the dedicated disposable database; normal booking never imports this.

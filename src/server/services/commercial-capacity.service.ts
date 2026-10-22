@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { quoteCommercialPlan } from "@/core/commercial-catalog";
 import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
-import { assertCommercialSandbox, commercialHash, commercialInteger } from "./commercial-internal";
+import { assertCommercialSandbox, assertNoOpenCommercialMigration, commercialHash, commercialInteger } from "./commercial-internal";
 import { commercialJson, materializeCommercialEntitlements } from "./commercial-subscription-v2.service";
 
 export class CommercialCapacityError extends Error {
@@ -51,6 +51,7 @@ export async function requestCommercialSeatChange(input: SeatChangeRequestInput,
       return { ...existing, alreadyExists: true };
     }
     if (input.effectiveAt < now) throw new CommercialCapacityError("INVALID_EFFECTIVE_DATE");
+    await assertNoOpenCommercialMigration(tx, input.businessId);
     const snapshot = await tx.commercialSubscription.findUnique({ where: { businessId: input.businessId } });
     if (!snapshot || snapshot.legacySubscriptionId) throw new CommercialCapacityError("V2_SNAPSHOT_REQUIRED");
     if (!evaluateCommercialEntitlements({ ...snapshot, plan: snapshot.planCode }, now).commercialAccess || snapshot.status !== "ACTIVE") throw new CommercialCapacityError("COMMERCIAL_ACCESS_BLOCKED");
