@@ -129,7 +129,11 @@ export function createMercadoPagoSandboxAdapter() {
   const { key, secret } = sandboxConfiguration("MERCADO_PAGO");
   const accountId = Number(process.env.COMMERCIAL_V2_MP_TEST_ACCOUNT_ID);
   if (!Number.isSafeInteger(accountId) || accountId <= 0) throw new Error("MP_TEST_ACCOUNT_ID_REQUIRED");
-  const config = new MercadoPagoConfig({ accessToken: key, options: { timeout: 10_000 } });
+  // SDK 3.2 forwards this runtime option to RestClient, although its public
+  // Options declaration omits retries. Transport tests lock in single-attempt
+  // writes on HTTP 5xx AND network errors; the durable operation owns retries.
+  const options = { timeout: 10_000, retries: 0 };
+  const config = new MercadoPagoConfig({ accessToken: key, options });
   const subs = new PreApproval(config); const invoices = new Invoice(config); const payments = new Payment(config); const user = new User(config);
   return new MercadoPagoSandboxAdapter({ account: () => user.get(), subscription: id => subs.get({ id }),
     create: (body, idempotencyKey) => subs.create({ body, requestOptions: { idempotencyKey } }),

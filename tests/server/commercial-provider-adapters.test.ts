@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { quoteCommercialPlan } from "@/core/commercial-catalog";
+import { createMercadoPagoSandboxAdapter } from "@/server/commercial-billing/mercadopago-sandbox";
 import { createPaddleSandboxAdapter } from "@/server/commercial-billing/paddle-sandbox";
 import { sandboxConfiguration } from "@/server/commercial-billing/contracts";
 import { mpFixture, paddleFixture, mpNotification, mpSignature, paddleNotification, paddleSignature, paddlePriceMap } from "../fixtures/commercial-provider-fixtures";
@@ -7,7 +8,7 @@ const quote = quoteCommercialPlan({ catalogVersion:"puragenda-next-v1", plan:"PU
 const context = { operationId:"fixture-operation", businessId:"fixture-business", quote, strategy:"IMMEDIATE" as const,
   effectiveAt:new Date(), providerSubscriptionId:null as string | null };
 beforeEach(() => vi.stubEnv("COMMERCIAL_V2_SANDBOX_WRITES","1"));
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {vi.unstubAllEnvs();vi.unstubAllGlobals();});
 describe("real SDK contracts against explicit local provider fixtures", () => {
   it("MP creates the exact V2 recurring amount and an authorization is still unpaid", async () => {
     const f=mpFixture(); const preview=await f.adapter.preview(context);
@@ -88,6 +89,24 @@ describe("real SDK contracts against explicit local provider fixtures", () => {
     const note=await f.adapter.verifyNotification(raw,paddleSignature(raw));
     expect((await f.adapter.observe({...context,providerSubscriptionId:f.state.subscription.id},note,preview)).state).toBe(action==="refund"?"REFUNDED":"CHARGEBACK");
     if(action==="refund"){f.state.adjustment.totals.total="1";expect((await f.adapter.observe({...context,providerSubscriptionId:f.state.subscription.id},note,preview)).state).toBe("UNKNOWN");}
+  });
+
+
+  it.each(["http500","network"])("MP official SDK performs one write attempt after %s",async failure=>{
+    vi.stubEnv("COMMERCIAL_V2_PROVIDER_ENV","sandbox");vi.stubEnv("COMMERCIAL_V2_MP_ACCESS_TOKEN","TEST-fixture-only");
+    vi.stubEnv("COMMERCIAL_V2_MP_WEBHOOK_SECRET","fixture");vi.stubEnv("COMMERCIAL_V2_MP_TEST_ACCOUNT_ID","123");
+    let writes=0;
+    vi.stubGlobal("fetch",vi.fn(async(url: string,options:RequestInit)=>{
+      if(String(url).endsWith("/users/me"))return Response.json({id:123,site_id:"MLC",tags:["test_user"]});
+      if(options.method==="POST"&&String(url).endsWith("/preapproval/")){
+        writes++;if(failure==="network")throw new Error("fixture network timeout");
+        return Response.json({message:"fixture server error",status:500},{status:500});
+      }
+      throw new Error("Unexpected fixture request");
+    }));
+    const adapter=createMercadoPagoSandboxAdapter();const preview=await adapter.preview(context);
+    await expect(adapter.execute(context,preview,"test@example.invalid")).rejects.toBeDefined();
+    expect(writes).toBe(1);
   });
 
   it("has fail-closed credentials and no live fallback",()=>{
