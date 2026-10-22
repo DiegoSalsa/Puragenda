@@ -34,14 +34,15 @@ describe("real SDK contracts against explicit local provider fixtures", () => {
     await expect(f.adapter.verifyNotification(raw,bad)).rejects.toThrow("INVALID_WEBHOOK_SIGNATURE");
     bad.set("x-signature","ts=1,v1=bad"); await expect(f.adapter.verifyNotification(raw,bad)).rejects.toThrow("EXPIRED_WEBHOOK_SIGNATURE");
   });
-  it("Paddle uses the complete recurring item set and preserves a legacy add-on", async () => {
+  it("Paddle retains every add-on in preview and blocks Plus until migration review", async () => {
     const f=paddleFixture();f.state.subscription.items.push({price:{id:`pri_${"z".repeat(26)}`},quantity:1});
     const current={...context,providerSubscriptionId:f.state.subscription.id};
     const preview=await f.adapter.preview(current);
     expect(preview.items).toContainEqual({priceId:`pri_${"z".repeat(26)}`,quantity:1});
     expect(preview.items).toContainEqual({priceId:paddlePriceMap.PURAGENDA_PLUS,quantity:1});
-    await f.adapter.execute(current,preview);
-    expect(f.state.calls).toBe(1);expect(f.state.lastUpdate).toMatchObject({onPaymentFailure:"prevent_change"});
+    expect(preview.blockers).toContain("RETAINED_ADDON_REQUIRES_MIGRATION_REVIEW");
+    await expect(f.adapter.execute(current,preview)).rejects.toThrow("PADDLE_PREVIEW_CHANGED");
+    expect(f.state.calls).toBe(0);expect(f.state.lastUpdate).toMatchObject({onPaymentFailure:"prevent_change"});
   });
   it("Paddle defers charging without claiming it deferred the contract or paid it", async () => {
     const f=paddleFixture("prorated_next_billing_period");
@@ -68,6 +69,8 @@ describe("real SDK contracts against explicit local provider fixtures", () => {
   it("Paddle rechecks a changed preview before attempting a mutation",async()=>{
     const f=paddleFixture();const current={...context,providerSubscriptionId:f.state.subscription.id};const preview=await f.adapter.preview(current);
     f.state.immediate++;
+    await expect(f.adapter.execute(current,preview)).rejects.toThrow("PADDLE_PREVIEW_CHANGED");expect(f.state.calls).toBe(0);
+    f.state.immediate--;f.state.recurring++;
     await expect(f.adapter.execute(current,preview)).rejects.toThrow("PADDLE_PREVIEW_CHANGED");expect(f.state.calls).toBe(0);
   });
   it("Paddle rejects cross-subscription transactions and currency changes",async()=>{

@@ -71,6 +71,9 @@ export class PaddleSandboxAdapter implements SandboxBillingAdapter {
     }
     assertProviderCurrency(response.currencyCode); assertProviderCurrency(response.recurringTransactionDetails.totals.currencyCode);
     const blockers = context.strategy === "NEXT_RENEWAL" && !this.renewalValidated ? ["PADDLE_RENEWAL_BOUNDARY_UNVERIFIED"] : [];
+    if (context.quote.plan === "PURAGENDA_PLUS" && items.some(item => !Object.values(this.priceIds).includes(item.priceId))) {
+      blockers.push("RETAINED_ADDON_REQUIRES_MIGRATION_REVIEW");
+    }
     const immediate = response.immediateTransaction?.details.totals;
     const expected = immediate ?? response.nextTransaction?.details.totals;
     return { supported: blockers.length === 0, blockers, items, currencyCode: "CLP", immediateAmountMinor: immediate?.grandTotal ?? null,
@@ -81,7 +84,7 @@ export class PaddleSandboxAdapter implements SandboxBillingAdapter {
     assertSandboxMutation();
     const fresh = await this.preview(context);
     if (!fresh.supported || !preview.supported || commercialHash(fresh.items) !== commercialHash(preview.items) ||
-      fresh.expectedPaymentMinor !== preview.expectedPaymentMinor || fresh.taxAmountMinor !== preview.taxAmountMinor || fresh.prorationMode !== preview.prorationMode ||
+      fresh.expectedPaymentMinor !== preview.expectedPaymentMinor || fresh.recurringAmountMinor !== preview.recurringAmountMinor || fresh.taxAmountMinor !== preview.taxAmountMinor || fresh.prorationMode !== preview.prorationMode ||
       Date.now() - new Date(preview.previewedAt).getTime() > 60_000) throw new Error("PADDLE_PREVIEW_CHANGED_REAPPROVAL_REQUIRED");
     const customData = { puragendaCommercialOperation: context.operationId, puragendaBusinessId: context.businessId, puragendaSandbox: true };
     if (context.providerSubscriptionId) {
