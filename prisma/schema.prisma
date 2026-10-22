@@ -688,6 +688,7 @@ model CommercialSubscription {
   entitlements       CommercialEntitlement[]
   events             CommercialEvent[]
   seatChangeRequests SeatChangeRequest[]
+  billingOperations CommercialBillingOperation[]
 
   @@unique([id, businessId])
   @@index([status, renewalAt])
@@ -785,6 +786,7 @@ model SeatChangeRequest {
   paymentEvidence              Json?
   quoteSnapshot                Json
   paymentEventId               String?                 @unique
+  billingOperation             CommercialBillingOperation?
   paymentEvent                 CommercialEvent?        @relation("AppliedSeatPayment", fields: [paymentEventId], references: [id], onDelete: NoAction)
   conflictReason               String?
   appliedAt                    DateTime?
@@ -886,6 +888,7 @@ model Business {
   appointments                Appointment[]
   clients                     Client[]
   subscription                Subscription?
+  commercialBillingOperations CommercialBillingOperation[]
   commercialSubscription      CommercialSubscription?
   commercialEntitlements      CommercialEntitlement[]
   commercialEvents            CommercialEvent[]
@@ -2778,4 +2781,69 @@ model McpOperation {
   @@index([expiresAt])
   @@index([connectionId])
   @@index([businessId])
+}
+
+// Sandbox-only external operations. Intent, provider response and payment are
+// separate records; an accepted HTTP request never grants entitlements.
+model CommercialBillingOperation {
+  id                       String @id @default(cuid())
+  businessId               String
+  subscriptionId           String
+  seatChangeRequestId      String? @unique
+  provider                 CommercialBillingProvider
+  environment              String @default("SANDBOX")
+  kind                     String
+  strategy                 String
+  status                   String @default("PREPARED")
+  idempotencyKey           String @unique
+  inputHash                String
+  previousContractHash     String
+  targetPlanCode           String
+  targetProfessionalTotal  Int
+  quoteSnapshot            Json
+  providerPreview          Json?
+  recurringAmountMinor     Int
+  expectedPaymentMinor     Int?
+  taxAmountMinor           Int?
+  currencyCode             String @default("CLP")
+  effectiveAt              DateTime
+  providerSubscriptionId   String?
+  providerOperationId      String?
+  executionStartedAt       DateTime?
+  appliedAt                DateTime?
+  failureCode              String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription CommercialSubscription @relation(fields: [subscriptionId, businessId], references: [id, businessId], onDelete: Cascade)
+  seatChangeRequest SeatChangeRequest? @relation(fields: [seatChangeRequestId], references: [id], onDelete: NoAction)
+  payments CommercialPaymentEvidence[]
+
+  @@unique([id, businessId])
+  @@index([businessId, status, effectiveAt])
+  @@index([provider, providerSubscriptionId])
+}
+
+model CommercialPaymentEvidence {
+  id                      String @id @default(cuid())
+  businessId              String
+  operationId             String
+  provider                CommercialBillingProvider
+  paymentId               String
+  status                  String
+  origin                  String
+  amountMinor             Int
+  currencyCode            String
+  periodStart             DateTime
+  periodEnd               DateTime
+  occurredAt              DateTime
+  providerSubscriptionId  String
+  eventId                 String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  operation CommercialBillingOperation @relation(fields: [operationId, businessId], references: [id, businessId], onDelete: Cascade)
+
+  @@unique([provider, paymentId])
+  @@index([operationId, status])
 }
