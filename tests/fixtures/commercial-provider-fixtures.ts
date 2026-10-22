@@ -17,7 +17,7 @@ export function paddleSignature(body: string) {
 export function mpNotification(id = "payment-fixture", type = "payment", resource = "101") {
   return JSON.stringify({ id, type, date_created: new Date().toISOString(), data: { id: resource } });
 }
-export function paddleNotification(id = randomUUID(), type = "transaction.completed", resource = `txn_${"1".repeat(26)}`) {
+export function paddleNotification(id: string = randomUUID(), type = "transaction.completed", resource = `txn_${"1".repeat(26)}`) {
   return JSON.stringify({ event_id: id, event_type: type, occurred_at: new Date().toISOString(),
     notification_id: `ntf_${"1".repeat(26)}`, data: { id: resource, status: "completed", items: [], payments: [], totals: { subtotal: "1000", tax: "0", total: "1000", fee: "0", earnings: "1000", currency_code: "CLP" } } });
 }
