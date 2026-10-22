@@ -51,7 +51,7 @@ async function changeEvidence(c: Awaited<ReturnType<typeof contract>>, r: Awaite
 suite("commercial V2 actual PostgreSQL services, locks and constraints", () => {
   beforeAll(() => {
     const url = new URL(databaseUrl!);
-    if (!["127.0.0.1", "localhost"].includes(url.hostname) || url.pathname !== "/puragenda_commercial_test") throw new Error("Unsafe test database");
+    if (!["127.0.0.1", "localhost"].includes(url.hostname) || !/^\/puragenda_commercial_test(?:_[a-z0-9]+)?$/.test(url.pathname)) throw new Error("Unsafe test database");
   });
   afterAll(async () => {
     await prisma.business.deleteMany({ where: { id: { in: fixtureIds } } });

@@ -24,7 +24,10 @@
     "postinstall": "prisma generate",
     "compare:commercial-catalog": "tsx scripts/compare-commercial-catalog.ts",
     "simulate:commercial-backfill": "tsx scripts/simulate-commercial-backfill.ts",
-    "test:commercial:postgres": "node scripts/test-commercial-postgres.mjs"
+    "test:commercial:postgres": "node scripts/test-commercial-postgres.mjs",
+    "test:commercial:migrations": "node scripts/test-commercial-migrations.mjs",
+    "db:commercial:bootstrap": "node scripts/commercial-migrations.mjs bootstrap",
+    "db:commercial:legacy": "node scripts/commercial-migrations.mjs legacy"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

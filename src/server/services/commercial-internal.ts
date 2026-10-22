@@ -7,7 +7,7 @@ export function assertCommercialSandbox() {
   const url = new URL(process.env.DATABASE_URL || "postgres://invalid/invalid");
   if (process.env.NODE_ENV === "production" || process.env.COMMERCIAL_V2_INTERNAL_WRITES !== "1" ||
       !["127.0.0.1", "localhost"].includes(url.hostname) ||
-      url.pathname !== "/puragenda_commercial_test") throw new Error("COMMERCIAL_WRITES_DISABLED");
+      !/^\/puragenda_commercial_test(?:_[a-z0-9]+)?$/.test(url.pathname)) throw new Error("COMMERCIAL_WRITES_DISABLED");
 }
 
 export const COMMERCIAL_RELEASE_FLAGS = Object.freeze({
