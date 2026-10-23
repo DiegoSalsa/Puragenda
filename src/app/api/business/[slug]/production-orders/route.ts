@@ -200,7 +200,7 @@ export async function POST(
             items: [{
               id: order.id,
               title: `Abono - ${service.name}`,
-              description: `Encargo ${order.orderNumber} para ${data.petName}`,
+              description: `Encargo ${order.orderNumber}`,
               quantity: 1,
               unit_price: order.depositAmount,
               currency_id: business.currencyCode,

@@ -135,8 +135,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
                           {order.productionWindowLabel || format(parseISO(order.productionWeek), "d MMM", { locale: dateLocale })}
                         </span>
                       </div>
-                      <p className="mt-2 font-semibold">{order.petName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{order.serviceName}</p>
+                      <p className="mt-2 truncate font-semibold">{order.serviceName}</p>
                       <div className="mt-3 flex items-center justify-between text-xs">
                         <span className="truncate text-muted-foreground">{order.customerName}</span>
                         {loading === order.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -156,7 +155,7 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
             <div className="flex items-start justify-between border-b border-border p-5">
               <div>
                 <p className="text-xs font-semibold text-brand-foreground">{selected.orderNumber}</p>
-                <h2 className="mt-1 text-xl font-bold">{selected.petName} · {selected.serviceName}</h2>
+                <h2 className="mt-1 text-xl font-bold">{selected.serviceName}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{statusLabels[selected.status]}</p>
               </div>
               <button onClick={() => setSelected(null)} className="rounded-lg px-3 py-1 text-sm text-muted-foreground hover:bg-muted">{t("close")}</button>
@@ -171,10 +170,10 @@ export function OrdersBoard({ businessName, currencyCode, initialOrders }: { bus
                     </div>
                   ) : <div className="mt-2 flex items-center gap-2 rounded-xl bg-muted p-4 text-sm text-muted-foreground"><ImageIcon className="h-4 w-4" />{t("noPhotos")}</div>}
                 </div>
-                <div>
+                {selected.petDetails ? <div>
                   <h3 className="text-sm font-semibold">{t("petDetails")}</h3>
                   <p className="mt-2 whitespace-pre-wrap rounded-xl bg-muted/50 p-4 text-sm">{selected.petDetails}</p>
-                </div>
+                </div> : null}
                 {selected.selectedOptions.length > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold">{t("options")}</h3>
