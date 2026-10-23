@@ -292,7 +292,7 @@ export function ProductionOrderFlow({
         <input required value={form.petName} onChange={(event) => setForm({ ...form, petName: event.target.value })} placeholder={legacy("YLa2UCHuy8Cw")} maxLength={80}
           className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
         <textarea required value={form.petDetails} onChange={(event) => setForm({ ...form, petDetails: event.target.value })}
-          placeholder={legacy("nMmAXcs2Bz7A")} minLength={10} maxLength={2000} rows={5}
+          minLength={10} maxLength={2000} rows={5}
           className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
       </div>
 
