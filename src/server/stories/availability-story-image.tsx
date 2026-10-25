@@ -38,7 +38,7 @@ export function AvailabilityStoryImage({
     foreground.toLowerCase() === "#ffffff" ? "#242128" : "#fffdf7";
   const accentText = readableTextColor(data.primaryColor);
   const shortUrl = new URL(data.bookingUrl).pathname.replace(/^\//, "");
-  const serviceLabels = data.serviceNames.slice(0, 4);
+  const serviceLabels = data.showServices ? data.serviceNames.slice(0, 4) : [];
   const compactSchedule = data.showSchedule && data.days.length > 7;
   const denseSchedule = data.days.length > 42;
   const compactCardHeight = denseSchedule
@@ -370,6 +370,9 @@ export function AvailabilityStoryImage({
           flex: 1,
         }}
       >
+        {data.showSchedule && data.days.length === 0 && (
+          <span style={{ fontSize: 32, color: muted }}>{data.noAvailability}</span>
+        )}
         {data.showSchedule &&
           data.days.map((day) => {
             const [, month, dayOfMonth] = day.date.split("-");

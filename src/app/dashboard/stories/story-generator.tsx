@@ -24,6 +24,7 @@ import {
 } from "@/components/icons/hover-icons";
 import { useLocale, useTranslations } from "next-intl";
 import { getStoryVisibilityDefaults } from "@/core/story-visibility";
+import { normalizeStoryConfiguration, storyAvailabilityKey, storyTemplateBackgroundPath } from "@/core/story-configuration";
 import { AvailabilityStoryImage } from "@/server/stories/availability-story-image";
 import type { AvailabilityStoryData } from "@/server/services/availability-story.service";
 import type {
@@ -290,10 +291,10 @@ export function StoryGenerator({
         (options.canChooseStaff ? null : options.ownStaffId),
   );
   const [allServices, setAllServices] = useState(
-    initialFocus ? false : defaultPreset?.allServices ?? true,
+    initialFocus ? !initialFocus.serviceId : defaultPreset?.allServices ?? true,
   );
   const [serviceIds, setServiceIds] = useState<string[]>(
-    initialFocus?.serviceId ? [initialFocus.serviceId] : defaultPreset?.serviceIds ?? [],
+    initialFocus ? initialFocus.serviceId ? [initialFocus.serviceId] : [] : defaultPreset?.serviceIds ?? [],
   );
   const [range, setRange] = useState<AvailabilityStoryRequest["range"]>(
     initialFocus ? "CUSTOM" : defaultPreset?.range ?? "NEXT_AVAILABLE",
@@ -306,7 +307,7 @@ export function StoryGenerator({
   const [excludeDateInput, setExcludeDateInput] = useState("");
   const [selectedSlots, setSelectedSlots] = useState<
     AvailabilityStoryRequest["selectedSlots"]
-  >(defaultPreset?.selectedSlots ?? []);
+  >(initialFocus || defaultPreset?.range !== "CUSTOM" ? [] : defaultPreset.selectedSlots);
   const [objective, setObjective] = useState<StoryObjective>(
     initialFocus?.objective ?? defaultPreset?.objective ?? "FILL_SLOTS",
   );
@@ -368,6 +369,8 @@ export function StoryGenerator({
   const [previewData, setPreviewData] = useState<AvailabilityStoryData | null>(
     null,
   );
+  const [previewAvailabilityKey, setPreviewAvailabilityKey] = useState("");
+  const [exportData, setExportData] = useState<AvailabilityStoryData | null>(null);
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const [campaignFingerprint, setCampaignFingerprint] = useState("");
   const [bookingLink, setBookingLink] = useState<string | null>(null);
@@ -386,6 +389,7 @@ export function StoryGenerator({
   const [showMetrics, setShowMetrics] = useState(false);
   const storyNodeRef = useRef<HTMLDivElement>(null);
   const productLogoPromiseRef = useRef<Promise<string> | null>(null);
+  const operationRef = useRef(false);
 
   const selectedLocation = options.locations.find(
     (location) => location.id === locationId,
@@ -408,7 +412,7 @@ export function StoryGenerator({
   );
 
   const configuration = useMemo<AvailabilityStoryRequest>(
-    () => ({
+    () => normalizeStoryConfiguration({
       locationId,
       staffId,
       serviceIds,
@@ -471,6 +475,7 @@ export function StoryGenerator({
   );
 
   const fingerprint = JSON.stringify(configuration);
+  const availabilityKey = storyAvailabilityKey(configuration);
   const currency = useMemo(
     () =>
       new Intl.NumberFormat(locale, {
@@ -482,7 +487,7 @@ export function StoryGenerator({
   );
 
   const renderData = useMemo(() => {
-    if (!previewData) return null;
+    if (!previewData || previewAvailabilityKey !== availabilityKey) return null;
     const chosen = new Map(
       selectedSlots.map((slot) => [`${slot.date}:${slot.time}`, true]),
     );
@@ -490,6 +495,7 @@ export function StoryGenerator({
       ...previewData,
       headline,
       template,
+      templateBackgroundUrl: new URL(storyTemplateBackgroundPath(template), previewData.templateBackgroundUrl).toString(),
       objective,
       backgroundMode,
       primaryColor: accentColor,
@@ -517,11 +523,11 @@ export function StoryGenerator({
                   chosen.has(`${day.date}:${time}`),
                 ),
               }))
-              .filter((day) => day.times.length > 0)
           : previewData.days,
     } satisfies AvailabilityStoryData;
   }, [
     accentColor,
+    availabilityKey,
     artIntensity,
     backgroundMode,
     callToAction,
@@ -532,6 +538,7 @@ export function StoryGenerator({
     logoFit,
     objective,
     previewData,
+    previewAvailabilityKey,
     secondaryColor,
     selectedSlots,
     showAddress,
@@ -681,7 +688,7 @@ export function StoryGenerator({
     locationId &&
     headline.trim() &&
     (allServices || serviceIds.length > 0) &&
-    (range !== "CUSTOM" || (targetDate && endDate)),
+    (!showSchedule || range !== "CUSTOM" || (targetDate && endDate && endDate >= targetDate)),
   );
 
   async function requestStory(publish: boolean, input = configuration) {
@@ -710,46 +717,48 @@ export function StoryGenerator({
 
   async function generatePreview(input = configuration) {
     if (!formValid && input === configuration) return;
+    if (operationRef.current) return;
+    operationRef.current = true;
     setLoading(true);
     setError("");
     try {
-      const result = await requestStory(false, input);
+      // Keep the complete catalog so deselected times can be selected again.
+      const result = await requestStory(false, { ...input, selectedSlots: [] });
       setPreviewData(result.data);
-      setSelectedSlots(input.selectedSlots ?? []);
+      setPreviewAvailabilityKey(storyAvailabilityKey(input));
       setMobilePanel("PREVIEW");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t("generateError"));
     } finally {
+      operationRef.current = false;
       setLoading(false);
     }
   }
 
   async function ensurePublished() {
-    if (
+    const reuseCampaign = Boolean(
       campaignId &&
       bookingLink &&
       campaignFingerprint === fingerprint &&
       renderData
-    ) {
-      return { campaignId, bookingLink, data: renderData };
-    }
-    setPublishing(true);
-    const result = await requestStory(true);
+    );
+    // Revalidate openings even when reusing the same campaign link.
+    const result = await requestStory(!reuseCampaign);
+    const published = {
+      campaignId: reuseCampaign ? campaignId : result.campaignId,
+      bookingLink: reuseCampaign ? bookingLink! : result.bookingUrl,
+      data: { ...result.data, bookingUrl: reuseCampaign ? bookingLink! : result.bookingUrl },
+    };
     flushSync(() => {
-      setPreviewData(result.data);
-      setCampaignId(result.campaignId);
+      setExportData(published.data);
+      setCampaignId(published.campaignId);
       setCampaignFingerprint(fingerprint);
-      setBookingLink(result.bookingUrl);
+      setBookingLink(published.bookingLink);
     });
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
     );
-    setPublishing(false);
-    return {
-      campaignId: result.campaignId,
-      bookingLink: result.bookingUrl,
-      data: result.data,
-    };
+    return published;
   }
 
   async function ensureProductLogoEmbedded() {
@@ -768,7 +777,10 @@ export function StoryGenerator({
               reader.onload = () => resolve(String(reader.result));
               reader.readAsDataURL(blob);
             }),
-        );
+        ).catch((reason) => {
+          productLogoPromiseRef.current = null;
+          throw reason;
+        });
     }
     const dataUrl = await productLogoPromiseRef.current;
     flushSync(() => setProductLogoDataUrl(dataUrl));
@@ -813,6 +825,9 @@ export function StoryGenerator({
   }
 
   async function downloadStory() {
+    if (operationRef.current || !renderData || !formValid) return;
+    operationRef.current = true;
+    setPublishing(true);
     setError("");
     try {
       const published = await ensurePublished();
@@ -825,12 +840,18 @@ export function StoryGenerator({
       URL.revokeObjectURL(url);
       await recordActivity(published.campaignId, "download");
     } catch (reason) {
-      setPublishing(false);
       setError(reason instanceof Error ? reason.message : t("generateError"));
+    } finally {
+      operationRef.current = false;
+      setPublishing(false);
+      setExportData(null);
     }
   }
 
   async function shareStory() {
+    if (operationRef.current || !renderData || !formValid) return;
+    operationRef.current = true;
+    setPublishing(true);
     setError("");
     try {
       const published = await ensurePublished();
@@ -865,12 +886,18 @@ export function StoryGenerator({
       URL.revokeObjectURL(url);
       await recordActivity(published.campaignId, "download");
     } catch (reason) {
-      setPublishing(false);
       setError(reason instanceof Error ? reason.message : t("generateError"));
+    } finally {
+      operationRef.current = false;
+      setPublishing(false);
+      setExportData(null);
     }
   }
 
   async function copyBookingLink() {
+    if (operationRef.current || !renderData || !formValid) return;
+    operationRef.current = true;
+    setPublishing(true);
     setError("");
     try {
       const published = await ensurePublished();
@@ -879,8 +906,11 @@ export function StoryGenerator({
       window.setTimeout(() => setCopied(false), 1800);
       await recordActivity(published.campaignId, "copy");
     } catch (reason) {
-      setPublishing(false);
       setError(reason instanceof Error ? reason.message : t("copyError"));
+    } finally {
+      operationRef.current = false;
+      setPublishing(false);
+      setExportData(null);
     }
   }
 
@@ -893,7 +923,7 @@ export function StoryGenerator({
     setTargetDate(input.targetDate ?? "");
     setEndDate(input.endDate ?? "");
     setExcludedDates(input.excludedDates ?? []);
-    setSelectedSlots(input.selectedSlots ?? []);
+    setSelectedSlots(input.range === "CUSTOM" ? input.selectedSlots : []);
     setObjective(input.objective);
     setTemplate(input.template);
     setHeadline(input.headline);
@@ -930,6 +960,7 @@ export function StoryGenerator({
       endDate: opportunity.date,
       excludedDates: [],
       selectedSlots: [],
+      showSchedule: true,
       headline: opportunity.headline,
       objective: opportunity.daysAway <= 2 ? "LAST_MINUTE" : "FILL_SLOTS",
     };
@@ -983,6 +1014,7 @@ export function StoryGenerator({
   }
 
   function changeLocation(nextLocationId: string) {
+    setSelectedSlots([]);
     setLocationId(nextLocationId);
     const nextServices = options.services.filter((service) =>
       service.locationIds.includes(nextLocationId),
@@ -1001,13 +1033,35 @@ export function StoryGenerator({
     setPreviewData(null);
   }
 
+  function changeAvailability(update: () => void) {
+    update();
+    setSelectedSlots([]);
+    setPreviewData(null);
+  }
+
+  async function changeShowSchedule(next: boolean) {
+    if (next === showSchedule || operationRef.current) return;
+    setShowSchedule(next);
+    setSelectedSlots([]);
+    if (previewData) {
+      if (next && range === "CUSTOM" && (!targetDate || !endDate || endDate < targetDate)) {
+        setPreviewData(null);
+        return;
+      }
+      await generatePreview(normalizeStoryConfiguration({
+        ...configuration, showSchedule: next, selectedSlots: [],
+        targetDate: targetDate || undefined, endDate: endDate || undefined,
+      }));
+    }
+  }
+
   function toggleSlot(date: string, time: string) {
     setSelectedSlots((current) => {
       const exists = current.some(
         (slot) => slot.date === date && slot.time === time,
       );
       return exists
-        ? current.filter((slot) => slot.date !== date || slot.time !== time)
+        ? current.length === 1 ? current : current.filter((slot) => slot.date !== date || slot.time !== time)
         : [...current, { date, time }];
     });
   }
@@ -1018,7 +1072,7 @@ export function StoryGenerator({
     "rounded-[1.65rem] border-2 border-[#171717] bg-white p-5 text-[#171717] shadow-[5px_5px_0_#E9D8FF] dark:border-border dark:bg-card dark:text-foreground dark:shadow-[5px_5px_0_#312E46] sm:p-6";
 
   return (
-    <div className="mx-auto min-w-0 max-w-[1440px] space-y-8 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:space-y-10">
+    <fieldset disabled={loading || publishing} className="mx-auto min-w-0 max-w-[1440px] space-y-8 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:space-y-10">
       <section
         data-tour="page-header"
         className="relative overflow-hidden rounded-[2rem] border-2 border-[#171717] bg-[#E9D8FF] p-6 text-[#171717] shadow-[7px_7px_0_#171717] sm:p-9 lg:p-10"
@@ -1314,7 +1368,7 @@ export function StoryGenerator({
                 <span className="text-sm font-medium">{t("service")}</span>
                 <button
                   type="button"
-                  onClick={() => setAllServices((current) => !current)}
+                  onClick={() => changeAvailability(() => setAllServices((current) => !current))}
                   className={`mt-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-sm font-bold ${allServices ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                 >
                   <span>{t("allServices")}</span>
@@ -1328,13 +1382,13 @@ export function StoryGenerator({
                         <button
                           key={service.id}
                           type="button"
-                          onClick={() =>
+                          onClick={() => changeAvailability(() =>
                             setServiceIds((current) =>
                               active
                                 ? current.filter((id) => id !== service.id)
                                 : [...current, service.id],
-                            )
-                          }
+                            ),
+                          )}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${active ? "bg-[#E9D8FF] text-[#5B21B6]" : "hover:bg-[#F8F5ED] dark:hover:bg-muted"}`}
                         >
                           <span>
@@ -1358,9 +1412,13 @@ export function StoryGenerator({
                     {t("staff")}
                     <select
                       value={staffId ?? ""}
-                      onChange={(event) =>
-                        setStaffId(event.target.value || null)
-                      }
+                      onChange={(event) => changeAvailability(() => {
+                        const nextStaffId = event.target.value || null;
+                        setStaffId(nextStaffId);
+                        setServiceIds((current) => current.filter((id) => options.services.some(
+                          (service) => service.id === id && (!nextStaffId || service.staffIds.length === 0 || service.staffIds.includes(nextStaffId)),
+                        )));
+                      })}
                       className={inputClass}
                     >
                       <option value="">{t("wholeTeam")}</option>
@@ -1380,7 +1438,8 @@ export function StoryGenerator({
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowSchedule(true)}
+                    onClick={() => void changeShowSchedule(true)}
+                    aria-pressed={showSchedule}
                     className={`rounded-xl border-2 p-3 text-left ${showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                   >
                     <span className="block text-sm font-black">
@@ -1392,7 +1451,8 @@ export function StoryGenerator({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowSchedule(false)}
+                    onClick={() => void changeShowSchedule(false)}
+                    aria-pressed={!showSchedule}
                     className={`rounded-xl border-2 p-3 text-left ${!showSchedule ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                   >
                     <span className="block text-sm font-black">
@@ -1422,7 +1482,7 @@ export function StoryGenerator({
                       <button
                         key={value}
                         type="button"
-                        onClick={() => setRange(value)}
+                        onClick={() => changeAvailability(() => setRange(value))}
                         className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold ${range === value ? "border-[#7C3AED] bg-[#E9D8FF] text-[#5B21B6]" : "border-foreground/15"}`}
                       >
                         {label}
@@ -1436,9 +1496,7 @@ export function StoryGenerator({
                         <input
                           type="date"
                           value={targetDate}
-                          onChange={(event) =>
-                            setTargetDate(event.target.value)
-                          }
+                          onChange={(event) => changeAvailability(() => setTargetDate(event.target.value))}
                           className={inputClass}
                         />
                       </label>
@@ -1448,7 +1506,7 @@ export function StoryGenerator({
                           type="date"
                           value={endDate}
                           min={targetDate}
-                          onChange={(event) => setEndDate(event.target.value)}
+                          onChange={(event) => changeAvailability(() => setEndDate(event.target.value))}
                           className={inputClass}
                         />
                       </label>
@@ -1466,14 +1524,14 @@ export function StoryGenerator({
                     <button
                       type="button"
                       disabled={!excludeDateInput}
-                      onClick={() => {
+                      onClick={() => changeAvailability(() => {
                         setExcludedDates((current) =>
                           current.includes(excludeDateInput)
                             ? current
                             : [...current, excludeDateInput],
                         );
                         setExcludeDateInput("");
-                      }}
+                      })}
                       className="rounded-xl border-2 border-foreground px-3 text-xs font-black"
                     >
                       {t("excludeDate")}
@@ -1485,11 +1543,11 @@ export function StoryGenerator({
                         <button
                           key={date}
                           type="button"
-                          onClick={() =>
+                          onClick={() => changeAvailability(() =>
                             setExcludedDates((current) =>
                               current.filter((entry) => entry !== date),
-                            )
-                          }
+                            ),
+                          )}
                           className="inline-flex items-center gap-1 rounded-full bg-[#F8F5ED] px-2 py-1 text-[10px] font-bold dark:bg-muted"
                         >
                           {date}
@@ -1549,7 +1607,7 @@ export function StoryGenerator({
                 ))}
               </div>
 
-              {previewData?.days.length ? (
+              {showSchedule && renderData && previewData?.days.length ? (
                 <div className="mt-5 rounded-2xl bg-[#F8F5ED] p-4 dark:bg-muted">
                   <p className="text-xs font-black">{t("chooseSlots")}</p>
                   <p className="mt-1 text-[10px] text-muted-foreground">
@@ -1574,6 +1632,8 @@ export function StoryGenerator({
                                 key={time}
                                 type="button"
                                 onClick={() => {
+                                  const slots = previewData.days.flatMap((entry) => entry.times.map((entryTime) => ({ date: entry.date, time: entryTime })));
+                                  if (slots.length === 1) return;
                                   if (selectedSlots.length === 0)
                                     setSelectedSlots(
                                       previewData.days
@@ -2025,7 +2085,7 @@ export function StoryGenerator({
               {renderData ? (
                 <div className="relative h-[454px] w-[256px] max-w-full overflow-hidden rounded-[1.4rem] border-[5px] border-black bg-black shadow-[0_30px_80px_rgba(0,0,0,.55)] sm:h-[653px] sm:w-[367px]">
                   <div className="h-[1920px] w-[1080px] origin-top-left scale-[.237] sm:scale-[.34]">
-                    <div ref={storyNodeRef} className="h-[1920px] w-[1080px]">
+                    <div className="h-[1920px] w-[1080px]">
                       <AvailabilityStoryImage
                         data={renderData}
                         backgroundImageUrl={backgroundPhoto}
@@ -2070,7 +2130,7 @@ export function StoryGenerator({
                     <span className="relative h-[154px] w-[87px] overflow-hidden rounded-lg border-2 border-black bg-black">
                       <span className="absolute left-0 top-0 block h-[1920px] w-[1080px] origin-top-left scale-[.08]">
                         <AvailabilityStoryImage
-                          data={{ ...renderData, template: variant }}
+                          data={{ ...renderData, template: variant, templateBackgroundUrl: new URL(storyTemplateBackgroundPath(variant), renderData.templateBackgroundUrl).toString() }}
                           backgroundImageUrl={backgroundPhoto}
                           productLogoUrl={
                             productLogoDataUrl ?? "/icon-512x512.png"
@@ -2093,7 +2153,7 @@ export function StoryGenerator({
             <div className="grid gap-2 border-t border-white/15 p-4 sm:grid-cols-3">
               <button
                 type="button"
-                disabled={!renderData || publishing}
+                disabled={!renderData || !formValid || loading || publishing}
                 onClick={() => void downloadStory()}
                 className="flex items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-[#171717] disabled:opacity-30"
               >
@@ -2106,7 +2166,7 @@ export function StoryGenerator({
               </button>
               <button
                 type="button"
-                disabled={!renderData || publishing}
+                disabled={!renderData || !formValid || loading || publishing}
                 onClick={() => void shareStory()}
                 className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black disabled:opacity-30"
               >
@@ -2115,7 +2175,7 @@ export function StoryGenerator({
               </button>
               <button
                 type="button"
-                disabled={!renderData || publishing}
+                disabled={!renderData || !formValid || loading || publishing}
                 onClick={() => void copyBookingLink()}
                 className="flex items-center justify-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-black disabled:opacity-30"
               >
@@ -2280,6 +2340,17 @@ export function StoryGenerator({
           </button>
         )}
       </div>
-    </div>
+      {(exportData || renderData) && (
+        <div aria-hidden="true" style={{ position: "fixed", left: -10000, top: 0, pointerEvents: "none" }}>
+          <div data-story-export ref={storyNodeRef} style={{ width: 1080, height: 1920 }}>
+            <AvailabilityStoryImage
+              data={exportData ?? renderData!}
+              backgroundImageUrl={backgroundPhoto}
+              productLogoUrl={productLogoDataUrl ?? "/icon-512x512.png"}
+            />
+          </div>
+        </div>
+      )}
+    </fieldset>
   );
 }

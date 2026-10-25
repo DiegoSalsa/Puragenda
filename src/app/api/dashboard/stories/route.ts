@@ -19,6 +19,11 @@ function errorResponse(error: unknown) {
       { error: "Negocio no encontrado" },
       { status: 404 },
     );
+  if (message === "STORY_DATE_FORBIDDEN" || message === "STORY_DATES_EMPTY")
+    return NextResponse.json(
+      { error: "Selecciona fechas válidas dentro de los próximos 90 días y conserva al menos un día" },
+      { status: 400 },
+    );
   if (message.includes("FORBIDDEN"))
     return NextResponse.json(
       { error: "No tienes acceso a esa disponibilidad" },

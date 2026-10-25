@@ -26,7 +26,7 @@ export const availabilityStoryRequestSchema = z.object({
   selectedSlots: z.array(z.object({
     date: dateSchema,
     time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  })).max(40).default([]),
+  })).max(360).default([]),
   template: storyTemplateSchema,
   objective: storyObjectiveSchema.default("FILL_SLOTS"),
   headline: z.string().trim().min(1).max(80).default("¡Tenemos horas disponibles!"),
@@ -50,10 +50,10 @@ export const availabilityStoryRequestSchema = z.object({
   if (!value.allServices && value.serviceIds.length === 0) {
     context.addIssue({ code: "custom", message: "Selecciona al menos un servicio", path: ["serviceIds"] });
   }
-  if (value.range === "CUSTOM" && (!value.targetDate || !value.endDate)) {
+  if (value.showSchedule && value.range === "CUSTOM" && (!value.targetDate || !value.endDate)) {
     context.addIssue({ code: "custom", message: "Selecciona el inicio y fin del período", path: ["targetDate"] });
   }
-  if (value.targetDate && value.endDate && value.endDate < value.targetDate) {
+  if (value.showSchedule && value.range === "CUSTOM" && value.targetDate && value.endDate && value.endDate < value.targetDate) {
     context.addIssue({ code: "custom", message: "La fecha final debe ser posterior a la inicial", path: ["endDate"] });
   }
 });
