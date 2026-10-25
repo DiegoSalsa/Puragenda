@@ -3,6 +3,7 @@ import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { buildSlots, type AvailabilityScheduleOverride } from "@/core/availability";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
+import { normalizeStoryConfiguration, storyTemplateBackgroundPath } from "@/core/story-configuration";
 import { prisma } from "@/server/db/prisma";
 import { getStaffAgendaScope } from "@/server/services/business.service";
 import { getBlockedSlots } from "@/server/services/appointment.service";
@@ -12,6 +13,7 @@ import type {
   StoryObjective,
   StoryTemplate,
 } from "@/server/validations/availability-story";
+import { availabilityStoryRequestSchema } from "@/server/validations/availability-story";
 import { getDateLocale } from "@/i18n/date-locale";
 import { resolveLocale, type AppLocale } from "@/i18n/config";
 import { randomBytes } from "node:crypto";
@@ -300,9 +302,9 @@ export async function getAvailabilityStoryPresets(user: StoryUser, business: Sto
     orderBy: [{ isDefault: "desc" }, { updatedAt: "desc" }],
     select: { id: true, name: true, configuration: true, isDefault: true, updatedAt: true },
   }).then((entries) => entries.flatMap((entry) => {
-    const configuration = entry.configuration as unknown as AvailabilityStoryRequest;
-    return configuration && typeof configuration === "object"
-      ? [{ ...entry, updatedAt: entry.updatedAt.toISOString(), configuration }]
+    const parsed = availabilityStoryRequestSchema.safeParse(entry.configuration);
+    return parsed.success && (access.canChooseStaff || parsed.data.staffId === access.ownStaffId)
+      ? [{ ...entry, updatedAt: entry.updatedAt.toISOString(), configuration: parsed.data }]
       : [];
   })).catch((error) => {
     if (isStoryCampaignStorageMissing(error)) return [];
@@ -317,17 +319,31 @@ export async function saveAvailabilityStoryPreset(
 ) {
   const access = await getAvailabilityStoryAccess(user, business);
   if (!access.allowed) throw new Error("STORY_FORBIDDEN");
+  if (!access.canChooseStaff && input.configuration.staffId !== access.ownStaffId) throw new Error("STORY_STAFF_SCOPE_FORBIDDEN");
   if (!(await hasStoryPresetStorage())) throw new Error("STORY_PRESET_STORAGE_MISSING");
 
   return prisma.$transaction(async (tx) => {
+    if (!access.canChooseStaff) {
+      const existing = await tx.storyPreset.findUnique({
+        where: { businessId_name: { businessId: business.id, name: input.name } },
+        select: { configuration: true },
+      });
+      const existingConfiguration = availabilityStoryRequestSchema.safeParse(existing?.configuration);
+      if (existing && (!existingConfiguration.success || existingConfiguration.data.staffId !== access.ownStaffId)) {
+        throw new Error("STORY_STAFF_SCOPE_FORBIDDEN");
+      }
+    }
     if (input.isDefault) {
       await tx.storyPreset.updateMany({
-        where: { businessId: business.id, isDefault: true },
+        where: { businessId: business.id, isDefault: true, ...(!access.canChooseStaff ? { configuration: { path: ["staffId"], equals: access.ownStaffId! } } : {}) },
         data: { isDefault: false },
       });
     }
     return tx.storyPreset.upsert({
-      where: { businessId_name: { businessId: business.id, name: input.name } },
+      where: {
+        businessId_name: { businessId: business.id, name: input.name },
+        ...(!access.canChooseStaff ? { configuration: { path: ["staffId"], equals: access.ownStaffId! } } : {}),
+      },
       update: {
         configuration: input.configuration as unknown as Prisma.InputJsonValue,
         isDefault: input.isDefault,
@@ -351,7 +367,10 @@ export async function deleteAvailabilityStoryPreset(
 ) {
   const access = await getAvailabilityStoryAccess(user, business);
   if (!access.allowed) throw new Error("STORY_FORBIDDEN");
-  const result = await prisma.storyPreset.deleteMany({ where: { id: presetId, businessId: business.id } });
+  const result = await prisma.storyPreset.deleteMany({ where: {
+    id: presetId, businessId: business.id,
+    ...(!access.canChooseStaff ? { configuration: { path: ["staffId"], equals: access.ownStaffId! } } : {}),
+  } });
   if (result.count !== 1) throw new Error("STORY_PRESET_NOT_FOUND");
 }
 
@@ -591,6 +610,7 @@ export async function buildAvailabilityStory(
   request: AvailabilityStoryRequest,
   assetBaseUrl?: string,
 ): Promise<AvailabilityStoryData> {
+  request = normalizeStoryConfiguration(request);
   const business = await prisma.business.findUnique({
     where: { id: businessId },
     include: {
@@ -774,7 +794,13 @@ export async function buildAvailabilityStory(
 
     const selectedByStaff = new Map<string, Array<{ start: Date; end: Date }>>();
     const selected: Array<{ start: Date; end: Date }> = [];
+    const selectedTimesForDate = request.selectedSlots
+      .filter((slot) => slot.date === localDateKey(date))
+      .map((slot) => slot.time);
     for (const [, candidates] of [...candidatesByTime.entries()].sort(([left], [right]) => left - right)) {
+      // Apply explicit choices before the display limit and overlap sampling.
+      // Otherwise an earlier newly freed slot can silently displace a chosen time.
+      if (request.selectedSlots.length > 0 && !selectedTimesForDate.includes(format(candidates[0].start, "HH:mm"))) continue;
       const candidate = candidates
         .sort((left, right) => (selectedByStaff.get(left.staffId)?.length ?? 0) - (selectedByStaff.get(right.staffId)?.length ?? 0))
         .find((entry) => !(selectedByStaff.get(entry.staffId) ?? []).some(
@@ -789,9 +815,6 @@ export async function buildAvailabilityStory(
     }
 
     const formattedTimes = selected.map((slot) => format(slot.start, "HH:mm"));
-    const selectedTimesForDate = request.selectedSlots
-      .filter((slot) => slot.date === localDateKey(date))
-      .map((slot) => slot.time);
     return {
       date: localDateKey(date),
       label: (() => {
@@ -814,13 +837,6 @@ export async function buildAvailabilityStory(
       })()
     : computedDays;
   const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
-  const templateFile = {
-    AURORA: "editorial-paper.webp",
-    EDITORIAL: "organic-paper.webp",
-    BOLD: "graphic-paper.webp",
-    MINIMAL: "editorial-paper.webp",
-    FRAME: "graphic-paper.webp",
-  }[request.template];
   const bookingUrl = new URL(`/widget/${business.slug}`, appUrl);
   bookingUrl.searchParams.set("location", location.slug);
   bookingUrl.searchParams.set("utm_source", "instagram");
@@ -834,7 +850,7 @@ export async function buildAvailabilityStory(
 
   const slotCount = days.reduce((total, day) => total + day.times.length, 0);
   const potentialRevenue = services.length === 1 ? slotCount * services[0].price : 0;
-  const logoUrl = request.showLogo ? await embedStoryLogo(business.logoUrl) : null;
+  const logoUrl = await embedStoryLogo(business.logoUrl);
 
   return {
     businessName: business.name,
@@ -845,7 +861,7 @@ export async function buildAvailabilityStory(
     backgroundColor: request.canvasColor,
     textColor: request.storyTextColor,
     serviceName: request.allServices ? copy.allServices : services.map((service) => service.name).join(" · "),
-    serviceNames: request.showServices ? services.map((service) => service.name) : [],
+    serviceNames: services.map((service) => service.name),
     locationName: location.name,
     locationAddress: location.address ?? business.address ?? null,
     staffName: requestedStaffId ? staffMembers[0]?.name ?? copy.professional : copy.wholeTeam,
@@ -865,7 +881,7 @@ export async function buildAvailabilityStory(
     bookingUrl: bookingUrl.toString(),
     generatedAt: now.toISOString(),
     timezone: location.timezone,
-    templateBackgroundUrl: `${assetBaseUrl ?? appUrl}/story-templates/${templateFile}`,
+    templateBackgroundUrl: new URL(storyTemplateBackgroundPath(request.template), assetBaseUrl ?? appUrl).toString(),
     ctaMode: request.ctaMode,
     callToAction: request.callToAction ?? (request.ctaMode === "LINK_STICKER" ? copy.stickerCallToAction : copy.callToAction),
     disclaimer: services.length > 1 ? copy.groupedDisclaimer : copy.disclaimer,
@@ -884,6 +900,7 @@ export async function recordAvailabilityStoryCampaign(
   data: AvailabilityStoryData,
   origin: string,
 ) {
+  request = normalizeStoryConfiguration(request);
   if (!(await hasStoryCampaignStorage())) {
     return { campaignId: null, bookingUrl: data.bookingUrl };
   }
@@ -891,7 +908,7 @@ export async function recordAvailabilityStoryCampaign(
   const destination = new URL(data.bookingUrl);
   destination.searchParams.set("story", token);
   destination.searchParams.set("utm_campaign", `story-${token}`);
-  const targetDate = request.targetDate ?? data.days[0]?.date ?? null;
+  const targetDate = request.showSchedule ? request.targetDate ?? data.days[0]?.date ?? null : null;
 
   const campaign = await prisma.storyCampaign.create({
     data: {
@@ -901,7 +918,7 @@ export async function recordAvailabilityStoryCampaign(
       locationId: request.locationId,
       staffId: request.staffId ?? null,
       serviceIds: data.serviceIds,
-      range: request.range === "CUSTOM" ? "CUSTOM" : request.targetDate ? "TARGET_DATE" : request.range,
+      range: request.range,
       targetDate: targetDate ? new Date(`${targetDate}T00:00:00.000Z`) : null,
       headline: data.headline,
       template: data.template,
@@ -939,7 +956,7 @@ export async function recordAvailabilityStoryActivity(
         ? { copiedCount: { increment: 1 } }
         : { status: "ARCHIVED", archivedAt: new Date() };
   const result = await prisma.storyCampaign.updateMany({
-    where: { id: campaignId, businessId: business.id },
+    where: { id: campaignId, businessId: business.id, ...(!access.canChooseStaff ? { staffId: access.ownStaffId } : {}) },
     data,
   });
   if (result.count !== 1) throw new Error("STORY_CAMPAIGN_NOT_FOUND");
@@ -956,13 +973,14 @@ export async function getAvailabilityStoryInsights(
   }
 
   const excludedStatuses: AppointmentStatus[] = ["CANCELLED", "NO_SHOW"];
+  const campaignScope = { businessId: business.id, ...(!access.canChooseStaff ? { staffId: access.ownStaffId } : {}) };
   const activeAppointmentWhere = {
-    storyCampaign: { businessId: business.id, status: "PUBLISHED" },
+    storyCampaign: { ...campaignScope, status: "PUBLISHED" },
     status: { notIn: excludedStatuses },
   };
   const result = await Promise.all([
     prisma.storyCampaign.aggregate({
-      where: { businessId: business.id, status: "PUBLISHED" },
+      where: { ...campaignScope, status: "PUBLISHED" },
       _count: { _all: true },
       _sum: { linkVisits: true, downloadCount: true, shareCount: true, copiedCount: true },
     }),
@@ -972,7 +990,7 @@ export async function getAvailabilityStoryInsights(
       _sum: { totalPrice: true },
     }),
     prisma.storyCampaign.findMany({
-      where: { businessId: business.id },
+      where: campaignScope,
       orderBy: { createdAt: "desc" },
       take: 40,
       include: {
@@ -1025,7 +1043,7 @@ export async function getAvailabilityStoryInsights(
       serviceIds: campaign.serviceIds,
       targetDate: campaign.targetDate?.toISOString().slice(0, 10) ?? null,
       template: campaign.template as StoryTemplate,
-      configuration: campaign.configuration as unknown as AvailabilityStoryRequest | null,
+      configuration: availabilityStoryRequestSchema.safeParse(campaign.configuration).data ?? null,
     })),
   };
 }
