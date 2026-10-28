@@ -1,3 +1,4 @@
+import { planUsageAllocation } from "./commercial-usage-policy";
 import { prisma } from "@/server/db/prisma";
 import { MARKETING_LIMITS } from "@/core/constants";
 import type { SubscriptionPlan } from "@/core/entities";
@@ -9,8 +10,9 @@ import type { SubscriptionPlan } from "@/core/entities";
 /**
  * Get the marketing limits for a given subscription plan.
  */
-export function getMarketingLimits(plan: SubscriptionPlan) {
-  return MARKETING_LIMITS[plan] ?? MARKETING_LIMITS.INDIVIDUAL;
+export function getMarketingLimits(plan: SubscriptionPlan, trial = false) {
+  if (plan === "PURAGENDA" || plan === "PURAGENDA_PLUS") return planUsageAllocation(plan, trial)?.marketing ?? { maxEmails: 0, maxCampaignsPerMonth: 0 };
+  return MARKETING_LIMITS[plan];
 }
 
 /**

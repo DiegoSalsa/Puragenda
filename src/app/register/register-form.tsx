@@ -2,6 +2,8 @@
 
 import { FormEvent, useState, useRef } from "react";
 import { commercialQuote, registrationIntent, publicWebsiteMonthly } from "@/websites/commercial";
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
+import { PUBLIC_TRIAL_NOTE } from "@/lib/public-plans";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "@/components/icons/hover-icons";
@@ -35,17 +37,20 @@ export function RegisterForm({
   const t = useTranslations("register");
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const wantsPlan = searchParams.get("plan"); // "EQUIPO", "INDIVIDUAL", "TEST" or null
+  const wantsPlan = searchParams.get("plan"); // legacy backend plan; public V2 intent is kept separately
   const wantsTrial = searchParams.get("trial") === "1";
   const selected = registrationIntent(searchParams);
-  const websiteSelected = selected.website;
+  const commercialPlan = selected.commercialPlan ?? (selected.website ? "PURAGENDA_PLUS" : "PURAGENDA");
+  const professionalTotal = selected.professionalTotal ?? (wantsPlan === "EQUIPO" ? Math.min(20, STAFF_LIMITS.EQUIPO + selected.extraStaff) : 1);
+  const commercialQuoteSelection = commercialPlan ? quoteCommercialContract({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: commercialPlan, professionalTotal, billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY" }) : null;
+  const websiteSelected = false;
   const submitBusy = useRef(false);
   const extraStaffCount = wantsPlan === "EQUIPO"
     ? selected.extraStaff
     : 0;
-  const requestedDirectSubscription = (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
-  const planLabel = wantsPlan === "EQUIPO" ? t("plans.team") : wantsPlan === "INDIVIDUAL" ? t("plans.individual") : wantsPlan === "TEST" ? t("plans.test") : null;
-  const planPrice = wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0;
+  const requestedDirectSubscription = !commercialPlan && (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
+  const planLabel = commercialPlan === "PURAGENDA_PLUS" ? "Puragenda+" : commercialPlan === "PURAGENDA" ? "Puragenda" : wantsPlan === "EQUIPO" ? t("plans.team") : wantsPlan === "INDIVIDUAL" ? t("plans.individual") : wantsPlan === "TEST" ? t("plans.test") : null;
+  const planPrice = commercialQuoteSelection?.monthlyTotal ?? (wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0);
   const totalEquipoStaff = STAFF_LIMITS.EQUIPO + extraStaffCount;
 
   const [name, setName] = useState("");
@@ -54,7 +59,7 @@ export function RegisterForm({
   const [countryCode, setCountryCode] = useState(initialCountryCode);
   const withWebsite = websiteSelected && countryCode === "CL";
   const isDirectSubscription = requestedDirectSubscription && (!withWebsite || websiteAcquisitionEnabled);
-  const selectedQuote = selected.plan ? commercialQuote(selected.plan, selected.cycle, extraStaffCount, withWebsite) : null;
+  const selectedQuote = selected.plan ? commercialQuote(selected.plan, selected.cycle, commercialPlan ? selected.professionalTotal : extraStaffCount, withWebsite) : null;
   const [timezone, setTimezone] = useState(initialCountryCode ? detectedCountry.timezone : "");
   const [currencyCode, setCurrencyCode] = useState(initialCountryCode ? detectedCountry.currency : "");
   const [email, setEmail] = useState("");
@@ -106,7 +111,7 @@ export function RegisterForm({
       // Step 1: Create account
       setLoadingStep("register");
       track("registration_started", {
-        plan: wantsPlan || "EQUIPO",
+        plan: commercialPlan || wantsPlan || "EQUIPO",
         intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
         extra_staff: extraStaffCount,
         website_intent: withWebsite,
@@ -123,7 +128,9 @@ export function RegisterForm({
           email: email.trim(),
           password,
           referralCode: referralCode.trim() || undefined,
-          planIntent: wantsPlan || undefined,
+          planIntent: commercialPlan,
+          commercialPlanIntent: commercialPlan || undefined,
+          professionalTotal,
           extraStaffCount,
           websiteIntent: withWebsite,
           billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY",
@@ -153,7 +160,7 @@ export function RegisterForm({
       if (!data.user) return;
 
       track("registration_completed", {
-        plan: wantsPlan || "EQUIPO",
+        plan: commercialPlan || wantsPlan || "EQUIPO",
         intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
         country: countryCode || "unknown",
         website_intent: withWebsite,
@@ -199,6 +206,11 @@ export function RegisterForm({
     <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">{t("title")}</h2>
+        {commercialPlan && <div className="space-y-2 rounded-xl border-2 border-black bg-[#E9D8FF] p-3 text-sm font-bold text-black">
+          <p className="font-black">Plan elegido: {commercialPlan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"} · {professionalTotal} {professionalTotal === 1 ? "profesional" : "profesionales"}</p>
+          <p>Precio al contratar: ${new Intl.NumberFormat(locale).format(commercialQuoteSelection?.cycleTotal ?? planPrice)} CLP/{selected.cycle === "annual" ? "año · 2 meses gratis" : "mes"} · IVA incluido.</p>
+          <p>{PUBLIC_TRIAL_NOTE}</p>
+        </div>}
         {websiteSelected && <div className="space-y-2 rounded-xl border-2 border-black bg-[#FFF5BA] p-3 text-sm font-bold text-black">
           <p>{planLabel} + Sitio Web</p>
           <p>Puragenda: ${new Intl.NumberFormat(locale).format(selectedQuote?.baseCharge ?? planPrice)}/{selected.cycle === "annual" ? "año" : "mes"}</p>

@@ -4,7 +4,7 @@ vi.mock("@/server/auth/admin-session", () => ({ requireSuperAdminSession: mocks.
 vi.mock("@/server/db/prisma", () => ({ prisma: { subscription: { findUnique: mocks.findUnique, update: mocks.update } } }));
 vi.mock("@/server/services/subscription-billing.service", () => ({ syncMercadoPagoSubscriptionAmount: mocks.sync }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-import { updateSubscriptionAction, applySubscriptionBenefitPresetAction, updateSubscriptionBillingRulesAction, clearSubscriptionBenefitAction, syncSubscriptionBillingAction } from "@/server/actions/admin.actions";
+import { updateSubscriptionAction, applySubscriptionBenefitPresetAction, updateSubscriptionBillingRulesAction, clearSubscriptionBenefitAction, syncSubscriptionBillingAction, extendTrialAction } from "@/server/actions/admin.actions";
 
 const manual = { paymentMethod: "BANK_TRANSFER", plan: "EQUIPO", billingCycle: "MONTHLY", extraStaffCount: 0, staffLimitOverride: 2, customMonthlyPriceClp: 17990 };
 describe("superadmin preserves manual subscription agreements", () => {
@@ -14,6 +14,13 @@ describe("superadmin preserves manual subscription agreements", () => {
     mocks.findUnique.mockResolvedValue(manual);
     mocks.update.mockResolvedValue(manual);
     mocks.sync.mockResolvedValue({ success: true });
+  });
+  it("protects V2 trials from legacy extension, plan changes and billing synchronization", async () => {
+    mocks.findUnique.mockResolvedValue({ plan: "PURAGENDA_PLUS", status: "TRIALING", paymentMethod: "AUTOMATIC", trialEndsAt: new Date(Date.now() + 86400000) });
+    expect(await extendTrialAction("v2", 30)).toHaveProperty("error");
+    expect(await updateSubscriptionAction("v2", { plan: "INDIVIDUAL" })).toHaveProperty("error");
+    expect(await syncSubscriptionBillingAction("v2")).toHaveProperty("error");
+    expect(mocks.update).not.toHaveBeenCalled(); expect(mocks.sync).not.toHaveBeenCalled();
   });
   it.each([
     { plan: "INDIVIDUAL" as const }, { billingCycle: "ANNUAL" as const },

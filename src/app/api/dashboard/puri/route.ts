@@ -1,3 +1,4 @@
+import { GrowthBudgetError } from "@/server/puri/growth/budgets";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getApiSessionUser } from "@/server/auth/user-session";
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
     try {
       answer = await answerWithPuri({ context, message: parsed.data.message, history: parsed.data.history, telemetry });
     } catch (error) {
+      if (error instanceof PuriAccessError || error instanceof GrowthBudgetError) throw error;
       errorCode = error instanceof Error && error.message === "PURI_NOT_CONFIGURED" ? "NOT_CONFIGURED"
         : error instanceof Error && ["APIConnectionTimeoutError", "TimeoutError", "AbortError"].includes(error.name) ? "MODEL_TIMEOUT"
         : "MODEL_OR_PROVIDER_ERROR";
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
     if (errorCode) return Response.json({ code: errorCode === "NOT_CONFIGURED" ? "NOT_CONFIGURED" : "UNAVAILABLE" }, { status: 503 });
     return Response.json({ answer, responseId }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (error instanceof GrowthBudgetError) return Response.json({ code: error.message }, { status: error.message === "BUDGET_EXHAUSTED" ? 429 : 503 });
     if (error instanceof PuriAccessError) {
       try {
         const business = await prisma.business.findFirst({ where: { OR: [{ ownerId: user.id }, { staff: { some: { userId: user.id, isActive: true } } }] }, select: { id: true } });

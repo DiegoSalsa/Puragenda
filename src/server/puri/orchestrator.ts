@@ -1,3 +1,4 @@
+import { withCommercialPuriUsage } from "./commercial-usage";
 import { puriTools } from "./definitions";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasPermission } from "./context";
@@ -104,7 +105,9 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
       reasoning: { effort: "low" },
       store: false,
     };
-    const response = input.extension ? await input.extension.createResponse(parameters) : await openai!.responses.create(parameters);
+    const response = input.extension ? await input.extension.createResponse(parameters)
+      : input.context.commercialV2 ? await withCommercialPuriUsage({ businessId: input.context.business.id, model: PURI_MODEL, parameters, maxRetries: openai!.maxRetries, run: () => openai!.responses.create(parameters) })
+      : await openai!.responses.create(parameters);
     if (input.telemetry) {
       input.telemetry.modelDurationMs += Math.round(performance.now() - modelStarted);
       input.telemetry.model = response.model ?? PURI_MODEL;

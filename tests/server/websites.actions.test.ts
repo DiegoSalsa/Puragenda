@@ -48,7 +48,7 @@ describe("website draft, publication and ownership",()=>{
 
  it("publishes one validated saved snapshot and rejects stale versions",async()=>{await publishWebsite(2);expect(m.publish).toHaveBeenCalledWith(expect.objectContaining({where:{id:"website-a",revision:2},data:expect.objectContaining({status:"PUBLISHED",publishedRevision:2,publishedConfig:expect.objectContaining({schemaVersion:2,galleryFilters:[],galleryCategories:expect.arrayContaining([expect.objectContaining({id:"cat-color"})])})})}));await expect(publishWebsite(1)).resolves.toEqual({error:"Recarga el borrador antes de publicar"});});
 
- it("refuses publication without paid access or a complete hero",async()=>{m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:null});await expect(publishWebsite(2)).resolves.toEqual({error:"Activa el add-on y regulariza tu suscripción para publicar"});expect(m.publish).not.toHaveBeenCalled();});
+ it("refuses publication without paid access or a complete hero",async()=>{m.business.mockResolvedValue({subscription:{status:"ACTIVE"},websiteAddon:null});await expect(publishWebsite(2)).resolves.toEqual({error:"Necesitas una suscripción vigente con sitio web incluido para publicar"});expect(m.publish).not.toHaveBeenCalled();});
  it("uses the effective fallback headline for publication requirements",()=>{expect(effectiveWebsiteHeadline({headline:" Título " ,copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Título");expect(effectiveWebsiteHeadline({headline:"   ",copy:{hero:{fallbackHeadline:"Fallback"}}})).toBe("Fallback");expect(effectiveWebsiteHeadline({headline:"\t",copy:{hero:{fallbackHeadline:"  "}}})).toBe("");});
  it.each(["coral", "plum", "forest"] as const)("publishes the approved %s preset", async accent => {
   const config={...fixtureView("a").config,accent};
@@ -91,7 +91,7 @@ describe("website draft, publication and ownership",()=>{
  it("keeps revision, entitlement and media ownership checks when contrast is accepted", async () => {
   await expect(publishWebsite(1, { ignoreContrast: true })).resolves.toEqual({ error: "Recarga el borrador antes de publicar" });
   m.business.mockResolvedValueOnce({ subscription: { status: "ACTIVE" }, websiteAddon: null });
-  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: "Activa el add-on y regulariza tu suscripción para publicar" });
+  await expect(publishWebsite(2, { ignoreContrast: true })).resolves.toEqual({ error: "Necesitas una suscripción vigente con sitio web incluido para publicar" });
   const config = { ...pinkFixtureView().config, heroImage: "/website-media-qa/tenant-b/private.webp", colors: { ...pinkFixtureView().config.colors, accent: "#e78eb8" } };
   m.media.mockResolvedValue([{ websiteId: "website-b", deletedAt: null }]);
   m.business.mockResolvedValue({ subscription: { status: "ACTIVE" }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) }, website: { id: "website-a", templateKey: "y2k", templateVersion: 1, revision: 2, draftConfig: config } });

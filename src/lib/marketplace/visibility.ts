@@ -52,7 +52,7 @@ export type MarketplaceListingCandidate = {
   locationActive: boolean;
   demo: boolean;
   subscriptionActive: boolean;
-  plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
+  plan: "INDIVIDUAL" | "EQUIPO" | "TEST" | "PURAGENDA" | "PURAGENDA_PLUS";
   hasBookableService: boolean;
 };
 

@@ -17,7 +17,7 @@ import {
 } from "@/components/landing/seo";
 import { breadcrumbListNode, faqPageNode, jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 import {
   PSYCHOLOGISTS_SOFTWARE_PATH,
@@ -243,21 +243,6 @@ export default function PsychologistsSoftwareLandingPage() {
       <PricingSection
         id="planes"
         title="Planes generales para una profesional o un equipo"
-        individual={{
-          name: PRICING.INDIVIDUAL.name,
-          price: formatLandingClp(PRICING.INDIVIDUAL.monthly),
-          detail: `${STAFF_LIMITS.INDIVIDUAL} profesional, con disponibilidad según el horario del negocio.`,
-        }}
-        team={{
-          name: PRICING.EQUIPO.name,
-          price: formatLandingClp(PRICING.EQUIPO.monthly),
-          detail: (
-            <>
-              <p>{STAFF_LIMITS.EQUIPO} profesionales incluidos, con servicios y horarios por integrante.</p>
-              <p className="mt-3">Profesional adicional: {formatLandingClp(EXTRA_STAFF_COST.EQUIPO)} CLP / mes.</p>
-            </>
-          ),
-        }}
         footer={
           <p>
             La prueba dura {TRIAL_DURATION_DAYS} días. No existe un plan específico para psicólogos: son los planes generales de Puragenda. Revisa <Link href="/pricing" className={seo.link}>Precios</Link> y la <Link href="/funciones/agenda-multiples-profesionales" className={seo.link}>agenda para múltiples profesionales</Link>.

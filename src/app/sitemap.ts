@@ -10,6 +10,14 @@ import { CASE_STUDIES_PATH, caseStudyPath, getIndexableCaseStudyPaths, getPublis
 import { BOOKING_COMPARISON_REVIEWED_AT } from "@/lib/data/booking-system-comparison";
 
 const contentUpdatedAt = new Date("2026-09-01T00:00:00-04:00");
+const commercialUpdatedAt = new Date("2026-10-27T00:00:00-03:00");
+const commercialUpdatedPaths = new Set([
+  "/", "/pricing", "/puragenda-plus", "/puri", "/soluciones", "/caracteristicas", "/faq",
+  "/sistema-de-agendamiento-online", "/software-agenda-barberias", "/software-agenda-peluquerias",
+  "/software-agenda-manicure", "/software-agenda-estetica", "/software-agenda-psicologos",
+  "/alternativa-agendapro", "/funciones/agenda-multiples-profesionales",
+  ...industriesData.map((industry) => `/para/${industry.slug}`),
+]);
 const searchConsoleContentUpdatedAt = new Date(`${BOOKING_COMPARISON_REVIEWED_AT}T00:00:00-03:00`);
 const searchConsoleUpdatedPaths = new Set([
   "/alternativa-agendapro",
@@ -39,6 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ["/software-agenda-estetica", "weekly", 0.9],
     ["/software-agenda-psicologos", "weekly", 0.9],
     ["/pricing", "monthly", 0.8],
+    ["/puragenda-plus", "monthly", 0.8],
     ["/puri", "monthly", 0.8],
     ["/soluciones", "monthly", 0.8],
     ["/caracteristicas", "monthly", 0.8],
@@ -54,7 +63,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(([path]) => isSitemapEligible(path as string))
     .map(([path, changeFrequency, priority]) => ({
       url: sitemapUrl(path as string),
-      lastModified: searchConsoleUpdatedPaths.has(path as string) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
+      lastModified: commercialUpdatedPaths.has(path as string) ? commercialUpdatedAt : searchConsoleUpdatedPaths.has(path as string) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
       changeFrequency: changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"],
       priority: priority as number,
     }));
@@ -64,7 +73,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(isSitemapEligible)
     .map((path) => ({
       url: sitemapUrl(path),
-      lastModified: contentUpdatedAt,
+      lastModified: commercialUpdatedPaths.has(path) ? commercialUpdatedAt : contentUpdatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     }));
@@ -84,7 +93,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter(({ path }) => isSitemapEligible(path))
     .map(({ feature, path }) => ({
       url: sitemapUrl(path),
-      lastModified: feature.detail ? new Date(`${feature.detail.updatedAt}T00:00:00-03:00`) : searchConsoleUpdatedPaths.has(path) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
+      lastModified: commercialUpdatedPaths.has(path) ? commercialUpdatedAt : feature.detail ? new Date(`${feature.detail.updatedAt}T00:00:00-03:00`) : searchConsoleUpdatedPaths.has(path) ? searchConsoleContentUpdatedAt : contentUpdatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.9,
     }));

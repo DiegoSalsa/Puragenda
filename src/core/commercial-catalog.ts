@@ -1,5 +1,6 @@
 import {
   ANNUAL_MULTIPLIER,
+  COMMERCIAL_BASE_PRICING,
   EXTRA_STAFF_COST,
   PRICING,
   STAFF_LIMITS,
@@ -7,6 +8,11 @@ import {
 
 export const COMMERCIAL_CATALOG_VERSION = "puragenda-next-v1" as const;
 export const COMMERCIAL_CURRENCY = "CLP" as const;
+export const COMMERCIAL_MAX_PROFESSIONALS = 20 as const;
+export const COMMERCIAL_ANNUAL_POLICY = {
+  monthsInYear: 12,
+  paidMonths: ANNUAL_MULTIPLIER,
+} as const;
 
 export type CommercialCatalogVersion = typeof COMMERCIAL_CATALOG_VERSION;
 export type CommercialPlanCode = "PURAGENDA" | "PURAGENDA_PLUS";
@@ -35,7 +41,7 @@ export type CommercialPlanMetadata = {
   legacy: boolean;
   baseMonthly: number;
   includedProfessionals: number;
-  annualPolicy: "UNDEFINED" | "LEGACY_MULTIPLIER_10";
+  annualPolicy: "UNDEFINED" | "TWO_MONTHS_FREE" | "LEGACY_MULTIPLIER_10";
   capabilities: readonly CommercialCapability[];
 };
 
@@ -70,18 +76,18 @@ export const COMMERCIAL_PLAN_METADATA = {
     plan: "PURAGENDA",
     displayName: "Puragenda",
     legacy: false,
-    baseMonthly: 12_990,
+    baseMonthly: COMMERCIAL_BASE_PRICING.PURAGENDA.monthly,
     includedProfessionals: 1,
-    annualPolicy: "UNDEFINED",
+    annualPolicy: "TWO_MONTHS_FREE",
     capabilities: PURAGENDA_CAPABILITIES,
   },
   PURAGENDA_PLUS: {
     plan: "PURAGENDA_PLUS",
     displayName: "Puragenda+",
     legacy: false,
-    baseMonthly: 22_990,
+    baseMonthly: COMMERCIAL_BASE_PRICING.PURAGENDA_PLUS.monthly,
     includedProfessionals: 1,
-    annualPolicy: "UNDEFINED",
+    annualPolicy: "TWO_MONTHS_FREE",
     capabilities: PURAGENDA_PLUS_CAPABILITIES,
   },
   INDIVIDUAL: {
@@ -304,7 +310,7 @@ export function quoteCommercialPlan(input: CommercialQuoteInput): CommercialQuot
   if (billingCycle !== "MONTHLY") {
     throw new CommercialCatalogError(
       "UNSUPPORTED_BILLING_CYCLE",
-      "El catálogo V2 solo define facturación mensual; la anualidad está pendiente",
+      "Este flujo de contratación solo admite facturación mensual",
     );
   }
 
@@ -334,6 +340,31 @@ export function quoteCommercialPlan(input: CommercialQuoteInput): CommercialQuot
     cycleTotal: monthlyTotal,
     surchargeSteps: surchargeStepsResult,
     capabilities: metadata.capabilities,
+  };
+}
+
+/**
+ * Read-only annual offer for public pricing. Reuses the full progressive monthly
+ * quote, including professionals. It does not enable annual provider operations
+ * or change the monthly-only contract of quoteCommercialPlan.
+ */
+export function quoteCommercialAnnualPlan(input: Omit<CommercialQuoteInput, "billingCycle">) {
+  const monthly = quoteCommercialPlan({ ...input, billingCycle: "MONTHLY" });
+  const metadata = COMMERCIAL_PLAN_METADATA[monthly.plan];
+  if (metadata.annualPolicy !== "TWO_MONTHS_FREE") {
+    throw new CommercialCatalogError("UNSUPPORTED_BILLING_CYCLE", "El plan no tiene una oferta anual definida");
+  }
+  const { monthsInYear, paidMonths } = COMMERCIAL_ANNUAL_POLICY;
+  const cycleTotal = safeAmount(monthly.monthlyTotal * paidMonths, "El total anual");
+  const undiscountedYear = safeAmount(monthly.monthlyTotal * monthsInYear, "El total anual sin descuento");
+  return {
+    ...monthly,
+    billingCycle: "ANNUAL" as const,
+    cycleTotal,
+    monthlyEquivalent: cycleTotal / monthsInYear,
+    savings: undiscountedYear - cycleTotal,
+    freeMonths: monthsInYear - paidMonths,
+    paidMonths,
   };
 }
 
@@ -383,4 +414,10 @@ export function quoteLegacyPlan(input: {
     extraCost,
     total,
   };
+}
+
+/** Local V2 contract quotation. Provider adapters must explicitly support its cycle. */
+export function quoteCommercialContract(input: CommercialQuoteInput) {
+  if (input.billingCycle === "ANNUAL") return quoteCommercialAnnualPlan(input);
+  return quoteCommercialPlan(input);
 }

@@ -1,3 +1,4 @@
+import { ensureCommercialContactPolicy } from "@/server/services/commercial-usage-policy";
 import type {
   Prisma,
   CfMessage,
@@ -66,6 +67,7 @@ export async function reserveContactQuota(
   v: CfVersion,
   now: Date,
 ) {
+  const allocation = await ensureCommercialContactPolicy(tx, m.businessId, now);
   const policies = await tx.cfPolicy.findMany({
     where: { key: { in: ["GLOBAL", m.businessId] } },
   });
@@ -129,6 +131,7 @@ export async function reserveContactQuota(
       limit: 1,
     },
   ];
+  if (allocation?.trial) keys.push({ key: `${m.businessId}:${allocation.period}`, kind: "BUSINESS_TRIAL", period: allocation.period, businessId: m.businessId, limit: allocation.trialLimit! });
   const previous = await tx.cfQuotaReservation.findUnique({
     where: { messageId: m.id },
     include: { allocations: true },

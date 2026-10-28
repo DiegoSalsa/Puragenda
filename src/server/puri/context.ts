@@ -1,3 +1,4 @@
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { prisma } from "@/server/db/prisma";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
@@ -10,6 +11,8 @@ export async function createPuriContext(
 ): Promise<PuriContext> {
   const business = await getBusinessForUser(user.id);
   if (!business) throw new PuriAccessError("BUSINESS_NOT_FOUND");
+  const access = await getCommercialPlanAccess(business.id);
+  if (access.v2 && !access.has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
   const [permissions, scope, locations] = await Promise.all([
     getEffectiveBusinessPermissions(user, business),
     getStaffAgendaScope(user, business),
@@ -29,6 +32,7 @@ export async function createPuriContext(
   return {
     user,
     business,
+    commercialV2: access.v2,
     permissions,
     staffId: scope.ownStaffId,
     canSeeAllAgendas,

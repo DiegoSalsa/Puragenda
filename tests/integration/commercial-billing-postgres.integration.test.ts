@@ -1,3 +1,4 @@
+import { COMMERCIAL_PLAN_METADATA } from "@/core/commercial-catalog";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -47,7 +48,7 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     const f=await fixture("MERCADO_PAGO");const op=await intent(f,"MERCADO_PAGO");const provider=uniqueMp();
     await previewSandboxBillingOperation(op.id,provider.adapter);await executeSandboxBillingOperation(op.id,provider.adapter,"test@example.invalid");
     expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
-    provider.state.payment.transaction_amount=22990;provider.state.payment.date_last_updated=new Date().toISOString();
+    provider.state.payment.transaction_amount=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;provider.state.payment.date_last_updated=new Date().toISOString();
     const raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));
     const concurrent=await Promise.all([processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter),processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter)]);
     expect(concurrent.filter(result=>"applied" in result && result.applied)).toHaveLength(1);
@@ -84,7 +85,7 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     await previewSandboxBillingOperation(op.id,provider.adapter);await executeSandboxBillingOperation(op.id,provider.adapter,"test@example.invalid");
     provider.state.payment.date_last_updated=new Date().toISOString();provider.state.payment.transaction_amount=1;
     let raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter)).toMatchObject({outcome:"REJECTED"});
-    provider.state.payment.status="pending";provider.state.payment.transaction_amount=22990;
+    provider.state.payment.status="pending";provider.state.payment.transaction_amount=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;
     raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter)).toMatchObject({outcome:"UNKNOWN"});
     await expect(processSandboxBillingWebhook(raw,new Headers(),provider.adapter)).rejects.toThrow();
     expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
@@ -96,7 +97,7 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     const raw=paddleNotification(randomUUID(),"transaction.completed",provider.state.transaction.id);const result=await processSandboxBillingWebhook(raw,paddleSignature(raw),provider.adapter);
     expect(result).toMatchObject({applied:true});
     const snapshot=await prisma.commercialSubscription.findUniqueOrThrow({where:{businessId:f.businessId}});
-    expect(snapshot.totalPriceClp).toBe(22990);expect((await prisma.commercialPaymentEvidence.findFirstOrThrow({where:{operationId:op.id}})).amountMinor).toBe(1000);
+    expect(snapshot.totalPriceClp).toBe(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly);expect((await prisma.commercialPaymentEvidence.findFirstOrThrow({where:{operationId:op.id}})).amountMinor).toBe(1000);
     expect((await getCommercialEntitlementShadow(f.businessId)).capabilities).toContain("puri.plus");
   });
   it("Paddle subscription update without a completed transaction never grants new seats",async()=>{
@@ -123,7 +124,7 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
   it.each(["refunded","charged_back"])("revokes shadow access on %s and ignores a stale approval",async status=>{
     const f=await fixture("MERCADO_PAGO");const op=await intent(f,"MERCADO_PAGO");const provider=uniqueMp();
     await previewSandboxBillingOperation(op.id,provider.adapter);await executeSandboxBillingOperation(op.id,provider.adapter,"test@example.invalid");
-    provider.state.payment.transaction_amount=22990;provider.state.payment.date_last_updated=new Date().toISOString();
+    provider.state.payment.transaction_amount=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;provider.state.payment.date_last_updated=new Date().toISOString();
     let raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter);
     const paidDate=provider.state.payment.date_last_updated;
     provider.state.payment.status=status;provider.state.payment.date_last_updated=new Date().toISOString();
@@ -132,10 +133,10 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter);
     expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
   });
-  it("canonical cancellation revokes shadow access and a stale approval cannot restore it",async()=>{
+  it("canonical MP cancellation preserves the paid period and a stale approval cannot restore renewal",async()=>{
     const f=await fixture("MERCADO_PAGO");const op=await intent(f,"MERCADO_PAGO");const provider=uniqueMp();
     await previewSandboxBillingOperation(op.id,provider.adapter);await executeSandboxBillingOperation(op.id,provider.adapter,"test@example.invalid");
-    provider.state.payment.transaction_amount=22990;provider.state.payment.date_last_updated=new Date().toISOString();
+    provider.state.payment.transaction_amount=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;provider.state.payment.date_last_updated=new Date().toISOString();
     let raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));
     await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter);
     expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(true);
@@ -145,10 +146,12 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
     raw=mpNotification(randomUUID(),"subscription_preapproval",provider.state.sub.id);
     expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({lifecycleUpdated:true});
     expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({duplicate:true});
-    expect((await prisma.commercialSubscription.findUniqueOrThrow({where:{businessId:f.businessId}})).status).toBe("CANCELLED");
+    expect((await prisma.commercialSubscription.findUniqueOrThrow({where:{businessId:f.businessId}})).status).toBe("SCHEDULED_CHANGE");
     raw=mpNotification(randomUUID(),"payment",String(provider.state.payment.id));
     expect(await processSandboxBillingWebhook(raw,mpSignature(raw),provider.adapter,observedAt())).toMatchObject({outcome:"IGNORED"});
-    expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(false);
+    expect((await getCommercialEntitlementShadow(f.businessId)).commercialAccess).toBe(true);
+    expect((await prisma.commercialSubscription.findUniqueOrThrow({where:{businessId:f.businessId}})).renewalAt).toBeNull();
+    expect((await getCommercialEntitlementShadow(f.businessId,prisma,future())).commercialAccess).toBe(false);
     expect(provider.state.calls).toBe(1);
   });
   it("scheduled changes cannot execute early and do not change existing rights",async()=>{
@@ -193,14 +196,14 @@ local("billing V2 actual PostgreSQL with signed contract fixtures",()=>{
   it("applies next-renewal terms only after the synthetic clock reaches the paid period",async()=>{
     const f=await fixture("PADDLE",true);const provider=paddleFixture("prorated_immediately",true);
     provider.state.transaction.id=`txn_${randomUUID().replaceAll("-", "").slice(0,26)}`;
-    provider.state.immediate=27990;provider.state.recurring=27990;
+    provider.state.immediate=quoteCommercialPlan({ catalogVersion: "puragenda-next-v1", plan: "PURAGENDA_PLUS", professionalTotal: 2 }).monthlyTotal;provider.state.recurring=quoteCommercialPlan({ catalogVersion: "puragenda-next-v1", plan: "PURAGENDA_PLUS", professionalTotal: 2 }).monthlyTotal;
     const effectiveAt=new Date(Date.now()+10000);
     await prisma.commercialSubscription.update({where:{businessId:f.businessId},data:{renewalAt:effectiveAt,periodEnd:effectiveAt}});
     const op=await prepareSandboxBillingOperation({...f,provider:"PADDLE",plan:"PURAGENDA_PLUS",professionalTotal:2,strategy:"NEXT_RENEWAL",idempotencyKey:randomUUID(),effectiveAt});
     await previewSandboxBillingOperation(op.id,provider.adapter);
     await executeSandboxBillingOperation(op.id,provider.adapter);expect(provider.state.calls).toBe(0);
     await executeSandboxBillingOperation(op.id,provider.adapter,undefined,new Date(effectiveAt.getTime()+1));
-    provider.bind(context(op),27990,new Date(effectiveAt.getTime()+2));
+    provider.bind(context(op),quoteCommercialPlan({ catalogVersion: "puragenda-next-v1", plan: "PURAGENDA_PLUS", professionalTotal: 2 }).monthlyTotal,new Date(effectiveAt.getTime()+2));
     const period={startsAt:effectiveAt.toISOString(),endsAt:new Date(effectiveAt.getTime()+30*86_400_000).toISOString()};
     provider.state.transaction.billingPeriod=period;provider.state.subscription.currentBillingPeriod=period;
     const raw=paddleNotification(randomUUID(),"transaction.completed",provider.state.transaction.id);

@@ -28,7 +28,7 @@ export default async function MarketingPage() {
 
   const subscription = await getSubscriptionByBusinessId(business.id);
   const plan: SubscriptionPlan = subscription?.plan ?? "INDIVIDUAL";
-  const limits = getMarketingLimits(plan);
+  const limits = getMarketingLimits(plan, subscription?.isTrial ?? false);
 
   const [campaignsSent, lastCampaign, history] = await Promise.all([
     getCampaignsThisMonth(business.id),

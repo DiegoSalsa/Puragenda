@@ -1,3 +1,4 @@
+import { COMMERCIAL_PLAN_METADATA } from "@/core/commercial-catalog";
 import { randomUUID } from "node:crypto";
 import pg from "pg";
 import { afterAll, describe, expect, it } from "vitest";
@@ -41,7 +42,7 @@ async function approve(f: Fixture, proposal: Awaited<ReturnType<typeof prepare>>
 }
 async function payment(f: Fixture, proposal: Awaited<ReturnType<typeof prepare>>, now = new Date(f.renewal.getTime()+10)) {
   f.provider.state.sub.external_reference=proposal.id;
-  f.provider.state.sub.auto_recurring.transaction_amount=proposal.targetPlanCode === "PURAGENDA_PLUS" ? 22990 : 12990;
+  f.provider.state.sub.auto_recurring.transaction_amount=proposal.targetPlanCode === "PURAGENDA_PLUS" ? COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly : 12990;
   const preview = proposal.preview as { target: { monthlyTotal: number } };
   f.provider.state.sub.auto_recurring.transaction_amount=preview.target.monthlyTotal;
   f.provider.state.sub.next_payment_date=new Date(now.getTime()+30*86_400_000).toISOString();
@@ -189,7 +190,7 @@ suite("commercial migration, web continuity and real PostgreSQL concurrency",()=
     const wrong=mpFixture(true);wrong.state.sub.external_reference=p.id;
     const raw=mpNotification(randomUUID(),"payment");
     await expect(reconcileMigrationPayment(p.id,raw,mpSignature(raw),wrong.adapter)).rejects.toThrow("MIGRATION_PROVIDER_BINDING_MISMATCH");
-    f.provider.state.sub.external_reference=p.id;f.provider.state.sub.auto_recurring.transaction_amount=22990;
+    f.provider.state.sub.external_reference=p.id;f.provider.state.sub.auto_recurring.transaction_amount=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;
     f.provider.state.invoice.debit_date=f.renewal.toISOString();f.provider.state.payment.transaction_amount=1;f.provider.state.payment.date_last_updated=new Date().toISOString();
     const insufficient=mpNotification(randomUUID(),"payment",String(f.provider.state.payment.id));
     await expect(reconcileMigrationPayment(p.id,insufficient,mpSignature(insufficient),f.provider.adapter,new Date(f.renewal.getTime()+10))).rejects.toThrow("MIGRATION_PAYMENT_MISMATCH");
@@ -221,12 +222,12 @@ suite("commercial migration, web continuity and real PostgreSQL concurrency",()=
   });
   it("Paddle canonical paid migration reuses signed SDK evidence without mutating items",async()=>{
     const f=await legacy();const provider=paddleFixture("prorated_immediately",true);const sub=provider.state.subscription.id;
-    provider.state.immediate=22990;
+    provider.state.immediate=COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly;
     await prisma.subscription.update({where:{businessId:f.businessId},data:{mpSubscriptionId:null,paddleSubscriptionId:sub}});
     await prisma.commercialSubscription.update({where:{businessId:f.businessId},data:{provider:"PADDLE",externalSubscriptionId:sub}});
     f.dependencies={adapter:provider.adapter,fixtureReview:review} as unknown as Fixture["dependencies"];
     const p=await prepare(f);await approve(f,p);
-    provider.bind(migrationContext(p.id,f.businessId,{plan:"PURAGENDA_PLUS",professionalTotal:1,effectiveAt:f.renewal},sub),22990);
+    provider.bind(migrationContext(p.id,f.businessId,{plan:"PURAGENDA_PLUS",professionalTotal:1,effectiveAt:f.renewal},sub),COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly);
     provider.state.transaction.id=`txn_${randomUUID().replaceAll("-", "").slice(0,26)}`;
     provider.state.transaction.billingPeriod={startsAt:f.renewal.toISOString(),endsAt:new Date(f.renewal.getTime()+30*86_400_000).toISOString()};
     provider.state.subscription.currentBillingPeriod=provider.state.transaction.billingPeriod;

@@ -1,3 +1,4 @@
+import { commercialUsageContext, ensureCommercialPuriBudgets } from "@/server/services/commercial-usage-policy";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import {
@@ -93,7 +94,8 @@ export async function reserveGrowthUsage(input: {
   assertGrowthSandbox();
   commercialInteger(input.micros);
   const units = commercialInteger(input.units ?? 1, 1);
-  const { keys } = budgetKeys(input.businessId, input.category, input.now);
+  const now = input.now ?? new Date();
+  const { keys } = await ensureCommercialPuriBudgets(input.businessId, input.category, now) ?? budgetKeys(input.businessId, input.category, now);
   return prisma
     .$transaction(async (tx) => {
       await lock(tx);
@@ -298,7 +300,7 @@ export async function settleGrowthUsage(
 export async function growthBudgetSnapshot(scope: GrowthScope) {
   await revalidateGrowthScope(scope);
   if (!scope.owner && (scope.staffId || !scope.canMoney)) return [];
-  const { periodStart } = budgetKeys(scope.businessId, "ANALYSIS_SQL");
+  const periodStart = (await commercialUsageContext(scope.businessId))?.periodStart ?? budgetKeys(scope.businessId, "ANALYSIS_SQL").periodStart;
   return prisma.puriBudgetBucket.findMany({
     where: { businessId: scope.businessId, periodStart },
     select: {
@@ -317,7 +319,7 @@ export async function growthBudgetSnapshot(scope: GrowthScope) {
 export async function growthUsageSummary(scope: GrowthScope) {
   await revalidateGrowthScope(scope);
   if (!scope.owner && (scope.staffId || !scope.canMoney)) return null;
-  const { periodStart } = budgetKeys(scope.businessId, "ANALYSIS_SQL"),
+  const periodStart = (await commercialUsageContext(scope.businessId))?.periodStart ?? budgetKeys(scope.businessId, "ANALYSIS_SQL").periodStart,
     where = { businessId: scope.businessId, createdAt: { gte: periodStart } };
   const [usage, unknown, analysis] = await Promise.all([
     prisma.puriUsageReservation.aggregate({

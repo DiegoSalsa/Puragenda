@@ -5,6 +5,7 @@ import { runContactWorker, expireContactJobs } from "@/server/contact-flow/worke
 import { reconcileResendDeliveries } from "@/server/contact-flow/events";
 import { recoverAbandonedGrowthUsage } from "@/server/puri/growth/budgets";
 import { runGrowthScheduler } from "@/server/puri/growth/proactive";
+import { reconcileReadyMercadoPagoPeriods } from "@/server/commercial-billing/operations";
 
 const key = "PURAGENDA_NEXT";
 export function commercialWorkerEnabled() {
@@ -40,15 +41,16 @@ export async function runCommercialTick() {
     if (process.env.COMMERCIAL_WORKER_KILLED === "1") return { killed: true };
     const usage = await recoverAbandonedGrowthUsage(10);
     const expired = await expireContactJobs(10);
+    const billing = await reconcileReadyMercadoPagoPeriods({ limit: 2 });
     const contacts = await runContactWorker({ limit: 3, maxDurationMs: 15000 });
     const reconciled = process.env.CONTACT_FLOW_RESEND_TEST_ENABLED === "1" ? await reconcileResendDeliveries(2) : null;
     const growth = process.env.PURI_PLUS_PROACTIVE_ENABLED === "1"
       ? await runGrowthScheduler({ after: claim.cursor, limit: 2, maxDurationMs: 8000 }) : null;
     const summary = { processed: contacts.processed, recoveredUsage: usage.recovered, expiredJobs: expired.expired, reconciled: reconciled?.reconciled ?? 0,
-      proactiveProcessed: growth?.processed ?? 0, proactiveFailed: growth?.failed ?? 0 };
+      proactiveProcessed: growth?.processed ?? 0, proactiveFailed: growth?.failed ?? 0, billingApplied: billing.applied, billingFailed: billing.failed };
     await prisma.commercialWorkerState.updateMany({ where: { key, leaseOwner: claim.leaseOwner, fence: claim.fence }, data: {
       cursor: growth ? growth.more ? growth.nextCursor : "" : claim.cursor,
-      lastSuccessAt: new Date(), lastError: growth?.failed ? "PROACTIVE_PARTIAL_FAILURE" : null, summary,
+      lastSuccessAt: new Date(), lastError: billing.failed ? "BILLING_RECONCILIATION_REQUIRED" : growth?.failed ? "PROACTIVE_PARTIAL_FAILURE" : null, summary,
     } });
     return { ...summary, simulated: contacts.simulated, externalBlocked: contacts.externalBlocked };
   } catch {

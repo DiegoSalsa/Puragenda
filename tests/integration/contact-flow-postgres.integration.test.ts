@@ -617,6 +617,19 @@ suite("Contact Flow / real isolated PostgreSQL", () => {
         /PRIVATE_CLIENT|PRIVATE_NOTES|private-\d@example|customerEmail|addressHash|clientId/,
       );
   });
+  it("analyzes, prepares, authorizes and simulates a campaign during a Plus trial without payment evidence", async () => {
+    const f = await fixture({ trial: true, maximum: 2 });
+    const sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId: f.businessId } });
+    expect(sub.status).toBe("TRIALING"); expect(sub.lastPaymentAt).toBeNull();
+    // Explicit synthetic quota exercises the same central policy as registration.
+    await prisma.commercialSubscription.update({ where: { id: sub.id }, data: { termsSnapshot: { origin: "registration_v2" } } });
+    vi.stubEnv("COMMERCIAL_USAGE_POLICY_JSON", JSON.stringify({ version: "synthetic-cf-trial", trial: { PURAGENDA_PLUS: { puri: Object.fromEntries(["ALL", "STANDARD_INTERACTIVE", "PLUS_INTERACTIVE", "RECOMMENDATION", "ANALYSIS_SQL", "PROACTIVE_SQL"].map(category => [category, { limitMicros: 1000000000, limitUnits: 1000000000 }])), contactFlow: { ...syntheticContactPolicy, trialLimit: 1 } } }, paid: {}, global: { puri: { limitMicros: 1000000000, limitUnits: 1000000000 }, contactFlow: { ...syntheticContactPolicy, dailyLimit: 100000, monthlyLimit: 1000000 } } }));
+    expect(await runContactWorker({ businessId: f.businessId, limit: 2 })).toMatchObject({ simulated: true });
+    expect((await messages(f.businessId)).filter(m => m.state === "ACCEPTED")).toHaveLength(1);
+    expect(await prisma.cfQuotaBucket.findFirst({ where: { businessId: f.businessId, kind: "BUSINESS_TRIAL" } })).toMatchObject({ limit: 1, consumed: 1, reserved: 0 });
+    await runContactWorker({ businessId: f.businessId, limit: 2 });
+    expect((await messages(f.businessId)).filter(m => m.state === "ACCEPTED")).toHaveLength(1);
+  });
   it("sends only through a durable claimed job and records simulated provider acceptance", async () => {
     const f = await fixture();
     expect(

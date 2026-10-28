@@ -17,7 +17,7 @@ import LivePreviewFrame from "./live-preview-frame";
 import DomainPanel from "./domain-panel";
 import RitualGalleryPanel from "./ritual-gallery-panel";
 import RitualCopyFields from "./ritual-copy-fields";
-import BillingPanel from "./billing-panel";
+import BillingPanel from "./commercial-billing-panel";
 import styles from "./website-builder.module.css";
 import EditorNotice from "./editor-notice";
 

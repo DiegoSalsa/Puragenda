@@ -7,13 +7,17 @@ import { mpFixture, paddleFixture, mpNotification, mpSignature, paddleNotificati
 const quote = quoteCommercialPlan({ catalogVersion:"puragenda-next-v1", plan:"PURAGENDA_PLUS", professionalTotal:2 });
 const context = { operationId:"fixture-operation", businessId:"fixture-business", quote, strategy:"IMMEDIATE" as const,
   effectiveAt:new Date(), providerSubscriptionId:null as string | null };
-beforeEach(() => vi.stubEnv("COMMERCIAL_V2_SANDBOX_WRITES","1"));
+beforeEach(() => {
+  vi.stubEnv("COMMERCIAL_V2_SANDBOX_WRITES","1");
+  vi.stubEnv("COMMERCIAL_V2_INTERNAL_WRITES","1");
+  vi.stubEnv("DATABASE_URL","postgres://fixture@127.0.0.1/puragenda_commercial_test");
+});
 afterEach(() => {vi.unstubAllEnvs();vi.unstubAllGlobals();});
 describe("real SDK contracts against explicit local provider fixtures", () => {
   it("MP creates the exact V2 recurring amount and an authorization is still unpaid", async () => {
     const f=mpFixture(); const preview=await f.adapter.preview(context);
     const result=await f.adapter.execute(context,preview,"test@example.invalid");
-    expect(f.state.sub.auto_recurring.transaction_amount).toBe(27990);
+    expect(f.state.sub.auto_recurring.transaction_amount).toBe(quote.monthlyTotal);
     expect(result.status).toBe("AWAITING_PAYMENT"); expect(f.state.calls).toBe(1);
   });
   it("MP blocks mid-cycle proration and unverified renewal changes", async () => {

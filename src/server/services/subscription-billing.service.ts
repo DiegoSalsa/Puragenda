@@ -1,3 +1,4 @@
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
 import { PreApproval } from "mercadopago";
 import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER } from "@/core/constants";
 import { mpClient } from "@/server/lib/mercadopago";
@@ -81,6 +82,7 @@ export function calculateSubscriptionBaseAmount(subscription: {
   if (subscription.paymentMethod === "BANK_TRANSFER" && subscription.customMonthlyPriceClp != null) {
     return subscription.customMonthlyPriceClp;
   }
+  if (subscription.plan === "PURAGENDA" || subscription.plan === "PURAGENDA_PLUS") return quoteCommercialContract({ plan: subscription.plan, professionalTotal: 1 + subscription.extraStaffCount, billingCycle: subscription.billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION }).cycleTotal;
   const planPricing = PRICING[subscription.plan] ?? PRICING.INDIVIDUAL;
   let monthlyAmount = planPricing.monthly;
 

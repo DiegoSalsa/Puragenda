@@ -21,7 +21,8 @@ vi.mock("@/components/ui/accordion", () => ({
 import Page, { metadata } from "@/app/software-agenda-psicologos/page";
 import IndustryPage from "@/app/para/[industry]/page";
 import sitemap from "@/app/sitemap";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
+import { COMMERCIAL_PLAN_METADATA as PLANS } from "@/core/commercial-catalog";
 import { industriesData } from "@/lib/data/industries";
 import {
   PSYCHOLOGISTS_SOFTWARE_PATH,
@@ -69,10 +70,10 @@ describe("SEO-018 psychologist commercial hub", () => {
   });
 
   it("uses central pricing and the four approved structured-data nodes", () => {
-    for (const plan of [PRICING.INDIVIDUAL, PRICING.EQUIPO]) expect(visible).toContain(formatLandingClp(plan.monthly));
+    for (const plan of [PLANS.PURAGENDA, PLANS.PURAGENDA_PLUS]) expect(visible).toContain(formatLandingClp(plan.baseMonthly));
     const pricingFaq = psychologistsSoftwareFaqs().find((item) => item.question.includes("Cuánto cuesta"))!;
-    expect(pricingFaq.answer).toContain(`${STAFF_LIMITS.EQUIPO} profesionales`);
-    expect(pricingFaq.answer).toContain(formatLandingClp(EXTRA_STAFF_COST.EQUIPO));
+    expect(pricingFaq.answer).toContain("un profesional");
+    expect(pricingFaq.answer).toContain("escala progresiva");
     expect(pricingFaq.answer).toContain(`${TRIAL_DURATION_DAYS} días`);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]);
     expect(graph["@graph"].map((node: Record<string, unknown>) => node["@type"])).toEqual(["Organization", "SoftwareApplication", "FAQPage", "BreadcrumbList"]);

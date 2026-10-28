@@ -3,6 +3,7 @@ import { featureSolutions } from "@/lib/data/feature-solutions";
 import { industriesData } from "@/lib/data/industries";
 import { getIndexableMarketplacePaths } from "@/lib/marketplace";
 import { CASE_STUDIES_PATH, caseStudyPath, getIndexableCaseStudyPaths, getPublishedCaseStudies } from "@/lib/data/case-studies";
+import { PLUS_GROWTH_SUMMARY, PUBLIC_PLANS_PRICE_SUMMARY, PUBLIC_TRIAL_NOTE } from "@/lib/public-plans";
 
 export const revalidate = 86400;
 
@@ -32,9 +33,14 @@ export function GET() {
 
 > Puragenda es un sistema de reservas online para negocios de servicios en Chile. Permite gestionar citas, profesionales, clientes, abonos, recordatorios, encargos y disponibilidad desde un panel web. Puri es el asistente integrado que consulta la información disponible del negocio según los permisos de cada cuenta.
 
-Last-updated: 2026-09-04
+Last-updated: 2026-10-27
 
 Este archivo ayuda a agentes a encontrar páginas públicas. No sustituye a [robots.txt](${absoluteUrl("/robots.txt")}) ni al [sitemap](${absoluteUrl("/sitemap.xml")}).
+
+## Planes
+${PUBLIC_PLANS_PRICE_SUMMARY}
+Puragenda+ incluye sitio web personalizable con editor, hosting y reservas integradas. ${PLUS_GROWTH_SUMMARY}
+${PUBLIC_TRIAL_NOTE}
 
 ## Información principal
 - [Producto](${absoluteUrl("/")})
@@ -43,6 +49,7 @@ Este archivo ayuda a agentes a encontrar páginas públicas. No sustituye a [rob
 - [Software de agenda para barberías](${absoluteUrl("/software-agenda-barberias")})
 - [Software de agenda para peluquerías](${absoluteUrl("/software-agenda-peluquerias")})
 - [Planes y precios](${absoluteUrl("/pricing")})
+- [Puragenda+](${absoluteUrl("/puragenda-plus")})
 - [Características](${absoluteUrl("/caracteristicas")})
 - [Soluciones por industria](${absoluteUrl("/soluciones")})
 - [Preguntas frecuentes](${absoluteUrl("/faq")})

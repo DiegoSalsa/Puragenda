@@ -1,4 +1,4 @@
-import { PRICING, STAFF_LIMITS } from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
 import type { ContentSection, ContentTable } from "./seo-expansion";
 import { formatLandingClp } from "./scheduling-system-landing";
 
@@ -30,7 +30,7 @@ export const bookingSystemComparison: ContentSection = {
     caption: "Comparación orientativa para negocios de servicios en Chile. No es un ranking ni una cotización.",
     columns: ["Proveedor", "Plan o capacidad de referencia", "Precio o límite publicado", "Reservas y pagos", "Recordatorios"],
     rows: [
-      ["Puragenda", `Individual: ${STAFF_LIMITS.INDIVIDUAL} profesional. Equipo: ${STAFF_LIMITS.EQUIPO}.`, `${formatLandingClp(PRICING.INDIVIDUAL.monthly)} y ${formatLandingClp(PRICING.EQUIPO.monthly)} CLP/mes; reservas ilimitadas.`, "Enlace y widget; abonos por servicio con Mercado Pago configurado.", "Email para las citas del día siguiente."],
+      ["Puragenda", "Puragenda y Puragenda+: desde un profesional, con capacidad ampliable.", PUBLIC_PLANS_PRICE_SUMMARY, "Enlace y widget; abonos por servicio con Mercado Pago configurado.", "Email para las citas del día siguiente."],
       ["AgendaPro", "Individual: 1 profesional. Otros planes varían con el equipo.", `${formatLandingClp(agendaproPlanSnapshot[0].monthlyClp)} CLP/mes + IVA en Individual.`, "Agenda de citas y clases; pago online publicado con tarifas propias.", "Recordatorios y confirmaciones de WhatsApp según plan; revisar los productos adicionales."],
       ["Fresha", "Independent: 1 profesional. Team: cobro por integrante reservable.", "Suscripción mensual; captación de clientes nuevos por marketplace tiene una comisión adicional.", "Enlaces directos e Instagram; anticipos con Fresha Payments donde esté disponible.", "Avisos automáticos; mensajes incluidos y cargos adicionales según consumo."],
       ["Booksy", "Suscripción base; profesionales adicionales tienen un cargo mensual.", "Tarifa publicada para el mercado de la fuente; confirmar contratación y precio para Chile.", "Reservas ilimitadas y perfil en marketplace; cobros según los medios disponibles.", "Confirmaciones y recordatorios incluidos según su página de precios."],

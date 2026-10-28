@@ -1,8 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { getStaffLimit } from "@/core/subscription-plan";
+import { getCommercialPlanAccess, isV2Plan } from "./commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 
-type CapacityReader = Pick<Prisma.TransactionClient, "subscription" | "staff">;
+type CapacityReader = Pick<Prisma.TransactionClient, "subscription" | "staff" | "business">;
 
 export async function getStaffLimitInfo(businessId: string, db: CapacityReader = prisma) {
   const [subscription, currentCount] = await Promise.all([
@@ -10,7 +11,7 @@ export async function getStaffLimitInfo(businessId: string, db: CapacityReader =
     db.staff.count({ where: { businessId, isActive: true } }),
   ]);
   const plan = subscription?.plan ?? "INDIVIDUAL";
-  const maxAllowed = getStaffLimit(subscription);
+  const maxAllowed = isV2Plan(plan) ? (await getCommercialPlanAccess(businessId, new Date(), db)).professionalTotal : getStaffLimit(subscription);
   return { plan, currentCount, maxAllowed, canAdd: currentCount < maxAllowed };
 }
 

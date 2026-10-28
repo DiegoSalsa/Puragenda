@@ -23,8 +23,7 @@ import {
   softwareApplicationNode,
 } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import {
   SALON_SOFTWARE_PATH,
   salonCustomerSteps,
@@ -41,8 +40,6 @@ import { cn } from "@/lib/utils";
 export const revalidate = 3600;
 
 const faqs = salonSoftwareFaqs();
-const individualPrice = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-const teamPrice = formatLandingClp(PRICING.EQUIPO.monthly);
 
 export const metadata: Metadata = createPageMetadata({
   title: salonSoftwareMetadata.title,
@@ -201,12 +198,10 @@ export default async function SalonSoftwareLandingPage() {
         title="Cuánto cuesta el sistema para un salón"
         intro={
           <p>
-            Un profesional usa el plan {PRICING.INDIVIDUAL.name}. Un equipo de estilistas, el plan {PRICING.EQUIPO.name} ({STAFF_LIMITS.EQUIPO} incluidos). Detalle en{" "}
+            Ambos planes se adaptan a una persona o un equipo. Suma tu sitio web con Puragenda+. Detalle en{" "}
             <Link href="/pricing" className={seo.link}>precios</Link>.
           </p>
         }
-        individual={{ name: "Estilista independiente", price: individualPrice, detail: `Plan ${PRICING.INDIVIDUAL.name}.` }}
-        team={{ name: "Salón con equipo", price: teamPrice, detail: `Plan ${PRICING.EQUIPO.name}.` }}
       />
 
       <section className={seo.bandWarm} aria-labelledby="prueba-salon">

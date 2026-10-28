@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 
 export type UserRole = "ADMIN" | "RECEPTIONIST" | "STAFF" | "SUPERADMIN";
-export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
+export type SubscriptionPlan = "INDIVIDUAL" | "EQUIPO" | "TEST" | "PURAGENDA" | "PURAGENDA_PLUS";
 export type SubscriptionStatus = "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED";
 export type BillingCycle = "MONTHLY" | "ANNUAL";
 export type AppointmentStatus = "PENDING" | "AWAITING_PAYMENT" | "CONFIRMED" | "CANCELLED" | "CHECKED_IN" | "COMPLETED" | "NO_SHOW";

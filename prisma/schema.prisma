@@ -453,6 +453,8 @@ model BlacklistedIp {
 // ==========================================
 
 enum SubscriptionPlan {
+  PURAGENDA
+  PURAGENDA_PLUS
   INDIVIDUAL
   EQUIPO
   TEST
@@ -666,6 +668,9 @@ model CommercialSubscription {
   periodStart            DateTime?
   periodEnd              DateTime?
   renewalAt              DateTime?
+  renewalCancellationStatus String?
+  renewalCancellationRequestedAt DateTime?
+  renewalCancelledAt     DateTime?
   trialStart             DateTime?
   trialEnd               DateTime?
   gracePeriodEndsAt      DateTime?

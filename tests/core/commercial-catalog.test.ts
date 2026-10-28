@@ -6,6 +6,7 @@ import {
   calculateProfessionalSurcharge,
   getCommercialPlanMetadata,
   quoteCommercialPlan,
+  quoteCommercialAnnualPlan,
   quoteLegacyPlan,
 } from "@/core/commercial-catalog";
 
@@ -22,15 +23,15 @@ function expectCatalogError(action: () => unknown, code: string) {
 describe("commercial catalog V2", () => {
   it("matches every approved monthly price", () => {
     const expected = [
-      [1, 12_990, 22_990],
-      [2, 17_990, 27_990],
-      [3, 22_490, 32_490],
-      [4, 26_490, 36_490],
-      [5, 29_990, 39_990],
-      [6, 32_990, 42_990],
-      [7, 35_990, 45_990],
-      [8, 38_990, 48_990],
-      [100, 314_990, 324_990],
+      [1, 12_990, 27_990],
+      [2, 17_990, 32_990],
+      [3, 22_490, 37_490],
+      [4, 26_490, 41_490],
+      [5, 29_990, 44_990],
+      [6, 32_990, 47_990],
+      [7, 35_990, 50_990],
+      [8, 38_990, 53_990],
+      [100, 314_990, 329_990],
     ] as const;
 
     for (const [professionalTotal, puragenda, plus] of expected) {
@@ -85,7 +86,7 @@ describe("commercial catalog V2", () => {
         plan: "PURAGENDA_PLUS",
         professionalTotal: total,
       }).monthlyTotal;
-      expect(plus - puragenda).toBe(10_000);
+      expect(plus - puragenda).toBe(15_000);
       expect(puragenda).toBeGreaterThanOrEqual(previous);
       previous = puragenda;
     }
@@ -160,7 +161,7 @@ describe("commercial catalog V2", () => {
       legacy: false,
       baseMonthly: 12_990,
       includedProfessionals: 1,
-      annualPolicy: "UNDEFINED",
+      annualPolicy: "TWO_MONTHS_FREE",
     });
     expect(plus.capabilities).toContain("puri.plus");
     expect(plus.capabilities).toContain("contact_flow");
@@ -172,6 +173,29 @@ describe("commercial catalog V2", () => {
       includedProfessionals: 5,
       annualPolicy: "LEGACY_MULTIPLIER_10",
     });
+  });
+
+  it.each([
+    [1, 129_900, 279_900],
+    [2, 179_900, 329_900],
+    [3, 224_900, 374_900],
+    [5, 299_900, 449_900],
+    [6, 329_900, 479_900],
+    [20, 749_900, 899_900],
+  ])("offers 12 months for the price of 10 with %i professionals", (professionalTotal, baseAnnual, plusAnnual) => {
+    for (const [plan, expected] of [["PURAGENDA", baseAnnual], ["PURAGENDA_PLUS", plusAnnual]] as const) {
+      const quote = quoteCommercialAnnualPlan({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan, professionalTotal });
+      expect(quote).toMatchObject({ billingCycle: "ANNUAL", cycleTotal: expected, freeMonths: 2, professionalTotal });
+      expect(quote.monthlyEquivalent * 12).toBeCloseTo(expected);
+      expect(quote.savings).toBe(quote.monthlyTotal * 2);
+    }
+  });
+
+  it("rejects invalid annual capacity and amounts without changing monthly billing", () => {
+    for (const [professionalTotal, error] of [[0, "INVALID_PROFESSIONAL_TOTAL"], [Number.MAX_SAFE_INTEGER, "UNSAFE_AMOUNT"]] as const) {
+      expectCatalogError(() => quoteCommercialAnnualPlan({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: "PURAGENDA_PLUS", professionalTotal }), error);
+    }
+    expectCatalogError(() => quoteCommercialPlan({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: "PURAGENDA_PLUS", professionalTotal: 1, billingCycle: "ANNUAL" }), "UNSUPPORTED_BILLING_CYCLE");
   });
 
   it("keeps legacy quotes explicit and isolated", () => {

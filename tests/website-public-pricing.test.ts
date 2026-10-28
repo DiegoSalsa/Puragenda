@@ -63,12 +63,13 @@ describe("public Website commercial contract", () => {
     expect(hasPaidBase(sub)).toBe(true); expect(hasPaidBase({...sub,isTrial:true})).toBe(false);
     expect(hasPaidBase({...sub,currentPeriodEnd:new Date(0)})).toBe(false);
   });
-  it("shows real templates, separate billing and domain exclusion, never public Founder", () => {
+  it("shows the website as included in Plus, with real templates and domain exclusion", () => {
     const html=renderToStaticMarkup(createElement(WebsiteCommercialSection,{}));
-    expect(html).toContain("9.990"); expect(html).not.toContain("5.990");
-    expect(html).toContain("compra del dominio no está incluida");expect(html).toContain("dos suscripciones recurrentes independientes");
-    for (const key of ["bella","matchday","ritual"]) expect(html).toContain(`/website-preview?template=${key}`);
-    expect(html).toContain("Contratación pública del sitio próximamente");
+    expect(html).not.toContain("9.990"); expect(html).not.toContain("5.990");
+    expect(html).toContain("Incluido en Puragenda+");
+    expect(html).toContain("compra del dominio no está incluida");expect(html).not.toContain("suscripciones recurrentes independientes");
+    for (const key of ["bella","matchday","ritual"]) expect(html).toContain(`/websites/previews/${key}.svg`);
+    expect(html).not.toContain("complemento");
   });
   it("funnel properties are whitelisted, enum checked and contain no tenant/PII", () => {
     const pii={ email:"qa@example.test",businessId:"tenant",hostname:"tenant.test",domain:"tenant.test",token:"secret" };
@@ -79,7 +80,7 @@ describe("public Website commercial contract", () => {
   it("pricing canonical and sitemap are stable", async () => {
     const metadata=await generateMetadata();
     expect(metadata.alternates?.canonical).toBe("https://www.puragenda.cl/pricing");
-    expect(metadata.description).toContain("facturación independiente");
+    expect(metadata.description).toContain("Puragenda+ incluye sitio web, Puri avanzado y Contact Flow");
     const urls=sitemap().map(item=>item.url);
     expect(urls).toContain("https://www.puragenda.cl/pricing");
     expect(urls.some(url=>url.includes("onboarding"))).toBe(false);

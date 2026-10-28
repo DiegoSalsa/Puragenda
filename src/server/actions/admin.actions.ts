@@ -1,5 +1,6 @@
 "use server";
 
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 import {
   isRecentAdminAuth,
@@ -173,6 +174,7 @@ export async function updateSubscriptionAction(
 
   try {
     const current = await prisma.subscription.findUnique({ where: { id: subscriptionId } });
+    if (isV2Plan(current?.plan)) return { error: "El contrato V2 se gestiona desde su flujo comercial. Este formulario legacy no puede cambiarlo." };
     if (current?.paymentMethod === "BANK_TRANSFER" && (
       (data.plan !== undefined && data.plan !== current.plan) ||
       (data.billingCycle !== undefined && data.billingCycle !== current.billingCycle) ||
@@ -260,10 +262,11 @@ export async function extendTrialAction(subscriptionId: string, days: number) {
   try {
     const sub = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
-      select: { trialEndsAt: true, status: true },
+      select: { trialEndsAt: true, status: true, plan: true },
     });
 
     if (!sub) return { error: "Suscripción no encontrada" };
+    if (isV2Plan(sub.plan)) return { error: "La prueba V2 conserva su fecha original y no se extiende desde el sistema legacy." };
 
     const base = sub.trialEndsAt && sub.trialEndsAt > new Date() ? sub.trialEndsAt : new Date();
     const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
@@ -333,7 +336,8 @@ function revalidateSubscriptionAdmin(subscriptionId?: string) {
 }
 
 async function automaticBillingOnly(subscriptionId: string) {
-  const subscription = await prisma.subscription.findUnique({ where: { id: subscriptionId }, select: { paymentMethod: true } });
+  const subscription = await prisma.subscription.findUnique({ where: { id: subscriptionId }, select: { paymentMethod: true, plan: true } });
+  if (isV2Plan(subscription?.plan)) return { error: "Las condiciones V2 se gestionan desde el contrato comercial, sin modificaciones legacy." };
   return subscription?.paymentMethod === "BANK_TRANSFER"
     ? { error: "Esta suscripción se renueva por transferencia. Los beneficios y la sincronización automática no modifican su acuerdo." }
     : null;

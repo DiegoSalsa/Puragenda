@@ -20,7 +20,8 @@ import Page, { metadata } from "@/app/software-agenda-estetica/page";
 import IndustryPage from "@/app/para/[industry]/page";
 import sitemap from "@/app/sitemap";
 import { buildSlots } from "@/core/availability";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
+import { COMMERCIAL_PLAN_METADATA as PLANS } from "@/core/commercial-catalog";
 import {
   AESTHETICS_SOFTWARE_PATH,
   aestheticsCatalogExample,
@@ -81,14 +82,14 @@ describe("SEO-017 aesthetics commercial hub", () => {
   });
 
   it("uses central pricing in visible content and SoftwareApplication offers", () => {
-    for (const plan of [PRICING.INDIVIDUAL, PRICING.EQUIPO]) expect(visible).toContain(formatLandingClp(plan.monthly));
+    for (const plan of [PLANS.PURAGENDA, PLANS.PURAGENDA_PLUS]) expect(visible).toContain(formatLandingClp(plan.baseMonthly));
     const pricingFaq = aestheticsSoftwareFaqs().find((item) => item.question.includes("Cuánto cuesta"))!;
-    expect(pricingFaq.answer).toContain(`${STAFF_LIMITS.EQUIPO} profesionales`);
-    expect(pricingFaq.answer).toContain(formatLandingClp(EXTRA_STAFF_COST.EQUIPO));
+    expect(pricingFaq.answer).toContain("un profesional");
+    expect(pricingFaq.answer).toContain("escala progresiva");
     expect(pricingFaq.answer).toContain(`${TRIAL_DURATION_DAYS} días`);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]);
     const app = graph["@graph"].find((node: Record<string, unknown>) => node["@type"] === "SoftwareApplication");
-    expect(app.offers.map((offer: { price: string }) => offer.price)).toEqual([String(PRICING.INDIVIDUAL.monthly), String(PRICING.EQUIPO.monthly)]);
+    expect(app.offers.map((offer: { price: string }) => offer.price)).toEqual([String(PLANS.PURAGENDA.baseMonthly), String(PLANS.PURAGENDA_PLUS.baseMonthly)]);
   });
 
   it("renders visible factual FAQs and the existing four-node schema without reviews", () => {

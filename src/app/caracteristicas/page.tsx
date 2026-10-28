@@ -5,6 +5,8 @@ import { CalendarClock, LayoutTemplate, Mail, Users, ArrowRight, Bell, BarChart3
 import { Metadata } from "next";
 import Link from "next/link";
 import { createPageMetadata } from "@/lib/seo";
+import { PuriPublicSection } from "@/components/landing/puri-public-section";
+import { PuragendaPlusHomeSection } from "@/components/puragenda-plus-section";
 import { JsonLd } from "@/components/json-ld";
 import { jsonLdGraph, organizationRef, softwareApplicationNode } from "@/lib/json-ld";
 
@@ -81,6 +83,9 @@ export default async function CaracteristicasPage() {
           ))}
         </div>
       </section>
+
+      <PuriPublicSection />
+      <PuragendaPlusHomeSection />
 
       {/* Fidelización Deep Dive */}
       <section className="border-t-4 border-black dark:border-white bg-[#BFFCC6] dark:bg-black py-20 overflow-hidden">

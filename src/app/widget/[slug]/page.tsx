@@ -95,6 +95,7 @@ export default async function WidgetPage({
           plan: true,
           status: true,
           isTrial: true,
+          currentPeriodEnd: true,
           trialEndsAt: true,
           gracePeriodEndsAt: true,
         },

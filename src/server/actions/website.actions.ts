@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
 import { hasWebsiteEntitlement, validSubdomain } from "@/websites/policy";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
+import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { requireWebsiteManager, ensureWebsite } from "@/server/websites/service";
 import { addWebsiteDomain, customHostname, verifyWebsiteDomain, refreshWebsiteDomain, removeWebsiteDomain } from "@/server/websites/domains";
 import { startWebsiteCheckout, changeWebsiteBilling, recoverWebsitePayment, startWebsiteTrial } from "@/server/websites/checkout";
@@ -40,7 +42,7 @@ async function publishWebsiteImpl(revision: number, options?: WebsitePublication
   const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
     const current = await tx.business.findUniqueOrThrow({ where: { id: business.id }, include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true, website: true } });
-    if (current.deletedAt || !hasWebsiteEntitlement(current.websiteAddon, new Date(), current.websiteOfferEligibility) || !hasOperationalSubscriptionAccess(current.subscription)) throw new WebsiteError("Activa el add-on y regulariza tu suscripción para publicar");
+    if (current.deletedAt || !(isV2Plan(current.subscription?.plan) ? (await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).publish : hasWebsiteEntitlement(current.websiteAddon, new Date(), current.websiteOfferEligibility) && hasOperationalSubscriptionAccess(current.subscription))) throw new WebsiteError("Necesitas una suscripción vigente con sitio web incluido para publicar");
     const site = current.website;
     if (!site || site.revision !== revision) throw new WebsiteError("Recarga el borrador antes de publicar");
     const template = resolveTemplate(site.templateKey, site.templateVersion);

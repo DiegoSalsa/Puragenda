@@ -12,7 +12,7 @@ export async function publicBusiness(slug: string) {
 }
 export async function searchPublicBusinesses(query: string, cursor?: string) {
   const rows = await prisma.business.findMany({ where: { AND: [await mcpBusinessFilter(), ...(cursor ? [{ id: { gt: cursor } }] : [])], mcpPublicDiscovery: true, name: { contains: query, mode: "insensitive" } },
-    select: { id: true, slug: true, name: true, timezone: true, currencyCode: true, subscription: { select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } } }, orderBy: { id: "asc" }, take: 21 });
+    select: { id: true, slug: true, name: true, timezone: true, currencyCode: true, subscription: { select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true } } }, orderBy: { id: "asc" }, take: 21 });
   return { businesses: rows.slice(0, 20).filter((row) => hasOperationalSubscriptionAccess(row.subscription)).map(({ id, slug, name, timezone, currencyCode }) => ({ id, slug, name, timezone, currencyCode })),
     nextCursor: rows.length > 20 ? rows[19].id : null };
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks=vi.hoisted(()=>({business:vi.fn(),retired:vi.fn(),user:vi.fn(),sessionBusiness:vi.fn(),permission:vi.fn(),member:vi.fn(),location:vi.fn(),site:vi.fn(),domain:vi.fn()}));
 vi.mock("@/server/db/prisma",()=>({prisma:{business:{findUnique:mocks.business},commercialWebsiteTransition:{findFirst:mocks.retired},
   staff:{findFirst:mocks.member},businessLocation:{findFirst:mocks.location},businessWebsite:{findUnique:mocks.site,findFirst:mocks.domain}}}));
@@ -13,10 +13,12 @@ function fixture(plan="PURAGENDA_PLUS",status="ACTIVE",paid=true){return {delete
     trialEnd:future,gracePeriodEndsAt:future,lastPaymentStatus:paid?"CONFIRMED":null,lastPaymentAt:paid?past:null,lastPaymentEventId:paid?"verified-evidence":null}};}
 describe("one shadow website entitlement policy",()=>{
   beforeEach(()=>{
+    vi.useFakeTimers({toFake:["Date"]});vi.setSystemTime(now);
     vi.clearAllMocks();mocks.business.mockResolvedValue(fixture());mocks.retired.mockResolvedValue(null);
     mocks.user.mockResolvedValue({id:"owner-a",role:"ADMIN"});mocks.sessionBusiness.mockResolvedValue({id:"business-a",ownerId:"owner-a",deletedAt:null});
     mocks.permission.mockResolvedValue(true);mocks.member.mockResolvedValue({id:"staff-a"});mocks.location.mockResolvedValue(null);
   });
+  afterEach(()=>vi.useRealTimers());
   it.each([
     ["PURAGENDA","ACTIVE",true,false],["PURAGENDA_PLUS","ACTIVE",true,true],
     ["PURAGENDA_PLUS","PENDING_PAYMENT",false,false],["PURAGENDA_PLUS","ACTIVE",false,false],

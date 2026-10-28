@@ -6,6 +6,8 @@ import { assertCommercialSandbox, assertNoOpenCommercialMigration, commercialHas
 import { withCommercialCapacityLock } from "@/server/services/commercial-capacity.service";
 import { commercialJson, materializeCommercialEntitlements } from "@/server/services/commercial-subscription-v2.service";
 import { assertSandboxMutation, type BillingContext, type BillingProvider, type BillingStrategy, type ProviderPreview, type SandboxBillingAdapter } from "./contracts";
+import { assertMercadoPagoSandboxMutation } from "./mercadopago-sandbox";
+import { applyMercadoPagoRenewal, confirmMercadoPagoCancellation } from "./mercadopago-lifecycle";
 
 export function contractHash(snapshot: { planCode: string; professionalTotal: number; totalPriceClp: number | null; periodEnd: Date | null; status: string; externalSubscriptionId: string | null }) {
   return commercialHash({ plan: snapshot.planCode, seats: snapshot.professionalTotal, amount: snapshot.totalPriceClp,
@@ -41,6 +43,7 @@ export async function prepareSandboxBillingOperation(input: {
     const snapshot = await tx.commercialSubscription.findUniqueOrThrow({ where: { businessId: input.businessId }, include: { items: true } });
     if (snapshot.legacySubscriptionId || (snapshot.termsSnapshot as { sandboxFixture?: boolean } | null)?.sandboxFixture !== true) throw new Error("SANDBOX_FIXTURE_REQUIRED_LEGACY_UNTOUCHED");
     if (snapshot.provider !== input.provider || snapshot.currencyCode !== "CLP") throw new Error("BILLING_CONTRACT_MISMATCH");
+    if (input.provider === "MERCADO_PAGO" && snapshot.renewalCancellationStatus) throw new Error("RENEWAL_CANCELLATION_PENDING");
     const kind = snapshot.externalSubscriptionId ? "CONTRACT_CHANGE" : "NEW_SUBSCRIPTION";
     if (kind === "CONTRACT_CHANGE" && snapshot.status !== "ACTIVE") throw new Error("CONTRACT_NOT_ACTIVE");
     if (kind === "NEW_SUBSCRIPTION" && !["DRAFT", "PENDING_PAYMENT"].includes(snapshot.status)) throw new Error("CONTRACT_NOT_PENDING");
@@ -72,7 +75,7 @@ export async function previewSandboxBillingOperation(id: string, adapter: Sandbo
   });
 }
 export async function executeSandboxBillingOperation(id: string, adapter: SandboxBillingAdapter, payerEmail?: string, now = new Date()) {
-  assertSandboxMutation();
+  if (adapter.provider === "MERCADO_PAGO") assertMercadoPagoSandboxMutation(); else assertSandboxMutation();
   const op = await ownedOperation(id, adapter);
   const claimed = await withCommercialCapacityLock(op.businessId, async tx => {
     const current = await tx.commercialBillingOperation.findUniqueOrThrow({ where: { id } });
@@ -115,7 +118,10 @@ export async function resolveUnknownSandboxOperation(id: string, adapter: Sandbo
 }
 
 async function applyPaid(tx: Prisma.TransactionClient, op: CommercialBillingOperation, payment: CommercialPaymentEvidence, now: Date) {
-  if (op.status === "APPLIED") return { applied: false, alreadyApplied: true };
+  if (op.status === "APPLIED") {
+    if (op.provider === "MERCADO_PAGO") return applyMercadoPagoRenewal(tx, op, payment, now);
+    return { applied: false, alreadyApplied: true };
+  }
   if (op.status !== "PAID" || payment.status !== "CONFIRMED" || payment.operationId !== op.id || payment.amountMinor !== op.expectedPaymentMinor ||
       payment.currencyCode !== op.currencyCode || !op.executionStartedAt || payment.occurredAt < op.executionStartedAt) throw new Error("VERIFIED_PAYMENT_REQUIRED");
   if (op.effectiveAt > now || payment.periodStart > now) return { applied: false, scheduled: true };
@@ -153,7 +159,8 @@ export async function applyPaidSandboxOperation(id: string, now = new Date()) {
   const op = await prisma.commercialBillingOperation.findUniqueOrThrow({ where: { id } });
   return withCommercialCapacityLock(op.businessId, async tx => {
     const current = await tx.commercialBillingOperation.findUniqueOrThrow({ where: { id } });
-    const payment = await tx.commercialPaymentEvidence.findFirstOrThrow({ where: { operationId: id, status: "CONFIRMED" }, orderBy: { occurredAt: "desc" } });
+    const payment = await tx.commercialPaymentEvidence.findFirstOrThrow({ where: { operationId: id, status: "CONFIRMED" },
+      orderBy: op.provider === "MERCADO_PAGO" ? [{ periodStart: "desc" }, { occurredAt: "desc" }] : { occurredAt: "desc" } });
     return applyPaid(tx, current, payment, now);
   });
 }
@@ -197,9 +204,19 @@ export async function processSandboxBillingWebhook(raw: string, headers: Headers
     const event = await tx.commercialEvent.create({ data: { businessId: op.businessId, subscriptionId: op.subscriptionId, source,
       eventId: notification.eventId, operation: `BILLING_${observation.state}`, occurredAt: notification.occurredAt,
       outcome, correlationId: op.id, payloadHash: notification.rawHash,
-      details: { origin: observation.origin, amountMinor: observation.amountMinor, currencyCode: observation.currencyCode } } });
+      details: { origin: observation.origin, amountMinor: observation.amountMinor, currencyCode: observation.currencyCode,
+        periodStart: observation.periodStart?.toISOString() ?? null, periodEnd: observation.periodEnd?.toISOString() ?? null } } });
     if (outcome !== "APPLIED") return { outcome, eventId: event.id };
     if (["CANCELLED", "REJECTED"].includes(observation.state)) {
+      if (adapter.provider === "MERCADO_PAGO" && observation.state === "CANCELLED") {
+        await confirmMercadoPagoCancellation(tx, currentSnapshot, observation.resourceUpdatedAt, event.id, now);
+        if (current.status !== "APPLIED") await tx.commercialBillingOperation.update({ where: { id: op.id }, data: { status: "CANCELLED" } });
+        return { outcome, lifecycleUpdated: true };
+      }
+      // A failed renewal attempt does not erase an already paid period.
+      if (adapter.provider === "MERCADO_PAGO" && observation.state === "REJECTED" && currentSnapshot.lastPaymentStatus === "CONFIRMED" && currentSnapshot.periodEnd && currentSnapshot.periodEnd > now) {
+        return { outcome, lifecycleUpdated: false, paidPeriodPreserved: true };
+      }
       const updated = await tx.commercialSubscription.update({ where: { id: op.subscriptionId }, data: {
         status: observation.state === "CANCELLED" ? "CANCELLED" : "PAST_DUE_BLOCKED",
         lastReconciledAt: observation.resourceUpdatedAt, lastReconciledEventId: event.id } });
@@ -237,4 +254,24 @@ export async function cancelPreparedSandboxOperation(id: string) {
     if (current.executionStartedAt || !["PREPARED", "SCHEDULED"].includes(current.status)) throw new Error("EXTERNAL_RESULT_MUST_BE_RECONCILED");
     return tx.commercialBillingOperation.update({ where: { id }, data: { status: "CANCELLED" } });
   });
+}
+
+/** Rebuild paid rights from already verified evidence; never calls a provider. */
+export async function reconcileReadyMercadoPagoPeriods(input: { businessId?: string; limit?: number; now?: Date } = {}) {
+  assertCommercialSandbox();
+  const limit = Math.max(1, Math.min(5, Math.trunc(input.limit ?? 5))), now = input.now ?? new Date();
+  const rows = await prisma.$queryRaw<Array<{ operationId: string }>>`
+    SELECT DISTINCT p."operationId" FROM "CommercialPaymentEvidence" p
+    JOIN "CommercialBillingOperation" op ON op.id=p."operationId" AND op."businessId"=p."businessId"
+    JOIN "CommercialSubscription" s ON s.id=op."subscriptionId" AND s."businessId"=op."businessId"
+    WHERE op.provider='MERCADO_PAGO' AND op.status IN ('PAID','APPLIED') AND p.status='CONFIRMED'
+      AND p."periodStart"<=${now} AND p."periodEnd">${now} AND s."lastPaymentEventId" IS DISTINCT FROM p.id
+      AND (s."periodEnd" IS NULL OR p."periodEnd">s."periodEnd")
+      AND (${input.businessId ?? null}::text IS NULL OR s."businessId"=${input.businessId ?? null})
+    ORDER BY p."operationId" LIMIT ${limit}`;
+  let applied = 0, failed = 0;
+  for (const row of rows) {
+    try { if ((await applyPaidSandboxOperation(row.operationId, now)).applied) applied++; } catch { failed++; }
+  }
+  return { applied, failed };
 }

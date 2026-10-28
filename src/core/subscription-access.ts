@@ -1,4 +1,6 @@
 export type OperationalSubscription = {
+  plan?: string | null;
+  currentPeriodEnd?: Date | string | null;
   status?: string | null;
   isTrial?: boolean | null;
   trialEndsAt?: Date | string | null;
@@ -50,6 +52,10 @@ export function getSubscriptionAccessState(
 
   switch (subscription.status) {
     case "ACTIVE":
+      if (["PURAGENDA", "PURAGENDA_PLUS"].includes(subscription.plan ?? "")) {
+        const end = validDate(subscription.currentPeriodEnd);
+        if (!end || end <= now) return "INACTIVE";
+      }
       return "ACTIVE";
     case "TRIALING":
       return isTrialCurrentlyActive(subscription, now) ? "TRIAL_ACTIVE" : "TRIAL_EXPIRED";

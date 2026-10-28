@@ -26,7 +26,7 @@ export async function POST(
       select: {
         id: true,
         subscription: {
-          select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+          select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
         },
       },
     });

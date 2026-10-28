@@ -11,6 +11,7 @@ Object.assign(env, { NODE_ENV: "production", DATABASE_URL: databaseUrl, DIRECT_U
   AUTH_SECRET: randomBytes(32).toString("hex"), NEXT_TELEMETRY_DISABLED: "1", WEBSITE_BUILD_QA: "1",
   NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3120", APP_URL: "http://127.0.0.1:3120", NEXT_PUBLIC_PADDLE_ENV: "sandbox",
   COMMERCIAL_V2_INTERNAL_WRITES: "1", COMMERCIAL_V2_SANDBOX_WRITES: "1", COMMERCIAL_V2_SANDBOX_WEBHOOKS: "1",
+  COMMERCIAL_V2_MP_OWNER_SANDBOX: "1",
   PURI_PLUS_INTERNAL_ENABLED: "1", PURI_PLUS_AI_ENABLED: "1", PURI_PLUS_PROACTIVE_ENABLED: "1", CONTACT_FLOW_LAB_ENABLED: "1",
   CONTACT_FLOW_PUBLIC_CONSENT_ENABLED: "1", CONTACT_FLOW_RESEND_TEST_ENABLED: "1", COMMERCIAL_WORKER_ENABLED: "1",
   WEBSITE_LAUNCH_ENABLED: "0", WEBSITE_CHECKOUT_ENABLED: "0", MCP_ENABLED: "0" });
@@ -27,6 +28,7 @@ try {
   const results = [];
   for (const [path, method] of [
     ["/api/dashboard/puri-plus", "POST"], ["/api/dashboard/contact-flow", "POST"],
+    ["/api/dashboard/puri-plus/billing", "POST"],
     ["/api/internal/puri-plus", "POST"], ["/api/internal/contact-flow", "POST"],
     ["/api/internal/commercial-sandbox/webhooks/paddle", "POST"], ["/api/internal/commercial-sandbox/webhooks/mercadopago", "POST"],
     ["/api/contact-flow/webhooks/resend", "POST"], ["/api/client-portal/commercial-preferences", "POST"],

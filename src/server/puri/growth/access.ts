@@ -3,12 +3,13 @@ import {
   assertCommercialSandbox,
   commercialHash,
 } from "@/server/services/commercial-internal";
-import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
+import { effectiveSnapshotAccess } from "@/server/services/commercial-plan-access";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS as P } from "@/core/permissions";
 import { PuriAccessError, type PuriContext } from "../types";
 
 export function assertGrowthSandbox() {
+  if (process.env.PURAGENDA_NEXT_ENABLED === "1") return;
   assertCommercialSandbox();
   if (process.env.PURI_PLUS_INTERNAL_ENABLED !== "1")
     throw new PuriAccessError("PURI_PLUS_DISABLED");
@@ -56,6 +57,7 @@ export async function createGrowthScope(
           professionalTotal: true,
           periodStart: true,
           periodEnd: true,
+          trialStart: true,
           trialEnd: true,
           gracePeriodEndsAt: true,
           lastPaymentStatus: true,
@@ -103,31 +105,7 @@ export async function createGrowthScope(
     throw new PuriAccessError("LOCATION_FORBIDDEN");
   if (!location && !owner) throw new PuriAccessError("LOCATION_REQUIRED");
   const subscription = business.commercialSubscription;
-  const entitlements =
-    subscription &&
-    evaluateCommercialEntitlements(
-      { ...subscription, plan: subscription.planCode },
-      now,
-    );
-  if (
-    !subscription ||
-    subscription.planCode !== "PURAGENDA_PLUS" ||
-    !["ACTIVE", "SCHEDULED_CHANGE", "PAST_DUE_GRACE"].includes(
-      subscription.status,
-    ) ||
-    !subscription.periodStart ||
-    subscription.periodStart > now ||
-    !subscription.periodEnd ||
-    subscription.lastPaymentStatus !== "CONFIRMED" ||
-    !subscription.lastPaymentAt ||
-    subscription.lastPaymentAt > now ||
-    !subscription.lastPaymentEventId ||
-    !entitlements?.commercialAccess ||
-    !entitlements.capabilities.includes("puri.plus")
-  )
-    throw new PuriAccessError("PLUS_ENTITLEMENT_REQUIRED");
-  // Grace cannot extend premium capability beyond an actually paid period.
-  if (subscription.periodEnd <= now)
+  if (!subscription || !effectiveSnapshotAccess(subscription, now).capabilities.includes("puri.plus"))
     throw new PuriAccessError("PLUS_ENTITLEMENT_REQUIRED");
   const staffId =
     !allAgendas || context.ownAgenda ? (member?.id ?? null) : null;

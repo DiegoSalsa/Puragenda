@@ -23,9 +23,10 @@ export type PublishedListingRecord = {
     deletedAt: Date | null;
     productionOrdersEnabled: boolean;
     subscription: {
-      plan: "INDIVIDUAL" | "EQUIPO" | "TEST";
+      plan: "INDIVIDUAL" | "EQUIPO" | "TEST" | "PURAGENDA" | "PURAGENDA_PLUS";
       status: string;
       isTrial: boolean;
+      currentPeriodEnd?: Date | null;
       trialEndsAt: Date | null;
       gracePeriodEndsAt: Date | null;
     } | null;

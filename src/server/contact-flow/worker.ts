@@ -16,7 +16,7 @@ import { consentEligibility } from "./consent";
 import { reserveContactQuota, settleContactQuota } from "./quotas";
 import { enrollmentToken } from "./tokens";
 import { settleInterruptedDelivery } from "./interruption";
-import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
+import { effectiveSnapshotAccess } from "@/server/services/commercial-plan-access";
 import { SimulatedContactProvider, ResendContactProvider, type DeliveryResult } from "./providers";
 
 const includeJob = {
@@ -103,6 +103,7 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
           professionalTotal: true,
           periodStart: true,
           periodEnd: true,
+          trialStart: true,
           trialEnd: true,
           gracePeriodEndsAt: true,
           lastPaymentStatus: true,
@@ -117,8 +118,6 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
       select: { deletedAt: true },
     }),
     sub = business?.commercialSubscription;
-  const entitlement =
-    sub && evaluateCommercialEntitlements({ ...sub, plan: sub.planCode }, now);
   if (
     !business ||
     business.deletedAt ||
@@ -127,21 +126,7 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
     actor.deletedAt
   )
     return "AUTHORIZER_ACCESS_CHANGED";
-  if (
-    !sub ||
-    sub.planCode !== "PURAGENDA_PLUS" ||
-    !["ACTIVE", "SCHEDULED_CHANGE", "PAST_DUE_GRACE"].includes(sub.status) ||
-    !sub.periodStart ||
-    sub.periodStart > now ||
-    !sub.periodEnd ||
-    sub.periodEnd <= now ||
-    sub.lastPaymentStatus !== "CONFIRMED" ||
-    !sub.lastPaymentAt ||
-    sub.lastPaymentAt > now ||
-    !sub.lastPaymentEventId ||
-    !entitlement?.commercialAccess ||
-    !entitlement.capabilities.includes("puri.plus")
-  )
+  if (!sub || !effectiveSnapshotAccess(sub, now).capabilities.includes("contact_flow"))
     return "PLUS_ENTITLEMENT_REQUIRED";
   if (
     c.locationId &&

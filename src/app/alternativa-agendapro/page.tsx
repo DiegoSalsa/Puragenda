@@ -1,3 +1,4 @@
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import type { Metadata } from "next";
@@ -28,7 +29,7 @@ export const revalidate = 3600;
 const criteria = [
   {
     label: "Precio publicado",
-    puragenda: "Individual $12.990 CLP/mes y Equipo $29.990 CLP/mes.",
+    puragenda: PUBLIC_PLANS_PRICE_SUMMARY,
     competitor: "Individual $15.900 CLP/mes + IVA para un profesional, según la página oficial revisada el 14 de octubre de 2026. Otros planes varían con el equipo.",
   },
   {

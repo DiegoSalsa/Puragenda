@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       countryCode: true,
       currencyCode: true,
       subscription: {
-        select: { status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
+        select: { plan: true, currentPeriodEnd: true, status: true, isTrial: true, trialEndsAt: true, gracePeriodEndsAt: true },
       },
     },
   });

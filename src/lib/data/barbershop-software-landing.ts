@@ -1,11 +1,6 @@
-import {
-  EXTRA_STAFF_COST,
-  PRICING,
-  STAFF_LIMITS,
-  TRIAL_DURATION_DAYS,
-} from "@/core/constants";
+import { PUBLIC_PLANS_PRICE_SUMMARY } from "@/lib/public-plans";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import type { FaqItem } from "@/lib/json-ld";
-import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
 
 export const BARBERSHOP_SOFTWARE_PATH = "/software-agenda-barberias";
 
@@ -167,15 +162,11 @@ export const barbershopCustomerSteps = [
 ] as const;
 
 export function barbershopSoftwareFaqs(): FaqItem[] {
-  const individual = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-  const team = formatLandingClp(PRICING.EQUIPO.monthly);
-  const extraStaff = formatLandingClp(EXTRA_STAFF_COST.EQUIPO);
-
   return [
     {
       question: "¿Puedo tener varios barberos en la misma agenda?",
       answer:
-        "Sí. El plan Equipo incluye varios profesionales con horario y servicios propios. El cliente elige barbero después del servicio y ve solo su disponibilidad. El detalle está en la página de agenda para múltiples profesionales.",
+        "Sí. Ambos planes permiten sumar profesionales con horario y servicios propios. El cliente elige barbero después del servicio y ve solo su disponibilidad. El detalle está en la página de agenda para múltiples profesionales.",
     },
     {
       question: "¿Cada barbero puede tener un horario distinto?",
@@ -204,7 +195,7 @@ export function barbershopSoftwareFaqs(): FaqItem[] {
     },
     {
       question: "¿Cuánto cuesta el software de agenda para una barbería?",
-      answer: `El plan ${PRICING.INDIVIDUAL.name} cuesta ${individual} al mes para un barbero. El plan ${PRICING.EQUIPO.name} cuesta ${team} al mes e incluye ${STAFF_LIMITS.EQUIPO} profesionales. Extra en Equipo: ${extraStaff} al mes cada uno. La prueba dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
+      answer: `${PUBLIC_PLANS_PRICE_SUMMARY} La prueba de Puragenda dura ${TRIAL_DURATION_DAYS} días y no pide tarjeta.`,
     },
     {
       question: "¿Los recordatorios de la barbería llegan por WhatsApp?",

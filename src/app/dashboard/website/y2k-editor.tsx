@@ -18,7 +18,7 @@ import MatchdayGalleryPanel from "./matchday-gallery-panel";
 import LivePreviewFrame from "./live-preview-frame";
 import MediaLibrary from "./media-library";
 import DomainPanel from "./domain-panel";
-import BillingPanel from "./billing-panel";
+import BillingPanel from "./commercial-billing-panel";
 import Y2kAppearancePanel from "./y2k-appearance-panel";
 import Y2kStickersPanel from "./y2k-stickers-panel";
 import { applyStickerEdit, stickerEditMessageSchema, stickersForViewport, type PinkSticker, type StickerEditorState } from "@/websites/templates/pink-y2k/stickers";

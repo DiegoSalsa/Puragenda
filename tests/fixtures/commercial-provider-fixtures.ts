@@ -1,3 +1,4 @@
+import { COMMERCIAL_CATALOG_VERSION, COMMERCIAL_PLAN_METADATA, quoteCommercialPlan } from "@/core/commercial-catalog";
 import { createHmac, randomUUID } from "node:crypto";
 import { Paddle, Environment } from "@paddle/paddle-node-sdk";
 import { MercadoPagoSandboxAdapter, type MercadoPagoPort } from "@/server/commercial-billing/mercadopago-sandbox";
@@ -32,20 +33,22 @@ export function mpFixture(renewalValidated = false) {
     subscription: async () => state.sub, create: async body => {
       state.calls++; state.sub = { ...state.sub, external_reference: body.external_reference!, auto_recurring: body.auto_recurring as typeof state.sub.auto_recurring };
       if (state.timeout) throw new Error("fixture network timeout after remote acceptance"); return state.sub;
-    }, update: async (_id, body) => { state.calls++; state.sub = { ...state.sub, external_reference: body.external_reference!, auto_recurring: { ...state.sub.auto_recurring, ...body.auto_recurring } }; return state.sub; },
+    }, update: async (_id, body) => { state.calls++; state.sub = { ...state.sub, status: body.status ?? state.sub.status,
+      external_reference: body.external_reference ?? state.sub.external_reference, auto_recurring: { ...state.sub.auto_recurring, ...body.auto_recurring } }; return state.sub; },
     search: async () => ({ results: [state.sub] }), invoice: async () => state.invoice,
     invoicesForPayment: async () => ({ results: [state.invoice] }), payment: async () => state.payment };
   return { state, port, adapter: new MercadoPagoSandboxAdapter(port, 123, webhookSecret, "CONTRACT_FIXTURE", renewalValidated) };
 }
 const codes = ["PURAGENDA", "PURAGENDA_PLUS", "seats.2", "seats.3", "seats.4", "seats.5", "seats.6"];
 export const paddlePriceMap = Object.fromEntries(codes.map((code,index) => [code, `pri_${String(index+1).padStart(26,"0")}`]));
-const units = [12990,22990,5000,4500,4000,3500,3000];
+const units = [COMMERCIAL_PLAN_METADATA.PURAGENDA.baseMonthly, COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly,
+  ...quoteCommercialPlan({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: "PURAGENDA", professionalTotal: 6 }).surchargeSteps.map(step => step.unitAmount)];
 const total = (amount: number) => ({ grandTotal: String(amount), tax: "0", currencyCode: "CLP" });
 export function paddleFixture(mode: "prorated_immediately" | "prorated_next_billing_period" = "prorated_immediately", renewalValidated = false) {
   const sdk = new Paddle("pdl_sdbx_apikey_fixture", { environment: Environment.sandbox });
   const subId = `sub_${"1".repeat(26)}`; const txnId = `txn_${"1".repeat(26)}`;
   const period = { startsAt: new Date(Date.now()-60_000).toISOString(), endsAt: new Date(Date.now()+30*86_400_000).toISOString() };
-  const state = { calls: 0, timeout: false, immediate: 1000, recurring: 22990,
+  const state = { calls: 0, timeout: false, immediate: 1000, recurring: Number(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly),
     subscription: { id: subId, status: "active", currencyCode: "CLP", customData: { puragendaSandbox: true } as Record<string, unknown>,
       scheduledChange: null, currentBillingPeriod: period, updatedAt: new Date().toISOString(), items: [{ price: { id: paddlePriceMap.PURAGENDA }, quantity:1 }] },
     transaction: { id: txnId, subscriptionId: subId as string | null, status: "completed", currencyCode: "CLP", customData: {} as Record<string,unknown>,

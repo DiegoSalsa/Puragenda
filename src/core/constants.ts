@@ -37,7 +37,12 @@ export const ROLES = { ADMIN: "ADMIN", RECEPTIONIST: "RECEPTIONIST", STAFF: "STA
 export const PLANS = { INDIVIDUAL: "INDIVIDUAL", EQUIPO: "EQUIPO", TEST: "TEST" } as const;
 
 // Pricing (CLP/month)
+export const COMMERCIAL_BASE_PRICING = {
+  PURAGENDA: { monthly: 12_990, name: "Puragenda" },
+  PURAGENDA_PLUS: { monthly: 27_990, name: "Puragenda+" },
+} as const;
 export const PRICING = {
+  ...COMMERCIAL_BASE_PRICING,
   INDIVIDUAL: { monthly: 12990, name: "Individual" },
   EQUIPO:     { monthly: 29990, name: "Equipo" },
   TEST:       { monthly: 1000, name: "Test" },
@@ -59,6 +64,8 @@ export const TRIAL_DURATION_DAYS = 30;
 
 // Staff limits per plan
 export const STAFF_LIMITS = {
+  PURAGENDA: 1,
+  PURAGENDA_PLUS: 1,
   INDIVIDUAL: 1,
   EQUIPO: 5,     // 5 included, extras purchasable
   TEST: 1,

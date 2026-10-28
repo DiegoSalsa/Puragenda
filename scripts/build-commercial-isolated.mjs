@@ -19,5 +19,5 @@ Object.assign(env,{NODE_ENV:"production",DATABASE_URL:databaseUrl,DIRECT_URL:dat
   CONTACT_FLOW_LAB_ENABLED:"0",
   MCP_ENABLED:"0",MCP_PUBLIC_BOOKING_ENABLED:"0",MCP_REVIEW_SUPPRESS_EFFECTS:"1"});
 console.log("Production compilation with isolated local database, no provider credentials, all commercial writers disabled.");
-const result=spawnSync(process.execPath,["node_modules/next/dist/bin/next","build"],{env,stdio:"inherit",windowsHide:true});
+const result=spawnSync(process.execPath,["node_modules/next/dist/bin/next","build", ...(process.argv.includes("--webpack") ? ["--webpack"] : [])],{env,stdio:"inherit",windowsHide:true});
 process.exit(result.status??1);

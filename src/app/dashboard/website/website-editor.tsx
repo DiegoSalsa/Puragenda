@@ -21,7 +21,7 @@ import { editableProcess } from "@/websites/templates/bella/process";
 import LivePreviewFrame from "./live-preview-frame";
 import MediaLibrary from "./media-library";
 import DomainPanel from "./domain-panel";
-import BillingPanel from "./billing-panel";
+import BillingPanel from "./commercial-billing-panel";
 import styles from "./website-builder.module.css";
 import EditorNotice from "./editor-notice";
 type Props = WebsiteEditorProps<BellaConfig>;

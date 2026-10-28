@@ -1,3 +1,4 @@
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
 import { prisma } from "@/server/db/prisma";
 import { PRICING, EXTRA_STAFF_COST, ANNUAL_MULTIPLIER } from "@/core/constants";
 import { getStaffLimit } from "@/core/subscription-plan";
@@ -27,6 +28,10 @@ export function calculatePrice(
   billingCycle: BillingCycle,
   extraStaffCount: number
 ): { basePrice: number; extraCost: number; total: number; label: string } {
+  if (plan === "PURAGENDA" || plan === "PURAGENDA_PLUS") {
+    const q = quoteCommercialContract({ plan, billingCycle, professionalTotal: 1 + extraStaffCount, catalogVersion: COMMERCIAL_CATALOG_VERSION });
+    return { basePrice: q.baseMonthly, extraCost: q.professionalSurchargeMonthly, total: q.cycleTotal, label: `$${q.cycleTotal.toLocaleString("es-CL")}/${billingCycle === "ANNUAL" ? "año (10 meses)" : "mes"}` };
+  }
   const planPricing = PRICING[plan];
   const basePrice = planPricing.monthly;
 

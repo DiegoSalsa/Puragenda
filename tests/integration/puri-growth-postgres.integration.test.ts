@@ -117,12 +117,14 @@ suite(
             email: "private-0@example.invalid",
           },
         });
+      // Keep the visit on the same UTC day even when the suite runs near midnight.
+      const now = new Date(); now.setUTCHours(12, 0, 0, 0);
       await f.appointment(0, {
         clientId: client.id,
-        startTime: new Date(Date.now() - 3600000),
-        endTime: new Date(Date.now() - 1800000),
+        startTime: new Date(+now - 3600000),
+        endTime: new Date(+now - 1800000),
       });
-      const e = await collectGrowthEvidence(f.scope, DEFAULT_GROWTH_RULES);
+      const e = await collectGrowthEvidence(f.scope, DEFAULT_GROWTH_RULES, now);
       expect(e.evidence.cohort?.inactive).toBe(4);
       expect(e.evidence.counts.current).toBe(2);
     });

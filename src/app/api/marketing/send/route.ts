@@ -1,3 +1,4 @@
+import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
 import { NextRequest, NextResponse } from "next/server";
 import { marketingLimiter } from "@/server/lib/rate-limit";
 import { getApiSessionUser } from "@/server/auth/user-session";
@@ -44,10 +45,11 @@ export async function POST(request: NextRequest) {
 
     const subscription = await getSubscriptionByBusinessId(business.id);
     const plan: SubscriptionPlan = subscription?.plan ?? "INDIVIDUAL";
+    if (isV2Plan(plan) && !(await getCommercialPlanAccess(business.id)).allowed) return NextResponse.json({ error: "Suscripción vencida" }, { status: 403 });
 
     // ── 3. Validate frequency: max 1 campaign per month ──
     const campaignsSent = await getCampaignsThisMonth(business.id);
-    const limits = getMarketingLimits(plan);
+    const limits = getMarketingLimits(plan, subscription?.isTrial ?? false);
 
     if (campaignsSent >= limits.maxCampaignsPerMonth) {
       return NextResponse.json(

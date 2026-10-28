@@ -1,3 +1,4 @@
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialPlan } from "@/core/commercial-catalog";
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
@@ -9,7 +10,7 @@ import { configureGrowthBudget } from "@/server/puri/growth/budgets";
 import { createPuriContext } from "@/server/puri/context";
 
 export async function growthFixture(
-  options: { team?: boolean; history?: boolean } = {},
+  options: { team?: boolean; history?: boolean; trial?: boolean } = {},
 ) {
   assertGrowthSandbox();
   const now = new Date();
@@ -49,22 +50,25 @@ export async function growthFixture(
       currentPeriodEnd: day(-30),
     },
   });
+  const commercialQuote = quoteCommercialPlan({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: "PURAGENDA_PLUS", professionalTotal: options.team ? 2 : 1 });
   await prisma.commercialSubscription.create({
     data: {
       businessId,
-      catalogVersion: "2026-10-v2",
+      catalogVersion: COMMERCIAL_CATALOG_VERSION,
       planCode: "PURAGENDA_PLUS",
       billingCycle: "MONTHLY",
       professionalTotal: options.team ? 2 : 1,
-      basePriceClp: 22990,
-      totalPriceClp: options.team ? 25990 : 22990,
-      status: "ACTIVE",
+      basePriceClp: commercialQuote.baseMonthly,
+      totalPriceClp: commercialQuote.monthlyTotal,
+      status: options.trial ? "TRIALING" : "ACTIVE",
+      trialStart: options.trial ? new Date(+now - 60000) : null,
+      trialEnd: options.trial ? new Date(+now + 30 * 86400000) : null,
       snapshotHash: "synthetic",
       periodStart: day(20),
       periodEnd: day(-30),
-      lastPaymentStatus: "CONFIRMED",
-      lastPaymentAt: day(20),
-      lastPaymentEventId: randomUUID(),
+      lastPaymentStatus: options.trial ? null : "CONFIRMED",
+      lastPaymentAt: options.trial ? null : day(20),
+      lastPaymentEventId: options.trial ? null : randomUUID(),
     },
   });
   const location = await prisma.businessLocation.create({

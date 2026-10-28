@@ -24,7 +24,7 @@ export default async function Page() {
     <Link href="/dashboard/puri-plus" className="text-sm font-bold underline">Volver a Puri+</Link>
     <h1 className="text-2xl font-black">Configuración comercial</h1>
     <section className="rounded-2xl border-2 border-black bg-white p-5 text-black">
-      <h2 className="font-black">Uso mensual de Puri+</h2>
+      <h2 className="font-black">Uso de Puri+ en tu período</h2>
       <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="p-2">Categoría</th><th className="p-2">Operaciones</th><th className="p-2">Presupuesto USD</th><th className="p-2">Estado</th></tr></thead><tbody>{budgets.map(b => <tr key={b.category} className="border-t"><td className="p-2">{b.category}</td><td className="p-2">{b.spentUnits + b.reservedUnits} / {b.limitUnits}</td><td className="p-2">{((b.spentMicros + b.reservedMicros) / 1000000).toFixed(4)} / {(b.limitMicros / 1000000).toFixed(2)}</td><td className="p-2">{b.unknownCost ? "Conciliación requerida" : b.alertLevel >= 80 ? `Alerta ${b.alertLevel}%` : "Disponible"}</td></tr>)}</tbody></table></div>
       {!budgets.length && <p className="mt-3 text-sm">Sin presupuesto configurado. La IA permanece bloqueada.</p>}
     </section>

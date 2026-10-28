@@ -207,7 +207,7 @@ export const industriesData: IndustrySEOData[] = [
       },
       {
         question: "¿Funciona para psicólogos o terapeutas independientes?",
-        answer: "Sí. El Plan Individual está pensado para un profesional e incluye 30 días de prueba sin tarjeta antes de activar la suscripción.",
+        answer: "Sí. Puragenda parte con un profesional y puedes probarlo 30 días sin tarjeta antes de activar la suscripción.",
       },
       {
         question: "¿Los pacientes pueden reprogramar sin llamar a recepción?",
@@ -263,7 +263,7 @@ export const industriesData: IndustrySEOData[] = [
       { title: "Reservas desde Google o Instagram", description: "Comparte el enlace de la agenda donde tus pacientes ya buscan tu centro, sin exigirles instalar una aplicación." },
     ],
     faq: [
-      { question: "¿Sirve para un centro con varios kinesiólogos?", answer: "Sí. El plan Equipo permite coordinar profesionales con sus horarios y servicios asignados desde un panel común." },
+      { question: "¿Sirve para un centro con varios kinesiólogos?", answer: "Sí. Ambos planes permiten sumar profesionales y coordinar sus horarios y servicios asignados desde un panel común." },
       { question: "¿Puedo diferenciar evaluación y tratamiento?", answer: "Sí. Cada tipo de sesión puede tener su propia duración, precio, descripción y profesionales disponibles." },
       { question: "¿El paciente necesita crear una cuenta?", answer: "No. Puede completar la reserva desde el enlace público con sus datos de contacto." },
       { question: "¿Es una ficha clínica electrónica?", answer: "No. Puragenda organiza la agenda y los clientes, pero no reemplaza una ficha clínica ni un software médico especializado." },
@@ -281,7 +281,7 @@ export const industriesData: IndustrySEOData[] = [
     heroSubheadline: "Empieza por los servicios que ofreces: qué incluye el esmaltado, cuándo se necesita retiro y quién realiza cada técnica. Esas decisiones dan forma a tu agenda diaria.",
     benefits: [
       { title: "Nombra lo que está incluido", description: "Distingue un esmaltado de un esmaltado con retiro. Si dedicas más tiempo a un diseño, crea su servicio con la duración completa y explica cuándo elegirlo." },
-      { title: "Prepara la jornada", description: "Revisa qué servicios realiza cada integrante y configura los períodos sin atención. En Equipo se usan horarios por profesional; en Individual, el horario del negocio." },
+      { title: "Prepara la jornada", description: "Revisa qué servicios realiza cada integrante y configura los períodos sin atención. Configura los horarios por profesional y los períodos de apertura del negocio." },
       { title: "Revisa la visita anterior", description: "Antes de coordinar un mantenimiento, consulta el historial de citas y conversa con la clienta sobre el servicio que necesita esta vez." },
     ],
     faq: [

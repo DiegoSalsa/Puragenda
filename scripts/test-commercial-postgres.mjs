@@ -20,6 +20,8 @@ const run=(args)=>spawnSync(process.execPath,["node_modules/vitest/vitest.mjs","
 // temporary global limit cannot affect another suite. Worker races inside each
 // test still execute concurrently against real PostgreSQL.
 postgresFiles.push("tests/integration/commercial-launch-postgres.integration.test.ts");
+postgresFiles.push("tests/integration/commercial-mp-owner-postgres.integration.test.ts");
+postgresFiles.push("tests/integration/registration-v2-postgres.integration.test.ts");
 const postgresStatus=run([...(process.argv.includes("--contact-flow")?[postgresFiles[4]]:process.argv.includes("--launch")?[postgresFiles[5]]:postgresFiles),"--no-file-parallelism"]);
 if(postgresStatus!==0)process.exit(postgresStatus);
 if(process.argv.includes("--all"))process.exit(run(postgresFiles.flatMap(file=>["--exclude",file])));

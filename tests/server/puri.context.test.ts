@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DASHBOARD_PERMISSIONS as P } from "@/core/permissions";
 
-const mocks = vi.hoisted(() => ({ business: vi.fn(), scope: vi.fn(), permissions: vi.fn(), locations: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), business: vi.fn(), scope: vi.fn(), permissions: vi.fn(), locations: vi.fn() }));
+vi.mock("@/server/services/commercial-plan-access", () => ({ getCommercialPlanAccess: mocks.access }));
 vi.mock("@/server/services/business.service", () => ({ getBusinessForUser: mocks.business, getStaffAgendaScope: mocks.scope }));
 vi.mock("@/server/services/permissions.service", () => ({ getEffectiveBusinessPermissions: mocks.permissions }));
 vi.mock("@/server/db/prisma", () => ({ prisma: { businessLocation: { findMany: mocks.locations } } }));
@@ -11,12 +12,17 @@ import { appointmentScope, createPuriContext } from "@/server/puri/context";
 describe("Puri authenticated context", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.access.mockResolvedValue({ v2: false, has: () => true });
     mocks.business.mockResolvedValue({ id: "business-1", ownerId: "owner-1", timezone: "America/Santiago", currencyCode: "CLP" });
     mocks.scope.mockResolvedValue({ ownStaffId: "staff-1" });
     mocks.permissions.mockResolvedValue([P.APPOINTMENTS_VIEW_OWN, P.ANALYTICS_VIEW_OWN]);
     mocks.locations.mockResolvedValue([{ id: "location-1", slug: "main", name: "Main", timezone: "America/Santiago", isPrimary: true }]);
   });
 
+  it("denies standard Puri after a V2 trial expires even if the user still has dashboard permissions", async () => {
+    mocks.access.mockResolvedValue({ v2: true, has: () => false });
+    await expect(createPuriContext({ id: "owner-1", role: "ADMIN" }, { pathname: "/dashboard", locale: "es" })).rejects.toThrow("FORBIDDEN");
+  });
   it("resolves the business from the session and restricts staff to their agenda", async () => {
     const context = await createPuriContext({ id: "staff-user", role: "STAFF" }, { pathname: "/dashboard/agenda", locale: "es", agenda: "all" });
     expect(mocks.business).toHaveBeenCalledWith("staff-user");

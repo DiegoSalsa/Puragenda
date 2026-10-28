@@ -58,6 +58,7 @@ function SelectTrigger({
 
 function SelectContent({
   className,
+  listClassName,
   children,
   side = "bottom",
   sideOffset = 4,
@@ -66,6 +67,7 @@ function SelectContent({
   alignItemWithTrigger = true,
   ...props
 }: SelectPrimitive.Popup.Props &
+  { listClassName?: string } &
   Pick<
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
@@ -87,7 +89,7 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
+          <SelectPrimitive.List className={listClassName}>{children}</SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>

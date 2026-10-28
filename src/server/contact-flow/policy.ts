@@ -12,7 +12,7 @@ export const CONTACT_FLOW_EXTERNAL_RELEASE = false as const;
 export const CF_PURPOSE = "COMMERCIAL";
 export function assertContactLab() {
   assertGrowthSandbox();
-  if (process.env.CONTACT_FLOW_LAB_ENABLED !== "1")
+  if (process.env.PURAGENDA_NEXT_ENABLED !== "1" && process.env.CONTACT_FLOW_LAB_ENABLED !== "1")
     throw new Error("CONTACT_FLOW_DISABLED");
 }
 export function contactLabEnabled() {

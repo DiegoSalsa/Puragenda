@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -22,20 +22,45 @@ export function Navbar({ user, business }: NavbarProps = {}) {
   const t = useTranslations("navigation");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [sessionUser, setSessionUser] = useState(user ?? null);
   const [sessionBusiness, setSessionBusiness] = useState(business ?? null);
   const navLinks = [
-    { href: "/soluciones", label: t("solutions") },
     { href: "/caracteristicas", label: t("features") },
     { href: "/pricing", label: t("pricing") },
-    { href: "/faq", label: t("faq") },
     { href: "/contacto", label: t("contact") },
   ];
   const consumerLinks = [
     { href: "/negocios", label: t("exploreBusinesses") },
   ];
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const trigger = menuButtonRef.current;
+    document.body.style.overflow = "hidden";
+    const focusable = () => Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select, [tabindex="0"]') ?? []);
+    focusable()[0]?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      const target = event.shiftKey ? items.at(-1) : items[0];
+      if ((event.shiftKey && document.activeElement === items[0]) || (!event.shiftKey && document.activeElement === items.at(-1))) {
+        event.preventDefault();
+        target?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+      trigger?.focus();
+    };
+  }, [mobileOpen]);
 
   useEffect(() => {
     if (user) return;
@@ -83,13 +108,14 @@ export function Navbar({ user, business }: NavbarProps = {}) {
 
           <div className="hidden min-w-0 items-center gap-3 min-[1280px]:flex min-[1500px]:gap-4">
           {/* Desktop nav */}
-          <nav className="flex flex-none items-center justify-center gap-0">
+          <nav aria-label={t("openMenu")} className="flex flex-none items-center justify-center gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <a
                   key={link.href}
                   href={link.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={`rounded-full px-1.5 py-2 text-sm font-medium transition-all duration-200 min-[1500px]:px-3 min-[1500px]:text-base ${
                     isActive
                       ? "bg-[#7C3AED]/10 text-[#7C3AED] font-semibold"
@@ -149,8 +175,11 @@ export function Navbar({ user, business }: NavbarProps = {}) {
           {/* Mobile hamburger */}
           <div className="flex flex-1 items-center justify-end min-[1280px]:hidden">
             <button
+              ref={menuButtonRef}
               onClick={() => setMobileOpen(true)}
               aria-label={t("openMenu")}
+              aria-expanded={mobileOpen}
+              aria-controls="public-mobile-menu"
               className="min-h-11 min-w-11 rounded-full p-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <span aria-hidden="true" className="flex h-5 w-5 flex-col justify-center gap-1.5">
@@ -173,7 +202,7 @@ export function Navbar({ user, business }: NavbarProps = {}) {
               onClick={() => setMobileOpen(false)}
             />
             {/* Drawer panel */}
-            <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col border-l border-border/50 z-[10000] shadow-2xl animate-drawer-right bg-background/95 backdrop-blur-xl">
+            <aside ref={drawerRef} id="public-mobile-menu" role="dialog" aria-modal="true" aria-label={t("openMenu")} className="absolute right-0 top-0 flex h-full w-72 max-w-[85vw] flex-col overflow-y-auto border-l border-border/50 z-[10000] shadow-2xl animate-drawer-right bg-background/95 backdrop-blur-xl">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/50 p-6">
                 <div className="flex items-center gap-2.5">

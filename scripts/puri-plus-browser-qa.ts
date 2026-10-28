@@ -1,3 +1,5 @@
+import { COMMERCIAL_PLAN_METADATA } from "@/core/commercial-catalog";
+import { formatPublicClp } from "@/lib/public-plans";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
@@ -58,6 +60,10 @@ async function main() {
     [
       "node_modules/next/dist/bin/next",
       "dev",
+      // Stable browser fixture: Turbopack 16.4.2 repeatedly invalidated this
+      // local server graph after Prisma regeneration. Production compilation
+      // is checked separately with the default bundler and all release seals.
+      "--webpack",
       "--hostname",
       "127.0.0.1",
       "--port",
@@ -123,7 +129,7 @@ async function main() {
       errors: string[] = [];
     page.on("pageerror", (e: Error) => errors.push(e.message));
     await page.goto(origin + "/internal/puri-plus", {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
     });
     assert.match(await page.title(), /Puri/);
     assert.equal(
@@ -357,9 +363,9 @@ async function main() {
     assert.equal(unlabeled, 0);
     // The commercial workspace is now part of the existing dashboard shell.
     await page.setViewportSize({ width: 1440, height: 1050 });
-    await page.goto(origin + "/dashboard/puri-plus", { waitUntil: "networkidle" });
+    await page.goto(origin + "/dashboard/puri-plus", { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Puri+ y Contact Flow", exact: true }).waitFor();
-    await page.getByText("$22.990 CLP · IVA incluido", { exact: true }).waitFor();
+    await page.getByText("$27.990 CLP · IVA incluido", { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await page.screenshot({ path: "scratch/puri-plus-qa/dashboard-desktop.png", fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -371,7 +377,7 @@ async function main() {
     const bookingPage = await context.newPage();
     bookingPage.on("pageerror", (e: Error) => errors.push(e.message));
     const widgetDate = f.day(-11).toISOString().slice(0, 10);
-    await bookingPage.goto(`${origin}/widget/${business.slug}?service=${f.service.id}&location=${f.location.slug}&date=${widgetDate}`, { waitUntil: "networkidle" });
+    await bookingPage.goto(`${origin}/widget/${business.slug}?service=${f.service.id}&location=${f.location.slug}&date=${widgetDate}`, { waitUntil: "domcontentloaded" });
     await bookingPage.getByRole("button", { name: /^\d{2}:\d{2}$/ }).filter({ visible: true }).first().click();
     await bookingPage.getByRole("button", { name: "Continuar con mis datos", exact: true }).click();
     const optin = bookingPage.getByRole("checkbox", { name: /Acepto recibir comunicaciones comerciales/ });
@@ -419,6 +425,23 @@ async function main() {
       }),
       0,
     );
+    // An owner without premium access can review the offer. Missing provider
+    // credentials keep checkout disabled; a return URL cannot activate access.
+    await prisma.commercialSubscription.update({ where: { businessId: standard.businessId }, data: {
+      provider: "MERCADO_PAGO", status: "PENDING_PAYMENT", termsSnapshot: { sandboxFixture: true },
+      periodStart: null, periodEnd: null, lastPaymentAt: null, lastPaymentEventId: null, lastPaymentStatus: null,
+    } });
+    const offerPage = await standardContext.newPage();
+    offerPage.on("pageerror", (error: Error) => errors.push(error.message));
+    await offerPage.setViewportSize({ width: 390, height: 844 });
+    await offerPage.goto(origin + "/dashboard/puri-plus", { waitUntil: "domcontentloaded" });
+    const offer = offerPage.getByRole("region", { name: "Gestión de suscripción" });
+    await offer.waitFor();
+    assert.equal(await offer.getByRole("button", { name: `Contratar prueba por ${formatPublicClp(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly)} CLP / mes` }).isDisabled(), true);
+    assert.match(await offer.innerText(), /Pendiente de pago/);
+    assert.match(await offerPage.locator("body").innerText(), /requiere acceso autorizado/);
+    assert.equal(await offerPage.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await offerPage.screenshot({ path: "scratch/puri-plus-qa/checkout-offer-mobile.png", fullPage: true });
     assert.deepEqual(errors, []);
     const report = {
       flow: "SQL → signal → recommendation → proposal approval → campaign → exclusions → execution authorization → durable outbox → simulated acceptance → authenticated reconciliation → results → anonymous unsubscribe",
@@ -461,6 +484,8 @@ async function main() {
         "REAL_WIDGET_OPTIONAL_UNCHECKED_CONSENT",
         "BROWSER_BOOKING_PENDING_EMAIL_VERIFICATION",
         "VERIFIED_PORTAL_OPTIN_AND_REVOCATION",
+        "OWNER_WITHOUT_PREMIUM_CAN_REVIEW_MONTHLY_OFFER",
+        "CHECKOUT_DISABLED_WITHOUT_SANDBOX_CREDENTIALS",
       ],
     };
     writeFileSync(

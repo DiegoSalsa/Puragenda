@@ -23,12 +23,11 @@ import {
   softwareApplicationNode,
 } from "@/lib/json-ld";
 import { createPageMetadata } from "@/lib/seo";
-import { PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
 import { customerTestimonials } from "@/lib/data/testimonials";
 import { CASE_STUDIES_PATH, caseStudyPath, getPublishedCaseStudies, getPublishedCaseStudy } from "@/lib/data/case-studies";
 import {
   SCHEDULING_SYSTEM_PATH,
-  formatLandingClp,
   schedulingSystemAudiences,
   schedulingSystemBenefits,
   schedulingSystemBusinessSteps,
@@ -46,8 +45,6 @@ export const revalidate = 3600;
 const faqs = schedulingSystemFaqs();
 const publishedCases = getPublishedCaseStudies();
 const publishedSoccerbarberCase = getPublishedCaseStudy("soccerbarber");
-const individualPrice = formatLandingClp(PRICING.INDIVIDUAL.monthly);
-const teamPrice = formatLandingClp(PRICING.EQUIPO.monthly);
 
 export const metadata: Metadata = createPageMetadata({
   title: schedulingSystemMetadata.title,
@@ -254,16 +251,6 @@ export default async function SchedulingSystemLandingPage() {
               .
             </p>
           }
-          individual={{
-            name: `Plan ${PRICING.INDIVIDUAL.name}`,
-            price: individualPrice,
-            detail: "Para un profesional. Incluye reservas ilimitadas y el widget de reservas.",
-          }}
-          team={{
-            name: `Plan ${PRICING.EQUIPO.name}`,
-            price: teamPrice,
-            detail: `Incluye ${STAFF_LIMITS.EQUIPO} profesionales, roles de acceso y la misma reserva online para todo el equipo.`,
-          }}
           footer={
             <p>
               Prueba de {TRIAL_DURATION_DAYS} días sin tarjeta.{" "}

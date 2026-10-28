@@ -1,4 +1,5 @@
 import type { Prisma, CommercialSubscription } from "@prisma/client";
+import { effectiveSnapshotAccess, isV2Plan } from "./commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 import { COMMERCIAL_CATALOG_VERSION, getCommercialPlanMetadata, quoteCommercialPlan, type CommercialBillingCycle, type CommercialPlanIdentifier } from "@/core/commercial-catalog";
 import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
@@ -26,13 +27,12 @@ type SnapshotDb = Pick<Prisma.TransactionClient, "business" | "subscription" | "
 
 /** Entitlements are a rebuildable projection, never a separately editable contract. */
 export async function materializeCommercialEntitlements(
-  db: Pick<Prisma.TransactionClient, "commercialEntitlement">,
-  snapshot: Pick<CommercialSubscription, "id" | "businessId" | "planCode" | "status" | "professionalTotal" | "periodStart" | "periodEnd" | "trialEnd" | "gracePeriodEndsAt" | "termsSnapshot">,
+  db: Pick<Prisma.TransactionClient, "commercialEntitlement"> & Partial<Pick<Prisma.TransactionClient, "subscription">>,
+  snapshot: Pick<CommercialSubscription, "id" | "businessId" | "planCode" | "status" | "professionalTotal" | "periodStart" | "periodEnd" | "trialEnd" | "gracePeriodEndsAt" | "termsSnapshot" | "trialStart" | "lastPaymentAt" | "lastPaymentStatus" | "lastPaymentEventId" | "billingCycle">,
   now = new Date(),
 ) {
-  assertCommercialSandbox();
   const terms = snapshot.termsSnapshot as { websiteAddon?: { active?: boolean; validUntil?: string | null } } | null;
-  const evaluation = evaluateCommercialEntitlements({
+  const evaluation = isV2Plan(snapshot.planCode) ? effectiveSnapshotAccess(snapshot, now) : evaluateCommercialEntitlements({
     ...snapshot, plan: snapshot.planCode,
     legacyWebsiteActive: terms?.websiteAddon?.active,
     legacyWebsiteUntil: terms?.websiteAddon?.validUntil ? new Date(terms.websiteAddon.validUntil) : null,
@@ -54,6 +54,14 @@ export async function materializeCommercialEntitlements(
       create: { ...data, businessId: snapshot.businessId, subscriptionId: snapshot.id, capability,
         source: "commercial_snapshot", dedupeKey: `${snapshot.id}:${capability}` }, update: data,
     });
+  }
+  if (db.subscription && isV2Plan(snapshot.planCode)) {
+    const effective = effectiveSnapshotAccess(snapshot, now);
+    await db.subscription.updateMany({ where: { businessId: snapshot.businessId, plan: { in: ["PURAGENDA", "PURAGENDA_PLUS"] } }, data: {
+      status: effective.commercialAccess ? (snapshot.status === "TRIALING" ? "TRIALING" : "ACTIVE") : "INACTIVE",
+      billingCycle: snapshot.billingCycle, isTrial: snapshot.status === "TRIALING", trialEndsAt: snapshot.trialEnd, currentPeriodEnd: snapshot.periodEnd,
+      plan: snapshot.planCode as "PURAGENDA" | "PURAGENDA_PLUS", staffLimitOverride: snapshot.professionalTotal, extraStaffCount: snapshot.professionalTotal - 1,
+    } });
   }
   return evaluation;
 }

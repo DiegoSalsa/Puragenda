@@ -8,7 +8,9 @@ const scenarios = [
   { name: "Intensivo", calls: 3000, inputPerCall: 20000, outputPerCall: 1200, retryFactor: 1.25, sqlAnalyses: 600, campaigns: 40, emails: 2000 },
   { name: "Extremo", calls: 20000, inputPerCall: 32000, outputPerCall: 1200, retryFactor: 1.50, sqlAnalyses: 6000, campaigns: 200, emails: 10000 },
 ];
-const priceClpVatIncluded = 22990, vatRate = 0.19, netRevenueClp = priceClpVatIncluded / (1 + vatRate);
+const { require: tsRequire } = await import("tsx/cjs/api");
+const { COMMERCIAL_CATALOG_VERSION, quoteCommercialPlan } = tsRequire("../src/core/commercial-catalog.ts", import.meta.url);
+const priceClpVatIncluded = quoteCommercialPlan({ plan: "PURAGENDA_PLUS", catalogVersion: COMMERCIAL_CATALOG_VERSION, professionalTotal: 1 }).cycleTotal, vatRate = 0.19, netRevenueClp = priceClpVatIncluded / (1 + vatRate);
 const result = { priceClpVatIncluded, vatRate, netRevenueClp, rates,
   assumptions: "Synthetic usage and FX sensitivity, not measured customer consumption. No cache savings assumed. Calls already include analysis explanations and campaign preparation; SQL itself uses no model tokens.",
   unknownCosts: ["Resend contracted commercial allowance and account separation", "PostgreSQL/Vercel contracted tier and allocation", "Mercado Pago contracted commission", "Paddle account-specific fees, settlement/FX", "website hosting per business", "support and refunds"],

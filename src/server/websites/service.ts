@@ -1,3 +1,5 @@
+import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
+import { resolveWebsiteCommercialAccess } from "./commercial-access";
 import { WebsiteError } from "@/server/websites/errors";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/server/db/prisma";
@@ -14,11 +16,13 @@ import type { WebsiteView } from "@/websites/types";
 import type { Prisma } from "@prisma/client";
 
 export const websiteRootDomain = () => normalizeHostname(process.env.WEBSITE_ROOT_DOMAIN || "puragenda.cl");
-export async function requireWebsiteManager(ownerOnly = false) {
+export async function requireWebsiteManager(ownerOnly = false, requireEntitlement = true) {
   const user = await getCurrentSessionUser();
   if (!user) throw new WebsiteError("No autenticado");
   const business = await getBusinessForUser(user.id);
   if (!business || business.deletedAt || (ownerOnly ? business.ownerId !== user.id : !await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.WEBSITE_MANAGE))) throw new WebsiteError("No autorizado");
+  const access = requireEntitlement ? await getCommercialPlanAccess(business.id) : null;
+  if (access?.v2 && !access.has("website.editor")) throw new WebsiteError("Tu plan necesita acceso vigente a Puragenda+ para gestionar el sitio web");
   return { user, business };
 }
 export async function getManagedWebsite() {
@@ -38,7 +42,7 @@ export async function resolveWebsiteHost(raw: string) {
   const site = slug
     ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
     : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE", tenantVerifiedAt: { not: null } } } }, include: includeBusiness });
-  if (!site || !websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt, new Date(), site.business.websiteOfferEligibility)) return null;
+  if (!site || !(isV2Plan(site.business.subscription?.plan) ? site.status === "PUBLISHED" && !!site.publishedConfig && (await resolveWebsiteCommercialAccess(site.businessId)).hosting : websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt, new Date(), site.business.websiteOfferEligibility))) return null;
   const identity = websiteTemplate(site, false);
   resolveTemplate(identity.key, identity.version);
   return site;

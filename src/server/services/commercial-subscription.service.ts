@@ -1,3 +1,4 @@
+import { isV2Plan } from "./commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 import { createHash } from "node:crypto";
 import { isValid, parseISO } from "date-fns";
@@ -25,6 +26,7 @@ export async function configureManualTeamSubscription(input: ManualTeamTerms, ap
     if (!business || !subscription) throw new Error("Negocio o suscripción inexistente");
     const activeStaff = await tx.staff.count({ where: { businessId: business.id, isActive: true } });
     const blockers: string[] = [];
+    if (isV2Plan(subscription.plan)) blockers.push("El contrato V2 no puede modificarse mediante la configuración de contratos legacy");
     if (business.countryCode !== "CL" || subscription.billingCycle !== "MONTHLY") {
       blockers.push("Esta configuración requiere Chile y ciclo mensual");
     }
@@ -113,6 +115,7 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
     }
 
     const blockers: string[] = [];
+    if (isV2Plan(subscription.plan)) blockers.push("El contrato V2 no puede modificarse mediante la configuración de contratos legacy");
     if (business.countryCode !== "CL" || subscription.billingCycle !== "MONTHLY" || subscription.paymentMethod !== "BANK_TRANSFER" || subscription.isTrial) {
       blockers.push("Se requiere una suscripción mensual pagada por transferencia de Chile, fuera de prueba");
     }

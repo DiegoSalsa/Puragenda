@@ -15,6 +15,7 @@ export async function getBusinessBySlug(slug: string) {
           plan: true,
           status: true,
           isTrial: true,
+          currentPeriodEnd: true,
           trialEndsAt: true,
           gracePeriodEndsAt: true,
         },

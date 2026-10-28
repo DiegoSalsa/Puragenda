@@ -4,6 +4,9 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
+import { CommercialTrialPanel } from "@/components/dashboard/commercial-trial-panel";
+import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
+import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
@@ -74,12 +77,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     : `http://localhost:3000/widget/${business.slug}`;
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
 
-  const planName = subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const commercialAccess = await getCommercialPlanAccess(business.id);
+  const contract = commercialAccess.v2 ? commercialAccess.snapshot : null;
+  const planName = contract ? (contract.planCode === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda") : subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
   const isManualTransfer = subscription?.paymentMethod === "BANK_TRANSFER";
-  const planPrice = isManualTransfer && subscription.customMonthlyPriceClp != null
+  const planPrice = contract?.totalPriceClp ?? (isManualTransfer && subscription.customMonthlyPriceClp != null
     ? subscription.customMonthlyPriceClp
-    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly;
-  const isActive = subscription?.status === "ACTIVE";
+    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly);
+  const isActive = hasOperationalSubscriptionAccess(subscription) && !subscription?.isTrial;
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
     !isManualTransfer &&
@@ -189,7 +194,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {business.countryCode === "CL"
+                {contract ? `$${planPrice.toLocaleString("es-CL")} CLP/${contract.billingCycle === "ANNUAL" ? "año · 2 meses gratis" : "mes"} · IVA incluido` : business.countryCode === "CL"
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
                   : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
                   {isManualTransfer && " · IVA incluido · Transferencia bancaria"}
@@ -204,6 +209,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </div>
             )}
           </div>
+          {contract && isV2Plan(contract.planCode) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} />}
         </div>
 
         {/* ── Mercado Pago Connection ── */}

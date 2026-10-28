@@ -1,4 +1,5 @@
 import "server-only";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 import { cache } from "react";
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -16,6 +17,8 @@ export const getDashboardWebsiteLaunch = cache(async (): Promise<WebsiteLaunchCo
   if (!user || isDemoAccountEmail(user.email)) return null;
   const business = await getBusinessForUser(user.id);
   if (!business || business.deletedAt || business.ownerId !== user.id) return null;
+  const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id }, select: { plan: true } });
+  if (isV2Plan(subscription?.plan)) return null;
   const [offer, addon, site, services, locations] = await Promise.all([
     prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id }, select: { offerCode: true, eligibleAt: true, trialStartedAt: true, trialEndsAt: true, trialConsumedAt: true } }),
     prisma.websiteAddon.findUnique({ where: { businessId: business.id }, select: { status: true, validUntil: true, cancelAt: true } }),

@@ -87,6 +87,9 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { businessId: business.id },
     });
+    if (subscription?.plan === "PURAGENDA" || subscription?.plan === "PURAGENDA_PLUS") {
+      return NextResponse.json({ error: "La contratación V2 requiere la integración de pago del plan y período elegidos.", code: "V2_PROVIDER_CHECKOUT_PENDING" }, { status: 409 });
+    }
     if (subscription?.paymentMethod === "BANK_TRANSFER") {
       return NextResponse.json(
         { error: "Tu suscripción se paga por transferencia bancaria. Contacta a administración para renovarla.", code: "MANUAL_TRANSFER_SUBSCRIPTION" },

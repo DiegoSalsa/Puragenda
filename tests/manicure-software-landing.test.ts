@@ -21,7 +21,8 @@ import Page, { metadata } from "@/app/software-agenda-manicure/page";
 import IndustryPage from "@/app/para/[industry]/page";
 import sitemap from "@/app/sitemap";
 import { buildSlots } from "@/core/availability";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { TRIAL_DURATION_DAYS } from "@/core/constants";
+import { COMMERCIAL_PLAN_METADATA as PLANS } from "@/core/commercial-catalog";
 import { industriesData } from "@/lib/data/industries";
 import { MANICURE_SOFTWARE_PATH, manicureCatalogExample, manicureSoftwareCopy, manicureSoftwareFaqs } from "@/lib/data/manicure-software-landing";
 import { formatLandingClp } from "@/lib/data/scheduling-system-landing";
@@ -68,15 +69,15 @@ describe("SEO-016 manicure commercial hub", () => {
   });
 
   it("uses shared current public pricing in visible content and schema", () => {
-    for (const plan of [PRICING.INDIVIDUAL, PRICING.EQUIPO]) expect(visible).toContain(formatLandingClp(plan.monthly));
+    for (const plan of [PLANS.PURAGENDA, PLANS.PURAGENDA_PLUS]) expect(visible).toContain(formatLandingClp(plan.baseMonthly));
     const faq = manicureSoftwareFaqs().find((item) => item.question.includes("Cuánto cuesta"))!;
-    expect(faq.answer).toContain(`${STAFF_LIMITS.EQUIPO} profesionales`);
-    expect(faq.answer).toContain(formatLandingClp(EXTRA_STAFF_COST.EQUIPO));
+    expect(faq.answer).toContain("un profesional");
+    expect(faq.answer).toContain("escala progresiva");
     expect(faq.answer).toContain(`${TRIAL_DURATION_DAYS} días`);
     expect(visible).not.toContain("Plan Test");
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]);
     const app = graph["@graph"].find((node: Record<string, unknown>) => node["@type"] === "SoftwareApplication");
-    expect(app.offers.map((offer: { price: string }) => offer.price)).toEqual([String(PRICING.INDIVIDUAL.monthly), String(PRICING.EQUIPO.monthly)]);
+    expect(app.offers.map((offer: { price: string }) => offer.price)).toEqual([String(PLANS.PURAGENDA.baseMonthly), String(PLANS.PURAGENDA_PLUS.baseMonthly)]);
   });
 
   it("renders factual FAQs matching the existing JSON-LD architecture without reviews", () => {

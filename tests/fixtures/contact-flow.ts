@@ -24,13 +24,14 @@ export const syntheticContactPolicy = {
 };
 export async function contactFixture(
   options: {
+    trial?: boolean;
     consents?: number;
     authorize?: boolean;
     prepare?: boolean;
     maximum?: number;
   } = {},
 ) {
-  const f = await growthFixture();
+  const f = await growthFixture({ trial: options.trial });
   await configureContactPolicy("GLOBAL", {
     ...syntheticContactPolicy,
     dailyLimit: 100000,

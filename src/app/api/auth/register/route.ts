@@ -51,6 +51,8 @@ export async function POST(request: NextRequest) {
       currencyCode,
       referralCode,
       planIntent,
+      commercialPlanIntent,
+      professionalTotal,
       extraStaffCount,
       websiteIntent,
       billingCycle,
@@ -73,6 +75,8 @@ export async function POST(request: NextRequest) {
       ip,
       referralCode,
       planIntent,
+      commercialPlanIntent,
+      professionalTotal,
       extraStaffCount,
       websiteIntent,
       billingCycle,
@@ -116,6 +120,9 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "La cuenta ya existe. Inicia sesión para continuar." }, { status: 409 });
+    }
     console.error("[route] Error:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
