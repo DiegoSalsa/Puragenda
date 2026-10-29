@@ -5,7 +5,8 @@
     "deploymentEnabled": {
       "release/puragenda-next-rc1": false,
       "fix/puragenda-next-audit-01-registration": false,
-      "fix/puragenda-next-audit-02-agenda": false
+      "fix/puragenda-next-audit-02-agenda": false,
+      "fix/puragenda-next-audit-03-services-staff": false
     }
   },
   "crons": [

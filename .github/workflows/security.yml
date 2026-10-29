@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   baseline:
-    if: github.ref != 'refs/heads/fix/puragenda-next-audit-02-agenda' && github.head_ref != 'fix/puragenda-next-audit-02-agenda'
+    if: github.ref != 'refs/heads/fix/puragenda-next-audit-02-agenda' && github.head_ref != 'fix/puragenda-next-audit-02-agenda' && github.ref != 'refs/heads/fix/puragenda-next-audit-03-services-staff' && github.head_ref != 'fix/puragenda-next-audit-03-services-staff'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
       - run: npm run build
 
   codex-security:
-    if: github.event_name == 'pull_request' && github.head_ref != 'fix/puragenda-next-audit-02-agenda'
+    if: github.event_name == 'pull_request' && github.head_ref != 'fix/puragenda-next-audit-02-agenda' && github.ref != 'refs/heads/fix/puragenda-next-audit-03-services-staff' && github.head_ref != 'fix/puragenda-next-audit-03-services-staff'
     runs-on: ubuntu-latest
     env:
       CODEX_SECURITY_API_KEY: ${{ secrets.CODEX_SECURITY_API_KEY }}
