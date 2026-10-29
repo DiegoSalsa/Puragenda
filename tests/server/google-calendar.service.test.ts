@@ -25,10 +25,12 @@ import {
   buildGoogleAuthorizationUrl,
   createGoogleOAuthState,
   decryptGoogleToken,
+  disconnectGoogleCalendarConnection,
   encryptGoogleToken,
   getGoogleCalendarBusySlots,
   googleCalendarAppUrl,
   listGoogleCalendars,
+  removeAppointmentFromGoogle,
   syncAppointmentToGoogle,
   verifyGoogleOAuthState,
 } from "@/server/services/google-calendar.service";
@@ -53,6 +55,19 @@ const staffConnection = {
   createdAt: new Date("2026-01-01T00:00:00Z"),
   updatedAt: new Date("2026-01-01T00:00:00Z"),
 };
+
+const internalNote = "SYNTHETIC_INTERNAL_NOTE_MUST_STAY_IN_PURAGENDA";
+
+function eventMapping(connection = staffConnection) {
+  return {
+    id: "mapping-1",
+    appointmentId: "appointment-1",
+    connectionId: connection.id,
+    calendarId: connection.calendarId,
+    googleEventId: "google-event-1",
+    connection,
+  };
+}
 
 function appointment(status = "CONFIRMED") {
   return {
@@ -261,36 +276,133 @@ describe("Google Calendar integration", () => {
     expect(row.startTime.toISOString()).toBe("2026-07-04T04:30:00.000Z");
   });
 
-  it("deletes the mapped Google event when an appointment is cancelled", async () => {
-    const mappedAppointment = appointment("CANCELLED");
-    mappedAppointment.googleCalendarEvent = {
-      id: "mapping-1",
-      appointmentId: "appointment-1",
-      connectionId: "google-staff",
-      calendarId: "worker-calendar",
-      googleEventId: "google-event-1",
-      googleEventUrl: null,
-      etag: null,
-      lastSyncedAt: new Date(),
-      syncError: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      connection: staffConnection,
-    } as never;
-    prismaMock.appointment.findUnique.mockResolvedValue(mappedAppointment);
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+  it.each([false, true].flatMap(includeCustomerAttendee =>
+    ["create", "confirm", "reschedule", "retry-create", "retry-update"].map(flow => ({ includeCustomerAttendee, flow })),
+  ))("never exports internal notes during $flow with customer attendee=$includeCustomerAttendee", async ({ includeCustomerAttendee, flow }) => {
+    const connection = { ...staffConnection, includeCustomerAttendee };
+    const mapped = ["confirm", "reschedule", "retry-update"].includes(flow);
+    const row = {
+      ...appointment(flow === "create" ? "PENDING" : "CONFIRMED"),
+      internalNotes: internalNote,
+      customerAddress: null,
+      locationId: "island-branch",
+      location: { timezone: "Pacific/Easter", address: "Isla 100", mapsUrl: null },
+      business: { ...appointment().business, googleCalendarConnections: [connection] },
+      googleCalendarEvent: mapped ? eventMapping(connection) : null,
+    };
+    if (flow === "reschedule") {
+      row.startTime = new Date("2026-08-11T14:00:00Z");
+      row.endTime = new Date("2026-08-11T15:00:00Z");
+    }
+    prismaMock.appointment.findUnique.mockResolvedValue(row);
+    const fetchMock = vi.fn().mockImplementation(async () => Response.json({ id: "google-event-1" }));
+    if (flow === "retry-create" || flow === "retry-update") {
+      fetchMock.mockResolvedValueOnce(Response.json({ error: { message: "synthetic retry" } }, { status: flow === "retry-create" ? 409 : 404 }));
+    }
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(syncAppointmentToGoogle("appointment-1")).resolves.toMatchObject({
-      synced: true,
-      action: "deleted",
-    });
-    expect(fetchMock.mock.calls[0][0]).toContain(
-      "/calendars/worker-calendar/events/google-event-1?sendUpdates=all",
+    await expect(syncAppointmentToGoogle(row.id)).resolves.toMatchObject({ synced: true, action: mapped ? "updated" : "created" });
+
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(
+      flow === "retry-create" ? ["POST", "PUT"] : flow === "retry-update" ? ["PUT", "POST"] : [mapped ? "PUT" : "POST"],
     );
-    expect(prismaMock.googleCalendarEvent.delete).toHaveBeenCalledWith({
-      where: { id: "mapping-1" },
+    for (const [url, request] of fetchMock.mock.calls) {
+      expect(url).toContain("sendUpdates=all");
+      const body = JSON.parse(request.body);
+      expect(body).toMatchObject({ location: "Isla 100", start: { dateTime: row.startTime.toISOString(), timeZone: "Pacific/Easter" }, end: { dateTime: row.endTime.toISOString(), timeZone: "Pacific/Easter" } });
+      expect(body.attendees.some((attendee: { email: string }) => attendee.email === row.customerEmail)).toBe(includeCustomerAttendee);
+      expect(body.attendees).toContainEqual({ email: "paz@negocio.cl" });
+      expect(JSON.stringify([url, request])).not.toContain(internalNote);
+      expect(request.body).not.toMatch(/internalNotes|Notas internas/);
+    }
+    const query = prismaMock.appointment.findUnique.mock.calls[0][0];
+    expect(query.select).toBeDefined();
+    expect(query.select).not.toHaveProperty("internalNotes");
+    expect(row.internalNotes).toBe(internalNote);
+    expect(prismaMock.googleCalendarEvent.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([false, true])("redacts historical descriptions before cancellation, customer attendee=%s", async includeCustomerAttendee => {
+    const mappedAppointment = appointment("CANCELLED");
+    mappedAppointment.googleCalendarEvent = eventMapping({ ...staffConnection, includeCustomerAttendee }) as never;
+    const row = { ...mappedAppointment, internalNotes: internalNote };
+    let remoteDescription = `Notas internas: ${internalNote}`;
+    prismaMock.appointment.findUnique.mockResolvedValue(row);
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, request: RequestInit) => {
+      if (request.method === "PATCH") remoteDescription = JSON.parse(request.body as string).description;
+      if (request.method === "DELETE") expect(remoteDescription).toBe("");
+      return new Response(null, { status: 204 });
     });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(syncAppointmentToGoogle("appointment-1")).resolves.toMatchObject({ synced: true, action: "deleted" });
+    expect(fetchMock.mock.calls.map(([url, request]) => [url, request.method])).toEqual([
+      [expect.stringContaining("/calendars/worker-calendar/events/google-event-1?sendUpdates=none"), "PATCH"],
+      [expect.stringContaining("/calendars/worker-calendar/events/google-event-1?sendUpdates=all"), "DELETE"],
+    ]);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ description: "" });
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(internalNote);
+    expect(row.internalNotes).toBe(internalNote);
+    expect(prismaMock.googleCalendarEvent.delete).toHaveBeenCalledWith({ where: { id: "mapping-1" } });
+  });
+
+  it("retains the mapping and sends no cancellation if historical redaction fails, then retries safely", async () => {
+    const mappedAppointment = { ...appointment("CANCELLED"), internalNotes: internalNote, googleCalendarEvent: eventMapping() };
+    prismaMock.appointment.findUnique.mockResolvedValue(mappedAppointment);
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ error: { message: "synthetic failure" } }, { status: 503 }))
+      .mockImplementation(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(syncAppointmentToGoogle("appointment-1")).resolves.toMatchObject({ synced: false, reason: "delete_failed" });
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(["PATCH"]);
+    expect(prismaMock.googleCalendarEvent.delete).not.toHaveBeenCalled();
+    await expect(syncAppointmentToGoogle("appointment-1")).resolves.toMatchObject({ synced: true, action: "deleted" });
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(["PATCH", "PATCH", "DELETE"]);
+    expect(prismaMock.googleCalendarEvent.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["PATCH", "DELETE"])("keeps deletion idempotent when %s finds the remote event absent", async missingAt => {
+    prismaMock.appointment.findUnique.mockResolvedValue({ ...appointment("CANCELLED"), googleCalendarEvent: eventMapping() });
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, request: RequestInit) => request.method === missingAt
+      ? Response.json({ error: { message: "not found" } }, { status: 404 })
+      : new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(syncAppointmentToGoogle("appointment-1")).resolves.toMatchObject({ synced: true, action: "deleted" });
+    expect(fetchMock).toHaveBeenCalledTimes(missingAt === "PATCH" ? 1 : 2);
+    expect(prismaMock.googleCalendarEvent.delete).toHaveBeenCalledWith({ where: { id: "mapping-1" } });
+  });
+
+  it("redacts the old event before moving an appointment to another calendar", async () => {
+    const row = { ...appointment(), internalNotes: internalNote, googleCalendarEvent: eventMapping({ ...staffConnection, id: "old-connection", calendarId: "old-calendar" }) };
+    prismaMock.appointment.findUnique.mockResolvedValue(row);
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, request: RequestInit) => request.method === "POST" ? Response.json({ id: "new-event" }) : new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(syncAppointmentToGoogle(row.id)).resolves.toMatchObject({ synced: true, action: "created" });
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(["PATCH", "DELETE", "POST"]);
+    expect(fetchMock.mock.calls[0][0]).toContain("/calendars/old-calendar/events/google-event-1?sendUpdates=none");
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(internalNote);
+  });
+
+  it("redacts historical descriptions for direct appointment removal too", async () => {
+    prismaMock.googleCalendarEvent.findUnique.mockResolvedValue(eventMapping());
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await removeAppointmentFromGoogle("appointment-1");
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(["PATCH", "DELETE"]);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ description: "" });
+  });
+
+  it("redacts mapped events before disconnecting a calendar", async () => {
+    prismaMock.googleCalendarConnection.findUnique.mockResolvedValue({ ...staffConnection, events: [eventMapping()] });
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await disconnectGoogleCalendarConnection(staffConnection.id);
+
+    expect(fetchMock.mock.calls.map(([, request]) => request.method)).toEqual(["PATCH", "DELETE", "POST"]);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ description: "" });
+    expect(fetchMock.mock.calls[2][0]).toBe("https://oauth2.googleapis.com/revoke");
+    expect(prismaMock.googleCalendarConnection.delete).toHaveBeenCalledWith({ where: { id: staffConnection.id } });
   });
 
   it("reads external busy periods from the worker calendar", async () => {

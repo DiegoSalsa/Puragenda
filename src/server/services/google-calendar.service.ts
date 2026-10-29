@@ -533,7 +533,20 @@ function uniqueAttendees(values: Array<string | null | undefined>, organizer: st
 async function appointmentForGoogle(appointmentId: string) {
   return prisma.appointment.findUnique({
     where: { id: appointmentId },
-    include: {
+    // Keep appointment fields explicit. Internal notes never belong in Google,
+    // even when customer invitations are disabled.
+    select: {
+      id: true,
+      businessId: true,
+      locationId: true,
+      staffId: true,
+      customerName: true,
+      customerEmail: true,
+      customerPhone: true,
+      customerAddress: true,
+      startTime: true,
+      endTime: true,
+      status: true,
       location: { select: appointmentVenueSelect },
       service: { select: { name: true } },
       staff: {
@@ -597,7 +610,6 @@ async function buildGoogleEvent(appointment: GoogleAppointment, connection: Goog
     `Servicio: ${appointment.service.name}`,
     `Profesional: ${staffName}`,
     `Estado: ${appointment.status}`,
-    appointment.internalNotes ? `Notas internas: ${appointment.internalNotes}` : null,
     `ID Puragenda: ${appointment.id}`,
   ]
     .filter(Boolean)
@@ -629,10 +641,18 @@ async function buildGoogleEvent(appointment: GoogleAppointment, connection: Goog
 async function deleteMappedGoogleEvent(
   mapping: NonNullable<GoogleAppointment["googleCalendarEvent"]>,
 ) {
+  const eventPath = `/calendar/v3/calendars/${encodeURIComponent(mapping.calendarId)}/events/${encodeURIComponent(mapping.googleEventId)}`;
   try {
+    // Older events may already contain internal notes. Clear their description
+    // before notifying guests of a cancellation, calendar move or disconnect.
+    // If redaction fails, retain the mapping for a safe retry without notifying.
+    await googleApiRequest(mapping.connection, `${eventPath}?sendUpdates=none`, {
+      method: "PATCH",
+      body: JSON.stringify({ description: "" }),
+    });
     await googleApiRequest(
       mapping.connection,
-      `/calendar/v3/calendars/${encodeURIComponent(mapping.calendarId)}/events/${encodeURIComponent(mapping.googleEventId)}?sendUpdates=all`,
+      `${eventPath}?sendUpdates=all`,
       { method: "DELETE" },
     );
   } catch (error) {

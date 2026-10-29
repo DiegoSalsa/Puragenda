@@ -26,6 +26,7 @@ vi.mock("@/server/db/prisma", () => ({
 import { rescheduleAppointmentAction } from "@/server/actions/appointment.actions";
 import { prisma } from "@/server/db/prisma";
 import { getCustomerAppointmentByToken } from "@/server/services/customer-appointment-action.service";
+import { sendConfirmationEmail, sendAppointmentActionStaffNotification } from "@/server/email/send";
 
 const appointment = {
   id: "appointment-1",
@@ -158,5 +159,24 @@ describe("public appointment rescheduling availability", () => {
         "El horario seleccionado coincide con la pausa de atención del negocio",
     });
     expect(prisma.appointment.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("preserves internal notes locally without returning or emailing them on reschedule", async () => {
+    const internalNote = "SYNTHETIC_INTERNAL_NOTE_MUST_STAY_IN_PURAGENDA";
+    vi.mocked(getCustomerAppointmentByToken).mockResolvedValue({ ...appointment, internalNotes: internalNote } as never);
+    vi.mocked(prisma.appointment.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.scheduleBlock.findFirst).mockResolvedValue(null);
+    const create = vi.fn(async ({ data }) => ({ ...appointment, ...data, id: "rescheduled-appointment" }));
+    vi.mocked(prisma.$transaction).mockImplementation(async callback => {
+      if (typeof callback !== "function") throw new Error("Expected an interactive transaction");
+      return callback({ appointment: { updateMany: vi.fn(async () => ({ count: 1 })), create } } as never);
+    });
+
+    const result = await rescheduleAppointmentAction(appointment.id, "2026-08-11T15:00:00.000Z", "2026-08-11T16:00:00.000Z", "a".repeat(64));
+
+    expect(result).toEqual({ success: true, newAppointmentId: "rescheduled-appointment" });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ internalNotes: internalNote }) }));
+    expect(sendConfirmationEmail).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify([result, vi.mocked(sendConfirmationEmail).mock.calls, vi.mocked(sendAppointmentActionStaffNotification).mock.calls])).not.toContain(internalNote);
   });
 });
