@@ -77,3 +77,9 @@ RC1 y la rama de auditoría 01 permanecen en `5dcea3d33012301eaa05b03a6005fb557d
 Se conservaron respaldos y datos locales de QA. Las protecciones de Preview de RC1 y auditoría 01 siguen intactas: despliegue Git deshabilitado y bloqueo temprano de build; RC1 solo admite un futuro Preview aislado con opt-in explícito. La rama 02 no tiene referencia remota. Antes de autorizar su futura publicación deberá revisarse y añadirse su protección Preview específica.
 
 Pendiente: revisión del alcance de auditoría 02 por el usuario. No se hizo push de esta rama, deploy, activación de webhooks, instalación de secretos ni cambios en producción.
+
+## Preparación posterior de publicación para revisión
+
+El usuario autorizó publicar exclusivamente auditoría 02. Antes del push se verificó de nuevo la base exacta de cinco commits sobre RC1 y se añadió un sexto commit dedicado a protección: entrada explícita `git.deploymentEnabled=false`, salida temprana del build para la rama 02 en cualquier entorno y exclusión de sus jobs de GitHub Actions, incluso para pull requests o despacho manual. Las protecciones de RC1 y auditoría 01 se conservan.
+
+La revisión autenticada de Vercel confirmó el proyecto `puragenda`, repositorio `DiegoSalsa/Puragenda`, producción desde `main` en `e74c922`, raíz del repositorio, sin overrides de comandos del proyecto, comportamiento automático de build y ausencia de deploy hooks. GitHub confirmó un único workflow activo (`security.yml`), con push limitado a `main`, y sin webhooks adicionales del repositorio. No se modificaron ajustes remotos. Referencias: [bloqueo Git por rama en Vercel](https://vercel.com/docs/project-configuration/git-configuration) y [condiciones de jobs en GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions).
