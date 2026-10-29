@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/vercel-build.mjs",
+  "git": {
+    "deploymentEnabled": {
+      "release/puragenda-next-rc1": false
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/mcp-cleanup",

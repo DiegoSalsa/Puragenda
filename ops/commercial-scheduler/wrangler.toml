@@ -1,0 +1,19 @@
+name = "puragenda-next-scheduler"
+main = "worker.mjs"
+compatibility_date = "2026-10-28"
+workers_dev = false
+preview_urls = false
+
+[vars]
+SCHEDULER_ENABLED = "0"
+PURAGENDA_WORKER_URL = "https://www.puragenda.cl/api/cron/puragenda-next"
+# COMMERCIAL_WORKER_SECRET must be installed as a Cloudflare secret after approval.
+# Do not put its value in this file or commands printed in a terminal.
+
+[triggers]
+# Configure exactly one "* * * * *" trigger only during authorized activation.
+crons = []
+
+[observability]
+enabled = true
+head_sampling_rate = 1

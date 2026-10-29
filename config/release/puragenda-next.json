@@ -1,0 +1,33 @@
+{
+  "version": "PURAGENDA_NEXT_RC_2026_10_28",
+  "productionOrigin": "https://www.puragenda.cl",
+  "staging": {
+    "recommendedVercelProject": "puragenda-next-staging",
+    "proposedOrigin": "https://next-staging.puragenda.cl",
+    "databaseMustBeIndependent": true,
+    "inheritProductionEnvironment": false,
+    "localHttpOrigin": "http://127.0.0.1:3128",
+    "localHttpsOrigin": "https://localhost:3448",
+    "remoteResourcesCreated": false
+  },
+  "contactFlow": {
+    "sender": "contacto@contacto.puragenda.cl",
+    "replyTo": "contacto@purocode.com",
+    "capacityMode": "shared_free",
+    "productionEnabled": false,
+    "externalRelease": false,
+    "sharedInboxRoutingVerified": false
+  },
+  "scheduler": {
+    "recommendedProvider": "Cloudflare Workers Free Cron Trigger",
+    "method": "GET",
+    "path": "/api/cron/puragenda-next",
+    "intervalSeconds": 60,
+    "requestTimeoutSeconds": 25,
+    "workerBudgetMs": 20000,
+    "functionMaxDurationSeconds": 60,
+    "authorizationEnvironmentVariable": "COMMERCIAL_WORKER_SECRET",
+    "shareLegacyCronSecret": false,
+    "configuredRemotely": false
+  }
+}
