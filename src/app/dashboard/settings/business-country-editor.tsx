@@ -8,8 +8,10 @@ import { Loader2, Save } from "@/components/icons/hover-icons";
 import { useRouter } from "next/navigation";
 import { getCountryConfig, getTimezoneOptions } from "@/core/countries";
 import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";
+import { REGISTRATION_TIMEZONES } from "@/core/registration-market";
 
 interface Props {
+  registrationV2?: boolean;
   initialCountryCode: string;
   initialTimezone: string;
   initialCurrencyCode: string;
@@ -19,6 +21,7 @@ interface Props {
 }
 
 export function BusinessCountryEditor({
+  registrationV2 = false,
   initialCountryCode,
   initialTimezone,
   initialCurrencyCode,
@@ -27,6 +30,7 @@ export function BusinessCountryEditor({
   currencyOptions,
 }: Props) {
   const legacy = useTranslations("legacy");
+  const registration = useTranslations("register");
   const router = useRouter();
   const [countryCode, setCountryCode] = useState(initialCountryCode);
   const [timezone, setTimezone] = useState(initialTimezone);
@@ -35,6 +39,9 @@ export function BusinessCountryEditor({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const unchanged = countryCode === initialCountryCode && timezone === initialTimezone && currencyCode === initialCurrencyCode;
+  const visibleTimezoneOptions = registrationV2
+    ? REGISTRATION_TIMEZONES.map(value => ({ value, label: registration("timezones." + value.replaceAll("/", "_")), preferred: true }))
+    : timezoneOptions;
 
   function applyCountry(next: string) {
     const defaults = getCountryConfig(next);
@@ -65,7 +72,8 @@ export function BusinessCountryEditor({
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-1.5">
           <label htmlFor="business-country" className="text-xs text-muted-foreground"><LocalizedText id="u4khNiQT1Htd" /></label>
-          <select
+          {registrationV2 ? <input id="business-country" value={getCountryConfig(countryCode).name} readOnly
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm" /> : <select
             id="business-country"
             value={countryCode}
             onInput={(event) => applyCountry(event.currentTarget.value)}
@@ -73,7 +81,7 @@ export function BusinessCountryEditor({
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none focus:border-[#7C3AED]/30"
           >
             {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.name}</option>)}
-          </select>
+          </select>}
         </div>
         <div className="space-y-1.5">
           <label htmlFor="business-timezone" className="text-xs text-muted-foreground"><LocalizedText id="Q7IoZUu59-y5" /></label>
@@ -84,25 +92,27 @@ export function BusinessCountryEditor({
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none focus:border-[#7C3AED]/30"
           >
             <optgroup label="Zonas recomendadas para el país">
-              {timezoneOptions.filter((option) => option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              {visibleTimezoneOptions.filter((option) => option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </optgroup>
-            <optgroup label="Otras zonas horarias">
-              {timezoneOptions.filter((option) => !option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </optgroup>
+            {!registrationV2 && <optgroup label="Otras zonas horarias">
+              {visibleTimezoneOptions.filter((option) => !option.preferred).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </optgroup>}
           </select>
         </div>
         <div className="space-y-1.5">
           <label htmlFor="business-currency" className="text-xs text-muted-foreground"><LocalizedText id="C42wtXfxvNTl" /></label>
-          <select
+          {registrationV2 ? <input id="business-currency" value={currencyCode} readOnly
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm" /> : <select
             id="business-currency"
             value={currencyCode}
             onChange={(event) => setCurrencyCode(event.target.value)}
             className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm uppercase outline-none focus:border-[#7C3AED]/30"
           >
             {currencyOptions.map((currency) => <option key={currency.value} value={currency.value}>{currency.label}</option>)}
-          </select>
+          </select>}
         </div>
       </div>
+      {registrationV2 && <p className="text-xs text-muted-foreground">{registration("chileOnly")}</p>}
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground">
           <LocalizedText id="f9-BrGUa14gF" />

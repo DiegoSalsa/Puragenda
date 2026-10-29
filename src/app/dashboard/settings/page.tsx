@@ -7,7 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import { CommercialTrialPanel } from "@/components/dashboard/commercial-trial-panel";
 import { CommercialSubscriptionPanel } from "@/components/dashboard/commercial-subscription-panel";
 import { CommercialUsagePanel } from "@/components/dashboard/commercial-usage-panel";
-import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
+import { getCommercialPlanAccess, isRegistrationV2Contract, isV2Plan } from "@/server/services/commercial-plan-access";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { PRICING } from "@/core/constants";
 import Link from "next/link";
@@ -267,6 +267,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <Globe2 className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="AzILVqHZj-3Z" />
           </div>
           <BusinessCountryEditor
+            registrationV2={isRegistrationV2Contract(commercialAccess.snapshot)}
             initialCountryCode={business.countryCode}
             initialTimezone={business.timezone}
             initialCurrencyCode={business.currencyCode}

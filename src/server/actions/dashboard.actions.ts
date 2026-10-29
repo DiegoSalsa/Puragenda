@@ -26,6 +26,8 @@ import {
   isValidTimeZone,
 } from "@/core/countries";
 import { createBusinessLocation, getLocationForBusiness, updateBusinessLocation } from "@/server/services/location.service";
+import { isRegistrationV2Contract } from "@/server/services/commercial-plan-access";
+import { registrationMarketSchema } from "@/core/registration-market";
 
 type DailyHours = {
   dayOfWeek: number;
@@ -1015,6 +1017,13 @@ export async function updateBusinessCountryAction(
   }
   if (!isValidTimeZone(data.timezone)) return { error: "La zona horaria no es válida" };
   if (!/^[A-Z]{3}$/.test(currencyCode)) return { error: "La moneda debe usar un código ISO de 3 letras" };
+  const contract = await prisma.commercialSubscription.findUnique({
+    where: { businessId: business.id },
+    select: { planCode: true, legacySubscriptionId: true, termsSnapshot: true },
+  });
+  if (isRegistrationV2Contract(contract) && !registrationMarketSchema.safeParse({ countryCode, currencyCode, timezone: data.timezone }).success) {
+    return { error: "Tu contrato de Puragenda requiere Chile (CL), moneda CLP y una zona horaria de Chile" };
+  }
   const unchanged = business.countryCode === countryCode && business.timezone === data.timezone && business.currencyCode === currencyCode;
   if (unchanged) return { success: true };
   if (business.mpAccessToken && business.countryCode !== countryCode) {

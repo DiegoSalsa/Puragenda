@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcrypt";
 import { NextRequest } from "next/server";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+const actionActor = vi.hoisted(() => ({ user: null as { id: string; role: string } | null }));
+vi.mock("@/server/auth/user-session", () => ({ getCurrentSessionUser: vi.fn(async () => actionActor.user) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/email/send", () => ({ sendWelcomeEmail: vi.fn(async () => true), sendNewRegistrationNotification: vi.fn(async () => true) }));
 import { prisma } from "@/server/db/prisma";
 import { registerUser, verifyCredentials } from "@/server/services/auth.service";
@@ -20,6 +23,8 @@ import { reconcileCommercialEvent, type ReconciledCommercialEvidence } from "@/s
 import { reserveGrowthUsage, settleGrowthUsage } from "@/server/puri/growth/budgets";
 import { commercialUsagePolicySchema } from "@/server/services/commercial-usage-policy";
 import { getCommercialUsageSummary } from "@/server/services/commercial-usage-summary";
+import { updateBusinessCountryAction } from "@/server/actions/dashboard.actions";
+import { revalidatePath } from "next/cache";
 
 const suite = describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 const users: string[] = [], businesses: string[] = [], ips: string[] = [];
@@ -33,6 +38,16 @@ function request(route: string, body: object) {
 async function identityCounts() {
   return Promise.all([prisma.user.count(), prisma.business.count(), prisma.subscription.count(), prisma.commercialSubscription.count(), prisma.commercialSubscriptionItem.count(), prisma.staff.count(), prisma.businessLocation.count(), prisma.commercialEvent.count()]);
 }
+async function regionalState(businessId: string) {
+  return Promise.all([
+    prisma.business.findUniqueOrThrow({ where: { id: businessId } }),
+    prisma.subscription.findUnique({ where: { businessId } }),
+    prisma.commercialSubscription.findUnique({ where: { businessId }, include: { items: true, entitlements: true } }),
+    prisma.commercialBillingOperation.findMany({ where: { businessId } }),
+    prisma.commercialEvent.findMany({ where: { businessId }, orderBy: { id: "asc" } }),
+    prisma.businessLocation.findMany({ where: { businessId }, include: { hours: true } }),
+  ]);
+}
 async function register(plan: "PURAGENDA" | "PURAGENDA_PLUS" = "PURAGENDA_PLUS", seats = 1, cycle: "MONTHLY" | "ANNUAL" = "MONTHLY", ip = "127.0.0.1", email?: string) {
   const input = registerSchema.parse({ email: email ?? `${randomUUID()}@example.invalid`, password: "Local-test-only-pass123", name: "Synthetic Owner", businessName: `Next ${randomUUID()}`,
     countryCode: "CL", marketplaceCategorySlug: "otro", marketplaceOtherDescription: "Negocio sintético", marketplaceCityName: "Local QA", marketplaceLocalityNotFound: true,
@@ -43,7 +58,7 @@ async function register(plan: "PURAGENDA" | "PURAGENDA_PLUS" = "PURAGENDA_PLUS",
   return { ...result, input };
 }
 suite("Next registration and real local trial lifecycle", () => {
-  afterEach(() => { delete process.env.COMMERCIAL_USAGE_POLICY_JSON; });
+  afterEach(() => { delete process.env.COMMERCIAL_USAGE_POLICY_JSON; actionActor.user = null; });
   afterAll(async () => {
     await prisma.blacklistedIp.deleteMany({ where: { ip: { in: ips } } });
     await prisma.business.deleteMany({ where: { id: { in: businesses } } });
@@ -105,6 +120,58 @@ suite("Next registration and real local trial lifecycle", () => {
     expect(registerSchema.safeParse({ ...base, commercialPlanIntent: "EQUIPO" }).success).toBe(false);
     expect(registerSchema.safeParse({ ...base, planIntent: "TEST" }).success).toBe(false);
     expect(registerSchema.parse({ ...base, amount: 1, trialEnd: "2099-01-01" })).not.toHaveProperty("amount");
+  });
+  it.each(["PURAGENDA", "PURAGENDA_PLUS"] as const)("protects %s regional settings through direct Server Action calls even after trial expiry", async plan => {
+    const c = await register(plan), businessId = c.business.id;
+    actionActor.user = c.user;
+    const unconnected = await regionalState(businessId);
+    for (const fields of [{ countryCode: "AR" }, { currencyCode: "USD" }]) {
+      expect((await updateBusinessCountryAction({ countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", ...fields }, true)).error).toContain("Chile");
+      expect(await regionalState(businessId)).toEqual(unconnected);
+    }
+    await prisma.business.update({ where: { id: businessId }, data: { mpAccessToken: "synthetic-mp-not-valid", mpRefreshToken: "synthetic-refresh-not-valid", mpUserId: "synthetic-mp-user", address: "Synthetic address", logoUrl: "/synthetic-logo.svg" } });
+    await prisma.commercialSubscription.update({ where: { businessId }, data: { status: "INACTIVE", trialStart: new Date(Date.now() - 40 * 86400000), trialEnd: new Date(Date.now() - 10 * 86400000) } });
+    const before = await regionalState(businessId);
+    vi.mocked(revalidatePath).mockClear();
+    for (const fields of [
+      { countryCode: "AR" }, { countryCode: "MX" }, { countryCode: "JP" },
+      { currencyCode: "USD" }, { currencyCode: "ARS" },
+      { timezone: "America/Mexico_City" }, { timezone: "Asia/Tokyo" },
+    ]) {
+      const result = await updateBusinessCountryAction({ countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", ...fields }, true);
+      expect(result.error).toContain("Chile");
+      expect(await regionalState(businessId)).toEqual(before);
+      expect(revalidatePath).not.toHaveBeenCalled();
+    }
+    expect((await updateBusinessCountryAction({ countryCode: "CL", currencyCode: "CLP", timezone: "Pacific/Easter" }, false)).error).toContain("confirmar");
+    expect(await regionalState(businessId)).toEqual(before);
+    for (const timezone of ["America/Coyhaique", "America/Punta_Arenas", "Pacific/Easter"]) {
+      expect(await updateBusinessCountryAction({ countryCode: "CL", currencyCode: "CLP", timezone }, true)).toEqual({ success: true });
+      const after = await regionalState(businessId);
+      expect({ ...after[0], timezone: before[0].timezone, updatedAt: before[0].updatedAt }).toEqual(before[0]);
+      expect(after[0].timezone).toBe(timezone);
+      expect(after.slice(1)).toEqual(before.slice(1));
+    }
+  });
+  it("retains legacy international editing and existing Mercado Pago compatibility rules", async () => {
+    const user = await prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password: "synthetic-no-login", name: "Legacy regional fixture" } });
+    const businessId = randomUUID(); users.push(user.id); businesses.push(businessId);
+    await prisma.business.create({ data: { id: businessId, ownerId: user.id, slug: businessId, apiKey: randomUUID(), name: "Legacy regional fixture", countryCode: "AR", currencyCode: "ARS", timezone: "America/Argentina/Buenos_Aires" } });
+    const legacy = await prisma.subscription.create({ data: { businessId, plan: "EQUIPO", status: "ACTIVE", isTrial: false, currentPeriodEnd: new Date(Date.now() + 30 * 86400000) } });
+    await prisma.commercialSubscription.create({ data: { businessId, legacySubscriptionId: legacy.id, planCode: "EQUIPO", catalogVersion: COMMERCIAL_CATALOG_VERSION, professionalTotal: 5, currencyCode: "ARS", billingCycle: "MONTHLY", termsSnapshot: { origin: "legacy_import" }, snapshotHash: "synthetic-legacy-snapshot" } });
+    actionActor.user = user;
+    const before = await regionalState(businessId);
+    expect(await updateBusinessCountryAction({ countryCode: "MX", currencyCode: "MXN", timezone: "America/Mexico_City" }, true)).toEqual({ success: true });
+    expect((await regionalState(businessId)).slice(1)).toEqual(before.slice(1));
+    await prisma.business.update({ where: { id: businessId }, data: { mpAccessToken: "synthetic-legacy-mp-not-valid" } });
+    const connected = await regionalState(businessId);
+    expect((await updateBusinessCountryAction({ countryCode: "AR", currencyCode: "ARS", timezone: "America/Argentina/Buenos_Aires" }, true)).error).toContain("Desconecta");
+    expect((await updateBusinessCountryAction({ countryCode: "MX", currencyCode: "USD", timezone: "America/Mexico_City" }, true)).error).toContain("MXN");
+    expect(await regionalState(businessId)).toEqual(connected);
+    expect(await updateBusinessCountryAction({ countryCode: "MX", currencyCode: "MXN", timezone: "America/Cancun" }, true)).toEqual({ success: true });
+    const after = await regionalState(businessId);
+    expect({ ...after[0], timezone: connected[0].timezone, updatedAt: connected[0].updatedAt }).toEqual(connected[0]);
+    expect(after.slice(1)).toEqual(connected.slice(1));
   });
   it("changes plan/cycle/capacity without extending trial and deduplicates retries", async () => {
     const c = await register(), businessId = c.business.id;

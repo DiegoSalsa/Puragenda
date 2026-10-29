@@ -6,6 +6,12 @@ import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import type { CommercialCapability } from "@/core/commercial-catalog";
 
 export const isV2Plan = (plan: string | null | undefined) => plan === "PURAGENDA" || plan === "PURAGENDA_PLUS";
+
+/** Persisted registration provenance, independent of trial/payment/access status. */
+export function isRegistrationV2Contract(contract: Pick<CommercialSubscription, "planCode" | "legacySubscriptionId" | "termsSnapshot"> | null | undefined) {
+  return !!contract && isV2Plan(contract.planCode) && contract.legacySubscriptionId === null
+    && (contract.termsSnapshot as { origin?: unknown } | null)?.origin === "registration_v2";
+}
 type AccessSnapshot = CommercialEntitlementEvaluationInput & {
   trialStart?: Date | null; lastPaymentStatus?: string | null;
   lastPaymentAt?: Date | null; lastPaymentEventId?: string | null;
