@@ -1,0 +1,49 @@
+{
+  "flow": "SQL → signal → recommendation → proposal approval → campaign → exclusions → execution authorization → durable outbox → simulated acceptance → authenticated reconciliation → results → anonymous unsubscribe",
+  "approved": 1,
+  "executable": false,
+  "standardDenied": true,
+  "realProviderCalls": 0,
+  "simulatedAccepted": 4,
+  "simulatedDelivered": 4,
+  "attributedBookings": 1,
+  "completedBookings": 1,
+  "incrementalBookings": null,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1050
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "horizontalOverflow": false,
+  "pageErrors": [],
+  "checks": [
+    "CONTACT_PREVIEW_AND_CONSENT_EXCLUSIONS",
+    "SEPARATE_EXECUTION_AUTHORIZATION",
+    "PAUSE_RESUME_AND_BUSINESS_KILL_SWITCH",
+    "DURABLE_SIMULATED_ACCEPTANCE",
+    "AUTHENTICATED_DELIVERY_RECONCILIATION",
+    "TECHNICAL_ATTRIBUTION_RESULTS",
+    "SIGNED_ATTRIBUTION_THROUGH_REAL_BOOKING_HTTP",
+    "ANONYMOUS_SIGNED_UNSUBSCRIBE_NO_PII",
+    "APPROVED_SQL_FLOW_AND_AUDIT",
+    "EXPLICIT_APPROVAL_CHECKBOX",
+    "STANDARD_API_403_AND_ZERO_RUNS",
+    "DESKTOP_NO_OVERFLOW",
+    "MOBILE_NO_OVERFLOW",
+    "NOINDEX_METADATA",
+    "BUTTON_ACCESSIBLE_NAMES",
+    "DETERMINISTIC_CHAT_FALLBACK",
+    "ZERO_PAGE_ERRORS",
+    "DASHBOARD_DESKTOP_AND_MOBILE",
+    "VAT_INCLUDED_PLAN_OFFER",
+    "OWNER_CONFIGURATION_AND_USAGE",
+    "REAL_WIDGET_OPTIONAL_UNCHECKED_CONSENT",
+    "BROWSER_BOOKING_PENDING_EMAIL_VERIFICATION",
+    "VERIFIED_PORTAL_OPTIN_AND_REVOCATION"
+  ]
+}

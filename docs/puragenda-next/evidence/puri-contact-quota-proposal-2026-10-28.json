@@ -1,0 +1,179 @@
+{
+  "status": "PENDING_OWNER_APPROVAL",
+  "active": false,
+  "providerPricingVerifiedAt": "2026-10-28",
+  "pricesUsdPerMillion": {
+    "model": "gpt-6-luna",
+    "input": 0.1,
+    "cachedInput": 0.01,
+    "cacheWrite": 0.125,
+    "output": 0.5
+  },
+  "providerSources": [
+    "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "https://resend.com/pricing?product=transactional"
+  ],
+  "units": "One AI model turn reserves one credit; a user question usually needs multiple turns. SQL analysis and proactive detection use their own unit limits and no model charge.",
+  "assumptions": {
+    "fxStressClpPerUsd": 1000,
+    "fxIsObservedMarketRate": false,
+    "vatIncludedCatalogRate": 0.19,
+    "paidPilot": {
+      "basic": 30,
+      "plus": 20
+    },
+    "additionalConcurrentTrials": 50,
+    "commercialResendProUsdPerMonth": 20,
+    "commercialResendProIncludedEmails": 50000,
+    "commercialResendOverageUsdPer1000": 0.9,
+    "commercialAndTransactionalAccountsSeparate": true
+  },
+  "transactionalProposal": {
+    "basicMonthly": 1000,
+    "plusMonthly": 2000,
+    "trial30days": 200,
+    "additionalProfessionalMonthly": 500,
+    "globalMonthlyCapacityPlanning": 30000,
+    "globalDailyCapacityPlanning": 1000,
+    "enforcedByThisPolicy": false,
+    "operationalNote": "Capacity proposal only. Do not silently discard confirmations/reminders or take capacity from commercial mail. Existing provider account currently exposes 3000/month and 100/day; capacity and priority handling require approval before a larger pilot."
+  },
+  "policy": {
+    "version": "DRAFT_OWNER_APPROVAL_REQUIRED_2026_10_28",
+    "trial": {
+      "PURAGENDA": {
+        "marketing": {
+          "maxEmails": 0,
+          "maxCampaignsPerMonth": 0
+        },
+        "puri": {
+          "ALL": {
+            "limitUnits": 100,
+            "limitMicros": 300000
+          },
+          "STANDARD_INTERACTIVE": {
+            "limitUnits": 100,
+            "limitMicros": 300000
+          }
+        }
+      },
+      "PURAGENDA_PLUS": {
+        "marketing": {
+          "maxEmails": 0,
+          "maxCampaignsPerMonth": 0
+        },
+        "puri": {
+          "ALL": {
+            "limitUnits": 455,
+            "limitMicros": 800000
+          },
+          "STANDARD_INTERACTIVE": {
+            "limitUnits": 200,
+            "limitMicros": 400000
+          },
+          "PLUS_INTERACTIVE": {
+            "limitUnits": 100,
+            "limitMicros": 300000
+          },
+          "RECOMMENDATION": {
+            "limitUnits": 25,
+            "limitMicros": 100000
+          },
+          "ANALYSIS_SQL": {
+            "limitUnits": 100,
+            "limitMicros": 0
+          },
+          "PROACTIVE_SQL": {
+            "limitUnits": 30,
+            "limitMicros": 0
+          }
+        },
+        "contactFlow": {
+          "dailyLimit": 5,
+          "monthlyLimit": 30,
+          "trialLimit": 30,
+          "campaignsPerPeriod": 1,
+          "maxContactsPerCampaign": 30,
+          "contactDays": 30,
+          "senderEmail": "pending-approval@campaigns.example.invalid",
+          "emailEnabled": false,
+          "killed": true
+        }
+      }
+    },
+    "paid": {
+      "PURAGENDA": {
+        "marketing": {
+          "maxEmails": 0,
+          "maxCampaignsPerMonth": 0
+        },
+        "puri": {
+          "ALL": {
+            "limitUnits": 500,
+            "limitMicros": 2000000
+          },
+          "STANDARD_INTERACTIVE": {
+            "limitUnits": 500,
+            "limitMicros": 2000000
+          }
+        }
+      },
+      "PURAGENDA_PLUS": {
+        "marketing": {
+          "maxEmails": 0,
+          "maxCampaignsPerMonth": 0
+        },
+        "puri": {
+          "ALL": {
+            "limitUnits": 2224,
+            "limitMicros": 5000000
+          },
+          "STANDARD_INTERACTIVE": {
+            "limitUnits": 1000,
+            "limitMicros": 2000000
+          },
+          "PLUS_INTERACTIVE": {
+            "limitUnits": 500,
+            "limitMicros": 2500000
+          },
+          "RECOMMENDATION": {
+            "limitUnits": 100,
+            "limitMicros": 500000
+          },
+          "ANALYSIS_SQL": {
+            "limitUnits": 500,
+            "limitMicros": 0
+          },
+          "PROACTIVE_SQL": {
+            "limitUnits": 124,
+            "limitMicros": 0
+          }
+        },
+        "contactFlow": {
+          "dailyLimit": 10,
+          "monthlyLimit": 150,
+          "campaignsPerPeriod": 3,
+          "maxContactsPerCampaign": 50,
+          "contactDays": 30,
+          "senderEmail": "pending-approval@campaigns.example.invalid",
+          "emailEnabled": false,
+          "killed": true
+        }
+      }
+    },
+    "global": {
+      "puri": {
+        "limitUnits": 100000,
+        "limitMicros": 200000000
+      },
+      "contactFlow": {
+        "dailyLimit": 500,
+        "monthlyLimit": 10000,
+        "contactDays": 30,
+        "senderEmail": "pending-approval@campaigns.example.invalid",
+        "emailEnabled": false,
+        "killed": true
+      }
+    }
+  }
+}

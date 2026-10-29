@@ -1,0 +1,185 @@
+{
+  "priceClpVatIncluded": 22990,
+  "vatRate": 0.19,
+  "netRevenueClp": 19319.32773109244,
+  "rates": {
+    "model": "gpt-6-luna",
+    "inputUsdPerMillion": 0.1,
+    "cachedInputUsdPerMillion": 0.01,
+    "cacheWriteUsdPerMillion": 0.125,
+    "outputUsdPerMillion": 0.5,
+    "verifiedAt": "2026-10-22",
+    "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
+  },
+  "assumptions": "Synthetic usage and FX sensitivity, not measured customer consumption. No cache savings assumed. Calls already include analysis explanations and campaign preparation; SQL itself uses no model tokens.",
+  "unknownCosts": [
+    "Resend contracted commercial allowance and account separation",
+    "PostgreSQL/Vercel contracted tier and allocation",
+    "Mercado Pago contracted commission",
+    "Paddle account-specific fees, settlement/FX",
+    "website hosting per business",
+    "support and refunds"
+  ],
+  "scenarios": [
+    {
+      "name": "Bajo",
+      "calls": 100,
+      "inputPerCall": 8000,
+      "outputPerCall": 600,
+      "retryFactor": 1.1,
+      "sqlAnalyses": 20,
+      "campaigns": 2,
+      "emails": 100,
+      "effectiveCalls": 110,
+      "inputTokens": 880000,
+      "outputTokens": 66000,
+      "aiUsd": 0.121,
+      "aiUsdUpperWithCacheWrites": 0.143,
+      "emailUsd": null,
+      "infrastructureUsd": null,
+      "providerFeesClp": null,
+      "grossMarginPercent": null,
+      "sensitivity": [
+        {
+          "assumedFxClpPerUsd": 850,
+          "aiClp": 102.85,
+          "remainderBeforeUnknownCostsClp": 19216.47773109244,
+          "maximumOtherCostsFor70PercentMarginClp": 5692.948319327731
+        },
+        {
+          "assumedFxClpPerUsd": 950,
+          "aiClp": 114.95,
+          "remainderBeforeUnknownCostsClp": 19204.377731092438,
+          "maximumOtherCostsFor70PercentMarginClp": 5680.848319327732
+        },
+        {
+          "assumedFxClpPerUsd": 1050,
+          "aiClp": 127.05,
+          "remainderBeforeUnknownCostsClp": 19192.27773109244,
+          "maximumOtherCostsFor70PercentMarginClp": 5668.748319327731
+        }
+      ],
+      "exceedsSandboxAiBudget2Usd": false
+    },
+    {
+      "name": "Habitual",
+      "calls": 600,
+      "inputPerCall": 12000,
+      "outputPerCall": 900,
+      "retryFactor": 1.15,
+      "sqlAnalyses": 120,
+      "campaigns": 10,
+      "emails": 500,
+      "effectiveCalls": 690,
+      "inputTokens": 8280000,
+      "outputTokens": 621000,
+      "aiUsd": 1.1385,
+      "aiUsdUpperWithCacheWrites": 1.3455,
+      "emailUsd": null,
+      "infrastructureUsd": null,
+      "providerFeesClp": null,
+      "grossMarginPercent": null,
+      "sensitivity": [
+        {
+          "assumedFxClpPerUsd": 850,
+          "aiClp": 967.725,
+          "remainderBeforeUnknownCostsClp": 18351.60273109244,
+          "maximumOtherCostsFor70PercentMarginClp": 4828.073319327731
+        },
+        {
+          "assumedFxClpPerUsd": 950,
+          "aiClp": 1081.575,
+          "remainderBeforeUnknownCostsClp": 18237.752731092438,
+          "maximumOtherCostsFor70PercentMarginClp": 4714.223319327732
+        },
+        {
+          "assumedFxClpPerUsd": 1050,
+          "aiClp": 1195.4250000000002,
+          "remainderBeforeUnknownCostsClp": 18123.90273109244,
+          "maximumOtherCostsFor70PercentMarginClp": 4600.373319327731
+        }
+      ],
+      "exceedsSandboxAiBudget2Usd": false
+    },
+    {
+      "name": "Intensivo",
+      "calls": 3000,
+      "inputPerCall": 20000,
+      "outputPerCall": 1200,
+      "retryFactor": 1.25,
+      "sqlAnalyses": 600,
+      "campaigns": 40,
+      "emails": 2000,
+      "effectiveCalls": 3750,
+      "inputTokens": 75000000,
+      "outputTokens": 4500000,
+      "aiUsd": 9.75,
+      "aiUsdUpperWithCacheWrites": 11.625,
+      "emailUsd": null,
+      "infrastructureUsd": null,
+      "providerFeesClp": null,
+      "grossMarginPercent": null,
+      "sensitivity": [
+        {
+          "assumedFxClpPerUsd": 850,
+          "aiClp": 8287.5,
+          "remainderBeforeUnknownCostsClp": 11031.827731092439,
+          "maximumOtherCostsFor70PercentMarginClp": -2491.7016806722686
+        },
+        {
+          "assumedFxClpPerUsd": 950,
+          "aiClp": 9262.5,
+          "remainderBeforeUnknownCostsClp": 10056.827731092439,
+          "maximumOtherCostsFor70PercentMarginClp": -3466.7016806722686
+        },
+        {
+          "assumedFxClpPerUsd": 1050,
+          "aiClp": 10237.5,
+          "remainderBeforeUnknownCostsClp": 9081.827731092439,
+          "maximumOtherCostsFor70PercentMarginClp": -4441.701680672269
+        }
+      ],
+      "exceedsSandboxAiBudget2Usd": true
+    },
+    {
+      "name": "Extremo",
+      "calls": 20000,
+      "inputPerCall": 32000,
+      "outputPerCall": 1200,
+      "retryFactor": 1.5,
+      "sqlAnalyses": 6000,
+      "campaigns": 200,
+      "emails": 10000,
+      "effectiveCalls": 30000,
+      "inputTokens": 960000000,
+      "outputTokens": 36000000,
+      "aiUsd": 114,
+      "aiUsdUpperWithCacheWrites": 138,
+      "emailUsd": null,
+      "infrastructureUsd": null,
+      "providerFeesClp": null,
+      "grossMarginPercent": null,
+      "sensitivity": [
+        {
+          "assumedFxClpPerUsd": 850,
+          "aiClp": 96900,
+          "remainderBeforeUnknownCostsClp": -77580.67226890757,
+          "maximumOtherCostsFor70PercentMarginClp": -91104.20168067227
+        },
+        {
+          "assumedFxClpPerUsd": 950,
+          "aiClp": 108300,
+          "remainderBeforeUnknownCostsClp": -88980.67226890757,
+          "maximumOtherCostsFor70PercentMarginClp": -102504.20168067227
+        },
+        {
+          "assumedFxClpPerUsd": 1050,
+          "aiClp": 119700,
+          "remainderBeforeUnknownCostsClp": -100380.67226890757,
+          "maximumOtherCostsFor70PercentMarginClp": -113904.20168067227
+        }
+      ],
+      "exceedsSandboxAiBudget2Usd": true
+    }
+  ]
+}

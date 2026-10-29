@@ -1,0 +1,1671 @@
+{
+  "at": "2026-10-29T00:16:59.618Z",
+  "branch": "feature/puragenda-next",
+  "head": "8d28501c55c876ffee18f7c5513aa8ecdd0c3fe8",
+  "originMain": "e74c92237e47db43425a7d47209520967e51bfb0",
+  "initialFiles": 117,
+  "initialTracked": 45,
+  "backup": [
+    {
+      "path": ".env.example",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "scripts/test-commercial-postgres.mjs",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/api/billing/subscribe/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/api/contact-flow/webhooks/[provider]/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/api/cron/billing-reconciliation/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/app/api/cron/trial-expiry/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/app/api/marketing/send/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/contact-flow/unsubscribe/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/dashboard/layout.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/dashboard/puri-plus/page.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/dashboard/puri-plus/settings/page.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/dashboard/settings/page.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/para/x7k9m2v4q8/(panel)/page.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/commercial-trial-panel.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/payment-wall.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/puri-assistant.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/contact-flow-lab.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/growth-lab.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/workspace.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/commercial-worker.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/server/contact-flow/campaigns.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/dashboard-http.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/events.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/policy.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/providers.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/resend-test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/tokens.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/worker.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/commercial-usage.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/growth/budgets.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/growth/http.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/growth/pricing.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/growth/recommendations.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/orchestrator.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/puri/telemetry.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/services/commercial-trial.service.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/services/commercial-usage-policy.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/services/staff-capacity.service.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/integration/contact-flow-postgres.integration.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/integration/registration-v2-postgres.integration.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/seo-expansion-batch-01.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/contact-flow.policy.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/puri.telemetry.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/website-purchase-checkout.route.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "config/commercial/contact-flow-free.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/21-iteracion-8-cierre-y-bloqueos.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/22-iteracion-8-operacion.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/23-mercadopago-v2-validacion-real-2026-10-28.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/24-mercadopago-v2-webhooks-recuperacion-2026-10-28.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/25-puri-cuotas-contact-flow-2026-10-28.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/26-resend-contact-flow-certificacion-2026-10-28.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/27-contact-flow-free-lanzamiento-2026-10-28.md",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "docs/puragenda-next/evidence/contact-flow-free-launch-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-browser-result.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-dashboard-desktop.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-dashboard-mobile.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-economics.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-portal-consent-mobile.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-production-seal.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-secrets.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-validation.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-annual-paid.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-child-app-owner-redirect.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-monthly-paid.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-panel-blocked.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-sandbox-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-test-webhook-restored.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-trial-authorized.png",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-webhooks-recovery-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-basic-quota-mobile.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-close-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-flow-mobile.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-plus-quota-desktop.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-quota-proposal-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-trial-expired-mobile.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-certification-2026-10-28.json",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-domain-2026-10-28.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-results-2026-10-28.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-webhook-2026-10-28.jpg",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "prisma/migrations/20261027120000_commercial_mp_v2_runtime/migration.sql",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "prisma/migrations/20261028120000_commercial_mp_v2_recovery_index/migration.sql",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "scripts/prepare-contact-flow-policy.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "scripts/prepare-contact-flow-production.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/app/api/dashboard/subscription/billing/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/api/dashboard/usage/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/api/webhooks/mercadopago-v2/route.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/app/para/x7k9m2v4q8/(panel)/contact-flow-operations-card.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/components/dashboard/commercial-subscription-panel.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/components/dashboard/commercial-usage-panel.tsx",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/core/commercial-billing-policy.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/core/commercial-selection.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/core/commercial-usage.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-http.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-provider.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-recovery.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/first-paid-plus.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/launch-policy.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/operations.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/release-switch.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/server/contact-flow/resend-capacity.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/resend-certification.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "src/server/contact-flow/resend-release.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "src/server/services/commercial-usage-summary.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/fixtures/contact-flow-production.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "tests/integration/contact-flow-free-postgres.integration.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "tests/integration/mercadopago-v2-postgres.integration.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "tests/server/commercial-usage-summary.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/commercial-usage.route.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/contact-flow-certification.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/contact-flow-launch-policy.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/contact-flow-release.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": false
+    },
+    {
+      "path": "tests/server/marketing-v2-separation.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/mercadopago-v2-http.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/mercadopago-v2-policy.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    },
+    {
+      "path": "tests/server/mercadopago-v2-provider.test.ts",
+      "backupVerified": true,
+      "currentExists": true,
+      "currentMatchesInitial": true
+    }
+  ],
+  "originalEnvironmentUnchanged": true,
+  "transactionalSourceUnchanged": true,
+  "stagedFiles": 0,
+  "secretScan": {
+    "publicFiles": 2202,
+    "privateValuesCompared": 31,
+    "matches": 0
+  },
+  "privateEvidence": [
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-annual-paid.png",
+      "sha256": "832997bdeaf302b1dfaef25083d390aae97da697c3ca7622d0456118d5693745",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-child-app-owner-redirect.png",
+      "sha256": "c9c3a000f7a896903e97e6b58587c7253521cde39e7ef7ff2d1cec850f95aa48",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-monthly-paid.png",
+      "sha256": "d14893a9e7de382591243ec2a6dec146eb145bac36fa169988e789ec0db35c1f",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-panel-blocked.png",
+      "sha256": "7cf57220006dc855d46880d9c21dc6f6f13c53c830515e95537ed19cd6d4b6e3",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-sandbox-2026-10-28.json",
+      "sha256": "28bf4f174fbe51e4cf58f1965bf78104a795e9c90d73d5d5e85c1ec2b0deeb2a",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-test-webhook-restored.png",
+      "sha256": "7dbb246f7af1133bde89dca65d300a7dfe8869fa2e2f7a3e381081ac89a668da",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-trial-authorized.png",
+      "sha256": "64adee747aaed9c751ffcef3fbcf48106668339e4edbfc6f57673459d68deec9",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/mercadopago-v2-webhooks-recovery-2026-10-28.json",
+      "sha256": "f67079e5edfb1263cd9cd095d99ef018c4e58bf922264e0c38dcad22df431198",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-certification-2026-10-28.json",
+      "sha256": "8958b5acd67aeede4d66f2707dcd2792501f24f80a34e928c2c90ce722cd351a",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-domain-2026-10-28.jpg",
+      "sha256": "a14e0ec2e65eb79b4c606e555685231c0a9087288220625452ddc6bf350fe2fe",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-results-2026-10-28.jpg",
+      "sha256": "9cc8b98de26e221402daf43053d26880c3a485cbbba87f58f118753fbb30fd54",
+      "backupVerified": true
+    },
+    {
+      "path": "docs/puragenda-next/evidence/resend-contact-webhook-2026-10-28.jpg",
+      "sha256": "126945fe734fb5fb8d64f9227d7485443347348eba8e403d68270466cce9002a",
+      "backupVerified": true
+    }
+  ],
+  "inventory": [
+    {
+      "path": ".env.example",
+      "bytes": 9377,
+      "sha256": "73df3814d9422587331d3c32dc7401d2983f6a1da6b27b9f6a1ffd0a6175529f",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 1832,
+      "sha256": "509812d6761e85651d1e8ff85f5ab9c53e2d864c8de00684472a7693fe77b1a7",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "config/commercial/contact-flow-free.json",
+      "bytes": 1183,
+      "sha256": "b837b85be9ad7283d33dbb611de23a03b4f09c0069e1df1cfc078b636c0c22cc",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "config/release/puragenda-next.json",
+      "bytes": 1113,
+      "sha256": "4bacba5e1da506aa2efcbce4276b46c56a981dc08a253c57c8014541cc9b8be7",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "docs/audits/stories-2026-10-25.md",
+      "bytes": 11008,
+      "sha256": "802b530273f79f9e5da2b50ff106fcbd5f2747e00b1c24fbe4e9e207cdc1c8d5",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/21-iteracion-8-cierre-y-bloqueos.md",
+      "bytes": 23931,
+      "sha256": "d3bf50f19ece05f3c182a33d4b256adef73151a89818c50462b339cfaf087c55",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/22-iteracion-8-operacion.md",
+      "bytes": 12544,
+      "sha256": "d72d68df6efa5a978d2d3545c0bcf1de739bdc24a95467f7b773628f376d6026",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/23-mercadopago-v2-validacion-real-2026-10-28.md",
+      "bytes": 10491,
+      "sha256": "04e7f7c6a32dd6e0e16bbd33debfdf421eb5696eb0846e4d6cac36771869992d",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/24-mercadopago-v2-webhooks-recuperacion-2026-10-28.md",
+      "bytes": 14241,
+      "sha256": "37b41d135445922c89c3a9477eadbe97472cbe8067f3544a8c88d72c5a10c255",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/25-puri-cuotas-contact-flow-2026-10-28.md",
+      "bytes": 19082,
+      "sha256": "ae9c99fa5d529170bf414ae6dd0d18a36ec565fbf1e3b8dc1c1f6c036ac58c58",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/26-resend-contact-flow-certificacion-2026-10-28.md",
+      "bytes": 9637,
+      "sha256": "566a2aa3d31a88513aa77ccdc6516cdc73651ebf44cd20a0af852b1f3e75af57",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/27-contact-flow-free-lanzamiento-2026-10-28.md",
+      "bytes": 18268,
+      "sha256": "66b5e319c4460b20f419242f8c25b4bd74191e801a833af10f054d451015fdbf",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/28-consolidacion-candidata-lanzamiento-2026-10-28.md",
+      "bytes": 28572,
+      "sha256": "5f25552cf2e9cdc0937b97dc4c8eb201e2ab2ea40415980101119fd3eedbbdf7",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/contact-flow-free-launch-2026-10-28.json",
+      "bytes": 5206,
+      "sha256": "5e7dc330283135497b47a483fc488c1b9e44b9cd7192b686cec7b9e5c241cf2f",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-browser-result.json",
+      "bytes": 1531,
+      "sha256": "778f079ba861f560a022244f116cc39c75b5a70f738788cb9291696316df73b7",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-dashboard-desktop.png",
+      "bytes": 169782,
+      "sha256": "fd2fb3654b20be511357e57dd9bb8a18e5ca3502b4a10d46c41438332614053e",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-dashboard-mobile.png",
+      "bytes": 70717,
+      "sha256": "7303522673fff1311d90dc9925d305400cde0659b7b287f80a7951ffbf5d48d4",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-economics.json",
+      "bytes": 5828,
+      "sha256": "93675dfe73a7692c98d4007d17082620ae37ead0dd4db8ef881a251c1a786df8",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-portal-consent-mobile.png",
+      "bytes": 163691,
+      "sha256": "6a537e1f1d1d146e88056e5d0eae83ee1bcbd6af84d15cac2e42b33559e1ca5a",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-production-seal.json",
+      "bytes": 1403,
+      "sha256": "b9480e3ef2929f49d5893ca9e511acc7aceb866dbff6be6c2fc52f12582b1f71",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-secrets.json",
+      "bytes": 158,
+      "sha256": "075a63b57b7092aac8cab1dda844a18993384eddb9c8b13a815aa2c2bb11daaa",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/iteration-8-validation.json",
+      "bytes": 3025,
+      "sha256": "2d169a235b12e131882676efc44e8f7ba53667532380841708a1347121b5d527",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-basic-quota-mobile.jpg",
+      "bytes": 54387,
+      "sha256": "bc3ae18b0567a61614ff02912a20606a840cba67b299cf5a8e74acd5d94b70ef",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-close-2026-10-28.json",
+      "bytes": 13103,
+      "sha256": "ded33a247d3725624f16410e18fad864c105f8b95ba227b12adc7e02b53ea816",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-flow-mobile.jpg",
+      "bytes": 66137,
+      "sha256": "2aa593cb79de5f4772b7b14eb04b53098d44e1ec14391790a9b8e2a850f2b382",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-plus-quota-desktop.jpg",
+      "bytes": 70752,
+      "sha256": "4779379ffe574821e7f2aae9ab8649ae8eee5ec030d36b636c5da1061c63d179",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-quota-proposal-2026-10-28.json",
+      "bytes": 5008,
+      "sha256": "67c77f85a7f39c891507764dec1d826a15ec7e519275eaf28cc98da107020837",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/puri-contact-trial-expired-mobile.jpg",
+      "bytes": 56453,
+      "sha256": "e08bf2f0abf39daae06689bae8fe9ad387597f461f5701a5428e999e48b99ac7",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-dashboard-desktop-2026-10-28.png",
+      "bytes": 176563,
+      "sha256": "54076ec1186cc16dd01d49e3d1359b830f7256c9f105d3c31fc0b71d1cb05ee6",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-dashboard-mobile-2026-10-28.png",
+      "bytes": 50571,
+      "sha256": "1f02954d1314fa483e7b02f6c651dd502a06b3e44dbc4c02f7813630de2d383c",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-inventory-2026-10-28.json",
+      "selfHashIntentionallyOmitted": true,
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-validation-2026-10-28.json",
+      "bytes": 15398,
+      "sha256": "f19b92cc961c0a7181a1ba27a9f7c1c8dff49d453aaa04366475699c0a03628d",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-website-desktop-2026-10-28.png",
+      "bytes": 154352,
+      "sha256": "e4ffc2bc0a156baeb7364008a238623967830ad2df104652a3a2e250ba385b94",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "docs/puragenda-next/evidence/rc-widget-mobile-2026-10-28.png",
+      "bytes": 24046,
+      "sha256": "e96eae07e381bb54cb02029efc8ed1ed9c98d8e6dc53af74926ace72de545a6b",
+      "proposedGroup": "documentacion-evidencia-publica"
+    },
+    {
+      "path": "messages/dashboard/modules/es.json",
+      "bytes": 2623,
+      "sha256": "3b305c81f4efe1c3475e1f0152684f384dd053a389e24a9e82bc7eaa99c87fef",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "ops/commercial-scheduler/worker.mjs",
+      "bytes": 1376,
+      "sha256": "c7d33756089b445b2f6254d2039f4ad16572419fc1ef43c69ba73dd168579607",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "ops/commercial-scheduler/wrangler.toml",
+      "bytes": 547,
+      "sha256": "ab2c662c6d1c14d2d096651fde0e039add76dcedfa3cad901320dd78795ed558",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 525965,
+      "sha256": "db96d6738f9ab125aa92ac8c21d2ea88433b7f56ca301fa2161699e2bb41e1cb",
+      "proposedGroup": "dependencias-seguridad"
+    },
+    {
+      "path": "package.json",
+      "bytes": 4143,
+      "sha256": "11827d75197cb9379c712ace8a3eff12e47f748fb595af82e7cf7567c5f2565f",
+      "proposedGroup": "dependencias-seguridad"
+    },
+    {
+      "path": "prisma/migrations/20261027120000_commercial_mp_v2_runtime/migration.sql",
+      "bytes": 1875,
+      "sha256": "f506a270b0edc3dea20168762c88d1921f6a1ec3784945e325e784ff6cd41609",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "prisma/migrations/20261028120000_commercial_mp_v2_recovery_index/migration.sql",
+      "bytes": 135,
+      "sha256": "729180db7aa99b3b8cca71f5dd2f50f716bd6e199e48f7bff66b0cd9f78b1635",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "bytes": 124970,
+      "sha256": "9305465abc018baaa51df1d5bb069f0171bf9b90e31e4e44be70c20764edd6d0",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "scripts/next-staging-network-guard.mjs",
+      "bytes": 1285,
+      "sha256": "5d8f0b034d6f40a7d96176fc5fd1acd99b874aba26d97d4203ce78488721213b",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "scripts/prepare-contact-flow-policy.ts",
+      "bytes": 351,
+      "sha256": "beaf8b048495bff57936ee360a8fc4e29edd287e92f929a717c9d536ea9f6997",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "scripts/prepare-contact-flow-production.ts",
+      "bytes": 2862,
+      "sha256": "e132ba0f3f2685315d7b799a240a20df7b31efff0d1028176b1c3a32fcddd936",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "scripts/prepare-next-staging.mjs",
+      "bytes": 6226,
+      "sha256": "87e8fe83166475e7017a9de7e86dd10be6d532617b435d520c669c5abd08a71d",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "scripts/qa-availability-stories.mjs",
+      "bytes": 13246,
+      "sha256": "ffe88996017a467a4225082e934b4e37c29571b2fdae985dbfc85fc98ecf3c9b",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "scripts/run-next-staging.mjs",
+      "bytes": 2401,
+      "sha256": "6299073f96c5e4fbe8fb923ab235c7dbabc2419842acfc34724d8b05efd5f766",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "scripts/seed-next-staging.ts",
+      "bytes": 3444,
+      "sha256": "f46187c797d935f4057d1473c1522e0771c6698c71202b9e91e1f32e1c2cef15",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "scripts/test-commercial-postgres.mjs",
+      "bytes": 2986,
+      "sha256": "5cb4136b67cbf3df1e29c1f8ae313e49bbe356f2ea5f89141a85135c97b8464d",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "scripts/test-next-staging-websites.mjs",
+      "bytes": 8272,
+      "sha256": "4737a152ebec2bdd7c63f77b8b92e00191be72c17a9aaed75a7dce39410e6789",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "scripts/test-next-staging.mjs",
+      "bytes": 8397,
+      "sha256": "9c85ce0712b8cdbb2665b9c2908d16b1abe0eaf8686e8e8b022895e37b7cca20",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "src/app/api/billing/subscribe/route.ts",
+      "bytes": 17223,
+      "sha256": "221c13187e651ae8395cf373ec4461cf175ec8e282f2d000008209c12b1f4715",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/business/[slug]/production-orders/route.ts",
+      "bytes": 11225,
+      "sha256": "7f8a1bc5364a93286a6600e71585bb54dad8e02d43fb27986bd17d5f74fe7fe6",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/contact-flow/webhooks/[provider]/route.ts",
+      "bytes": 1485,
+      "sha256": "77d9d879049173943af84f39c5167f8239092a4817c94c6b7d741c424c8f111b",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/app/api/cron/puragenda-next/route.ts",
+      "bytes": 773,
+      "sha256": "341f30b0bbe4f149a0984d5d95020759ff645be855f23d3dbd25feb5fec1ad3a",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "src/app/api/dashboard/stories/route.ts",
+      "bytes": 2936,
+      "sha256": "d146190af8ff4efdda4a6103530451d5adea407c09e12ea94560cb642466f7ee",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/dashboard/subscription/billing/route.ts",
+      "bytes": 455,
+      "sha256": "460ae0c8a0db21efcd3f01808417846f92fe2808282e328196eabdd0dec90f9e",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/dashboard/usage/route.ts",
+      "bytes": 795,
+      "sha256": "7e868448a59180585778cc19512302c199a651f87061f39aa226ba535fb58573",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/marketing/send/route.ts",
+      "bytes": 6504,
+      "sha256": "ce175f6cec9183b02766958f0d1a04ea55f44701fb2cf291ff8f105282def310",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/api/webhooks/mercadopago-v2/route.ts",
+      "bytes": 947,
+      "sha256": "1b208c17339065d97ed06e46a1c432790680521b3f3e0bdffc0ae9f8bc97d02b",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/app/contact-flow/unsubscribe/route.ts",
+      "bytes": 2303,
+      "sha256": "396a88191d4dbaad6cb79f9b473a11c5dd58725c549231ba22e69452d59cea50",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/app/dashboard/layout.tsx",
+      "bytes": 6447,
+      "sha256": "df8db6cfede23238a3165cc6a4db84fda9678f65bc65021e322730c984aa01d9",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/dashboard/orders/orders-board.tsx",
+      "bytes": 14549,
+      "sha256": "481d6753af46ff3a1920305168b36fbd04a58f5092817a5596c75220e328a068",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/dashboard/puri-plus/page.tsx",
+      "bytes": 4376,
+      "sha256": "82edc4768a4dad230810de16a3963184f98a3828353039948a690a91b810bd6e",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/app/dashboard/puri-plus/settings/page.tsx",
+      "bytes": 3777,
+      "sha256": "8f79202e3a223525b5bea7ed006d6f248ca489afaefd601e008a7711094c0edf",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/app/dashboard/settings/page.tsx",
+      "bytes": 26450,
+      "sha256": "d8a35bf1f4018c0978fbc3ff13107b1a741faf3be4b6646161f78823a6d5bf43",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/dashboard/staff/staff-list.tsx",
+      "bytes": 59696,
+      "sha256": "23b6e5790f04f7ecdc21ff9e3cfb42e0aa057d7fa0120984b0a4a1a7e4357a23",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "src/app/dashboard/stories/story-generator.tsx",
+      "bytes": 97282,
+      "sha256": "722be4c9d3212adf0cfd1aea61d977a1a9f3baec0e9d3e48ad60430ec28433eb",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/encargo/[orderNumber]/page.tsx",
+      "bytes": 2927,
+      "sha256": "b8a38baaab9cfe61c4305e6ddce839999e0865f4215a6ff4f697731c0a8a6e35",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/para/x7k9m2v4q8/(panel)/contact-flow-operations-card.tsx",
+      "bytes": 2194,
+      "sha256": "3552ac17ac33f8cafa80ef0f000c642b234b7e632196beed216e9c99a8304c6d",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/app/para/x7k9m2v4q8/(panel)/page.tsx",
+      "bytes": 17749,
+      "sha256": "9e680af531027d52a7bacd181d55720b97985b5e306b5b01018e477352a3606f",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/app/widget/[slug]/production-order-flow.tsx",
+      "bytes": 18435,
+      "sha256": "160829175470bc3e461821f0c523e2eecf91dd42b1d18f62d4850cd96bc72f8d",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "src/components/dashboard/commercial-subscription-panel.tsx",
+      "bytes": 12161,
+      "sha256": "a12d3e59c69d375a691baad7885b39d4f34e27e58d28f7358c3bfebe796cbec8",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/components/dashboard/commercial-trial-panel.tsx",
+      "bytes": 4564,
+      "sha256": "e409d03dd2f8a17d23817bf59c1e69820177d2910625a5a2090cc0a63fbfa0ce",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/components/dashboard/commercial-usage-panel.tsx",
+      "bytes": 3899,
+      "sha256": "18fc8f6c5dccb13b5c45a5cb2fd1e77980f6a7372fd43ba91d52e6d65d548025",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/components/dashboard/payment-wall.tsx",
+      "bytes": 12672,
+      "sha256": "0712f272a14a231cd35034867a8d64ad2e666056dbd13bcde8c7c1e466ff72d0",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/components/dashboard/puri-assistant.tsx",
+      "bytes": 20371,
+      "sha256": "6fd8c585eb86ee390e071161085e9acb4e98a0bb41c47ef48bd45b7bd75d1b7f",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/contact-flow-lab.tsx",
+      "bytes": 26937,
+      "sha256": "0715d0eb002720cc6d60d8313ac8c93c64a1ddaccc7587e621570e00baa153c4",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/growth-lab.tsx",
+      "bytes": 23564,
+      "sha256": "9782784377b26e5e13f2928bc2fe04606bd30b5817d650f58d70fda933edd5f8",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/components/dashboard/puri-plus/workspace.tsx",
+      "bytes": 4462,
+      "sha256": "cb2fe79e66c30991b51f3cc95510c7af38c11e1fe7b7cae0622680f351c7e015",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/components/dashboard/sidebar.tsx",
+      "bytes": 24905,
+      "sha256": "e8e8d1d6c134dce47ea71d4ff348993eb393e10989b7e455d42e661c9ed4fa93",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/components/dashboard/subscription-banner.tsx",
+      "bytes": 10144,
+      "sha256": "bfb851fa8f7f1513f3228812f3cdbc2eed6e05a68553f78387d69a27c4b01ce3",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "src/core/commercial-billing-policy.ts",
+      "bytes": 2367,
+      "sha256": "cdcbe6a8a89018cb9f8360f7048df99c38e76748ae7471f3b376b34a4e97873b",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/core/commercial-selection.ts",
+      "bytes": 412,
+      "sha256": "3bc11af6bb757417ba7b57bbc049ff95327e51e348f9c44efaafb62dfc0f461c",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/core/commercial-usage.ts",
+      "bytes": 1576,
+      "sha256": "f5048238dc7c55aea81e36e6d9c6ee7987795c9fe2e008d31bed2bca711c011b",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/core/story-configuration.ts",
+      "bytes": 1668,
+      "sha256": "db0c3cdbb3bd363fbbeb234a4fc16719fb053386c2e7fd0097fc1391e00ecf4a",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-http.ts",
+      "bytes": 5595,
+      "sha256": "0736d45bc8c1040541edbd1c8a50efe92848584470452490159dad53065dd6c8",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-provider.ts",
+      "bytes": 11260,
+      "sha256": "0ea244460e75a70f7f0944efa3500b7b50ac16d17205ad02d199d98ae0f4d1e5",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2-recovery.ts",
+      "bytes": 12254,
+      "sha256": "e8a6fda35e5972b9ec1694b9218bc65b415353bc227104fecdefd17cac7977c4",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/server/commercial-billing/mercadopago-v2.ts",
+      "bytes": 39170,
+      "sha256": "5ca7e31280a168cc7d0780956fb3bc9a6bcfca790637258c89597285ef032a91",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "src/server/commercial-worker.ts",
+      "bytes": 6603,
+      "sha256": "a7d4d1c57d3b0dae7f0b96f4ea330da8baa2e749efa95c47401aa30775771c43",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "src/server/contact-flow/campaigns.ts",
+      "bytes": 22193,
+      "sha256": "9ed409ed9568fcbeba171eaf8a884b5206bc87ae43356436c4b45d7021418f0c",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/dashboard-http.ts",
+      "bytes": 6740,
+      "sha256": "8993ec9ec60675c056ff942c882983cb44eb459f795e698c36b821dd81a29192",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/events.ts",
+      "bytes": 10362,
+      "sha256": "91130d852f83ce55c2d73b997b13831875d1df3d00d4fa2e5ff2ef7a945a3319",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/first-paid-plus.ts",
+      "bytes": 2736,
+      "sha256": "4d116fd2813d404d9e012f24fd57931d9e4454d3cacebca637befbcfb470ea25",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/launch-policy.ts",
+      "bytes": 1199,
+      "sha256": "f30707e3dd624e2fdb094fab10f49259a007d2a30421ef7da9d70afa9851301c",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/operations.ts",
+      "bytes": 2052,
+      "sha256": "160ec83e0a8062bf9f305af7c13ca37334e81668d403bb210b82934d3439dd9f",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/policy.ts",
+      "bytes": 3178,
+      "sha256": "f1f83a6ab359aef8be3c8b5d4ad5d2ca800bde62be938586088b0824a7b29f3f",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/providers.ts",
+      "bytes": 7781,
+      "sha256": "98f762d05d9b6999dae549fc7d15c32bb91d82dd68452440972d89aa9f785414",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/release-switch.ts",
+      "bytes": 252,
+      "sha256": "f29e944833a12951698f5bf827fea0930427f62de67745078c160aecb07e8634",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/resend-capacity.ts",
+      "bytes": 6859,
+      "sha256": "3b52915826dac97d4ea2e3bad1c406e5593b331b35b1bfde96d1622d688a9075",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/resend-certification.ts",
+      "bytes": 3127,
+      "sha256": "43a0da0ac7e0e04bf0aa406694da8ea79f4f5b82c4dddf5f82811b6d3f65d3f1",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/resend-release.ts",
+      "bytes": 7385,
+      "sha256": "8b5fd1ddff30eed74335b9192ed8f8771d818869405669aca3ada198d131b60f",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/resend-test.ts",
+      "bytes": 5241,
+      "sha256": "381352c61127dae81e89e883b65ce49be296df9884dcde7441daad951d6d144f",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/tokens.ts",
+      "bytes": 4835,
+      "sha256": "cc1510412925fad4af62408c759ddf242b56db73783e22e34b8b0adb56574f70",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/contact-flow/worker.ts",
+      "bytes": 24262,
+      "sha256": "c443f7e465b4f2f1dd6a4864648a46fd93edda6ca59f0bbd58eb9e546c20a21e",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "src/server/puri/commercial-usage.ts",
+      "bytes": 2579,
+      "sha256": "908db25142776ca5dd9b73b4df9a4a0eeefb3be84b55ca946cc91daa6b7260b9",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/growth/budgets.ts",
+      "bytes": 15017,
+      "sha256": "a4629ff1d590e48185740af685bd5b8078dee734a50f1776ac8da37c77a4c26e",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/growth/http.ts",
+      "bytes": 6480,
+      "sha256": "aa6542181aaba17f079cfe9f2f2eface79e593ad3c71671b501a3f8e29f85e25",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/growth/pricing.ts",
+      "bytes": 988,
+      "sha256": "758ccc7cfe755e749fff7d055c26e2f93b8850a8ed5b7823d47c4ba0ac60f860",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/growth/recommendations.ts",
+      "bytes": 19236,
+      "sha256": "a2ac14ec5cd41977ec0cba8d4c92672c4edd7933c4185ee121c42ae94dd5e28f",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/orchestrator.ts",
+      "bytes": 12557,
+      "sha256": "cdbe7292a29b63b8d426a2ff430a153586ccc49af3aeb72bd955d40fd1ede9ba",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/puri/telemetry.ts",
+      "bytes": 5125,
+      "sha256": "3728315dc2823345c121c3057065eb1b8ae124d0132d2a2149af77ab92b1304f",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/services/availability-story.service.ts",
+      "bytes": 46809,
+      "sha256": "788f661b09f08dd677cc807dfd69e1367c4618a48f9b3d31c77c251b8415108f",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/services/commercial-trial.service.ts",
+      "bytes": 8822,
+      "sha256": "bf95b818e891cf0a1d4059bd1af9c727f43a242c2323eee77296a4c89f58e9b5",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/services/commercial-usage-policy.ts",
+      "bytes": 7396,
+      "sha256": "a877b8303f6b01f268b4b279b60649c654d89c9fd76ce4b8b1a424131e7e7df9",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/services/commercial-usage-summary.ts",
+      "bytes": 5634,
+      "sha256": "018af6dc4a781a23947165c6e98ef6406e04fb3698e959e68c8274c15bea137f",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "src/server/services/google-calendar.service.ts",
+      "bytes": 35120,
+      "sha256": "25a440049c3de09ec15e28cc69eb4df89ca382ba74e90da01c4e61cf0aac68dd",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/services/staff-capacity.service.ts",
+      "bytes": 2446,
+      "sha256": "210217b4512370fc6a6657fc3b2c8a8f1b7eba2d18eca82eccaef05eb57923f3",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "src/server/stories/availability-story-image.tsx",
+      "bytes": 21985,
+      "sha256": "9649b780465dab5cc6fce4c48aaf951bfc74a6657a5064fb4155b9277e6c452f",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/validations/availability-story.ts",
+      "bytes": 3250,
+      "sha256": "4cbdce97f06ce97fe70ab6185bcf6126fe7b8048766dd861097aa550951d4d5d",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "src/server/validations/booking.ts",
+      "bytes": 14381,
+      "sha256": "e7c6a1087b3f801ba423c5030434c8104d09f185d4c113655901192768ef75e8",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "tests/fixtures/contact-flow-production.ts",
+      "bytes": 2936,
+      "sha256": "702d1b22e93ea1575c596d06e8670dced544a4616f91baa43e400dddc16e0cc2",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/integration/contact-flow-free-postgres.integration.test.ts",
+      "bytes": 22967,
+      "sha256": "8fb281938a6e94c23b3076e624ced78345c8a9fdb4884f87ca4314825d9d078c",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/integration/contact-flow-postgres.integration.test.ts",
+      "bytes": 51155,
+      "sha256": "b2e0a02f0ffdae8124fc27be532bfd7cc56f9734aa862f7b3ccdcf029b48c3d3",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/integration/mercadopago-v2-postgres.integration.test.ts",
+      "bytes": 31456,
+      "sha256": "04bc94429a3b335895c06879b9c4d1de9727344ead8980617c01966e9b123806",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "tests/integration/registration-v2-postgres.integration.test.ts",
+      "bytes": 16086,
+      "sha256": "2771f546fc7c935869cc69c452160089901f13fa772b8e739362ad7445a3d217",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "tests/seo-expansion-batch-01.test.ts",
+      "bytes": 19075,
+      "sha256": "4e45ae969d191b59d4266449e126f5a4125b49675c8cc8cee91cf11148835e99",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/availability-story-image.test.ts",
+      "bytes": 4830,
+      "sha256": "62951de690a273e88c041bd386024a6d91c7facb9a163fefdb2edeb78c93fb60",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/availability-story-regressions.test.ts",
+      "bytes": 10348,
+      "sha256": "c056f454172d722452c6493b0c18ffe6b18a9d391efa4bc9eded0bcee6c8e36a",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/availability-story.route.test.ts",
+      "bytes": 3167,
+      "sha256": "eb4ba123bb597ade1b2c4b2e0f2ca7cfda6a3ca040f74de1e1ab715d31369ba8",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/commercial-scheduler.test.ts",
+      "bytes": 1868,
+      "sha256": "6322d2a16ee533d497a36f46c7feb8b975dc26430050593a3413cc2e7cc4af33",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/commercial-usage-summary.test.ts",
+      "bytes": 2954,
+      "sha256": "2222e78a6786b3eb5d736c14178b8812273cd7901695211e8559c1f70e9b03c1",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "tests/server/commercial-usage.route.test.ts",
+      "bytes": 1787,
+      "sha256": "1087b8d9f821a431fcc579045a9235ed5ade2af5d062ff32bbf46c3c5b0246a4",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "tests/server/commercial-worker.route.test.ts",
+      "bytes": 1900,
+      "sha256": "25f210064092f61a84aa49be01ff369aef2d40cebb457264e0e15e5221f02266",
+      "proposedGroup": "operacion-staging-scheduler"
+    },
+    {
+      "path": "tests/server/contact-flow-certification.test.ts",
+      "bytes": 6689,
+      "sha256": "bc48993f5be2236e874cd0fc92349a70afb5a98e0469206f862aaed8ba92af2d",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/server/contact-flow-launch-policy.test.ts",
+      "bytes": 1459,
+      "sha256": "efd33d274de51bfb36f85571df6abec973323c1fd668a8cc94b0b6c33c66fc18",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/server/contact-flow-release.test.ts",
+      "bytes": 5798,
+      "sha256": "51f869069fbec0bb04ec4065ce23e0ee91930edacff305cf4f9ff090b8ff0943",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/server/contact-flow.policy.test.ts",
+      "bytes": 5095,
+      "sha256": "2696cb273377558b1eb0704b9c1123df6bfd18716a585aab96854d14ebabfa4a",
+      "proposedGroup": "contact-flow"
+    },
+    {
+      "path": "tests/server/google-calendar-multi-read.test.ts",
+      "bytes": 9323,
+      "sha256": "651e5c229677d5de18175f70993296508b6c3f4550e860a1400cf94861120ee1",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/marketing-v2-separation.test.ts",
+      "bytes": 1975,
+      "sha256": "cd4a2509bf3a5bb621fb01446bc4c17d08778ed06eab4fac6d3755a790b2f2e7",
+      "proposedGroup": "compartido-revision-por-hunks"
+    },
+    {
+      "path": "tests/server/mercadopago-v2-http.test.ts",
+      "bytes": 3545,
+      "sha256": "7988824d2dc468b34ca5cdb34ba023475a9ded417a8abc4ac06047e2526f70cb",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "tests/server/mercadopago-v2-policy.test.ts",
+      "bytes": 8679,
+      "sha256": "0e3693e528565ac57789eb1840b4f0b4cb9ebb6b1c0d97174ff8c73088edec39",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "tests/server/mercadopago-v2-provider.test.ts",
+      "bytes": 1766,
+      "sha256": "01cd1f4b30c9f53e6fafbfd0531c69b1448b076936465f5d922072e37b1350ed",
+      "proposedGroup": "mercado-pago-v2"
+    },
+    {
+      "path": "tests/server/puri.telemetry.test.ts",
+      "bytes": 2247,
+      "sha256": "76b73e741f98c3ccaa77e0283d83de73b52837d2e4495cdfb0eb570a03b126aa",
+      "proposedGroup": "puri-cuotas"
+    },
+    {
+      "path": "tests/server/subscription-banner-v2.test.ts",
+      "bytes": 1728,
+      "sha256": "9337173768aa40966239ac1ca0088ad61b6c26e992a5cb3da8ae11533a82e560",
+      "proposedGroup": "registro-agenda-sitios"
+    },
+    {
+      "path": "tests/server/website-purchase-checkout.route.test.ts",
+      "bytes": 5564,
+      "sha256": "a914ee3481371fc8d4f4558ff2ad8e7e1d85712779afe11fafceccd83db36e72",
+      "proposedGroup": "registro-agenda-sitios"
+    }
+  ]
+}

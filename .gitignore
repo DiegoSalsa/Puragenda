@@ -84,3 +84,10 @@ next-env.d.ts
 
 # Supabase CLI local cache
 /supabase/.temp/
+
+# Private operational receipts: preserve locally, keep out of release commits.
+/docs/puragenda-next/evidence/mercadopago-v2-*.png
+/docs/puragenda-next/evidence/mercadopago-v2-sandbox-2026-10-28.json
+/docs/puragenda-next/evidence/mercadopago-v2-webhooks-recovery-2026-10-28.json
+/docs/puragenda-next/evidence/resend-contact-*.jpg
+/docs/puragenda-next/evidence/resend-contact-certification-2026-10-28.json

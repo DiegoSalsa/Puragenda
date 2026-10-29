@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-22",
+  "timezone": "America/Santiago",
+  "initialHead": "b894e75",
+  "originMain": "34187de43a860b88b7328b5e11743da21b48db7c",
+  "iterationComplete": false,
+  "commercialLaunchApproved": false,
+  "productionOperationsEnabled": false,
+  "tests": {
+    "mainPassed": 1743,
+    "mainSkipped": 131,
+    "postgresCommercialPassed": 199,
+    "otherPassed": 1544,
+    "failed": 0,
+    "previouslySkippedExecuted": 131,
+    "uniquePassedCombined": 1874,
+    "newTests": 16,
+    "previouslySkipped": {
+      "booking": 19,
+      "mcp": 27,
+      "websiteMercadoPago": 30,
+      "websitePurchase": 33,
+      "legacySubscriptions": 20,
+      "depositConcurrency": 2
+    }
+  },
+  "checks": {
+    "prismaValidate": true,
+    "prismaGenerate": true,
+    "freshBootstrap": true,
+    "legacyUpgrade": true,
+    "repeatedDeploy": true,
+    "schemaDiffEmpty": true,
+    "rlsGrants": true,
+    "typecheck": true,
+    "lintErrors": 0,
+    "lintWarnings": 32,
+    "productionBuild": true,
+    "productionSealHttpChecks": 11,
+    "browserChecks": 23,
+    "browserPageErrors": 0,
+    "horizontalOverflow": false,
+    "boundedGrowthRequestBody": true
+  },
+  "external": {
+    "paddleSandboxCatalogRead": true,
+    "resendDomainRead": {
+      "name": "puragenda.cl",
+      "status": "verified"
+    },
+    "productionDatabaseReadOnlyMetadata": true,
+    "productionCountries": [
+      "CL"
+    ],
+    "productionCommercialTablesPresent": false,
+    "paddleDocsMcpStatus": 401,
+    "sandboxV2PaymentsCompleted": 0,
+    "realEmailsSent": 0,
+    "liveCharges": 0,
+    "deployments": 0,
+    "merges": 0,
+    "pushes": 0
+  },
+  "auditProduction": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "blockers": [
+    "Paddle documentation MCP authentication or pending alternative approval",
+    "SDK/webhook sandbox credentials and V2 catalog terms",
+    "Owner checkout/renewal/cancellation commercial flow incomplete",
+    "Authorized technical email recipient and isolated commercial Resend account configuration",
+    "Hosted staging/scheduler access and verified account costs",
+    "Legal review and production backup/restore validation"
+  ],
+  "evidenceLimitations": [
+    "Contract provider fixtures are not external payments or deliveries",
+    "Browser portal email verification uses a synthetic database fixture",
+    "No launch readiness certification",
+    "Secret scan is pattern-based, not universal"
+  ],
+  "secretScan": {
+    "scope": "tracked and new text files; credential-pattern scan, not a guarantee against all secret types",
+    "scannedFiles": 1760,
+    "findings": []
+  },
+  "commits": [
+    "6b14ac8 fix(puri-plus): bound request parsing and contain preference failures",
+    "8ba9b23 feat(puragenda-next): consolidate dashboard consent budgets and controlled workers",
+    "cbc2085 fix(deps): patch Next.js and production transitive vulnerabilities"
+  ]
+}
