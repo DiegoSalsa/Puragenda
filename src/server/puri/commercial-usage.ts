@@ -14,6 +14,8 @@ export async function withCommercialPuriUsage<T extends ModelResult>(input: {
   const access = await getCommercialPlanAccess(input.businessId);
   if (!access.has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
   const bytes = Buffer.byteLength(JSON.stringify(input.parameters));
+  if (bytes > 64000) throw new GrowthBudgetError("MODEL_INPUT_LIMIT");
+  if (!Number.isSafeInteger(input.maxRetries) || input.maxRetries < 0 || input.maxRetries > 2) throw new GrowthBudgetError("MODEL_RETRY_LIMIT");
   const perAttempt = maximumModelMicros(input.model, bytes);
   const micros = perAttempt === null ? null : perAttempt * (1 + input.maxRetries);
   if (micros === null || !Number.isSafeInteger(micros) || micros < 1) throw new GrowthBudgetError("MODEL_PRICE_UNKNOWN");

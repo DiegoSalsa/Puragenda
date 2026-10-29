@@ -10,6 +10,8 @@ import { PuriMascot } from "@/components/brand/puri-mascot";
 import { PuriMessageText } from "@/components/dashboard/puri-message-text";
 import { track } from "@/lib/analytics/client";
 import type { PuriAnswer, PuriCard } from "@/server/puri/types";
+import { CommercialUsagePanel } from "./commercial-usage-panel";
+import { commercialUsageMessage } from "@/core/commercial-usage";
 
 type Message = { role: "user" | "assistant"; content: string; answer?: PuriAnswer; failed?: boolean; responseId?: string; rating?: "positive" | "negative" };
 
@@ -143,14 +145,14 @@ export function PuriAssistant() {
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         const errorKey: Record<string, string> = { UNAUTHENTICATED: "authRequired", INVALID_REQUEST: "invalidRequest", RATE_LIMIT: "rateLimit", FORBIDDEN: "forbidden", NOT_CONFIGURED: "notConfigured" };
-        throw new Error(t(errorKey[payload?.code] ?? "error"));
+        throw new Error(commercialUsageMessage(payload?.code ?? "") ?? t(errorKey[payload?.code] ?? "error"));
       }
       for (const tool of payload.answer.toolsUsed ?? []) track("puri_tool_called", { tool });
       setMessages([...nextMessages, { role: "assistant", content: payload.answer.message, answer: payload.answer, responseId: payload.responseId }]);
     } catch (error) {
       track("puri_error", { stage: "request" });
       setMessages([...nextMessages, { role: "assistant", content: error instanceof Error ? error.message : t("error"), failed: true }]);
-    } finally { sendingRef.current = false; setLoading(false); }
+    } finally { sendingRef.current = false; setLoading(false); window.dispatchEvent(new Event("commercial:usage-changed")); }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); void send(input); }
@@ -178,6 +180,7 @@ export function PuriAssistant() {
           <div className="flex min-w-0 items-center gap-2.5"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#171717]"><PuriMascot variant="default" compact className="h-11 w-11" /></div><div><h2 id={titleId} className="text-lg font-black leading-none">Puri</h2><p className="mt-1 text-xs font-semibold text-[#5B486C]">{t("subtitle")}</p></div></div>
           <button type="button" onClick={() => setOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white shadow-[2px_2px_0_#171717] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]" aria-label={t("close")}><X className="h-5 w-5" /></button>
         </header>
+        <div className="shrink-0 px-3 pt-3"><CommercialUsagePanel compact refreshKey={messages.length} /></div>
         <div ref={scrollerRef} onScroll={(event) => { const node = event.currentTarget; stickToBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 96; }} className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5">
           {messages.length === 0 ? <div className="space-y-5"><div className="rounded-[1.5rem] border-[3px] border-black bg-[#FFF5BA] px-5 pb-5 pt-3 shadow-[4px_4px_0_#171717]"><PuriMascot variant="greeting" className="mx-auto h-36 w-36" /><p className="text-center text-xl font-black leading-tight">{t("emptyTitle")}</p><p className="mx-auto mt-1 max-w-64 text-center text-sm font-medium leading-snug text-[#534B40]">{t("emptyBody")}</p></div><div className="grid gap-2">{suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => void send(suggestion)} className="min-h-11 rounded-xl border-2 border-black bg-white px-3.5 py-2.5 text-left text-sm font-bold shadow-[2px_2px_0_#171717] transition hover:-translate-y-0.5 hover:bg-[#F4EBFF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C3AED]">{suggestion}</button>)}</div></div>
           : messages.map((message, index) => <div key={index} className={message.role === "user" ? "ml-8" : "mr-2"}>

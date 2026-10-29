@@ -26,4 +26,13 @@ describe("Puri metadata classification", () => {
     process.env.PURI_MODEL_PRICES_USD_PER_MILLION = JSON.stringify({ "test-model": { input: 2, output: 10 } });
     expect(estimatePuriCostUsd(usage)).toBeCloseTo(0.004);
   });
+  it("records the verified Standard cost only with complete usage and the matching service tier", () => {
+    process.env.PURI_PLUS_VERIFIED_PRICING_ENABLED = "1";
+    try {
+      const usage = { ...emptyPuriTelemetry("gpt-6-luna"), promptTokens: 1000, completionTokens: 200, cachedTokens: 100, cacheWriteTokens: 200, serviceTier: "default" };
+      expect(estimatePuriCostUsd(usage)).toBe(.000196);
+      expect(estimatePuriCostUsd({ ...usage, cacheWriteTokens: undefined })).toBeNull();
+      expect(estimatePuriCostUsd({ ...usage, serviceTier: "fast" })).toBeNull();
+    } finally { delete process.env.PURI_PLUS_VERIFIED_PRICING_ENABLED; }
+  });
 });

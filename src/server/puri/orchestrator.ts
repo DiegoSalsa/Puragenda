@@ -104,9 +104,10 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
       max_output_tokens: 1_200,
       reasoning: { effort: "low" },
       store: false,
+      ...(input.context.commercialV2 ? { service_tier: "default" as const } : {}),
     };
     const response = input.extension ? await input.extension.createResponse(parameters)
-      : input.context.commercialV2 ? await withCommercialPuriUsage({ businessId: input.context.business.id, model: PURI_MODEL, parameters, maxRetries: openai!.maxRetries, run: () => openai!.responses.create(parameters) })
+      : input.context.commercialV2 ? await withCommercialPuriUsage({ businessId: input.context.business.id, model: PURI_MODEL, parameters, maxRetries: 0, run: () => openai!.responses.create(parameters, { maxRetries: 0, timeout: 20000 }) })
       : await openai!.responses.create(parameters);
     if (input.telemetry) {
       input.telemetry.modelDurationMs += Math.round(performance.now() - modelStarted);
@@ -114,6 +115,9 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
       input.telemetry.promptTokens += response.usage?.input_tokens ?? 0;
       input.telemetry.completionTokens += response.usage?.output_tokens ?? 0;
       input.telemetry.cachedTokens += response.usage?.input_tokens_details?.cached_tokens ?? 0;
+      const writes = response.usage?.input_tokens_details?.cache_write_tokens;
+      input.telemetry.cacheWriteTokens = round === 0 ? writes : input.telemetry.cacheWriteTokens !== undefined && writes !== undefined ? input.telemetry.cacheWriteTokens + writes : undefined;
+      input.telemetry.serviceTier = round === 0 ? response.service_tier : input.telemetry.serviceTier === response.service_tier ? response.service_tier : "unknown";
     }
     const calls = (response.output as unknown[]).filter((item): item is { type: "function_call"; name: string; arguments: string; call_id: string } => (item as { type?: string }).type === "function_call");
     if (calls.length === 0) {

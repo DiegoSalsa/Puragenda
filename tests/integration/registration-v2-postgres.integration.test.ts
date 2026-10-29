@@ -14,6 +14,7 @@ import { withStaffCapacityLock, assertStaffCapacity, getStaffLimitInfo } from "@
 import { reconcileCommercialEvent, type ReconciledCommercialEvidence } from "@/server/services/commercial-reconciliation.service";
 import { reserveGrowthUsage, settleGrowthUsage } from "@/server/puri/growth/budgets";
 import { commercialUsagePolicySchema } from "@/server/services/commercial-usage-policy";
+import { getCommercialUsageSummary } from "@/server/services/commercial-usage-summary";
 
 const suite = describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 const users: string[] = [], businesses: string[] = [], ips: string[] = [];
@@ -142,5 +143,20 @@ suite("Next registration and real local trial lifecycle", () => {
     const sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId } });
     const later = new Date(+sub.trialStart! + 20 * 86400000);
     await expect(reserveGrowthUsage({ ...request, key: randomUUID(), now: later })).rejects.toThrow("BUDGET_EXHAUSTED");
+  });
+  it.each(["PURAGENDA", "PURAGENDA_PLUS"] as const)("enforces %s trial credits concurrently and exposes only commercial consumption", async plan => {
+    const c = await register(plan), businessId = c.business.id, budget = { limitUnits: 2, limitMicros: 1000 };
+    const allocation = { puri: { ALL: budget, STANDARD_INTERACTIVE: budget, PLUS_INTERACTIVE: budget } };
+    process.env.COMMERCIAL_USAGE_POLICY_JSON = JSON.stringify({ version: "synthetic-qa-only", trial: { [plan]: allocation }, paid: {}, global: { puri: { limitUnits: 1000000, limitMicros: 1000000 } } });
+    const calls = await Promise.allSettled([1, 2, 3].map(() => reserveGrowthUsage({ businessId, category: "STANDARD_INTERACTIVE", key: randomUUID(), inputHash: "synthetic", micros: 1 })));
+    expect(calls.filter(result => result.status === "fulfilled")).toHaveLength(2);
+    expect(calls.filter(result => result.status === "rejected")).toHaveLength(1);
+    const usage = await getCommercialUsageSummary(businessId);
+    expect(usage!.items[0]).toMatchObject({ state: "EXHAUSTED", reserved: 2, remaining: 0 });
+    expect(JSON.stringify(usage)).not.toMatch(/Micros|Tokens|credential/);
+    if (plan === "PURAGENDA") await expect(reserveGrowthUsage({ businessId, category: "PLUS_INTERACTIVE", key: randomUUID(), inputHash: "synthetic", micros: 1 })).rejects.toThrow("PLUS_ENTITLEMENT_REQUIRED");
+    const sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId } });
+    await expect(reserveGrowthUsage({ businessId, category: "STANDARD_INTERACTIVE", key: randomUUID(), inputHash: "synthetic", micros: 1, now: sub.trialEnd! })).rejects.toThrow("COMMERCIAL_ACCESS_REQUIRED");
+    expect(await prisma.puriUsageReservation.count({ where: { businessId } })).toBe(2);
   });
 });

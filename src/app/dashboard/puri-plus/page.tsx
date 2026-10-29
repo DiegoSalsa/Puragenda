@@ -18,7 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
   if (!business) notFound();
   const owner = business.ownerId === user.id;
   const subscription = owner ? await prisma.commercialSubscription.findUnique({ where: { businessId: business.id }, select: {
-    planCode: true, status: true, periodEnd: true, renewalAt: true, professionalTotal: true, lastPaymentStatus: true, totalPriceClp: true, billingCycle: true, termsSnapshot: true,
+    planCode: true, status: true, trialEnd: true, periodEnd: true, renewalAt: true, professionalTotal: true, lastPaymentStatus: true, totalPriceClp: true, billingCycle: true, termsSnapshot: true,
   } }) : null;
   return <div className="space-y-6 pb-8">
     <section className="rounded-2xl border-2 border-black bg-white p-5 text-black shadow-[3px_3px_0_#171717]">
@@ -27,10 +27,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
         <Link href="/dashboard/puri-plus/settings" className="rounded-xl border-2 border-black px-4 py-2 text-sm font-bold">Configuración y límites</Link>
       </div>
       <p className="mt-3 text-sm">Detecta oportunidades con tus reservas, revisa estrategias y autoriza cada campaña desde tu dashboard.</p>
-      {owner && <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+      {owner && subscription?.planCode !== "PURAGENDA_PLUS" && <p className="mt-4 text-sm">{subscription?.planCode === "PURAGENDA" ? "Tu plan Puragenda incluye Puri estándar. " : ""}Puri avanzado, Contact Flow y el sitio web están incluidos en Puragenda+. <Link href="/dashboard/settings#plan" className="font-bold underline">Ver Puragenda+</Link></p>}
+      {owner && subscription?.planCode === "PURAGENDA_PLUS" && <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
         <div><p className="font-bold">{subscription?.status === "TRIALING" ? "Precio al contratar" : "Tu plan"}</p><p>{new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(subscription?.totalPriceClp ?? COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly)} CLP/{subscription?.billingCycle === "ANNUAL" ? "año" : "mes"} · IVA incluido</p><p className="text-xs">{subscription?.professionalTotal ?? 1} profesional(es), sitio web, Puri+ y Contact Flow.</p></div>
-        <div><p className="font-bold">Suscripción</p><p>{subscription?.planCode === "PURAGENDA_PLUS" ? commercialStatusLabel(subscription.status) : "Sin Puragenda+ contratado"}</p><p className="text-xs">Pago: {commercialStatusLabel(subscription?.lastPaymentStatus)}</p></div>
-        <div><p className="font-bold">{subscription?.status === "TRIALING" ? "Fin de la prueba gratuita" : "Período pagado"}</p><p>{subscription?.periodEnd ? new Intl.DateTimeFormat("es-CL", { dateStyle: "medium", timeZone: business.timezone }).format(subscription.periodEnd) : "Sin período confirmado"}</p><p className="text-xs">Las capacidades premium se verifican en cada operación.</p></div>
+        <div><p className="font-bold">Suscripción</p><p>{commercialStatusLabel(subscription.status)}</p><p className="text-xs">{subscription.status === "TRIALING" ? "Tu prueba no requiere un pago." : `Pago: ${commercialStatusLabel(subscription.lastPaymentStatus)}`}</p></div>
+        <div><p className="font-bold">{subscription.status === "TRIALING" ? "Fin de la prueba gratuita" : "Período pagado"}</p><p>{(subscription.status === "TRIALING" ? subscription.trialEnd : subscription.periodEnd) ? new Intl.DateTimeFormat("es-CL", { dateStyle: "medium", timeZone: business.timezone }).format((subscription.status === "TRIALING" ? subscription.trialEnd : subscription.periodEnd)!) : "Sin período confirmado"}</p><p className="text-xs">{subscription.status === "TRIALING" ? "Puedes utilizar las funciones de tu plan dentro de su cupo durante la prueba." : "Conservas tu acceso durante el periodo indicado."}</p></div>
       </div>}
     </section>
     {owner && (subscription?.termsSnapshot as { sandboxFixture?: boolean } | null)?.sandboxFixture === true && <CommercialSubscriptionPanel />}

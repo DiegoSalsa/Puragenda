@@ -93,9 +93,8 @@ export async function PuriPlusWorkspace({
             ? await contactSnapshot(scope)
             : undefined,
         signals: await listGrowthSignals(scope),
-        recommendations: await listGrowthRecommendations(scope),
-        budgets: await growthBudgetSnapshot(scope),
-        usage: await growthUsageSummary(scope),
+        recommendations: (await listGrowthRecommendations(scope)).map(row => dashboard ? { id: row.id, title: row.title, explanation: row.explanation, status: row.status, version: row.version, contentHash: row.contentHash, strategy: row.strategy, expiresAt: row.expiresAt, evidence: row.evidence } : row),
+        ...(dashboard ? {} : { budgets: await growthBudgetSnapshot(scope), usage: await growthUsageSummary(scope) }),
         locations,
         selectedLocationSlug: context.location?.slug,
         capabilities: { canPrepare: scope.canPrepare },
@@ -111,8 +110,7 @@ export async function PuriPlusWorkspace({
       <main className="mx-auto max-w-2xl p-8">
         <h1 className="text-2xl font-bold">Puri+ requiere acceso autorizado</h1>
         <p className="mt-4">
-          Necesitas Puragenda+ con pago confirmado y permisos efectivos para
-          esta sucursal.
+          Necesitas una prueba vigente o un periodo activo de Puragenda+ y permisos para esta sucursal.
         </p>
       </main>
     );

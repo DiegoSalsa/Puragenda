@@ -6,7 +6,7 @@ import {
   commercialInteger,
 } from "@/server/services/commercial-internal";
 import { estimatePuriCostUsd } from "../telemetry";
-import { PLUS_VERIFIED_PRICE } from "./pricing";
+import { PLUS_VERIFIED_PRICE, verifiedModelMicros } from "./pricing";
 import {
   assertGrowthSandbox,
   revalidateGrowthScope,
@@ -222,8 +222,7 @@ export function knownModelMicros(
     return null;
   if (usesVerifiedPrice(model)) {
     const writes = usage?.input_tokens_details?.cache_write_tokens;
-    if (writes === undefined || !Number.isSafeInteger(writes) || writes < 0 || writes + c > i || Date.now() >= Date.parse(PLUS_VERIFIED_PRICE.validUntil)) return null;
-    return Math.ceil((i - c - writes) * PLUS_VERIFIED_PRICE.input + c * PLUS_VERIFIED_PRICE.cachedInput + writes * PLUS_VERIFIED_PRICE.cacheWrite + o * PLUS_VERIFIED_PRICE.output);
+    return verifiedModelMicros(model, i, o, c, writes);
   }
   const usd = estimatePuriCostUsd({
     model,

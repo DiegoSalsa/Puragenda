@@ -11,6 +11,7 @@ import {
 } from "./contracts";
 import { collectGrowthEvidence, type GrowthEvidence } from "./evidence";
 import { reserveGrowthUsage, settleGrowthUsage } from "./budgets";
+import { commercialUsageContext } from "@/server/services/commercial-usage-policy";
 
 export function recommendationHash(
   r: Pick<
@@ -258,7 +259,14 @@ export async function prepareGrowthStrategy(
     const cohort = e.cohort as
       | { thresholdDays: number; inactive: number }
       | undefined;
-    // These are review ceilings for a proposal, never an approved sending allocation.
+    const usage = await commercialUsageContext(scope.businessId, now, tx);
+    const registered = (usage?.sub.termsSnapshot as { origin?: string } | null)?.origin === "registration_v2";
+    const allowance = usage?.allocation?.contactFlow;
+    if (registered && (!allowance || allowance.maxContactsPerCampaign === undefined || allowance.campaignsPerPeriod === undefined)) throw new Error("COMMERCIAL_USAGE_LIMITS_UNDEFINED");
+    const monthlyLimit = registered ? Math.min(100, allowance!.maxContactsPerCampaign!, allowance!.monthlyLimit, usage!.trial ? allowance!.trialLimit ?? 0 : 100) : 50;
+    const dailyLimit = registered ? Math.min(10, allowance!.dailyLimit, monthlyLimit) : 5;
+    if (dailyLimit < 1 || monthlyLimit < 1) throw new Error("CAMPAIGN_QUOTA_EXHAUSTED");
+    // Review ceilings follow configured allowances; approval still never sends.
     const strategy: GrowthStrategy = strategySchema.parse({
       version: 1,
       objective:
@@ -278,8 +286,8 @@ export async function prepareGrowthStrategy(
       },
       frequency: "DAILY_GRADUAL",
       durationDays: 14,
-      dailyLimit: 5,
-      monthlyLimit: 50,
+      dailyLimit,
+      monthlyLimit,
       exclusionRules: [
         "NO_VERIFIED_CONSENT",
         "SUPPRESSED",
@@ -321,6 +329,7 @@ async function verifyFreshEvidence(
   scope: GrowthScope,
   r: PuriGrowthRecommendation,
   now: Date,
+  preserveApprovedWindow = false,
 ) {
   const run = await prisma.puriGrowthRun.findFirstOrThrow({
     where: {
@@ -342,7 +351,7 @@ async function verifyFreshEvidence(
     const current = await collectGrowthEvidence(
       scope,
       growthRulesSchema.parse(evidence.rules),
-      now,
+      preserveApprovedWindow ? run.createdAt : now,
     );
     return current.hash === r.evidenceHash;
   } finally {
@@ -482,6 +491,7 @@ export async function approvedGrowthHandoff(
   hash: string,
   version: number,
   now = new Date(),
+  preserveApprovedWindow = false,
 ) {
   await revalidateGrowthScope(scope, now);
   requirePrepare(scope);
@@ -495,7 +505,7 @@ export async function approvedGrowthHandoff(
   });
   assertHash(r, hash, version);
   if (r.expiresAt <= now) throw new Error("RECOMMENDATION_EXPIRED");
-  if (!(await verifyFreshEvidence(scope, r, now))) {
+  if (!(await verifyFreshEvidence(scope, r, now, preserveApprovedWindow))) {
     await prisma.puriGrowthRecommendation.updateMany({
       where: { id: r.id, status: "APPROVED", contentHash: hash },
       data: { status: "STALE" },

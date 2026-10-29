@@ -114,13 +114,18 @@ export async function POST(request: NextRequest) {
       });
     }
     await expireGrowthRecords(scope);
+    const dashboard = request.nextUrl.pathname.startsWith("/api/dashboard/");
+    if (dashboard && result && typeof result === "object" && "costMicros" in result) {
+      const publicResult = { ...result } as Record<string, unknown>;
+      delete publicResult.costMicros; delete publicResult.costKnown; delete publicResult.errorCode;
+      result = publicResult;
+    }
     return Response.json(
       {
         result,
         signals: await listGrowthSignals(scope),
-        recommendations: await listGrowthRecommendations(scope),
-        budgets: await growthBudgetSnapshot(scope),
-        usage: await growthUsageSummary(scope),
+        recommendations: (await listGrowthRecommendations(scope)).map(row => dashboard ? { id: row.id, title: row.title, explanation: row.explanation, status: row.status, version: row.version, contentHash: row.contentHash, strategy: row.strategy, expiresAt: row.expiresAt, evidence: row.evidence } : row),
+        ...(request.nextUrl.pathname.startsWith("/api/dashboard/") ? {} : { budgets: await growthBudgetSnapshot(scope), usage: await growthUsageSummary(scope) }),
         capabilities: {
           tier: scope.canPrepare ? "PURI_PLUS_PREPARE" : "PURI_PLUS",
           canMoney: scope.canMoney,

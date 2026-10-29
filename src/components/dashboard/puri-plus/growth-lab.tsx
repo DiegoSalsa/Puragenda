@@ -5,6 +5,8 @@ import { PuriMascot } from "@/components/brand/puri-mascot";
 import { PuriMessageText } from "@/components/dashboard/puri-message-text";
 import type { GrowthStrategy } from "@/server/puri/growth/contracts";
 import { ContactFlowLab, type ContactFlowSnapshot } from "./contact-flow-lab";
+import { CommercialUsagePanel } from "../commercial-usage-panel";
+import { commercialUsageMessage } from "@/core/commercial-usage";
 type Signal = {
   id: string;
   kind: string;
@@ -31,7 +33,7 @@ export type GrowthLabData = {
   contactFlowOwner?: boolean;
   signals: Signal[];
   recommendations: Recommendation[];
-  budgets: {
+  budgets?: {
     category: string;
     limitUnits: number;
     spentUnits: number;
@@ -41,7 +43,7 @@ export type GrowthLabData = {
     unknownCost: boolean;
     alertLevel: number;
   }[];
-  usage: {
+  usage?: {
     inputTokens: number | null;
     outputTokens: number | null;
     cachedTokens: number | null;
@@ -227,6 +229,7 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.code ?? "UNAVAILABLE");
+      window.dispatchEvent(new Event("commercial:usage-changed"));
       setData({
         contactFlowEnabled: initialData.contactFlowEnabled,
         contactFlowSnapshot: initialData.contactFlowSnapshot,
@@ -239,11 +242,11 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
         setReply(
           body.result.answer.message +
             (body.result.fallback
-              ? "\nExplicación determinista; IA no disponible o sin presupuesto autorizado."
+              ? "\nResumen preparado con datos verificados del negocio."
               : ""),
         );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "UNAVAILABLE");
+      setError(e instanceof Error ? commercialUsageMessage(e.message) ?? e.message : "No pudimos completar la consulta. Inténtalo nuevamente.");
     } finally {
       setBusy(false);
     }
@@ -560,7 +563,7 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
           owner={data.contactFlowOwner === true}
         />
       )}
-      <section aria-labelledby="usage">
+      {dashboard ? <CommercialUsagePanel refreshKey={data.recommendations.length + data.signals.length} /> : <section aria-labelledby="usage">
         <h2 id="usage" className="mb-3 text-xl font-black">
           Uso y límites del mes
         </h2>
@@ -575,7 +578,7 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
-          {data.budgets.map((b) => (
+          {(data.budgets ?? []).map((b) => (
             <div
               key={b.category}
               className="rounded-xl border border-black bg-white p-4 text-sm"
@@ -597,7 +600,7 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
               </p>
             </div>
           ))}
-          {data.budgets.length === 0 && (
+          {!data.budgets?.length && (
             <p className="text-sm">
               El detalle de uso requiere autorización financiera del negocio. Si
               está autorizado y no aparece presupuesto, el procesamiento
@@ -605,7 +608,7 @@ export function GrowthLab({ initialData, dashboard = false }: { initialData: Gro
             </p>
           )}
         </div>
-      </section>
+      </section>}
     </Container>
   );
 }
