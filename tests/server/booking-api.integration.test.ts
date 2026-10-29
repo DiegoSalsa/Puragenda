@@ -193,6 +193,32 @@ describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
     expect(await prisma.appointment.findFirst()).toMatchObject({ status: "CANCELLED", paymentStatus: "REJECTED" });
     expect(mocks.preference).toHaveBeenCalledTimes(1); expect(mocks.notify).not.toHaveBeenCalled();
   });
+  it.each(["absent", "expired", "unavailable"])("never waives a mandatory integrated deposit when seller authorization is %s", async failure => {
+    await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: true, depositPaymentMode: "MERCADOPAGO" } });
+    if (failure === "unavailable") mocks.oauth.mockRejectedValueOnce(new Error("synthetic token refresh failure"));
+    else mocks.oauth.mockResolvedValueOnce(null);
+    const result = await POST(post(), ctx);
+    expect(result.status).toBe(503);
+    expect(await result.json()).toMatchObject({ code: "DEPOSIT_UNAVAILABLE" });
+    expect(await prisma.appointment.count()).toBe(0);
+    expect(mocks.preference).not.toHaveBeenCalled(); expect(mocks.notify).not.toHaveBeenCalled();
+  });
+  it.each(["free", "no-deposit", "not-required"])("does not require seller authorization when a deposit does not apply: %s", async scenario => {
+    await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: scenario !== "not-required", depositPaymentMode: "MERCADOPAGO" } });
+    await prisma.service.update({ where: { id: "local-service" }, data: scenario === "free" ? { price: 0 } : scenario === "no-deposit" ? { depositAmount: 0 } : {} });
+    const response = await POST(post(), ctx);
+    expect(response.status).toBe(201); expect(await response.json()).toMatchObject({ depositRequired: false });
+    expect(mocks.oauth).not.toHaveBeenCalled(); expect(mocks.preference).not.toHaveBeenCalled();
+  });
+  it("allows retrying the same operation after seller authorization recovers without duplicate effects", async () => {
+    await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: true, depositPaymentMode: "MERCADOPAGO" } });
+    expect((await POST(post(), ctx)).status).toBe(503);
+    mocks.oauth.mockResolvedValue("fixture-provider-token");
+    expect((await POST(post(), ctx)).status).toBe(201);
+    expect((await POST(post(), ctx)).status).toBe(201);
+    expect(await prisma.appointment.count()).toBe(1); expect(mocks.preference).toHaveBeenCalledTimes(1);
+    expect(await prisma.appointment.findFirst()).toMatchObject({ status: "AWAITING_PAYMENT", paymentHoldExpiresAt: new Date(Date.now() + 10 * 60_000) });
+  });
   it("revalidates the canonical selection at transactional write time", async () => {
     mocks.busy.mockImplementationOnce(async () => [])
       .mockImplementationOnce(async () => { await prisma.service.update({ where: { id: "local-service" }, data: { price: 23000 } }); return []; });

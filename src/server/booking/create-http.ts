@@ -721,9 +721,14 @@ async function handleBooking(
       }
     }
 
-    const businessMpAccessToken = business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink
-      ? await getValidMercadoPagoAccessToken(business.id)
-      : null;
+    let businessMpAccessToken: string | null = null;
+    if (business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink) {
+      try { businessMpAccessToken = await getValidMercadoPagoAccessToken(business.id); }
+      catch { /* A refresh failure cannot waive an obligatory deposit. */ }
+      if (!businessMpAccessToken) {
+        return Response.json({ error: "El abono obligatorio no está disponible temporalmente. Contacta al negocio o intenta más tarde.", code: "DEPOSIT_UNAVAILABLE" }, { status: 503 });
+      }
+    }
     if (
       businessMpAccessToken
       && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
