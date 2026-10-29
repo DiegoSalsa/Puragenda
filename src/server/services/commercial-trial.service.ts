@@ -1,18 +1,12 @@
-import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { TRIAL_DURATION_DAYS } from "@/core/constants";
-import { COMMERCIAL_CATALOG_VERSION, COMMERCIAL_MAX_PROFESSIONALS, quoteCommercialContract } from "@/core/commercial-catalog";
+import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
+import { commercialSelectionSchema, type CommercialSelection } from "@/core/commercial-selection";
+export { commercialSelectionSchema, type CommercialSelection } from "@/core/commercial-selection";
 import { commercialHash } from "./commercial-internal";
 import { commercialJson, materializeCommercialEntitlements } from "./commercial-subscription-v2.service";
 import { effectiveSnapshotAccess } from "./commercial-plan-access";
-
-export const commercialSelectionSchema = z.object({
-  plan: z.enum(["PURAGENDA", "PURAGENDA_PLUS"]),
-  professionalTotal: z.number().int().min(1).max(COMMERCIAL_MAX_PROFESSIONALS),
-  billingCycle: z.enum(["MONTHLY", "ANNUAL"]),
-}).strict();
-export type CommercialSelection = z.infer<typeof commercialSelectionSchema>;
 
 function contractTerms(selection: CommercialSelection) {
   const quote = quoteCommercialContract({ ...selection, catalogVersion: COMMERCIAL_CATALOG_VERSION });
@@ -75,6 +69,7 @@ export async function changeCommercialTrial(input: CommercialSelection & { busin
     const prior = await tx.commercialEvent.findUnique({ where: { source_eventId: { source: "trial_selection", eventId } } });
     if (prior) { if (prior.payloadHash !== payloadHash) throw new Error("IDEMPOTENCY_CONFLICT"); return { duplicate: true }; }
     const current = await tx.commercialSubscription.findUniqueOrThrow({ where: { businessId: input.businessId } });
+    if (await tx.commercialBillingOperation.findFirst({ where: { businessId: input.businessId, environment: { in: ["V2_SANDBOX", "V2_PRODUCTION"] }, status: { in: ["PREPARED", "EXECUTING", "UNKNOWN", "AWAITING_PAYMENT", "SCHEDULED"] } } })) throw new Error("V2_OPERATION_ALREADY_OPEN");
     if (current.status !== "TRIALING" || !effectiveSnapshotAccess(current, now).commercialAccess) throw new Error("ACTIVE_TRIAL_REQUIRED");
     if (await tx.staff.count({ where: { businessId: input.businessId, isActive: true } }) > selection.professionalTotal) throw new Error("ACTIVE_PROFESSIONALS_EXCEED_SELECTION");
     const { quote, terms } = contractTerms(selection);

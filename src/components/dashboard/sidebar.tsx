@@ -214,12 +214,8 @@ function SidebarContent({
 }) {
   const t = useTranslations("navigation");
   const pathname = usePathname();
-  const baseUrl =
-    process.env.NODE_ENV === "production"
-      ? "https://www.puragenda.cl"
-      : "http://localhost:3000";
   const widgetHref = widgetSlug
-    ? new URL(`/widget/${widgetSlug}`, baseUrl).toString()
+    ? `/widget/${encodeURIComponent(widgetSlug)}`
     : "/dashboard/settings";
   const isOnAppearance = pathname.startsWith("/dashboard/appearance");
   const [appearanceOpen, setAppearanceOpen] = useState(isOnAppearance);

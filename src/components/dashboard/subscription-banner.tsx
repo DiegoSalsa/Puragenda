@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
 import { PRICING, STAFF_LIMITS } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
+import { isV2Plan } from "@/server/services/commercial-plan-access";
 
 export async function SubscriptionBanner({
   businessId,
@@ -21,6 +22,17 @@ export async function SubscriptionBanner({
 }) {
   const subscription = await prisma.subscription.findUnique({ where: { businessId } });
   if (!subscription) return null;
+
+  if (isV2Plan(subscription.plan)) {
+    const contract = await prisma.commercialSubscription.findUnique({ where: { businessId }, select: { planCode: true, professionalTotal: true, billingCycle: true, status: true, trialEnd: true } });
+    if (hideHealthyStatus && contract?.status === "ACTIVE") return null;
+    const days = contract?.trialEnd ? Math.max(0, Math.ceil((+contract.trialEnd - new Date().getTime()) / 86400000)) : 0;
+    return <section aria-label="Plan de Puragenda" className="rounded-2xl border border-border bg-card p-5 text-sm">
+      <p className="font-semibold">{subscription.plan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"}{contract ? ` · ${contract.professionalTotal} ${contract.professionalTotal === 1 ? "profesional" : "profesionales"} · ${contract.billingCycle === "ANNUAL" ? "Anual" : "Mensual"}` : ""}</p>
+      <p className="mt-1 text-muted-foreground">{!contract ? "Tu contrato requiere revisión." : contract.status === "TRIALING" && days > 0 ? `Te quedan ${days} días de prueba gratuita. No se realizan cobros automáticos durante la prueba.` : contract.status === "ACTIVE" ? "Tu suscripción está vigente." : "Revisa la vigencia y contratación de tu plan."}</p>
+      <Link href="/dashboard/settings" className="mt-3 inline-flex font-semibold underline">Revisar plan y contratación</Link>
+    </section>;
+  }
 
   const { plan, status, isTrial, trialEndsAt } = subscription;
   const daysLeft = trialEndsAt ? Math.max(0, differenceInDays(new Date(trialEndsAt), new Date())) : 0;

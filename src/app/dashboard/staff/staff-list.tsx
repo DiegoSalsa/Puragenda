@@ -62,7 +62,7 @@ function generateCode(): string {
   return code;
 }
 
-const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo" };
+const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo", PURAGENDA: "Puragenda", PURAGENDA_PLUS: "Puragenda+" };
 const ROLE_LABELS: Record<StaffAccessRole, string> = {
   ADMIN: "Admin",
   RECEPTIONIST: "Recepcionista",
@@ -322,7 +322,7 @@ export function StaffList({
 
   async function handleSaveServices(staffId: string) {
     setSavingServices(staffId);
-    await updateStaffServicesAction(staffId, staffServices[staffId] || []);
+    await updateStaffServicesAction(staffId, staffServices[staffId] ?? initialStaff.find((member) => member.id === staffId)?.serviceIds ?? []);
     setSavingServices(null);
     router.refresh();
   }
@@ -489,7 +489,8 @@ export function StaffList({
           const selectedLocationId = scheduleLocationIds[s.id] || s.locations[0]?.locationId || "";
           const scheduleStateKey = scheduleKey(s.id, selectedLocationId || undefined);
           const sched = schedules[scheduleStateKey] || schedules[s.id] || defaultSchedule();
-          const assignedServiceNames = (staffServices[s.id] || []).map((id) => serviceNameMap[id]).filter(Boolean);
+          const selectedServiceIds = staffServices[s.id] ?? s.serviceIds;
+          const assignedServiceNames = selectedServiceIds.map((id) => serviceNameMap[id]).filter(Boolean);
 
           return (
             <div key={s.id} className={`relative overflow-visible rounded-2xl border border-border bg-card transition-shadow hover:shadow-sm ${menuId === s.id ? "z-30" : "z-auto"}`}>
@@ -688,7 +689,7 @@ export function StaffList({
                       </p>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {allServices.map((svc) => {
-                          const checked = (staffServices[s.id] || []).includes(svc.id);
+                          const checked = selectedServiceIds.includes(svc.id);
                           return (
                             <label key={svc.id} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm cursor-pointer transition-all ${checked ? "border-[#7C3AED]/30 bg-[#7C3AED]/5" : "border-border hover:border-border/80"}`}>
                               <input
@@ -702,7 +703,7 @@ export function StaffList({
                           );
                         })}
                       </div>
-                      {(staffServices[s.id] || []).length === 0 && (
+                      {selectedServiceIds.length === 0 && (
                         <p className="flex items-center gap-1.5 rounded-xl bg-black px-3 py-2 text-xs font-medium text-white dark:bg-white dark:text-black"><AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> <LocalizedText id="3nFZYntceFS9" /></p>
                       )}
                       <button onClick={() => handleSaveServices(s.id)} disabled={savingServices === s.id}
