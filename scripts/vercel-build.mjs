@@ -1,6 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { validateProductionEnv } from "./validate-production-env.mjs";
 
+// This branch is published exclusively for independent code review.
+if (process.env.VERCEL_GIT_COMMIT_REF === "fix/puragenda-next-audit-01-registration") {
+  console.error("[vercel-build] AUDIT_BRANCH_BUILD_DISABLED: this review branch cannot deploy.");
+  process.exit(1);
+}
+
 // Publishing RC1 for code review must not deploy it into the connected project.
 // An authorized, separate staging project may opt in, always as Preview.
 if (process.env.VERCEL_GIT_COMMIT_REF === "release/puragenda-next-rc1" &&

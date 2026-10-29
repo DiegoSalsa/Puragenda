@@ -21,11 +21,18 @@ afterAll(()=>{
   rmSync(directory,{recursive:true,force:true});
 });
 describe("RC1 push/deployment isolation",()=>{
-  it("disables automatic Vercel deployment for exactly RC1 without changing legacy schedules",()=>{
+  it("disables automatic Vercel deployment for RC1 and the registration audit branch without changing legacy schedules",()=>{
     const config=JSON.parse(readFileSync("vercel.json","utf8"));
-    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false});
+    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false});
     expect(config.crons).toHaveLength(5);
     expect(config.crons.some((cron:{path:string})=>cron.path==="/api/cron/puragenda-next")).toBe(false);
+  });
+  it.each(["production","preview","development",""])("refuses every registration-audit %s build before any CLI executes",environment=>{
+    for(const approved of ["0","1"]) {
+      const r=run(environment,approved,"fix/puragenda-next-audit-01-registration");
+      expect(r.status).toBe(1);expect(r.stderr).toContain("AUDIT_BRANCH_BUILD_DISABLED");
+      expect(r.stdout).not.toContain("RC1_FAKE");expect(r.stdout).not.toContain("RC1_UNEXPECTED_MIGRATION");
+    }
   });
   it.each(["production","preview"])("refuses an unsolicited RC1 %s build before any CLI executes",environment=>{
     const r=run(environment);expect(r.status).toBe(1);expect(r.stderr).toContain("RC1_AUDIT_ONLY");expect(r.stdout).not.toContain("RC1_FAKE");expect(r.stdout).not.toContain("RC1_UNEXPECTED_MIGRATION");
