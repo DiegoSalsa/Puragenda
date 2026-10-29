@@ -1,0 +1,13 @@
+import {spawnSync} from "node:child_process";
+import {pathToFileURL} from "node:url";
+import {randomBytes} from "node:crypto";
+import path from "node:path";
+import {localCommercialDatabase} from "./commercial-migrations.mjs";
+const source=new URL(localCommercialDatabase(process.env.COMMERCIAL_V2_TEST_DATABASE_URL));
+source.pathname="/puragenda_booking_api_test";
+const allowed=new Set(["PATH","SYSTEMROOT","WINDIR","TEMP","TMP","APPDATA","LOCALAPPDATA","USERPROFILE","COMSPEC","PATHEXT","PROGRAMFILES","PROGRAMFILES(X86)"]);
+const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>allowed.has(key.toUpperCase())));
+Object.assign(env,{PURAGENDA_BOOKING_TEST_DATABASE_URL:source.href,AUTH_SECRET:randomBytes(32).toString("hex"),RESEND_API_KEY:"",PURAGENDA_NEXT_ENABLED:"0",CONTACT_FLOW_PRODUCTION_ENABLED:"0",CONTACT_FLOW_EXTERNAL_RELEASE:"false",NEXT_STAGING_NETWORK_GUARD:"1",NEXT_TELEMETRY_DISABLED:"1",NODE_OPTIONS:`--import=${pathToFileURL(path.resolve("scripts/next-staging-network-guard.mjs")).href}`});
+const args=process.argv.includes("--mcp")?["--mcp"]:[];
+const result=spawnSync(process.execPath,["scripts/test-booking-api-local.mjs",...args],{env,stdio:"inherit",windowsHide:true});
+process.exitCode=result.status??1;

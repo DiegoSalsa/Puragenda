@@ -17,3 +17,16 @@ crons = []
 [observability]
 enabled = true
 head_sampling_rate = 1
+
+# Dedicated staging configuration; never inherits the production destination.
+[env.staging]
+name = "puragenda-next-staging-scheduler"
+workers_dev = false
+preview_urls = false
+
+[env.staging.vars]
+SCHEDULER_ENABLED = "0"
+PURAGENDA_WORKER_URL = "https://next-staging.puragenda.cl/api/cron/puragenda-next"
+
+[env.staging.triggers]
+crons = []

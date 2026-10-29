@@ -35,7 +35,7 @@ try{
  const business=(await db.query('SELECT b.id FROM "Business" b JOIN "User" u ON u.id=b."ownerId" WHERE u.email=$1',[registered])).rows[0];assert(business);
  const site=async()=> (await db.query('SELECT * FROM "BusinessWebsite" WHERE "businessId"=$1',[business.id])).rows[0];
  const base=await site();assert(base);
- check("UI-created Plus business has persisted website draft",base.draftConfig.headline==="Reserva integral RC");
+ check("Registered Plus business has persisted website draft",base.draftConfig.headline==="Reserva integral RC");
  const form=new FormData();form.set("image",new Blob([fs.readFileSync("public/websites/pink-y2k/pink-dream.webp")],{type:"image/webp"}),"synthetic-cover.webp");form.set("usage","hero");
  const uploaded=await request("/api/website/media",cookie,{method:"POST",body:form});const asset=JSON.parse(uploaded.text).asset;
  check("Authenticated media upload uses only local mock storage",uploaded.response.status===200&&asset?.secureUrl.startsWith("/website-media-qa/"));

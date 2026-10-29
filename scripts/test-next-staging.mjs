@@ -76,7 +76,7 @@ try{
  const observed=await pool.query('SELECT "lastError","leaseUntil","lastSuccessAt" IS NOT NULL AS success FROM "CommercialWorkerState" LIMIT 1');
  ok("Worker reports last success and releases lease",observed.rows[0]?.success&&observed.rows[0].lastError===null&&observed.rows[0].leaseUntil===null);
  const booking=await pool.query('SELECT count(*)::int AS n FROM "Appointment" WHERE "customerEmail"=$1',['reserva-integral@rc.example.invalid']);
- ok("UI-created widget booking exists in isolated PostgreSQL",booking.rows[0].n===1);
+ ok("Public booking exists in isolated PostgreSQL",booking.rows[0].n===1);
  const report={passed:true,syntheticOnly:true,httpOrigin:origin,httpsCaValidated:true,externalProviderCalls:0,aiProviderCalls:0,checks};
  fs.writeFileSync(path.join(target,"integrated-http-results.json"),JSON.stringify(report,null,2));
  console.log(JSON.stringify(report,null,2));

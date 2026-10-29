@@ -14,7 +14,7 @@ function run(environment:string,approved="0",branch="release/puragenda-next-rc1"
   const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>allowed.has(key.toUpperCase()))) as Record<string,string>;
   const pathKey=Object.keys(env).find(key=>key.toUpperCase()==="PATH")??"PATH";
   env[pathKey]=directory+delimiter+env[pathKey];
-  return spawnSync(process.execPath,[resolve("scripts/vercel-build.mjs")],{cwd:directory,env:{...env,VERCEL_ENV:environment,VERCEL_GIT_COMMIT_REF:branch,PURAGENDA_RC1_STAGING_BUILD:approved},encoding:"utf8",windowsHide:true,timeout:10000});
+  return spawnSync(process.execPath,[resolve("scripts/vercel-build.mjs")],{cwd:directory,env:{...env,NODE_ENV:"test",VERCEL_ENV:environment,VERCEL_GIT_COMMIT_REF:branch,PURAGENDA_RC1_STAGING_BUILD:approved},encoding:"utf8",windowsHide:true,timeout:10000});
 }
 afterAll(()=>{
   if(dirname(resolve(directory))!==resolve(tmpdir())||!basename(directory).startsWith("puragenda-rc1-build-"))throw new Error("OWNED_TEST_DIRECTORY_REQUIRED");

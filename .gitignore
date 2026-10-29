@@ -91,3 +91,7 @@ next-env.d.ts
 /docs/puragenda-next/evidence/mercadopago-v2-webhooks-recovery-2026-10-28.json
 /docs/puragenda-next/evidence/resend-contact-*.jpg
 /docs/puragenda-next/evidence/resend-contact-certification-2026-10-28.json
+
+# Local scheduler runtime and secret bindings.
+/ops/commercial-scheduler/.dev.vars*
+/ops/commercial-scheduler/.wrangler/
