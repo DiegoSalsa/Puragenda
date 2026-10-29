@@ -1,3 +1,4 @@
+import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 import crypto from "node:crypto";
 import type { GoogleCalendarConnection } from "@prisma/client";
 import { fromZonedTime } from "date-fns-tz";
@@ -533,6 +534,7 @@ async function appointmentForGoogle(appointmentId: string) {
   return prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
+      location: { select: appointmentVenueSelect },
       service: { select: { name: true } },
       staff: {
         select: {
@@ -576,7 +578,8 @@ function selectAppointmentConnection(appointment: GoogleAppointment) {
   );
 }
 
-function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCalendarConnection) {
+async function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCalendarConnection) {
+  const venue = await resolveAppointmentVenue(appointment);
   const staffName = appointment.staff?.name ?? "Sin profesional asignado";
   const attendees = uniqueAttendees(
     [
@@ -604,14 +607,14 @@ function buildGoogleEvent(appointment: GoogleAppointment, connection: GoogleCale
     id: googleEventId(appointment.id),
     summary: `${appointment.service.name} · ${appointment.customerName}`,
     description,
-    location: appointment.customerAddress || appointment.business.address || undefined,
+    location: appointment.customerAddress || venue.businessAddress || undefined,
     start: {
       dateTime: appointment.startTime.toISOString(),
-      timeZone: appointment.business.timezone,
+      timeZone: venue.timezone,
     },
     end: {
       dateTime: appointment.endTime.toISOString(),
-      timeZone: appointment.business.timezone,
+      timeZone: venue.timezone,
     },
     attendees,
     extendedProperties: {
@@ -676,7 +679,7 @@ export async function syncAppointmentToGoogle(appointmentId: string) {
       await deleteMappedGoogleEvent(existingMapping);
     }
 
-    const event = buildGoogleEvent(appointment, connection);
+    const event = await buildGoogleEvent(appointment, connection);
     const path = `/calendar/v3/calendars/${encodeURIComponent(connection.calendarId)}/events`;
     let response: Response;
     const canUpdateExisting =

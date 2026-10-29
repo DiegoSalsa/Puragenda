@@ -1,3 +1,4 @@
+import { resolveAppointmentVenue } from "@/server/services/appointment-venue";
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { getAppointmentByIdAndBusiness, isAppointmentCapacityConflict } from "@/server/services/appointment.service";
@@ -64,7 +65,7 @@ async function sendConfirmedAppointmentNotifications(appointmentId: string) {
       startTime: fullAppointment.startTime,
       endTime: fullAppointment.endTime,
       businessName: fullAppointment.business.name,
-      timezone: fullAppointment.business.timezone,
+      ...await resolveAppointmentVenue(fullAppointment),
     });
   }
 }
@@ -296,7 +297,7 @@ export async function PATCH(
             startTime: fullAppointment.startTime,
             endTime: fullAppointment.endTime,
             businessName: fullAppointment.business.name,
-            timezone: fullAppointment.business.timezone,
+            ...await resolveAppointmentVenue(fullAppointment),
           });
         }
       }

@@ -1,4 +1,5 @@
 "use server";
+import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -859,6 +860,7 @@ export async function createScheduleBlockAction(data: {
         },
         include: {
           recurringBooking: { select: { id: true, customerName: true, customerEmail: true } },
+          location: { select: appointmentVenueSelect },
           service: { select: { name: true } },
           business: { select: { name: true, timezone: true } },
         },
@@ -893,7 +895,7 @@ export async function createScheduleBlockAction(data: {
             serviceName: apt.service.name,
             sessionDate: apt.startTime,
             businessName: apt.business.name,
-            timezone: apt.business.timezone,
+            ...await resolveAppointmentVenue(apt),
           });
         }
 

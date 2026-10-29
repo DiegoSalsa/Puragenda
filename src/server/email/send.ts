@@ -40,6 +40,7 @@ import { isSupportedLocale, resolveLocale } from "@/i18n/config";
 import { localizeEmailTemplate } from "./localization";
 import { ADMIN_NOTIFICATION_EMAILS } from "@/core/constants";
 import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
+import { resolveAppointmentVenue, type AppointmentVenueSource } from "@/server/services/appointment-venue";
 import {
   getClientPortalAppUrl,
   issueClientPortalEmailToken,
@@ -49,7 +50,7 @@ import {
 // TYPES
 // ═══════════════════════════════════════════
 
-interface AppointmentWithRelations {
+interface AppointmentWithRelations extends AppointmentVenueSource {
   id?: string;
   businessId?: string;
   recurringBookingId?: string | null;
@@ -187,9 +188,7 @@ export async function sendBookingNotifications(appointment: AppointmentWithRelat
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
-    timezone: appointment.business.timezone,
-    businessAddress: appointment.business.address,
-    businessMapsUrl: appointment.business.mapsUrl,
+    ...await resolveAppointmentVenue(appointment),
   };
 
   const tasks: Promise<unknown>[] = [];
@@ -296,9 +295,7 @@ export async function sendDepositConfirmedNotifications(
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
-    timezone: appointment.business.timezone,
-    businessAddress: appointment.business.address,
-    businessMapsUrl: appointment.business.mapsUrl,
+    ...await resolveAppointmentVenue(appointment),
     ...actionUrls,
   };
 
@@ -400,9 +397,7 @@ export async function sendConfirmationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
-    timezone: appointment.business.timezone,
-    businessAddress: appointment.business.address,
-    businessMapsUrl: appointment.business.mapsUrl,
+    ...await resolveAppointmentVenue(appointment),
     ...actionUrls,
   };
 
@@ -439,9 +434,7 @@ export async function sendCancellationEmail(appointment: AppointmentWithRelation
     startTime: appointment.startTime,
     endTime: appointment.endTime,
     businessName: appointment.business.name,
-    timezone: appointment.business.timezone,
-    businessAddress: appointment.business.address,
-    businessMapsUrl: appointment.business.mapsUrl,
+    ...await resolveAppointmentVenue(appointment),
   };
 
   const template = await addClientPortalLinkToEmail(
@@ -859,6 +852,8 @@ export async function sendAppointmentActionNotification(data: {
   endTime: Date;
   businessName: string;
   timezone?: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
   ownerEmail: string;
   locale?: AppLocale;
 }) {
@@ -905,6 +900,8 @@ export async function sendAppointmentActionStaffNotification(data: {
   endTime: Date;
   businessName: string;
   timezone?: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
   locale?: AppLocale;
 }) {
   const locale = await resolveEmailLocale({ locale: data.locale, staffEmail: data.staffEmail, businessName: data.businessName });

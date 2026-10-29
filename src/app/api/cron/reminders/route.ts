@@ -8,6 +8,7 @@ import { resolveLocale } from "@/i18n/config";
 import { isTomorrowInTimezone } from "@/lib/date";
 import { authorizeCronRequest } from "@/server/auth/cron";
 import { issueCustomerAppointmentToken } from "@/server/services/customer-appointment-action.service";
+import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 
 // ── Vercel Cron: scheduled daily at 14:00 UTC; local Chile time varies with DST. ──
 // Protected via CRON_SECRET to prevent unauthorized access.
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
   if (unauthorized) return unauthorized;
 
   try {
-    // Query a safe UTC window, then decide "tomorrow" in each business timezone.
+    // Query a safe UTC window, then decide "tomorrow" at the booked branch.
     const now = new Date();
     const candidates = await prisma.appointment.findMany({
       where: {
@@ -35,14 +36,14 @@ export async function GET(req: Request) {
         reminderSent: false,
       },
       include: {
+        location: { select: appointmentVenueSelect },
         service: { select: { name: true } },
         staff: { select: { name: true } },
-        business: { select: { name: true, timezone: true, locale: true } },
+        business: { select: { name: true, timezone: true, locale: true, address: true, mapsUrl: true } },
       },
     });
-    const appointments = candidates.filter((appointment) =>
-      isTomorrowInTimezone(appointment.startTime, now, appointment.business.timezone)
-    );
+    const withVenue = await Promise.all(candidates.map(async appointment => ({ appointment, venue: await resolveAppointmentVenue(appointment) })));
+    const appointments = withVenue.filter(({ appointment, venue }) => isTomorrowInTimezone(appointment.startTime, now, venue.timezone));
 
     if (appointments.length === 0) {
       return NextResponse.json({
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
     const errors: string[] = [];
     const appUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl" : "http://localhost:3000";
 
-    for (const apt of appointments) {
+    for (const { appointment: apt, venue } of appointments) {
       try {
         const actionToken = await issueCustomerAppointmentToken(apt.id, apt.startTime);
         if (!actionToken) {
@@ -74,7 +75,7 @@ export async function GET(req: Request) {
             startTime: apt.startTime,
             endTime: apt.endTime,
             businessName: apt.business.name,
-            timezone: apt.business.timezone,
+            ...venue,
             locale: resolveLocale(apt.business.locale),
             confirmUrl: `${appUrl}/cita/confirmar?manageToken=${actionToken}`,
             cancelUrl: `${appUrl}/cita/cancelar?manageToken=${actionToken}`,
@@ -119,6 +120,7 @@ export async function GET(req: Request) {
           expirationWarningSent: false,
         },
         include: {
+          location: { select: appointmentVenueSelect },
           service: {
             select: {
               name: true,
@@ -146,7 +148,7 @@ export async function GET(req: Request) {
             renewalMessage,
             managementToken: booking.managementToken || "",
             businessName: booking.business.name,
-            timezone: booking.business.timezone,
+            ...await resolveAppointmentVenue(booking),
             locale: resolveLocale(booking.business.locale),
           });
 
@@ -158,7 +160,7 @@ export async function GET(req: Request) {
               endDate: booking.endDate,
               daysLeft,
               businessName: booking.business.name,
-              timezone: booking.business.timezone,
+              ...await resolveAppointmentVenue(booking),
               locale: resolveLocale(booking.business.locale),
             });
           }
@@ -195,6 +197,7 @@ export async function GET(req: Request) {
         include: {
           recurringBooking: {
             include: {
+              location: { select: appointmentVenueSelect },
               service: { select: { name: true } },
               business: { select: { name: true, timezone: true, locale: true } },
             },
@@ -209,7 +212,7 @@ export async function GET(req: Request) {
           serviceName: override.recurringBooking.service.name,
           originalDate: override.originalDate,
           businessName: override.recurringBooking.business.name,
-          timezone: override.recurringBooking.business.timezone,
+          ...await resolveAppointmentVenue(override.recurringBooking),
           locale: resolveLocale(override.recurringBooking.business.locale),
         });
 

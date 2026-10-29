@@ -248,6 +248,18 @@ describe("Google Calendar integration", () => {
       expect.objectContaining({ where: { appointmentId: "appointment-1" } }),
     );
   });
+  it.each(["America/Santiago", "Pacific/Easter"].flatMap(timezone => [false, true].map(mapped => ({ timezone, mapped }))))("keeps the UTC instant for new and existing branch events: %j", async ({ timezone, mapped }) => {
+    const row = { ...appointment(), customerAddress: null, startTime: new Date("2026-07-04T04:30:00Z"), endTime: new Date("2026-07-04T05:00:00Z"),
+      locationId: "booked-branch", location: { timezone, address: "Booked branch 100", mapsUrl: null },
+      googleCalendarEvent: mapped ? { id: "synthetic-mapping", connectionId: staffConnection.id, calendarId: staffConnection.calendarId, googleEventId: "synthetic-event", connection: staffConnection } : null };
+    prismaMock.appointment.findUnique.mockResolvedValue(row);
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ id: "synthetic-event" })); vi.stubGlobal("fetch", fetchMock);
+    expect(await syncAppointmentToGoogle(row.id)).toMatchObject({ synced: true, action: mapped ? "updated" : "created" });
+    expect(fetchMock.mock.calls[0][1].method).toBe(mapped ? "PUT" : "POST");
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toMatchObject({ location: "Booked branch 100", start: { dateTime: row.startTime.toISOString(), timeZone: timezone }, end: { dateTime: row.endTime.toISOString(), timeZone: timezone } });
+    expect(row.startTime.toISOString()).toBe("2026-07-04T04:30:00.000Z");
+  });
 
   it("deletes the mapped Google event when an appointment is cancelled", async () => {
     const mappedAppointment = appointment("CANCELLED");

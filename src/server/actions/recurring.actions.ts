@@ -1,4 +1,5 @@
 "use server";
+import { resolveAppointmentVenue } from "@/server/services/appointment-venue";
 
 import { prisma } from "@/server/db/prisma";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
@@ -423,7 +424,7 @@ export async function createRecurringBookingAction(data: {
           healthAnswers: data.healthAnswers,
           healthFreeText: data.healthFreeText,
           businessName: business.name,
-          timezone: business.timezone,
+          timezone: location.timezone,
         });
       }
     } else {
@@ -440,7 +441,7 @@ export async function createRecurringBookingAction(data: {
         conflicts: conflictDates,
         managementToken,
         businessName: business.name,
-        timezone: business.timezone,
+        timezone: location.timezone,
       });
     }
   } catch (err) {
@@ -549,7 +550,7 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
       endDate: booking.endDate,
       managementToken: booking.managementToken ?? "",
       businessName: business.name,
-      timezone: business.timezone,
+      ...await resolveAppointmentVenue({ ...booking, business }),
     });
   } catch (err) {
     console.error("[recurring.actions] Error sending approval email:", err);

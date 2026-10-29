@@ -178,6 +178,15 @@ function enterpriseDetailsTable(data: BookingEmailData | ReminderEmailData): str
   return html;
 }
 
+function venueDetails(data: { businessAddress?: string | null; businessMapsUrl?: string | null }) {
+  if (!data.businessAddress) return "";
+  const map = data.businessMapsUrl && /^https?:\/\//i.test(data.businessMapsUrl) ? data.businessMapsUrl : null;
+  return `<div style="margin:16px 0;padding:16px;background:#f8fafc;border-radius:10px;">
+    <p style="margin:0;font-size:14px;">${escapeHtml(data.businessAddress)}</p>
+    ${map ? `<a href="${escapeHtml(map)}" style="font-size:13px;">Ver en Google Maps</a>` : ""}
+  </div>`;
+}
+
 function googleCalendarButton(data: BookingEmailData): string {
   const dates = [data.startTime, data.endTime]
     .map((date) => formatInTimeZone(date, "UTC", "yyyyMMdd'T'HHmmss'Z'"))
@@ -820,6 +829,7 @@ export function reminderEmail(data: ReminderEmailData): { subject: string; html:
         ${detailRow(" Servicio", data.serviceName)}
         ${detailRow(" Profesional", data.staffName)}
       </table>
+      ${venueDetails(data)}
       <div style="margin:20px 0;padding:16px;background:linear-gradient(135deg,${BRAND}10,${BRAND}05);border-radius:10px;border:1px solid ${BRAND}30;">
         <p style="margin:0;font-size:15px;color:${BRAND_DARK};text-align:center;font-weight:600;">
           Te esperamos mañana a las ${timeStr} 
@@ -1034,6 +1044,8 @@ interface AppointmentActionEmailData extends LocalizedEmailData {
   endTime: Date;
   businessName: string;
   timezone?: string;
+  businessAddress?: string | null;
+  businessMapsUrl?: string | null;
 }
 
 /** Email to business owner when customer confirms or cancels via reminder link */
@@ -1084,6 +1096,7 @@ export function appointmentActionOwnerEmail(data: AppointmentActionEmailData): {
         </tr>
       </table>
       ${statusBadge}
+      ${venueDetails(data)}
       <div style="text-align:center;margin:24px 0;">
         <a href="${dashboardUrl}" style="display:inline-block;padding:12px 32px;background:#E5E7EB;color:#374151;text-decoration:none;font-size:14px;font-weight:600;border-radius:10px;">
           Ver en Dashboard →
@@ -1135,6 +1148,7 @@ export function appointmentActionStaffEmail(data: AppointmentActionEmailData): {
         </tr>
       </table>
       ${badge}
+      ${venueDetails(data)}
     `),
   };
 }
