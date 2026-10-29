@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { buildSlots, type AvailabilityScheduleEntry, type AvailabilityScheduleOverride, type AvailabilitySlot } from "./availability";
 import { isServiceAvailableAtTime, type ServiceAvailability } from "./service-availability";
+export const PUBLIC_BOOKING_HORIZON_DAYS = 90;
 
 export type BookingBusyRange = { startTime: string | Date; endTime: string | Date };
 export type BookingSlotRules = {

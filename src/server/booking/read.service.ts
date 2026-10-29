@@ -1,12 +1,13 @@
 import { prisma } from "@/server/db/prisma";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
-import { buildBookingSlots, bookingDayQueryBounds, localDateFromKey, slotToUtc } from "@/core/booking-availability";
+import { buildBookingSlots, bookingDayQueryBounds, localDateFromKey, slotToUtc, PUBLIC_BOOKING_HORIZON_DAYS } from "@/core/booking-availability";
 import { getBlockedSlots } from "@/server/services/appointment.service";
 import type { BookingAvailabilityDto, BookingCatalogDto } from "./contracts";
 import type { Prisma } from "@prisma/client";
+import { mergeScheduleOverrides } from "@/core/availability";
 
-export const MAX_BOOKING_DAYS_AHEAD = 90;
+export const MAX_BOOKING_DAYS_AHEAD = PUBLIC_BOOKING_HORIZON_DAYS;
 const hoursSelect = { dayOfWeek: true, startTime: true, endTime: true, breakStart: true, breakEnd: true } as const;
 const overridesSelect = { date: true, startTime: true, endTime: true, breakStart: true, breakEnd: true } as const;
 
@@ -117,8 +118,12 @@ export async function getBookingAvailability(data: BookingContext, query: Availa
     const blocked = internal.skipBusy ? [] : await getBlockedSlots(data.id, bounds.start, bounds.end, staff?.id, location.id);
     const slots = buildBookingSlots({ date, duration: quote.duration, timezone,
       businessHours: location.hours.length ? location.hours : data.businessHours,
-      scheduleOverrides: (location.scheduleOverrides.length ? location.scheduleOverrides : data.scheduleOverrides).map((override) => ({ ...override, date: override.date.toISOString().slice(0, 10) })),
-      staffSchedule: staff ? staff.locations.find((assignment) => assignment.locationId === location.id)?.schedule ?? staff.schedule : undefined,
+      scheduleOverrides: mergeScheduleOverrides(
+        data.scheduleOverrides.map(override => ({ ...override, date: override.date.toISOString().slice(0, 10) })),
+        location.scheduleOverrides.map(override => ({ ...override, date: override.date.toISOString().slice(0, 10) })),
+      ),
+      staffSchedule: staff ? (staff.locations.find((assignment) => assignment.locationId === location.id)?.schedule.length
+        ? staff.locations.find((assignment) => assignment.locationId === location.id)!.schedule : staff.schedule) : undefined,
       staffScheduleOverrides: staff?.scheduleOverrides.map((override) => ({ ...override, date: override.date.toISOString().slice(0, 10), isOpen: override.isWorking })),
       slotInterval: data.slotInterval, allowSameDayBookings: data.allowSameDayBookings, minAdvanceBookingMinutes: data.minAdvanceBookingMinutes,
       services: services.map((service) => ({ ...service, specialStartDate: service.specialStartDate?.toISOString().slice(0, 10), specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) })), blocked, now,

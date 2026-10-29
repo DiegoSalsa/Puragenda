@@ -24,6 +24,11 @@ export interface AvailabilitySlot {
   end: Date;
 }
 
+/** A branch overrides only matching dates, leaving other global exceptions intact. */
+export function mergeScheduleOverrides(global: AvailabilityScheduleOverride[], branch: AvailabilityScheduleOverride[]) {
+  return [...new Map([...global, ...branch].map(entry => [entry.date, entry])).values()];
+}
+
 function dateKey(date: Date) {
   return [
     date.getFullYear(),

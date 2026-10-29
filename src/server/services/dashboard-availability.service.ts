@@ -1,6 +1,7 @@
 import { addDays, format } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { buildSlots, type AvailabilityScheduleOverride } from "@/core/availability";
+import { mergeScheduleOverrides, type AvailabilityScheduleOverride } from "@/core/availability";
+import { buildBookingSlots, PUBLIC_BOOKING_HORIZON_DAYS } from "@/core/booking-availability";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { usesBusinessScheduleOnly } from "@/core/subscription-plan";
 import { prisma } from "@/server/db/prisma";
@@ -9,6 +10,7 @@ import { getStaffAgendaScope } from "@/server/services/business.service";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-block.service";
 import type { DashboardAvailabilityRequest } from "@/server/validations/dashboard-availability";
+import { releaseExpiredPaymentHolds } from "./payment-hold.service";
 
 type AvailabilityUser = { id: string; role: string };
 type AvailabilityBusiness = { id: string; ownerId: string | null };
@@ -88,13 +90,6 @@ function mapBusinessOverride(entry: {
     breakStart: entry.breakStart,
     breakEnd: entry.breakEnd,
   };
-}
-
-function rangesOverlap(
-  slot: { start: Date; end: Date },
-  range: { startTime: Date; endTime: Date },
-) {
-  return slot.start < range.endTime && slot.end > range.startTime;
 }
 
 async function loadAvailabilityServices(businessId: string, serviceIds: string[], locationId: string) {
@@ -314,14 +309,17 @@ async function loadBusyRanges(
   rangeStart: Date,
   rangeEnd: Date,
   now: Date,
+  businessOnly: boolean,
 ) {
+  await releaseExpiredPaymentHolds({ businessId, now });
   const staffIds = staffMembers.map((staff) => staff.id);
   const [appointments, scheduleBlocks, googleRanges] = await Promise.all([
     prisma.appointment.findMany({
       where: {
         businessId,
-        staffId: { in: staffIds },
+        ...(businessOnly ? { OR: [{ locationId }, { locationId: null }] } : { OR: [{ staffId: { in: staffIds } }, { staffId: null, OR: [{ locationId }, { locationId: null }] }] }),
         status: { not: "CANCELLED" },
+        paymentStatus: { not: "REJECTED" },
         startTime: { lt: rangeEnd },
         endTime: { gt: rangeStart },
       },
@@ -330,7 +328,7 @@ async function loadBusyRanges(
     }),
     prisma.scheduleBlock.findMany({
       where: {
-        staffId: { in: staffIds },
+        ...(businessOnly ? { staff: { businessId } } : { staffId: { in: staffIds } }),
         startTime: { lt: rangeEnd },
         endTime: { gt: rangeStart },
         AND: [
@@ -343,15 +341,19 @@ async function loadBusyRanges(
     }),
     Promise.all(staffIds.map(async (staffId) => ({
       staffId,
-      ranges: await getGoogleCalendarBusySlots(staffId, rangeStart, rangeEnd),
+      ranges: await getGoogleCalendarBusySlots(businessOnly ? "__business__" : staffId, rangeStart, rangeEnd, businessId),
     }))),
   ]);
 
   const byStaff = new Map(staffIds.map((staffId) => [staffId, [] as BusyRange[]]));
   for (const range of appointments) {
-    if (range.staffId) byStaff.get(range.staffId)?.push(range);
+    if (range.staffId && !businessOnly) byStaff.get(range.staffId)?.push(range);
+    else for (const ranges of byStaff.values()) ranges.push(range);
   }
-  for (const range of scheduleBlocks) byStaff.get(range.staffId)?.push(range);
+  for (const range of scheduleBlocks) {
+    if (businessOnly) for (const ranges of byStaff.values()) ranges.push(range);
+    else byStaff.get(range.staffId)?.push(range);
+  }
   for (const entry of googleRanges) byStaff.get(entry.staffId)?.push(...entry.ranges);
   for (const ranges of byStaff.values()) {
     ranges.sort((left, right) => left.startTime.getTime() - right.startTime.getTime());
@@ -444,7 +446,7 @@ export async function getDashboardAvailability(
   const now = new Date();
   const localNow = toZonedTime(now, location.timezone);
   const todayKey = localDateKey(localNow);
-  const lastAllowedKey = localDateKey(addDays(localNow, 90));
+  const lastAllowedKey = localDateKey(addDays(localNow, PUBLIC_BOOKING_HORIZON_DAYS));
   if (input.fromDate < todayKey || input.fromDate > lastAllowedKey) {
     throw new DashboardAvailabilityError(
       "DATE_OUT_OF_RANGE",
@@ -452,8 +454,8 @@ export async function getDashboardAvailability(
     );
   }
 
-  const dates = Array.from({ length: input.days }, (_, index) => addDays(startDate, index));
-  const rangeEndDate = addDays(startDate, input.days);
+  const dates = Array.from({ length: input.days }, (_, index) => addDays(startDate, index)).filter(date => localDateKey(date) <= lastAllowedKey);
+  const rangeEndDate = addDays(dates[dates.length - 1], 1);
   const rangeStart = fromZonedTime(`${input.fromDate}T00:00:00`, location.timezone);
   const rangeEnd = fromZonedTime(`${localDateKey(rangeEndDate)}T00:00:00`, location.timezone);
   const candidateStaff = [...new Map(
@@ -466,24 +468,24 @@ export async function getDashboardAvailability(
     rangeStart,
     rangeEnd,
     now,
+    usesBusinessScheduleOnly(business.subscription?.plan),
   );
+  const blockedDates = new Set((await prisma.blockedDate.findMany({ where: { businessId: business.id,
+    date: { gte: new Date(`${input.fromDate}T00:00:00Z`), lt: new Date(`${localDateKey(rangeEndDate)}T00:00:00Z`) } }, select: { date: true } })).map(row => row.date.toISOString().slice(0, 10)));
 
   const businessHours = location.hours.length ? location.hours : business.businessHours;
   const useBusinessScheduleOnly = usesBusinessScheduleOnly(business.subscription?.plan);
-  const businessOverrides = (location.scheduleOverrides.length
-    ? location.scheduleOverrides
-    : business.scheduleOverrides).map(mapBusinessOverride);
-  const cutoff = new Date(now.getTime() + business.minAdvanceBookingMinutes * 60_000);
+  const businessOverrides = mergeScheduleOverrides(business.scheduleOverrides.map(mapBusinessOverride), location.scheduleOverrides.map(mapBusinessOverride));
   const resultDays: DashboardAvailabilityDay[] = [];
 
   for (const date of dates) {
     const dateKey = localDateKey(date);
     const slotsByTime = new Map<string, DashboardAvailabilitySlot>();
+    if (blockedDates.has(dateKey)) { resultDays.push({ date: dateKey, slots: [] }); continue; }
 
     for (const candidate of candidates) {
       const groupSlots = candidate.groups.map((group) => {
         const blocked = blockedByStaff.get(group.staff.id) ?? [];
-        const localBlockedEnds = blocked.map((range) => toZonedTime(range.endTime, location.timezone));
         const locationSchedule = group.staff.locations[0]?.schedule ?? [];
         const staffSchedule = locationSchedule.length ? locationSchedule : group.staff.schedule;
         const staffOverrides = group.staff.scheduleOverrides.map((entry) => ({
@@ -495,23 +497,13 @@ export async function getDashboardAvailability(
           breakEnd: entry.breakEnd,
         }));
 
-        const available = buildSlots(
-          date,
-          group.duration,
-          businessHours,
-          useBusinessScheduleOnly ? undefined : staffSchedule,
-          business.slotInterval,
-          businessOverrides,
-          localBlockedEnds,
-          useBusinessScheduleOnly ? undefined : staffOverrides,
-        ).filter((slot) => {
-          const utcSlot = {
-            start: fromZonedTime(slot.start, location.timezone),
-            end: fromZonedTime(slot.end, location.timezone),
-          };
-          if (dateKey === todayKey && (!business.allowSameDayBookings || utcSlot.start <= cutoff)) return false;
-          return !blocked.some((range) => rangesOverlap(utcSlot, range));
-        });
+        const available = buildBookingSlots({ date, duration: group.duration, timezone: location.timezone,
+          businessHours, staffSchedule: useBusinessScheduleOnly ? undefined : staffSchedule,
+          slotInterval: business.slotInterval, scheduleOverrides: businessOverrides,
+          staffScheduleOverrides: useBusinessScheduleOnly ? undefined : staffOverrides,
+          allowSameDayBookings: business.allowSameDayBookings, minAdvanceBookingMinutes: business.minAdvanceBookingMinutes,
+          blocked, now, services: services.filter(service => group.serviceIds.includes(service.id)).map(service => ({ ...service,
+            specialStartDate: service.specialStartDate?.toISOString().slice(0, 10), specialEndDate: service.specialEndDate?.toISOString().slice(0, 10) })) });
 
         return new Map(available.map((slot) => [format(slot.start, "HH:mm"), slot]));
       });
