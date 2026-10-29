@@ -19,7 +19,8 @@ export async function getEffectiveBusinessPermissions(
     select: { accessProfile: { select: { permissions: true } } },
   });
 
-  if (staff?.accessProfile) {
+  if (!staff) return [];
+  if (staff.accessProfile) {
     return normalizeDashboardPermissions(staff.accessProfile.permissions);
   }
 

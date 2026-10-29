@@ -54,7 +54,7 @@ export async function canManageGoogleConnection(
   connection: { businessId: string; scope: string; staffId: string | null; userId: string },
 ) {
   if (connection.businessId !== business.id) return false;
-  if (connection.scope === "STAFF" && connection.userId === user.id) return true;
+  if (connection.scope === "STAFF" && connection.userId === user.id && await prisma.staff.findFirst({ where: { id: connection.staffId ?? "", businessId: business.id, userId: user.id, isActive: true }, select: { id: true } })) return true;
   return hasBusinessPermission(
     user,
     business,

@@ -45,7 +45,7 @@ export default async function StaffPage() {
     }),
     getStaffLimitInfo(business.id),
     prisma.service.findMany({
-      where: { businessId: business.id },
+      where: { isActive: true, businessId: business.id },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

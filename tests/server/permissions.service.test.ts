@@ -63,4 +63,10 @@ describe("business permission resolution", () => {
       ),
     ).resolves.toBe(false);
   });
+  it.each(["ADMIN", "RECEPTIONIST", "STAFF"])("denies legacy %s permissions without an active tenant membership", async role => {
+    findStaff.mockResolvedValue(null);
+    expect(await getEffectiveBusinessPermissions({ id: "inactive-member", role }, business)).toEqual([]);
+    expect(findStaff).toHaveBeenCalledWith(expect.objectContaining({ where: { businessId: business.id, userId: "inactive-member", isActive: true } }));
+  });
+
 });

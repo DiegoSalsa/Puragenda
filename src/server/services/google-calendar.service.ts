@@ -435,6 +435,7 @@ export async function saveGoogleCalendarConnection(input: {
   tokens: GoogleTokenResponse & { access_token: string };
   googleEmail: string;
 }) {
+  if (input.state.scope === "STAFF" && !await prisma.staff.findFirst({ where: { id: input.state.staffId ?? "", businessId: input.state.businessId, userId: input.state.userId, isActive: true }, select: { id: true } })) throw new Error("El profesional está inactivo");
   const existing = await prisma.googleCalendarConnection.findUnique({
     where: {
       businessId_scopeKey: {
@@ -565,7 +566,7 @@ async function appointmentForGoogle(appointmentId: string) {
           timezone: true,
           owner: { select: { email: true } },
           googleCalendarConnections: {
-            where: { syncEnabled: true },
+            where: { syncEnabled: true, OR: [{ scope: "BUSINESS" }, { staff: { isActive: true } }] },
             orderBy: [{ scope: "desc" }, { updatedAt: "desc" }],
           },
         },
@@ -879,7 +880,7 @@ export async function getGoogleCalendarBusySlots(
   businessId?: string,
 ) {
   let connection = await prisma.googleCalendarConnection.findFirst({
-    where: { staffId, scope: "STAFF", syncEnabled: true },
+    where: { staffId, scope: "STAFF", syncEnabled: true, staff: { isActive: true } },
     orderBy: { updatedAt: "desc" },
   });
   if (!connection && businessId) {

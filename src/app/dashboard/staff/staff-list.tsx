@@ -55,13 +55,6 @@ function scheduleKey(staffId: string, locationId?: string) {
   return locationId ? `${staffId}:${locationId}` : staffId;
 }
 
-function generateCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "DEL-";
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
 const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo", PURAGENDA: "Puragenda", PURAGENDA_PLUS: "Puragenda+" };
 const ROLE_LABELS: Record<StaffAccessRole, string> = {
   ADMIN: "Admin",
@@ -70,68 +63,16 @@ const ROLE_LABELS: Record<StaffAccessRole, string> = {
   SUPERADMIN: "Superadmin",
 };
 
-// ─── Delete Confirmation Modal ───
+// Reversible deactivation preserves appointments, schedules and Calendar links.
 function DeleteModal({ staffName, onConfirm, onCancel, deleting }: { staffName: string; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
-  const legacy = useTranslations("legacy");
-  const [code] = useState(generateCode);
-  const [input, setInput] = useState("");
-  const canConfirm = input === code;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onCancel}>
-      <div className="mx-4 w-full max-w-md rounded-2xl border border-red-500/20 bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-red-500/10 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-red-400" />
-            <h3 className="text-lg font-semibold text-red-400"><LocalizedText id="5dK9EfWHLB17" /></h3>
-          </div>
-          <button onClick={onCancel} className="rounded-lg p-1 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-        </div>
-        {/* Body */}
-        <div className="space-y-5 p-6">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            <LocalizedText id="xkCSOkEWgFOM" /> <span className="font-semibold text-red-400"><LocalizedText id="ucmdzi01yjIE" /></span><LocalizedText id="zrVExQoMUthT" />
-          </p>
-          <p className="text-sm text-muted-foreground">
-            <LocalizedText id="AUFxDzUhPw9c" /> <span className="font-semibold text-foreground">{staffName}</span><LocalizedText id="qS9cPvX4U6fg" />
-          </p>
-          {/* Code display */}
-          <div className="flex justify-center">
-            <div className="rounded-xl border border-border bg-muted px-5 py-3">
-              <p className="text-center font-mono text-xl font-bold tracking-[0.3em] text-foreground">{code}</p>
-            </div>
-          </div>
-          {/* Input */}
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground"><LocalizedText id="Oqht24zwho6Q" /></label>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value.toUpperCase())}
-              placeholder={legacy("WxxzfXeB9bHY")}
-              autoFocus
-              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 font-mono text-sm outline-none placeholder:text-muted-foreground/50 focus:border-red-500/30 transition-colors"
-            />
-          </div>
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button onClick={onCancel} className="flex-1 rounded-xl border border-border py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <LocalizedText id="u527QG3L1SSL" />
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={!canConfirm || deleting}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition-all hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              <LocalizedText id="RJRhV7-mNWqe" />
-            </button>
-          </div>
-        </div>
-      </div>
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onCancel}>
+    <div role="dialog" aria-modal="true" aria-label="Desactivar profesional" className="mx-4 max-w-md space-y-4 rounded-2xl border bg-card p-6" onClick={e => e.stopPropagation()}>
+      <h3 className="text-lg font-semibold">Desactivar profesional</h3>
+      <p className="text-sm">{staffName} dejará de recibir nuevas reservas y de acceder como integrante del negocio. Conservaremos su historial, horarios y vínculos de Calendar. Podrás reactivarlo si hay cupo.</p>
+      <p className="text-sm text-muted-foreground">Primero debes resolver sus reservas futuras y planes recurrentes vigentes.</p>
+      <div className="flex gap-3"><button onClick={onCancel} className="rounded-lg border px-4 py-2">Cancelar</button><button onClick={onConfirm} disabled={deleting} className="rounded-lg bg-brand px-4 py-2 disabled:opacity-50">{deleting ? "Desactivando…" : "Desactivar profesional"}</button></div>
     </div>
-  );
+  </div>;
 }
 
 // ─── Staff List ───
@@ -158,6 +99,7 @@ export function StaffList({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"ADMIN" | "RECEPTIONIST" | "STAFF">("STAFF");
+  const [createLocationIds, setCreateLocationIds] = useState<string[]>([]);
   const [createServiceIds, setCreateServiceIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -168,7 +110,7 @@ export function StaffList({
     const map: Record<string, ScheduleEntry[]> = {};
     for (const s of initialStaff) {
       map[s.id] = s.schedule.length === 7 ? s.schedule : defaultSchedule();
-      for (const location of s.locations) map[scheduleKey(s.id, location.locationId)] = location.schedule.length === 7 ? location.schedule : defaultSchedule();
+      for (const location of s.locations) map[scheduleKey(s.id, location.locationId)] = location.schedule.length === 7 ? location.schedule : s.schedule.length === 7 ? s.schedule : defaultSchedule();
     }
     return map;
   });
@@ -198,7 +140,7 @@ export function StaffList({
 
   const atLimit = !limitInfo.canAdd;
   const activeCount = initialStaff.filter((member) => member.isActive).length;
-  const accessCount = initialStaff.filter((member) => member.userId).length;
+  const accessCount = initialStaff.filter((member) => member.userId && member.isActive).length;
   const drawerTabs: [StaffDrawerTab, string][] = [
     ["general", "General"],
     ["services", "Servicios"],
@@ -223,16 +165,16 @@ export function StaffList({
       return;
     }
     setCreating(true); setCreateError("");
-    const result = await createStaffAction({ name: name.trim(), email: email.trim(), role, serviceIds: createServiceIds });
+    const result = await createStaffAction({ name: name.trim(), email: email.trim(), role, serviceIds: createServiceIds, locationIds: createLocationIds });
     if (result.error) { setCreateError(result.error); setCreating(false); return; }
-    setName(""); setEmail(""); setRole("STAFF"); setCreateServiceIds([]); setShowForm(false); setCreating(false); setCreateError("");
+    setName(""); setEmail(""); setRole("STAFF"); setCreateServiceIds([]); setCreateLocationIds([]); setShowForm(false); setCreating(false); setCreateError("");
     router.refresh();
   }
 
   async function handleToggle(id: string) {
     setTogglingId(id);
     setStaffError("");
-    const result = await toggleStaffActiveAction(id);
+    const result = await toggleStaffActiveAction(id, true);
     if (result.error) setStaffError(result.error);
     setTogglingId(null);
     router.refresh();
@@ -307,7 +249,8 @@ export function StaffList({
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
-    await deleteStaffAction(deleteTarget.id);
+    const result = await deleteStaffAction(deleteTarget.id);
+    if (result.error) setStaffError(result.error);
     setDeleting(false);
     setDeleteTarget(null);
     router.refresh();
@@ -379,7 +322,7 @@ export function StaffList({
   return (
     <>
       <div className="min-w-0 max-w-full space-y-4" data-tour="staff-list">
-        {staffError && <p role="alert" className="text-sm text-red-500">{staffError}</p>}
+        {staffError && <div role="alert" className="text-sm text-red-500"><p>{staffError}</p><Link href="/dashboard/agenda" className="underline">Revisar Agenda</Link> · <Link href="/dashboard/recurring" className="underline">Revisar planes recurrentes</Link></div>}
         {/* Limit indicator */}
         <div className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-3">
           <div><p className="text-2xl font-black text-foreground">{limitInfo.currentCount}<span className="text-sm text-muted-foreground">/{limitInfo.maxAllowed}</span></p><p className="text-xs text-muted-foreground"><LocalizedText id="9tjpfWpFfEqb" /> {PLAN_LABELS[limitInfo.plan] || limitInfo.plan}</p></div>
@@ -445,6 +388,11 @@ export function StaffList({
               </div>
             )}
 
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Dónde atenderá</p>
+              {allLocations.length === 1 ? <p className="text-sm">Se asignará a {allLocations[0].name}.</p> : allLocations.length > 1 ? allLocations.map(location => <label key={location.id} className="mr-4 inline-flex gap-2 text-sm"><input type="checkbox" checked={createLocationIds.includes(location.id)} onChange={e => setCreateLocationIds(ids => e.target.checked ? [...ids, location.id] : ids.filter(id => id !== location.id))} />{location.name}</label>) : <p className="text-sm text-muted-foreground">Sin sucursales activas. Los negocios legacy conservan el horario general; si tienes sucursales, activa una primero.</p>}
+              {!useBusinessScheduleOnly && <p className="text-xs text-muted-foreground">Después del alta, configura el horario en cada sucursal antes de recibir reservas.</p>}
+            </div>
             {/* ═══ SERVICE CHECKBOXES ON CREATE ═══ */}
             {allServices.length > 0 && (
               <div className="space-y-2">
@@ -475,10 +423,10 @@ export function StaffList({
 
             {createError && <p className="text-sm text-red-400">{createError}</p>}
             <div className="flex gap-2">
-              <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim()} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+              <button onClick={handleCreate} disabled={creating || !name.trim() || !email.trim() || (allLocations.length > 1 && !createLocationIds.length)} className="flex items-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} <LocalizedText id="P-X_Jm_DzqwO" />
               </button>
-              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); setCreateServiceIds([]); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
+              <button onClick={() => { setShowForm(false); setCreateError(""); setRole("STAFF"); setCreateServiceIds([]); setCreateLocationIds([]); }} className="rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground"><LocalizedText id="u527QG3L1SSL" /></button>
             </div>
           </div>
         )}
@@ -521,17 +469,16 @@ export function StaffList({
                   </button>
                   {menuId === s.id && (
                     <div className="absolute right-4 top-16 z-50 w-52 rounded-xl border border-border bg-popover p-1.5 shadow-xl">
-                        <button onClick={() => { handleToggle(s.id); setMenuId(null); }} disabled={togglingId === s.id || (!s.isActive && atLimit)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted disabled:opacity-50">
+                        <button onClick={() => { if (s.isActive) setDeleteTarget(s); else handleToggle(s.id); setMenuId(null); }} disabled={togglingId === s.id || (!s.isActive && atLimit)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted disabled:opacity-50">
                         {s.isActive ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}{s.isActive ? "Desactivar" : "Activar"}
                       </button>
-                      <button onClick={() => { setDeleteTarget(s); setMenuId(null); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
-                        <Trash2 className="h-3.5 w-3.5" /> <LocalizedText id="5bCfOB3vQULg" />
-                      </button>
+
                     </div>
                   )}
                 </div>
               </div>
 
+              <p className="px-5 pb-3 text-xs text-muted-foreground">{!s.isActive ? "Inactivo · historial conservado" : !s.locations.length && allLocations.length ? "Asigna una sucursal en Configuración" : !useBusinessScheduleOnly && !s.schedule.some(day => day.isWorking) && !s.locations.some(location => location.schedule.some(day => day.isWorking)) ? "Configura el horario para recibir reservas" : allServices.length === 0 ? "Crea servicios para comenzar a recibir reservas" : "Activo"}</p>
               {/* ── Service Badges (always visible) ── */}
               {assignedServiceNames.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 px-4 pb-3 sm:px-5 sm:pb-4 -mt-1">
