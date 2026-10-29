@@ -42,6 +42,8 @@ export interface AppointmentEditorClient {
 
 export interface EditableAppointment {
   id: string;
+  updatedAt?: string;
+  locationId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -60,6 +62,8 @@ export function AppointmentEditor({
   initialServiceId,
   initialSelectedOptionIds = [],
   timeZone,
+  locationId,
+  locationName,
   services,
   staff,
   clients,
@@ -72,6 +76,8 @@ export function AppointmentEditor({
   initialServiceId?: string;
   initialSelectedOptionIds?: string[];
   timeZone?: string;
+  locationId?: string;
+  locationName?: string;
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
@@ -168,6 +174,8 @@ export function AppointmentEditor({
             clientId: clientId || undefined,
             serviceId,
             staffId,
+            locationId: locationId ?? appointment?.locationId ?? undefined,
+            expectedUpdatedAt: appointment?.updatedAt,
             selectedOptionAlternativeIds: selectedOptionIds,
             startTime: startTime.toISOString(),
             internalNotes,
@@ -199,6 +207,7 @@ export function AppointmentEditor({
               <div>
                 <h2 className="font-semibold">{appointment ? t("editTitle") : t("newTitle")}</h2>
                 <p className="text-xs text-muted-foreground">{t("validationHint")}</p>
+                {locationName && <p className="text-xs font-semibold">{locationName}</p>}
               </div>
             </div>
             <button type="button" onClick={onClose} className="rounded-lg p-2 text-muted-foreground hover:bg-muted">

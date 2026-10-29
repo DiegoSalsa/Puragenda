@@ -16,6 +16,8 @@ import {
 import { APPOINTMENT_STATUS_COLORS as STATUS_COLORS, AppointmentDetailDialog } from "./appointment-detail-dialog";
 
 interface CalendarAppointment {
+  updatedAt?: string;
+  locationId?: string | null;
   id: string; customerName: string; customerEmail: string;
   startTime: string; endTime: string; status: string;
   paymentStatus: string; depositAmount: number | null; depositPaymentUrl: string | null;
@@ -115,6 +117,8 @@ export function WeeklyCalendar({
   weekStartISO,
   todayKey,
   locationSlug,
+  locationId,
+  locationName,
   agendaMode,
   businessHours = [],
   services = [],
@@ -130,6 +134,8 @@ export function WeeklyCalendar({
   weekStartISO: string;
   todayKey?: string;
   locationSlug?: string;
+  locationId?: string;
+  locationName?: string;
   agendaMode?: "mine";
   businessHours?: CalendarBusinessHour[];
   services?: AppointmentEditorService[];
@@ -499,6 +505,8 @@ export function WeeklyCalendar({
 
       {selected && (
         <AppointmentDetailDialog
+          locationId={locationId}
+          locationName={locationName}
           appointment={selected}
           onClose={() => setSelected(null)}
           canManageAppointments={canManageAppointments}
@@ -512,6 +520,8 @@ export function WeeklyCalendar({
       )}
       {editor && (
         <AppointmentEditor
+          locationId={locationId}
+          locationName={locationName}
           initialStart={editor.initialStart}
           initialStaffId={editor.initialStaffId}
           timeZone={timeZone}

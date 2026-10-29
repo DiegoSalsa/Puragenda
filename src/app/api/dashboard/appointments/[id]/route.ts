@@ -1,6 +1,7 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
-import { getAppointmentByIdAndBusiness } from "@/server/services/appointment.service";
+import { getAppointmentByIdAndBusiness, isAppointmentCapacityConflict } from "@/server/services/appointment.service";
+import { BookingSelectionError } from "@/core/booking-selection";
 import {
   sendConfirmationEmail,
   sendCancellationEmail,
@@ -447,64 +448,74 @@ export async function PUT(
       return Response.json({ error: "No tienes permisos para mover esta cita a esa agenda" }, { status: 403 });
     }
 
-    const resolved = await resolveManagedAppointment(business, parsed.data, id);
+    if (!parsed.data.expectedUpdatedAt || new Date(parsed.data.expectedUpdatedAt).getTime() !== existing.updatedAt.getTime()) {
+      return Response.json({ error: "La cita cambió; actualiza la agenda antes de editar", code: "APPOINTMENT_CHANGED" }, { status: 409 });
+    }
+    const resolved = await resolveManagedAppointment(business, { ...parsed.data, locationId: parsed.data.locationId ?? existing.locationId ?? undefined }, id);
     if ("error" in resolved) return Response.json({ error: resolved.error }, { status: 409 });
 
-    let client;
-    if (parsed.data.clientId) {
-      client = await prisma.client.findFirst({
-        where: { id: parsed.data.clientId, businessId: business.id },
-      });
-      if (!client) return Response.json({ error: "Cliente no encontrado" }, { status: 404 });
-    } else {
-      client = await prisma.client.upsert({
-        where: {
-          businessId_email: {
-            businessId: business.id,
-            email: parsed.data.customerEmail,
+    const updated = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`booking-capacity:${business.id}`}, 0))::text`;
+      const current = await tx.appointment.findUnique({ where: { id }, select: { updatedAt: true } });
+      if (!current || current.updatedAt.getTime() !== existing.updatedAt.getTime()) throw new BookingSelectionError("La cita cambió", "APPOINTMENT_CHANGED", 409);
+      let client;
+      if (parsed.data.clientId) {
+        client = await tx.client.findFirst({
+          where: { id: parsed.data.clientId, businessId: business.id },
+        });
+        if (!client) throw new BookingSelectionError("Cliente no encontrado", "CLIENT_NOT_FOUND", 404);
+      } else {
+        client = await tx.client.upsert({
+          where: {
+            businessId_email: {
+              businessId: business.id,
+              email: parsed.data.customerEmail,
+            },
           },
+          update: {
+            name: parsed.data.customerName,
+            phone: parsed.data.customerPhone || undefined,
+          },
+          create: {
+            businessId: business.id,
+            name: parsed.data.customerName,
+            email: parsed.data.customerEmail,
+            phone: parsed.data.customerPhone || null,
+          },
+        });
+      }
+
+      return tx.appointment.update({
+        where: { id, businessId: business.id, updatedAt: existing.updatedAt },
+        data: {
+          updatedAt: new Date(Math.max(Date.now(), existing.updatedAt.getTime() + 1)),
+          customerName: parsed.data.customerName,
+          customerEmail: parsed.data.customerEmail,
+          customerPhone: parsed.data.customerPhone || null,
+          clientId: client.id,
+          serviceId: resolved.value.service.id,
+          staffId: resolved.value.staff.id,
+          locationId: resolved.value.locationId,
+          startTime: resolved.value.startTime,
+          endTime: resolved.value.endTime,
+          totalDuration: resolved.value.totalDuration,
+          totalPrice: resolved.value.totalPrice,
+          originalTotalPrice: resolved.value.totalPrice,
+          discountAmount: null,
+          promotionId: null,
+          promotionTitle: null,
+          selectedOptions: resolved.value.selectedOptions,
+          internalNotes: parsed.data.internalNotes || null,
+          customerActionTokenHash: null,
+          customerActionTokenExpiresAt: null,
+          customerActionTokenUsedAt: null,
         },
-        update: {
-          name: parsed.data.customerName,
-          phone: parsed.data.customerPhone || undefined,
-        },
-        create: {
-          businessId: business.id,
-          name: parsed.data.customerName,
-          email: parsed.data.customerEmail,
-          phone: parsed.data.customerPhone || null,
+        include: {
+          service: true,
+          staff: true,
+          business: { include: { owner: { select: { email: true, name: true } } } },
         },
       });
-    }
-
-    const updated = await prisma.appointment.update({
-      where: { id },
-      data: {
-        customerName: parsed.data.customerName,
-        customerEmail: parsed.data.customerEmail,
-        customerPhone: parsed.data.customerPhone || null,
-        clientId: client.id,
-        serviceId: resolved.value.service.id,
-        staffId: resolved.value.staff.id,
-        startTime: resolved.value.startTime,
-        endTime: resolved.value.endTime,
-        totalDuration: resolved.value.totalDuration,
-        totalPrice: resolved.value.totalPrice,
-        originalTotalPrice: resolved.value.totalPrice,
-        discountAmount: null,
-        promotionId: null,
-        promotionTitle: null,
-        selectedOptions: resolved.value.selectedOptions,
-        internalNotes: parsed.data.internalNotes || null,
-        customerActionTokenHash: null,
-        customerActionTokenExpiresAt: null,
-        customerActionTokenUsedAt: null,
-      },
-      include: {
-        service: true,
-        staff: true,
-        business: { include: { owner: { select: { email: true, name: true } } } },
-      },
     });
 
     await syncAppointmentToGoogle(id);
@@ -512,6 +523,10 @@ export async function PUT(
     if (parsed.data.sendConfirmation) await sendConfirmationEmail(updated);
     return Response.json(updated);
   } catch (error) {
+    if (error instanceof BookingSelectionError) return Response.json({ error: error.message, code: error.code }, { status: error.status });
+    if (isAppointmentCapacityConflict(error) || (error && typeof error === "object" && "code" in error && error.code === "P2025")) {
+      return Response.json({ error: "La cita o el horario cambió; actualiza la agenda", code: "APPOINTMENT_CHANGED" }, { status: 409 });
+    }
     console.error("[dashboard appointments PUT]", error);
     return Response.json({ error: "No se pudo actualizar la cita" }, { status: 500 });
   }

@@ -233,6 +233,8 @@ export async function loadTodayDashboard(input: {
       const row = byId.get(appointment.id);
       return {
         id: appointment.id,
+        updatedAt: appointment.updatedAt.toISOString(),
+        locationId: appointment.locationId,
         customerName: appointment.customerName,
         customerEmail: appointment.customerEmail,
         customerPhone: appointment.customerPhone,

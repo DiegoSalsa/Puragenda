@@ -182,6 +182,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const serialized = weekAppointments.map((appointment) => ({
     id: appointment.id,
+    updatedAt: appointment.updatedAt.toISOString(),
+    locationId: appointment.locationId,
     customerName: appointment.customerName,
     customerEmail: appointment.customerEmail,
     customerPhone: appointment.customerPhone,
@@ -328,6 +330,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       )}
 
       <WeeklyCalendar
+        locationId={selectedLocation?.id}
+        locationName={selectedLocation?.name}
         appointments={serialized}
         priorityBlocks={serializedPriorityBlocks}
         weekStartISO={weekStartKey}

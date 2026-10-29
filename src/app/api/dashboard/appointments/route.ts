@@ -4,7 +4,7 @@ import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/busin
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { prisma } from "@/server/db/prisma";
-import { createAppointment } from "@/server/services/appointment.service";
+import { createAppointment, isAppointmentCapacityConflict } from "@/server/services/appointment.service";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
 import { managedAppointmentSchema } from "@/server/validations/appointment-management";
 import { sendConfirmationEmail } from "@/server/email/send";
@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       startTime: resolved.value.startTime,
       endTime: resolved.value.endTime,
       businessId: business.id,
+      locationId: resolved.value.locationId,
       serviceId: resolved.value.service.id,
       staffId: resolved.value.staff.id,
       clientId: client.id,
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json(created.appointment, { status: 201 });
   } catch (error) {
+    if (isAppointmentCapacityConflict(error)) return Response.json({ error: "Ese horario ya está ocupado" }, { status: 409 });
     console.error("[dashboard appointments POST]", error);
     return Response.json({ error: "No se pudo crear la cita" }, { status: 500 });
   }

@@ -13,6 +13,8 @@ import { PosPaymentDialog } from "./pos-payment-dialog";
 
 export type DashboardAppointment = {
   id: string;
+  updatedAt?: string;
+  locationId?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -68,6 +70,8 @@ export function AppointmentDetailDialog({
   clients,
   currencyCode,
   timeZone,
+  locationId,
+  locationName,
 }: {
   appointment: DashboardAppointment;
   onClose: () => void;
@@ -78,6 +82,8 @@ export function AppointmentDetailDialog({
   clients: AppointmentEditorClient[];
   currencyCode: string;
   timeZone?: string;
+  locationId?: string;
+  locationName?: string;
 }) {
   const t = useTranslations("dashboard.calendar");
   const todayT = useTranslations("dashboard.today");
@@ -161,6 +167,8 @@ export function AppointmentDetailDialog({
     return (
       <AppointmentEditor
         appointment={editor}
+        locationId={locationId}
+        locationName={locationName}
         timeZone={timeZone}
         services={services}
         staff={staff}
@@ -311,6 +319,8 @@ export function AppointmentDetailDialog({
             {canManageAppointments && !appointment.recurringBookingId && !["CANCELLED", "COMPLETED", "NO_SHOW"].includes(appointment.status) && (
               <button type="button" onClick={() => setEditor({
                 id: appointment.id,
+                updatedAt: appointment.updatedAt,
+                locationId: appointment.locationId,
                 customerName: appointment.customerName,
                 customerEmail: appointment.customerEmail,
                 customerPhone: appointment.customerPhone,

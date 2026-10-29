@@ -117,8 +117,9 @@ try {
         } else code = await run([nextBin, "dev", "-H", "127.0.0.1", "-p", port]);
       }
     } else {
-      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.release.test.ts", "tests/server/mcp-rollout.actions.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
-      code = await run([vitestBin, "run", ...files]);
+      const files = process.argv.includes("--mcp") ? ["tests/server/mcp.security.test.ts", "tests/server/mcp.rollout.test.ts", "tests/server/mcp.release.test.ts", "tests/server/mcp-rollout.actions.test.ts", "tests/server/mcp.postgres.integration.test.ts"] : process.argv.includes("--all") ? [] : ["tests/server/booking-api.integration.test.ts", "tests/server/dashboard-appointments.postgres.integration.test.ts", "tests/server/booking-read.test.ts", "tests/core/booking-selection.test.ts", "tests/core/booking-availability.test.ts"];
+      // Database fixtures share this disposable schema; do not overlap cleanup.
+      code = await run([vitestBin, "run", "--no-file-parallelism", ...files]);
     }
   }
 } finally {
