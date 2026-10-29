@@ -1,15 +1,13 @@
 "use client";
 
 import { FormEvent, useState, useRef } from "react";
-import { commercialQuote, registrationIntent, publicWebsiteMonthly } from "@/websites/commercial";
+import { registrationIntent } from "@/websites/commercial";
 import { COMMERCIAL_CATALOG_VERSION, quoteCommercialContract } from "@/core/commercial-catalog";
-import { PUBLIC_TRIAL_NOTE } from "@/lib/public-plans";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, UserPlus, Gift, Crown, CreditCard, Sparkles } from "@/components/icons/hover-icons";
-import { EXTRA_STAFF_COST, PRICING, STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
-import { getCountryConfig } from "@/core/countries";
-import { startBillingCheckout } from "@/components/paddle/checkout";
+import { Loader2, UserPlus, Gift } from "@/components/icons/hover-icons";
+import { STAFF_LIMITS, TRIAL_DURATION_DAYS } from "@/core/constants";
+import { REGISTRATION_COUNTRY, REGISTRATION_CURRENCY, REGISTRATION_TIMEZONES } from "@/core/registration-market";
 import { useLocale, useTranslations } from "next-intl";
 import { track } from "@/lib/analytics/client";
 import {
@@ -19,54 +17,32 @@ import {
 } from "@/lib/marketplace";
 
 export function RegisterForm({
-  countryOptions,
   categoryOptions,
   localityOptions,
-  paymentSimulatorEnabled,
-  initialCountryCode = "",
-  websiteAcquisitionEnabled = false,
 }: {
-  countryOptions: Array<{ code: string; name: string }>;
   categoryOptions: Array<{ slug: string; name: string }>;
   localityOptions: Array<{ slug: string; name: string; regionName: string }>;
-  paymentSimulatorEnabled: boolean;
-  initialCountryCode?: string;
-  websiteAcquisitionEnabled?: boolean;
 }) {
   const legacy = useTranslations("legacy");
   const t = useTranslations("register");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const wantsPlan = searchParams.get("plan"); // legacy backend plan; public V2 intent is kept separately
-  const wantsTrial = searchParams.get("trial") === "1";
   const selected = registrationIntent(searchParams);
   const commercialPlan = selected.commercialPlan ?? (selected.website ? "PURAGENDA_PLUS" : "PURAGENDA");
   const professionalTotal = selected.professionalTotal ?? (wantsPlan === "EQUIPO" ? Math.min(20, STAFF_LIMITS.EQUIPO + selected.extraStaff) : 1);
-  const commercialQuoteSelection = commercialPlan ? quoteCommercialContract({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: commercialPlan, professionalTotal, billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY" }) : null;
-  const websiteSelected = false;
+  const commercialQuoteSelection = quoteCommercialContract({ catalogVersion: COMMERCIAL_CATALOG_VERSION, plan: commercialPlan, professionalTotal, billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY" });
   const submitBusy = useRef(false);
-  const extraStaffCount = wantsPlan === "EQUIPO"
-    ? selected.extraStaff
-    : 0;
-  const requestedDirectSubscription = !commercialPlan && (wantsPlan === "EQUIPO" || wantsPlan === "INDIVIDUAL" || wantsPlan === "TEST") && !wantsTrial;
-  const planLabel = commercialPlan === "PURAGENDA_PLUS" ? "Puragenda+" : commercialPlan === "PURAGENDA" ? "Puragenda" : wantsPlan === "EQUIPO" ? t("plans.team") : wantsPlan === "INDIVIDUAL" ? t("plans.individual") : wantsPlan === "TEST" ? t("plans.test") : null;
-  const planPrice = commercialQuoteSelection?.monthlyTotal ?? (wantsPlan === "EQUIPO" ? PRICING.EQUIPO.monthly + extraStaffCount * EXTRA_STAFF_COST.EQUIPO : wantsPlan === "INDIVIDUAL" ? PRICING.INDIVIDUAL.monthly : wantsPlan === "TEST" ? PRICING.TEST.monthly : 0);
-  const totalEquipoStaff = STAFF_LIMITS.EQUIPO + extraStaffCount;
+  const countryCode = REGISTRATION_COUNTRY;
+  const currencyCode = REGISTRATION_CURRENCY;
 
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const detectedCountry = getCountryConfig(initialCountryCode);
-  const [countryCode, setCountryCode] = useState(initialCountryCode);
-  const withWebsite = websiteSelected && countryCode === "CL";
-  const isDirectSubscription = requestedDirectSubscription && (!withWebsite || websiteAcquisitionEnabled);
-  const selectedQuote = selected.plan ? commercialQuote(selected.plan, selected.cycle, commercialPlan ? selected.professionalTotal : extraStaffCount, withWebsite) : null;
-  const [timezone, setTimezone] = useState(initialCountryCode ? detectedCountry.timezone : "");
-  const [currencyCode, setCurrencyCode] = useState(initialCountryCode ? detectedCountry.currency : "");
+  const [timezone, setTimezone] = useState<string>(REGISTRATION_TIMEZONES[0]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [discountCode, setDiscountCode] = useState(searchParams.get("discount")?.toUpperCase() || "");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketplaceCategorySlug, setMarketplaceCategorySlug] = useState("");
   const [marketplaceOtherDescription, setMarketplaceOtherDescription] = useState("");
@@ -75,26 +51,15 @@ export function RegisterForm({
   const [marketplaceAuthorized, setMarketplaceAuthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<"register" | "payment" | null>(null);
-
-  function applyCountry(nextCountry: string) {
-    const defaults = getCountryConfig(nextCountry);
-    setCountryCode(nextCountry);
-    setTimezone(defaults.timezone);
-    setCurrencyCode(defaults.currency);
-    setMarketplaceLocalitySlug("");
-    setMarketplaceCityName("");
-  }
-
   const localityGroups = groupLocalitiesByRegion(localityOptions);
-  const localityNotFound = countryCode === "CL" && marketplaceLocalitySlug === MARKETPLACE_LOCALITY_NOT_FOUND;
+  const localityNotFound = marketplaceLocalitySlug === MARKETPLACE_LOCALITY_NOT_FOUND;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitBusy.current) return;
     setError(null);
 
-        if (!termsAccepted) {
+    if (!termsAccepted) {
       setError(t("errors.acceptTerms"));
       return;
     }
@@ -108,13 +73,12 @@ export function RegisterForm({
     setLoading(true);
 
     try {
-      // Step 1: Create account
-      setLoadingStep("register");
+      // Registration creates the free trial without starting a checkout.
       track("registration_started", {
-        plan: commercialPlan || wantsPlan || "EQUIPO",
-        intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
-        extra_staff: extraStaffCount,
-        website_intent: withWebsite,
+        plan: commercialPlan,
+        intent: "trial",
+        extra_staff: Math.max(0, professionalTotal - 1),
+        website_intent: false,
       });
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -129,21 +93,20 @@ export function RegisterForm({
           password,
           referralCode: referralCode.trim() || undefined,
           planIntent: commercialPlan,
-          commercialPlanIntent: commercialPlan || undefined,
+          commercialPlanIntent: commercialPlan,
           professionalTotal,
-          extraStaffCount,
-          websiteIntent: withWebsite,
+          websiteIntent: false,
           billingCycle: selected.cycle === "annual" ? "ANNUAL" : "MONTHLY",
           termsAccepted,
           marketplaceCategorySlug,
           marketplaceOtherDescription: marketplaceCategorySlug === MARKETPLACE_OTHER_CATEGORY_SLUG
             ? marketplaceOtherDescription.trim()
             : undefined,
-          marketplaceLocalitySlug: countryCode === "CL" && !localityNotFound
+          marketplaceLocalitySlug: !localityNotFound
             ? marketplaceLocalitySlug
             : undefined,
           marketplaceLocalityNotFound: localityNotFound,
-          marketplaceCityName: countryCode !== "CL" || localityNotFound
+          marketplaceCityName: localityNotFound
             ? marketplaceCityName.trim()
             : undefined,
           marketplaceAuthorized,
@@ -160,45 +123,16 @@ export function RegisterForm({
       if (!data.user) return;
 
       track("registration_completed", {
-        plan: commercialPlan || wantsPlan || "EQUIPO",
-        intent: wantsTrial ? "trial" : isDirectSubscription ? "subscription" : "standard",
-        country: countryCode || "unknown",
-        website_intent: withWebsite,
+        plan: commercialPlan,
+        intent: "trial",
+        country: countryCode,
+        website_intent: false,
       });
 
-      // Step 2: Start the provider selected by the business country.
-      if (isDirectSubscription && (!withWebsite || websiteAcquisitionEnabled)) {
-        setLoadingStep("payment");
-        const billingRes = await fetch("/api/billing/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: wantsPlan, extraStaffCount, discountCode: discountCode.trim() || undefined }),
-        });
-
-        const billingData = await billingRes.json();
-
-        if (billingRes.ok && (billingData.init_point || billingData.provider === "paddle")) {
-          track("checkout_started", {
-            plan: wantsPlan || "EQUIPO",
-            provider: billingData.provider === "paddle" ? "paddle" : "mercadopago",
-            extra_staff: extraStaffCount,
-            website_intent: withWebsite,
-          });
-          await startBillingCheckout(billingData);
-          return;
-        }
-
-        console.error("[register] Billing error:", billingData.error);
-        setError(billingData.error || t("errors.paymentStart"));
-        return;
-      }
-
-      // Step 3: Normal flow (trial or individual) → go to dashboard
-      window.location.href = withWebsite ? "/onboarding/website" : "/dashboard";
+      window.location.href = "/dashboard";
     } finally {
       submitBusy.current = false;
       setLoading(false);
-      setLoadingStep(null);
     }
   }
 
@@ -206,63 +140,11 @@ export function RegisterForm({
     <div className="rounded-2xl border border-border bg-card p-6 shadow-2xl animate-fade-up">
       <div className="mb-6 space-y-1.5">
         <h2 className="text-2xl font-bold">{t("title")}</h2>
-        {commercialPlan && <div className="space-y-2 rounded-xl border-2 border-black bg-[#E9D8FF] p-3 text-sm font-bold text-black">
-          <p className="font-black">Plan elegido: {commercialPlan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"} · {professionalTotal} {professionalTotal === 1 ? "profesional" : "profesionales"}</p>
-          <p>Precio al contratar: ${new Intl.NumberFormat(locale).format(commercialQuoteSelection?.cycleTotal ?? planPrice)} CLP/{selected.cycle === "annual" ? "año · 2 meses gratis" : "mes"} · IVA incluido.</p>
-          <p>{PUBLIC_TRIAL_NOTE}</p>
-        </div>}
-        {websiteSelected && <div className="space-y-2 rounded-xl border-2 border-black bg-[#FFF5BA] p-3 text-sm font-bold text-black">
-          <p>{planLabel} + Sitio Web</p>
-          <p>Puragenda: ${new Intl.NumberFormat(locale).format(selectedQuote?.baseCharge ?? planPrice)}/{selected.cycle === "annual" ? "año" : "mes"}</p>
-          <p>Sitio Web: +${new Intl.NumberFormat(locale).format(publicWebsiteMonthly)}/mes, facturado por separado.</p>
-          {selected.cycle === "annual" && <p>Tu plan Puragenda se factura anualmente y el sitio web mensualmente.</p>}
-          <p>Primero Puragenda; después confirmarás la contratación del sitio. Dos suscripciones independientes.</p>
-          {(wantsTrial || !websiteAcquisitionEnabled) && <p>Inicias solo la prueba de 30 días de Puragenda. El sitio no se cobra ni activa. {!websiteAcquisitionEnabled && "Contratación del sitio próximamente."}</p>}
-          {countryCode !== "CL" && <p>Esta oferta está disponible en Chile. Para otros países el registro incluye solo Puragenda.</p>}
-        </div>}
-        {isDirectSubscription ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              {t("activatePlan", { plan: planLabel ?? "" })}
-            </p>
-            <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-3 py-2">
-              <Crown className="h-4 w-4 text-[#7C3AED]" />
-              <span className="text-sm font-medium text-[#A78BFA]">
-                {countryCode && countryCode !== "CL"
-                  ? paymentSimulatorEnabled
-                    ? t("localPlanPrice", { plan: planLabel ?? "", currency: currencyCode })
-                    : t("usdPlanPrice", { plan: planLabel ?? "", price: wantsPlan === "EQUIPO" ? (32.99 + extraStaffCount * 3.49).toFixed(2) : wantsPlan === "INDIVIDUAL" ? "13.99" : "0.00" })
-                : selected.cycle === "annual" && selectedQuote ? `${planLabel}: $${new Intl.NumberFormat(locale).format(selectedQuote.baseCharge)}/año` : t("clpPlanPrice", { plan: planLabel ?? "", price: new Intl.NumberFormat(locale).format(planPrice) })}
-              </span>
-            </div>
-            {wantsPlan === "EQUIPO" && (
-              <p className="text-xs text-muted-foreground">
-                {t("staffTotal", { included: STAFF_LIMITS.EQUIPO, total: totalEquipoStaff })}
-              </p>
-            )}
-          </div>
-        ) : wantsTrial ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              {t("startTrial")}
-            </p>
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">
-                {t("trialBadge", { days: TRIAL_DURATION_DAYS, plan: planLabel || t("plans.team") })}
-              </span>
-            </div>
-            {(wantsPlan === "EQUIPO" || !wantsPlan) && (
-              <p className="text-xs text-muted-foreground">
-                {t("teamIncludes", { count: STAFF_LIMITS.EQUIPO, extras: extraStaffCount })}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {t("subtitle")}
-          </p>
-        )}
+        <div className="space-y-2 rounded-xl border-2 border-black bg-[#E9D8FF] p-3 text-sm font-bold text-black">
+          <p className="font-black">{t("selectedPlan", { plan: commercialPlan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda", count: professionalTotal })}</p>
+          <p>{t("selectedPrice", { price: new Intl.NumberFormat(locale).format(commercialQuoteSelection.cycleTotal), cycle: t(selected.cycle === "annual" ? "annualCycle" : "monthlyCycle") })}</p>
+          <p>{t("freeTrial", { days: TRIAL_DURATION_DAYS })}</p>
+        </div>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -298,26 +180,12 @@ export function RegisterForm({
 
         <div className="space-y-1.5">
           <label htmlFor="countryCode" className="text-sm text-muted-foreground">{t("country")}</label>
-          <select
-            id="countryCode"
-            value={countryCode}
-            onInput={(event) => applyCountry(event.currentTarget.value)}
-            onChange={(event) => applyCountry(event.target.value)}
-            required
-            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-          >
-            <option value="" disabled>{t("selectCountry")}</option>
-            {countryOptions.map((country) => (
-              <option key={country.code} value={country.code}>{country.name}</option>
-            ))}
-          </select>
-          <p className="text-xs text-muted-foreground">
-            {t("countryHelp")}
-          </p>
+          <input id="countryCode" value={new Intl.DisplayNames([locale], { type: "region" }).of(countryCode)} readOnly aria-describedby="registration-market-help"
+            className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm" />
+          <p id="registration-market-help" className="text-xs text-muted-foreground">{t("chileOnly")}</p>
         </div>
 
 
-        {countryCode === "CL" ? (
           <div className="space-y-1.5">
             <label htmlFor="marketplaceLocalitySlug" className="text-sm text-muted-foreground">
               {t("locality")}
@@ -346,21 +214,6 @@ export function RegisterForm({
               {t("localityHelp")}
             </p>
           </div>
-        ) : countryCode ? (
-          <div className="space-y-1.5">
-            <label htmlFor="marketplaceCityName" className="text-sm text-muted-foreground">{t("city")}</label>
-            <input
-              id="marketplaceCityName"
-              value={marketplaceCityName}
-              onChange={(event) => setMarketplaceCityName(event.target.value)}
-              placeholder={t("cityPlaceholder")}
-              maxLength={100}
-              required
-              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-            />
-            <p className="text-xs text-muted-foreground">{t("internationalCityHelp")}</p>
-          </div>
-        ) : null}
 
         {localityNotFound ? (
           <div className="space-y-1.5">
@@ -430,33 +283,20 @@ export function RegisterForm({
           </label>
         </div>
 
-        {countryCode && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label htmlFor="timezone" className="text-sm text-muted-foreground">{t("timezone")}</label>
-              <input
-                id="timezone"
-                value={timezone}
-                onChange={(event) => setTimezone(event.target.value)}
-                placeholder={t("timezonePlaceholder")}
-                required
-                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="currencyCode" className="text-sm text-muted-foreground">{t("currency")}</label>
-              <input
-                id="currencyCode"
-                value={currencyCode}
-                onChange={(event) => setCurrencyCode(event.target.value.toUpperCase().slice(0, 3))}
-                pattern="[A-Z]{3}"
-                maxLength={3}
-                required
-                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm uppercase outline-none transition-colors focus:border-[#7C3AED]/30"
-              />
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="min-w-0 space-y-1.5">
+            <label htmlFor="timezone" className="text-sm text-muted-foreground">{t("timezone")}</label>
+            <select id="timezone" value={timezone} onChange={event => setTimezone(event.target.value)} required
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30">
+              {REGISTRATION_TIMEZONES.map(zone => <option key={zone} value={zone}>{t("timezones." + zone.replaceAll("/", "_"))}</option>)}
+            </select>
           </div>
-        )}
+          <div className="min-w-0 space-y-1.5">
+            <label htmlFor="currencyCode" className="text-sm text-muted-foreground">{t("currency")}</label>
+            <input id="currencyCode" value={currencyCode} readOnly
+              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm" />
+          </div>
+        </div>
 
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-sm text-muted-foreground">{t("email")}</label>
@@ -518,25 +358,7 @@ export function RegisterForm({
           />
         </div>
 
-        {isDirectSubscription && (
-          <div className="space-y-1.5">
-            <label htmlFor="discountCode" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Gift className="h-3.5 w-3.5 text-[#7C3AED]" />
-              {t("discountCode")} <span className="text-muted-foreground/50">({t("optional")})</span>
-            </label>
-            <input
-              id="discountCode"
-              type="text"
-              placeholder={legacy("UnRX2tyHMgNp")}
-              value={discountCode}
-              onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-              maxLength={32}
-              className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-mono uppercase tracking-wider outline-none transition-colors focus:border-[#7C3AED]/30 placeholder:font-sans placeholder:normal-case placeholder:tracking-normal"
-            />
-          </div>
-        )}
-
-                {/* Terms and Conditions */}
+        {/* Terms and Conditions */}
         <div className="flex items-start gap-2 pt-2">
           <input
             type="checkbox"
@@ -559,40 +381,10 @@ export function RegisterForm({
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50 ${
-            isDirectSubscription
-              ? "bg-gradient-to-r from-[#7C3AED] via-[#6D28D9] to-[#5B21B6] shadow-lg shadow-[#7C3AED]/25 hover:shadow-xl hover:shadow-[#7C3AED]/30"
-              : "bg-[#7C3AED] hover:bg-[#5B21B6]"
-          }`}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {loadingStep === "register" ? t("creating") : t("redirectingPayment")}
-            </>
-          ) : isDirectSubscription ? (
-            <>
-              <CreditCard className="h-4 w-4" /> {t("createAndPay")}
-            </>
-          ) : (
-            <>
-              <UserPlus className="h-4 w-4" /> {t("create")}
-            </>
-          )}
+        <button type="submit" disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#5B21B6] disabled:opacity-50">
+          {loading ? <><Loader2 className="h-4 w-4 animate-spin" />{t("creating")}</> : <><UserPlus className="h-4 w-4" />{t("create")}</>}
         </button>
-
-        {isDirectSubscription && (
-          <p className="text-center text-xs text-muted-foreground">
-            {countryCode !== "CL"
-              ? paymentSimulatorEnabled
-                ? t("simulatorNotice")
-                : t("paddleNotice")
-              : t("mercadoPagoNotice")}
-          </p>
-        )}
       </form>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">

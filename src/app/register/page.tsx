@@ -1,23 +1,14 @@
 import Link from "next/link";
-import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { RegisterForm } from "./register-form";
-import { getCountryOptions, isSupportedCountryCode } from "@/core/countries";
-import { isLocalPaymentSimulatorEnabled } from "@/server/services/local-payment-simulator";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { getLocale } from "next-intl/server";
 import { listRegistrationMarketplaceCatalog } from "@/server/services/marketplace-onboarding.service";
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const user = await getCurrentSessionUser();
-  const locale = await getLocale();
-  const requestHeaders = await headers();
-  const detectedCountry = requestHeaders.get("x-vercel-ip-country")?.toUpperCase() ?? "";
-  const initialCountryCode = isSupportedCountryCode(detectedCountry) ? detectedCountry : "";
 
   if (user) {
     redirect(query.website === "1" ? "/onboarding/website?select=1" : "/dashboard");
@@ -41,12 +32,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
 
         <Suspense>
           <RegisterForm
-            countryOptions={getCountryOptions(locale)}
             categoryOptions={marketplaceCatalog.categories}
             localityOptions={marketplaceCatalog.localities}
-            paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
-            initialCountryCode={initialCountryCode}
-            websiteAcquisitionEnabled={publicWebsiteAcquisitionEnabled()}
           />
         </Suspense>
       </div>

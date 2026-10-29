@@ -1,12 +1,17 @@
 import { randomUUID } from "node:crypto";
+import bcrypt from "bcrypt";
+import { NextRequest } from "next/server";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/server/email/send", () => ({ sendWelcomeEmail: vi.fn(async () => true), sendNewRegistrationNotification: vi.fn(async () => true) }));
 import { prisma } from "@/server/db/prisma";
-import { registerUser } from "@/server/services/auth.service";
+import { registerUser, verifyCredentials } from "@/server/services/auth.service";
+import { POST as registerPOST } from "@/app/api/auth/register/route";
+import { POST as loginPOST } from "@/app/api/auth/login/route";
+import { getBusinessForUser } from "@/server/services/business.service";
 import { registerSchema } from "@/server/validations/auth";
 import { quoteCommercialContract, COMMERCIAL_CATALOG_VERSION } from "@/core/commercial-catalog";
 import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
-import { changeCommercialTrial, expireCommercialTrial } from "@/server/services/commercial-trial.service";
+import { changeCommercialTrial, createRegistrationContract, expireCommercialTrial } from "@/server/services/commercial-trial.service";
 import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { createGrowthScope } from "@/server/puri/growth/access";
 import type { PuriContext } from "@/server/puri/types";
@@ -18,6 +23,16 @@ import { getCommercialUsageSummary } from "@/server/services/commercial-usage-su
 
 const suite = describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 const users: string[] = [], businesses: string[] = [], ips: string[] = [];
+let requestNumber = 0;
+const registrationBody = () => ({ email: `${randomUUID()}@example.invalid`, password: "Local-test-only-pass123", name: "Synthetic Owner", businessName: `Next ${randomUUID()}`,
+  countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", marketplaceCategorySlug: "otro", marketplaceOtherDescription: "Negocio sintético", marketplaceCityName: "Local QA", marketplaceLocalityNotFound: true, termsAccepted: true });
+function request(route: string, body: object) {
+  const ip = `203.0.113.${++requestNumber}`; ips.push(ip);
+  return new NextRequest(`http://localhost${route}`, { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip, "x-vercel-ip-country": "JP" }, body: JSON.stringify(body) });
+}
+async function identityCounts() {
+  return Promise.all([prisma.user.count(), prisma.business.count(), prisma.subscription.count(), prisma.commercialSubscription.count(), prisma.commercialSubscriptionItem.count(), prisma.staff.count(), prisma.businessLocation.count(), prisma.commercialEvent.count()]);
+}
 async function register(plan: "PURAGENDA" | "PURAGENDA_PLUS" = "PURAGENDA_PLUS", seats = 1, cycle: "MONTHLY" | "ANNUAL" = "MONTHLY", ip = "127.0.0.1", email?: string) {
   const input = registerSchema.parse({ email: email ?? `${randomUUID()}@example.invalid`, password: "Local-test-only-pass123", name: "Synthetic Owner", businessName: `Next ${randomUUID()}`,
     countryCode: "CL", marketplaceCategorySlug: "otro", marketplaceOtherDescription: "Negocio sintético", marketplaceCityName: "Local QA", marketplaceLocalityNotFound: true,
@@ -41,6 +56,8 @@ suite("Next registration and real local trial lifecycle", () => {
       const sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId }, include: { items: true, entitlements: true } });
       const quote = quoteCommercialContract({ plan, professionalTotal: seats, billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION });
       expect(sub).toMatchObject({ planCode: plan, professionalTotal: seats, billingCycle, status: "TRIALING", totalPriceClp: quote.cycleTotal, provider: "NONE", lastPaymentAt: null, renewalAt: null });
+      expect(sub.currencyCode).toBe("CLP");
+      expect(await prisma.business.findUnique({ where: { id: businessId } })).toMatchObject({ countryCode: "CL", currencyCode: "CLP" });
       expect(sub.trialEnd!.getTime() - sub.trialStart!.getTime()).toBe(30 * 86400000);
       expect(sub.items.reduce((total, row) => total + row.amountClp!, 0)).toBe(quote.cycleTotal);
       expect(sub.termsSnapshot).toMatchObject({ vatIncluded: true, annualFreeMonths: billingCycle === "ANNUAL" ? 2 : 0 });
@@ -54,6 +71,34 @@ suite("Next registration and real local trial lifecycle", () => {
       else await expect(scope).rejects.toThrow("PLUS_ENTITLEMENT_REQUIRED");
     }
   }, 30000);
+  it.each([
+    ["PURAGENDA", "MONTHLY", 1, 12990], ["PURAGENDA", "ANNUAL", 1, 129900],
+    ["PURAGENDA_PLUS", "MONTHLY", 3, 37490], ["PURAGENDA_PLUS", "ANNUAL", 3, 374900],
+  ] as const)("registers Chilean %s / %s through the API without payment or geographic IP restrictions", async (plan, cycle, seats, price) => {
+    const response = await registerPOST(request("/api/auth/register", { ...registrationBody(), commercialPlanIntent: plan, professionalTotal: seats, billingCycle: cycle, amount: 1 }));
+    expect(response.status).toBe(201);
+    const body = await response.json(); users.push(body.user.id); businesses.push(body.business.id);
+    expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+    const sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId: body.business.id }, include: { items: true } });
+    expect(sub).toMatchObject({ planCode: plan, billingCycle: cycle, professionalTotal: seats, totalPriceClp: price, currencyCode: "CLP", provider: "NONE", externalSubscriptionId: null, lastPaymentAt: null, status: "TRIALING" });
+    expect(sub.trialEnd!.getTime() - sub.trialStart!.getTime()).toBe(30 * 86400000);
+    expect(sub.items.every(item => item.currencyCode === "CLP")).toBe(true);
+    expect(await prisma.commercialBillingOperation.count({ where: { businessId: body.business.id } })).toBe(0);
+  });
+  it.each([
+    { countryCode: "AR", currencyCode: "ARS" }, { countryCode: "US", currencyCode: "CLP" },
+    { countryCode: "CL", currencyCode: "USD" }, { countryCode: "CL", currencyCode: "EUR" },
+    { countryCode: "CL", currencyCode: "CLP", timezone: "Asia/Tokyo" },
+  ])("rejects forged regional fields before creating any identity or contract: %j", async fields => {
+    const body = { ...registrationBody(), ...fields }, before = await identityCounts();
+    const response = await registerPOST(request("/api/auth/register", body));
+    expect(response.status).toBe(400); expect(response.headers.get("set-cookie")).toBeNull();
+    expect(await prisma.user.findUnique({ where: { email: body.email } })).toBeNull();
+    expect(await identityCounts()).toEqual(before);
+    // Internal callers cannot bypass the same policy by skipping the route schema.
+    expect(await registerUser(body)).toMatchObject({ success: false, status: 400 });
+    expect(await identityCounts()).toEqual(before);
+  });
   it("rejects forged plan/capacity input instead of trusting client prices", () => {
     const base = { email: "local@example.invalid", password: "Local-only123", name: "QA", businessName: "QA", countryCode: "CL", termsAccepted: true, marketplaceCategorySlug: "otro", marketplaceOtherDescription: "Local test", marketplaceLocalityNotFound: true, marketplaceCityName: "Local" };
     for (const professionalTotal of [0, -1, 1.5, 21, "5"]) expect(registerSchema.safeParse({ ...base, professionalTotal }).success).toBe(false);
@@ -121,14 +166,28 @@ suite("Next registration and real local trial lifecycle", () => {
     expect(sub.lastPaymentEventId).toBeTruthy(); expect(sub.trialEnd).not.toEqual(end);
   });
   it("does not migrate or reprice an existing legacy contract", async () => {
-    const user = await prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password: "synthetic-no-login", name: "Legacy fixture" } });
+    const password = "Synthetic-legacy-access123";
+    const user = await prisma.user.create({ data: { email: `${randomUUID()}@example.invalid`, password: await bcrypt.hash(password, 4), name: "Legacy fixture" } });
     const businessId = `legacy-${randomUUID()}`;
     users.push(user.id); businesses.push(businessId);
-    await prisma.business.create({ data: { id: businessId, slug: businessId, apiKey: randomUUID(), name: "Legacy fixture", ownerId: user.id } });
-    await prisma.subscription.create({ data: { businessId, plan: "EQUIPO", status: "ACTIVE", isTrial: false, extraStaffCount: 2, staffLimitOverride: null, customMonthlyPriceClp: 24000, paymentMethod: "BANK_TRANSFER", billingCycle: "MONTHLY" } });
+    await prisma.business.create({ data: { id: businessId, slug: businessId, apiKey: randomUUID(), name: "Legacy fixture", ownerId: user.id, countryCode: "AR", currencyCode: "ARS", timezone: "America/Argentina/Buenos_Aires" } });
+    await prisma.subscription.create({ data: { businessId, plan: "EQUIPO", status: "ACTIVE", isTrial: false, extraStaffCount: 2, staffLimitOverride: null, customMonthlyPriceClp: 24000, paymentMethod: "BANK_TRANSFER", billingCycle: "MONTHLY", currentPeriodEnd: new Date(Date.now() + 30 * 86400000) } });
     const before = await prisma.subscription.findUnique({ where: { businessId } });
+    const businessBefore = await getBusinessForUser(user.id);
+    expect(await verifyCredentials(user.email, password)).toMatchObject({ id: user.id });
+    const response = await loginPOST(request("/api/auth/login", { email: user.email, password }));
+    expect(response.status).toBe(200); expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+    expect((await getCommercialPlanAccess(businessId)).allowed).toBe(true);
     expect((await getCommercialPlanAccess(businessId)).professionalTotal).toBe(7);
     expect((await getCommercialPlanAccess(businessId)).has("puri.plus")).toBe(false);
+    expect(await prisma.subscription.findUnique({ where: { businessId } })).toEqual(before);
+    expect(await getBusinessForUser(user.id)).toEqual(businessBefore);
+    await expect(prisma.$transaction(tx => createRegistrationContract(tx, { businessId, plan: "PURAGENDA", professionalTotal: 1, billingCycle: "MONTHLY", trialEligible: true }))).rejects.toThrow("REGISTRATION_MARKET_UNSUPPORTED");
+    expect(await prisma.commercialSubscription.count({ where: { businessId } })).toBe(0);
+    expect(await prisma.subscription.findUnique({ where: { businessId } })).toEqual(before);
+    // Currency is checked independently of country at the contract boundary.
+    await prisma.business.update({ where: { id: businessId }, data: { countryCode: "CL", currencyCode: "USD" } });
+    await expect(prisma.$transaction(tx => createRegistrationContract(tx, { businessId, plan: "PURAGENDA_PLUS", professionalTotal: 1, billingCycle: "ANNUAL", trialEligible: true }))).rejects.toThrow("REGISTRATION_MARKET_UNSUPPORTED");
     expect(await prisma.subscription.findUnique({ where: { businessId } })).toEqual(before);
   });
   it("requires explicit allowances and never replenishes a trial at month boundaries or on retry", async () => {

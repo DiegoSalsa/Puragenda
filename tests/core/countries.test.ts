@@ -85,26 +85,9 @@ describe("country tax identifiers", () => {
 });
 
 describe("registration country validation", () => {
-  it("accepts countries worldwide and keeps Chile as a legacy API default", () => {
-    expect(registerSchema.parse({
-      ...validRegistration,
-      countryCode: "AR",
-      marketplaceLocalitySlug: undefined,
-      marketplaceCityName: "Buenos Aires",
-    }).countryCode).toBe("AR");
-    expect(registerSchema.parse({
-      ...validRegistration,
-      countryCode: "JP",
-      timezone: "Asia/Tokyo",
-      currencyCode: "JPY",
-      marketplaceLocalitySlug: undefined,
-      marketplaceCityName: "Tokio",
-    })).toMatchObject({
-      countryCode: "JP",
-      timezone: "Asia/Tokyo",
-      currencyCode: "JPY",
-    });
-    expect(registerSchema.parse(validRegistration).countryCode).toBe("CL");
+  it("defaults new businesses to Chile and CLP and normalizes explicit codes", () => {
+    expect(registerSchema.parse(validRegistration)).toMatchObject({ countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago" });
+    expect(registerSchema.parse({ ...validRegistration, countryCode: " cl ", currencyCode: " clp " })).toMatchObject({ countryCode: "CL", currencyCode: "CLP" });
   });
 
   it("rejects unsupported countries", () => {
@@ -112,11 +95,21 @@ describe("registration country validation", () => {
     expect(registerSchema.safeParse({ ...validRegistration, countryCode: "JP", timezone: "Mars/Tokyo" }).success).toBe(false);
   });
 
-  it("requires a normal city for countries outside Chile", () => {
-    expect(registerSchema.safeParse({
-      ...validRegistration,
-      countryCode: "AR",
-      marketplaceLocalitySlug: undefined,
-    }).success).toBe(false);
+  it.each(["AR", "JP", "US"])("rejects new %s businesses even with otherwise valid regional fields", countryCode => {
+    expect(registerSchema.safeParse({ ...validRegistration, countryCode, marketplaceCityName: "Synthetic city" }).success).toBe(false);
+  });
+
+  it.each(["USD", "ARS", "EUR", ""])("rejects incompatible registration currency %s", currencyCode => {
+    expect(registerSchema.safeParse({ ...validRegistration, currencyCode }).success).toBe(false);
+  });
+
+  it.each(["America/Santiago", "America/Coyhaique", "America/Punta_Arenas", "Pacific/Easter"])("supports Chilean timezone %s", timezone => {
+    expect(registerSchema.parse({ ...validRegistration, timezone }).timezone).toBe(timezone);
+  });
+
+  it("rejects non-Chilean timezones without changing legacy country utilities", () => {
+    expect(registerSchema.safeParse({ ...validRegistration, timezone: "Asia/Tokyo" }).success).toBe(false);
+    expect(getCountryConfig("JP")).toMatchObject({ code: "JP", currency: "USD" });
+    expect(isSupportedCountryCode("JP")).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { STAFF_LIMITS } from "@/core/constants";
 import { COMMERCIAL_MAX_PROFESSIONALS } from "@/core/commercial-catalog";
-import { isSupportedCountryCode, isValidTimeZone } from "@/core/countries";
+import { registrationMarketSchema } from "@/core/registration-market";
 import { registrationMarketplaceShapeErrors } from "@/lib/marketplace/onboarding";
 
 export const registerSchema = z.object({
@@ -33,24 +33,7 @@ export const registerSchema = z.object({
     .max(100, "El nombre del negocio no debe exceder 100 caracteres")
     .trim(),
 
-  countryCode: z
-    .string()
-    .default("CL")
-    .transform((value) => value.trim().toUpperCase())
-    .refine(isSupportedCountryCode, "Selecciona un país válido"),
-
-  timezone: z
-    .string()
-    .trim()
-    .refine(isValidTimeZone, "Selecciona una zona horaria válida")
-    .optional(),
-
-  currencyCode: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z]{3}$/, "Usa un código de moneda ISO de 3 letras")
-    .optional(),
+  ...registrationMarketSchema.shape,
 
   referralCode: z
     .string()

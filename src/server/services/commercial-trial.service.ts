@@ -7,6 +7,7 @@ export { commercialSelectionSchema, type CommercialSelection } from "@/core/comm
 import { commercialHash } from "./commercial-internal";
 import { commercialJson, materializeCommercialEntitlements } from "./commercial-subscription-v2.service";
 import { effectiveSnapshotAccess } from "./commercial-plan-access";
+import { REGISTRATION_COUNTRY, REGISTRATION_CURRENCY } from "@/core/registration-market";
 
 function contractTerms(selection: CommercialSelection) {
   const quote = quoteCommercialContract({ ...selection, catalogVersion: COMMERCIAL_CATALOG_VERSION });
@@ -28,6 +29,10 @@ async function writeItems(tx: Prisma.TransactionClient, subscriptionId: string, 
 
 /** Registration already holds its identity lock. Never calls a payment provider. */
 export async function createRegistrationContract(tx: Prisma.TransactionClient, input: CommercialSelection & { businessId: string; trialEligible: boolean; now?: Date }) {
+  const business = await tx.business.findUniqueOrThrow({ where: { id: input.businessId }, select: { countryCode: true, currencyCode: true } });
+  if (business.countryCode !== REGISTRATION_COUNTRY || business.currencyCode !== REGISTRATION_CURRENCY) {
+    throw new Error("REGISTRATION_MARKET_UNSUPPORTED");
+  }
   const selection = commercialSelectionSchema.parse({ plan: input.plan, professionalTotal: input.professionalTotal, billingCycle: input.billingCycle });
   const now = input.now ?? new Date();
   const { quote, terms } = contractTerms(selection);

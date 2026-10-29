@@ -7,7 +7,7 @@ import { SALT_ROUNDS, API_KEY_PREFIX, STAFF_LIMITS, SUPERADMIN_EMAILS } from "@/
 import { toSlug } from "@/core/validators/slug";
 import { applyReferralCode } from "@/server/services/affiliate.service";
 import { sendWelcomeEmail, sendNewRegistrationNotification } from "@/server/email/send";
-import { getCountryConfig } from "@/core/countries";
+import { registrationMarketSchema } from "@/core/registration-market";
 import { createPrimaryLocation } from "@/server/services/location.service";
 import {
   createRegistrationMarketplaceListing,
@@ -95,13 +95,18 @@ export async function registerUser(data: {
   marketplaceCityName?: string | null;
   marketplaceAuthorized?: boolean;
 }) {
+  // Validate before any lookup, identity creation, referral or notification.
+  const market = registrationMarketSchema.safeParse(data);
+  if (!market.success) {
+    return { success: false as const, error: market.error.issues[0].message, status: 400 as const };
+  }
   const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing) {
     return { success: false as const, error: "Ya existe una cuenta con ese email", status: 409 as const };
   }
 
   const marketplace = await resolveRegistrationMarketplaceClassification({
-    countryCode: data.countryCode,
+    countryCode: market.data.countryCode,
     categorySlug: data.marketplaceCategorySlug,
     otherDescription: data.marketplaceOtherDescription,
     localitySlug: data.marketplaceLocalitySlug,
@@ -145,16 +150,15 @@ export async function registerUser(data: {
     const baseSlug = toSlug(data.businessName);
     const slug = await generateUniqueBusinessSlug(baseSlug, tx);
 
-    const region = getCountryConfig(data.countryCode);
     const business = await tx.business.create({
       data: {
         name: businessName,
         slug,
         apiKey: createApiKey(),
         ownerId: user.id,
-        countryCode: region.code,
-        currencyCode: data.currencyCode || region.currency,
-        timezone: data.timezone || region.timezone,
+        countryCode: market.data.countryCode,
+        currencyCode: market.data.currencyCode,
+        timezone: market.data.timezone,
         locale: resolveLocale(data.locale),
       },
       select: { id: true, name: true, slug: true, timezone: true, locale: true },

@@ -43,7 +43,7 @@ describe("public Website commercial contract", () => {
     expect(websitePriceTier({offerCode:"BETA_FOUNDER"})).toBe("BETA_FOUNDER");
   });
   it("server schema accepts a separate boolean, keeps honeypot name reserved, strips commercial authority fields", () => {
-    const data={email:"qa@example.test",password:"valid-password",name:"QA Owner",businessName:"QA Business",countryCode:"AR",marketplaceCategorySlug:"barberias",marketplaceCityName:"Local QA",termsAccepted:true, websiteIntent:true,billingCycle:"ANNUAL", amount:1,tier:"BETA_FOUNDER",providerPriceId:"fake"};
+    const data={email:"qa@example.test",password:"valid-password",name:"QA Owner",businessName:"QA Business",countryCode:"CL",marketplaceCategorySlug:"barberias",marketplaceLocalityNotFound:true,marketplaceCityName:"Local QA",termsAccepted:true, websiteIntent:true,billingCycle:"ANNUAL", amount:1,tier:"BETA_FOUNDER",providerPriceId:"fake"};
     const parsed=registerSchema.parse(data);
     expect(parsed.websiteIntent).toBe(true); expect(parsed.billingCycle).toBe("ANNUAL");
     expect(parsed).not.toHaveProperty("amount"); expect(parsed).not.toHaveProperty("tier");expect(parsed).not.toHaveProperty("providerPriceId");
