@@ -23,7 +23,7 @@ export async function GET(
   }
 
   const service = await prisma.service.findFirst({
-    where: { id: serviceId, businessId: business.id, bookingMode: "PRODUCTION" },
+    where: { isActive: true, id: serviceId, businessId: business.id, bookingMode: "PRODUCTION" },
     select: {
       id: true,
       productionScheduleMode: true,

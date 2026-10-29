@@ -186,7 +186,7 @@ export async function getAvailabilityStoryOptions(user: StoryUser, business: Sto
       select: { id: true, name: true, slug: true, address: true },
     }),
     prisma.service.findMany({
-      where: {
+      where: { isActive: true,
         businessId: business.id,
         bookingMode: "APPOINTMENT",
         ...(!access.canChooseStaff && access.ownStaffId
@@ -449,7 +449,7 @@ export async function getAvailabilityStoryOpportunities(
       },
     }),
     prisma.service.findMany({
-      where: { businessId: business.id, bookingMode: "APPOINTMENT" },
+      where: { isActive: true, businessId: business.id, bookingMode: "APPOINTMENT" },
       orderBy: [{ position: "asc" }, { name: "asc" }],
       select: {
         id: true,
@@ -645,7 +645,7 @@ export async function buildAvailabilityStory(
 
   const requestedStaffId = access.canChooseStaff ? request.staffId ?? null : access.ownStaffId;
   const services = await prisma.service.findMany({
-    where: {
+    where: { isActive: true,
       businessId: business.id,
       bookingMode: "APPOINTMENT",
       locations: { some: { locationId: location.id } },

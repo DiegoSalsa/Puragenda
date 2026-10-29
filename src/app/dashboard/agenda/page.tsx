@@ -139,7 +139,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       },
     }),
     prisma.service.findMany({
-      where: {
+      where: { isActive: true,
         businessId: business.id,
         bookingMode: "APPOINTMENT",
         ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id } } } : {}),
@@ -152,9 +152,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       orderBy: { name: "asc" },
       include: {
         staff: { where: { isActive: true }, select: { id: true } },
-        optionCategories: {
+        optionCategories: { where: { isActive: true },
           orderBy: { position: "asc" },
-          include: { alternatives: { orderBy: { position: "asc" } } },
+          include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
         },
       },
     }),

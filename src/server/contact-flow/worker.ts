@@ -145,7 +145,7 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
   )
     return "LOCATION_FORBIDDEN";
   const service = await tx.service.findFirst({
-    where: {
+    where: { isActive: true,
       id: v.serviceId,
       businessId: m.businessId,
       name: v.serviceName,

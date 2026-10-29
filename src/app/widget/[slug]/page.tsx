@@ -101,14 +101,14 @@ export default async function WidgetPage({
           gracePeriodEndsAt: true,
         },
       },
-      services: {
+      services: { where: { isActive: true },
         orderBy: [{ position: "asc" }, { name: "asc" }],
         include: {
           category: true,
           recurringPlan: true,
-          optionCategories: {
+          optionCategories: { where: { isActive: true },
             orderBy: { position: "asc" },
-            include: { alternatives: { orderBy: { position: "asc" } } },
+            include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
           },
           locations: { select: { locationId: true } },
         },

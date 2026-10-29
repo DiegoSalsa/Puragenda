@@ -41,6 +41,9 @@ export interface AppointmentEditorClient {
 }
 
 export interface EditableAppointment {
+  serviceName?: string;
+  totalPrice?: number;
+  totalDuration?: number;
   id: string;
   updatedAt?: string;
   locationId?: string | null;
@@ -52,7 +55,7 @@ export interface EditableAppointment {
   staffId: string | null;
   startTime: string;
   internalNotes: string | null;
-  selectedOptions: { alternativeId?: string }[];
+  selectedOptions: { alternativeId?: string; alternativeName?: string; categoryName?: string }[];
 }
 
 export function AppointmentEditor({
@@ -113,9 +116,11 @@ export function AppointmentEditor({
   const selectedAlternatives = selectedService?.optionCategories.flatMap((category) =>
     category.alternatives.filter((alternative) => selectedOptionIds.includes(alternative.id))
   ) ?? [];
-  const totalDuration = (selectedService?.duration ?? 0) +
+  const keepContract = !!appointment && serviceId === appointment.serviceId &&
+    JSON.stringify([...selectedOptionIds].sort()) === JSON.stringify(appointment.selectedOptions.flatMap(option => option.alternativeId ? [option.alternativeId] : []).sort());
+  const totalDuration = keepContract && appointment.totalDuration !== undefined ? appointment.totalDuration : (selectedService?.duration ?? 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.durationDelta, 0);
-  const totalPrice = (selectedService?.price ?? 0) +
+  const totalPrice = keepContract && appointment.totalPrice !== undefined ? appointment.totalPrice : (selectedService?.price ?? 0) +
     selectedAlternatives.reduce((sum, alternative) => sum + alternative.priceDelta, 0);
 
   function chooseClient(nextId: string) {
@@ -233,6 +238,7 @@ export function AppointmentEditor({
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("serviceSection")}</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <select required value={serviceId} onChange={(event) => chooseService(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
+                  {appointment && !services.some(service => service.id === appointment.serviceId) && <option value={appointment.serviceId}>{appointment.serviceName || "Servicio contratado"} (archivado)</option>}
                   {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
                 </select>
                 <select required value={staffId} onChange={(event) => setStaffId(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
@@ -241,6 +247,7 @@ export function AppointmentEditor({
                 </select>
               </div>
 
+              {keepContract && <p className="text-xs text-muted-foreground">Se conservan el precio, duración y opciones contratados. {appointment.selectedOptions.map(option => option.alternativeName).filter(Boolean).join(", ")}</p>}
               {selectedService?.optionCategories.map((category) => (
                 <div key={category.id} className="rounded-xl border border-border bg-muted/25 p-3">
                   <p className="text-sm font-medium">
@@ -298,7 +305,7 @@ export function AppointmentEditor({
 
           <div className="flex flex-col-reverse gap-3 border-t border-border bg-muted/20 px-5 py-4 sm:flex-row sm:justify-end">
             <button type="button" onClick={onClose} className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium">{t("cancel")}</button>
-            <button type="submit" disabled={pending || !services.length || !staffId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            <button type="submit" disabled={pending || (!services.length && !appointment) || !staffId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
               {pending ? t("saving") : appointment ? t("saveChanges") : t("create")}
             </button>

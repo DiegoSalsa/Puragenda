@@ -73,9 +73,9 @@ export async function POST(
     }
 
     const service = await prisma.service.findFirst({
-      where: { id: serviceId, businessId: business.id },
+      where: { isActive: true, id: serviceId, businessId: business.id },
       include: {
-        optionCategories: { include: { alternatives: true } },
+        optionCategories: { where: { isActive: true }, include: { alternatives: true } },
       },
     });
     if (!service) {

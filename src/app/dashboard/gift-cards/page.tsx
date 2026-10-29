@@ -18,7 +18,7 @@ export default async function GiftCardsPage() {
 
   const [templates, services, purchases, sold, sales, balances, serviceLiability, used] = await Promise.all([
     prisma.giftCardTemplate.findMany({ where: { businessId: business.id }, include: { services: { include: { service: { select: { id: true, name: true } } } } }, orderBy: [{ position: "asc" }, { createdAt: "desc" }] }),
-    prisma.service.findMany({ where: { businessId: business.id, bookingMode: "APPOINTMENT" }, select: { id: true, name: true, price: true }, orderBy: { name: "asc" } }),
+    prisma.service.findMany({ where: { isActive: true, businessId: business.id, bookingMode: "APPOINTMENT" }, select: { id: true, name: true, price: true }, orderBy: { name: "asc" } }),
     prisma.giftCardPurchase.findMany({ where: { businessId: business.id }, include: { giftCard: { select: { id: true, publicCode: true, status: true, claimedAt: true } }, createdBy: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.giftCardPurchase.count({ where: { businessId: business.id, paymentStatus: { in: ["PAID", "MANUAL_PAID"] } } }),
     prisma.giftCardPurchase.aggregate({ where: { businessId: business.id, paymentStatus: { in: ["PAID", "MANUAL_PAID"] } }, _sum: { salePrice: true } }),

@@ -207,7 +207,7 @@ export async function createRecurringBookingAction(data: {
 
   // Load service + plan
   const service = await prisma.service.findFirst({
-    where: { id: data.serviceId, businessId: business.id },
+    where: { id: data.serviceId, businessId: business.id, isActive: true },
     include: { recurringPlan: true },
   });
   if (!service) return { error: "Servicio no encontrado" };

@@ -35,7 +35,7 @@ const publicListingSelect = {
           gracePeriodEndsAt: true,
         },
       },
-      services: {
+      services: { where: { isActive: true },
         select: {
           name: true,
           bookingMode: true,

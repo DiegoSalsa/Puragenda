@@ -179,4 +179,12 @@ describe("public appointment rescheduling availability", () => {
     expect(sendConfirmationEmail).toHaveBeenCalledTimes(1);
     expect(JSON.stringify([result, vi.mocked(sendConfirmationEmail).mock.calls, vi.mocked(sendAppointmentActionStaffNotification).mock.calls])).not.toContain(internalNote);
   });
+  it("explains that an archived service requires the business without cancelling or consuming the booking", async () => {
+    vi.mocked(getCustomerAppointmentByToken).mockResolvedValue({ ...appointment, service: { ...appointment.service, isActive: false } } as never);
+    const result = await rescheduleAppointmentAction(appointment.id, "2026-08-21T14:00:00.000Z", "2026-08-21T15:00:00.000Z", "token");
+    expect(result).toMatchObject({ error: expect.stringContaining("Tu reserva se conserva") });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(sendConfirmationEmail).not.toHaveBeenCalled();
+  });
+
 });

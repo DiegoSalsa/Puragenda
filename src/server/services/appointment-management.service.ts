@@ -11,7 +11,7 @@ import { getPublicBlockingScheduleBlockWhere } from "@/server/services/schedule-
 import { BookingSelectionError } from "@/core/booking-selection";
 import { z } from "zod";
 
-type RescheduleTarget = { id: string; businessId: string; serviceId: string; staffId: string | null; totalPrice: number | null; selectedOptions: unknown; totalDuration: number | null; service: { price: number; duration: number } };
+type RescheduleTarget = { startTime?: Date; endTime?: Date; id: string; businessId: string; serviceId: string; staffId: string | null; totalPrice: number | null; selectedOptions: unknown; totalDuration: number | null; service: { price: number; duration: number } };
 
 /** Shared slot validation for adapters that only move an existing appointment.
  * Uses the public v1 schedule/selection engine; no alternate scheduling rules.
@@ -21,10 +21,17 @@ export async function validateAppointmentReschedule(a: RescheduleTarget, start: 
   const data = await loadBookingContext(a.businessId, db);
   const location = data.locations.find((l) => l.id === locationId);
   if (!location) throw fail();
-  const options = z.array(z.object({ alternativeId: z.string() })).nullish().parse(a.selectedOptions) ?? [];
+  // A move keeps the contracted duration/price and snapshots, even if an option
+  // was retired. Only availability is recomputed from today's schedule.
+  const contracted = await db.service.findFirst({ where: { id: a.serviceId, businessId: a.businessId }, include: {
+    category: true, locations: { where: { location: { businessId: a.businessId, isActive: true } } },
+  } });
+  if (!contracted) throw fail();
+  const duration = a.totalDuration ?? (a.startTime && a.endTime ? (a.endTime.getTime() - a.startTime.getTime()) / 60_000 : a.service.duration);
+  if (end.getTime() - start.getTime() !== duration * 60_000) throw fail();
+  data.services = [...data.services.filter(s => s.id !== a.serviceId), { ...contracted, price: a.totalPrice ?? a.service.price, duration, optionCategories: [] }];
   const available = await getBookingAvailability(data, { date: formatInTimeZone(start, location.timezone, "yyyy-MM-dd"), serviceId: a.serviceId,
-    staffId: a.staffId ?? undefined, locationId, selectedOptionAlternativeIds: options.map((o) => o.alternativeId) }, new Date(), { db, skipBusy: true });
-  if (available.selection.price !== (a.totalPrice ?? a.service.price) || available.selection.duration !== (a.totalDuration ?? a.service.duration)) throw new BookingSelectionError("La selección cambió", "SELECTION_CHANGED", 409);
+    staffId: a.staffId ?? undefined, locationId, selectedOptionAlternativeIds: [] }, new Date(), { db, skipBusy: true });
   if (!available.slots.some((s) => s.startTime === start.toISOString() && s.endTime === end.toISOString())) throw fail();
   if ((await checkAppointmentCollision(a.businessId, start, end, a.staffId, a.id, locationId, db, checkGoogle)).hasCollision) throw fail();
   const block = await db.scheduleBlock.findFirst({ where: { staff: { businessId: a.businessId }, ...(a.staffId ? { staffId: a.staffId } : {}),
@@ -52,6 +59,7 @@ type ResolvedManagedAppointment = {
   service: { id: string; name: string };
   staff: { id: string; name: string };
   locationId?: string;
+  preserveContract: boolean;
 };
 
 function minutesOfDay(date: Date) {
@@ -73,14 +81,19 @@ export async function resolveManagedAppointment(
     return { error: "La cita debe comenzar en una fecha futura" };
   }
 
+  const previous = excludeAppointmentId ? await prisma.appointment.findFirst({ where: { id: excludeAppointmentId, businessId: business.id } }) : null;
+  const previousOptions = z.array(z.object({ alternativeId: z.string() }).passthrough()).safeParse(previous?.selectedOptions ?? []);
+  const oldIds = previousOptions.success ? previousOptions.data.map(o => o.alternativeId).sort() : [];
+  const preserveContract = !!previous && previous.serviceId === input.serviceId && previousOptions.success &&
+    JSON.stringify(oldIds) === JSON.stringify([...input.selectedOptionAlternativeIds].sort());
   const [service, staff, locations, subscription] = await Promise.all([
     prisma.service.findFirst({
-      where: { id: input.serviceId, businessId: business.id, bookingMode: "APPOINTMENT" },
+      where: { ...(preserveContract ? {} : { isActive: true }), id: input.serviceId, businessId: business.id, bookingMode: "APPOINTMENT" },
       include: {
         locations: { select: { locationId: true } },
-        optionCategories: {
+        optionCategories: { where: { isActive: true },
           orderBy: { position: "asc" },
-          include: { alternatives: { orderBy: { position: "asc" } } },
+          include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
         },
       },
     }),
@@ -128,7 +141,7 @@ export async function resolveManagedAppointment(
   let totalDuration = service.duration;
   let totalPrice = service.price;
 
-  for (const category of service.optionCategories) {
+  for (const category of preserveContract ? [] : service.optionCategories) {
     const selected = category.alternatives.filter((alternative) => selectedIds.has(alternative.id));
     if (selected.length > category.maxSelections) {
       return { error: `Selecciona como máximo ${category.maxSelections} opción(es) en ${category.name}` };
@@ -154,10 +167,15 @@ export async function resolveManagedAppointment(
     }
   }
 
-  if (matchedIds.size !== selectedIds.size) {
+  if (!preserveContract && matchedIds.size !== selectedIds.size) {
     return { error: "Una o más opciones no pertenecen al servicio seleccionado" };
   }
 
+  if (preserveContract && previous) {
+    totalDuration = previous.totalDuration ?? (previous.endTime.getTime() - previous.startTime.getTime()) / 60_000;
+    totalPrice = previous.totalPrice ?? service.price;
+    selectedOptions.push(...(previous.selectedOptions as unknown as typeof selectedOptions ?? []));
+  }
   const endTime = new Date(requestedStart.getTime() + totalDuration * 60_000);
   const localStart = toZonedTime(requestedStart, timezone);
   const localEnd = toZonedTime(endTime, timezone);
@@ -283,6 +301,7 @@ export async function resolveManagedAppointment(
       totalDuration,
       totalPrice,
       selectedOptions,
+      preserveContract,
       service: { id: service.id, name: service.name },
       staff: { id: staff.id, name: staff.name },
       locationId: location?.id,

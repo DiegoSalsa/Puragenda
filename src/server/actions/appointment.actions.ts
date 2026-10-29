@@ -87,6 +87,7 @@ export async function rescheduleAppointmentAction(
     return { error: "El enlace no es válido, ya fue utilizado o venció" };
   }
   if (appointment.status === "CANCELLED") return { error: "Esta cita ya fue cancelada" };
+  if (appointment.service.isActive === false) return { error: "El servicio fue archivado. Tu reserva se conserva; contacta al negocio para reagendarla." };
   if (appointment.paymentStatus === "APPROVED") {
     return { error: "No puedes reagendar una cita con abono aprobado. Contacta al negocio." };
   }

@@ -97,7 +97,7 @@ export async function prepareCampaign(
     select: { evidence: true },
   });
   const service = await prisma.service.findFirstOrThrow({
-    where: {
+    where: { isActive: true,
       id: a.serviceId,
       businessId: scope.businessId,
       bookingMode: "APPOINTMENT",
@@ -346,7 +346,7 @@ export async function authorizeCampaign(
     )
       return current;
     const service = await tx.service.findFirst({
-      where: {
+      where: { isActive: true,
         id: v.serviceId,
         businessId: scope.businessId,
         price: v.servicePrice,
@@ -634,7 +634,7 @@ export async function contactSnapshot(scope: GrowthScope) {
       take: 100,
     }),
     services: await prisma.service.findMany({
-      where: { businessId: scope.businessId, bookingMode: "APPOINTMENT" },
+      where: { isActive: true, businessId: scope.businessId, bookingMode: "APPOINTMENT" },
       select: { id: true, name: true, price: true },
       orderBy: { id: "asc" },
       take: 100,

@@ -19,7 +19,7 @@ export default async function LoyaltyPage() {
   if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.LOYALTY_MANAGE))) return <div className="py-20 text-center">{t("permissionDenied")}</div>;
 
   const [services, clients, participants, stampAggregate, generated, used] = await Promise.all([
-    prisma.service.findMany({ where: { businessId: business.id, bookingMode: "APPOINTMENT" }, orderBy: { name: "asc" }, select: { id: true, name: true, price: true } }),
+    prisma.service.findMany({ where: { isActive: true, businessId: business.id, bookingMode: "APPOINTMENT" }, orderBy: { name: "asc" }, select: { id: true, name: true, price: true } }),
     prisma.client.findMany({ where: { businessId: business.id }, orderBy: [{ currentStamps: "desc" }, { name: "asc" }], take: 12, select: { id: true, name: true, email: true, currentStamps: true } }),
     prisma.client.count({ where: { businessId: business.id, OR: [{ currentStamps: { gt: 0 } }, { loyaltyStampEvents: { some: {} } }, { loyaltyCodes: { some: {} } }] } }),
     prisma.loyaltyStampEvent.aggregate({ where: { businessId: business.id, delta: { gt: 0 } }, _sum: { delta: true } }),

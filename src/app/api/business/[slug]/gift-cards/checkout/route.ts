@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (subscriptionDenied) return subscriptionDenied;
   const parsed = giftCardPurchaseDetailsSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message || "Datos inválidos" }, { status: 400 });
-  const template = await prisma.giftCardTemplate.findFirst({ where: { id: parsed.data.templateId, businessId: business.id, isActive: true, isPublic: true }, select: { id: true } });
+  const template = await prisma.giftCardTemplate.findFirst({ where: { id: parsed.data.templateId, businessId: business.id, isActive: true, isPublic: true, services: { none: { service: { isActive: false } } } }, select: { id: true } });
   if (!template) return Response.json({ error: "Gift Card no disponible" }, { status: 404 });
   const accessToken = await getValidMercadoPagoAccessToken(business.id);
   if (!accessToken) return Response.json({ error: "Este negocio aún no habilita la compra online de Gift Cards" }, { status: 409 });

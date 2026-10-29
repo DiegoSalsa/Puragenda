@@ -106,7 +106,7 @@ export async function loadTodayDashboard(input: {
         })
       : Promise.resolve(0),
     prisma.service.findMany({
-      where: {
+      where: { isActive: true,
         businessId: business.id,
         bookingMode: "APPOINTMENT",
         ...(selectedLocation ? { locations: { some: { locationId: selectedLocation.id } } } : {}),
@@ -119,9 +119,9 @@ export async function loadTodayDashboard(input: {
       orderBy: { name: "asc" },
       include: {
         staff: { where: { isActive: true }, select: { id: true } },
-        optionCategories: {
+        optionCategories: { where: { isActive: true },
           orderBy: { position: "asc" },
-          include: { alternatives: { orderBy: { position: "asc" } } },
+          include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
         },
       },
     }),

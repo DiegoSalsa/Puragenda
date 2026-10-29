@@ -94,7 +94,7 @@ function mapBusinessOverride(entry: {
 
 async function loadAvailabilityServices(businessId: string, serviceIds: string[], locationId: string) {
   return prisma.service.findMany({
-    where: {
+    where: { isActive: true,
       id: { in: serviceIds },
       businessId,
       bookingMode: "APPOINTMENT",
@@ -102,9 +102,9 @@ async function loadAvailabilityServices(businessId: string, serviceIds: string[]
     },
     include: {
       staff: { where: { isActive: true }, select: { id: true } },
-      optionCategories: {
+      optionCategories: { where: { isActive: true },
         orderBy: { position: "asc" },
-        include: { alternatives: { orderBy: { position: "asc" } } },
+        include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
       },
     },
   });

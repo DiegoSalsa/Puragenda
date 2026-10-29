@@ -52,11 +52,11 @@ export async function POST(
 
     const data = parsed.data;
     const service = await prisma.service.findFirst({
-      where: { id: data.serviceId, businessId: business.id, bookingMode: "PRODUCTION" },
+      where: { isActive: true, id: data.serviceId, businessId: business.id, bookingMode: "PRODUCTION" },
       include: {
-        optionCategories: {
+        optionCategories: { where: { isActive: true },
           orderBy: { position: "asc" },
-          include: { alternatives: { orderBy: { position: "asc" } } },
+          include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
         },
       },
     });
