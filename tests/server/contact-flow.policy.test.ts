@@ -5,7 +5,7 @@ import {
   assertContactLab,
   backoff,
   campaignInput,
-  CONTACT_FLOW_EXTERNAL_RELEASE,
+  contactFlowProductionRequested,
   signature,
   signatureMatches,
 } from "@/server/contact-flow/policy";
@@ -38,7 +38,7 @@ describe("Contact Flow release seal and contracts", () => {
     vi.stubEnv("RESEND_API_KEY", "synthetic-test-placeholder");
     const network = vi.fn().mockRejectedValue(new Error("unexpected network"));
     vi.stubGlobal("fetch", network);
-    expect(CONTACT_FLOW_EXTERNAL_RELEASE).toBe(false);
+    expect(contactFlowProductionRequested()).toBe(false);
     await expect(
       new ResendContactProvider().send(
         {} as Prisma.TransactionClient,

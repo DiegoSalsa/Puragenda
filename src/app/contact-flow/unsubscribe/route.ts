@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { contactLabEnabled } from "@/server/contact-flow/policy";
+import { contactOptOutEnabled } from "@/server/contact-flow/resend-test";
 import { contactPublicLimiter } from "@/server/contact-flow/http";
 import { unsubscribe } from "@/server/contact-flow/tokens";
 import { prisma } from "@/server/db/prisma";
@@ -18,7 +18,7 @@ const page = (message: string, form = false) =>
     { headers },
   );
 export async function GET(request: NextRequest) {
-  if (!contactLabEnabled()) return new Response(null, { status: 404 });
+  if (!contactOptOutEnabled()) return new Response(null, { status: 404 });
   const limited = await contactPublicLimiter.check(request);
   if (limited) return limited;
   try {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 // Supports RFC 8058 POST and the confirmation form. No session/PII lookup is
 // exposed: the signed unguessable bearer token authorizes only this opt-out.
 export async function POST(request: NextRequest) {
-  if (!contactLabEnabled()) return new Response(null, { status: 404 });
+  if (!contactOptOutEnabled()) return new Response(null, { status: 404 });
   const limited = await contactPublicLimiter.check(request);
   if (limited) return limited;
   try {

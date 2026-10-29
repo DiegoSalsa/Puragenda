@@ -14,9 +14,11 @@ import {
 } from "./policy";
 import { consentEligibility } from "./consent";
 import { cohortClients } from "./cohort";
-import { contactAddressAllowed, contactProviderMode } from "./resend-test";
+import { contactAddressAllowed, contactProviderMode, contactResendConfiguration, isProductionContactRuntime } from "./resend-test";
+import { resendReleaseReadiness } from "./resend-release";
 import { settleContactQuota } from "./quotas";
 import { settleInterruptedDelivery } from "./interruption";
+import { ensureCommercialContactPolicy, commercialCampaignAllowance, commercialUsageContext, commercialUsagePolicy } from "@/server/services/commercial-usage-policy";
 
 export function campaignText(
   objective: string,
@@ -119,6 +121,7 @@ export async function prepareCampaign(
   return prisma.$transaction(
     async (tx) => {
       await contactLock(tx);
+      await ensureCommercialContactPolicy(tx, scope.businessId, now);
       const prior = await tx.cfCampaign.findUnique({
         where: {
           businessId_scopeKey_recommendationId: {
@@ -129,6 +132,7 @@ export async function prepareCampaign(
         },
       });
       if (prior && !replaceId) return prior;
+      await commercialCampaignAllowance(tx, scope.businessId, a.maxContacts, now);
       if (
         replaceId &&
         (!prior || prior.id !== replaceId || prior.status !== "DRAFT")
@@ -306,6 +310,7 @@ export async function authorizeCampaign(
   now = new Date(),
 ) {
   await requireContactScope(scope, true);
+  if (isProductionContactRuntime()) contactResendConfiguration(scope.businessId, true);
   if (explicit !== true)
     throw new Error("EXPLICIT_EXECUTION_AUTHORIZATION_REQUIRED");
   const c = await scopedCampaign(scope, id),
@@ -354,6 +359,8 @@ export async function authorizeCampaign(
       include: { client: { select: { email: true } } },
     });
     if (!enrollments.length) throw new Error("NO_ELIGIBLE_RECIPIENTS");
+    await ensureCommercialContactPolicy(tx, scope.businessId, now);
+    await commercialCampaignAllowance(tx, scope.businessId, v.maxContacts, now, true);
     for (const e of enrollments) {
       if (
         addressHash(scope.businessId, e.client.email) !== e.addressHash ||
@@ -383,7 +390,7 @@ export async function authorizeCampaign(
         data: {
           businessId: scope.businessId,
           enrollmentId: e.id,
-          provider: syntheticAddress(e.client.email) ? "SIMULATED" : "RESEND",
+          provider: isProductionContactRuntime() ? "RESEND" : syntheticAddress(e.client.email) ? "SIMULATED" : "RESEND",
           idempotencyKey: commercialHash({
             campaign: c.id,
             version,
@@ -559,7 +566,7 @@ export async function contactSnapshot(scope: GrowthScope) {
       },
     },
   });
-  const policy = await prisma.cfPolicy.findUnique({
+  let policy = await prisma.cfPolicy.findUnique({
     where: { key: scope.businessId },
     select: {
       killed: true,
@@ -569,13 +576,23 @@ export async function contactSnapshot(scope: GrowthScope) {
       contactDays: true,
     },
   });
-  const global = await prisma.cfPolicy.findUnique({
+  let global = await prisma.cfPolicy.findUnique({
     where: { key: "GLOBAL" },
     select: { killed: true, emailEnabled: true },
   });
+  // Show the configured allowance before the first campaign, without writing
+  // counters or changing an operator's persisted kill switch on a read.
+  const usage = await commercialUsageContext(scope.businessId);
+  if ((usage?.sub.termsSnapshot as { origin?: string } | null)?.origin === "registration_v2") {
+    const configured = usage?.allocation?.contactFlow, platform = commercialUsagePolicy()?.global.contactFlow;
+    if (configured && platform) {
+      policy = { dailyLimit: configured.dailyLimit, monthlyLimit: configured.monthlyLimit, contactDays: configured.contactDays, emailEnabled: configured.emailEnabled, killed: !!policy?.killed || configured.killed };
+      global = { emailEnabled: platform.emailEnabled, killed: !!global?.killed || platform.killed };
+    }
+  }
   return {
     mode: contactProviderMode(scope.businessId),
-    externalBlocked: true,
+    externalBlocked: !resendReleaseReadiness().deliveryEnabled,
     policy,
     global,
     campaigns: campaigns.map((c) => {
@@ -606,7 +623,7 @@ export async function contactSnapshot(scope: GrowthScope) {
       };
     }),
     quotas: await prisma.cfQuotaBucket.findMany({
-      where: { OR: [{ businessId: scope.businessId }, { businessId: null }] },
+      where: { businessId: scope.businessId },
       select: {
         kind: true,
         period: true,
@@ -623,4 +640,14 @@ export async function contactSnapshot(scope: GrowthScope) {
       take: 100,
     }),
   };
+}
+
+/** Recipient identity is available only in an explicit owner review, never in AI snapshots. */
+export async function campaignRecipients(scope: GrowthScope, id: string, after?: string) {
+  await requireContactScope(scope, true);
+  const campaign = await scopedCampaign(scope, id), version = campaign.versions[0];
+  if (!version) throw new Error("CAMPAIGN_VERSION_CONFLICT");
+  const rows = await prisma.cfEnrollment.findMany({ where: { businessId: scope.businessId, versionId: version.id, ...(after ? { id: { gt: after } } : {}) },
+    orderBy: { id: "asc" }, take: 26, select: { id: true, eligible: true, exclusion: true, client: { select: { name: true, email: true } } } });
+  return { campaignId: id, version: version.version, contentHash: version.contentHash, recipients: rows.slice(0, 25).map(row => ({ id: row.id, name: row.client.name, email: row.client.email, eligible: row.eligible, exclusion: row.exclusion })), nextCursor: rows.length > 25 ? rows[24].id : null };
 }

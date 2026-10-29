@@ -1,4 +1,5 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { createHmac, randomUUID } from "node:crypto";
 import { prisma } from "@/server/db/prisma";
 import {
   contactFixture,
@@ -10,6 +11,7 @@ import {
   contactSnapshot,
   controlCampaign,
   prepareCampaign,
+  campaignRecipients,
 } from "@/server/contact-flow/campaigns";
 import {
   recordConsent,
@@ -17,6 +19,8 @@ import {
   verifyConsentReceipt,
 } from "@/server/contact-flow/consent";
 import { digest } from "@/server/contact-flow/policy";
+import { signature } from "@/server/contact-flow/policy";
+import { ensureCommercialContactPolicy } from "@/server/services/commercial-usage-policy";
 import { configureContactPolicy } from "@/server/contact-flow/quotas";
 import { reserveContactQuota } from "@/server/contact-flow/quotas";
 import { contactLock } from "@/server/contact-flow/policy";
@@ -35,11 +39,13 @@ import {
   receiveSimulatedEvent,
   reconcileSimulatedDeliveries,
   simulatedEventSignature,
+  receiveResendEvent,
 } from "@/server/contact-flow/events";
 import { createAppointment } from "@/server/services/appointment.service";
 import { contactResults } from "@/server/contact-flow/metrics";
 import { purgeContactFlow } from "@/server/contact-flow/retention";
 import { executeGrowthTool } from "@/server/puri/growth/tools";
+import { configureGrowthBudget } from "@/server/puri/growth/budgets";
 const suite = describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 const fixtures: Awaited<ReturnType<typeof contactFixture>>[] = [];
 async function fixture(o: Parameters<typeof contactFixture>[0] = {}) {
@@ -101,6 +107,54 @@ suite("Contact Flow / real isolated PostgreSQL", () => {
   afterAll(async () => {
     for (const f of fixtures.reverse()) await deleteContactFixture(f);
     await prisma.$disconnect();
+  });
+  async function registrationPolicy(f: Awaited<ReturnType<typeof fixture>>) {
+    await prisma.commercialSubscription.update({ where: { businessId: f.businessId }, data: { termsSnapshot: { origin: "registration_v2" } } });
+    const contactFlow = { ...syntheticContactPolicy, campaignsPerPeriod: 1, maxContactsPerCampaign: 2, trialLimit: 2 };
+    const puri = { ALL: { limitMicros: 1000000, limitUnits: 1000000 }, ANALYSIS_SQL: { limitMicros: 0, limitUnits: 1000000 } };
+    vi.stubEnv("COMMERCIAL_USAGE_POLICY_JSON", JSON.stringify({ version: "synthetic-qa-not-commercial", trial: { PURAGENDA_PLUS: { contactFlow, puri } }, paid: { PURAGENDA_PLUS: { contactFlow, puri } }, global: { puri: puri.ALL, contactFlow: { ...contactFlow, dailyLimit: 100000, monthlyLimit: 1000000 } } }));
+  }
+  it("initializes registered-plan policy before preparation and consumes one campaign slot under concurrent authorization", async () => {
+    const f = await fixture({ prepare: false }); await registrationPolicy(f);
+    await prisma.cfPolicy.delete({ where: { key: f.businessId } });
+    await expect(prepareCampaign(f.scope, { ...f.input, maxContacts: 3, dailyLimit: 2 })).rejects.toThrow("CAMPAIGN_CONTACT_LIMIT");
+    const c = await prepareCampaign(f.scope, { ...f.input, maxContacts: 2, dailyLimit: 2 });
+    const v = await prisma.cfVersion.findFirstOrThrow({ where: { campaignId: c.id } });
+    await Promise.all([authorizeCampaign(f.scope, c.id, v.contentHash, v.version, true), authorizeCampaign(f.scope, c.id, v.contentHash, v.version, true)]);
+    expect(await prisma.cfQuotaBucket.findFirst({ where: { businessId: f.businessId, kind: "BUSINESS_CAMPAIGNS" } })).toMatchObject({ limit: 1, consumed: 1 });
+    expect(await prisma.cfAuthorization.count({ where: { businessId: f.businessId } })).toBe(1);
+    await controlCampaign(f.scope, c.id, "CANCEL");
+    expect(await prisma.cfQuotaBucket.findFirst({ where: { businessId: f.businessId, kind: "BUSINESS_CAMPAIGNS" } })).toMatchObject({ consumed: 1 });
+  });
+  it("keeps operator kill switches set after every commercial policy refresh", async () => {
+    const f = await fixture(); await registrationPolicy(f);
+    await prisma.cfPolicy.updateMany({ where: { key: { in: [f.businessId, "GLOBAL"] } }, data: { killed: true } });
+    await prisma.$transaction(async tx => { await contactLock(tx); await ensureCommercialContactPolicy(tx, f.businessId, new Date()); });
+    expect((await prisma.cfPolicy.findMany({ where: { key: { in: [f.businessId, "GLOBAL"] } } })).every(p => p.killed)).toBe(true);
+    await runContactWorker({ businessId: f.businessId });
+    expect((await messages(f.businessId)).every(m => !m.acceptedAt)).toBe(true);
+  });
+  it("provides tenant-scoped recipient review only to the owner and keeps identities out of AI snapshots", async () => {
+    const f = await fixture({ authorize: false }), other = await fixture({ prepare: false });
+    const review = await campaignRecipients(f.scope, f.campaignId!);
+    expect(review.recipients.length).toBeGreaterThan(0); expect(review.recipients[0].email).toContain("@example.invalid");
+    expect(JSON.stringify(await contactSnapshot(f.scope))).not.toContain(review.recipients[0].email);
+    await expect(campaignRecipients(other.scope, f.campaignId!)).rejects.toThrow();
+    await expect(campaignRecipients({ ...f.scope, owner: false }, f.campaignId!)).rejects.toThrow();
+  });
+  it("authenticates provider suppression events locally and never restores eligibility on a later delivery", async () => {
+    const f = await fixture({ maximum: 1 }), [m] = await messages(f.businessId), providerId = randomUUID();
+    await prisma.cfMessage.update({ where: { id: m.id }, data: { provider: "RESEND", providerId } });
+    const secretBytes = Buffer.from("synthetic-webhook-secret-not-a-provider-credential");
+    for (const [key, value] of Object.entries({ CONTACT_FLOW_RESEND_TEST_ENABLED: "1", CONTACT_FLOW_RESEND_ISOLATED_ACCOUNT: "1", CONTACT_FLOW_RESEND_TEST_BUSINESS_ID: f.businessId, CONTACT_FLOW_RESEND_TEST_RECIPIENTS: JSON.stringify([m.enrollment.client.email]), CONTACT_FLOW_RESEND_FROM: "sender@example.invalid", CONTACT_FLOW_RESEND_DOMAIN_ID: "synthetic", CONTACT_FLOW_RESEND_API_KEY: "re_synthetic", CONTACT_FLOW_RESEND_WEBHOOK_SECRET: `whsec_${secretBytes.toString("base64")}`, CONTACT_FLOW_PUBLIC_ORIGIN: "https://synthetic.invalid" })) vi.stubEnv(key, value);
+    async function event(type: string) {
+      const id = randomUUID(), ts = String(Math.floor(Date.now() / 1000));
+      const raw = JSON.stringify({ type, created_at: new Date().toISOString(), data: { email_id: providerId, tags: { cf_message: m.id, cf_proof: signature(`resend:${m.id}`) } } });
+      return receiveResendEvent(raw, new Headers({ "svix-id": id, "svix-timestamp": ts, "svix-signature": `v1,${createHmac("sha256", secretBytes).update(`${id}.${ts}.${raw}`).digest("base64")}` }));
+    }
+    await event("email.suppressed"); await event("email.delivered");
+    expect(await prisma.cfMessage.findUnique({ where: { id: m.id } })).toMatchObject({ state: "FAILED" });
+    expect(await prisma.cfSuppression.count({ where: { businessId: f.businessId, reason: "ADMIN_BLOCK", sourceRef: { startsWith: "provider:RESEND:" } } })).toBe(1);
   });
   it("preserves UNKNOWN and quota when consent is revoked after an ambiguous timeout", async () => {
     const f = await fixture({ maximum: 1 });
@@ -854,6 +908,19 @@ suite("Contact Flow / real isolated PostgreSQL", () => {
     expect((await messages(f.businessId))[0].outbox?.lastError).toBe(
       "EVIDENCE_CHANGED",
     );
+  });
+  it("continues an authorized gradual campaign across midnight while rechecking the original evidence and current recipients", async () => {
+    const f = await fixture({ prepare: false, maximum: 2 });
+    const c = await prepareCampaign(f.scope, { ...f.input, dailyLimit: 1, expiresAt: new Date(Date.now() + 3 * 86400000).toISOString() });
+    const v = await prisma.cfVersion.findFirstOrThrow({ where: { campaignId: c.id } });
+    await authorizeCampaign(f.scope, c.id, v.contentHash, v.version, true);
+    await runContactWorker({ businessId: f.businessId, limit: 2 });
+    expect((await messages(f.businessId)).filter(m => m.state === "ACCEPTED")).toHaveLength(1);
+    const tomorrow = new Date(Date.now() + 86400000 + 60000);
+    for (const category of ["ALL", "ANALYSIS_SQL"] as const) await configureGrowthBudget({ businessId: f.businessId, category, limitMicros: 1000000, limitUnits: 1000000, now: tomorrow });
+    await configureGrowthBudget({ businessId: null, category: "ALL", limitMicros: 1000000000, limitUnits: 1000000000, now: tomorrow });
+    await runContactWorker({ businessId: f.businessId, limit: 2, now: tomorrow });
+    expect((await messages(f.businessId)).filter(m => m.state === "ACCEPTED")).toHaveLength(2);
   });
   for (const scenario of ["RATE_LIMIT", "TEMPORARY"] as const)
     it(`retries ${scenario} with bounded backoff and one stable provider key`, async () => {

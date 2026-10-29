@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
+import { commercialUsageMessage } from "@/core/commercial-usage";
 type Recommendation = {
   id: string;
   title: string;
@@ -36,7 +37,7 @@ type Campaign = {
   };
 };
 export type ContactFlowSnapshot = {
-  mode?: "SIMULATED_ONLY" | "CONTROLLED_RESEND_TEST";
+  mode?: "SIMULATED_ONLY" | "CONTROLLED_RESEND_TEST" | "PRODUCTION_RESEND";
   campaigns: Campaign[];
   policy: {
     killed: boolean;
@@ -84,6 +85,7 @@ const deliveries: Record<string, string> = {
   UNKNOWN: "Resultado desconocido",
   EXPIRED: "Vencidos",
 };
+const quotaLabels: Record<string, string> = { BUSINESS_DAY: "Correos del día", BUSINESS_MONTH: "Correos del mes", BUSINESS_TRIAL: "Correos de la prueba", BUSINESS_CAMPAIGNS: "Campañas del periodo", CAMPAIGN: "Correos de la campaña", CAMPAIGN_DAY: "Correos diarios de la campaña", CONTACT_DAY: "Límite diario por contacto" };
 function localDate(date: Date) {
   return new Date(+date - date.getTimezoneOffset() * 60000)
     .toISOString()
@@ -114,6 +116,7 @@ export function ContactFlowLab({
     [checked, setChecked] = useState<string | null>(null),
     [results, setResults] = useState<Record<string, unknown> | null>(null),
     [notice, setNotice] = useState("");
+  const [recipientReview, setRecipientReview] = useState<Record<string, { recipients: { id: string; name: string; email: string; eligible: boolean; exclusion: string | null }[]; nextCursor: string | null }>>({});
   const [recId, setRecId] = useState(""),
     [serviceId, setServiceId] = useState(""),
     [start, setStart] = useState(""),
@@ -135,14 +138,16 @@ export function ContactFlowLab({
         if (!response.ok)
           throw new Error(body.code ?? "CONTACT_FLOW_UNAVAILABLE");
         setData(body);
+        if (!["LOAD", "RECIPIENTS", "RESULTS"].includes(action)) window.dispatchEvent(new Event("commercial:usage-changed"));
         if (action === "RESULTS") setResults(body.result);
+        if (action === "RECIPIENTS") setRecipientReview(previous => ({ ...previous, [body.result.campaignId]: { recipients: extra.after ? [...(previous[body.result.campaignId]?.recipients ?? []), ...body.result.recipients] : body.result.recipients, nextCursor: body.result.nextCursor } }));
         if (action !== "LOAD")
           setNotice(
-            body.mode === "CONTROLLED_RESEND_TEST" ? "Operación registrada en la prueba controlada de Resend. Sólo se admiten los destinatarios técnicos autorizados." : "Operación registrada en el laboratorio. Los mensajes son simulados.",
+            body.mode === "PRODUCTION_RESEND" ? "Operación registrada. Solo se procesan campañas autorizadas dentro de sus límites." : body.mode === "CONTROLLED_RESEND_TEST" ? "Operación registrada en la prueba controlada de Resend. Sólo se admiten los destinatarios técnicos autorizados." : "Operación registrada en el laboratorio. Los mensajes son simulados.",
           );
         setChecked(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "CONTACT_FLOW_UNAVAILABLE");
+        setError(e instanceof Error ? commercialUsageMessage(e.message) ?? e.message : "No pudimos completar la operación.");
       } finally {
         setBusy(false);
       }
@@ -163,7 +168,7 @@ export function ContactFlowLab({
     if (
       window.confirm(
         action === "RUN"
-          ? data?.mode === "CONTROLLED_RESEND_TEST" ? "¿Ejecutar hasta cinco trabajos de prueba? Resend puede enviar correos reales a los destinatarios técnicos autorizados." : "¿Ejecutar hasta cinco trabajos con el proveedor simulado? No se enviarán correos reales."
+          ? data?.mode === "PRODUCTION_RESEND" ? "¿Procesar hasta cinco envíos de campañas que autorizaste? Se comprobarán consentimiento, bajas y cupos." : data?.mode === "CONTROLLED_RESEND_TEST" ? "¿Ejecutar hasta cinco trabajos de prueba? Resend puede enviar correos reales a los destinatarios técnicos autorizados." : "¿Ejecutar hasta cinco trabajos con el proveedor simulado? No se enviarán correos reales."
           : "¿Confirmar esta acción de Contact Flow?",
       )
     )
@@ -187,7 +192,7 @@ export function ContactFlowLab({
         </button>
       </div>
       <p className="text-sm font-bold">
-        {data?.mode === "CONTROLLED_RESEND_TEST" ? "Prueba controlada de Resend · destinatarios técnicos autorizados · producción desactivada" : "Laboratorio sintético · ejecución externa bloqueada por servidor"}
+        {data?.mode === "PRODUCTION_RESEND" ? "Envíos autorizados · consentimiento y límites verificados en cada intento. La entrega depende de la capacidad disponible; si falta margen, la campaña permanece en cola." : data?.mode === "CONTROLLED_RESEND_TEST" ? "Prueba controlada de Resend · destinatarios técnicos autorizados · producción desactivada" : "Prueba sin envíos a clientes · las campañas se ejecutan con mensajes simulados"}
       </p>
       <p className="text-sm">
         Aprobar una propuesta de Puri+ y autorizar su campaña son decisiones
@@ -210,17 +215,17 @@ export function ContactFlowLab({
         <>
           <div className="rounded-xl border border-black bg-white p-3 text-sm">
             <p>
-              Kill switch global:{" "}
+              Pausa de envíos de la plataforma:{" "}
               {data.global?.killed !== false ? "activo" : "inactivo"} · negocio:{" "}
               {data.policy?.killed !== false ? "activo" : "inactivo"}
             </p>
             <p>
-              Cuotas de prueba: {data.policy?.dailyLimit ?? "sin configurar"} al
+              Cupo configurado: {data.policy?.dailyLimit ?? "sin configurar"} al
               día · {data.policy?.monthlyLimit ?? "sin configurar"} al mes ·
               frecuencia mínima {data.policy?.contactDays ?? "sin configurar"}{" "}
               días. Correo:{" "}
               {data.policy?.emailEnabled
-                ? "habilitado para simulación"
+                ? data.mode === "PRODUCTION_RESEND" ? "habilitado para campañas autorizadas" : "habilitado para pruebas"
                 : "bloqueado"}
               .
             </p>
@@ -372,7 +377,7 @@ export function ContactFlowLab({
               <h3 className="font-black">
                 {c.version.subject} · versión {c.version.version}
               </h3>
-              <p className="text-sm font-bold">{state[c.status] ?? c.status}</p>
+              <p className="text-sm font-bold">{data.mode !== "SIMULATED_ONLY" && c.status === "READY" ? "Lista para envío autorizado" : data.mode !== "SIMULATED_ONLY" && c.status === "RUNNING" ? "Envío en curso" : state[c.status] ?? c.status}</p>
               <p className="text-sm">
                 {c.eligible} destinatarios elegibles · {c.excluded} excluidos.
                 Máximo {c.version.maxContacts} contactos y{" "}
@@ -427,9 +432,15 @@ export function ContactFlowLab({
               </details>
               {owner && c.status === "DRAFT" && (
                 <div className="space-y-3">
+                  <button className={button} disabled={busy} onClick={() => void act("RECIPIENTS", { id: c.id })}>Revisar destinatarios</button>
+                  {recipientReview[c.id] && <div className="space-y-2 rounded-xl border border-black bg-white p-3">
+                    <p className="font-bold">Destinatarios de esta versión</p>
+                    <ul className="space-y-2 text-sm">{recipientReview[c.id].recipients.map(recipient => <li key={recipient.id} className="break-words"><strong>{recipient.name}</strong> · {recipient.email}<br />{recipient.eligible ? "Incluido · consentimiento verificado" : reasons[recipient.exclusion ?? ""] ?? "Excluido"}</li>)}</ul>
+                    {recipientReview[c.id].nextCursor && <button className={button} disabled={busy} onClick={() => void act("RECIPIENTS", { id: c.id, after: recipientReview[c.id].nextCursor })}>Ver más destinatarios</button>}
+                  </div>}
                   <label className="flex items-start gap-2 text-sm">
                     <input
-                      aria-label={data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizo ejecución de prueba con Resend" : "Autorizo ejecución simulada"}
+                      aria-label={data?.mode === "PRODUCTION_RESEND" ? "Autorizo el envío de esta campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizo ejecución de prueba con Resend" : "Autorizo ejecución simulada"}
                       type="checkbox"
                       className="mt-1"
                       checked={checked === c.version.contentHash}
@@ -439,8 +450,8 @@ export function ContactFlowLab({
                         )
                       }
                     />
-                    Revisé el correo, las exclusiones y los límites. Autorizo
-                    expresamente esta versión para {data?.mode === "CONTROLLED_RESEND_TEST" ? "una prueba controlada con Resend" : "ejecución simulada"}.
+                    Revisé el correo, los destinatarios, las exclusiones y los límites. Autorizo
+                    expresamente esta versión para {data?.mode === "PRODUCTION_RESEND" ? "el envío de la campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "una prueba controlada con Resend" : "ejecución simulada"}.
                   </label>
                   <button
                     className={button + " bg-[#FFD84D]"}
@@ -456,7 +467,7 @@ export function ContactFlowLab({
                       })
                     }
                   >
-                    {data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizar prueba de Resend" : "Autorizar ejecución simulada"}
+                    {data?.mode === "PRODUCTION_RESEND" ? "Autorizar envío de campaña" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Autorizar prueba de Resend" : "Autorizar ejecución simulada"}
                   </button>
                 </div>
               )}
@@ -499,7 +510,7 @@ export function ContactFlowLab({
               <ul className="list-inside list-disc text-sm">
                 {Object.entries(c.states).map(([s, n]) => (
                   <li key={s}>
-                    {deliveries[s] ?? s}: {n}
+                    {data.mode !== "SIMULATED_ONLY" ? ({ ACCEPTED: "Aceptados por el proveedor", DELIVERED: "Entregas confirmadas", BOUNCED: "Rebotes", COMPLAINED: "Denuncias" } as Record<string, string>)[s] ?? deliveries[s] ?? s : deliveries[s] ?? s}: {n}
                   </li>
                 ))}
               </ul>
@@ -520,14 +531,14 @@ export function ContactFlowLab({
                 disabled={busy}
                 onClick={() => confirmAction("RUN")}
               >
-                {data?.mode === "CONTROLLED_RESEND_TEST" ? "Ejecutar prueba de Resend" : "Ejecutar laboratorio"}
+                {data?.mode === "PRODUCTION_RESEND" ? "Procesar envíos autorizados" : data?.mode === "CONTROLLED_RESEND_TEST" ? "Ejecutar prueba de Resend" : "Ejecutar laboratorio"}
               </button>
               <button
                 className={button}
                 disabled={busy}
                 onClick={() => confirmAction("RECONCILE")}
               >
-                {data?.mode === "CONTROLLED_RESEND_TEST" ? "Conciliar con Resend" : "Reconciliar entregas simuladas"}
+                {data?.mode !== "SIMULATED_ONLY" ? "Conciliar con Resend" : "Reconciliar entregas simuladas"}
               </button>
             </div>
           )}
@@ -556,8 +567,7 @@ export function ContactFlowLab({
               </p>
               <p>{String(results.note)}</p>
               <p>
-                Incrementalidad no determinada. Los resultados de entrega
-                corresponden a simulaciones.
+                No se puede asegurar cuántas reservas adicionales generó la campaña. {data.mode === "SIMULATED_ONLY" ? "Las entregas mostradas son simuladas." : "Las entregas mostradas corresponden a resultados del proveedor."}
               </p>
             </div>
           )}
@@ -567,9 +577,9 @@ export function ContactFlowLab({
                 Consumo y reservas de cuota
               </summary>
               <ul className="mt-2 list-inside list-disc text-sm">
-                {data.quotas.map((q, i) => (
+                {data.quotas.filter(q => !dashboard || q.kind.startsWith("BUSINESS_")).map((q, i) => (
                   <li key={i}>
-                    {q.kind} ({q.period}): {q.consumed} consumidos +{" "}
+                    {quotaLabels[q.kind] ?? q.kind} ({q.period.startsWith("trial-") ? "prueba" : q.period}): {q.consumed} utilizados +{" "}
                     {q.reserved} reservados / {q.limit}.
                   </li>
                 ))}

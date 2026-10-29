@@ -17,6 +17,7 @@ import {
   contactSnapshot,
   controlCampaign,
   prepareCampaign,
+  campaignRecipients,
 } from "@/server/contact-flow/campaigns";
 import { runContactWorker } from "@/server/contact-flow/worker";
 import { reconcileSimulatedDeliveries, reconcileResendDeliveries } from "@/server/contact-flow/events";
@@ -24,6 +25,7 @@ import { contactProviderMode } from "./resend-test";
 import { contactResults } from "@/server/contact-flow/metrics";
 import { prisma } from "@/server/db/prisma";
 import { readContactText } from "@/server/contact-flow/http";
+import { contactOperationalStatus } from "./operations";
 const schema = z
   .object({
     action: z.enum([
@@ -39,6 +41,8 @@ const schema = z
       "KILL",
       "GLOBAL_KILL",
       "RESULTS",
+      "RECIPIENTS",
+      "MONITOR",
     ]),
     locationSlug: z.string().max(100).optional(),
     id: z.string().min(1).max(100).optional(),
@@ -50,6 +54,7 @@ const schema = z
     explicit: z.boolean().optional(),
     killed: z.boolean().optional(),
     campaign: campaignInput.optional(),
+    after: z.string().min(1).max(100).optional(),
   })
   .strict();
 export async function POST(request: NextRequest) {
@@ -65,7 +70,13 @@ export async function POST(request: NextRequest) {
   if (!parsed.success)
     return Response.json({ code: "INVALID_REQUEST" }, { status: 400 });
   try {
-    const a = parsed.data,
+    const a = parsed.data;
+    if (a.action === "MONITOR") {
+      const admin = await getApiAdminSessionUser(request);
+      if (!admin) return Response.json({ code: "SUPERADMIN_REQUIRED" }, { status: 403 });
+      return Response.json(await contactOperationalStatus(admin.id), { headers: { "Cache-Control": "private, no-store" } });
+    }
+    const
       user = await getApiSessionUser(request);
     if (!user)
       return Response.json({ code: "UNAUTHENTICATED" }, { status: 401 });
@@ -117,7 +128,7 @@ export async function POST(request: NextRequest) {
       result =
         a.action === "RUN"
           ? await runContactWorker({ businessId: scope.businessId, limit: 5 })
-          : contactProviderMode(scope.businessId) === "CONTROLLED_RESEND_TEST" ? await reconcileResendDeliveries() : await reconcileSimulatedDeliveries(scope.businessId);
+          : contactProviderMode(scope.businessId) !== "SIMULATED_ONLY" ? await reconcileResendDeliveries(5, scope.businessId) : await reconcileSimulatedDeliveries(scope.businessId);
     } else if (a.action === "KILL" || a.action === "GLOBAL_KILL") {
       await requireContactScope(scope, true);
       if (a.killed === undefined || !a.explicit)
@@ -148,6 +159,9 @@ export async function POST(request: NextRequest) {
     } else if (a.action === "RESULTS") {
       if (!a.id) throw new Error("INVALID_REQUEST");
       result = await contactResults(scope, a.id);
+    } else if (a.action === "RECIPIENTS") {
+      if (!a.id) throw new Error("INVALID_REQUEST");
+      result = await campaignRecipients(scope, a.id, a.after);
     }
     return Response.json(
       { result, ...(await contactSnapshot(scope)) },

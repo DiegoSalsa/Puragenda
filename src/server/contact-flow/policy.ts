@@ -7,8 +7,7 @@ import {
   type GrowthScope,
 } from "@/server/puri/growth/access";
 
-// Source-level release seal. No environment variable, API key or UI action opens it.
-export const CONTACT_FLOW_EXTERNAL_RELEASE = false as const;
+export { contactFlowProductionRequested } from "./release-switch";
 export const CF_PURPOSE = "COMMERCIAL";
 export function assertContactLab() {
   assertGrowthSandbox();

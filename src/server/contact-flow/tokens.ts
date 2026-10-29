@@ -10,6 +10,7 @@ import {
   addressHash,
 } from "./policy";
 import { suppress } from "./consent";
+import { contactOptOutEnabled } from "./resend-test";
 
 export async function enrollmentToken(
   tx: Prisma.TransactionClient,
@@ -37,7 +38,8 @@ export async function resolveToken(
   kind: "UNSUBSCRIBE" | "BOOKING",
   now = new Date(),
 ) {
-  assertContactLab();
+  if (kind === "UNSUBSCRIBE") { if (!contactOptOutEnabled()) throw new Error("CONTACT_FLOW_DISABLED"); }
+  else assertContactLab();
   if (!/^[\w-]{43}\.[\w-]{43}$/.test(value))
     throw new Error("INVALID_CONTACT_TOKEN");
   const [id, signed] = value.split(".");

@@ -11,13 +11,16 @@ import {
   contactLock,
   requireContactScope,
 } from "./policy";
-import { contactAddressAllowed, resendTestConfiguration } from "./resend-test";
+import { contactAddressAllowed, contactResendConfiguration, isProductionContactRuntime } from "./resend-test";
 import { consentEligibility } from "./consent";
 import { reserveContactQuota, settleContactQuota } from "./quotas";
 import { enrollmentToken } from "./tokens";
 import { settleInterruptedDelivery } from "./interruption";
 import { effectiveSnapshotAccess } from "@/server/services/commercial-plan-access";
 import { SimulatedContactProvider, ResendContactProvider, type DeliveryResult } from "./providers";
+import { refreshResendCapacity, resendCapacityReason } from "./resend-capacity";
+import { credentialHash, resendReleaseReadiness } from "./resend-release";
+import { commercialHash } from "@/server/services/commercial-internal";
 
 const includeJob = {
   message: {
@@ -71,6 +74,11 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
     e = m.enrollment,
     v = e.version,
     c = v.campaign;
+  if (isProductionContactRuntime() && (m.provider !== "RESEND" || process.env.CONTACT_FLOW_DELIVERY_MODE !== "production")) return "CONTACT_FLOW_EXTERNAL_DELIVERY_BLOCKED";
+  if (m.provider === "RESEND" && process.env.CONTACT_FLOW_DELIVERY_MODE === "production") {
+    try { contactResendConfiguration(m.businessId); }
+    catch { return "CONTACT_FLOW_EXTERNAL_DELIVERY_BLOCKED"; }
+  }
   if (!["READY", "RUNNING"].includes(c.status))
     return c.status === "PAUSED" ? "CAMPAIGN_PAUSED" : "CAMPAIGN_CANCELLED";
   if (c.currentVersion !== v.version) return "CAMPAIGN_VERSION_CONFLICT";
@@ -211,6 +219,8 @@ const deferred = new Set([
   "CAMPAIGN_PAUSED",
   "WINDOW_NOT_STARTED",
   "CONTACT_POLICY_REQUIRED",
+  "CONTACT_FLOW_EXTERNAL_DELIVERY_BLOCKED",
+  "RESEND_CREDENTIAL_CHANGED",
 ]);
 async function stopJob(
   tx: Prisma.TransactionClient,
@@ -297,6 +307,7 @@ export async function dispatchContactClaim(
       v.recommendationHash,
       v.recommendationVersion,
       now,
+      true, // Re-query the reviewed observation window; current recipient checks remain mandatory.
     );
   } catch (error) {
     const code =
@@ -396,6 +407,23 @@ export async function dispatchContactClaim(
       now,
     );
     if (quota) return stopJob(tx, j, quota, now);
+    if (j.message.provider === "RESEND" && process.env.CONTACT_FLOW_DELIVERY_MODE === "production") {
+      const capacity = await resendCapacityReason(tx, now);
+      if (capacity) {
+        // Capacity pauses are not provider attempts and keep the campaign queued.
+        if (j.attempts === 0) await settleContactQuota(tx, j.messageId, "RELEASED", now);
+        await tx.cfOutbox.update({ where: { id: j.id }, data: { state: "PENDING", leaseUntil: null, lastError: capacity, nextAttemptAt: new Date(+now + 60000) } });
+        return { state: "DEFERRED", code: capacity };
+      }
+      const config = contactResendConfiguration(j.businessId), hash = credentialHash(config.key), key = `resend-binding:${j.messageId}`;
+      const deliveryBinding = commercialHash({ credentialSha256: hash, sender: config.sender, origin: config.origin, domainId: config.domainId, replyTo: "replyTo" in config ? config.replyTo : null, tokenSecretSha256: credentialHash(process.env.CONTACT_FLOW_TOKEN_SECRET ?? "") });
+      const prior = await tx.cfAudit.findUnique({ where: { key } });
+      if ((!prior && j.attempts > 0 || prior && (prior.details as { deliveryBinding?: string })?.deliveryBinding !== deliveryBinding) && await tx.cfAttempt.findFirst({ where: { messageId: j.messageId, outcome: { in: ["STARTED", "UNKNOWN"] } } })) {
+        await tx.cfOutbox.update({ where: { id: j.id }, data: { state: "PENDING", leaseUntil: null, lastError: "RESEND_CREDENTIAL_CHANGED", nextAttemptAt: new Date(+now + 60000) } });
+        return { state: "DEFERRED", code: "RESEND_CREDENTIAL_CHANGED" };
+      }
+      await tx.cfAudit.upsert({ where: { key }, create: { key, businessId: j.businessId, campaignId: c.id, event: "RESEND_DISPATCH_BINDING", details: { credentialSha256: hash, deliveryBinding } }, update: { details: { credentialSha256: hash, deliveryBinding } } });
+    }
     const number = j.attempts + 1;
     await tx.cfAttempt.create({
       data: {
@@ -459,11 +487,12 @@ export async function dispatchContactClaim(
           "BOOKING",
           new Date(+v.expiresAt + 30 * 86400000),
         );
-        const base =
-          process.env.CONTACT_FLOW_PUBLIC_ORIGIN ?? "http://127.0.0.1:3119";
+        const base = isProductionContactRuntime()
+          ? contactResendConfiguration(j.businessId).origin
+          : process.env.CONTACT_FLOW_PUBLIC_ORIGIN ?? "http://127.0.0.1:3119";
         const origin = new URL(base);
         if (j.message.provider === "RESEND") {
-          if (origin.origin !== resendTestConfiguration().origin) throw new Error("CONTROLLED_HTTPS_ORIGIN_REQUIRED");
+          if (origin.origin !== contactResendConfiguration(j.businessId).origin) throw new Error("CONTROLLED_HTTPS_ORIGIN_REQUIRED");
         } else if (
           !["127.0.0.1", "localhost"].includes(origin.hostname) || origin.protocol !== "http:"
         )
@@ -473,7 +502,7 @@ export async function dispatchContactClaim(
           from: v.senderEmail,
           senderName: v.businessName,
           subject: v.subject,
-          text: `${v.body}\nSolicitudes de baja: ${policy.senderEmail}`,
+          text: `${v.body}\nSolicitudes de baja: ${process.env.CONTACT_FLOW_DELIVERY_MODE === "production" ? process.env.CONTACT_FLOW_PRODUCTION_REPLY_TO : policy.senderEmail}`,
           unsubscribeUrl: `${origin.origin}/contact-flow/unsubscribe?token=${encodeURIComponent(unsub)}`,
           bookingUrl: `${origin.origin}/contact-flow/r?token=${encodeURIComponent(booking)}`,
         };
@@ -580,6 +609,7 @@ export async function runContactWorker(
   const limit = Math.min(20, Math.max(1, options.limit ?? 5)),
     results = [];
   const deadline = performance.now() + Math.max(100, Math.min(25000, options.maxDurationMs ?? 25000));
+  if (process.env.CONTACT_FLOW_DELIVERY_MODE === "production") await refreshResendCapacity().catch(() => undefined);
   for (let i = 0; i < limit; i++) {
     if (performance.now() >= deadline || process.env.COMMERCIAL_WORKER_KILLED === "1") break;
     const claim = await claimContactJob(
@@ -594,7 +624,7 @@ export async function runContactWorker(
     processed: results.length,
     results,
     simulated: results.every(r => !("simulated" in r) || r.simulated !== false),
-    externalBlocked: true,
+    externalBlocked: !resendReleaseReadiness().deliveryEnabled,
   };
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { contactLabEnabled } from "@/server/contact-flow/policy";
+import { contactReceiptsEnabled } from "@/server/contact-flow/resend-test";
 import {
   contactWebhookLimiter,
   readContactText,
@@ -12,11 +13,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ provider: string }> },
 ) {
-  if (!contactLabEnabled())
+  const { provider } = await params;
+  if (provider === "resend" ? !contactReceiptsEnabled() : !contactLabEnabled())
     return Response.json({ code: "NOT_FOUND" }, { status: 404 });
   const limited = await contactWebhookLimiter.check(request);
   if (limited) return limited;
-  const { provider } = await params;
   if (!["simulated", "resend"].includes(provider))
     return Response.json({ code: "NOT_FOUND" }, { status: 404 });
   if (Number(request.headers.get("content-length") ?? 0) > 16384)

@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
 
     const subscription = await getSubscriptionByBusinessId(business.id);
     const plan: SubscriptionPlan = subscription?.plan ?? "INDIVIDUAL";
-    if (isV2Plan(plan) && !(await getCommercialPlanAccess(business.id)).allowed) return NextResponse.json({ error: "Suscripción vencida" }, { status: 403 });
+    if (isV2Plan(plan)) {
+      if (!(await getCommercialPlanAccess(business.id)).allowed) return NextResponse.json({ error: "Suscripción vencida" }, { status: 403 });
+      return NextResponse.json({ code: "CONTACT_FLOW_REQUIRED", message: "Prepara y autoriza las campañas desde Contact Flow en Puragenda+." }, { status: 409 });
+    }
 
     // ── 3. Validate frequency: max 1 campaign per month ──
     const campaignsSent = await getCampaignsThisMonth(business.id);

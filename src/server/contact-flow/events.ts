@@ -8,7 +8,7 @@ import {
   signature,
   signatureMatches,
 } from "./policy";
-import { resendTestConfiguration } from "./resend-test";
+import { contactResendConfiguration, contactResendWebhookSecrets, isProductionContactRuntime } from "./resend-test";
 import { withProviderDeadline } from "./providers";
 import { suppress } from "./consent";
 import { settleContactQuota } from "./quotas";
@@ -17,7 +17,7 @@ const eventSchema = z
   .object({
     id: z.string().min(1).max(150),
     providerId: z.string().min(1).max(150),
-    kind: z.enum(["ACCEPTED", "DELIVERED", "BOUNCED", "COMPLAINED", "FAILED"]),
+    kind: z.enum(["ACCEPTED", "DELAYED", "DELIVERED", "BOUNCED", "COMPLAINED", "FAILED"]),
     occurredAt: z.iso.datetime(),
   })
   .strict();
@@ -50,11 +50,12 @@ export async function receiveResendEvent(
   headers: Headers,
   now = new Date(),
 ) {
-  assertContactLab();
-  const secret = process.env.CONTACT_FLOW_RESEND_WEBHOOK_SECRET;
-  if (!secret || raw.length > 16384)
+  const secrets = contactResendWebhookSecrets();
+  if (raw.length > 16384)
     throw new Error("INVALID_WEBHOOK_SIGNATURE");
-  const event = new Resend("verification-only").webhooks.verify({
+  let event: ReturnType<Resend["webhooks"]["verify"]> | undefined;
+  for (const secret of secrets) {
+    try { event = new Resend("verification-only").webhooks.verify({
     payload: raw,
     headers: {
       id: headers.get("svix-id") ?? "",
@@ -62,16 +63,27 @@ export async function receiveResendEvent(
       signature: headers.get("svix-signature") ?? "",
     },
     webhookSecret: secret,
-  });
+    }); break; } catch { /* Try the single previous key during an explicit rotation. */ }
+  }
+  if (!event) throw new Error("INVALID_WEBHOOK_SIGNATURE");
   const kinds: Record<string, string> = {
     "email.sent": "ACCEPTED",
     "email.delivered": "DELIVERED",
+    "email.delivery_delayed": "DELAYED",
     "email.bounced": "BOUNCED",
     "email.complained": "COMPLAINED",
     "email.failed": "FAILED",
+    "email.suppressed": "FAILED",
   };
   if (!kinds[event.type]) return { ignored: true };
-  const data = event.data as { email_id?: string; tags?: Record<string, string> };
+  const data = event.data as { email_id?: string; from?: string; tags?: Record<string, string> };
+  // A shared-team lab webhook also receives transactional events. Authenticate
+  // first, then discard other senders without querying or retaining their data.
+  if (data.from) {
+    const sender = (data.from.match(/<([^<>]+)>\s*$/)?.[1] ?? data.from).trim().toLowerCase();
+    const configuredSender = isProductionContactRuntime() ? process.env.CONTACT_FLOW_PRODUCTION_FROM : process.env.CONTACT_FLOW_RESEND_CERTIFICATION_JSON ? process.env.CONTACT_FLOW_RESEND_FROM : undefined;
+    if (configuredSender && sender !== configuredSender.toLowerCase()) return { ignored: true };
+  }
   const messageRef = data.tags?.cf_message;
   const correlatedId = messageRef && signatureMatches(`resend:${messageRef}`, data.tags?.cf_proof ?? "") ? messageRef : undefined;
   return applyProviderEvent(
@@ -85,6 +97,7 @@ export async function receiveResendEvent(
     digest(raw),
     now,
     correlatedId,
+    event.type === "email.suppressed" ? "ADMIN_BLOCK" : undefined,
   );
 }
 async function applyProviderEvent(
@@ -93,6 +106,7 @@ async function applyProviderEvent(
   payloadHash: string,
   now: Date,
   correlatedMessageId?: string,
+  suppressionReason?: string,
 ) {
   return prisma.$transaction(async (tx) => {
     await contactLock(tx);
@@ -127,12 +141,17 @@ async function applyProviderEvent(
         messageId: message.id,
         provider,
         providerId: input.providerId,
-        kind: input.kind,
+        kind: input.kind === "DELAYED" ? "ACCEPTED" : input.kind,
         payloadHash,
         occurredAt: new Date(input.occurredAt),
         receivedAt: now,
       },
     });
+    if (input.kind === "DELAYED") await tx.cfAudit.create({ data: {
+      key: `provider-delay:${key}`, businessId: message.businessId,
+      campaignId: message.enrollment.version.campaignId, event: "RESEND_DELIVERY_DELAYED",
+      details: { messageId: message.id, providerEventId: key },
+    } });
     const rank: Record<string, number> = {
       QUEUED: 0,
       UNKNOWN: 0,
@@ -142,11 +161,14 @@ async function applyProviderEvent(
       BOUNCED: 4,
       COMPLAINED: 5,
     };
-    if ((rank[input.kind] ?? 0) >= (rank[message.state] ?? 0)) {
+    // A provider delay confirms acceptance; it must never trigger another send
+    // or downgrade a delivery, bounce, complaint or persistent suppression.
+    const state = input.kind === "DELAYED" ? "ACCEPTED" : input.kind;
+    if ((rank[state] ?? 0) >= (rank[message.state] ?? 0)) {
       await tx.cfMessage.update({
         where: { id: message.id },
         data: {
-          state: input.kind,
+          state,
           providerId: input.providerId,
           acceptedAt: message.acceptedAt ?? new Date(input.occurredAt),
         },
@@ -164,7 +186,7 @@ async function applyProviderEvent(
       });
       await settleContactQuota(tx, message.id, "CONSUMED", now);
     }
-    if (input.kind === "BOUNCED" || input.kind === "COMPLAINED") {
+    if (input.kind === "BOUNCED" || input.kind === "COMPLAINED" || suppressionReason) {
       const e = message.enrollment;
       await suppress(
         tx,
@@ -172,7 +194,7 @@ async function applyProviderEvent(
           businessId: message.businessId,
           clientId: e.clientId,
           addressHash: e.addressHash,
-          reason: input.kind === "BOUNCED" ? "HARD_BOUNCE" : "SPAM",
+          reason: suppressionReason ?? (input.kind === "BOUNCED" ? "HARD_BOUNCE" : "SPAM"),
           sourceRef: `provider:${key}`,
         },
         now,
@@ -195,13 +217,13 @@ async function applyProviderEvent(
   });
 }
 
-export async function reconcileResendDeliveries(limit = 5) {
-  const config = resendTestConfiguration();
-  const client = new Resend(config.key);
+export async function reconcileResendDeliveries(limit = 5, businessId?: string) {
+  const config = contactResendConfiguration(businessId, true);
+  const client = new Resend(config.readKey);
   const messages = await prisma.cfMessage.findMany({ where: {
-    businessId: config.businessId, provider: "RESEND", providerId: { not: null }, state: { in: ["ACCEPTED", "UNKNOWN"] },
+    ...(businessId ? { businessId } : config.businessIds ? { businessId: { in: config.businessIds } } : {}), provider: "RESEND", providerId: { not: null }, state: { in: ["ACCEPTED", "UNKNOWN"] },
   }, orderBy: { createdAt: "asc" }, take: Math.max(1, Math.min(5, limit)) });
-  const kinds: Record<string, "ACCEPTED" | "DELIVERED" | "BOUNCED" | "COMPLAINED" | "FAILED"> = { sent: "ACCEPTED", delivered: "DELIVERED", bounced: "BOUNCED", complained: "COMPLAINED", failed: "FAILED", suppressed: "FAILED" };
+  const kinds: Record<string, "ACCEPTED" | "DELAYED" | "DELIVERED" | "BOUNCED" | "COMPLAINED" | "FAILED"> = { sent: "ACCEPTED", delivery_delayed: "DELAYED", delivered: "DELIVERED", bounced: "BOUNCED", complained: "COMPLAINED", failed: "FAILED", suppressed: "FAILED" };
   let reconciled = 0;
   for (const m of messages) {
     const result = await withProviderDeadline(() => client.emails.get(m.providerId!), AbortSignal.timeout(3000));
@@ -209,7 +231,7 @@ export async function reconcileResendDeliveries(limit = 5) {
     const tags = Object.fromEntries((result.data.tags ?? []).map(t => [t.name, t.value]));
     if (tags.cf_message !== m.id || !signatureMatches(`resend:${m.id}`, tags.cf_proof ?? "")) throw new Error("PROVIDER_MESSAGE_CONFLICT");
     const input = { id: `reconcile:${m.providerId}:${result.data.last_event}`, providerId: m.providerId!, kind: kinds[result.data.last_event], occurredAt: result.data.created_at };
-    const r = await applyProviderEvent("RESEND", input, digest(JSON.stringify(input)), new Date(), m.id);
+    const r = await applyProviderEvent("RESEND", input, digest(JSON.stringify(input)), new Date(), m.id, result.data.last_event === "suppressed" ? "ADMIN_BLOCK" : undefined);
     if ("accepted" in r) reconciled++;
   }
   return { reconciled, simulated: false };

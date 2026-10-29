@@ -19,6 +19,7 @@ import {
 } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { ContactFlowOperationsCard } from "./contact-flow-operations-card";
 
 export const dynamic = "force-dynamic";
 
@@ -145,6 +146,8 @@ export default async function AdminDashboardPage() {
           <LocalizedText id="VvuwYQzMj7ZD" />
         </Link>
       </div>
+
+      <ContactFlowOperationsCard />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
