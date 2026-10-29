@@ -257,6 +257,7 @@ export async function createAppointment(data: {
 export function isAppointmentCapacityConflict(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const item = error as { code?: string; message?: string; cause?: unknown; meta?: unknown };
+  if (["SERVICE_NOT_BOOKABLE", "STAFF_NOT_BOOKABLE"].some(code => item.message?.includes(code) || JSON.stringify(item.meta ?? {}).includes(code))) return true;
   return item.code === "23P01" || item.message?.includes("BOOKING_SLOT_CONFLICT") === true
     || (item.cause !== undefined && isAppointmentCapacityConflict(item.cause))
     || (item.meta !== undefined && JSON.stringify(item.meta).includes("BOOKING_SLOT_CONFLICT"));

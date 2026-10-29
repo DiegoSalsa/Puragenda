@@ -1394,6 +1394,8 @@ model ScheduleBlock {
 }
 
 model Service {
+  isActive                 Boolean @default(true)
+  catalogVersion           Int     @default(0)
   contactFlowVersions      CfVersion[]
   @@unique([id, businessId])
   id                       String                  @id @default(cuid())
@@ -1439,6 +1441,7 @@ model Service {
   @@index([businessId])
   @@index([categoryId])
   @@index([businessId, position])
+  @@index([businessId, isActive])
 }
 
 model ServiceCategory {
@@ -1528,6 +1531,7 @@ model ProductionOrder {
 }
 
 model ServiceOptionCategory {
+  isActive      Boolean @default(true)
   id            String   @id @default(cuid())
   name          String
   isRequired    Boolean  @default(false)
@@ -1545,6 +1549,7 @@ model ServiceOptionCategory {
 }
 
 model ServiceOptionAlternative {
+  isActive      Boolean @default(true)
   id            String   @id @default(cuid())
   name          String
   priceDelta    Float    @default(0)

@@ -4,9 +4,10 @@ import type { ServiceInput } from "@/server/validations/booking";
 const serviceOptionsInclude = {
   category: true,
   optionCategories: {
+    where: { isActive: true },
     orderBy: { position: "asc" as const },
     include: {
-      alternatives: { orderBy: { position: "asc" as const } },
+      alternatives: { where: { isActive: true }, orderBy: { position: "asc" as const } },
     },
   },
 };
@@ -87,6 +88,7 @@ export async function createService(data: {
   optionCategories?: ServiceInput["optionCategories"];
 }) {
   const { optionCategories = [], ...serviceData } = data;
+  if (optionCategories.some(c => c.id || c.alternatives.some(a => a.id))) throw new ServiceCatalogError("Las opciones nuevas no pueden reutilizar identificadores", 400);
   const availabilityData = {
     availabilityType: serviceData.availabilityType ?? "NORMAL",
     specialWeekDays: serviceData.availabilityType === "SPECIAL" ? serviceData.specialWeekDays ?? [] : [],
@@ -151,7 +153,9 @@ export async function updateService(
     specialStartTime?: string | null;
     specialEndTime?: string | null;
     optionCategories?: ServiceInput["optionCategories"];
-  }
+  },
+  businessId: string,
+  expectedCatalogVersion?: number,
 ) {
   const { optionCategories, ...serviceData } = data;
   const availabilityData = serviceData.availabilityType
@@ -169,27 +173,54 @@ export async function updateService(
       }
     : {};
 
-  if (optionCategories === undefined) {
-    return prisma.service.update({
-      where: { id: serviceId },
-      data: { ...serviceData, ...availabilityData },
-      include: serviceOptionsInclude,
-    });
-  }
-
   return prisma.$transaction(async (tx) => {
-    await tx.serviceOptionCategory.deleteMany({ where: { serviceId } });
-
-    return tx.service.update({
-      where: { id: serviceId },
-      data: {
-        ...serviceData,
-        ...availabilityData,
-        optionCategories: { create: buildOptionCategoryCreates(optionCategories) },
-      },
-      include: serviceOptionsInclude,
-    });
+    await tx.$queryRaw`SELECT "id" FROM "Service" WHERE "id" = ${serviceId} AND "businessId" = ${businessId} FOR UPDATE`;
+    const existing = await tx.service.findFirst({ where: { id: serviceId, businessId }, include: serviceOptionsInclude });
+    if (!existing) throw new ServiceCatalogError("Servicio no encontrado", 404);
+    if (expectedCatalogVersion !== undefined && existing.catalogVersion !== expectedCatalogVersion) {
+      throw new ServiceCatalogError("El servicio cambió. Recarga antes de guardar.", 409);
+    }
+    if (optionCategories !== undefined) {
+      const categoryIds = new Set<string>();
+      const alternativeIds = new Set<string>();
+      for (const category of optionCategories) {
+        const old = category.id ? existing.optionCategories.find(c => c.id === category.id) : undefined;
+        if (category.id && (!old || categoryIds.has(category.id))) throw new ServiceCatalogError("Categoría inválida o retirada", 400);
+        if (category.id) categoryIds.add(category.id);
+        for (const alternative of category.alternatives) {
+          if (alternative.id && (!old?.alternatives.some(a => a.id === alternative.id) || alternativeIds.has(alternative.id))) {
+            throw new ServiceCatalogError("Alternativa inválida o retirada", 400);
+          }
+          if (alternative.id) alternativeIds.add(alternative.id);
+        }
+      }
+      for (const [position, category] of optionCategories.entries()) {
+        const { alternatives, id } = category;
+        const fields = { name: category.name, isRequired: category.isRequired, maxSelections: category.maxSelections, position };
+        const old = existing.optionCategories.find(c => c.id === id);
+        const categoryChanges = Object.fromEntries(Object.entries(fields).filter(([key, value]) => !old || old[key as keyof typeof fields] !== value));
+        const saved = old ?? await tx.serviceOptionCategory.create({ data: { ...fields, serviceId } });
+        if (old && Object.keys(categoryChanges).length) await tx.serviceOptionCategory.update({ where: { id: saved.id }, data: categoryChanges });
+        for (const [alternativePosition, alternative] of alternatives.entries()) {
+          const alternativeFields = { name: alternative.name, priceDelta: alternative.priceDelta, durationDelta: alternative.durationDelta, isHomeService: alternative.isHomeService, position: alternativePosition };
+          const prior = old?.alternatives.find(a => a.id === alternative.id);
+          const changes = Object.fromEntries(Object.entries(alternativeFields).filter(([key, value]) => !prior || prior[key as keyof typeof alternativeFields] !== value));
+          if (prior && Object.keys(changes).length) await tx.serviceOptionAlternative.update({ where: { id: prior.id }, data: changes });
+          else if (!prior) await tx.serviceOptionAlternative.create({ data: { ...alternativeFields, categoryId: saved.id } });
+        }
+        const removed = old?.alternatives.filter(a => !alternativeIds.has(a.id)).map(a => a.id) ?? [];
+        if (removed.length) await tx.serviceOptionAlternative.updateMany({ where: { id: { in: removed }, categoryId: saved.id }, data: { isActive: false } });
+      }
+      const retiredIds = existing.optionCategories.filter(c => !categoryIds.has(c.id)).map(c => c.id);
+      await tx.serviceOptionAlternative.updateMany({ where: { categoryId: { in: retiredIds } }, data: { isActive: false } });
+      await tx.serviceOptionCategory.updateMany({ where: { id: { in: retiredIds }, serviceId }, data: { isActive: false } });
+    }
+    return tx.service.update({ where: { id: serviceId, businessId }, data: { ...serviceData, ...availabilityData, catalogVersion: { increment: 1 } }, include: serviceOptionsInclude });
   });
+}
+
+export class ServiceCatalogError extends Error {
+  constructor(message: string, public status: number) { super(message); }
 }
 
 export async function updateServiceImage(
@@ -204,13 +235,13 @@ export async function updateServiceImage(
   });
 }
 
-/**
- * Delete a service.
- */
-export async function deleteService(serviceId: string) {
-  return prisma.service.delete({
-    where: { id: serviceId },
-  });
+/** Legacy DELETE means reversible archival; tenant scope is mandatory. */
+export async function deleteService(serviceId: string, businessId: string) {
+  return setServiceActive(serviceId, businessId, false);
+}
+
+export async function setServiceActive(serviceId: string, businessId: string, isActive: boolean) {
+  return prisma.service.update({ where: { id: serviceId, businessId }, data: { isActive, catalogVersion: { increment: 1 } } });
 }
 
 export async function reorderServices(

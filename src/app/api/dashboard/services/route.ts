@@ -1,6 +1,6 @@
 import { getApiSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
-import { getServicesByBusinessId, createService, reorderServices } from "@/server/services/service.service";
+import { getServicesByBusinessId, createService, reorderServices, ServiceCatalogError } from "@/server/services/service.service";
 import { getServiceCategoryByIdAndBusiness } from "@/server/services/service-category.service";
 import { serviceSchema } from "@/server/validations/booking";
 import { NextRequest } from "next/server";
@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const services = await getServicesByBusinessId(business.id);
     return Response.json(services);
   } catch (error) {
+    if (error instanceof ServiceCatalogError) return Response.json({ error: error.message }, { status: error.status });
     console.error("[route] Error:", error);
     return Response.json({ error: "Error del servidor" }, { status: 500 });
   }
@@ -69,14 +70,17 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "La categoría seleccionada no pertenece a tu negocio" }, { status: 400 });
     }
 
+    const { expectedCatalogVersion: _version, ...fields } = parsed.data;
+    void _version;
     const service = await createService({
-      ...parsed.data,
+      ...fields,
       description: parsed.data.description || "",
       businessId: business.id,
     });
 
     return Response.json(service, { status: 201 });
   } catch (error) {
+    if (error instanceof ServiceCatalogError) return Response.json({ error: error.message }, { status: error.status });
     console.error("[route] Error:", error);
     return Response.json({ error: "Error del servidor" }, { status: 500 });
   }

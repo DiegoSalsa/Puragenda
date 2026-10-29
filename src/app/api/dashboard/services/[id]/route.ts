@@ -5,6 +5,8 @@ import {
   updateService,
   updateServiceImage,
   deleteService,
+  setServiceActive,
+  ServiceCatalogError,
 } from "@/server/services/service.service";
 import { getServiceCategoryByIdAndBusiness } from "@/server/services/service-category.service";
 import { serviceSchema } from "@/server/validations/booking";
@@ -65,13 +67,16 @@ export async function PUT(
       return Response.json({ error: "La categoría seleccionada no pertenece a tu negocio" }, { status: 400 });
     }
 
+    if (!Number.isInteger(body.expectedCatalogVersion)) return Response.json({ error: "Recarga el servicio antes de guardar" }, { status: 409 });
+    const { expectedCatalogVersion, ...fields } = parsed.data;
     const service = await updateService(id, {
-      ...parsed.data,
+      ...fields,
       description: parsed.data.description || "",
-    });
+    }, business.id, expectedCatalogVersion);
 
     return Response.json(service);
   } catch (error) {
+    if (error instanceof ServiceCatalogError) return Response.json({ error: error.message }, { status: error.status });
     console.error("[route] Error:", error);
     return Response.json({ error: "Error al actualizar" }, { status: 500 });
   }
@@ -96,10 +101,23 @@ export async function DELETE(
     const existing = await getServiceByIdAndBusiness(id, business.id);
     if (!existing) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
 
-    await deleteService(id);
+    await deleteService(id, business.id);
     return Response.json({ success: true });
   } catch (error) {
     console.error("[route] Error:", error);
-    return Response.json({ error: "Error al eliminar" }, { status: 500 });
+    return Response.json({ error: "Error al archivar" }, { status: 500 });
   }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getApiSessionUser(request);
+  if (!user) return Response.json({ error: "No autenticado" }, { status: 401 });
+  const business = await getBusinessForUser(user.id);
+  if (!business) return Response.json({ error: "Negocio no encontrado" }, { status: 404 });
+  if (!await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.SERVICES_MANAGE)) return Response.json({ error: "Sin permisos" }, { status: 403 });
+  const { id } = await params;
+  if (!await getServiceByIdAndBusiness(id, business.id)) return Response.json({ error: "Servicio no encontrado" }, { status: 404 });
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body.isActive !== "boolean") return Response.json({ error: "Estado inválido" }, { status: 400 });
+  return Response.json(await setServiceActive(id, business.id, body.isActive));
 }

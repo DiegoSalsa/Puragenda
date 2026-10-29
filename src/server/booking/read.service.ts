@@ -23,15 +23,15 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
       businessHours: { select: { ...hoursSelect, isOpen: true } },
       scheduleOverrides: { select: { ...overridesSelect, isOpen: true } },
       services: {
-        where: { bookingMode: "APPOINTMENT", recurringPlan: { is: null }, locations: { some: { location: { businessId, isActive: true } } } },
+        where: { isActive: true, bookingMode: "APPOINTMENT", recurringPlan: { is: null }, locations: { some: { location: { businessId, isActive: true } } } },
         take: 501, orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
         select: {
           id: true, name: true, description: true, imageUrl: true, price: true, duration: true, depositAmount: true, depositPaymentUrl: true,
           availabilityType: true, specialWeekDays: true, specialStartDate: true, specialEndDate: true, specialStartTime: true, specialEndTime: true,
           category: { select: { id: true, name: true, businessId: true, position: true } },
           locations: { where: { location: { businessId, isActive: true } }, select: { locationId: true } },
-          optionCategories: { orderBy: { position: "asc" }, select: { id: true, name: true, isRequired: true, maxSelections: true,
-            alternatives: { orderBy: { position: "asc" }, select: { id: true, name: true, priceDelta: true, durationDelta: true, isHomeService: true } } } },
+          optionCategories: { where: { isActive: true }, orderBy: { position: "asc" }, select: { id: true, name: true, isRequired: true, maxSelections: true,
+            alternatives: { where: { isActive: true }, orderBy: { position: "asc" }, select: { id: true, name: true, priceDelta: true, durationDelta: true, isHomeService: true } } } },
         },
       },
       staff: {

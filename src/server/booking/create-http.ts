@@ -300,7 +300,7 @@ async function handleBooking(
 
     // Verify primary service belongs to business
     const service = await getServiceByIdAndBusiness(serviceId, business.id);
-    if (!service) {
+    if (!service || service.isActive === false) {
       return Response.json(
         { error: "Servicio no encontrado para este negocio" },
         { status: 404 }
@@ -325,8 +325,8 @@ async function handleBooking(
     const allSelectedServices = [service];
     if (additionalIds.length > 0) {
       const additionalServices = await prisma.service.findMany({
-        where: { id: { in: additionalIds }, businessId: business.id },
-        include: { category: true, optionCategories: { orderBy: { position: "asc" }, include: { alternatives: { orderBy: { position: "asc" } } } } },
+        where: { isActive: true, id: { in: additionalIds }, businessId: business.id },
+        include: { category: true, optionCategories: { where: { isActive: true }, orderBy: { position: "asc" }, include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } } } },
       });
       if (additionalServices.length !== additionalIds.length) return Response.json({ error: "Uno o mas servicios seleccionados no pertenecen a este negocio" }, { status: 400 });
       allSelectedServices.push(...additionalServices);

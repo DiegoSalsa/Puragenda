@@ -2,6 +2,7 @@ import { z } from "zod";
 import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 
 export const optionAlternativeSchema = z.object({
+  id: z.string().min(1).max(100).optional(),
   name: z
     .string({ message: "El nombre de la alternativa es obligatorio" })
     .min(1, "El nombre de la alternativa no puede estar vacio")
@@ -24,6 +25,7 @@ export const optionAlternativeSchema = z.object({
 });
 
 export const optionCategorySchema = z.object({
+  id: z.string().min(1).max(100).optional(),
   name: z
     .string({ message: "El nombre de la categoria es obligatorio" })
     .min(1, "El nombre de la categoria no puede estar vacio")
@@ -169,6 +171,7 @@ const optionalClock = z.preprocess(
 );
 
 export const serviceSchema = z.object({
+  expectedCatalogVersion: z.number().int().min(0).optional(),
   name: z
     .string({ message: "El nombre es obligatorio" })
     .min(1, "El nombre no puede estar vacio")

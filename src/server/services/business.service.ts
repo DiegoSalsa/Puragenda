@@ -32,12 +32,13 @@ export async function getBusinessWithServices(slug: string) {
     where: { slug },
     include: {
       services: {
+        where: { isActive: true },
         orderBy: { name: "asc" },
         include: {
           category: true,
-          optionCategories: {
+          optionCategories: { where: { isActive: true },
             orderBy: { position: "asc" },
-            include: { alternatives: { orderBy: { position: "asc" } } },
+            include: { alternatives: { where: { isActive: true }, orderBy: { position: "asc" } } },
           },
         },
       },
@@ -102,7 +103,7 @@ export async function getFirstBusinessWithServicesByOwnerId(ownerId: string) {
     where: { ownerId },
     orderBy: { createdAt: "asc" },
     include: {
-      services: { orderBy: { name: "asc" } },
+      services: { where: { isActive: true }, orderBy: { name: "asc" } },
       staff: { where: { isActive: true }, orderBy: { name: "asc" } },
       subscription: true,
     },

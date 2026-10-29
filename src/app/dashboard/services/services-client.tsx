@@ -82,6 +82,8 @@ interface CustomProductionWindowForm extends Omit<CustomProductionWindow, "capac
 }
 
 interface Service {
+  isActive: boolean;
+  catalogVersion: number;
   id: string;
   name: string;
   position: number;
@@ -561,13 +563,16 @@ export function ServicesClient({
       const { imageUrl: _imageUrl, ...formWithoutImage } = form;
       void _imageUrl;
       const payload = {
+        ...(editingService ? { expectedCatalogVersion: editingService.catalogVersion } : {}),
         ...(editingService ? formWithoutImage : form),
         optionCategories: optionCategories
           .map((category) => ({
+            id: category.id,
             name: category.name.trim(),
             isRequired: category.isRequired,
             maxSelections: category.maxSelections,
             alternatives: category.alternatives.map((alternative) => ({
+              id: alternative.id,
               name: alternative.name.trim(),
               priceDelta: alternative.priceDelta,
               durationDelta: alternative.durationDelta,
@@ -686,14 +691,16 @@ export function ServicesClient({
     if (serviceImageInputRef.current) serviceImageInputRef.current.value = "";
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm(legacy("qXDI8YuwJX_1"))) return;
-
+  async function handleDelete(service: Service) {
+    if (service.isActive && !confirm("¿Archivar servicio? Dejará de aceptar nuevas reservas. Se conservarán el historial y las reservas existentes.")) return;
     try {
-      await fetch(`/api/dashboard/services/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/dashboard/services/${service.id}`, service.isActive
+        ? { method: "DELETE" }
+        : { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: true }) });
+      if (!response.ok) throw new Error((await response.json()).error || "No se pudo cambiar el estado del servicio");
       await Promise.all([fetchServices(), fetchCategories()]);
     } catch (error) {
-      console.error("Error deleting service:", error);
+      alert(error instanceof Error ? error.message : "No se pudo cambiar el estado del servicio");
     }
   }
 
@@ -1959,6 +1966,7 @@ export function ServicesClient({
                       <td className="py-3.5 pr-4 font-medium">
                         <div className="flex flex-col items-start gap-1">
                           <span>{service.name}</span>
+                          {!service.isActive && <span className="text-xs text-muted-foreground">Archivado · historial conservado</span>}
                           {service.bookingMode === "PRODUCTION" && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-0.5 text-[10px] font-semibold text-fuchsia-600 dark:text-fuchsia-400">
                               <CalendarRange className="h-3 w-3" /><LocalizedText id="1-L2HAv9XQki" />
@@ -2060,10 +2068,12 @@ export function ServicesClient({
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(service.id)}
+                            onClick={() => handleDelete(service)}
+                            aria-label={service.isActive ? `Archivar servicio ${service.name}` : `Reactivar servicio ${service.name}`}
+                            title={service.isActive ? "Archivar servicio" : "Reactivar servicio"}
                             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {service.isActive ? <Trash2 className="h-3.5 w-3.5" /> : "Reactivar"}
                           </button>
                         </div>
                       </td>
