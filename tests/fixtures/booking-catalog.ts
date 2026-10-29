@@ -5,9 +5,9 @@ export function bookingFixture(): Awaited<ReturnType<typeof loadBookingContext>>
   return {
     id: "business-1", slug: "fixture", name: "Fixture", timezone: "America/Santiago", currencyCode: "CLP",
     slotInterval: 30, minAdvanceBookingMinutes: 60, allowSameDayBookings: true, maxServicesPerBooking: 1, mcpPublicDiscovery: false,
-    depositRequired: false, depositPaymentMode: "MANUAL_LINK", mpAccessToken: "never-serialize", subscription: { plan: "EQUIPO" },
+    depositRequired: false, depositPaymentMode: "MANUAL_LINK", mpAccessToken: "never-serialize", mpRefreshToken: null, mpTokenExpiresAt: null, subscription: { plan: "EQUIPO" },
     businessHours: hours, scheduleOverrides: [],
-    services: [{ id: "service-1", name: "Cita", description: null, imageUrl: null, price: 20000, duration: 60, depositAmount: 5000,
+    services: [{ id: "service-1", name: "Cita", description: null, imageUrl: null, price: 20000, duration: 60, depositAmount: 5000, depositPaymentUrl: "https://payments.example.invalid/manual",
       availabilityType: "NORMAL", specialWeekDays: [], specialStartDate: null, specialEndDate: null, specialStartTime: null, specialEndTime: null,
       category: { id: "category-1", name: "Categoría", businessId: "business-1", position: 0 }, locations: [{ locationId: "location-1" }],
       optionCategories: [{ id: "option-category", name: "Formato", isRequired: true, maxSelections: 1, alternatives: [

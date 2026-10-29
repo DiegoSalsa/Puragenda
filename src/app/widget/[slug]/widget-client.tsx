@@ -1,6 +1,7 @@
 "use client";
 import { CommercialConsentChoice } from "@/components/commercial-consent-choice";
 import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
+import { selectedDepositUnavailable, type DepositPaymentStatus } from "@/core/booking-deposit";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 
@@ -53,6 +54,7 @@ interface Service {
   duration: number;
   price: number;
   depositAmount: number;
+  depositPaymentStatus?: DepositPaymentStatus;
   bookingMode: "APPOINTMENT" | "PRODUCTION";
   productionScheduleMode: "WEEKLY" | "CUSTOM";
   weeklyProductionCapacity: number;
@@ -559,6 +561,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
   const remainingAfterGiftCard = Math.max(0, totalPrice - giftCardPreviewAmount);
   const effectiveDepositAmount = Math.min(depositAmount, remainingAfterGiftCard);
   const showDeposit = depositRequired && effectiveDepositAmount > 0;
+  const depositUnavailable = selectedDepositUnavailable(depositRequired, activeServices, remainingAfterGiftCard);
 
   // Filter staff who can perform the selected service(s)
   const filteredStaff = useMemo(() => {
@@ -2401,11 +2404,11 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 {showDeposit && !previewMode && (
                   <div className="rounded-xl border px-4 py-3 text-sm" style={{ borderColor: `${pc}30`, background: `${pc}08` }}>
                     <p className="font-medium" style={{ color: pc }}><LocalizedText id="8OlEyuapzFy5" /> {formatPrice(effectiveDepositAmount, business.currencyCode)}</p>
-                    <p className="text-xs mt-1" style={{ color: textSecondary }}>{t("depositRedirect")}</p>
+                    <p className="text-xs mt-1" role={depositUnavailable ? "alert" : undefined} style={{ color: textSecondary }}>{t(depositUnavailable ? "depositUnavailable" : "depositRedirect")}</p>
                   </div>
                 )}
                 {apiError && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500 font-medium">{apiError}</div>}
-                <button type="submit" disabled={!isFormValid || submitting} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
+                <button type="submit" disabled={!isFormValid || submitting || (!previewMode && depositUnavailable)} className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 mt-2 text-sm font-bold transition-all hover:opacity-90 hover:shadow-lg hover:shadow-brand/20 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none" style={{ background: pc, color: getContrastColor(pc) }}>
                   {submitting ? <><Loader2 className="h-5 w-5 animate-spin" />{showDeposit ? t("redirecting") : t("confirming")}</> : <>{previewMode ? previewText.finish : showDeposit ? t("payDeposit") : t("confirmBooking")} <ChevronRight className="h-5 w-5" /></>}
                 </button>
               </form>

@@ -1,4 +1,5 @@
 import { publicConsentEnabled } from "@/server/contact-flow/public-consent";
+import { depositPaymentStatus } from "@/core/booking-deposit";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { prisma } from "@/server/db/prisma";
@@ -258,7 +259,7 @@ export default async function WidgetPage({
       services={business.services
         .filter((service) => service.bookingMode !== "PRODUCTION" || business.productionOrdersEnabled)
         .map((s) => ({
-        id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount,
+        id: s.id, name: s.name, description: s.description, imageUrl: s.imageUrl, duration: s.duration, price: s.price, depositAmount: s.depositAmount, depositPaymentStatus: depositPaymentStatus(business, s),
         bookingMode: s.bookingMode,
         productionScheduleMode: s.productionScheduleMode,
         weeklyProductionCapacity: s.weeklyProductionCapacity,
@@ -346,7 +347,7 @@ export default async function WidgetPage({
       }))}
       maxServicesPerBooking={business.maxServicesPerBooking}
       groupServicesByCategory={business.groupServicesByCategory}
-      depositRequired={business.depositRequired && (business.depositPaymentMode === "MANUAL_LINK" || !!business.mpAccessToken)}
+      depositRequired={business.depositRequired}
       allowSameDayBookings={business.allowSameDayBookings}
       slotInterval={business.slotInterval}
       minAdvanceBookingMinutes={business.minAdvanceBookingMinutes}

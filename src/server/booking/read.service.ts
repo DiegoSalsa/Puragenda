@@ -6,6 +6,7 @@ import { getBlockedSlots } from "@/server/services/appointment.service";
 import type { BookingAvailabilityDto, BookingCatalogDto } from "./contracts";
 import type { Prisma } from "@prisma/client";
 import { mergeScheduleOverrides } from "@/core/availability";
+import { depositPaymentStatus } from "@/core/booking-deposit";
 
 export const MAX_BOOKING_DAYS_AHEAD = PUBLIC_BOOKING_HORIZON_DAYS;
 const hoursSelect = { dayOfWeek: true, startTime: true, endTime: true, breakStart: true, breakEnd: true } as const;
@@ -17,7 +18,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
     select: {
       id: true, slug: true, name: true, timezone: true, currencyCode: true, mcpPublicDiscovery: true,
       slotInterval: true, minAdvanceBookingMinutes: true, allowSameDayBookings: true,
-      depositRequired: true, depositPaymentMode: true, mpAccessToken: true, maxServicesPerBooking: true,
+      depositRequired: true, depositPaymentMode: true, mpAccessToken: true, mpRefreshToken: true, mpTokenExpiresAt: true, maxServicesPerBooking: true,
       subscription: { select: { plan: true } },
       businessHours: { select: { ...hoursSelect, isOpen: true } },
       scheduleOverrides: { select: { ...overridesSelect, isOpen: true } },
@@ -25,7 +26,7 @@ export async function loadBookingContext(businessId: string, db: Prisma.Transact
         where: { bookingMode: "APPOINTMENT", recurringPlan: { is: null }, locations: { some: { location: { businessId, isActive: true } } } },
         take: 501, orderBy: [{ position: "asc" }, { name: "asc" }, { id: "asc" }],
         select: {
-          id: true, name: true, description: true, imageUrl: true, price: true, duration: true, depositAmount: true,
+          id: true, name: true, description: true, imageUrl: true, price: true, duration: true, depositAmount: true, depositPaymentUrl: true,
           availabilityType: true, specialWeekDays: true, specialStartDate: true, specialEndDate: true, specialStartTime: true, specialEndTime: true,
           category: { select: { id: true, name: true, businessId: true, position: true } },
           locations: { where: { location: { businessId, isActive: true } }, select: { locationId: true } },
@@ -66,6 +67,7 @@ export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
       id: service.id, name: service.name, description: service.description, imageUrl: service.imageUrl,
       category: service.category?.businessId === data.id ? { id: service.category.id, name: service.category.name, position: service.category.position } : null,
       price: service.price, duration: service.duration, depositAmount: service.depositAmount,
+      depositPaymentStatus: depositPaymentStatus(data, service),
       locationIds: service.locations.map((assignment) => assignment.locationId),
       optionCategories: service.optionCategories.map((category) => ({ id: category.id, name: category.name, isRequired: category.isRequired, maxSelections: category.maxSelections,
         alternatives: category.alternatives.map((alt) => ({ id: alt.id, name: alt.name, priceDelta: alt.priceDelta, durationDelta: alt.durationDelta, isHomeService: alt.isHomeService })) })),
@@ -79,7 +81,7 @@ export function toBookingCatalog(data: BookingContext): BookingCatalogDto {
     capabilities: { singleAppointment: true, production: false, recurring: false, firstAvailable: !businessOnly, idempotency: true, maxDaysAhead: MAX_BOOKING_DAYS_AHEAD },
     rules: { scheduleMode: businessOnly ? "BUSINESS" : "STAFF", staffSelection: businessOnly ? "NONE" : "REQUIRED",
       slotInterval: data.slotInterval, minAdvanceBookingMinutes: data.minAdvanceBookingMinutes, advanceAppliesTo: "SAME_DAY",
-      allowSameDayBookings: data.allowSameDayBookings, depositEnabled: data.depositRequired && (data.depositPaymentMode === "MANUAL_LINK" || !!data.mpAccessToken),
+      allowSameDayBookings: data.allowSameDayBookings, depositEnabled: data.depositRequired, depositPaymentStatus: depositPaymentStatus(data),
       maxServicesPerBooking: data.maxServicesPerBooking,
       customerFields: { name: true, email: true, phone: true, address: "HOME_OPTIONS_ONLY" },
     },

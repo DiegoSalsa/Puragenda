@@ -72,5 +72,15 @@ try {
   check("HTTP range stops on the ninetieth day", horizon.response.status === 200 && horizon.body.days.length === 1 && horizon.body.days[0].date === limit);
   const page = await call(`/dashboard/agenda?location=${location.slug}&date=${date}`);
   check("Agenda renders the selected branch and appointment version", page.response.status === 200 && page.text.includes(location.id) && page.text.includes("updatedAt"));
+  await db.business.update({ where: { id: business.id }, data: { depositRequired: true, depositPaymentMode: "MERCADOPAGO", mpAccessToken: null, mpRefreshToken: null } });
+  await db.service.update({ where: { id: service.id }, data: { depositAmount: 5000 } });
+  const catalog = await call(`/api/business/${business.slug}/booking-catalog`, undefined, "GET", { "x-api-key": business.apiKey });
+  check("Public HTTP catalog keeps the mandatory deposit while reporting unavailable payment", catalog.response.status === 200 && catalog.body.rules.depositEnabled === true && catalog.body.rules.depositPaymentStatus === "UNAVAILABLE" && !/mpAccessToken|mpRefreshToken|mpTokenExpiresAt/.test(catalog.text));
+  const before = { clients: await db.client.findMany({ where: { businessId: business.id } }), appointments: await db.appointment.findMany({ where: { businessId: business.id } }), consent: await db.cfConsent.findMany({ where: { businessId: business.id } }) };
+  const future = new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10);
+  const rejected = await call(`/api/business/${business.slug}/book`, { ...payload, customerName: "Rejected change", customerPhone: "+56911111111", startTime: future + "T08:00:00.000Z", endTime: future + "T08:30:00.000Z" }, "POST", { "x-api-key": business.apiKey, "Idempotency-Key": "deposit-rejection-" + randomUUID(), "Puragenda-Booking-Version": "1" });
+  check(`Unavailable mandatory deposit returns an explicit HTTP 503 (received ${rejected.response.status})`, rejected.response.status === 503 && rejected.body.code === "DEPOSIT_UNAVAILABLE");
+  const after = { clients: await db.client.findMany({ where: { businessId: business.id } }), appointments: await db.appointment.findMany({ where: { businessId: business.id } }), consent: await db.cfConsent.findMany({ where: { businessId: business.id } }) };
+  check("Rejected HTTP booking preserves existing CRM, appointments and consent", JSON.stringify(after) === JSON.stringify(before));
   fs.writeFileSync(path.join(target, "agenda-http-results.json"), JSON.stringify({ passed: true, checks, syntheticOnly: true, providerCredentialsPresent: false }, null, 2));
 } finally { await db.$disconnect(); }

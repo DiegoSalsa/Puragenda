@@ -10,6 +10,7 @@ vi.mock("@/server/lib/rate-limit", () => ({ rateLimit: () => ({ check: mocks.lim
 import { GET as catalog } from "@/app/api/business/[slug]/booking-catalog/route";
 import { GET as availability } from "@/app/api/business/[slug]/availability/route";
 import { getBookingAvailability, toBookingCatalog } from "@/server/booking/read.service";
+import { websiteCatalog } from "@/websites/catalog";
 
 const context = { params: Promise.resolve({ slug: "fixture" }) };
 const now = new Date("2026-09-30T12:00:00Z");
@@ -41,6 +42,25 @@ describe("public booking reads", () => {
     expect(JSON.stringify(body)).not.toMatch(/never-serialize|apiKey|mpAccessToken|"schedule"|customerEmail/);
     expect(response.headers.get("Cache-Control")).toContain("no-store");
     expect(mocks.context.mock.calls[0][0].select.services.where).toMatchObject({ bookingMode: "APPOINTMENT", recurringPlan: { is: null } });
+  });
+  it.each([
+    { mpAccessToken: null, expected: "UNAVAILABLE" },
+    { mpAccessToken: "never-serialize", mpTokenExpiresAt: new Date("2026-09-29T00:00Z"), mpRefreshToken: null, expected: "UNAVAILABLE" },
+    { mpAccessToken: "never-serialize", mpTokenExpiresAt: new Date("2026-09-29T00:00Z"), mpRefreshToken: "never-serialize-refresh", expected: "CHECK_AT_BOOKING" },
+    { mpAccessToken: "never-serialize", mpTokenExpiresAt: new Date("2026-10-05T00:00Z"), expected: "CHECK_AT_BOOKING" },
+  ])("keeps the deposit requirement distinct from seller availability: %j", config => {
+    const data = Object.assign(bookingFixture(), config, { depositRequired: true, depositPaymentMode: "MERCADOPAGO" as const });
+    const catalog = toBookingCatalog(data);
+    expect(catalog.rules).toMatchObject({ depositEnabled: true, depositPaymentStatus: config.expected });
+    expect(catalog.services[0]).toMatchObject({ depositAmount: 5000, depositPaymentStatus: config.expected });
+    expect(websiteCatalog(catalog).rules).toMatchObject({ depositEnabled: true, depositPaymentStatus: config.expected });
+    expect(JSON.stringify(catalog)).not.toMatch(/never-serialize|mpAccessToken|mpRefreshToken|mpTokenExpiresAt/);
+  });
+  it.each([null, "https://payments.example.invalid/manual"])("reports manual links per service without publishing the private configuration: %s", link => {
+    const data = bookingFixture(); data.depositRequired = true;
+    Object.assign(data.services[0], { depositPaymentUrl: link });
+    expect(toBookingCatalog(data).services[0]).toMatchObject({ depositPaymentStatus: link ? "CHECK_AT_BOOKING" : "UNAVAILABLE" });
+    expect(JSON.stringify(toBookingCatalog(data))).not.toContain("payments.example.invalid");
   });
   it("represents a business agenda without inventing staff", async () => {
     const data = bookingFixture(); data.subscription!.plan = "INDIVIDUAL";

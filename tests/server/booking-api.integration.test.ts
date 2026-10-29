@@ -2,13 +2,16 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { NextRequest } from "next/server";
 import pg from "pg";
 
-const mocks = vi.hoisted(() => ({ notify: vi.fn(), sync: vi.fn(), busy: vi.fn(), preference: vi.fn(), oauth: vi.fn() }));
+const mocks = vi.hoisted(() => ({ notify: vi.fn(), sync: vi.fn(), busy: vi.fn(), preference: vi.fn(), oauth: vi.fn(), portalAccount: vi.fn(), portalEmail: vi.fn() }));
 vi.mock("@/server/email/send", () => ({ sendBookingNotifications: mocks.notify }));
 vi.mock("@/server/services/google-calendar.service", () => ({ syncAppointmentToGoogle: mocks.sync, getGoogleCalendarBusySlots: mocks.busy }));
 vi.mock("@/server/services/mercadopago-oauth.service", () => ({ getValidMercadoPagoAccessToken: mocks.oauth }));
 vi.mock("mercadopago", () => ({ MercadoPagoConfig: class {}, Preference: class { create = mocks.preference; } }));
 vi.mock("@/server/services/widget-promotion.service", () => ({ resolveWidgetPromotion: async () => ({ promotion: null, quote: null }) }));
-vi.mock("@/server/services/client-portal.service", () => ({ getClientPortalAccountFromRequest: async () => null, getClientPortalEmailFromRequest: async () => null, updateClientPortalProfileFromBooking: async () => {} }));
+vi.mock("@/server/services/client-portal.service", async importOriginal => ({
+  ...await importOriginal<typeof import("@/server/services/client-portal.service")>(),
+  getClientPortalAccountFromRequest: mocks.portalAccount, getClientPortalEmailFromRequest: mocks.portalEmail,
+}));
 vi.mock("@/server/lib/rate-limit", () => ({ bookingLimiter: { check: () => null }, rateLimit: () => ({ check: () => null }) }));
 
 import { prisma } from "@/server/db/prisma";
@@ -19,6 +22,7 @@ import { GET as blocked } from "@/app/api/business/[slug]/appointments/route";
 import { createAppointment } from "@/server/services/appointment.service";
 import { bookingOperationContext, bookingPayloadHash, claimBookingOperation, BOOKING_LEASE_MS } from "@/server/booking/idempotency";
 import { bookingSchema } from "@/server/validations/booking";
+import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 
 const url = process.env.PURAGENDA_BOOKING_TEST_DATABASE_URL;
 const enabled = !!url && ["127.0.0.1", "localhost", "[::1]"].includes(new URL(url).hostname)
@@ -42,7 +46,9 @@ describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-09-30T12:00:00.000Z"));
     mocks.notify.mockResolvedValue(undefined); mocks.sync.mockResolvedValue({ synced: true }); mocks.busy.mockResolvedValue([]);
     mocks.oauth.mockResolvedValue(null); mocks.preference.mockResolvedValue({ id: "preference-fixture", init_point: "https://payments.example.invalid/fixture" });
+    mocks.portalAccount.mockResolvedValue(null); mocks.portalEmail.mockResolvedValue(null);
     await prisma.business.deleteMany({ where: { id: { in: ["local-business", "foreign-business"] } } });
+    await prisma.clientPortalAccount.deleteMany({ where: { email: payload.customerEmail } });
     await prisma.business.create({ data: { id: "local-business", name: "Local Fixture", slug: "booking-fixture", apiKey: "fixture-api-key", slotInterval: 30, allowSameDayBookings: true,
       subscription: { create: { plan: "EQUIPO", status: "ACTIVE" } },
       locations: { create: { id: "local-location", slug: "principal", name: "Principal", timezone: "America/Santiago", isPrimary: true, isActive: true,
@@ -55,7 +61,7 @@ describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
     } });
     for (const id of ["local-staff-a", "local-staff-b"]) await prisma.staff.create({ data: { id, name: id, businessId: "local-business", services: { connect: { id: "local-service" } }, locations: { create: { locationId: "local-location" } } } });
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
   afterAll(async () => { await prisma.$disconnect(); });
 
   it("reserves through the existing service and replays after a lost HTTP response without effects", async () => {
@@ -202,6 +208,42 @@ describe.skipIf(!enabled)("booking API with isolated local PostgreSQL", () => {
     expect(await result.json()).toMatchObject({ code: "DEPOSIT_UNAVAILABLE" });
     expect(await prisma.appointment.count()).toBe(0);
     expect(mocks.preference).not.toHaveBeenCalled(); expect(mocks.notify).not.toHaveBeenCalled();
+  });
+  it.each([true, false].flatMap(v1 => [true, false].flatMap(existing => ["absent", "expired", "refresh-error"].map(failure => ({ v1, existing, failure })))))
+    ("leaves CRM, consent, portal and existing holds unchanged after 503: %j", async ({ v1, existing, failure }) => {
+    vi.stubEnv("PURAGENDA_NEXT_ENABLED", "1"); vi.stubEnv("CONTACT_FLOW_PUBLIC_CONSENT_ENABLED", "1");
+    vi.stubEnv("CONTACT_FLOW_TOKEN_SECRET", "synthetic-consent-key-for-isolated-postgres-tests");
+    await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: true, depositPaymentMode: "MERCADOPAGO" } });
+    const account = await prisma.clientPortalAccount.create({ data: { email: payload.customerEmail, name: "Original portal", phone: "11111111", defaultAddress: "Original address", passwordHash: "synthetic-disabled-login", emailVerifiedAt: new Date() } });
+    mocks.portalAccount.mockResolvedValue(account); mocks.portalEmail.mockResolvedValue(account.email);
+    if (existing) await prisma.client.create({ data: { businessId: "local-business", email: payload.customerEmail, name: "Original CRM", phone: "22222222" } });
+    await prisma.appointment.create({ data: { businessId: "local-business", serviceId: "local-service", staffId: "local-staff-b", locationId: "local-location", customerName: "Existing hold", customerEmail: "hold@example.invalid", startTime: new Date("2026-10-01T14:00:00Z"), endTime: new Date("2026-10-01T15:00:00Z"), status: "AWAITING_PAYMENT", paymentStatus: "PENDING", paymentHoldExpiresAt: new Date("2026-09-30T11:00:00Z") } });
+    const snapshot = async () => ({ clients: await prisma.client.findMany({ where: { businessId: "local-business" } }),
+      consent: await prisma.cfConsent.findMany({ where: { businessId: "local-business" } }), audit: await prisma.cfAudit.findMany({ where: { businessId: "local-business" } }),
+      profile: await prisma.clientPortalAccount.findUnique({ where: { id: account.id } }), appointments: await prisma.appointment.findMany({ where: { businessId: "local-business" } }) });
+    const before = await snapshot();
+    if (failure === "refresh-error") mocks.oauth.mockRejectedValueOnce(new Error("synthetic refresh failure"));
+    const response = await POST(post({ ...payload, commercialConsent: { accepted: true, textVersion: COMMERCIAL_CONSENT_VERSION } }, v1 ? "safe-deposit-rejection" : null, "fixture-api-key", v1), ctx);
+    expect(response.status).toBe(503); expect(await response.json()).toMatchObject({ code: "DEPOSIT_UNAVAILABLE" });
+    expect(await snapshot()).toEqual(before);
+    expect(mocks.notify).not.toHaveBeenCalled(); expect(mocks.sync).not.toHaveBeenCalled(); expect(mocks.busy).not.toHaveBeenCalled(); expect(mocks.preference).not.toHaveBeenCalled();
+  });
+  it.each([false, true])("preserves valid commercial consent and verified profile updates after a successful booking (manual=%s)", async manual => {
+    vi.stubEnv("PURAGENDA_NEXT_ENABLED", "1"); vi.stubEnv("CONTACT_FLOW_PUBLIC_CONSENT_ENABLED", "1");
+    vi.stubEnv("CONTACT_FLOW_TOKEN_SECRET", "synthetic-consent-key-for-isolated-postgres-tests");
+    const account = await prisma.clientPortalAccount.create({ data: { email: payload.customerEmail, name: "Original", passwordHash: "synthetic-disabled-login", emailVerifiedAt: new Date() } });
+    mocks.portalAccount.mockResolvedValue(account); mocks.portalEmail.mockResolvedValue(account.email);
+    if (manual) await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: true, depositPaymentMode: "MANUAL_LINK" } });
+    const response = await POST(post({ ...payload, commercialConsent: { accepted: true, textVersion: COMMERCIAL_CONSENT_VERSION } }), ctx);
+    expect(response.status).toBe(201);
+    expect(await prisma.cfConsent.findFirst({ where: { businessId: "local-business" } })).toMatchObject({ state: "GRANTED", source: "CLIENT_PORTAL" });
+    expect(await prisma.clientPortalAccount.findUnique({ where: { id: account.id } })).toMatchObject({ name: payload.customerName, phone: payload.customerPhone });
+  });
+  it("records anonymous acceptance without granting verified commercial eligibility", async () => {
+    vi.stubEnv("PURAGENDA_NEXT_ENABLED", "1"); vi.stubEnv("CONTACT_FLOW_PUBLIC_CONSENT_ENABLED", "1");
+    vi.stubEnv("CONTACT_FLOW_TOKEN_SECRET", "synthetic-consent-key-for-isolated-postgres-tests");
+    expect((await POST(post({ ...payload, commercialConsent: { accepted: true, textVersion: COMMERCIAL_CONSENT_VERSION } }), ctx)).status).toBe(201);
+    expect(await prisma.cfConsent.findFirst({ where: { businessId: "local-business" } })).toMatchObject({ state: "PENDING_VERIFICATION", source: "PUBLIC_WIDGET" });
   });
   it.each(["free", "no-deposit", "not-required"])("does not require seller authorization when a deposit does not apply: %s", async scenario => {
     await prisma.business.update({ where: { id: "local-business" }, data: { depositRequired: scenario !== "not-required", depositPaymentMode: "MERCADOPAGO" } });

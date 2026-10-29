@@ -28,6 +28,7 @@ import { operationalSubscriptionDeniedResponse } from "@/server/http/subscriptio
 import { quoteBookingSelection, BookingSelectionError } from "@/core/booking-selection";
 import { getBookingAvailability, loadBookingContext } from "@/server/booking/read.service";
 import { paymentHoldExpiresAt } from "@/server/services/payment-hold.service";
+import { DEPOSIT_UNAVAILABLE_MESSAGE } from "@/core/booking-deposit";
 import { publicConsentEnabled, recordPublicConsent } from "@/server/contact-flow/public-consent";
 import { bookingJson } from "@/server/booking/response";
 import { bookingContractContext, bookingReviewContext, bookingOperationContext, bookingPayloadHash, bookingResult, claimBookingOperation, completeBookingOperation, checkpointBookingResponse } from "@/server/booking/idempotency";
@@ -483,6 +484,56 @@ async function handleBooking(
       }
     }
 
+    // ── Check deposit requirements (per-service) ──
+    let totalDepositAmount = allSelectedServices.reduce(
+      (sum, selected) => sum + (selected.depositAmount || 0),
+      0,
+    );
+    totalDepositAmount = Math.min(totalDepositAmount, remainingAfterGiftCard);
+    const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
+    const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
+
+    if (business.depositRequired && totalDepositAmount > 0 && usesManualPaymentLink) {
+      if (allServiceIds.length > 1) {
+        return Response.json(
+          { error: "El pago por link solo admite un servicio por reserva. Selecciona un único servicio." },
+          { status: 409 },
+        );
+      }
+      if (!manualPaymentUrl) {
+        return Response.json(
+          { error: "Este servicio todavía no tiene configurado su link de pago. Contacta al negocio." },
+          { status: 409 },
+        );
+      }
+    }
+
+    let businessMpAccessToken: string | null = null;
+    if (business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink) {
+      try { businessMpAccessToken = await getValidMercadoPagoAccessToken(business.id); }
+      catch { /* A refresh failure cannot waive an obligatory deposit. */ }
+      if (!businessMpAccessToken) {
+        return Response.json({ error: DEPOSIT_UNAVAILABLE_MESSAGE, code: "DEPOSIT_UNAVAILABLE" }, { status: 503 });
+      }
+    }
+    if (
+      businessMpAccessToken
+      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
+    ) {
+      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
+      return Response.json(
+        {
+          error: expectedCurrency
+            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
+            : "El pago online no está disponible para el país de este negocio.",
+        },
+        { status: 409 },
+      );
+    }
+    const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
+      usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
+    );
+
     if (isBookingV1(request)) {
       if (hasStaffAssignments) throw new BookingSelectionError("El contrato v1 no admite profesionales separados por servicio", "UNSUPPORTED_CAPABILITY");
       const availability = await getBookingAvailability(await loadBookingContext(business.id), {
@@ -697,55 +748,6 @@ async function handleBooking(
       address: requiresHomeAddress ? customerAddress : null,
     });
 
-    // ── Check deposit requirements (per-service) ──
-    let totalDepositAmount = allSelectedServices.reduce(
-      (sum, selected) => sum + (selected.depositAmount || 0),
-      0,
-    );
-    totalDepositAmount = Math.min(totalDepositAmount, remainingAfterGiftCard);
-    const usesManualPaymentLink = business.depositPaymentMode === "MANUAL_LINK";
-    const manualPaymentUrl = usesManualPaymentLink ? service.depositPaymentUrl : null;
-
-    if (business.depositRequired && totalDepositAmount > 0 && usesManualPaymentLink) {
-      if (allServiceIds.length > 1) {
-        return Response.json(
-          { error: "El pago por link solo admite un servicio por reserva. Selecciona un único servicio." },
-          { status: 409 },
-        );
-      }
-      if (!manualPaymentUrl) {
-        return Response.json(
-          { error: "Este servicio todavía no tiene configurado su link de pago. Contacta al negocio." },
-          { status: 409 },
-        );
-      }
-    }
-
-    let businessMpAccessToken: string | null = null;
-    if (business.depositRequired && totalDepositAmount > 0 && !usesManualPaymentLink) {
-      try { businessMpAccessToken = await getValidMercadoPagoAccessToken(business.id); }
-      catch { /* A refresh failure cannot waive an obligatory deposit. */ }
-      if (!businessMpAccessToken) {
-        return Response.json({ error: "El abono obligatorio no está disponible temporalmente. Contacta al negocio o intenta más tarde.", code: "DEPOSIT_UNAVAILABLE" }, { status: 503 });
-      }
-    }
-    if (
-      businessMpAccessToken
-      && !isMercadoPagoCurrencyCompatible(business.countryCode, business.currencyCode)
-    ) {
-      const expectedCurrency = getMercadoPagoCurrency(business.countryCode);
-      return Response.json(
-        {
-          error: expectedCurrency
-            ? `El pago online de este negocio está temporalmente bloqueado: Mercado Pago requiere ${expectedCurrency}.`
-            : "El pago online no está disponible para el país de este negocio.",
-        },
-        { status: 409 },
-      );
-    }
-    const depositRequired = business.depositRequired && totalDepositAmount > 0 && (
-      usesManualPaymentLink ? !!manualPaymentUrl : !!businessMpAccessToken
-    );
     // Only the integrated Mercado Pago flow receives a short-lived hold. The
     // deadline is calculated on the server and persisted with the appointment.
     const paymentHoldDeadline = depositRequired && !!businessMpAccessToken && !usesManualPaymentLink
