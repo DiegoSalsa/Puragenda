@@ -42,12 +42,11 @@ export default async function ProductionOrderStatusPage({
         </div>
         <h1 className="mt-5 text-2xl font-bold">{approved ? "Cupo confirmado" : failed ? "No se pudo completar el pago" : "Pago en revisión"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {approved ? `${order.business.name} recibió tu abono y revisará las referencias de ${order.petName}.` : "Puedes volver a intentarlo o coordinar el abono directamente con el negocio."}
+          {approved ? `${order.business.name} recibió tu abono y revisará tu encargo.` : "Puedes volver a intentarlo o coordinar el abono directamente con el negocio."}
         </p>
         <div className="mt-6 rounded-2xl bg-muted/50 p-5 text-left text-sm">
           <p className="mb-3 flex items-center gap-2 font-semibold" style={{ color: order.business.primaryColor }}><Package className="h-4 w-4" />{order.orderNumber}</p>
           <p><span className="text-muted-foreground"><LocalizedText id="Xn5rZDSz0P56" /></span> {order.service.name}</p>
-          <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="II9i55cJhFRf" /></span> {order.petName}</p>
           <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="AZ_Rh8tklB9e" /></span> {formatPrice(order.depositAmount, order.business.currencyCode)}</p>
           <p className="mt-1"><span className="text-muted-foreground"><LocalizedText id="F8KoVWBpyA0r" /></span> {formatPrice(order.balanceAmount, order.business.currencyCode)}</p>
         </div>

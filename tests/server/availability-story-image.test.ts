@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { ImageResponse } from "next/og";
+import { renderToStaticMarkup } from "react-dom/server";
 import { AvailabilityStoryImage } from "@/server/stories/availability-story-image";
 import type {
   AvailabilityStoryData,
@@ -62,6 +63,23 @@ async function renderStory(data: AvailabilityStoryData) {
 }
 
 describe("availability story PNG", () => {
+  it.each(["EDITORIAL", "BOLD", "MINIMAL", "FRAME"] as const)("renders the %s template with visible openings", async template => {
+    const data = { ...buildStoryData([{ date: "2026-08-10", label: "Lunes 10 de agosto", times: ["10:00", "11:00"] }]), template };
+    const { png } = await renderStory(data);
+    expect(png.byteLength).toBeGreaterThan(1000);
+  });
+  it("shows an explicit empty state instead of a blank schedule", () => {
+    const markup = renderToStaticMarkup(createElement(AvailabilityStoryImage, { data: buildStoryData([]), productLogoUrl: pixel }));
+    expect(markup).toContain("Sin cupos disponibles");
+  });
+
+  it("hides and restores service labels using the visibility flag", () => {
+    const data = { ...buildStoryData([]), serviceName: "Servicios", showServices: false };
+    const hidden = renderToStaticMarkup(createElement(AvailabilityStoryImage, { data, productLogoUrl: pixel }));
+    expect(hidden).not.toContain("Coloración");
+    const visible = renderToStaticMarkup(createElement(AvailabilityStoryImage, { data: { ...data, showServices: true }, productLogoUrl: pixel }));
+    expect(visible).toContain("Coloración");
+  });
   it("renders a 1080x1920 detailed image response", async () => {
     const { response, png } = await renderStory(
       buildStoryData([

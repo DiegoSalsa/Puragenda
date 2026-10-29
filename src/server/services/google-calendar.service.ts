@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { GoogleCalendarConnection } from "@prisma/client";
+import { fromZonedTime } from "date-fns-tz";
 
 import { SITE_URL } from "@/lib/site";
 import { prisma } from "@/server/db/prisma";
@@ -797,6 +798,57 @@ export async function syncRecurringBookingAppointments(recurringBookingId: strin
   return Promise.all(appointments.map((appointment) => syncAppointmentToGoogle(appointment.id)));
 }
 
+// Older OAuth grants include calendar.events but cannot call freeBusy. Read
+// only availability fields from the same calendars with those existing grants.
+async function readBusySlotsFromEvents(
+  connection: GoogleCalendarConnection,
+  selections: Array<{ calendarId: string }>,
+  timeMin: Date,
+  timeMax: Date,
+) {
+  const ranges: Array<{ startTime: Date; endTime: Date }> = [];
+  for (const calendar of selections) {
+    let pageToken: string | undefined;
+    let pages = 0;
+    do {
+      if (++pages > 20) throw new Error("Google Calendar availability pagination limit exceeded");
+      const query = new URLSearchParams({
+        timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
+        singleEvents: "true", showDeleted: "false", maxResults: "2500",
+        fields: "timeZone,nextPageToken,items(status,transparency,start,end,attendees(self,responseStatus))",
+      });
+      if (pageToken) query.set("pageToken", pageToken);
+      const response = await googleApiRequest(connection,
+        `/calendar/v3/calendars/${encodeURIComponent(calendar.calendarId)}/events?${query}`);
+      const data = await response.json() as {
+        timeZone?: string; nextPageToken?: string;
+        items?: Array<{
+          status?: string; transparency?: string;
+          start?: { dateTime?: string; date?: string };
+          end?: { dateTime?: string; date?: string };
+          attendees?: Array<{ self?: boolean; responseStatus?: string }>;
+        }>;
+      };
+      if (!Array.isArray(data.items)) throw new Error("Invalid Google Calendar events response");
+      for (const event of data.items) {
+        if (event.status === "cancelled" || event.transparency === "transparent"
+          || event.attendees?.some((attendee) => attendee.self && attendee.responseStatus === "declined")) continue;
+        const parseTime = (value: typeof event.start) => value?.dateTime
+          ? new Date(value.dateTime)
+          : value?.date && data.timeZone ? fromZonedTime(`${value.date}T00:00:00`, data.timeZone) : new Date(NaN);
+        const startTime = parseTime(event.start);
+        const endTime = parseTime(event.end);
+        if (!Number.isFinite(startTime.getTime()) || !Number.isFinite(endTime.getTime()) || endTime <= startTime) {
+          throw new Error("Invalid Google Calendar event time range");
+        }
+        ranges.push({ startTime, endTime });
+      }
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+  }
+  return ranges;
+}
+
 export async function getGoogleCalendarBusySlots(
   staffId: string,
   timeMin: Date,
@@ -817,27 +869,30 @@ export async function getGoogleCalendarBusySlots(
 
   try {
     const selections = await readCalendarSelections(connection);
-    const response = await googleApiRequest(connection, "/calendar/v3/freeBusy", {
-      method: "POST",
-      body: JSON.stringify({
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        items: selections.map((calendar) => ({ id: calendar.calendarId })),
-      }),
-    });
-    const data = (await response.json()) as {
-      calendars?: Record<string, { busy?: Array<{ start?: string; end?: string }> }>;
-    };
-    const ranges = selections.flatMap((calendar) => data.calendars?.[calendar.calendarId]?.busy ?? [])
-      .filter((range) => range.start && range.end)
-      .map((range) => ({
-        startTime: new Date(range.start as string),
-        endTime: new Date(range.end as string),
-      }))
-      .filter(
-        (range) =>
-          Number.isFinite(range.startTime.getTime()) && Number.isFinite(range.endTime.getTime()),
-      );
+    let ranges: Array<{ startTime: Date; endTime: Date }>;
+    try {
+      const response = await googleApiRequest(connection, "/calendar/v3/freeBusy", {
+        method: "POST",
+        body: JSON.stringify({
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          items: selections.map((calendar) => ({ id: calendar.calendarId })),
+        }),
+      });
+      const data = (await response.json()) as {
+        calendars?: Record<string, { busy?: Array<{ start?: string; end?: string }> }>;
+      };
+      ranges = selections.flatMap((calendar) => data.calendars?.[calendar.calendarId]?.busy ?? [])
+        .filter((range) => range.start && range.end)
+        .map((range) => ({
+          startTime: new Date(range.start as string),
+          endTime: new Date(range.end as string),
+        }))
+        .filter((range) => Number.isFinite(range.startTime.getTime()) && Number.isFinite(range.endTime.getTime()));
+    } catch (error) {
+      if (!(error instanceof GoogleCalendarApiError) || error.status !== 403) throw error;
+      ranges = await readBusySlotsFromEvents(connection, selections, timeMin, timeMax);
+    }
     ranges.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
     const merged: Array<{ startTime: Date; endTime: Date }> = [];
     for (const range of ranges) {

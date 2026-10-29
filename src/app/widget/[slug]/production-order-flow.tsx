@@ -72,8 +72,6 @@ export function ProductionOrderFlow({
     name: "",
     email: "",
     phone: "",
-    petName: "",
-    petDetails: "",
     deliveryMethod: "COORDINATE",
     address: "",
   });
@@ -181,8 +179,6 @@ export function ProductionOrderFlow({
           customerEmail: form.email,
           commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
           customerPhone: form.phone,
-          petName: form.petName,
-          petDetails: form.petDetails,
           referenceImageUrls: images,
           deliveryMethod: form.deliveryMethod,
           customerAddress: form.deliveryMethod === "SHIPPING" ? form.address : undefined,
@@ -225,7 +221,6 @@ export function ProductionOrderFlow({
           <p className="mb-3 flex items-center gap-2 font-semibold" style={{ color: primaryColor }}><Package className="h-4 w-4" />{result.orderNumber}</p>
           <div className="space-y-2">
             <p><span style={{ color: textSecondary }}><LocalizedText id="Xn5rZDSz0P56" /></span> {service.name}</p>
-            <p><span style={{ color: textSecondary }}><LocalizedText id="II9i55cJhFRf" /></span> {form.petName}</p>
             <p><span style={{ color: textSecondary }}><LocalizedText id="GOhyviNZ126R" /></span> {formatPrice(totalPrice, business.currencyCode)}</p>
             <p><span style={{ color: textSecondary }}><LocalizedText id="R5FTETj45I0u" /></span> {formatPrice(result.depositAmount, business.currencyCode)}</p>
             <p><span style={{ color: textSecondary }}><LocalizedText id="VBwE9DuUb3G3" /></span> {formatPrice(result.balanceAmount, business.currencyCode)}</p>
@@ -292,15 +287,6 @@ export function ProductionOrderFlow({
           <LocalizedText id="By7yCBiK3QhC" />
         </div>
       )}
-
-      <div className="space-y-3">
-        <h3 className="font-semibold"><LocalizedText id="tQ9mhcNVfPvd" /></h3>
-        <input required value={form.petName} onChange={(event) => setForm({ ...form, petName: event.target.value })} placeholder={legacy("YLa2UCHuy8Cw")} maxLength={80}
-          className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
-        <textarea required value={form.petDetails} onChange={(event) => setForm({ ...form, petDetails: event.target.value })}
-          placeholder={legacy("nMmAXcs2Bz7A")} minLength={10} maxLength={2000} rows={5}
-          className="w-full rounded-xl border px-4 py-3 text-sm outline-none" style={{ borderColor: "var(--wborder)", background: "var(--wsubtle)", color: textColor }} />
-      </div>
 
       <div className="space-y-3">
         <div>

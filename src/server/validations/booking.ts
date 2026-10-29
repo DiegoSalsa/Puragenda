@@ -337,8 +337,9 @@ export const productionOrderSchema = z.object({
   customerName: z.string().trim().min(2).max(100),
   customerEmail: z.string().trim().email().max(255).toLowerCase(),
   customerPhone: z.string().trim().regex(/^\+?[0-9\s()-]{8,18}$/, "Telefono invalido"),
-  petName: z.string().trim().min(1, "Indica el nombre de la mascota").max(80),
-  petDetails: z.string().trim().min(10, "Cuéntanos un poco mas sobre la mascota").max(2000),
+  // Kept optional for backwards compatibility with existing clients and orders.
+  petName: z.string().trim().max(80).optional().default(""),
+  petDetails: z.string().trim().max(2000).optional().default(""),
   referenceImageUrls: z.array(z.string().url()).max(6).optional().default([]),
   deliveryMethod: z.enum(["COORDINATE", "PICKUP", "SHIPPING"]).optional().default("COORDINATE"),
   customerAddress: z.string().trim().max(300).optional(),
