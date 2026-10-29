@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("next/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));
-vi.mock("next-intl",()=>({useTranslations:()=> (key:string)=>key}));
+vi.mock("next-intl",()=>({useTranslations:()=> (key:string,values?:Record<string,unknown>)=>key+" "+Object.values(values??{}).join(" ")}));
 import { formatPrice } from "@/lib/utils";
 import { AppointmentEditor, type EditableAppointment, type AppointmentEditorService } from "@/app/dashboard/appointment-editor";
 const appointment:EditableAppointment={id:"a",serviceId:"retired",serviceName:"Servicio histórico",totalPrice:90,totalDuration:35,customerName:"Cliente",customerEmail:"c@example.invalid",customerPhone:null,clientId:null,staffId:"staff",startTime:"2026-11-02T10:00:00.000Z",internalNotes:null,selectedOptions:[{alternativeId:"retired-option",alternativeName:"A domicilio original"}]};
