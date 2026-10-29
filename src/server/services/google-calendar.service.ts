@@ -880,8 +880,16 @@ export async function getGoogleCalendarBusySlots(
         }),
       });
       const data = (await response.json()) as {
-        calendars?: Record<string, { busy?: Array<{ start?: string; end?: string }> }>;
+        calendars?: Record<string, { errors?: unknown[]; busy?: Array<{ start?: string; end?: string }> }>;
       };
+      for (const selected of selections) {
+        const calendar = data.calendars?.[selected.calendarId];
+        if (!calendar || calendar.errors?.length || !Array.isArray(calendar.busy)
+          || calendar.busy.some(range => !range.start || !range.end || !Number.isFinite(Date.parse(range.start))
+            || !Number.isFinite(Date.parse(range.end)) || Date.parse(range.end) <= Date.parse(range.start))) {
+          throw new Error("Google Calendar FreeBusy returned an incomplete or failed calendar");
+        }
+      }
       ranges = selections.flatMap((calendar) => data.calendars?.[calendar.calendarId]?.busy ?? [])
         .filter((range) => range.start && range.end)
         .map((range) => ({
