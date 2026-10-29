@@ -2853,6 +2853,7 @@ model CommercialBillingOperation {
   @@unique([id, businessId])
   @@index([businessId, status, effectiveAt])
   @@index([provider, providerSubscriptionId])
+  @@index([provider, environment, updatedAt, id], map: "CommercialBillingOperation_recovery_idx")
 }
 
 model CommercialPaymentEvidence {

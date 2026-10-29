@@ -5,6 +5,8 @@ import { getBusinessForUser } from "@/server/services/business.service";
 import { getBusinessHours } from "@/server/services/businessHours.service";
 import { prisma } from "@/server/db/prisma";
 import { CommercialTrialPanel } from "@/components/dashboard/commercial-trial-panel";
+import { CommercialSubscriptionPanel } from "@/components/dashboard/commercial-subscription-panel";
+import { CommercialUsagePanel } from "@/components/dashboard/commercial-usage-panel";
 import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { PRICING } from "@/core/constants";
@@ -107,6 +109,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="min-w-0 max-w-full overflow-x-hidden space-y-8">
+      {commercialAccess.v2 && <CommercialUsagePanel />}
       <div>
         <h1 className="text-3xl font-bold tracking-tight"><LocalizedText id="u1BxN-NjE3kV" /></h1>
         <p className="mt-1 text-muted-foreground"><LocalizedText id="M-ZrZLBNmuDs" /></p>
@@ -198,7 +201,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   ? `$${planPrice.toLocaleString("es-CL")} CLP/mes`
                   : subscription?.plan === "EQUIPO" ? "USD 32,99/mes base" : "USD 13,99/mes base"}
                   {isManualTransfer && " · IVA incluido · Transferencia bancaria"}
-                {subscription?.currentPeriodEnd && (
+                {contract?.status === "TRIALING" && contract.trialEnd ? (
+                  <> · Prueba hasta el {contract.trialEnd.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</>
+                ) : contract?.periodEnd ? (
+                  <> · Acceso pagado hasta el {contract.periodEnd.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}</>
+                ) : !contract && subscription?.currentPeriodEnd && (
                   <> <LocalizedText id="U34Bfej7YVY-" /> {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}
               </p>
@@ -209,7 +216,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </div>
             )}
           </div>
-          {contract && isV2Plan(contract.planCode) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} />}
+          {contract && isV2Plan(contract.planCode) && contract.status === "TRIALING" && contract.trialEnd && <CommercialTrialPanel plan={contract.planCode as "PURAGENDA" | "PURAGENDA_PLUS"} professionalTotal={contract.professionalTotal} billingCycle={contract.billingCycle} trialEnd={contract.trialEnd.toISOString()} billingLocked={!!contract.externalSubscriptionId && contract.renewalCancellationStatus !== "CANCELLED_VERIFIED"} />}
+          {contract && isV2Plan(contract.planCode) && business.ownerId === user.id && <CommercialSubscriptionPanel />}
         </div>
 
         {/* ── Mercado Pago Connection ── */}

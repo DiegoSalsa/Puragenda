@@ -74,6 +74,7 @@ export default async function DashboardLayout({
           plan={subscription?.plan ?? "INDIVIDUAL"}
           paymentSimulatorEnabled={isLocalPaymentSimulatorEnabled()}
           reason={paymentWallReason}
+          canManageCommercialSubscription={business.ownerId === user.id}
         />
         </>
         </RequestIntlProvider>

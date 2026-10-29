@@ -21,6 +21,7 @@ import {
 import { PRICING } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
 import { startBillingCheckout } from "@/components/paddle/checkout";
+import { CommercialSubscriptionPanel } from "./commercial-subscription-panel";
 
 interface PaymentWallProps {
   userEmail: string;
@@ -31,6 +32,7 @@ interface PaymentWallProps {
   plan: string;
   paymentSimulatorEnabled?: boolean;
   reason?: "pending" | "past_due";
+  canManageCommercialSubscription?: boolean;
 }
 
 export function PaymentWall({
@@ -41,6 +43,7 @@ export function PaymentWall({
   plan,
   paymentSimulatorEnabled = false,
   reason = "pending",
+  canManageCommercialSubscription = false,
 }: PaymentWallProps) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
@@ -143,7 +146,7 @@ export function PaymentWall({
     }
   }
 
-  if (v2) return <main className="mx-auto my-12 max-w-xl space-y-4 rounded-2xl border-2 border-black bg-white p-6 text-black"><h1 className="text-2xl font-black">Tu período de acceso ha terminado</h1><p>Tu configuración y los datos de {businessName} se conservan. Necesitas contratar {plan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"} para reactivar el servicio.</p><p>La contratación de esta versión está pendiente de habilitación. No se ha realizado ningún cobro automático.</p><a className="font-bold underline" href="/contacto">Contactar a Puragenda</a></main>;
+  if (v2) return <main className="mx-auto my-8 max-w-xl space-y-4 rounded-2xl border-2 border-black bg-white p-5 text-black sm:my-12 sm:p-6"><h1 className="text-2xl font-black">Tu período de acceso ha terminado</h1><p>La configuración y los datos de {businessName} se conservan. Revisa tu suscripción para reactivar {plan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda"}.</p>{canManageCommercialSubscription ? <CommercialSubscriptionPanel /> : <p>El propietario del negocio puede revisar los pagos y gestionar la suscripción.</p>}<a className="inline-block font-bold underline" href="/contacto">Contactar a Puragenda</a></main>;
 
   if (verifying) {
     return (

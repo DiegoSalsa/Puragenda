@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const m=vi.hoisted(()=>({user:vi.fn(),business:vi.fn(),subscription:vi.fn(),intent:vi.fn(),save:vi.fn(),claim:vi.fn(),finish:vi.fn(),unknown:vi.fn(),create:vi.fn()}));
+const m=vi.hoisted(()=>({user:vi.fn(),business:vi.fn(),subscription:vi.fn(),intent:vi.fn(),save:vi.fn(),claim:vi.fn(),finish:vi.fn(),unknown:vi.fn(),create:vi.fn(),v2:vi.fn()}));
+vi.mock("@/server/commercial-billing/mercadopago-v2-http",()=>({handleMpV2Command:m.v2}));
 vi.mock("@/server/auth/user-session",()=>({getApiSessionUser:m.user}));
 vi.mock("@/server/services/business.service",()=>({getBusinessForUser:m.business}));
 vi.mock("@/server/lib/rate-limit",()=>({billingLimiter:{check:()=>null}}));
@@ -19,10 +20,12 @@ describe("bundle BASE provider contract",()=>{
     m.intent.mockResolvedValue({businessId:"business"});m.claim.mockResolvedValue({reused:false,key:"local-operation"});
     m.create.mockResolvedValue({id:"local-base",init_point:"https://www.mercadopago.cl/local-checkout"});m.save.mockResolvedValue({id:"subscription"});m.finish.mockResolvedValue(undefined);m.unknown.mockResolvedValue(undefined);
   });
-  it("keeps a V2 trial out of legacy checkout and never calls a payment provider", async () => {
+  it("dispatches a V2 trial to its own checkout and never calls the legacy provider", async () => {
     m.subscription.mockResolvedValue({ plan: "PURAGENDA_PLUS", status: "TRIALING", isTrial: true });
-    const response = await POST(new NextRequest("https://example.test/api/billing/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "EQUIPO" }) }));
-    expect(response.status).toBe(409); expect(await response.json()).toMatchObject({ code: "V2_PROVIDER_CHECKOUT_PENDING" });
+    m.v2.mockResolvedValue(Response.json({status:"AWAITING_PAYMENT"},{status:202}));
+    const body={action:"SUBSCRIBE",accepted:true,idempotencyKey:"synthetic-key",expectedContractHash:"a".repeat(64)};
+    const response = await POST(new NextRequest("https://example.test/api/billing/subscribe", { method: "POST", headers: { "Content-Type": "application/json",Origin:"https://example.test" }, body: JSON.stringify(body) }));
+    expect(response.status).toBe(202); expect(m.v2).toHaveBeenCalledWith(expect.any(NextRequest),body);
     expect(m.create).not.toHaveBeenCalled(); expect(m.save).not.toHaveBeenCalled();
   });
   function request(body:unknown={plan:"EQUIPO",extraStaffCount:2}){return new NextRequest("https://example.test/api/billing/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});}

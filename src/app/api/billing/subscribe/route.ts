@@ -24,6 +24,7 @@ import {
   localProviderId,
 } from "@/server/services/local-payment-simulator";
 import { getPaddleCheckoutItems } from "@/server/lib/paddle";
+import { handleMpV2Command } from "@/server/commercial-billing/mercadopago-v2-http";
 
 type ValidPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
 
@@ -58,8 +59,10 @@ export async function POST(request: NextRequest) {
     let discountCode: string | undefined;
     let mercadoPagoEmail = user.email;
     let requestedExtraStaffCount = 0;
+    let v2Body: unknown;
     try {
       const body = await request.json();
+      v2Body = body;
       if (body.plan === "INDIVIDUAL" || body.plan === "EQUIPO" || body.plan === "TEST") {
         requestedPlan = body.plan;
       }
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
       where: { businessId: business.id },
     });
     if (subscription?.plan === "PURAGENDA" || subscription?.plan === "PURAGENDA_PLUS") {
-      return NextResponse.json({ error: "La contratación V2 requiere la integración de pago del plan y período elegidos.", code: "V2_PROVIDER_CHECKOUT_PENDING" }, { status: 409 });
+      return handleMpV2Command(request, v2Body);
     }
     if (subscription?.paymentMethod === "BANK_TRANSFER") {
       return NextResponse.json(
