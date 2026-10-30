@@ -5,6 +5,7 @@ import { sendBookingNotifications } from "@/server/email/send";
 import { bookingSchema } from "@/server/validations/booking";
 import { prisma } from "@/server/db/prisma";
 import { NextRequest } from "next/server";
+import { getOrCreateBookingClient } from "@/server/services/booking-client.service";
 import { bookingLimiter } from "@/server/lib/rate-limit";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { toZonedTime } from "date-fns-tz";
@@ -718,22 +719,9 @@ async function handleBooking(
 
     }
 
-    const client = await prisma.client.upsert({
-      where: {
-        businessId_email: { businessId: business.id, email: customerEmail },
-      },
-      update: {
-        name: customerName,
-        phone: customerPhone,
-      },
-      create: {
-        name: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        businessId: business.id,
-      },
-    });
-    if (parsed.data.commercialConsent?.accepted === true && publicConsentEnabled()) {
+    const client = await getOrCreateBookingClient({ businessId: business.id, name: customerName, email: customerEmail, phone: customerPhone });
+    const bookingClientId = client.portalOwnerEmail === customerEmail ? client.id : undefined;
+    if (bookingClientId && parsed.data.commercialConsent?.accepted === true && publicConsentEnabled()) {
       await recordPublicConsent({
         businessId: business.id, clientId: client.id,
         ...parsed.data.commercialConsent,
@@ -946,7 +934,7 @@ async function handleBooking(
           promotionId: appliedPromotion?.id,
           promotionTitle: appliedPromotion?.title,
           selectedOptions: selectedOptionsSnapshot.filter((option) => assignments.some((assignment) => assignment.serviceId === option.serviceId)),
-          clientId: client.id,
+          clientId: bookingClientId,
           depositRequired,
           depositAmount: groupDeposit,
           depositPaymentUrl: manualPaymentUrl,
@@ -1095,7 +1083,7 @@ async function handleBooking(
       promotionId: appliedPromotion?.id,
       promotionTitle: appliedPromotion?.title,
       selectedOptions: selectedOptionsSnapshot,
-      clientId: client.id,
+      clientId: bookingClientId,
       depositRequired,
       depositAmount: totalDepositAmount,
       depositPaymentUrl: manualPaymentUrl,

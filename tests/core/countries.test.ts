@@ -73,7 +73,8 @@ describe("business country configuration", () => {
 
 describe("country tax identifiers", () => {
   it("normalizes Chilean RUT and Argentine DNI/CUIT independently", () => {
-    expect(normalizeAndValidateTaxId("CL", "12.345.678-9")).toEqual({ value: "12345678-9" });
+    expect(normalizeAndValidateTaxId("CL", "12.345.678-5")).toEqual({ value: "12345678-5" });
+    expect(normalizeAndValidateTaxId("CL", "12.345.678-9")).toHaveProperty("error");
     expect(normalizeAndValidateTaxId("AR", "12.345.678")).toEqual({ value: "12345678" });
     expect(normalizeAndValidateTaxId("AR", "20-12345678-3")).toEqual({ value: "20123456783" });
   });

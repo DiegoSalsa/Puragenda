@@ -323,7 +323,7 @@ export async function rescheduleAppointmentAction(
     return tx.appointment.create({
       data: {
         customerName: appointment.customerName,
-        customerEmail: appointment.customerEmail,
+        customerEmail: appointment.portalOwnerEmail || appointment.customerEmail,
         customerPhone: appointment.customerPhone,
         customerAddress: appointment.customerAddress,
         startTime: newStart,

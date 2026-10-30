@@ -176,6 +176,15 @@ export function normalizeAndValidateTaxId(countryCode: string | null | undefined
     if (!/^\d{7,8}-[\dK]$/.test(normalized)) {
       return { error: "Formato de RUT inválido. Usa el formato 12345678-9" };
     }
+    const [body, digit] = normalized.split("-");
+    let sum = 0, factor = 2;
+    for (let index = body.length - 1; index >= 0; index--) {
+      sum += Number(body[index]) * factor;
+      factor = factor === 7 ? 2 : factor + 1;
+    }
+    const remainder = 11 - sum % 11;
+    const expected = remainder === 11 ? "0" : remainder === 10 ? "K" : String(remainder);
+    if (/^0+$/.test(body) || digit !== expected) return { error: "El dígito verificador del RUT no es válido" };
     return { value: normalized };
   }
 

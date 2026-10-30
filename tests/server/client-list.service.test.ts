@@ -69,7 +69,7 @@ describe("listClients", () => {
       include: expect.objectContaining({
         _count: {
           select: {
-            appointments: { where: { status: "CHECKED_IN" } },
+            appointments: { where: { status: "COMPLETED" } },
           },
         },
       }),
