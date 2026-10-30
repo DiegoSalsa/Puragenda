@@ -3,6 +3,7 @@ vi.mock("@/server/auth/user-session", () => ({ getCurrentSessionUser: async () =
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/server/email/send", () => ({ sendStaffInviteEmail: vi.fn().mockResolvedValue(undefined) }));
 import { NextRequest } from "next/server";
+import type { AppointmentStatus, PaymentStatus } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { createService, updateService, deleteService, getServiceByIdAndBusiness, setServiceActive } from "@/server/services/service.service";
 import { createStaffAction, deleteStaffAction, toggleStaffActiveAction } from "@/server/actions/dashboard.actions";
@@ -221,9 +222,64 @@ describe.skipIf(!enabled)("audit 03 services and staff with PostgreSQL",()=>{
   await deleteStaffAction(staff.id);expect(await getBusinessForUser(user.id)).toMatchObject({id:"audit03-other"});expect(await getEffectiveBusinessPermissions(user,{id:businessId,ownerId:"audit03-owner"})).toEqual([]);expect((await getEffectiveBusinessPermissions(user,{id:"audit03-other",ownerId:null})).length).toBeGreaterThan(0);
  });
 
+ it.each((["delete", "toggle"] as const).flatMap(action => (["NONE", "APPROVED", "REJECTED"] as const).map(paymentStatus => ({ action, paymentStatus }))))("blocks deactivation of a current CHECKED_IN session via $action with payment $paymentStatus", async ({ action, paymentStatus }) => {
+  const { staff, appointment } = await staffSession("CHECKED_IN", 20 * 60_000, paymentStatus);
+  const result = action === "delete" ? await deleteStaffAction(staff.id) : await toggleStaffActiveAction(staff.id, false);
+  expect(result).toMatchObject({ error: expect.stringContaining("1 reserva(s)") });
+  expect((await prisma.staff.findUniqueOrThrow({ where: { id: staff.id } })).isActive).toBe(true);
+  expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(appointment);
+ });
+ it.each((["COMPLETED", "NO_SHOW", "CANCELLED"] as const).flatMap(status => ["historical", "current interval"].map(interval => ({ status, interval }))))("allows deactivation with $status in a $interval without changing the appointment", async ({ status, interval }) => {
+  const { staff, appointment } = await staffSession(status, interval === "historical" ? -60_000 : 20 * 60_000);
+  expect(await deleteStaffAction(staff.id)).toMatchObject({ success: true });
+  expect((await prisma.staff.findUniqueOrThrow({ where: { id: staff.id } })).isActive).toBe(false);
+  expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(appointment);
+ });
+ it("does not block deactivation for an elapsed CHECKED_IN session", async () => {
+  const { staff, appointment } = await staffSession("CHECKED_IN", -60_000);
+  expect(await deleteStaffAction(staff.id)).toMatchObject({ success: true });
+  expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(appointment);
+ });
+ it("keeps the legacy exclusion of rejected pending bookings", async () => {
+  const { staff, appointment } = await staffSession("PENDING", 20 * 60_000, "REJECTED");
+  expect(await deleteStaffAction(staff.id)).toMatchObject({ success: true });
+  expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(appointment);
+ });
+ it.each([
+  { before: "CONFIRMED", after: "CHECKED_IN" },
+  { before: "CHECKED_IN", after: "COMPLETED" },
+ ] as const)("protects deactivation while an uncommitted $before -> $after transition is in progress", async ({ before, after }) => {
+  const { staff, appointment } = await staffSession(before);
+  let release!: () => void, updated!: () => void;
+  const barrier = new Promise<void>(resolve => { release = resolve; });
+  const ready = new Promise<void>(resolve => { updated = resolve; });
+  const transition = prisma.$transaction(async tx => {
+    const changed = await tx.appointment.update({ where: { id: appointment.id }, data: { status: after } });
+    updated(); await barrier; return changed;
+  });
+  try {
+    await Promise.race([ready, transition]);
+    expect(await deleteStaffAction(staff.id)).toMatchObject({ error: expect.stringContaining("1 reserva(s)") });
+    expect((await prisma.staff.findUniqueOrThrow({ where: { id: staff.id } })).isActive).toBe(true);
+    expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(appointment);
+  } finally { release(); await transition; }
+  const changed = await prisma.appointment.findUniqueOrThrow({ where: { id: appointment.id } });
+  expect(changed).toEqual({ ...appointment, status: after, updatedAt: changed.updatedAt });
+  expect(await deleteStaffAction(staff.id)).toMatchObject(after === "COMPLETED" ? { success: true } : { error: expect.stringContaining("1 reserva(s)") });
+  expect(await prisma.appointment.findUnique({ where: { id: appointment.id } })).toEqual(changed);
+ });
+
 });
 
 function tomorrow(){const d=new Date(Date.now()+86400000);d.setUTCHours(10,0,0,0);return d;}
 async function futureAppointment(serviceId:string,staffId?:string,additionalServiceIds:string[]=[],offsetMinutes=0){const start=new Date(tomorrow().getTime()+offsetMinutes*60000);return prisma.appointment.create({data:{businessId,serviceId,staffId,additionalServiceIds,locationId:"audit03-location",customerName:"C",customerEmail:"c@audit03.invalid",startTime:start,endTime:new Date(start.getTime()+1800000),totalDuration:30,totalPrice:100}});}
 function req(method:string,body?:object){return new NextRequest("http://localhost/api/dashboard/services/fixture",{method,...(body?{headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{})});}
 function ctx(id:string){return {params:Promise.resolve({id})};}
+
+async function staffSession(status: AppointmentStatus, endOffset = 20 * 60_000, paymentStatus: PaymentStatus = "NONE") {
+ const service = await catalog();
+ const staff = await prisma.staff.create({ data: { businessId, name: "Session professional" } });
+ const now = Date.now();
+ const appointment = await prisma.appointment.create({ data: { businessId, serviceId: service.id, staffId: staff.id, customerName: "Session Client", customerEmail: "session@audit03.invalid", startTime: new Date(now + Math.min(-10 * 60_000, endOffset - 30 * 60_000)), endTime: new Date(now + endOffset), status, paymentStatus, totalPrice: 100 } });
+ return { staff, appointment };
+}

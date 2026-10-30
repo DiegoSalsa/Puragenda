@@ -158,3 +158,21 @@ tests/server/permissions.service.test.ts
 tests/server/rc1-deployment-safety.test.ts
 vercel.json
 ```
+
+## Cierre tras revisión independiente — CHECKED_IN
+
+La entrega local descrita arriba se publicó en `516f73e68dca689a1147c999f01781ccca8c6eaf`. Este cierre añade una corrección acotada sobre ese SHA: `changeStaffActive()` cuenta también citas `CHECKED_IN` con `endTime > now`, incluso con pago rechazado, porque la atención continúa vigente. Conserva la exclusión legacy de pagos rechazados para reservas pendientes, los bloqueos transaccionales, los cupos y las recurrencias. Eliminar y activar/desactivar profesionales comparten esta función; la búsqueda de escritores no encontró otro recorrido de desactivación que corregir.
+
+Reproducción sobre PostgreSQL 17 real en `127.0.0.1:55445`: antes del ajuste fallaron 8 de las 49 pruebas y aprobaron 41. Se añadieron 16 casos: ambos recorridos con atención vigente y distintos pagos; `COMPLETED`, `NO_SHOW` y `CANCELLED` históricos o con intervalo aún abierto; `CHECKED_IN` vencido; pago pendiente rechazado; transiciones concurrentes sin confirmar `CONFIRMED → CHECKED_IN` y `CHECKED_IN → COMPLETED`. La desactivación rechaza mientras la atención sigue vigente y permite reintentar tras completar. Se comprueba que no modifica ni elimina la cita; solo la transición explícita cambia su estado.
+
+| Validación de este cierre | Resultado |
+| --- | --- |
+| Auditoría 03, base PostgreSQL nueva y migraciones reales | 49 aprobadas, sin omisiones; incluye las 33 anteriores. |
+| Agenda/reservas PostgreSQL | 97 aprobadas, sin omisiones. |
+| Compatibilidad legacy PostgreSQL | 85 aprobadas, sin omisiones. |
+| Suite general | 1.785 aprobadas y 515 condicionales omitidas por sus guardas; las suites PostgreSQL ejecutadas en este cierre son las tres indicadas arriba. |
+| Protección de publicación | 20 aprobadas; exclusiones explícitas de auditoría 03 en Vercel/build/Actions conservadas. |
+| Next typegen, TypeScript y Prisma validate | Aprobados. |
+| ESLint y build de producción con webpack | Cero errores, las mismas 32 advertencias; build aprobado en copia aislada sin credenciales operativas. |
+
+El cierre afecta únicamente al servicio de profesionales, su prueba PostgreSQL y este informe; el inventario frente a RC1 sigue siendo de 58 archivos. Sin cambios de esquema ni nuevas migraciones: `20261029180000_preserve_service_staff_history` permanece intacta y solo se utilizó en PostgreSQL local aislado. No se modificaron `main` ni RC1 ni se ejecutaron merges, despliegues o migraciones remotas. Evidencias en `scratch/audit-03-close/`, ignoradas por Git; clúster propio detenido al terminar.

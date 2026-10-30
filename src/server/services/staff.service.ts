@@ -77,7 +77,16 @@ export async function changeStaffActive(businessId: string, staffId: string, des
     if (isActive) await assertStaffCapacity(businessId, tx);
     else {
       const now = new Date();
-      const appointments = await tx.appointment.count({ where: { businessId, staffId, endTime: { gt: now }, status: { in: ["PENDING", "CONFIRMED", "AWAITING_PAYMENT"] }, paymentStatus: { not: "REJECTED" } } });
+      const appointments = await tx.appointment.count({
+        where: {
+          businessId, staffId, endTime: { gt: now },
+          OR: [
+            // An ongoing session remains active regardless of its payment status.
+            { status: "CHECKED_IN" },
+            { status: { in: ["PENDING", "CONFIRMED", "AWAITING_PAYMENT"] }, paymentStatus: { not: "REJECTED" } },
+          ],
+        },
+      });
       const recurring = await tx.recurringBooking.count({ where: { businessId, staffId, endDate: { gt: now }, status: { in: ["ACTIVE", "PAUSED", "PENDING_APPROVAL"] } } });
       if (appointments || recurring) throw new StaffLifecycleError(`Tiene ${appointments} reserva(s) futura(s) y ${recurring} plan(es) recurrente(s) vigente(s). Revisa Agenda y Planes recurrentes para reasignar o resolver esas reservas antes de desactivar.`);
     }
