@@ -362,6 +362,7 @@ model ClientPortalToken {
   consumedAt DateTime?
   purpose    ClientPortalTokenPurpose @default(MAGIC_ACCESS)
   createdAt  DateTime                 @default(now())
+  authenticationIntent Boolean                  @default(false)
 
   @@index([email, createdAt])
   @@index([expiresAt])
@@ -389,6 +390,7 @@ model ClientPortalAccount {
 model ClientPortalSession {
   id         String   @id @default(cuid())
   accountId  String
+  email      String?
   tokenHash  String   @unique
   expiresAt  DateTime
   lastUsedAt DateTime @default(now())
@@ -397,6 +399,19 @@ model ClientPortalSession {
   account ClientPortalAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, expiresAt])
+  @@index([expiresAt])
+  @@index([email])
+}
+
+model ClientPortalIdentity {
+  email               String    @id
+  legacyInvalidBefore DateTime?
+}
+
+model ClientPortalRevocation {
+  tokenHash String   @id
+  expiresAt DateTime
+
   @@index([expiresAt])
 }
 
@@ -1613,6 +1628,7 @@ model RecurringBooking {
   clientId              String?
   customerName          String
   customerEmail         String
+  portalOwnerEmail         String?
   customerPhone         String?
   customerAddress       String?
   customerRut           String?
@@ -1628,6 +1644,9 @@ model RecurringBooking {
   healthAnswers         Json? // Respuestas a healthQuestions
   healthFreeText        String? // Texto libre del cliente
   healthAccepted        Boolean         @default(false) // Acepto que pueden rechazar
+  healthAcceptedAt         DateTime?
+  healthConsentVersion     String?
+  healthConsentSnapshot    Json?
   // Estado de pausa
   pausedUntil           DateTime?
   // Notas internas del negocio (solo lo ve el negocio)
@@ -1637,6 +1656,9 @@ model RecurringBooking {
   renewalOffered        Boolean         @default(false)
   // Token para el link de gestion del cliente (/mi-plan/[token])
   managementToken       String?         @unique
+  managementTokenHash      String?         @unique
+  managementTokenExpiresAt DateTime?
+  managementTokenRevokedAt DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
@@ -1650,6 +1672,7 @@ model RecurringBooking {
   sessionOverrides RecurringSessionOverride[]
 
   @@index([businessId])
+  @@index([portalOwnerEmail])
   @@index([serviceId])
   @@index([staffId])
   @@index([clientId])
@@ -1725,8 +1748,8 @@ enum PosPaymentStatus {
 }
 
 model Appointment {
+  portalOwnerEmail             String?
   contactFlowAttribution       CfAttribution?
-  @@unique([id, businessId])
   id                           String               @id @default(cuid())
   customerName                 String
   customerEmail                String
@@ -1806,6 +1829,7 @@ model Appointment {
   settledByUser          User?                   @relation("AppointmentSettledBy", fields: [settledByUserId], references: [id], onDelete: SetNull)
   bookingFeedback        BookingFeedback?
 
+  @@unique([id, businessId])
   @@index([businessId])
   @@index([serviceId])
   @@index([staffId, startTime, endTime])
@@ -1818,6 +1842,7 @@ model Appointment {
   @@index([locationId, startTime, endTime])
   @@index([businessId, status, paymentHoldExpiresAt])
   @@index([settledByUserId])
+  @@index([portalOwnerEmail])
 }
 
 /// Internal product feedback collected after a widget booking. Superadmin-only.
@@ -2033,10 +2058,10 @@ model GoogleCalendarEvent {
 // ==========================================
 
 model Client {
+  portalOwnerEmail        String?
   contactFlowConsents     CfConsent[]
   contactFlowSuppressions CfSuppression[]
   contactFlowEnrollments  CfEnrollment[]
-  @@unique([id, businessId])
   id               String   @id @default(cuid())
   name             String
   email            String
@@ -2058,8 +2083,10 @@ model Client {
   recurringBookings  RecurringBooking[]
   productionOrders   ProductionOrder[]
 
+  @@unique([id, businessId])
   @@unique([businessId, email])
   @@index([businessId])
+  @@index([portalOwnerEmail])
 }
 
 // ==========================================

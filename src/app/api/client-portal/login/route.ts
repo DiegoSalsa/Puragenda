@@ -9,7 +9,7 @@ import {
 } from "@/server/services/client-portal.service";
 
 export async function POST(request: NextRequest) {
-  const limited = clientPortalLoginLimiter.check(request);
+  const limited = await clientPortalLoginLimiter.check(request);
   if (limited) return limited;
   const parsed = clientPortalLoginSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
   if (!account) return Response.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(CLIENT_PORTAL_COOKIE_NAME, await createClientPortalAccountSession(account.email), getClientPortalCookieOptions());
+  try {
+    response.cookies.set(CLIENT_PORTAL_COOKIE_NAME, await createClientPortalAccountSession(account.email, undefined, account.passwordHash), getClientPortalCookieOptions());
+  } catch {
+    return Response.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
+  }
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

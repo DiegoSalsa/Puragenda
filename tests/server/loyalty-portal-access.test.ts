@@ -29,7 +29,7 @@ describe("loyalty portal access", () => {
     expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: {
         id: "foreign-client",
-        email: { equals: "maria@example.com", mode: "insensitive" },
+        portalOwnerEmail: "maria@example.com",
       },
     }));
     expect(redirect).not.toHaveBeenCalled();

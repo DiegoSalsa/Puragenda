@@ -20,6 +20,7 @@ const prismaMock = vi.hoisted(() => ({
     findFirst: vi.fn(),
   },
   $transaction: vi.fn(),
+  $executeRaw: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ cookies: vi.fn() }));
@@ -30,9 +31,10 @@ import {
   createClientPortalAccountSession,
   createClientPortalSessionToken,
   getClientPortalAppUrl,
+  getClientPortalCookieOptions,
   getClientPortalAppointment,
   hashClientPortalToken,
-  issueClientPortalEmailToken,
+  issueClientPortalMagicToken,
   normalizeClientPortalEmail,
   resolveClientPortalSessionToken,
   verifyClientPortalSessionToken,
@@ -41,6 +43,7 @@ import {
 describe("acceso sin contraseña al portal del cliente", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.$transaction.mockImplementation(async work => typeof work === "function" ? work(prismaMock) : Promise.all(work));
     vi.unstubAllEnvs();
     process.env.AUTH_SECRET = "client-portal-test-secret-with-at-least-32-characters";
   });
@@ -50,6 +53,10 @@ describe("acceso sin contraseña al portal del cliente", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
 
     expect(getClientPortalAppUrl()).toBe("https://www.puragenda.cl");
+  });
+  it("uses Secure, HttpOnly and SameSite=Lax cookies in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(getClientPortalCookieOptions()).toMatchObject({ secure: true, httpOnly: true, sameSite: "lax", path: "/" });
   });
 
   it("normaliza el correo y firma una sesión que no admite alteraciones", () => {
@@ -67,7 +74,6 @@ describe("acceso sin contraseña al portal del cliente", () => {
 
   it("crea una sesión opaca, revocable y de larga duración para una cuenta activa", async () => {
     prismaMock.clientPortalAccount.findUnique.mockResolvedValue({ id: "account-1", emailVerifiedAt: new Date() });
-    prismaMock.$transaction.mockResolvedValue([]);
 
     const token = await createClientPortalAccountSession("client@example.com");
 
@@ -105,6 +111,7 @@ describe("acceso sin contraseña al portal del cliente", () => {
       consumedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
       purpose: "MAGIC_ACCESS",
+      authenticationIntent: true,
     });
     prismaMock.clientPortalToken.updateMany.mockResolvedValue({ count: 1 });
 
@@ -117,14 +124,14 @@ describe("acceso sin contraseña al portal del cliente", () => {
     await expect(consumeClientPortalMagicToken(token)).resolves.toBeNull();
   });
 
-  it("crea enlaces de correo por 30 días sin invalidar otros enlaces vigentes", async () => {
-    prismaMock.$transaction.mockResolvedValue([]);
+  it("crea enlaces de autenticación por 15 minutos sin invalidar otros enlaces vigentes", async () => {
     const before = Date.now();
 
-    const result = await issueClientPortalEmailToken("client@example.com");
+    const result = await issueClientPortalMagicToken("client@example.com");
 
     expect(result.token).toHaveLength(64);
-    expect(result.expiresAt.getTime()).toBeGreaterThanOrEqual(before + 30 * 24 * 60 * 60 * 1000);
+    expect(result.expiresAt.getTime()).toBeGreaterThanOrEqual(before + 15 * 60 * 1000);
+    expect(result.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 15 * 60 * 1000);
     expect(prismaMock.clientPortalToken.deleteMany).toHaveBeenCalledWith({
       where: { expiresAt: { lte: expect.any(Date) } },
     });
@@ -145,9 +152,7 @@ describe("acceso sin contraseña al portal del cliente", () => {
     expect(prismaMock.appointment.findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
         id: "appointment-1",
-        OR: expect.arrayContaining([
-          { customerEmail: { equals: "client@example.com", mode: "insensitive" } },
-        ]),
+        portalOwnerEmail: "client@example.com",
       }),
     }));
   });

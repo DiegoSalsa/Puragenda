@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { clientPortalProfileSchema } from "@/server/validations/client-portal";
 import {
   CLIENT_PORTAL_COOKIE_NAME,
-  createClientPortalAccountSession,
   getClientPortalCookieOptions,
   getClientPortalEmailFromRequest,
   getClientPortalProfile,
@@ -19,9 +18,9 @@ export async function GET(request: NextRequest) {
   const token = request.cookies.get(CLIENT_PORTAL_COOKIE_NAME)?.value;
   if (token) {
     const renewed = await renewClientPortalSessionToken(token);
-    response.cookies.set(
+    if (renewed) response.cookies.set(
       CLIENT_PORTAL_COOKIE_NAME,
-      renewed ? token : await createClientPortalAccountSession(email),
+      token,
       getClientPortalCookieOptions(),
     );
   }

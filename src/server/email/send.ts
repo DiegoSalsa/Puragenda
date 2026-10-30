@@ -43,7 +43,6 @@ import { issueCustomerAppointmentToken } from "@/server/services/customer-appoin
 import { resolveAppointmentVenue, type AppointmentVenueSource } from "@/server/services/appointment-venue";
 import {
   getClientPortalAppUrl,
-  issueClientPortalEmailToken,
 } from "@/server/services/client-portal.service";
 
 // ═══════════════════════════════════════════
@@ -375,7 +374,7 @@ export async function sendDepositConfirmedNotifications(
       `[Email] Deposit-confirmed notifications incomplete for appointment ${appointment.id ?? "unknown"}: ${failedRecipients.join(", ")}`,
     );
   } else {
-    console.log(`[Email] Deposit-confirmed notifications sent for appointment with ${data.customerName}`);
+    console.log(`[Email] Deposit-confirmed notifications sent for appointment with [redacted]`);
   }
   return { ownerDelivered, staffDelivered, customerDelivered, failedRecipients };
 }
@@ -468,9 +467,9 @@ export async function sendWelcomeEmail(ownerEmail: string, ownerName: string, bu
       subject,
       html,
     });
-    console.log(`[Email] Welcome sent to ${ownerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending welcome:", err);
+    console.log(`[Email] Welcome sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending welcome:");
   }
 }
 
@@ -500,9 +499,9 @@ export async function sendStaffInviteEmail(
       subject,
       html,
     });
-    console.log(`[Email] Staff invite sent to ${staffEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending staff invite:", err);
+    console.log(`[Email] Staff invite sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending staff invite:");
   }
 }
 
@@ -525,9 +524,9 @@ export async function sendForgotPasswordEmail(email: string, token: string) {
       subject,
       html,
     });
-    console.log(`[Email] Forgot password sent to ${email}`);
-  } catch (err) {
-    console.error("[Email] Error sending forgot password:", err);
+    console.log(`[Email] Forgot password sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending forgot password:");
   }
 }
 
@@ -586,19 +585,9 @@ export async function sendClientPortalPasswordResetEmail(email: string, resetUrl
   });
 }
 
-export async function createClientPortalEmailUrl(customerEmail: string): Promise<string | null> {
-  try {
-    const account = await prisma.clientPortalAccount.findUnique({
-      where: { email: customerEmail.trim().toLowerCase() },
-      select: { emailVerifiedAt: true },
-    });
-    if (account?.emailVerifiedAt) return `${getClientPortalAppUrl()}/mi-agenda`;
-    const { token } = await issueClientPortalEmailToken(customerEmail);
-    return `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`;
-  } catch (error) {
-    console.error(`[Email] Could not create client portal link for ${customerEmail}:`, error);
-    return null;
-  }
+export async function createClientPortalEmailUrl(_customerEmail: string): Promise<string | null> {
+  void _customerEmail; // Preserve callers without putting identity or credentials in the URL.
+  return `${getClientPortalAppUrl()}/mi-agenda`;
 }
 
 export async function addClientPortalLinkToEmail(
@@ -626,11 +615,11 @@ export async function sendNewRegistrationNotification(data: {
         subject,
         html,
       })
-      .catch((err) => console.error(`[Email] Error sending registration notification to ${adminEmail}:`, err))
+      .catch(() => console.error(`[Email] Error sending registration notification`))
   );
 
   await Promise.allSettled(tasks);
-  console.log(`[Email] Registration notification sent for ${data.businessName} (${data.ownerEmail})`);
+  console.log(`[Email] Registration notification sent for [redacted] ([redacted])`);
 }
 
 export async function sendSubscriptionPaymentAdminNotification(data: Parameters<typeof subscriptionPaymentAdminEmail>[0]): Promise<boolean> {
@@ -687,9 +676,9 @@ export async function sendLoyaltyStampEmail(data: {
       subject,
       html,
     });
-    console.log(`[Email] Loyalty stamp notification sent to ${data.clientEmail} (${data.currentStamps}/${data.stampsRequired})`);
-  } catch (err) {
-    console.error("[Email] Error sending loyalty stamp email:", err);
+    console.log(`[Email] Loyalty stamp notification sent to [redacted] ([redacted]/[redacted])`);
+  } catch {
+    console.error("[Email] Error sending loyalty stamp email:");
   }
 }
 
@@ -732,9 +721,9 @@ export async function sendLoyaltyRewardEmail(data: {
       subject,
       html,
     });
-    console.log(`[Email] Loyalty reward email sent to ${data.clientEmail} (code: ${data.rewardCode})`);
-  } catch (err) {
-    console.error("[Email] Error sending loyalty reward email:", err);
+    console.log(`[Email] Loyalty reward email sent to [redacted] (code: [redacted])`);
+  } catch {
+    console.error("[Email] Error sending loyalty reward email:");
   }
 }
 
@@ -763,10 +752,10 @@ export async function sendTrialExpiringEmail(data: {
       html,
     });
     if (result.error) throw new Error(result.error.message);
-    console.log(`[Email] Trial expiring warning sent to ${data.ownerEmail}`);
+    console.log(`[Email] Trial expiring warning sent to [redacted]`);
     return true;
-  } catch (err) {
-    console.error("[Email] Error sending trial expiring email:", err);
+  } catch {
+    console.error("[Email] Error sending trial expiring email:");
     return false;
   }
 }
@@ -791,10 +780,10 @@ export async function sendTrialExpiredEmail(data: {
       html,
     });
     if (result.error) throw new Error(result.error.message);
-    console.log(`[Email] Trial expired notification sent to ${data.ownerEmail}`);
+    console.log(`[Email] Trial expired notification sent to [redacted]`);
     return true;
-  } catch (err) {
-    console.error("[Email] Error sending trial expired email:", err);
+  } catch {
+    console.error("[Email] Error sending trial expired email:");
     return false;
   }
 }
@@ -887,7 +876,7 @@ export async function sendAdminLoginCodeEmail(
     throw new Error(`Resend rejected admin login code: ${result.error.message}`);
   }
 
-  console.log(`[Email] Admin login code sent to ${email}`);
+  console.log(`[Email] Admin login code sent to [redacted]`);
 }
 
 export async function sendAppointmentActionStaffNotification(data: {
@@ -942,9 +931,9 @@ export async function sendRecurringBookingCreatedClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring created sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring created:", err);
+    console.log(`[Email] Recurring created sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring created:");
   }
 }
 
@@ -970,9 +959,9 @@ export async function sendRecurringBookingPendingApprovalBusiness(data: {
   const { subject, html } = localizeEmailTemplate(recurringBookingPendingApprovalBusinessEmail({ ...data, locale }), locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
-    console.log(`[Email] Recurring pending approval sent to ${data.ownerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring pending approval:", err);
+    console.log(`[Email] Recurring pending approval sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring pending approval:");
   }
 }
 
@@ -995,9 +984,9 @@ export async function sendRecurringBookingApprovedClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring approved sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring approved:", err);
+    console.log(`[Email] Recurring approved sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring approved:");
   }
 }
 
@@ -1017,9 +1006,9 @@ export async function sendRecurringBookingRejectedClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring rejected sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring rejected:", err);
+    console.log(`[Email] Recurring rejected sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring rejected:");
   }
 }
 
@@ -1038,9 +1027,9 @@ export async function sendRecurringBookingCancelledClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring cancelled sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring cancelled:", err);
+    console.log(`[Email] Recurring cancelled sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring cancelled:");
   }
 }
 
@@ -1061,9 +1050,9 @@ export async function sendRecurringSessionCancelledClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring session cancelled sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring session cancelled:", err);
+    console.log(`[Email] Recurring session cancelled sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring session cancelled:");
   }
 }
 
@@ -1087,9 +1076,9 @@ export async function sendRecurringExpiringClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring expiring sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring expiring client:", err);
+    console.log(`[Email] Recurring expiring sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring expiring client:");
   }
 }
 
@@ -1107,9 +1096,9 @@ export async function sendRecurringExpiringBusiness(data: {
   const { subject, html } = localizeEmailTemplate(recurringExpiringBusinessEmail({ ...data, locale }), locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.ownerEmail, subject, html });
-    console.log(`[Email] Recurring expiring business sent to ${data.ownerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring expiring business:", err);
+    console.log(`[Email] Recurring expiring business sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring expiring business:");
   }
 }
 
@@ -1130,8 +1119,8 @@ export async function sendRecurringConflictWarningClient(data: {
   const { subject, html } = localizeEmailTemplate(template, locale);
   try {
     await resend.emails.send({ from: EMAIL_FROM, to: data.customerEmail, subject, html });
-    console.log(`[Email] Recurring conflict warning sent to ${data.customerEmail}`);
-  } catch (err) {
-    console.error("[Email] Error sending recurring conflict warning:", err);
+    console.log(`[Email] Recurring conflict warning sent to [redacted]`);
+  } catch {
+    console.error("[Email] Error sending recurring conflict warning:");
   }
 }

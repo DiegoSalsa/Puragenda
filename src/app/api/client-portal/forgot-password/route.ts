@@ -10,7 +10,7 @@ import {
 import { sendClientPortalPasswordResetEmail } from "@/server/email/send";
 
 export async function POST(request: NextRequest) {
-  const limited = clientPortalAccountEmailLimiter.check(request);
+  const limited = await clientPortalAccountEmailLimiter.check(request);
   if (limited) return limited;
   const body = await request.json().catch(() => null);
   const parsed = clientPortalEmailSchema.safeParse(body?.email);

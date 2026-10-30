@@ -32,13 +32,14 @@ describe("correo de acceso al portal del cliente", () => {
     });
     const decorated = withClientPortalAccess(
       booking,
-      "https://www.puragenda.cl/mi-agenda/entrar/secret&value",
+      "https://www.puragenda.cl/mi-agenda?synthetic=value&test=true",
     );
 
     expect(decorated.subject).toBe(booking.subject);
     expect(decorated.html).toContain("Ver mis citas y premios");
-    expect(decorated.html).toContain("válido por 30 días");
-    expect(decorated.html).toContain("secret&amp;value");
+    expect(decorated.html).toContain("Inicia sesión");
+    expect(decorated.html).not.toContain("30 días");
+    expect(decorated.html).toContain("value&amp;test=true");
     expect(decorated.html).toContain("Zona horaria");
     expect(decorated.html).toContain("America/Argentina/Buenos_Aires");
   });

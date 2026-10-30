@@ -11,7 +11,7 @@ import { ArrowRight, CalendarClock, Check, IdCard, KeyRound, Loader2, LogOut, Ma
 export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }: { invalidLink?: boolean; returnTo?: string | null }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot" | "magic">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -35,7 +35,7 @@ export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }:
         ? "/api/client-portal/login"
         : mode === "register"
           ? "/api/client-portal/register"
-          : "/api/client-portal/forgot-password";
+          : mode === "magic" ? "/api/client-portal/request-link" : "/api/client-portal/forgot-password";
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,14 +70,14 @@ export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }:
         </div>
         <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-[#6d28d9]">Portal del cliente</p>
         <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-          {mode === "login" ? "Entra a Mi agenda" : mode === "register" ? "Activa tu cuenta" : "Recupera tu contraseña"}
+          {mode === "login" ? "Entra a Mi agenda" : mode === "register" ? "Activa tu cuenta" : mode === "magic" ? "Recibe un enlace de acceso" : "Recupera tu contraseña"}
         </h1>
         <p className="mt-3 text-sm font-medium leading-6 text-black/60">
           {mode === "login"
             ? "Consulta tus reservas y reutiliza tus datos sin completar el formulario cada vez."
             : mode === "register"
               ? "Usa el mismo correo de tu reserva. Te enviaremos una sola verificación para activar la cuenta."
-              : "Te enviaremos un enlace únicamente para crear una contraseña nueva."}
+              : mode === "magic" ? "Recibe en el correo de tu reserva un enlace de un solo uso, válido por 15 minutos." : "Te enviaremos un enlace únicamente para crear una contraseña nueva."}
         </p>
 
         {message ? (
@@ -128,7 +128,7 @@ export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }:
                 </div>
               </>
             )}
-            {mode !== "forgot" && (
+            {(mode === "login" || mode === "register") && (
               <div>
                 <label htmlFor="portal-password" className="mb-2 block text-sm font-black">Contraseña</label>
                 <input id="portal-password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} required minLength={mode === "register" ? 10 : 1} className="h-13 w-full rounded-xl border-3 border-black bg-white px-4 text-base font-semibold outline-none focus:shadow-[4px_4px_0_#7c3aed]" />
@@ -146,7 +146,7 @@ export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }:
               disabled={loading}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border-3 border-black bg-[#7c3aed] px-5 font-black text-white shadow-[4px_4px_0_#000] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{mode === "login" ? "Entrar" : mode === "register" ? "Enviar verificación" : "Recuperar contraseña"} <ArrowRight className="h-5 w-5" /></>}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{mode === "login" ? "Entrar" : mode === "register" ? "Enviar verificación" : mode === "magic" ? "Enviar enlace de acceso" : "Recuperar contraseña"} <ArrowRight className="h-5 w-5" /></>}
             </button>
           </form>
         )}
@@ -155,6 +155,7 @@ export function ClientPortalAccessForm({ invalidLink = false, returnTo = null }:
           <div className="mt-6 flex flex-col gap-2 border-t-2 border-black/10 pt-5 text-sm font-bold">
             {mode !== "register" && <button type="button" onClick={() => { setMode("register"); setError(null); }} className="inline-flex items-center gap-2 text-left text-[#6d28d9]"><UserPlus className="h-4 w-4" /> Activar mi cuenta</button>}
             {mode !== "forgot" && <button type="button" onClick={() => { setMode("forgot"); setError(null); }} className="inline-flex items-center gap-2 text-left text-black/55"><KeyRound className="h-4 w-4" /> Olvidé mi contraseña</button>}
+            {mode !== "magic" && <button type="button" onClick={() => { setMode("magic"); setError(null); }} className="text-left text-black/55">Recibir un enlace sin contraseña</button>}
             {mode !== "login" && <button type="button" onClick={() => { setMode("login"); setError(null); setMessage(null); }} className="text-left text-black/55">Volver a iniciar sesión</button>}
           </div>
         )}
@@ -349,7 +350,9 @@ export function ClientPortalProfileEditor({ profile }: {
       setCurrentPassword("");
       setNewPassword("");
       setPasswordConfirmation("");
-      setPasswordMessage("Contraseña actualizada. Las demás sesiones fueron cerradas.");
+      setPasswordMessage("Contraseña actualizada. Inicia sesión nuevamente.");
+      router.replace("/mi-agenda");
+      router.refresh();
     } catch (error) {
       setPasswordError(error instanceof Error ? error.message : "No pudimos cambiar la contraseña");
     } finally {

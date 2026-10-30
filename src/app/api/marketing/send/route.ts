@@ -16,8 +16,6 @@ import { localizeEmailTemplate } from "@/server/email/localization";
 import { resolveLocale } from "@/i18n/config";
 import {
   getClientPortalAppUrl,
-  issueClientPortalEmailTokens,
-  normalizeClientPortalEmail,
 } from "@/server/services/client-portal.service";
 import type { SubscriptionPlan } from "@/core/entities";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
@@ -97,13 +95,6 @@ export async function POST(request: NextRequest) {
     const senderEmail = "marketing@puragenda.cl";
     const from = `${senderName} <${senderEmail}>`;
 
-    let portalTokens = new Map<string, string>();
-    try {
-      portalTokens = await issueClientPortalEmailTokens(audience.map((client) => client.email));
-    } catch (portalError) {
-      console.error("[Marketing] Could not create client portal links:", portalError);
-    }
-
     const emails = audience.map((client) => {
       const baseTemplate = marketingCampaignEmail({
         clientName: client.name,
@@ -112,13 +103,7 @@ export async function POST(request: NextRequest) {
         body: message.trim(),
         widgetUrl,
       });
-      const token = portalTokens.get(normalizeClientPortalEmail(client.email));
-      const template = token
-        ? withClientPortalAccess(
-            baseTemplate,
-            `${getClientPortalAppUrl()}/mi-agenda/entrar/${token}`,
-          )
-        : baseTemplate;
+      const template = withClientPortalAccess(baseTemplate, `${getClientPortalAppUrl()}/mi-agenda`);
       const { html } = localizeEmailTemplate(template, resolveLocale(business.locale));
 
       return {
@@ -146,7 +131,7 @@ export async function POST(request: NextRequest) {
     // ── 9. Record campaign ──
     await recordCampaign(business.id, subject.trim(), message.trim(), audience.length);
 
-    console.log(`[Marketing] Campaign sent: "${subject}" to ${audience.length} clients for business ${business.name}`);
+    console.log(`[Marketing] Campaign sent to ${audience.length} recipients`);
 
     return NextResponse.json({
       success: true,

@@ -3,7 +3,6 @@ import { clientPortalChangePasswordSchema } from "@/server/validations/client-po
 import {
   CLIENT_PORTAL_COOKIE_NAME,
   changeClientPortalPassword,
-  createClientPortalAccountSession,
   getClientPortalCookieOptions,
   getClientPortalEmailFromRequest,
 } from "@/server/services/client-portal.service";
@@ -19,8 +18,8 @@ export async function PATCH(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set(
     CLIENT_PORTAL_COOKIE_NAME,
-    await createClientPortalAccountSession(email),
-    getClientPortalCookieOptions(),
+    "",
+    getClientPortalCookieOptions(0),
   );
   response.headers.set("Cache-Control", "no-store");
   return response;
