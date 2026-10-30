@@ -25,7 +25,8 @@ postgresFiles.push("tests/integration/registration-v2-postgres.integration.test.
 postgresFiles.push("tests/integration/mercadopago-v2-postgres.integration.test.ts");
 postgresFiles.push("tests/integration/contact-flow-free-postgres.integration.test.ts");
 postgresFiles.push("tests/integration/services-staff-postgres.integration.test.ts");
-const postgresStatus=run([...(process.argv.includes("--services-staff")?[postgresFiles[10]]:process.argv.includes("--contact-flow-free")?[postgresFiles[9]]:process.argv.includes("--contact-flow")?[postgresFiles[4]]:process.argv.includes("--launch")?[postgresFiles[5]]:postgresFiles),"--no-file-parallelism"]);
+postgresFiles.push("tests/integration/clients-privacy-postgres.integration.test.ts");
+const postgresStatus=run([...(process.argv.includes("--clients-privacy")?[postgresFiles[11]]:process.argv.includes("--services-staff")?[postgresFiles[10]]:process.argv.includes("--contact-flow-free")?[postgresFiles[9]]:process.argv.includes("--contact-flow")?[postgresFiles[4]]:process.argv.includes("--launch")?[postgresFiles[5]]:postgresFiles),"--no-file-parallelism"]);
 if(postgresStatus!==0)process.exit(postgresStatus);
 if(process.argv.includes("--all"))process.exit(run(postgresFiles.flatMap(file=>["--exclude",file])));
 process.exit(0);

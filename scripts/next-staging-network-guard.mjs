@@ -1,6 +1,6 @@
 import { createRequire, syncBuiltinESMExports } from "node:module";
 export function stagingHostAllowed(value) {
-  try { const u=new URL(value);return ["http:","https:"].includes(u.protocol)&&["localhost","127.0.0.1","[::1]"].includes(u.hostname); }
+  try { const u=new URL(value);return (["http:","https:"].includes(u.protocol)&&["localhost","127.0.0.1","[::1]"].includes(u.hostname)) || (process.env.NEXT_ISOLATED_BUILD_FONTS==="1" && u.protocol==="https:" && ["fonts.googleapis.com","fonts.gstatic.com"].includes(u.hostname)); }
   catch { return false; }
 }
 if(process.env.NEXT_STAGING_NETWORK_GUARD==="1") {

@@ -1,6 +1,8 @@
 import { readdirSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+import path from "node:path";
 import { localCommercialDatabase } from "./commercial-migrations.mjs";
 // Next loads .env files itself. Refuse ambient project secrets rather than
 // assuming a sanitized child environment can override every future variable.
@@ -9,6 +11,8 @@ const databaseUrl = localCommercialDatabase(process.env.COMMERCIAL_V2_TEST_DATAB
 const allowed = new Set(["PATH","SYSTEMROOT","WINDIR","TEMP","TMP","APPDATA","LOCALAPPDATA","USERPROFILE","COMSPEC","PATHEXT","PROGRAMFILES","PROGRAMFILES(X86)","HTTP_PROXY","HTTPS_PROXY","NO_PROXY","NODE_EXTRA_CA_CERTS"]);
 const env = Object.fromEntries(Object.entries(process.env).filter(([key])=>allowed.has(key.toUpperCase())));
 Object.assign(env,{NODE_ENV:"production",DATABASE_URL:databaseUrl,DIRECT_URL:databaseUrl,NEXT_TELEMETRY_DISABLED:"1",
+  NEXT_STAGING_NETWORK_GUARD:"1",NODE_OPTIONS:`--import=${pathToFileURL(path.resolve("scripts/next-staging-network-guard.mjs")).href}`,
+  NEXT_ISOLATED_BUILD_FONTS:"1", // Public build assets only; all provider APIs stay blocked.
   AUTH_SECRET:randomBytes(32).toString("hex"),NEXTAUTH_SECRET:randomBytes(32).toString("hex"),
   APP_URL:"http://127.0.0.1:3000",NEXT_PUBLIC_APP_URL:"http://127.0.0.1:3000",NEXT_PUBLIC_PADDLE_ENV:"sandbox",
   WEBSITE_BUILD_QA:"1",WEBSITE_LAUNCH_ENABLED:"0",WEBSITE_CHECKOUT_ENABLED:"0",WEBSITE_VERCEL_WRITES_ENABLED:"0",

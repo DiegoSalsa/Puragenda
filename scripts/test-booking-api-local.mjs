@@ -65,6 +65,10 @@ try {
     const lifecycleSql = fs.readFileSync(new URL("../prisma/migrations/20261029180000_preserve_service_staff_history/migration.sql", import.meta.url), "utf8");
     // db push created the columns/index. Execute the exact versioned guards too.
     await client.query(lifecycleSql.slice(lifecycleSql.indexOf("CREATE FUNCTION prevent_catalog_history_delete"), lifecycleSql.lastIndexOf("COMMIT;")));
+    const portalSql = fs.readFileSync(new URL("../prisma/migrations/20261030120000_client_portal_privacy/migration.sql", import.meta.url), "utf8");
+    // db push created the new columns; fixtures must also enforce the real
+    // ownership, health-consent and RLS guards used by the application.
+    await client.query(portalSql.slice(portalSql.indexOf('CREATE FUNCTION "portal_reservation_owner"'), portalSql.lastIndexOf("COMMIT;")));
     if (process.argv.includes("--mcp") || mcpPreview) {
       // Recreate connector tables from the versioned migration, so tests cover
       // real FKs, indexes, grants and RLS rather than db push alone.
