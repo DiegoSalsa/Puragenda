@@ -56,10 +56,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   COMPLETED: { label: "Completado", color: "text-muted-foreground", bg: "bg-muted/50", border: "border-border" },
 };
 
-export function PlanClient({ token }: { token: string }) {
+export function PlanClient({ token, initialEmail = "" }: { token: string; initialEmail?: string }) {
   const legacy = useTranslations("legacy");
   const [step, setStep] = useState<"identity" | "main">("identity");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

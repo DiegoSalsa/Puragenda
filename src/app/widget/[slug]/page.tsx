@@ -2,6 +2,7 @@ import { publicConsentEnabled } from "@/server/contact-flow/public-consent";
 import { depositPaymentStatus } from "@/core/booking-deposit";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
+import { healthFormRevision } from "@/server/services/health-consent";
 import { prisma } from "@/server/db/prisma";
 import { WidgetClient } from "./widget-client";
 import type { Metadata, Viewport } from "next";
@@ -304,6 +305,7 @@ export default async function WidgetPage({
           requiresApproval: s.recurringPlan.requiresApproval,
           requiresHealthForm: s.recurringPlan.requiresHealthForm,
           healthQuestions: s.recurringPlan.healthQuestions,
+          healthFormRevision: healthFormRevision(s.recurringPlan.healthQuestions),
           requiresRut: s.recurringPlan.requiresRut,
           renewalMessage: s.recurringPlan.renewalMessage,
           expirationWarningDays: s.recurringPlan.expirationWarningDays,

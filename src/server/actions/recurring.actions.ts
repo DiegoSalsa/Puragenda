@@ -2,6 +2,9 @@
 import { resolveAppointmentVenue } from "@/server/services/appointment-venue";
 
 import { prisma } from "@/server/db/prisma";
+import { healthConsentText, HEALTH_CONSENT_VERSION } from "@/core/health-consent";
+import { healthFormRevision } from "@/server/services/health-consent";
+import { resolveLocale } from "@/i18n/config";
 import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/business.service";
 import { revalidatePath } from "next/cache";
@@ -27,10 +30,12 @@ import {
   sendRecurringBookingCancelledClient,
 } from "@/server/email/send";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
-import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { hasBusinessPermission, getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { redactPrivateData } from "@/server/services/private-data";
 import { syncRecurringBookingAppointments } from "@/server/services/google-calendar.service";
 import { normalizeAndValidateTaxId } from "@/core/countries";
 import { getLocationForBusiness } from "@/server/services/location.service";
+import { getOrCreateBookingClient } from "@/server/services/booking-client.service";
 
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentSessionUser>>>;
 type BusinessForUser = NonNullable<Awaited<ReturnType<typeof getBusinessForUser>>>;
@@ -184,6 +189,9 @@ export async function createRecurringBookingAction(data: {
   healthAnswers?: Record<string, string>;
   healthFreeText?: string;
   healthAccepted?: boolean;
+  healthConsentVersion?: string;
+  healthFormRevision?: string;
+  healthConsentLocale?: string;
 }) {
   // Load business
   const business = await prisma.business.findUnique({
@@ -236,9 +244,11 @@ export async function createRecurringBookingAction(data: {
   }
 
   // Validate health form acceptance
-  if (plan.requiresHealthForm && !data.healthAccepted) {
+  if (plan.requiresHealthForm && data.healthAccepted !== true) {
     return { error: "Debes aceptar los terminos del formulario de salud" };
   }
+  if (plan.requiresHealthForm && data.healthConsentVersion !== HEALTH_CONSENT_VERSION) return { error: "El formulario cambió. Actualiza la página y vuelve a aceptar el consentimiento." };
+  if (plan.requiresHealthForm && data.healthFormRevision !== healthFormRevision(plan.healthQuestions)) return { error: "Las preguntas del formulario cambiaron. Actualiza la página antes de enviarlo." };
 
   // Validate day selection against plan mode constraints
   if (data.selectedDays.length === 0) {
@@ -294,36 +304,8 @@ export async function createRecurringBookingAction(data: {
   const conflictDates = conflicts.map((c) => c.date);
 
   // Find or create Client record
-  let client = await prisma.client.findUnique({
-    where: {
-      businessId_email: {
-        businessId: business.id,
-        email: data.customerEmail.toLowerCase().trim(),
-      },
-    },
-  });
-
-  if (!client) {
-    client = await prisma.client.create({
-      data: {
-        businessId: business.id,
-        name: data.customerName,
-        email: data.customerEmail.toLowerCase().trim(),
-        phone: normalizedPhone,
-        rut: taxId.value || null,
-      },
-    });
-  } else if (taxId.value && !client.rut) {
-    await prisma.client.update({
-      where: { id: client.id },
-      data: { phone: normalizedPhone, rut: taxId.value },
-    });
-  } else if (client.phone !== normalizedPhone) {
-    await prisma.client.update({
-      where: { id: client.id },
-      data: { phone: normalizedPhone },
-    });
-  }
+  const client = await getOrCreateBookingClient({ businessId: business.id, name: data.customerName, email: data.customerEmail, phone: normalizedPhone, rut: taxId.value || null });
+  const linkedClientId = client.portalOwnerEmail === data.customerEmail.toLowerCase().trim() ? client.id : null;
 
   // Generate management token
   const managementToken = crypto.randomBytes(24).toString("hex");
@@ -340,7 +322,7 @@ export async function createRecurringBookingAction(data: {
         serviceId: service.id,
         recurringPlanId: plan.id,
         staffId: data.staffId ?? null,
-        clientId: client!.id,
+        clientId: linkedClientId,
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
         customerPhone: normalizedPhone,
@@ -352,10 +334,14 @@ export async function createRecurringBookingAction(data: {
         startDate: data.startDate,
         endDate,
         durationMonths: data.durationMonths,
-        healthAnswers: data.healthAnswers ?? undefined,
-        healthFreeText: data.healthFreeText ?? null,
-        healthAccepted: data.healthAccepted ?? false,
-        managementToken,
+        healthAnswers: plan.requiresHealthForm ? data.healthAnswers ?? undefined : undefined,
+        healthFreeText: plan.requiresHealthForm ? data.healthFreeText ?? null : null,
+        healthAccepted: plan.requiresHealthForm && data.healthAccepted === true,
+        healthAcceptedAt: plan.requiresHealthForm ? new Date() : null,
+        healthConsentVersion: plan.requiresHealthForm ? HEALTH_CONSENT_VERSION : null,
+        healthConsentSnapshot: plan.requiresHealthForm ? { text: healthConsentText(resolveLocale(data.healthConsentLocale)), locale: resolveLocale(data.healthConsentLocale), revision: data.healthFormRevision, questions: plan.healthQuestions } : undefined,
+        managementTokenExpiresAt: new Date(endDate.getTime() + 30 * 86400000),
+        managementTokenHash: crypto.createHash("sha256").update(managementToken).digest("hex"),
       },
     });
 
@@ -367,7 +353,7 @@ export async function createRecurringBookingAction(data: {
         businessId: business.id,
         serviceId: service.id,
         staffId: data.staffId ?? null,
-        clientId: client!.id,
+        clientId: linkedClientId,
         customerName: data.customerName,
         customerEmail: data.customerEmail.toLowerCase().trim(),
         customerPhone: normalizedPhone,
@@ -421,8 +407,8 @@ export async function createRecurringBookingAction(data: {
           startDate: data.startDate,
           endDate,
           durationMonths: data.durationMonths,
-          healthAnswers: data.healthAnswers,
-          healthFreeText: data.healthFreeText,
+          healthAnswers: plan.requiresHealthForm ? data.healthAnswers : undefined,
+          healthFreeText: plan.requiresHealthForm ? data.healthFreeText : undefined,
           businessName: business.name,
           timezone: location.timezone,
         });
@@ -444,8 +430,8 @@ export async function createRecurringBookingAction(data: {
         timezone: location.timezone,
       });
     }
-  } catch (err) {
-    console.error("[recurring.actions] Error sending emails:", err);
+  } catch {
+    console.error("[recurring.actions] Error sending emails:");
   }
 
   return {
@@ -548,12 +534,12 @@ export async function approveRecurringBookingAction(recurringBookingId: string) 
       serviceName: booking.service.name,
       startDate: booking.startDate,
       endDate: booking.endDate,
-      managementToken: booking.managementToken ?? "",
+      managementToken: booking.id,
       businessName: business.name,
       ...await resolveAppointmentVenue({ ...booking, business }),
     });
-  } catch (err) {
-    console.error("[recurring.actions] Error sending approval email:", err);
+  } catch {
+    console.error("[recurring.actions] Error sending approval email:");
   }
 
   revalidatePath("/dashboard/recurring");
@@ -589,8 +575,8 @@ export async function rejectRecurringBookingAction(recurringBookingId: string, r
       reason,
       businessName: business.name,
     });
-  } catch (err) {
-    console.error("[recurring.actions] Error sending rejection email:", err);
+  } catch {
+    console.error("[recurring.actions] Error sending rejection email:");
   }
 
   revalidatePath("/dashboard/recurring");
@@ -630,8 +616,8 @@ export async function cancelFullRecurringAction(recurringBookingId: string) {
       serviceName: booking.service.name,
       businessName: business.name,
     });
-  } catch (err) {
-    console.error("[recurring.actions] Error sending cancellation email:", err);
+  } catch {
+    console.error("[recurring.actions] Error sending cancellation email:");
   }
 
   revalidatePath("/dashboard/recurring");
@@ -846,6 +832,7 @@ export async function addInternalNoteAction(recurringBookingId: string, note: st
 
   const business = await getBusinessForUser(user.id);
   if (!business) return { error: "No tienes un negocio" };
+  if (!(await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW))) return { error: "Sin permiso para notas internas" };
 
   const booking = await prisma.recurringBooking.findFirst({
     where: await recurringBookingWhereForAgenda(user, business, recurringBookingId),
@@ -888,7 +875,9 @@ export async function getRecurringBookingsForBusinessAction() {
     },
   });
 
-  return { success: true, bookings };
+  const permissions = await getEffectiveBusinessPermissions(user, business);
+  const scope = await getStaffAgendaScope(user, business);
+  return { success: true, bookings: bookings.map(booking => redactPrivateData(booking, permissions, scope.ownStaffId)) };
 }
 
 export async function getRecurringBookingDetailAction(recurringBookingId: string) {
@@ -922,5 +911,7 @@ export async function getRecurringBookingDetailAction(recurringBookingId: string
 
   if (!booking) return { error: "Suscripcion no encontrada" };
 
-  return { success: true, booking };
+  const permissions = await getEffectiveBusinessPermissions(user, business);
+  const scope = await getStaffAgendaScope(user, business);
+  return { success: true, booking: redactPrivateData(booking, permissions, scope.ownStaffId) };
 }

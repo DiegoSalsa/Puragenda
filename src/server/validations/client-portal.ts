@@ -54,7 +54,7 @@ export function safeClientPortalReturnTo(value: string | null | undefined): stri
   try {
     const base = "https://puragenda.local";
     const parsed = new URL(value, base);
-    if (parsed.origin !== base || !/^\/widget\/[^/]+\/?$/.test(parsed.pathname)) return null;
+    if (parsed.origin !== base || !/^\/(?:widget|mi-plan)\/[^/]+\/?$/.test(parsed.pathname)) return null;
     return `${parsed.pathname}${parsed.search}`;
   } catch {
     return null;

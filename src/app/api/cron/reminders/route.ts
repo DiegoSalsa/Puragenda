@@ -146,7 +146,7 @@ export async function GET(req: Request) {
             endDate: booking.endDate,
             daysLeft,
             renewalMessage,
-            managementToken: booking.managementToken || "",
+            managementToken: booking.id,
             businessName: booking.business.name,
             ...await resolveAppointmentVenue(booking),
             locale: resolveLocale(booking.business.locale),

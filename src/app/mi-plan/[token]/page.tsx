@@ -1,27 +1,20 @@
 import { prisma } from "@/server/db/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PlanClient } from "./plan-client";
+import { getClientPortalEmail } from "@/server/services/client-portal.service";
+import { portalPlanWhere } from "@/server/services/portal-plan.service";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
-  const booking = await prisma.recurringBooking.findUnique({
-    where: { managementToken: token },
-    select: { service: { select: { name: true } }, business: { select: { name: true } } },
-  });
-  if (!booking) return { title: "Plan no encontrado" };
-  return {
-    title: `Mi Plan — ${booking.service.name} | ${booking.business.name}`,
-    description: `Gestiona tu suscripción de ${booking.service.name} en ${booking.business.name}`,
-  };
-}
+export const metadata = { title: "Mi plan", robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
 export default async function MiPlanPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const email = await getClientPortalEmail();
+  if (!email) redirect(`/mi-agenda?returnTo=${encodeURIComponent(`/mi-plan/${token}`)}`);
 
-  const exists = await prisma.recurringBooking.findUnique({
-    where: { managementToken: token },
+  const exists = await prisma.recurringBooking.findFirst({
+    where: portalPlanWhere(token, email),
     select: { id: true },
   });
 
@@ -29,7 +22,7 @@ export default async function MiPlanPage({ params }: { params: Promise<{ token: 
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A] p-4 text-white">
-      <PlanClient token={token} />
+      <PlanClient token={exists.id} initialEmail={email} />
     </div>
   );
 }

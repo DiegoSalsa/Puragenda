@@ -1,4 +1,5 @@
 "use client";
+import { healthConsentText, HEALTH_CONSENT_VERSION } from "@/core/health-consent";
 import { CommercialConsentChoice } from "@/components/commercial-consent-choice";
 import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 import { selectedDepositUnavailable, type DepositPaymentStatus } from "@/core/booking-deposit";
@@ -39,6 +40,7 @@ interface RecurringPlan {
   requiresApproval: boolean;
   requiresHealthForm: boolean;
   healthQuestions: string[];
+  healthFormRevision?: string;
   requiresRut: boolean;
   renewalMessage: string | null;
   expirationWarningDays: number;
@@ -1144,6 +1146,9 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
           healthAnswers: Object.keys(healthAnswers).length > 0 ? healthAnswers : undefined,
           healthExtra: healthExtra || undefined,
           healthAccepted: healthTerms,
+          healthConsentVersion: HEALTH_CONSENT_VERSION,
+          healthFormRevision: selectedService?.recurringPlan?.healthFormRevision,
+          healthConsentLocale: locale,
           commercialConsent: commercialConsentEnabled ? { accepted: commercialConsent, textVersion: COMMERCIAL_CONSENT_VERSION } : undefined,
         }),
       });
@@ -1886,7 +1891,7 @@ export function WidgetClient({ business, services, primaryColor, businessHours, 
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={healthTerms} onChange={(e) => setHealthTerms(e.target.checked)} className="mt-0.5 h-4 w-4 rounded" style={{ accentColor: pc }} />
-                  <span className="text-sm" style={{ color: textSecondary }}><LocalizedText id="vI24hOzffnNh" /></span>
+                  <span className="text-sm" style={{ color: textSecondary }}>{healthConsentText(locale)}</span>
                 </label>
               </div>
 

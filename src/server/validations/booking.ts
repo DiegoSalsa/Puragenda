@@ -141,6 +141,9 @@ export const recurringBookingRequestSchema = z.object({
   healthAnswers: z.record(z.string(), z.string().max(1000)).optional(),
   healthExtra: z.string().max(2000).optional(),
   healthAccepted: z.boolean().optional(),
+  healthConsentVersion: z.string().max(80).optional(),
+  healthFormRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  healthConsentLocale: z.string().max(10).optional(),
   commercialConsent: z.object({ accepted: z.boolean(), textVersion: z.literal(COMMERCIAL_CONSENT_VERSION) }).strict().optional(),
 });
 

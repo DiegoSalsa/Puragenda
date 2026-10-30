@@ -17,6 +17,7 @@ import {
   getClientPortalProfile,
 } from "@/server/services/client-portal.service";
 import { prisma } from "@/server/db/prisma";
+import { resolveAppointmentVenue } from "@/server/services/appointment-venue";
 import { formatPrice } from "@/lib/utils";
 import { safeClientPortalReturnTo } from "@/server/validations/client-portal";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -75,6 +76,8 @@ export default async function ClientPortalPage({
     }) : [],
   ]);
   if (returnTo && profile) redirect(returnTo);
+  const upcomingVenues = await Promise.all(data.upcoming.map(resolveAppointmentVenue));
+  const historyVenues = await Promise.all(data.history.map(resolveAppointmentVenue));
   const firstName = data.displayName.split(/\s+/)[0];
 
   return (
@@ -102,6 +105,7 @@ export default async function ClientPortalPage({
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[1.45fr_0.8fr]">
           <div className="space-y-10">
+            {data.plans?.length > 0 && <section className="space-y-3"><h2 className="text-xl font-black">Mis planes</h2>{data.plans.map(plan => <Link key={plan.id} href={`/mi-plan/${plan.id}`} className="block rounded-xl border-2 border-black bg-white p-4 font-bold">{plan.service.name} · {plan.business.name} · {plan.status}</Link>)}</section>}
             <section id="mis-gift-cards">
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Gift className="h-6 w-6" strokeWidth={2.8} />
@@ -133,6 +137,7 @@ export default async function ClientPortalPage({
               ) : (
                 <div className="space-y-4">
                   {data.upcoming.map((appointment, index) => {
+                    const venue = upcomingVenues[index];
                     // This dynamic server page intentionally evaluates action availability at request time.
                     // eslint-disable-next-line react-hooks/purity
                     const hoursUntil = (appointment.startTime.getTime() - Date.now()) / 3_600_000;
@@ -156,10 +161,10 @@ export default async function ClientPortalPage({
                               <span className="rounded-full border-2 border-black bg-[#bffcc6] px-2.5 py-1 text-[10px] font-black uppercase">{STATUS_LABELS[appointment.status]}</span>
                             </div>
                             <div className="mt-4 grid gap-2 text-sm font-semibold text-black/65 sm:grid-cols-2">
-                              <p className="flex items-center gap-2 capitalize"><CalendarDays className="h-4 w-4 text-black" />{appointmentDate(appointment.startTime, appointment.business.timezone)}</p>
-                              <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-black" />{appointmentTime(appointment.startTime, appointment.endTime, appointment.business.timezone)}</p>
+                              <p className="flex items-center gap-2 capitalize"><CalendarDays className="h-4 w-4 text-black" />{appointmentDate(appointment.startTime, venue.timezone)}</p>
+                              <p className="flex items-center gap-2"><Clock className="h-4 w-4 text-black" />{appointmentTime(appointment.startTime, appointment.endTime, venue.timezone)}</p>
                               {appointment.staff?.name && <p className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-black" />{appointment.staff.name}</p>}
-                              {appointment.business.address && <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-black" />{appointment.business.address}</p>}
+                              {venue.businessAddress && <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-black" />{venue.businessAddress}</p>}
                             </div>
                             <ClientPortalAppointmentActions appointmentId={appointment.id} canCancel={canManage} canReschedule={canReschedule} />
                           </div>
@@ -183,7 +188,7 @@ export default async function ClientPortalPage({
                   <div key={appointment.id} className={`flex items-center justify-between gap-4 p-4 ${index ? "border-t-2 border-black/10" : ""}`}>
                     <div className="min-w-0">
                       <p className="truncate font-black">{appointment.service.name}</p>
-                      <p className="mt-0.5 truncate text-xs font-semibold text-black/50">{appointment.business.name} · <span className="capitalize">{appointmentDate(appointment.startTime, appointment.business.timezone)}</span></p>
+                      <p className="mt-0.5 truncate text-xs font-semibold text-black/50">{appointment.business.name} · <span className="capitalize">{appointmentDate(appointment.startTime, historyVenues[index].timezone)}</span></p>
                     </div>
                     <span className={`shrink-0 rounded-full border-2 border-black px-2 py-1 text-[10px] font-black uppercase ${appointment.status === "CANCELLED" || appointment.status === "NO_SHOW" ? "bg-red-100" : "bg-[#bffcc6]"}`}>
                       {STATUS_LABELS[appointment.status]}
