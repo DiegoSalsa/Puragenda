@@ -12,6 +12,7 @@ import { DashboardAvailabilityPanel } from "../dashboard-availability-panel";
 import { PendingRecurringPanel } from "../pending-recurring-panel";
 import { PageTutorial } from "@/components/dashboard/page-tutorial";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
+import { redactPrivateData } from "@/server/services/private-data";
 import { DASHBOARD_PERMISSIONS, type DashboardPermission } from "@/core/permissions";
 import { redirect } from "next/navigation";
 import { getCountryConfig } from "@/core/countries";
@@ -170,7 +171,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    canManageAppointments
+    canManageAppointments && permissions.includes(DASHBOARD_PERMISSIONS.CLIENTS_MANAGE)
       ? prisma.client.findMany({
           where: { businessId: business.id },
           orderBy: { updatedAt: "desc" },
@@ -180,7 +181,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       : Promise.resolve([]),
   ]);
 
-  const serialized = weekAppointments.map((appointment) => ({
+  const serialized = weekAppointments.map((appointment) => redactPrivateData({
     id: appointment.id,
     updatedAt: appointment.updatedAt.toISOString(),
     locationId: appointment.locationId,
@@ -212,10 +213,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     postSessionItems: (appointment.postSessionItems as { description: string; amount: number }[] | null) ?? [],
     paymentMethod: appointment.paymentMethod,
     settledAt: appointment.settledAt?.toISOString() ?? null,
-  }));
+  }, permissions, agendaScope.ownStaffId));
 
-  const pendingSerialized = pendingRecurring.map((booking) => ({
+  const pendingSerialized = pendingRecurring.map((booking) => redactPrivateData({
     id: booking.id,
+    staffId: booking.staffId,
     customerName: booking.customerName,
     customerEmail: booking.customerEmail,
     serviceName: booking.service.name,
@@ -228,7 +230,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     healthAnswers: booking.healthAnswers as Record<string, string> | null,
     healthFreeText: booking.healthFreeText,
     createdAt: booking.createdAt.toISOString(),
-  }));
+  }, permissions, agendaScope.ownStaffId));
   const serializedPriorityBlocks = priorityBlocks.map((block) => ({
     id: block.id,
     staffId: block.staffId,
@@ -330,6 +332,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       )}
 
       <WeeklyCalendar
+        canViewInternalNotes={permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW)}
         locationId={selectedLocation?.id}
         locationName={selectedLocation?.name}
         appointments={serialized}

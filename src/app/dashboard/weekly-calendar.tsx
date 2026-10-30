@@ -127,6 +127,7 @@ export function WeeklyCalendar({
   currencyCode,
   timeZone,
   canManageAppointments = false,
+  canViewInternalNotes = false,
   posEnabled = false,
 }: {
   appointments: CalendarAppointment[];
@@ -144,6 +145,7 @@ export function WeeklyCalendar({
   currencyCode: string;
   timeZone?: string;
   canManageAppointments?: boolean;
+  canViewInternalNotes?: boolean;
   posEnabled?: boolean;
 }) {
   const t = useTranslations("dashboard.calendar");
@@ -505,6 +507,7 @@ export function WeeklyCalendar({
 
       {selected && (
         <AppointmentDetailDialog
+          canViewInternalNotes={canViewInternalNotes}
           locationId={locationId}
           locationName={locationName}
           appointment={selected}
@@ -520,6 +523,7 @@ export function WeeklyCalendar({
       )}
       {editor && (
         <AppointmentEditor
+          canViewInternalNotes={canViewInternalNotes}
           locationId={locationId}
           locationName={locationName}
           initialStart={editor.initialStart}

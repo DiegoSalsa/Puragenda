@@ -11,6 +11,7 @@ import {
   type TodayOpportunityInput,
 } from "@/lib/today-dashboard";
 import { prisma } from "@/server/db/prisma";
+import { redactPrivateData } from "@/server/services/private-data";
 import { getStaffAgendaScope } from "@/server/services/business.service";
 import { getAvailabilityStoryOpportunities } from "@/server/services/availability-story.service";
 
@@ -135,7 +136,7 @@ export async function loadTodayDashboard(input: {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
-    canManageAppointments
+    canManageAppointments && permissions.includes(DASHBOARD_PERMISSIONS.CLIENTS_MANAGE)
       ? prisma.client.findMany({
           where: {
             businessId: business.id,
@@ -202,6 +203,7 @@ export async function loadTodayDashboard(input: {
       showingOwnAgenda,
     }),
     canManageAppointments,
+    canViewInternalNotes: permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW),
     canBlockTime,
     canGenerateStory,
     canSeeMoney: showMoney,
@@ -231,7 +233,7 @@ export async function loadTodayDashboard(input: {
     story: model.story,
     appointments: appointments.map((appointment) => {
       const row = byId.get(appointment.id);
-      return {
+      return redactPrivateData({
         id: appointment.id,
         updatedAt: appointment.updatedAt.toISOString(),
         locationId: appointment.locationId,
@@ -267,7 +269,7 @@ export async function loadTodayDashboard(input: {
         paymentLabel: row?.label ?? "none",
         collected: showMoney ? row?.collected ?? 0 : 0,
         pending: showMoney ? row?.pending ?? 0 : 0,
-      };
+      }, permissions, agendaScope.ownStaffId);
     }),
     blockStaff: (showingOwnAgenda || !agendaScope.canSeeAllAgendas
       ? staff.filter((member) => member.id === agendaScope.ownStaffId)

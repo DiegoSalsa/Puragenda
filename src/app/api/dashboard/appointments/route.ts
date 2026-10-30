@@ -4,6 +4,7 @@ import { getBusinessForUser, getStaffAgendaScope } from "@/server/services/busin
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { prisma } from "@/server/db/prisma";
+import { dashboardAppointmentDTO } from "@/server/services/private-data";
 import { createAppointment, isAppointmentCapacityConflict } from "@/server/services/appointment.service";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
 import { managedAppointmentSchema } from "@/server/validations/appointment-management";
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
     if (!canManageTarget(permissions, agendaScope.ownStaffId, parsed.data.staffId)) {
       return Response.json({ error: "No tienes permisos para crear citas en esta agenda" }, { status: 403 });
     }
+    if (parsed.data.internalNotes && !permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW)) return Response.json({ error: "Sin permiso para notas internas" }, { status: 403 });
 
     const resolved = await resolveManagedAppointment(business, parsed.data);
     if ("error" in resolved) return Response.json({ error: resolved.error }, { status: 409 });
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       if (appointment) await sendConfirmationEmail(appointment);
     }
 
-    return Response.json(created.appointment, { status: 201 });
+    return Response.json(dashboardAppointmentDTO(created.appointment, permissions, agendaScope.ownStaffId), { status: 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (isAppointmentCapacityConflict(error)) return Response.json({ error: "Ese horario ya está ocupado" }, { status: 409 });
     console.error("[dashboard appointments POST]", error);

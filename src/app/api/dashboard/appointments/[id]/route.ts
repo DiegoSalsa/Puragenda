@@ -14,6 +14,7 @@ import { NextRequest } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { getEffectiveBusinessPermissions } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
+import { dashboardAppointmentDTO } from "@/server/services/private-data";
 import { appointmentSettlementSchema, managedAppointmentSchema } from "@/server/validations/appointment-management";
 import { resolveManagedAppointment } from "@/server/services/appointment-management.service";
 import {
@@ -137,14 +138,14 @@ export async function PATCH(
 
       await processLoyaltyStamps(id);
 
-      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+      return Response.json(dashboardAppointmentDTO(await getAppointmentByIdAndBusiness(id, business.id), permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
     }
 
     if (body.markDepositPaid === true) {
       if (!existing.depositAmount || existing.depositAmount <= 0) {
         return Response.json({ error: "Esta cita no tiene un abono pendiente" }, { status: 409 });
       }
-      if (existing.paymentStatus === "APPROVED") return Response.json(existing);
+      if (existing.paymentStatus === "APPROVED") return Response.json(dashboardAppointmentDTO(existing, permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
       if (existing.status !== "AWAITING_PAYMENT") {
         return Response.json({ error: "El abono de esta cita ya no está pendiente" }, { status: 409 });
       }
@@ -171,7 +172,7 @@ export async function PATCH(
 
       await syncAppointmentToGoogle(id);
       await sendConfirmedAppointmentNotifications(id);
-      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+      return Response.json(dashboardAppointmentDTO(await getAppointmentByIdAndBusiness(id, business.id), permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
     }
 
     if (body.rejectDepositReceipt === true) {
@@ -193,7 +194,7 @@ export async function PATCH(
       if (rejected.count === 0) {
         return Response.json({ error: "El comprobante cambió de estado; actualiza la agenda" }, { status: 409 });
       }
-      return Response.json(await getAppointmentByIdAndBusiness(id, business.id));
+      return Response.json(dashboardAppointmentDTO(await getAppointmentByIdAndBusiness(id, business.id), permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
     }
 
     if (!status || !["PENDING", "CONFIRMED", "CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"].includes(status)) {
@@ -205,7 +206,7 @@ export async function PATCH(
 
     if (existing.status === status) {
       if (status === "COMPLETED") await processLoyaltyStamps(id);
-      return Response.json(existing);
+      return Response.json(dashboardAppointmentDTO(existing, permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
     }
 
     if (status === "CANCELLED") {
@@ -228,7 +229,7 @@ export async function PATCH(
       // replay calendar sync, CRM effects, or cancellation emails.
       if (cancelled.alreadyCancelled) {
         const current = await getAppointmentByIdAndBusiness(id, business.id);
-        return Response.json(current ?? { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
+        return Response.json(current ? dashboardAppointmentDTO(current, permissions, agendaScope.ownStaffId) : { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
       }
     } else {
       const transition = await prisma.appointment.updateMany({
@@ -237,7 +238,7 @@ export async function PATCH(
       });
       if (transition.count === 0) {
         const current = await getAppointmentByIdAndBusiness(id, business.id);
-        return Response.json(current ?? { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
+        return Response.json(current ? dashboardAppointmentDTO(current, permissions, agendaScope.ownStaffId) : { error: "Cita no encontrada" }, { status: current ? 200 : 404 });
       }
     }
 
@@ -303,7 +304,7 @@ export async function PATCH(
       }
     }
 
-    return Response.json(appointment);
+    return Response.json(dashboardAppointmentDTO(appointment, permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("[route] Error:", error);
     return Response.json(
@@ -449,6 +450,7 @@ export async function PUT(
       return Response.json({ error: "No tienes permisos para mover esta cita a esa agenda" }, { status: 403 });
     }
 
+    if (parsed.data.internalNotes && !permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW)) return Response.json({ error: "Sin permiso para notas internas" }, { status: 403 });
     if (!parsed.data.expectedUpdatedAt || new Date(parsed.data.expectedUpdatedAt).getTime() !== existing.updatedAt.getTime()) {
       return Response.json({ error: "La cita cambió; actualiza la agenda antes de editar", code: "APPOINTMENT_CHANGED" }, { status: 409 });
     }
@@ -508,7 +510,7 @@ export async function PUT(
             promotionTitle: null,
           }),
           selectedOptions: resolved.value.selectedOptions,
-          internalNotes: parsed.data.internalNotes || null,
+          ...(permissions.includes(DASHBOARD_PERMISSIONS.APPOINTMENT_NOTES_VIEW) ? { internalNotes: parsed.data.internalNotes || null } : {}),
           customerActionTokenHash: null,
           customerActionTokenExpiresAt: null,
           customerActionTokenUsedAt: null,
@@ -524,7 +526,7 @@ export async function PUT(
     await syncAppointmentToGoogle(id);
 
     if (parsed.data.sendConfirmation) await sendConfirmationEmail(updated);
-    return Response.json(updated);
+    return Response.json(dashboardAppointmentDTO(updated, permissions, agendaScope.ownStaffId), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof BookingSelectionError) return Response.json({ error: error.message, code: error.code }, { status: error.status });
     if (isAppointmentCapacityConflict(error) || (error && typeof error === "object" && "code" in error && error.code === "P2025")) {

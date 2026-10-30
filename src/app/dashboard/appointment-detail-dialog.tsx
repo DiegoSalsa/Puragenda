@@ -64,6 +64,7 @@ export function AppointmentDetailDialog({
   appointment,
   onClose,
   canManageAppointments,
+  canViewInternalNotes = false,
   posEnabled,
   services,
   staff,
@@ -76,6 +77,7 @@ export function AppointmentDetailDialog({
   appointment: DashboardAppointment;
   onClose: () => void;
   canManageAppointments: boolean;
+  canViewInternalNotes?: boolean;
   posEnabled: boolean;
   services: AppointmentEditorService[];
   staff: AppointmentEditorStaff[];
@@ -166,6 +168,7 @@ export function AppointmentDetailDialog({
   if (editor) {
     return (
       <AppointmentEditor
+        canViewInternalNotes={canViewInternalNotes}
         appointment={editor}
         locationId={locationId}
         locationName={locationName}

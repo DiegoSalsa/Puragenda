@@ -71,6 +71,7 @@ export function AppointmentEditor({
   staff,
   clients,
   currencyCode,
+  canViewInternalNotes = false,
   onClose,
 }: {
   appointment?: EditableAppointment;
@@ -85,6 +86,7 @@ export function AppointmentEditor({
   staff: AppointmentEditorStaff[];
   clients: AppointmentEditorClient[];
   currencyCode: string;
+  canViewInternalNotes?: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations("dashboard.editor");
@@ -183,7 +185,7 @@ export function AppointmentEditor({
             expectedUpdatedAt: appointment?.updatedAt,
             selectedOptionAlternativeIds: selectedOptionIds,
             startTime: startTime.toISOString(),
-            internalNotes,
+            ...(canViewInternalNotes ? { internalNotes } : {}),
             sendConfirmation,
           }),
         },
@@ -292,7 +294,7 @@ export function AppointmentEditor({
                 <span className="rounded-full bg-muted px-3 py-1.5">{t("minutes", { count: totalDuration })}</span>
                 <span className="rounded-full bg-muted px-3 py-1.5">{formatPrice(Math.round(totalPrice), currencyCode)}</span>
               </div>
-              <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />
+              {canViewInternalNotes && <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder={t("internalNote")} rows={3} className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm" />}
               <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/25 p-3 text-sm">
                 <input type="checkbox" checked={sendConfirmation} onChange={(event) => setSendConfirmation(event.target.checked)} className="h-4 w-4 accent-[#7C3AED]" />
                 <Mail className="h-4 w-4 text-brand-foreground" />
