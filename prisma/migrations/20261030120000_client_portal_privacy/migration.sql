@@ -60,10 +60,18 @@ END $$;
 CREATE TRIGGER "Client_portal_owner" BEFORE INSERT OR UPDATE ON "Client" FOR EACH ROW EXECUTE FUNCTION "portal_crm_owner"();
 ALTER TABLE "ClientPortalIdentity" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ClientPortalRevocation" ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON "ClientPortalIdentity", "ClientPortalRevocation" FROM PUBLIC, anon, authenticated;
 -- The public widget reads availability through the server, never customer rows.
 ALTER TABLE "Client" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Appointment" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "RecurringBooking" ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON "Client", "Appointment", "RecurringBooking" FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON "ClientPortalIdentity", "ClientPortalRevocation", "Client", "Appointment", "RecurringBooking" FROM PUBLIC;
+-- PostgreSQL installations outside Supabase need not define these roles.
+DO $$ BEGIN
+ IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'anon') THEN
+  REVOKE ALL ON "ClientPortalIdentity", "ClientPortalRevocation", "Client", "Appointment", "RecurringBooking" FROM anon;
+ END IF;
+ IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'authenticated') THEN
+  REVOKE ALL ON "ClientPortalIdentity", "ClientPortalRevocation", "Client", "Appointment", "RecurringBooking" FROM authenticated;
+ END IF;
+END $$;
 COMMIT;

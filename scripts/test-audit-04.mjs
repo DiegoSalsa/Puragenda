@@ -16,6 +16,21 @@ Object.assign(env, { NODE_ENV: "test", DATABASE_URL: database, DIRECT_URL: datab
 mkdirSync("scratch/audit04", { recursive: true });
 const mode = process.argv[2] || "postgres";
 if (mode === "general") delete env.COMMERCIAL_V2_TEST_DATABASE_URL;
+if (mode === "verify") {
+  const checks = [
+    ["node_modules/prisma/build/index.js", "generate"],
+    ["node_modules/prisma/build/index.js", "validate"],
+    ["node_modules/next/dist/bin/next", "typegen"],
+    ["node_modules/typescript/bin/tsc", "--noEmit"],
+    ["node_modules/eslint/bin/eslint.js"],
+  ];
+  for (const args of checks) {
+    console.log("CHECK " + args.join(" "));
+    const result = spawnSync(process.execPath, args, { env, stdio: "inherit", windowsHide: true });
+    if (result.status !== 0) { process.exitCode = result.status ?? 1; break; }
+  }
+  process.exit(process.exitCode ?? 0);
+}
 const commands = {
   general: ["node_modules/vitest/vitest.mjs", "run", "--reporter=dot", "--reporter=json", "--outputFile.json=scratch/audit04/general.json"],
   postgres: ["scripts/test-commercial-postgres.mjs", "--clients-privacy"],
@@ -23,7 +38,7 @@ const commands = {
   booking: ["scripts/test-rc1-booking-postgres.mjs"],
   mcp: ["scripts/test-rc1-booking-postgres.mjs", "--mcp"],
   legacy: ["scripts/test-rc1-legacy-postgres.mjs"],
-  migrations: ["scripts/test-audit-04-migrations.mjs"],
+  migrations: ["scripts/test-audit-04-migrations.mjs", ...process.argv.slice(3)],
   tests: ["node_modules/vitest/vitest.mjs", "run", ...process.argv.slice(3)],
 };
 if (!commands[mode]) throw new Error("UNKNOWN_AUDIT_CHECK");
