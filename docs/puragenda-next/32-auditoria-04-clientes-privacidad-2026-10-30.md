@@ -4,9 +4,9 @@ Fecha de corte solicitada: 2026-10-30. Repositorio: `DiegoSalsa/Puragenda`.
 
 ## Resultado y alcance
 
-Los nueve hallazgos fueron reproducidos y corregidos. La validación final no tiene pruebas fallidas: 2.380 casos Vitest distintos ejecutados entre la suite general y las suites PostgreSQL, 89 comprobaciones HTTP/navegador y 22 comprobaciones de actualización de migraciones. La publicación requiere coordinar la migración y la transición de credenciales que se describen abajo; este trabajo no modifica producción.
+Los nueve hallazgos originales fueron reproducidos y corregidos. El cierre de la revisión independiente sobre `d6f69cc248e308ebb3e6ee9d15d8444f5b9da56a` agrega la corrección 04-A, endurece el creador de sesiones de 04-B y corrige la elevación de sesiones durante la activación. La validación final no tiene pruebas fallidas: 2.389 casos Vitest distintos, 105 comprobaciones HTTP/navegador y dos escenarios de actualización de migraciones con 38 y 29 comprobaciones. La publicación requiere coordinar la migración y la transición de credenciales que se describen abajo; este trabajo no modifica producción.
 
-Se trabajó exclusivamente en `fix/puragenda-next-audit-04-clients-privacy`, creada desde el SHA aprobado `aa780ac53feec66b6ed2b50b3d00511210592e52`. Se verificaron las referencias local y remota de `release/puragenda-next-rc1` contra ese SHA. No se modificaron `main` ni RC1 y no se hizo push, merge, despliegue, migración remota ni envío de correos. No se inspeccionaron cuentas ni datos personales productivos, ni se invocaron proveedores de pagos, correo, Calendar o IA durante las pruebas. El build descargó únicamente recursos públicos de fuentes mediante una excepción acotada.
+Se trabajó exclusivamente en `fix/puragenda-next-audit-04-clients-privacy`, creada desde el SHA aprobado `aa780ac53feec66b6ed2b50b3d00511210592e52`. Se verificaron las referencias local y remota de `release/puragenda-next-rc1` contra ese SHA. La rama se publica únicamente para revisión independiente. No se modificaron `main` ni RC1 y no se hizo merge, despliegue, migración remota ni envío de correos. No se inspeccionaron cuentas ni datos personales productivos, ni se invocaron proveedores de pagos, correo, Calendar o IA durante las pruebas. El build descargó únicamente recursos públicos de fuentes mediante una excepción acotada.
 
 ## Preparación y aislamiento
 
@@ -14,7 +14,7 @@ El directorio original `C:/Users/diego/Desktop/agenda` tenía trabajo previo en 
 
 Worktree de entrega: `C:/Users/diego/.codex/worktrees/puragenda-next-audit04/agenda`. Se instalaron las dependencias del lockfile sin cambiar manifiestos. Se leyeron las guías de seguridad, autenticación, cookies y Route Handlers incluidas en esta versión de Next.js y las instrucciones locales de Supabase/PostgreSQL.
 
-Se creó un clúster propio de PostgreSQL 17, accesible únicamente por loopback en el puerto 55446, con bases descartables y datos sintéticos. Los ejecutores filtran el entorno y bloquean I/O externo; el staging usa secretos generados localmente en archivos ignorados y con permisos restringidos. HTTP: `127.0.0.1:3128`; HTTPS local: puerto 3448 con CA explícita, sin cambiar la confianza del sistema. El navegador bloqueó peticiones fuera de loopback. Al terminar se detuvieron únicamente el staging y el clúster creados para esta auditoría.
+Se utilizaron clústeres propios de PostgreSQL 17, accesibles únicamente por loopback: 55446 para las regresiones y 55447 para el escenario sin roles de Supabase, con bases descartables y datos sintéticos. Los ejecutores filtran el entorno y bloquean I/O externo; el staging usa secretos generados localmente en archivos ignorados y con permisos restringidos. HTTP: `127.0.0.1:3128`; HTTPS local: puerto 3448 con CA explícita, sin cambiar la confianza del sistema. El navegador bloqueó peticiones fuera de loopback. Al terminar se detuvieron únicamente el staging y los clústeres de esta auditoría.
 
 Los fallos iniciales de reproducción se conservaron como evidencia técnica ignorada bajo `scratch/audit04/`; no forman parte de los resultados finales aprobados. No se crearon capturas, diagramas ni informes adicionales.
 
@@ -143,20 +143,58 @@ Se simuló localmente el escenario de grants públicos documentado por Supabase:
 - Actualizaciones parciales concurrentes de notas y RUT preservan ambos cambios; otro negocio no puede editar el cliente. La edición simultánea del mismo campo mantiene la semántica vigente de última escritura; no se diseñó un CRM nuevo con versionado de notas.
 - Regresiones de pagos, abonos, historial, Calendar, fidelización, Gift Cards, Contact Flow, marketing legacy, recurrentes y MCP completadas con proveedores simulados/bloqueados.
 
+## Cierre de revisión independiente: 04-A, 04-B y activación
+
+### 04-A — Roles opcionales de PostgreSQL
+
+**Estado: confirmado y corregido.** La migración 04 original falló en PostgreSQL real cuando `anon` y `authenticated` no existían. El log del servidor identificó `role "anon" does not exist`; Prisma abortó `20261030120000_client_portal_privacy` dentro de su transacción. La reproducción se ejecutó antes de cambiar el SQL.
+
+Se conserva `REVOKE ... FROM PUBLIC` incondicional para las cinco tablas sensibles y se comprueba cada rol por separado en `pg_catalog.pg_roles` antes de revocar sus privilegios. Se mantienen RLS, triggers, columnas, backfill e índices. La migración no crea roles ni elimina datos. [PostgreSQL 17: REVOKE y privilegios de PUBLIC](https://www.postgresql.org/docs/17/sql-revoke.html).
+
+Se amplió `scripts/test-audit-04-migrations.mjs`: verifica grants públicos y por defecto, prueba acceso con un rol público sintético, comprueba RLS, compara todas las columnas y filas históricas de clientes, citas, planes, cuentas y sesiones, y verifica ausencia de drift. Resultado: 38 comprobaciones con ambos roles existentes y grants concedidos; 29 con ambos roles ausentes al aplicar 04. La migración 03 tiene el mismo blob que en RC1.
+
+La reconstrucción local del historial congelado anterior a RC1 necesita roles transitorios: el primer ensayo detectó que `20261022180000_commercial_migration_web_plus` ya los referenciaba. Para el caso sin roles, el ejecutor parte de un clúster propio que no los tiene, reconstruye RC1 con esos roles de fixture y elimina sus grants/roles **antes** de ejecutar la migración 04; comprueba explícitamente su ausencia en ese punto y al terminar. No se alteró ninguna migración histórica ni se presenta esto como una certificación de que todo el historial antiguo puede arrancar desde cero sin roles. Sí se verificó la transición de un esquema RC1 completo sin ellos y, en el otro escenario, la reconstrucción completa desde legacy hasta el estado final.
+
+Archivos: migración 04, ejecutor de migraciones y runner `scripts/test-audit-04.mjs`. No se agregó otra migración ni se aplicó ninguna remotamente. Como el SQL de 04 cambió durante revisión y antes de su aprobación, una base local descartable que ya registró su checksum anterior debe reconstruirse; no se propone editar checksums ni el historial de una base real.
+
+### 04-B — Prueba de credenciales al crear sesiones
+
+**Estado: secuencia atribuida a las rutas descartada en el SHA revisado; creador de sesiones endurecido frente al riesgo reproducido.** Se inspeccionaron `profile/password/route.ts` y `reset-password/route.ts`: ambas ya borraban la cookie y exigían un login nuevo; no llamaban a un creador de sesión después de cambiar la contraseña. Las pruebas HTTP nuevas comprueban que la respuesta no emite un `cps_` y que no queda una fila de reemplazo. Se conserva este comportamiento.
+
+Sí se reprodujo la variante a nivel de servicio: después del reset A y de un reset B más reciente, una llamada retrasada a `createClientPortalAccountSession(email)` aún podía emitir una sesión, porque su comprobación de hash era opcional. La prueba negativa falló antes de corregirlo. Ahora el creador exportado exige, en tipos y en ejecución, el hash exacto de la credencial que el llamador verificó. Dentro de la transacción y del bloqueo por identidad se compara con el hash vigente y con la activación de la cuenta. Un hash anterior, incluso después de volver a elegir la misma contraseña, no equivale al nuevo hash bcrypt. La llamada sin prueba también se rechaza. Los magic links siguen consumiendo su prueba de un uso y creando la sesión dentro de la misma transacción.
+
+No se agregó una sesión automática al cambio/reset. Se conserva la revocación atómica de sesiones modernas, época HMAC y tokens pendientes. El acceso local de demo se adapta al consumo atómico de un magic link y conserva su bloqueo en producción; el ejecutor de QA de Puri pasa la prueba de su fixture. Estas adaptaciones son los únicos cambios fuera del servicio y sus pruebas necesarios por el contrato más estricto.
+
+Pruebas PostgreSQL nuevas: dos resets concurrentes; cambio y reset concurrentes; creación/login frente a rotación en ambos órdenes; llamada retrasada sin prueba y con hash anterior; rechazo de contraseñas/enlaces previos; rollback total ante un fallo real de PostgreSQL después de comenzar la revocación. Las carreras usan conexiones independientes, mantienen el bloqueo real y esperan a observar ambas operaciones en `pg_locks` antes de liberarlo. Se comprobó que una emisión anterior queda revocada o que una emisión posterior con prueba obsoleta se rechaza, sin sesiones huérfanas. Los fallos SQL de prueba son triggers temporales exclusivos de la base sintética y se retiran al finalizar cada caso.
+
+### Sesiones anteriores a la activación
+
+**Estado: confirmado y corregido.** Una sesión `cps_` emitida por magic link mientras `emailVerifiedAt` era nulo comenzaba a resolver una cuenta verificada después de activar esa cuenta, sin cambiar de credencial. También falló el intercalado concurrente entre activación y consumo de un magic link anterior.
+
+`verifyClientPortalAccount()` ahora invalida sesiones modernas, credenciales HMAC previas y enlaces pendientes **en la misma transacción** que establece `emailVerifiedAt`, conservando el bloqueo por identidad. La ruta de activación sigue borrando la cookie y solicitando un acceso nuevo. Los clientes legacy conservan el portal y pueden solicitar un magic link nuevo después de activar; el nuevo acceso puede consultar la cuenta verificada. No se convierten credenciales antiguas silenciosamente.
+
+Se probaron replay de activación, cookie previa rechazada, enlaces magic pendientes invalidados, nuevo login legítimo, nuevo magic legítimo y rollback de `emailVerifiedAt`/consumo de token si PostgreSQL no logra revocar una sesión. La prueba TCP incluye registro real con email mock, activación, login y recuperación; los tokens de activación/reset usados por el ejecutor son fixtures controlados y no se recuperan de logs ni de proveedores externos.
+
+### Archivos del cierre y resultados
+
+El cierre modifica diez archivos respecto del SHA revisado: migración 04; servicio de portal; ruta local de demo; pruebas PostgreSQL de privacidad; prueba unitaria del servicio; scripts de migraciones, runner de auditoría, HTTP de privacidad y QA de Puri; y este informe. No modifica las rutas de cambio/reset porque ya aplicaban la política segura de cerrar acceso. Los nueve hallazgos originales se conservan corregidos.
+
+La reproducción previa produjo tres fallos esperados entre 55 casos: creador sin prueba, elevación tras activación y su carrera con magic. Después se agregó una comprobación de rollback de activación: los **56 casos PostgreSQL de Auditoría 04** pasan en la regresión comercial completa. La primera comprobación TypeScript detectó un llamador antiguo en QA de Puri; se adaptó y se repitieron los controles. No se cuenta esa ejecución fallida como aprobada.
+
 ## Evidencia final de pruebas
 
 ### Casos Vitest sin doble conteo
 
 | Ejecución final | Aprobadas en esa ejecución | Omitidas por guarda | Aporte distinto al total |
 | --- | ---: | ---: | ---: |
-| General: 275 archivos, 256 ejecutados | 1.818 | 562 | 1.818 |
-| Comercial PostgreSQL completo, incluye auditorías 01/03/04 y Contact Flow | 390 | 0 | 390 |
+| General: 275 archivos, 256 ejecutados | 1.818 | 571 | 1.818 |
+| Comercial PostgreSQL completo, incluye auditorías 01/03/04 y Contact Flow | 399 | 0 | 399 |
 | Booking/Agenda PostgreSQL | 97 | 0 | 60 |
 | MCP PostgreSQL y seguridad | 53 | 0 | 27 |
 | Legacy PostgreSQL: marketing, fidelización, Gift Cards y planes | 85 | 0 | 85 |
-| **Total distinto ejecutado y aprobado** | | | **2.380** |
+| **Total distinto ejecutado y aprobado** | | | **2.389** |
 
-Los 37 casos compartidos de booking y los 26 casos compartidos de MCP ya están en la suite general. Las 562 omisiones de la ejecución general corresponden exactamente a los 390 + 60 + 27 + 85 casos posteriormente ejecutados en bases aisladas. No se suman reruns, ni los 47 casos de esta auditoría otra vez: ya están dentro de los 390 comerciales. Fallidas al cierre: **0**. No quedan casos omitidos de esta colección después de las ejecuciones condicionales.
+Los 37 casos compartidos de booking y los 26 casos compartidos de MCP ya están en la suite general. Las 571 omisiones de la ejecución general corresponden exactamente a los 399 + 60 + 27 + 85 casos posteriormente ejecutados en bases aisladas. No se suman reruns, ni los 56 casos de esta auditoría otra vez: ya están dentro de los 399 comerciales. Fallidas al cierre: **0**. No quedan casos omitidos de esta colección después de las ejecuciones condicionales.
 
 ### HTTP, navegador y migraciones
 
@@ -166,9 +204,10 @@ Los 37 casos compartidos de booking y los 26 casos compartidos de MCP ya están 
 | Auditoría 02: Agenda, disponibilidad, fechas bloqueadas, alcance | 14 |
 | Auditoría 03: servicios, profesionales, historial y abonos | 13 |
 | RC1/Contact Flow: HTTPS, autenticación, aislamiento, consentimiento, worker y replay | 19 |
-| Auditoría 04: HTML/RSC, identidad, sesiones, planes, consentimiento | 33 HTTP + 4 navegador |
-| **Total HTTP/navegador** | **89** |
-| Actualización de migraciones RC1 → auditoría 04 | **22** |
+| Auditoría 04: HTML/RSC, registro, activación, sesiones, planes, consentimiento | 49 HTTP + 4 navegador |
+| **Total HTTP/navegador** | **105** |
+| Actualización de migraciones RC1 → auditoría 04 con roles y grants | **38** |
+| Actualización de migraciones RC1 → auditoría 04 sin roles | **29** |
 
 El resultado RC1 incluye además una medición informativa de duración del worker; no se contó como prueba adicional. La E2E gráfica sí se ejecutó: Chrome headless mediante Playwright, viewport 390×844, login real, citas autorizadas sin marcadores privados, ausencia de overflow horizontal, logout sin cookie y acceso visual al formulario legacy sin contraseña. No se tomaron capturas. El envío real del email no se ejecutó.
 
@@ -184,11 +223,11 @@ El staging final se preparó de nuevo para ejecutar toda la secuencia sobre fixt
 - Revisión de secretos del cambio completo: lectura de cambios de autenticación/env, patrones de claves privadas/API/tokens, rutas privadas y diff revisados; cero coincidencias de credenciales y ningún `.env`, archivo `*.private.json` ni clúster local incluido en Git. Es revisión del cambio, no un escaneo de cuentas externas.
 - `git diff --check`: aprobado. Migración de auditoría 03 sin diferencias respecto del SHA base. Referencia RC1 local/remota verificada de nuevo.
 
-Los logs y JSON técnicos de ejecución se conservan ignorados en `scratch/audit04/`, `scratch/audit-03/`, `scratch/rc1-20261029/` y en el staging local. No se incorporan datos ni credenciales sintéticas del entorno a los commits.
+Los logs y JSON técnicos de ejecución se conservan ignorados en `scratch/audit04/` (el cierre usa `closure/`), `scratch/audit-03/`, `scratch/rc1-20261029/` y en el staging local. No se incorporan datos ni credenciales sintéticas del entorno a los commits.
 
 ### Repetición local
 
-Ejecutar desde el worktree con un PostgreSQL descartable propio, nunca con URL remota. Los runners validan host loopback y nombre de base de pruebas. Requieren los roles locales `anon` y `authenticated`, utilizados también por las migraciones existentes. El clúster de esta ejecución quedó detenido.
+Ejecutar desde el worktree con PostgreSQL descartable propio, nunca con URL remota. Los runners validan host loopback y nombre de base de pruebas. Las regresiones completas utilizan los roles locales `anon` y `authenticated`, necesarios para reconstruir el historial anterior. El escenario sin roles exige otro clúster propio que inicialmente no los tenga y realiza la transición explicada en 04-A. Los clústeres de esta ejecución quedaron detenidos.
 
 ```powershell
 $env:COMMERCIAL_V2_TEST_DATABASE_URL = 'postgresql://postgres@127.0.0.1:55446/puragenda_commercial_test_audit04'
@@ -198,9 +237,12 @@ node scripts/test-audit-04.mjs booking
 node scripts/test-audit-04.mjs mcp
 node scripts/test-audit-04.mjs legacy
 node scripts/test-audit-04.mjs migrations
+node scripts/test-audit-04.mjs verify
+$env:COMMERCIAL_V2_TEST_DATABASE_URL = 'postgresql://postgres@127.0.0.1:55447/puragenda_commercial_test_audit04'
+node scripts/test-audit-04.mjs migrations --without-supabase-roles
 ```
 
-El modo `postgres` ejecuta solamente los 47 casos PostgreSQL nuevos. Para HTTP se debe crear un staging fresco con `node scripts/prepare-next-staging.mjs --prepare-local`, iniciar `node scripts/run-next-staging.mjs` y ejecutar en orden `scripts/bootstrap-next-staging-http.mjs`, `scripts/test-next-staging-agenda.mjs`, `scripts/test-next-staging-services-staff.mjs` y `scripts/test-next-staging.mjs`, seguidos de `node --import tsx scripts/test-next-staging-clients-privacy.mjs --browser`. No reutilizar fixtures alterados para la secuencia completa. El último script admite `AUDIT04_PLAYWRIGHT_MODULE` para resolver un módulo Playwright ya instalado; en esta máquina se utilizó el runtime local de Codex y Chrome disponible. No se agregó una dependencia al producto.
+El modo `postgres` ejecuta solamente los 56 casos PostgreSQL de Auditoría 04; `verify` encadena Prisma generate/validate, typegen, TypeScript y ESLint con entorno filtrado. Para HTTP se debe usar nuevamente la URL del clúster de regresiones, crear un staging fresco con `node scripts/prepare-next-staging.mjs --prepare-local`, iniciar `node scripts/run-next-staging.mjs` y ejecutar en orden `scripts/bootstrap-next-staging-http.mjs`, `scripts/test-next-staging-agenda.mjs`, `scripts/test-next-staging-services-staff.mjs` y `scripts/test-next-staging.mjs`, seguidos de `node --import tsx scripts/test-next-staging-clients-privacy.mjs --browser`. No reutilizar fixtures alterados para la secuencia completa. El último script admite `AUDIT04_PLAYWRIGHT_MODULE` para resolver un módulo Playwright ya instalado; en esta máquina se utilizó el runtime local de Codex y Chrome disponible. No se agregó una dependencia al producto.
 
 Compilación: `node scripts/build-commercial-isolated.mjs --webpack` con la misma URL de pruebas y sin archivos `.env` ambientales. TypeScript y Prisma deben recibir exclusivamente las URLs locales y secretos sintéticos, como en los runners; no cargar el entorno original del usuario.
 
@@ -208,7 +250,7 @@ Compilación: `node scripts/build-commercial-isolated.mjs --webpack` con la mism
 
 Única migración agregada: `prisma/migrations/20261030120000_client_portal_privacy/migration.sql`. `20261029180000_preserve_service_staff_history` permanece intacta.
 
-La nueva migración es transaccional y aditiva: agrega columnas, índices, tablas de identidad/revocación, instantáneas y guardas; rellena titularidad desde reservas y endurece acceso público. No elimina citas, clientes, pagos, planes ni fidelización. No cambia la nulabilidad de `ClientPortalSession.accountId`. Los contratos legacy mantienen su `healthAccepted` original sin fecha, versión ni evidencia fabricada. La prueba de upgrade aplicó todas las migraciones anteriores sobre una base vacía, insertó fixtures de RC1, aplicó esta migración y comprobó preservación, ambigüedades, RLS/grants y ausencia de drift Prisma: 22/22.
+La nueva migración es transaccional y aditiva: agrega columnas, índices, tablas de identidad/revocación, instantáneas y guardas; rellena titularidad desde reservas y endurece acceso público. No elimina citas, clientes, pagos, planes ni fidelización. No cambia la nulabilidad de `ClientPortalSession.accountId`. Los contratos legacy mantienen su `healthAccepted` original sin fecha, versión ni evidencia fabricada. Se verificaron preservación de todas las columnas históricas, ambigüedades, RLS/grants y ausencia de drift Prisma en ambos escenarios de 04-A: 38/38 con roles y 29/29 sin ellos al aplicar 04.
 
 Procedimiento de publicación futura, **no ejecutado aquí**:
 
@@ -225,7 +267,8 @@ Reversión segura: detener las nuevas entradas si hay una incidencia, conservar 
 | --- | --- | --- |
 | Magic solicitado RC1 de 15 minutos no consumido | Se acepta una vez hasta su vencimiento original y emite sesión moderna | Mantener este acceso legítimo; no prolongar el enlace |
 | Link de marketing/pie transaccional largo de 30 días | No autentica; el destinatario utiliza el acceso normal y solicita un enlace corto | No reenviar campañas ni ejecutar revocaciones masivas; asegurar que las instancias antiguas no sigan canjeándolo |
-| Cookie HMAC ya emitida | Conserva vencimiento original; logout guarda revocación por hash; cambio/reset invalida por identidad | No renovar ni convertir silenciosamente. Retirar runtime antiguo que ignora esos controles |
+| Cookie HMAC ya emitida | Conserva vencimiento original; logout guarda revocación por hash; cambio/reset/activación invalida por identidad | No renovar ni convertir silenciosamente. Retirar runtime antiguo que ignora esos controles |
+| Sesión magic anterior a la activación | La activación la revoca junto a los enlaces pendientes | Solicitar un login o magic nuevo; no heredar acceso de cuenta verificada con la cookie previa |
 | Cookie surgida del canje de una campaña antigua | El esquema anterior no identifica su origen | Si se identifica un incidente o un grupo afectado, justificar e invalidar su época por identidad mediante un procedimiento autorizado; no asumir que todas las sesiones están comprometidas |
 | Sesión moderna anterior de hasta 400 días | Se aplican límites de 90 días absolutos/30 de inactividad | Avisar del posible nuevo login; no borrar cuentas ni historial |
 | Localizador legacy de plan | Requiere sesión del titular; vencimiento explícito o fin del plan + 30 días | El titular puede entrar con ID estable desde su portal y rotar/revocar el enlace; no enviar credenciales nuevas masivamente |
@@ -239,9 +282,9 @@ La aprobación corresponde al código y a los escenarios locales ejecutados. Que
 
 ## Entrega Git e inventario
 
-Siete commits locales organizados en protecciones, sesiones/comunicaciones, permisos, consentimiento/planes, integridad CRM, pruebas e informe. Los seis de implementación/pruebas son `a25d648`, `49655cd`, `8467469`, `580f811`, `37b4fd2` y `5b5e005`; el séptimo contiene este informe. El SHA completo final se entrega en la respuesta de cierre, evitando una autorreferencia imposible dentro del propio commit.
+La entrega inicial comprende siete commits hasta `d6f69cc`, que fue publicado y revisado independientemente. El cierre agrega tres commits: `f97f036` para 04-A, `0913b77` para sesiones/activación y sus pruebas, y la actualización de este informe. Total: diez commits sobre RC1. El SHA completo final se entrega en la respuesta de cierre, evitando una autorreferencia imposible dentro del propio commit. La publicación se limita a esta rama, sin force push, merge, despliegue ni integración en RC1; queda congelada para aprobación definitiva.
 
-Total: **80 archivos agregados o modificados respecto de RC1**, incluido este único informe. No se modificaron manifiestos/lockfile ni se incorporó `scratch`. Inventario completo:
+Total: **82 archivos agregados o modificados respecto de RC1**, incluido este único informe. El cierre añade al inventario la adaptación de demo y del ejecutor QA de Puri al contrato de sesiones. No se modificaron manifiestos/lockfile ni se incorporó `scratch`. Inventario completo:
 
 ```text
 .github/workflows/security.yml
@@ -250,6 +293,7 @@ prisma/migrations/20261030120000_client_portal_privacy/migration.sql
 prisma/schema.prisma
 scripts/build-commercial-isolated.mjs
 scripts/next-staging-network-guard.mjs
+scripts/puri-plus-browser-qa.ts
 scripts/test-audit-04-migrations.mjs
 scripts/test-audit-04.mjs
 scripts/test-booking-api-local.mjs
@@ -280,6 +324,7 @@ src/app/dashboard/today-screen.tsx
 src/app/dashboard/weekly-calendar.tsx
 src/app/mi-agenda/activar/[token]/route.ts
 src/app/mi-agenda/client-portal-client.tsx
+src/app/mi-agenda/demo/route.ts
 src/app/mi-agenda/entrar/[token]/route.ts
 src/app/mi-agenda/page.tsx
 src/app/mi-plan/[token]/page.tsx
