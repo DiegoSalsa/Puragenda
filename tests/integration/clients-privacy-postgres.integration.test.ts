@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import bcrypt from "bcrypt";
+import pg from "pg";
 import { NextRequest } from "next/server";
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -29,6 +30,12 @@ let appointmentSequence = 0;
 async function account(email = alice) {
   return prisma.clientPortalAccount.create({ data: { email, name: "Synthetic", passwordHash: await bcrypt.hash("Synthetic-Password-123", 4), emailVerifiedAt: new Date() } });
 }
+async function magicSession(email: string) {
+  const link = await portal.issueClientPortalMagicToken(email);
+  const session = await portal.consumeClientPortalAccessSession(link.token);
+  if (!session) throw new Error("Synthetic magic login failed");
+  return session;
+}
 async function appointment(email = alice, clientId?: string, businessId = "audit04-a", status: "COMPLETED" | "PENDING" | "CHECKED_IN" | "CANCELLED" | "NO_SHOW" = "COMPLETED") {
   const startTime = new Date(Date.UTC(2026, 0, 1, appointmentSequence++));
   return prisma.appointment.create({ data: { businessId, serviceId: `${businessId}-service`, clientId, customerName: "Synthetic", customerEmail: email, startTime, endTime: new Date(startTime.getTime() + 1800000), status } });
@@ -39,6 +46,34 @@ async function plan() {
 }
 function request(path: string, token?: string, body?: object) {
   return new NextRequest(`http://localhost${path}`, { method: body ? "POST" : "GET", headers: { ...(token ? { cookie: `${portal.CLIENT_PORTAL_COOKIE_NAME}=${token}` } : {}), "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
+}
+
+// Hold the real identity lock until both operations have reached PostgreSQL.
+// This makes the race reproducible without replacing any database operation.
+async function queuedIdentityOperations<T>(work: () => Promise<T>, waiting = 2) {
+  const gate = new pg.Client({ connectionString: raw });
+  await gate.connect();
+  let pending: Promise<T> | undefined;
+  try {
+    await gate.query("BEGIN");
+    await gate.query("SELECT pg_advisory_xact_lock(hashtextextended($1,4101))", [alice]);
+    pending = work();
+    void pending.catch(() => undefined);
+    const deadline = Date.now() + 4000;
+    let queued = false;
+    while (Date.now() < deadline) {
+      const result = await gate.query("SELECT count(*)::int n FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())");
+      if (result.rows[0].n >= waiting) { queued = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    expect(queued, "Both real transactions must reach the identity lock").toBe(true);
+    await gate.query("COMMIT");
+    return await pending;
+  } finally {
+    await gate.query("ROLLBACK");
+    await gate.end();
+    if (pending) await Promise.allSettled([pending]);
+  }
 }
 describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
   beforeEach(async () => {
@@ -64,14 +99,14 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect(await portal.resolveClientPortalSessionToken(token)).toBeNull();
   });
   it("04-01 creates opaque revocable sessions for legacy magic-link customers too", async () => {
-    const token = await portal.createClientPortalAccountSession(alice);
+    const token = await magicSession(alice);
     expect(token).toMatch(/^cps_/);
     expect(await portal.resolveClientPortalSessionToken(token)).toBe(alice);
     await portal.revokeClientPortalSessionToken(token);
     expect(await portal.resolveClientPortalSessionToken(token)).toBeNull();
   });
   it("04-01 changes the password and invalidates both session generations", async () => {
-    await account(); const legacy = portal.createClientPortalSessionToken(alice), modern = await portal.createClientPortalAccountSession(alice);
+    await account(); const legacy = portal.createClientPortalSessionToken(alice), modern = await magicSession(alice);
     expect(await portal.changeClientPortalPassword(alice, "Synthetic-Password-123", "New-Synthetic-Password-123")).toBe(true);
     expect(await portal.resolveClientPortalSessionToken(legacy)).toBeNull();
     expect(await portal.resolveClientPortalSessionToken(modern)).toBeNull();
@@ -84,7 +119,7 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect(await portal.resetClientPortalPassword(reset.token, "Another-Synthetic-123")).toBeNull();
   });
   it("04-01 concurrent renewal and logout never resurrect a token", async () => {
-    await account(); const token = await portal.createClientPortalAccountSession(alice);
+    await account(); const token = await magicSession(alice);
     await Promise.all([portal.renewClientPortalSessionToken(token), portal.revokeClientPortalSessionToken(token)]);
     expect(await portal.resolveClientPortalSessionToken(token)).toBeNull();
     expect(await portal.renewClientPortalSessionToken(token)).toBe(false);
@@ -97,6 +132,124 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     if (!first.ok || !second.ok) throw new Error("Synthetic registration failed");
     expect(await portal.verifyClientPortalAccount(first.token)).toBeNull();
     expect(await portal.verifyClientPortalAccount(second.token)).toBe(alice);
+  });
+  it("closure rejects a delayed reset process minting a session without credential proof after a newer reset", async () => {
+    await account();
+    const first = await portal.issueClientPortalPasswordResetToken(alice);
+    expect(await portal.resetClientPortalPassword(first.token, "First-Reset-Synthetic-123")).toBe(alice);
+    const firstProof = await portal.verifyClientPortalCredentials(alice, "First-Reset-Synthetic-123");
+    expect(firstProof).toBeTruthy();
+    // Request A has rotated credentials, then pauses before its former naked
+    // session-creation call; B completes a newer rotation before A resumes.
+    const second = await portal.issueClientPortalPasswordResetToken(alice);
+    expect(await portal.resetClientPortalPassword(second.token, "Second-Reset-Synthetic-123")).toBe(alice);
+    await expect(portal.createClientPortalAccountSession(alice, undefined, undefined as unknown as string)).rejects.toThrow("PORTAL_CREDENTIAL_CHANGED");
+    await expect(portal.createClientPortalAccountSession(alice, undefined, firstProof!.passwordHash)).rejects.toThrow("PORTAL_CREDENTIAL_CHANGED");
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+  });
+  it("closure activation cannot silently upgrade a pre-activation magic session", async () => {
+    await appointment();
+    const registered = await portal.registerClientPortalAccount({ email: alice, name: "Synthetic", phone: "123456789", password: "Synthetic-Password-123" });
+    if (!registered.ok) throw new Error("Synthetic registration failed");
+    const magic = await portal.issueClientPortalMagicToken(alice);
+    const session = (await portal.consumeClientPortalAccessSession(magic.token))!;
+    const legacy = portal.createClientPortalSessionToken(alice);
+    expect(await portal.resolveClientPortalAccountToken(session)).toBeNull();
+    expect(await portal.verifyClientPortalAccount(registered.token)).toBe(alice);
+    expect(await portal.resolveClientPortalAccountToken(session)).toBeNull();
+    expect(await portal.resolveClientPortalSessionToken(session)).toBeNull();
+    expect(await portal.resolveClientPortalSessionToken(legacy)).toBeNull();
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+    const fresh = await portal.issueClientPortalMagicToken(alice);
+    const freshSession = (await portal.consumeClientPortalAccessSession(fresh.token))!;
+    expect(await portal.resolveClientPortalAccountToken(freshSession)).toMatchObject({ email: alice });
+  });
+  it("closure two simultaneous password resets serialize and consume only one credential generation", async () => {
+    await account();
+    const first = await portal.issueClientPortalPasswordResetToken(alice), second = await portal.issueClientPortalPasswordResetToken(alice);
+    const results = await queuedIdentityOperations(() => Promise.all([
+      portal.resetClientPortalPassword(first.token, "First-Reset-Synthetic-123"),
+      portal.resetClientPortalPassword(second.token, "Second-Reset-Synthetic-123"),
+    ]));
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await portal.verifyClientPortalCredentials(alice, "Synthetic-Password-123")).toBeNull();
+    expect(await portal.verifyClientPortalCredentials(alice, results[0] ? "First-Reset-Synthetic-123" : "Second-Reset-Synthetic-123")).toBeTruthy();
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+    expect(await prisma.clientPortalToken.count({ where: { email: alice } })).toBe(0);
+    expect(await portal.resetClientPortalPassword(first.token, "Replay-Synthetic-123")).toBeNull();
+    expect(await portal.resetClientPortalPassword(second.token, "Replay-Synthetic-123")).toBeNull();
+  });
+  it("closure simultaneous password change and reset leave no old sessions or partial revocations", async () => {
+    await account();
+    const magic = await portal.issueClientPortalMagicToken(alice), modern = (await portal.consumeClientPortalAccessSession(magic.token))!, legacy = portal.createClientPortalSessionToken(alice);
+    const reset = await portal.issueClientPortalPasswordResetToken(alice);
+    const results = await queuedIdentityOperations(() => Promise.all([
+      portal.changeClientPortalPassword(alice, "Synthetic-Password-123", "Changed-Synthetic-123"),
+      portal.resetClientPortalPassword(reset.token, "Reset-Synthetic-123"),
+    ]));
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await portal.resolveClientPortalSessionToken(modern)).toBeNull();
+    expect(await portal.resolveClientPortalSessionToken(legacy)).toBeNull();
+    expect(await portal.verifyClientPortalCredentials(alice, "Synthetic-Password-123")).toBeNull();
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+    expect(await prisma.clientPortalToken.count({ where: { email: alice } })).toBe(0);
+  });
+  it.each(["login-first", "rotation-first"])("closure login/session creation versus credential revocation: %s", async order => {
+    const original = await account();
+    const create = () => portal.createClientPortalAccountSession(alice, undefined, original.passwordHash);
+    const rotate = () => portal.changeClientPortalPassword(alice, "Synthetic-Password-123", "Rotated-Synthetic-123");
+    const results = await queuedIdentityOperations(() => Promise.allSettled(order === "login-first" ? [create(), rotate()] : [rotate(), create()]));
+    const session = results[order === "login-first" ? 0 : 1];
+    if (session.status === "fulfilled" && typeof session.value === "string") expect(await portal.resolveClientPortalSessionToken(session.value)).toBeNull();
+    else expect(session.status).toBe("rejected");
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+    await expect(create()).rejects.toThrow("PORTAL_CREDENTIAL_CHANGED");
+    expect(await portal.verifyClientPortalCredentials(alice, "Synthetic-Password-123")).toBeNull();
+  });
+  it("closure activation serializes with consumption of an earlier magic link", async () => {
+    await appointment();
+    const registered = await portal.registerClientPortalAccount({ email: alice, name: "Synthetic", phone: "123456789", password: "Synthetic-Password-123" });
+    if (!registered.ok) throw new Error("Synthetic registration failed");
+    const magic = await portal.issueClientPortalMagicToken(alice);
+    const [, session] = await queuedIdentityOperations(() => Promise.all([portal.verifyClientPortalAccount(registered.token), portal.consumeClientPortalAccessSession(magic.token)]));
+    if (session) expect(await portal.resolveClientPortalSessionToken(session)).toBeNull();
+    expect(await prisma.clientPortalSession.count({ where: { email: alice } })).toBe(0);
+  });
+  it("closure a PostgreSQL failure rolls back the password, consumed token and all session revocations", async () => {
+    await account();
+    const magic = await portal.issueClientPortalMagicToken(alice), session = (await portal.consumeClientPortalAccessSession(magic.token))!, legacy = portal.createClientPortalSessionToken(alice);
+    const reset = await portal.issueClientPortalPasswordResetToken(alice);
+    const db = new pg.Client({ connectionString: raw }); await db.connect();
+    try {
+      await db.query(`CREATE FUNCTION audit04_fail_token_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.email='alice@audit04.invalid' THEN RAISE EXCEPTION 'AUDIT04_SYNTHETIC_FAILURE'; END IF; RETURN OLD; END $$; CREATE TRIGGER audit04_fail_token_delete BEFORE DELETE ON "ClientPortalToken" FOR EACH ROW EXECUTE FUNCTION audit04_fail_token_delete()`);
+      await expect(portal.resetClientPortalPassword(reset.token, "Rejected-Synthetic-123")).rejects.toThrow();
+      expect(await portal.verifyClientPortalCredentials(alice, "Synthetic-Password-123")).toBeTruthy();
+      expect(await portal.resolveClientPortalSessionToken(session)).toBe(alice);
+      expect(await portal.resolveClientPortalSessionToken(legacy)).toBe(alice);
+      expect((await prisma.clientPortalToken.findUniqueOrThrow({ where: { tokenHash: portal.hashClientPortalToken(reset.token) } })).consumedAt).toBeNull();
+      expect(await prisma.clientPortalIdentity.findUnique({ where: { email: alice } })).toBeNull();
+    } finally {
+      await db.query('DROP TRIGGER IF EXISTS audit04_fail_token_delete ON "ClientPortalToken"; DROP FUNCTION IF EXISTS audit04_fail_token_delete()');
+      await db.end();
+    }
+  });
+  it("closure activation rolls back verification if PostgreSQL cannot revoke a previous session", async () => {
+    await appointment();
+    const registered = await portal.registerClientPortalAccount({ email: alice, name: "Synthetic", phone: "123456789", password: "Synthetic-Password-123" });
+    if (!registered.ok) throw new Error("Synthetic registration failed");
+    const session = await magicSession(alice);
+    const db = new pg.Client({ connectionString: raw }); await db.connect();
+    try {
+      await db.query(`CREATE FUNCTION audit04_fail_session_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF OLD.email='alice@audit04.invalid' THEN RAISE EXCEPTION 'AUDIT04_SYNTHETIC_FAILURE'; END IF; RETURN OLD; END $$; CREATE TRIGGER audit04_fail_session_delete BEFORE DELETE ON "ClientPortalSession" FOR EACH ROW EXECUTE FUNCTION audit04_fail_session_delete()`);
+      await expect(portal.verifyClientPortalAccount(registered.token)).rejects.toThrow();
+      expect((await prisma.clientPortalAccount.findUniqueOrThrow({ where: { email: alice } })).emailVerifiedAt).toBeNull();
+      expect(await portal.resolveClientPortalSessionToken(session)).toBe(alice);
+      expect(await portal.resolveClientPortalAccountToken(session)).toBeNull();
+      expect((await prisma.clientPortalToken.findUniqueOrThrow({ where: { tokenHash: portal.hashClientPortalToken(registered.token) } })).consumedAt).toBeNull();
+    } finally {
+      await db.query('DROP TRIGGER IF EXISTS audit04_fail_session_delete ON "ClientPortalSession"; DROP FUNCTION IF EXISTS audit04_fail_session_delete()');
+      await db.end();
+    }
   });
   it("04-02 CRM email changes do not transfer historical appointments", async () => {
     const client = await prisma.client.create({ data: { businessId: "audit04-a", name: "Synthetic", email: alice } });
@@ -148,14 +301,14 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect((await profile(request("/api/client-portal/profile", token))).status).toBe(401);
   });
   it.each(["expiresAt", "lastUsedAt", "createdAt"] as const)("never resolves or renews a session beyond its %s limit", async field => {
-    const token = await portal.createClientPortalAccountSession(alice);
+    const token = await magicSession(alice);
     const days = field === "createdAt" ? 91 : field === "lastUsedAt" ? 31 : 1;
     await prisma.clientPortalSession.update({ where: { tokenHash: portal.hashClientPortalToken(token) }, data: { [field]: new Date(Date.now() - days * 86400000) } });
     expect(await portal.resolveClientPortalSessionToken(token)).toBeNull();
     expect(await portal.renewClientPortalSessionToken(token)).toBe(false);
   });
   it("keeps the absolute session deadline unchanged during renewal", async () => {
-    const token = await portal.createClientPortalAccountSession(alice);
+    const token = await magicSession(alice);
     const before = await prisma.clientPortalSession.findUniqueOrThrow({ where: { tokenHash: portal.hashClientPortalToken(token) } });
     expect(await portal.renewClientPortalSessionToken(token)).toBe(true);
     const after = await prisma.clientPortalSession.findUniqueOrThrow({ where: { id: before.id } });
@@ -194,7 +347,7 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
   it.each([cancelAppointment, rescheduleAppointment])("04-02 the same owner rule protects cancellation and rescheduling", async endpoint => {
     const client = await prisma.client.create({ data: { businessId: "audit04-a", name: "Synthetic", email: alice } });
     const a = await appointment(alice, client.id); await prisma.client.update({ where: { id: client.id }, data: { email: bob } });
-    const token = await portal.createClientPortalAccountSession(bob);
+    const token = await magicSession(bob);
     const response = await endpoint(request("/api/client-portal/appointments/foreign", token, {}), { params: Promise.resolve({ appointmentId: a.id }) });
     expect(response.status).toBe(404); expect(await response.json()).toEqual({ error: "Cita no encontrada" });
     expect((await prisma.appointment.findUniqueOrThrow({ where: { id: a.id } })).status).toBe("COMPLETED");
@@ -239,12 +392,12 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect((await prisma.client.findUniqueOrThrow({ where: { id: c.id } })).rut).toBe("INTL-SYNTHETIC-123");
   });
   it.each(["pause", "resume", "cancel"])("04-08 another customer's authenticated session cannot %s a plan", async action => {
-    const p = await plan(), session = await portal.createClientPortalAccountSession(bob);
+    const p = await plan(), session = await magicSession(bob);
     const response = await planAction(request("/api/mi-plan/foreign/actions", session, { email: alice, action }), { params: Promise.resolve({ token: p.managementToken! }) });
     expect(response.status).toBe(404); expect(JSON.stringify(await response.json())).not.toContain("Synthetic");
   });
   it("04-08 valid legacy locators require the owner; expiry, rotation and revocation reject old paths", async () => {
-    const p = await plan(), session = await portal.createClientPortalAccountSession(alice);
+    const p = await plan(), session = await magicSession(alice);
     const read = (token: string) => readPlan(request(`/api/mi-plan/${token}`, session), { params: Promise.resolve({ token }) });
     expect((await read(p.managementToken!)).status).toBe(200);
     await prisma.recurringBooking.update({ where: { id: p.id }, data: { managementTokenExpiresAt: new Date(Date.now() - 1000) } });
@@ -258,7 +411,7 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect((await read(token)).status).toBe(404); expect((await read(p.id)).status).toBe(200);
   });
   it("04-08 a plan's approved deposits survive attempted pause and cancellation", async () => {
-    const p = await plan(), session = await portal.createClientPortalAccountSession(alice);
+    const p = await plan(), session = await magicSession(alice);
     const startTime = new Date(Date.now() + 86400000);
     const a = await prisma.appointment.create({ data: { businessId: p.businessId, serviceId: p.serviceId, recurringBookingId: p.id, customerName: "Synthetic", customerEmail: alice, startTime, endTime: new Date(startTime.getTime() + 1800000), status: "CONFIRMED", paymentStatus: "APPROVED", depositAmount: 1 } });
     for (const action of ["pause", "cancel"]) expect((await planAction(request("/api/mi-plan/owner/actions", session, { action, pauseUntil: "2027-01-01" }), { params: Promise.resolve({ token: p.id }) })).status).toBe(409);
@@ -266,7 +419,7 @@ describe.skipIf(!enabled)("audit 04 clients and privacy PostgreSQL", () => {
     expect((await prisma.recurringBooking.findUniqueOrThrow({ where: { id: p.id } })).status).toBe("ACTIVE");
   });
   it("04-08 concurrent pause and resume requests produce one transition without duplicate sessions", async () => {
-    const p = await plan(), session = await portal.createClientPortalAccountSession(alice);
+    const p = await plan(), session = await magicSession(alice);
     const act = (action: string) => planAction(request("/api/mi-plan/owner/actions", session, { action, pauseUntil: "2027-01-01" }), { params: Promise.resolve({ token: p.id }) });
     const paused = await Promise.all([act("pause"), act("pause")]); expect(paused.filter(r => r.status === 200)).toHaveLength(1);
     const resumed = await Promise.all([act("resume"), act("resume")]); expect(resumed.filter(r => r.status === 200)).toHaveLength(1);

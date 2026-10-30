@@ -73,9 +73,9 @@ describe("acceso sin contraseña al portal del cliente", () => {
   });
 
   it("crea una sesión opaca, revocable y de larga duración para una cuenta activa", async () => {
-    prismaMock.clientPortalAccount.findUnique.mockResolvedValue({ id: "account-1", emailVerifiedAt: new Date() });
+    prismaMock.clientPortalAccount.findUnique.mockResolvedValue({ id: "account-1", emailVerifiedAt: new Date(), passwordHash: "synthetic-verified-hash" });
 
-    const token = await createClientPortalAccountSession("client@example.com");
+    const token = await createClientPortalAccountSession("client@example.com", undefined, "synthetic-verified-hash");
 
     expect(token).toMatch(/^cps_[A-Za-z0-9_-]{43}$/);
     expect(token).not.toContain("client@example.com");

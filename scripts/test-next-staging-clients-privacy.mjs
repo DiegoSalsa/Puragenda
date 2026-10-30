@@ -127,12 +127,46 @@ try {
   check("HTTP rejects a legacy cookie after logout", (await call("/api/client-portal/profile", undefined, legacyCookie)).response.status === 401);
   r = await call("/api/client-portal/profile/password", { currentPassword: password, newPassword: changedPassword }, aliceCookie, "PATCH");
   check("Password change closes previous sessions and requires a new login", r.response.status === 200 && (await call("/api/client-portal/profile", undefined, aliceCookie)).response.status === 401);
+  check("Password change emits no replacement session or orphan row", !/=cps_/.test(r.response.headers.get("set-cookie") ?? "") && await db.clientPortalSession.count({ where: { email: alice } }) === 0);
+  check("The previous password cannot log in after a change", (await call("/api/client-portal/login", { email: alice, password })).response.status === 401);
   aliceCookie = await portalLogin(alice, changedPassword);
   const reset = await tokenRecord(alice, "RESET_PASSWORD", 60);
   r = await call("/api/client-portal/reset-password", { token: reset, password: resetPassword });
   check("Password reset revokes prior sessions", r.response.status === 200 && (await call("/api/client-portal/profile", undefined, aliceCookie)).response.status === 401);
+  check("Password reset emits no replacement session or orphan row", !/=cps_/.test(r.response.headers.get("set-cookie") ?? "") && await db.clientPortalSession.count({ where: { email: alice } }) === 0);
+  check("The previous password cannot log in after a reset", (await call("/api/client-portal/login", { email: alice, password: changedPassword })).response.status === 401);
   check("Password reset token is single use", (await call("/api/client-portal/reset-password", { token: reset, password: changedPassword })).response.status === 400);
   aliceCookie = await portalLogin(alice, resetPassword);
+  // A separate synthetic customer exercises registration/activation over TCP.
+  // Email transport uses the existing no-key mock. Plain activation/reset
+  // credentials are controlled fixtures, never recovered from private logs.
+  await db.apiRateLimitBucket.deleteMany({});
+  const pendingEmail = `pending-${suffix}@audit04.invalid`;
+  await db.appointment.create({ data: { businessId, locationId: primary.id, serviceId: service.id, customerName: "Synthetic pending", customerEmail: pendingEmail, startTime: new Date("2026-01-01T08:00:00Z"), endTime: new Date("2026-01-01T08:30:00Z"), status: "COMPLETED" } });
+  const beforeActivationMagic = await tokenRecord(pendingEmail);
+  const beforeActivationResponse = await call(`/mi-agenda/entrar/${beforeActivationMagic}`);
+  const beforeActivationCookie = cookies(beforeActivationResponse.response);
+  check("Legacy magic login has portal access before account activation", beforeActivationCookie.includes("=cps_") && (await call("/api/client-portal/profile", undefined, beforeActivationCookie)).response.status === 404);
+  r = await call("/api/client-portal/register", { email: pendingEmail, password, name: "Synthetic registered", phone: "123456789" });
+  check("HTTP registration persists a pending account without exposing credentials", r.response.status === 200 && !/tokenHash|passwordHash|cps_/.test(r.text) && (await db.clientPortalAccount.findUniqueOrThrow({ where: { email: pendingEmail } })).emailVerifiedAt === null);
+  check("HTTP registration issues a dedicated activation token", await db.clientPortalToken.count({ where: { email: pendingEmail, purpose: "VERIFY_ACCOUNT", authenticationIntent: true } }) === 1);
+  check("A pending account cannot log in with its password", (await call("/api/client-portal/login", { email: pendingEmail, password })).response.status === 401);
+  const activation = await tokenRecord(pendingEmail, "VERIFY_ACCOUNT", 60);
+  const outstandingMagic = await tokenRecord(pendingEmail);
+  r = await call(`/mi-agenda/activar/${activation}`, undefined, beforeActivationCookie);
+  check("HTTP activation verifies the account and requires a fresh login", r.response.status === 303 && r.response.headers.get("location").includes("cuenta=activada") && !/=cps_/.test(r.response.headers.get("set-cookie") ?? "") && !!(await db.clientPortalAccount.findUniqueOrThrow({ where: { email: pendingEmail } })).emailVerifiedAt);
+  check("A pre-activation cookie cannot gain verified-profile access", (await call("/api/client-portal/profile", undefined, beforeActivationCookie)).response.status === 401 && await db.clientPortalSession.count({ where: { email: pendingEmail } }) === 0);
+  check("Activation also invalidates outstanding older magic links", !(await call(`/mi-agenda/entrar/${outstandingMagic}`)).response.headers.has("set-cookie"));
+  check("HTTP activation is single use", (await call(`/mi-agenda/activar/${activation}`)).response.headers.get("location").includes("activacion-invalida"));
+  const activatedCookie = await portalLogin(pendingEmail);
+  check("Activated credentials can log in and read their own profile", (await call("/api/client-portal/profile", undefined, activatedCookie)).response.status === 200);
+  r = await call("/api/client-portal/forgot-password", { email: pendingEmail });
+  check("HTTP forgot-password preserves its generic response and reset purpose", r.response.status === 200 && await db.clientPortalToken.count({ where: { email: pendingEmail, purpose: "RESET_PASSWORD" } }) === 1);
+  const pendingReset = await tokenRecord(pendingEmail, "RESET_PASSWORD", 60);
+  r = await call("/api/client-portal/reset-password", { token: pendingReset, password: resetPassword });
+  check("HTTP reset after activation revokes all previous access and pending tokens", r.response.status === 200 && (await call("/api/client-portal/profile", undefined, activatedCookie)).response.status === 401 && await db.clientPortalSession.count({ where: { email: pendingEmail } }) === 0 && await db.clientPortalToken.count({ where: { email: pendingEmail } }) === 0);
+  check("Reset activated credentials can log in again", (await call("/api/client-portal/profile", undefined, await portalLogin(pendingEmail, resetPassword))).response.status === 200);
+  await db.apiRateLimitBucket.deleteMany({});
   if (process.argv.includes("--browser")) {
     const playwrightModulePath = process.env.AUDIT04_PLAYWRIGHT_MODULE;
     const { chromium } = await import(playwrightModulePath ? pathToFileURL(path.resolve(playwrightModulePath)).href : "playwright");

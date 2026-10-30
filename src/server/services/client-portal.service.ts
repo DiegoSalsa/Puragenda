@@ -178,7 +178,11 @@ export async function verifyClientPortalAccount(token: string) {
     where: { email, emailVerifiedAt: null },
     data: { emailVerifiedAt: new Date() },
   });
-  return updated.count === 1 ? email : null;
+  if (updated.count !== 1) return null;
+  // A session issued before activation must not gain verified-account access
+  // merely because this account's verification flag changes.
+  await invalidatePortalIdentity(tx, email);
+  return email;
   });
 }
 
@@ -333,8 +337,11 @@ export function verifyClientPortalSessionToken(token: string): string | null {
 export async function createClientPortalAccountSession(
   emailInput: string,
   maxAgeSeconds = CLIENT_PORTAL_SESSION_SECONDS,
-  expectedPasswordHash?: string,
+  expectedPasswordHash: string,
 ): Promise<string> {
+  // Every password-authenticated caller must carry the exact credential it
+  // verified. A delayed caller cannot silently authenticate a newer generation.
+  if (!expectedPasswordHash) throw new Error("PORTAL_CREDENTIAL_CHANGED");
   const email = normalizeClientPortalEmail(emailInput);
   return withPortalIdentity(email, tx => createPortalSession(tx, email, maxAgeSeconds, expectedPasswordHash));
 }

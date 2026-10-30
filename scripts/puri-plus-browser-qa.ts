@@ -395,7 +395,7 @@ async function main() {
     assert.equal((await prisma.cfConsent.findFirstOrThrow({ where: { businessId: f.businessId, clientId: client.id } })).state, "PENDING_VERIFICATION");
     const portalAccount = await prisma.clientPortalAccount.create({ data: { name: "Synthetic verified account", email: portalEmail, passwordHash: "synthetic-no-login", emailVerifiedAt: new Date() } });
     portalAccountId = portalAccount.id;
-    await context.addCookies([{ name: CLIENT_PORTAL_COOKIE_NAME, value: await createClientPortalAccountSession(portalEmail), url: origin }]);
+    await context.addCookies([{ name: CLIENT_PORTAL_COOKIE_NAME, value: await createClientPortalAccountSession(portalEmail, undefined, portalAccount.passwordHash), url: origin }]);
     await bookingPage.goto(origin + "/mi-agenda", { waitUntil: "domcontentloaded" });
     await bookingPage.getByRole("button", { name: "Acepto recibir correos", exact: true }).click();
     await bookingPage.getByText("Consentimiento registrado", { exact: true }).waitFor();
