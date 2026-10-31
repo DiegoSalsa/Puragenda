@@ -50,7 +50,7 @@ async function getAuthenticatedSubscription(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const blocked = billingLimiter.check(request);
+  const blocked = await billingLimiter.check(request);
   if (blocked) return blocked;
 
   try {
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const blocked = billingLimiter.check(request);
+  const blocked = await billingLimiter.check(request);
   if (blocked) return blocked;
 
   try {

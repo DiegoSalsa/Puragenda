@@ -190,7 +190,8 @@ export const clientPortalAccountEmailLimiter = distributedRateLimit({
 });
 
 /** Billing: 5 attempts per 15 minutes */
-export const billingLimiter = rateLimit({
+export const billingLimiter = distributedRateLimit({
+  namespace: "billing", trustedProxyOnly: true,
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: "Demasiados intentos de pago. Espera 15 minutos.",

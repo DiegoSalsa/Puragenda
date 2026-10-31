@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   let bundleClaim: { businessId: string; key: string } | null = null;
   try {
     // Rate limiting
-    const blocked = billingLimiter.check(request);
+    const blocked = await billingLimiter.check(request);
     if (blocked) return blocked;
 
     // 1. Verify authenticated session
