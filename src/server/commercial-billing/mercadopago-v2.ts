@@ -6,7 +6,10 @@ import { commercialJson, materializeCommercialEntitlements } from "@/server/serv
 import { commercialSelectionSchema, type CommercialSelection } from "@/server/services/commercial-trial.service";
 import { isV2Plan } from "@/server/services/commercial-plan-access";
 import { billingPeriodEnd, changeTiming, expansionAmount, includedVat, v2Quote, V2_OPEN_STATUSES } from "@/core/commercial-billing-policy";
-import { createMpV2Provider, MpV2Provider, mpV2InvoiceSchema, type MpV2Invoice, type MpV2Subscription } from "./mercadopago-v2-provider";
+import { createMpV2Provider, MpV2Provider, mpV2InvoiceSchema, type MpV2Invoice, type MpV2Subscription, type MpV2Payment } from "./mercadopago-v2-provider";
+import { refreshMpV2Dunning, refreshMpV2DunningInTransaction } from "./mercadopago-v2-dunning";
+import { hasPendingCommercialBenefit } from "@/server/services/commercial-benefit-hold";
+import { incrementPaidReferrals } from "@/server/services/affiliate.service";
 
 const savedQuote = z.object({ selection: commercialSelectionSchema, quote: z.unknown(),
   acceptedAt: z.coerce.date(), actorId: z.string(), periodStart: z.coerce.date().optional(), periodEnd: z.coerce.date().optional(), previousSelection: commercialSelectionSchema.optional() });
@@ -65,7 +68,9 @@ export async function prepareMpV2Operation(input: { businessId: string; actorId:
   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(input.idempotencyKey)) throw new Error("IDEMPOTENCY_KEY_REQUIRED");
   return prisma.$transaction(async tx => {
     await lock(tx, input.businessId);
-    const { sub } = await runtimeContract(tx, input.businessId, input.actorId);
+    const { sub, business } = await runtimeContract(tx, input.businessId, input.actorId);
+    if(hasPendingCommercialBenefit(business.subscription)) throw new Error("V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED");
+    if (await tx.commercialBillingOperation.findFirst({where:{businessId:input.businessId,failureCode:{endsWith:"_REVIEW_REQUIRED"}}})) throw new Error("V2_COMMERCIAL_REVIEW_REQUIRED");
     const selection = input.action === "SUBSCRIBE" ? selectionOf(sub) : commercialSelectionSchema.parse(input.selection);
     const quote = v2Quote(selection), inputHash = commercialHash({ action: input.action, selection });
     const key = `mp-v2:${input.businessId}:${input.idempotencyKey}`;
@@ -120,7 +125,10 @@ export async function executeMpV2Operation(businessId: string, id: string, payer
   await provider.checkAccount();
   if (!z.email().safeParse(payerEmail).success) throw new Error("V2_PAYER_EMAIL_INVALID");
   const claimed = await prisma.$transaction(async tx => {
-    await lock(tx, businessId); const { sub } = await runtimeContract(tx, businessId);
+    await lock(tx, businessId); const { sub, business } = await runtimeContract(tx, businessId);
+    if(hasPendingCommercialBenefit(business.subscription)) throw new Error("V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED");
+    if(await tx.commercialBillingOperation.findFirst({where:{businessId,failureCode:{endsWith:"_REVIEW_REQUIRED"}}})) throw new Error("V2_COMMERCIAL_REVIEW_REQUIRED");
+    if(sub.renewalCancellationStatus && !(op.kind === "NEW_SUBSCRIPTION" && sub.renewalCancellationStatus === "CANCELLED_VERIFIED")) throw new Error("V2_CANCELLATION_PENDING");
     if (sub.snapshotHash !== op.previousContractHash) throw new Error("V2_CONTRACT_CHANGED");
     if (op.kind === "CONTRACT_CHANGE" && (!sub.periodEnd || sub.periodEnd <= new Date())) throw new Error("V2_CHANGE_PERIOD_EXPIRED");
     return tx.commercialBillingOperation.updateMany({ where: { id, status: "PREPARED" }, data: { status: "EXECUTING", executionStartedAt: new Date() } });
@@ -201,7 +209,17 @@ async function applySelection(tx: Prisma.TransactionClient, sub: CommercialSubsc
   await materializeCommercialEntitlements(tx, updated, now);
   return updated;
 }
-const paymentState = (status: string) => status === "approved" ? "CONFIRMED" : status === "refunded" ? "REFUNDED" : status === "charged_back" ? "CHARGEBACK" : ["rejected", "cancelled"].includes(status) ? "REJECTED" : "PENDING";
+const paymentState = (payment: MpV2Payment) => payment.transaction_amount_refunded > 0 && payment.transaction_amount_refunded >= payment.transaction_amount ? "REFUNDED"
+  : payment.status === "approved" ? "CONFIRMED" : payment.status === "refunded" ? "REFUNDED" : payment.status === "charged_back" ? "CHARGEBACK" : ["rejected", "cancelled"].includes(payment.status) ? "REJECTED" : "PENDING";
+async function partialRefundReview(tx:Prisma.TransactionClient,op:CommercialBillingOperation,payment:MpV2Payment,start:Date,end:Date,now:Date) {
+  const partial=(payment.transaction_amount_refunded>0 && payment.transaction_amount_refunded<payment.transaction_amount) || (payment.transaction_amount_refunded===0 && payment.status_detail==="partially_refunded");
+  if(!partial) return false;
+  const key=`${op.environment}:${payment.id}`,eventId=`${key}:PARTIAL_REFUND:${payment.transaction_amount_refunded}`;
+  const event=await tx.commercialEvent.upsert({where:{source_eventId:{source:"mp_v2_review",eventId}},update:{},create:{businessId:op.businessId,subscriptionId:op.subscriptionId,source:"mp_v2_review",eventId,providerReference:key,operation:"PARTIAL_REFUND_REVIEW",outcome:"RECEIVED",occurredAt:now,details:{operationId:op.id,paymentId:payment.id,refunded:payment.transaction_amount_refunded,gross:payment.transaction_amount,periodStart:start.toISOString(),periodEnd:end.toISOString()}}});
+  await tx.commercialPaymentEvidence.upsert({where:{provider_paymentId:{provider:"MERCADO_PAGO",paymentId:key}},update:{},create:{businessId:op.businessId,operationId:op.id,provider:"MERCADO_PAGO",paymentId:key,status:"PENDING",origin:`${op.environment}_PROVIDER`,amountMinor:payment.transaction_amount,currencyCode:"CLP",periodStart:start,periodEnd:end,occurredAt:payment.date_last_updated,providerSubscriptionId:op.providerSubscriptionId!,eventId:event.id}});
+  await tx.commercialBillingOperation.update({where:{id:op.id},data:{failureCode:"V2_PARTIAL_REFUND_REVIEW_REQUIRED"}});
+  return true;
+}
 export async function reconcileMpV2Invoice(invoice: MpV2Invoice, provider = createMpV2Provider(), now = new Date()) {
   const remote = await provider.subscription(invoice.preapproval_id), root = await subscriptionRoot(remote, provider);
   const rootCycle = quoteOf(root).selection.billingCycle;
@@ -209,18 +227,24 @@ export async function reconcileMpV2Invoice(invoice: MpV2Invoice, provider = crea
   if (!invoice.payment?.id) return { status: "PENDING" };
   const payment = await provider.payment(invoice.payment.id);
   if (payment.external_reference && payment.external_reference !== rootReference(root.id)) throw new Error("V2_PAYMENT_BINDING_MISMATCH");
-  const state = paymentState(payment.status), key = `${provider.config.environment}:${payment.id}`;
+  const state = paymentState(payment), key = `${provider.config.environment}:${payment.id}`;
   return prisma.$transaction(async tx => {
     await lock(tx, root.businessId); const { sub } = await runtimeContract(tx, root.businessId);
     if (sub.externalSubscriptionId !== remote.id) throw new Error("V2_CONTRACT_BINDING_MISMATCH");
     const candidates = await tx.commercialBillingOperation.findMany({ where: { subscriptionId: sub.id, environment: provider.config.environment, providerSubscriptionId: remote.id,
       kind: "CONTRACT_CHANGE", effectiveAt: { lte: invoice.debit_date }, OR: [{ status: { in: ["SCHEDULED", "APPLIED"] } }, { status: "CANCELLED", providerOperationId: remote.id }] }, orderBy: { effectiveAt: "desc" } });
-    const op = candidates[0] ?? root, { selection } = quoteOf(op);
+    const priorEvidence = await tx.commercialPaymentEvidence.findUnique({ where: { provider_paymentId: { provider: "MERCADO_PAGO", paymentId: key } }, include: { operation: true } });
+    // A refund/review must not retroactively rebind historical invoices to a
+    // different quote. The first canonical association is immutable.
+    const op = priorEvidence?.operation ?? candidates[0] ?? root, { selection } = quoteOf(op);
+    if (op.businessId !== root.businessId || op.subscriptionId !== sub.id || op.providerSubscriptionId !== remote.id || op.environment !== provider.config.environment) throw new Error("V2_EVIDENCE_CONFLICT");
     if (invoice.transaction_amount !== op.recurringAmountMinor || payment.transaction_amount !== invoice.transaction_amount) throw new Error("V2_PAYMENT_AMOUNT_MISMATCH");
     if (invoice.debit_date.getTime() < root.effectiveAt.getTime() - 60_000 || invoice.debit_date > now || (state === "CONFIRMED" && (!payment.date_approved || payment.date_approved > now))) throw new Error("V2_PAYMENT_PERIOD_MISMATCH");
     const end = billingPeriodEnd(invoice.debit_date, selection.billingCycle, root.effectiveAt.getUTCDate());
     const prior = await tx.commercialPaymentEvidence.findUnique({ where: { provider_paymentId: { provider: "MERCADO_PAGO", paymentId: key } } });
     if (prior && (prior.operationId !== op.id || prior.businessId !== root.businessId || prior.amountMinor !== payment.transaction_amount || +prior.periodStart !== +invoice.debit_date)) throw new Error("V2_EVIDENCE_CONFLICT");
+    if(await partialRefundReview(tx,op,payment,invoice.debit_date,end,now)) return {status:prior?.status ?? "PENDING",reviewRequired:true};
+    if(state === "CONFIRMED" && await tx.commercialEvent.findFirst({where:{businessId:root.businessId,source:"mp_v2_review",operation:"PARTIAL_REFUND_REVIEW",providerReference:key}})) return {status:prior?.status ?? "PENDING",reviewRequired:true};
     if (prior?.status === state || (prior?.status === "CONFIRMED" && ["PENDING", "REJECTED"].includes(state)) || (prior && payment.date_last_updated < prior.occurredAt)) return { status: prior!.status, duplicate: true };
     if (prior && ["REFUNDED", "CHARGEBACK"].includes(prior.status) && state === "CONFIRMED") return { status: prior.status, duplicate: true };
     const eventId = `${key}:${state}`, newer = !sub.periodStart || invoice.debit_date >= sub.periodStart;
@@ -234,55 +258,67 @@ export async function reconcileMpV2Invoice(invoice: MpV2Invoice, provider = crea
       // Never undo an expansion paid later in the same recurring period.
       const currentExpansion = sub.periodStart && +sub.periodStart === +invoice.debit_date && sub.totalPriceClp! > op.recurringAmountMinor;
       const data = { status: "ACTIVE" as const, periodStart: invoice.debit_date, periodEnd: end, renewalAt: sub.renewalCancellationStatus === "CANCELLED_VERIFIED" ? null : end,
-        lastPaymentStatus: "CONFIRMED", lastPaymentAt: payment.date_approved!, lastPaymentEventId: event.id, lastReconciledAt: now, lastReconciledEventId: event.id };
+        lastPaymentStatus: "CONFIRMED", lastPaymentAt: payment.date_approved!, lastPaymentEventId: event.id, lastReconciledAt: now, lastReconciledEventId: event.id, gracePeriodEndsAt: null };
       if (currentExpansion) { const updated = await tx.commercialSubscription.update({ where: { id: sub.id }, data }); await materializeCommercialEntitlements(tx, updated, now); }
       else await applySelection(tx, sub, op, data, now);
-      await tx.commercialBillingOperation.update({ where: { id: op.id }, data: { status: "APPLIED", appliedAt: now, failureCode: null } });
+      await incrementPaidReferrals(sub.businessId,tx);
+      await tx.commercialBillingOperation.update({ where: { id: op.id }, data: { status: "APPLIED", appliedAt: now, failureCode: op.failureCode?.endsWith("_REVIEW_REQUIRED") ? op.failureCode : null } });
     } else if (["REFUNDED", "CHARGEBACK"].includes(state) && sub.lastPaymentEventId === prior?.eventId) {
       const updated = await tx.commercialSubscription.update({ where: { id: sub.id }, data: { lastPaymentStatus: state, status: "INACTIVE", lastReconciledAt: now } });
       await materializeCommercialEntitlements(tx, updated, now);
     }
     // Pending/rejected invoices do not revoke an unexpired trial/paid grant.
+    await refreshMpV2DunningInTransaction(tx,root.businessId,now);
     return { status: state, duplicate: false };
   });
 }
 
 async function reconcileExpansion(op: CommercialBillingOperation, paymentId: string, provider: MpV2Provider, now = new Date()) {
-  const payment = await provider.payment(paymentId), saved = quoteOf(op), state = paymentState(payment.status);
-  if (op.kind !== "CONTRACT_CHANGE" || op.strategy !== "IMMEDIATE" || payment.external_reference !== changeReference(op.id) || payment.transaction_amount !== op.expectedPaymentMinor) throw new Error("V2_EXPANSION_PAYMENT_MISMATCH");
+  const saved = quoteOf(op);
   if (!saved.periodStart || !saved.periodEnd) throw new Error("V2_CHANGE_PERIOD_REQUIRED");
-  const existing = await prisma.commercialPaymentEvidence.findUnique({ where: { provider_paymentId: { provider: "MERCADO_PAGO", paymentId: `${provider.config.environment}:${payment.id}` } } });
-  if (existing && existing.operationId !== op.id) throw new Error("V2_EVIDENCE_CONFLICT");
-  if (existing?.status === state || (existing?.status === "CONFIRMED" && ["PENDING", "REJECTED"].includes(state)) || (existing && payment.date_last_updated < existing.occurredAt) || (existing && ["REFUNDED", "CHARGEBACK"].includes(existing.status) && state === "CONFIRMED")) return;
-  if (state === "CONFIRMED") {
-    const other = await prisma.commercialPaymentEvidence.findFirst({ where: { operationId: op.id, status: "CONFIRMED", paymentId: { not: `${provider.config.environment}:${payment.id}` } } });
-    if (other) throw new Error("V2_DUPLICATE_PAYMENT_REVIEW_REQUIRED");
-    if (!payment.date_approved || payment.date_approved < op.effectiveAt || payment.date_approved >= saved.periodEnd) throw new Error("V2_CHANGE_PERIOD_EXPIRED");
-    const current = await prisma.$transaction(async tx => { await lock(tx, op.businessId); return (await runtimeContract(tx, op.businessId)).sub; });
-    if (current.snapshotHash !== op.previousContractHash || +current.periodEnd! !== +saved.periodEnd) throw new Error("V2_CONTRACT_CHANGED");
-    // Retrying this PUT after a timeout converges on the same authorized amount.
-    await updateRecurring(op, provider);
-  }
   await prisma.$transaction(async tx => {
     await lock(tx, op.businessId); const { sub } = await runtimeContract(tx, op.businessId);
+    // Serialize the canonical read and any recurring update with all local
+    // reconciliation. A delayed approval cannot overwrite a processed refund.
+    const payment=await provider.payment(paymentId), state=paymentState(payment);
+    if (op.kind !== "CONTRACT_CHANGE" || op.strategy !== "IMMEDIATE" || payment.external_reference !== changeReference(op.id) || payment.transaction_amount !== op.expectedPaymentMinor) throw new Error("V2_EXPANSION_PAYMENT_MISMATCH");
+    if (sub.externalSubscriptionId !== op.providerSubscriptionId) throw new Error("V2_CONTRACT_BINDING_MISMATCH");
     const key = `${provider.config.environment}:${payment.id}`;
     const prior = await tx.commercialPaymentEvidence.findUnique({ where: { provider_paymentId: { provider: "MERCADO_PAGO", paymentId: key } } });
     if (prior && prior.operationId !== op.id) throw new Error("V2_EVIDENCE_CONFLICT");
+    if(await partialRefundReview(tx,op,payment,op.effectiveAt,saved.periodEnd!,now)) return;
+    if(state === "CONFIRMED" && await tx.commercialEvent.findFirst({where:{businessId:sub.businessId,source:"mp_v2_review",operation:"PARTIAL_REFUND_REVIEW",providerReference:key}})) return;
     if (prior?.status === state || (prior?.status === "CONFIRMED" && ["PENDING", "REJECTED"].includes(state)) || (prior && payment.date_last_updated < prior.occurredAt)) return;
     if (prior && ["REFUNDED", "CHARGEBACK"].includes(prior.status) && state === "CONFIRMED") return;
+    if (state === "CONFIRMED") {
+      if(sub.renewalCancellationStatus) throw new Error("V2_CANCELLATION_PENDING");
+      const other=await tx.commercialPaymentEvidence.findFirst({where:{operationId:op.id,status:"CONFIRMED",paymentId:{not:key}}});
+      if(other) throw new Error("V2_DUPLICATE_PAYMENT_REVIEW_REQUIRED");
+      if (!payment.date_approved || payment.date_approved < op.effectiveAt || payment.date_approved >= saved.periodEnd!) throw new Error("V2_CHANGE_PERIOD_EXPIRED");
+      if (sub.snapshotHash !== op.previousContractHash || !sub.periodEnd || +sub.periodEnd !== +saved.periodEnd!) throw new Error("V2_CONTRACT_CHANGED");
+      await updateRecurring(op,provider);
+    }
     const eventId = `${key}:${state}`;
-    const event = await tx.commercialEvent.upsert({ where: { source_eventId: { source: "mp_v2_payment", eventId } }, update: {}, create: { source: "mp_v2_payment", eventId, businessId: sub.businessId, subscriptionId: sub.id, operation: "EXPANSION_PAYMENT", outcome: "APPLIED", occurredAt: payment.date_last_updated, payloadHash: commercialHash({ key, state }), details: { paymentState: state } } });
+    const event = await tx.commercialEvent.upsert({ where: { source_eventId: { source: "mp_v2_payment", eventId } }, update: {}, create: { source: "mp_v2_payment", eventId, businessId: sub.businessId, subscriptionId: sub.id, operation: "EXPANSION_PAYMENT", outcome: "APPLIED", occurredAt: payment.date_last_updated, payloadHash: commercialHash({ key, state }), details: { paymentState: state, operationId:op.id, providerSubscriptionId:op.providerSubscriptionId, periodStart:saved.periodStart!.toISOString(), periodEnd:saved.periodEnd!.toISOString() } } });
     await tx.commercialPaymentEvidence.upsert({ where: { provider_paymentId: { provider: "MERCADO_PAGO", paymentId: key } }, create: { businessId: sub.businessId, operationId: op.id, provider: "MERCADO_PAGO", paymentId: key, status: state,
       origin: `${provider.config.environment}_PROVIDER`, amountMinor: payment.transaction_amount, currencyCode: "CLP", periodStart: op.effectiveAt, periodEnd: saved.periodEnd!, occurredAt: payment.date_last_updated, providerSubscriptionId: op.providerSubscriptionId!, eventId: event.id }, update: { status: state, eventId: event.id, occurredAt: payment.date_last_updated } });
     if (state === "CONFIRMED") {
       if (sub.snapshotHash !== op.previousContractHash || !sub.periodEnd || +sub.periodEnd !== +saved.periodEnd!) throw new Error("V2_CONTRACT_CHANGED");
       await applySelection(tx, sub, op, { lastReconciledAt: now, lastReconciledEventId: event.id }, now);
       await tx.commercialBillingOperation.update({ where: { id: op.id }, data: { status: "APPLIED", appliedAt: now, failureCode: null } });
-    } else if (["REFUNDED", "CHARGEBACK"].includes(state) && prior?.status === "CONFIRMED") {
-      const updated = await tx.commercialSubscription.update({ where: { id: sub.id }, data: { status: "INACTIVE", lastPaymentStatus: state } });
-      await materializeCommercialEntitlements(tx, updated, now);
+    } else if (["REFUNDED", "CHARGEBACK"].includes(state)) {
+      // The supplemental payment never owns the base grant. Later recurring
+      // evidence is independent and must remain intact. For the same period,
+      // fall back to the unequivocally paid recurring selection, without ever
+      // deleting history or changing a remote amount on refund notification.
+      if (sub.periodStart && +sub.periodStart === +saved.periodStart! && sub.periodEnd && +sub.periodEnd === +saved.periodEnd!) {
+        const base=await tx.commercialPaymentEvidence.findFirst({where:{businessId:sub.businessId,providerSubscriptionId:op.providerSubscriptionId!,eventId:sub.lastPaymentEventId ?? "",status:"CONFIRMED",operation:{OR:[{kind:"NEW_SUBSCRIPTION"},{strategy:"NEXT_RENEWAL"}]}},include:{operation:true}});
+        if(base) await applySelection(tx,sub,base.operation,{lastReconciledAt:now,lastReconciledEventId:event.id},now);
+      }
+      await tx.commercialBillingOperation.update({where:{id:op.id},data:{status:op.appliedAt ? "APPLIED" : "REJECTED",failureCode:"V2_EXPANSION_REVERSAL_REVIEW_REQUIRED"}});
+      await tx.commercialEvent.upsert({where:{source_eventId:{source:"mp_v2_review",eventId}},update:{},create:{businessId:sub.businessId,subscriptionId:sub.id,source:"mp_v2_review",eventId,operation:"EXPANSION_REVERSAL_REVIEW",outcome:"RECEIVED",occurredAt:now,details:{operationId:op.id,paymentState:state,paidPeriodPreserved:true,remoteAmountUnchanged:true}}});
     }
-  });
+  },{maxWait:10000,timeout:60000});
 }
 
 export async function reconcileMpV2Operation(businessId: string, id: string, provider = createMpV2Provider()) {
@@ -325,6 +361,7 @@ export async function reconcileMpV2Operation(businessId: string, id: string, pro
     for (const invoice of (await provider.invoices(remote.id)).sort((a, b) => +a.debit_date - +b.debit_date)) await reconcileMpV2Invoice(invoice, provider);
   }
   // Rotate bounded cron batches even when a provider still reports pending.
+  await refreshMpV2Dunning(businessId);
   await prisma.commercialBillingOperation.update({ where: { id }, data: { updatedAt: new Date() } });
   const result = mpV2OperationView(await ownedOperation(businessId, id, provider), provider);
   return recoveryUrl ? { ...result, checkoutUrl: recoveryUrl } : result;
@@ -336,7 +373,9 @@ async function reconcileCancellation(remote: MpV2Subscription, provider: MpV2Pro
   await prisma.$transaction(async tx => {
     await lock(tx, root.businessId); const { sub } = await runtimeContract(tx, root.businessId);
     if (sub.externalSubscriptionId !== remote.id) throw new Error("V2_CONTRACT_BINDING_MISMATCH");
-    await tx.commercialSubscription.update({ where: { id: sub.id }, data: { renewalCancellationStatus: remote.status === "paused" ? "PAUSED" : "CANCELLED_VERIFIED", renewalCancelledAt: new Date(), renewalAt: null } });
+    const updated=await tx.commercialSubscription.update({ where: { id: sub.id }, data: { renewalCancellationStatus: remote.status === "paused" ? "PAUSED" : "CANCELLED_VERIFIED", renewalCancelledAt: new Date(), renewalAt: null, gracePeriodEndsAt:null,
+      ...(["PAST_DUE_GRACE","PAST_DUE_BLOCKED"].includes(sub.status) && sub.periodEnd && sub.periodEnd <= new Date() ? {status:"INACTIVE" as const}: {}) } });
+    await materializeCommercialEntitlements(tx,updated);
     await tx.commercialBillingOperation.updateMany({ where: { businessId: sub.businessId, providerSubscriptionId: remote.id, status: { in: V2_OPEN_STATUSES }, kind: { not: "CANCEL_RENEWAL" } }, data: { status: "CANCELLED" } });
   });
 }

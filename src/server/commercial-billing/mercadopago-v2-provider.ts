@@ -12,7 +12,8 @@ export const mpV2SubscriptionSchema = z.object({ id, status: z.string(), collect
   auto_recurring: z.object({ frequency: z.number().int(), frequency_type: z.literal("months"), transaction_amount: amount, currency_id: z.literal("CLP"), start_date: date.optional() }) });
 export const mpV2PaymentSchema = z.object({ id, status: z.string(), live_mode: z.boolean(), collector_id: z.number(),
   currency_id: z.literal("CLP"), transaction_amount: amount, external_reference: z.string().nullish(),
-  date_approved: date.nullish(), date_last_updated: date });
+  transaction_amount_refunded: amount.default(0), status_detail:z.string().nullish(),
+  date_approved: date.nullish(), date_last_updated: date }).refine(payment=>payment.transaction_amount_refunded<=payment.transaction_amount,{message:"Refund cannot exceed the canonical gross amount"});
 export const mpV2InvoiceSchema = z.object({ id, preapproval_id: z.string(), debit_date: date,
   currency_id: z.literal("CLP"), transaction_amount: amount, payment: z.object({ id: id.nullish() }).nullish() });
 export type MpV2Subscription = z.infer<typeof mpV2SubscriptionSchema>;

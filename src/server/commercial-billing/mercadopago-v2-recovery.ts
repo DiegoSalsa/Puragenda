@@ -5,6 +5,7 @@ import { prisma } from "@/server/db/prisma";
 import { assertCommercialSandbox, commercialHash } from "@/server/services/commercial-internal";
 import { createMpV2Provider, MpV2Provider, mpV2InvoiceSchema, type MpV2Port } from "./mercadopago-v2-provider";
 import { reconcileMpV2Invoice, reconcileMpV2Operation, reconcileMpV2SubscriptionStatus } from "./mercadopago-v2";
+import { refreshMpV2Dunning } from "./mercadopago-v2-dunning";
 
 export type MpV2RecoveryOptions = { limit?: number; maxRequests?: number; maxDurationMs?: number; minimumIntervalMs?: number; businessId?: string };
 const openStatuses = ["UNKNOWN", "AWAITING_PAYMENT", "SCHEDULED", "PAID"];
@@ -138,6 +139,10 @@ export async function runMpV2Recovery(supplied?: MpV2Provider, options: MpV2Reco
         const alert = money ? "V2_RECOVERY_MONETARY_MISMATCH" : /MISMATCH|BINDING/.test(code) ? "V2_RECOVERY_IDENTITY_MISMATCH" : failures + 1 >= 3 ? "V2_RECOVERY_REPEATED_FAILURE" : null;
         if (alert) metrics.alerts++;
         await persist(op, offset, failures + 1, code, alert);
+      } finally {
+        // Local, paid-boundary policy also runs on timeout, delayed webhook or
+        // an empty provider page. A retry never starts a fresh grace window.
+        await refreshMpV2Dunning(op.businessId);
       }
     }
     await prisma.commercialWorkerState.updateMany({ where: leaseWhere(), data: { summary: metrics, lastSuccessAt: metrics.failed ? undefined : new Date(), lastError: metrics.failed ? "V2_RECOVERY_PARTIAL_FAILURE" : null } });

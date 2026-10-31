@@ -8,6 +8,8 @@ import { commercialSelectionSchema } from "@/server/services/commercial-trial.se
 import { createMpV2Provider } from "./mercadopago-v2-provider";
 import { prepareMpV2Operation, executeMpV2Operation, reconcileMpV2Operation, cancelMpV2Renewal } from "./mercadopago-v2";
 import { V2_OPEN_STATUSES } from "@/core/commercial-billing-policy";
+import { hasPendingCommercialBenefit } from "@/server/services/commercial-benefit-hold";
+import { quoteCommercialBenefit } from "@/core/commercial-benefits";
 
 const common = { idempotencyKey: z.string().regex(/^[a-zA-Z0-9_-]{8,100}$/), accepted: z.literal(true), expectedContractHash: z.string().regex(/^[a-f0-9]{64}$/), mercadoPagoEmail: z.email().optional() };
 const command = z.discriminatedUnion("action", [
@@ -51,9 +53,15 @@ export async function mpV2DashboardState(request: NextRequest) {
   const operations = await prisma.commercialBillingOperation.findMany({ where: { businessId: owner.business.id, environment: { in: environment ? [environment] : ["V2_SANDBOX", "V2_PRODUCTION"] } }, orderBy: { createdAt: "desc" }, take: 20, include: { payments: { orderBy: { occurredAt: "desc" }, take: 3 } } });
   const open = operations.find(op => V2_OPEN_STATUSES.includes(op.status));
   const root = operations.find(op => op.kind === "NEW_SUBSCRIPTION" && op.providerSubscriptionId === owner.sub.externalSubscriptionId);
+  const projection=await prisma.subscription.findUnique({where:{businessId:owner.business.id}});
+  const review=await prisma.commercialBillingOperation.findFirst({where:{businessId:owner.business.id,failureCode:{endsWith:"_REVIEW_REQUIRED"}}});
+  const benefit=projection?.pendingDiscountPercentage ? {percentage:projection.pendingDiscountPercentage} : projection?.freeMonthsRemaining ? {freeMonths:projection.freeMonthsRemaining} : null;
+  const benefitQuote=benefit ? quoteCommercialBenefit(commercialSelectionSchema.parse({plan:owner.sub.planCode,professionalTotal:owner.sub.professionalTotal,billingCycle:owner.sub.billingCycle}),benefit) : null;
   return NextResponse.json({ enabled, contractHash: owner.sub.snapshotHash, plan: owner.sub.planCode, professionalTotal: owner.sub.professionalTotal, billingCycle: owner.sub.billingCycle, total: owner.sub.totalPriceClp,
     status: owner.sub.status, trialEnd: owner.sub.trialEnd, periodEnd: owner.sub.periodEnd, periodStart: owner.sub.periodStart, renewalAt: owner.sub.renewalAt,
     cancellationStatus: owner.sub.renewalCancellationStatus, hasProvider: !!owner.sub.externalSubscriptionId,
+    benefitHold:hasPendingCommercialBenefit(projection), reviewRequired:!!review, gracePeriodEndsAt:owner.sub.gracePeriodEndsAt,
+    billingCycleChangeEnabled:false, benefitQuote,
     operation: open ? { id: open.id, status: open.status, kind: open.kind, effectiveAt: open.effectiveAt } : null,
     reconcileOperationId: open?.id ?? root?.id ?? null,
     paymentStatus: operations.flatMap(op => op.payments).sort((a, b) => +b.occurredAt - +a.occurredAt)[0]?.status ?? null,

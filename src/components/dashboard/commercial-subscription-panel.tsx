@@ -8,7 +8,8 @@ import { expansionAmount } from "@/core/commercial-billing-policy";
 type State = { enabled: boolean; contractHash: string; plan: CommercialPlanCode; professionalTotal: number; billingCycle: CommercialBillingCycle; total: number;
   status: string; trialEnd: string | null; periodEnd: string | null; periodStart: string | null; renewalAt: string | null;
   hasProvider: boolean; cancellationStatus: string | null; operation: { id: string; status: string; kind: string; effectiveAt: string } | null;
-  reconcileOperationId: string | null; paymentStatus: string | null };
+  reconcileOperationId: string | null; paymentStatus: string | null; benefitHold?:boolean; reviewRequired?:boolean; gracePeriodEndsAt?:string|null;
+  benefitQuote?:{monthlyTotal:number;credit:number;amountDue:number}|null };
 const money = (total: number) => `$${total.toLocaleString("es-CL")} CLP`;
 const date = (value: string) => new Date(value).toLocaleDateString("es-CL", { timeZone: "America/Santiago" });
 const options = Array.from({ length: COMMERCIAL_MAX_PROFESSIONALS }, (_, i) => ({ value: i + 1, label: `${i + 1} ${i ? "profesionales" : "profesional"}` }));
@@ -72,6 +73,11 @@ export function CommercialSubscriptionPanel() {
     {state.paymentStatus && <p role="status">Último pago: {paymentLabels[state.paymentStatus] ?? "En revisión"}.</p>}
     {state.operation && <p role="status">{operationLabels[state.operation.status] ?? "Operación pendiente"}{state.operation.status === "SCHEDULED" && ` · ${date(state.operation.effectiveAt)}`}.</p>}
     {!state.enabled && <p>La contratación con Mercado Pago aún no está habilitada en este entorno.</p>}
+    {state.benefitHold && <p role="status">Tu descuento o premio sigue pendiente. Se conserva hasta confirmar un cobro compatible; no continuaremos con un cobro que lo omita.</p>}
+    {state.benefitQuote && <p>Propuesta pendiente de confirmación: crédito de {money(state.benefitQuote.credit)} sobre el precio mensual final de {money(state.benefitQuote.monthlyTotal)}. Próxima factura con el beneficio: {money(state.benefitQuote.amountDue)}, IVA incluido. El cobro todavía no está programado.</p>}
+    {state.reviewRequired && <p role="status">Hay un pago en revisión. Se conserva el acceso respaldado por pagos vigentes; los cambios de contrato requieren revisión.</p>}
+    {state.status === "PAST_DUE_GRACE" && state.gracePeriodEndsAt && <p>Renovación pendiente de confirmación. Acceso de recuperación hasta el {date(state.gracePeriodEndsAt)}.</p>}
+    {paid && <p>El cambio entre mensual y anual está pendiente de validación de cobro. Tu ciclo actual sigue vigente.</p>}
     {paid && !state.operation && !state.cancellationStatus && <>
       <div className="flex flex-wrap gap-3">
         <Select value={plan} items={[{ value: "PURAGENDA", label: "Puragenda" }, { value: "PURAGENDA_PLUS", label: "Puragenda+" }]} onValueChange={value => { if (value) setPlan(value); setAccepted(false); key.current = null; }}><SelectTrigger aria-label="Cambiar plan" disabled={busy} className="w-44 rounded-xl border-2 border-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PURAGENDA">Puragenda</SelectItem><SelectItem value="PURAGENDA_PLUS">Puragenda+</SelectItem></SelectContent></Select>
@@ -82,7 +88,7 @@ export function CommercialSubscriptionPanel() {
     {!state.operation && ((!paid && (!state.hasProvider || state.cancellationStatus === "CANCELLED_VERIFIED")) || changed) && <>
       <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 accent-[#7C3AED]" checked={accepted} onChange={event => setAccepted(event.target.checked)} disabled={busy || !state.enabled} />
         <span>Autorizo {changed ? "el cambio y sus cobros indicados" : `el cobro ${state.billingCycle === "ANNUAL" ? "anual" : "mensual"} de ${money(current.cycleTotal)}${trial ? ` desde el ${date(state.trialEnd!)}` : " al completar el checkout"}`} y las renovaciones automáticas. Puedo cancelar la renovación desde aquí.</span></label>
-      <button disabled={busy || !state.enabled || !accepted} onClick={() => run(changed ? "CHANGE" : "SUBSCRIBE", true)} className="rounded-xl border-2 border-black bg-[#E9D8FF] px-4 py-2 font-bold disabled:opacity-50">{busy ? "Confirmando…" : changed ? "Confirmar cambio" : "Contratar con Mercado Pago"}</button>
+      <button disabled={busy || !state.enabled || !accepted || state.benefitHold || state.reviewRequired} onClick={() => run(changed ? "CHANGE" : "SUBSCRIBE", true)} className="rounded-xl border-2 border-black bg-[#E9D8FF] px-4 py-2 font-bold disabled:opacity-50">{busy ? "Confirmando…" : changed ? "Confirmar cambio" : "Contratar con Mercado Pago"}</button>
     </>}
     <div className="flex flex-wrap gap-3">
       {state.reconcileOperationId && <button disabled={busy || !state.enabled} onClick={() => run("RECONCILE", state.operation?.status === "AWAITING_PAYMENT" || state.operation?.status === "PREPARED" || state.paymentStatus === "REJECTED")} className="rounded-xl border-2 border-black px-4 py-2 font-bold disabled:opacity-50">{state.operation?.status === "AWAITING_PAYMENT" || state.operation?.status === "PREPARED" ? "Continuar en Mercado Pago" : state.paymentStatus === "REJECTED" ? "Revisar pago en Mercado Pago" : "Comprobar estado"}</button>}

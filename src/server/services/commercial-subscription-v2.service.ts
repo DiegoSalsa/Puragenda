@@ -58,7 +58,8 @@ export async function materializeCommercialEntitlements(
   if (db.subscription && isV2Plan(snapshot.planCode)) {
     const effective = effectiveSnapshotAccess(snapshot, now);
     await db.subscription.updateMany({ where: { businessId: snapshot.businessId, plan: { in: ["PURAGENDA", "PURAGENDA_PLUS"] } }, data: {
-      status: effective.commercialAccess ? (snapshot.status === "TRIALING" ? "TRIALING" : "ACTIVE") : "INACTIVE",
+      status: effective.commercialAccess ? (snapshot.status === "TRIALING" ? "TRIALING" : snapshot.status === "PAST_DUE_GRACE" ? "PAST_DUE" : "ACTIVE") : "INACTIVE",
+      gracePeriodEndsAt: snapshot.gracePeriodEndsAt,
       billingCycle: snapshot.billingCycle, isTrial: snapshot.status === "TRIALING", trialEndsAt: snapshot.trialEnd, currentPeriodEnd: snapshot.periodEnd,
       plan: snapshot.planCode as "PURAGENDA" | "PURAGENDA_PLUS", staffLimitOverride: snapshot.professionalTotal, extraStaffCount: snapshot.professionalTotal - 1,
     } });

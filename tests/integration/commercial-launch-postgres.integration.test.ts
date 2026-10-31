@@ -113,9 +113,11 @@ suite("Commercial launch consolidation / real isolated PostgreSQL", () => {
     expect(await runCommercialTick()).toEqual({ killed: true });
     expect((await prisma.commercialWorkerState.findUniqueOrThrow({ where: { key: old.key } })).leaseOwner).toBeNull();
   });
-  it("expires premium capability at paid-period end even if a grace period exists", async () => {
+  it("uses the same bounded paid recovery policy for Puri and expires at grace end", async () => {
     const f = await fixture();
     await prisma.commercialSubscription.update({ where: { businessId: f.businessId }, data: { status: "PAST_DUE_GRACE", periodEnd: new Date(Date.now() - 1000), gracePeriodEndsAt: new Date(Date.now() + 86400000) } });
+    await expect(createGrowthScope(f.context)).resolves.toMatchObject({businessId:f.businessId});
+    await prisma.commercialSubscription.update({where:{businessId:f.businessId},data:{gracePeriodEndsAt:new Date(Date.now()-1)}});
     await expect(createGrowthScope(f.context)).rejects.toThrow("PLUS_ENTITLEMENT_REQUIRED");
   });
   it("uses a real Svix signature and durable receipt correlation after a lost Resend response", async () => {

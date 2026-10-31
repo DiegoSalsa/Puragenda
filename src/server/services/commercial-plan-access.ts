@@ -23,7 +23,9 @@ export function evaluateEffectiveCommercialAccess(sub: AccessSnapshot, now = new
   const paid = ["ACTIVE", "SCHEDULED_CHANGE", "PAST_DUE_GRACE"].includes(sub.status)
     && sub.lastPaymentStatus === "CONFIRMED" && !!sub.lastPaymentEventId
     && !!sub.lastPaymentAt && sub.lastPaymentAt <= now
-    && !!sub.periodStart && sub.periodStart <= now && !!sub.periodEnd && sub.periodEnd > now;
+    && !!sub.periodStart && sub.periodStart <= now && !!sub.periodEnd
+    && (sub.periodEnd > now || (sub.status === "PAST_DUE_GRACE" && !!sub.gracePeriodEndsAt && sub.gracePeriodEndsAt > now
+      && +sub.gracePeriodEndsAt <= +sub.periodEnd + 48 * 3600000));
   if (!isV2Plan(sub.plan) || !evaluation.commercialAccess || (!trial && !paid)) {
     return { ...evaluation, commercialAccess: false, capabilities: [], quantities: {}, reason: evaluation.reason ?? "VALID_TRIAL_OR_PAYMENT_REQUIRED" };
   }
