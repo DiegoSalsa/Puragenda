@@ -4,7 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { createRegistrationContract } from "@/server/services/commercial-trial.service";
 import type { CommercialSelection } from "@/core/commercial-selection";
 import { MpV2Provider, type MpV2Port, type MpV2Subscription, type MpV2Invoice } from "@/server/commercial-billing/mercadopago-v2-provider";
-import { prepareMpV2Operation, executeMpV2Operation } from "@/server/commercial-billing/mercadopago-v2";
+import { prepareMpV2Operation, executeMpV2Operation, reconcileMpV2Invoice, reconcileMpV2Operation } from "@/server/commercial-billing/mercadopago-v2";
 
 export const businesses: string[] = [], users: string[] = [];
 export function fakeProvider(environment: "V2_SANDBOX" | "V2_PRODUCTION" = "V2_SANDBOX") {
@@ -47,4 +47,20 @@ export function invoiceFor(f: Awaited<ReturnType<typeof fixture>>, op: Awaited<R
   f.invoices.set(id, invoice); f.payments.set(paymentId, { id: paymentId, status, live_mode: false, collector_id: 123, currency_id: "CLP", transaction_amount: amount,
     external_reference: remote.external_reference, date_approved: status === "approved" ? when : null, date_last_updated: when });
   return invoice;
+}
+
+type Fixture = Awaited<ReturnType<typeof fixture>>;
+export async function expand(f: Fixture, plan: "PURAGENDA" | "PURAGENDA_PLUS", professionalTotal: number) {
+  const op = await prepareMpV2Operation({ businessId: f.business.id, actorId: f.user.id, idempotencyKey: randomUUID(), action: "CHANGE", selection: { ...f.selection, plan, professionalTotal } }, f.provider);
+  await executeMpV2Operation(f.business.id, op.id, f.user.email, f.provider);
+  const id = randomUUID(), payment = { id, status: "approved", collector_id: 123, live_mode: false, currency_id: "CLP", transaction_amount: op.expectedPaymentMinor, external_reference: `v2_change_${op.id}`, date_approved: new Date(), date_last_updated: new Date() };
+  f.payments.set(id, payment);
+  await reconcileMpV2Operation(f.business.id, op.id, f.provider);
+  return { op, payment };
+}
+export async function paid(cycle: "MONTHLY" | "ANNUAL" = "MONTHLY") {
+  const f = await fixture({ plan: "PURAGENDA", professionalTotal: 1, billingCycle: cycle });
+  const root = await checkout(f), invoice = invoiceFor(f, root);
+  await reconcileMpV2Invoice(invoice, f.provider);
+  return { ...f, root, invoice };
 }

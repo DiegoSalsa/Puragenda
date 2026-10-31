@@ -195,19 +195,91 @@ export function mpV2OperationView(op: CommercialBillingOperation, provider: MpV2
     effectiveAt: op.effectiveAt, total: op.expectedPaymentMinor, recurringTotal: op.recurringAmountMinor, vatIncluded: true };
 }
 
-async function applySelection(tx: Prisma.TransactionClient, sub: CommercialSubscription, op: CommercialBillingOperation, data: Prisma.CommercialSubscriptionUpdateInput, now: Date) {
-  const { selection, quote } = quoteOf(op);
-  const terms = { origin: "registration_v2", vatIncluded: true, annualPaidMonths: quote.billingCycle === "ANNUAL" ? quote.paidMonths : null, annualFreeMonths: quote.billingCycle === "ANNUAL" ? quote.freeMonths : 0, quote };
+function selectionTerms(selection: CommercialSelection) {
+  const quote = v2Quote(selection);
+  return { origin: "registration_v2", vatIncluded: true, annualPaidMonths: quote.billingCycle === "ANNUAL" ? quote.paidMonths : null, annualFreeMonths: quote.billingCycle === "ANNUAL" ? quote.freeMonths : 0, quote };
+}
+function selectionHash(selection: CommercialSelection, operation: string, periodEnd: Date | null) {
+  return commercialHash({ selection, terms: selectionTerms(selection), operation, periodEnd });
+}
+async function applySelection(tx: Prisma.TransactionClient, sub: CommercialSubscription, op: CommercialBillingOperation, data: Prisma.CommercialSubscriptionUpdateInput, now: Date, selection = quoteOf(op).selection) {
+  const quote = v2Quote(selection);
+  const terms = selectionTerms(selection);
+  const latest = await tx.commercialSubscriptionItem.findFirst({ where: { subscriptionId: sub.id, effectiveTo: null }, orderBy: { effectiveFrom: "desc" }, select: { effectiveFrom: true } });
+  // Concurrent requests capture their clocks before acquiring the identity lock.
+  // Closing history must remain strictly later than the preceding projection.
+  const effectiveAt = new Date(Math.max(+now, latest ? +latest.effectiveFrom + 1 : +now));
   const updated = await tx.commercialSubscription.update({ where: { id: sub.id }, data: { ...data, planCode: selection.plan, professionalTotal: selection.professionalTotal, billingCycle: selection.billingCycle,
     basePriceClp: quote.baseMonthly, totalPriceClp: quote.cycleTotal, termsSnapshot: commercialJson(terms), snapshotHash: commercialHash({ selection, terms, operation: op.id, periodEnd: data.periodEnd ?? sub.periodEnd }) } });
-  await tx.commercialSubscriptionItem.updateMany({ where: { subscriptionId: sub.id, effectiveTo: null }, data: { effectiveTo: now } });
+  await tx.commercialSubscriptionItem.updateMany({ where: { subscriptionId: sub.id, effectiveTo: null }, data: { effectiveTo: effectiveAt } });
   const base = quote.billingCycle === "ANNUAL" ? quote.baseMonthly * quote.paidMonths : quote.baseMonthly;
   await tx.commercialSubscriptionItem.createMany({ data: [
-    { subscriptionId: sub.id, kind: "BASE_PLAN", code: selection.plan, quantity: 1, amountClp: base, unitAmountClp: quote.baseMonthly, catalogVersion: quote.catalogVersion, effectiveFrom: now, pricingSnapshot: commercialJson(quote) },
-    { subscriptionId: sub.id, kind: "PROFESSIONAL_SEATS", code: "professional_seats", quantity: selection.professionalTotal, amountClp: quote.cycleTotal - base, catalogVersion: quote.catalogVersion, effectiveFrom: now, pricingSnapshot: commercialJson(quote.surchargeSteps) },
+    { subscriptionId: sub.id, kind: "BASE_PLAN", code: selection.plan, quantity: 1, amountClp: base, unitAmountClp: quote.baseMonthly, catalogVersion: quote.catalogVersion, effectiveFrom: effectiveAt, pricingSnapshot: commercialJson(quote) },
+    { subscriptionId: sub.id, kind: "PROFESSIONAL_SEATS", code: "professional_seats", quantity: selection.professionalTotal, amountClp: quote.cycleTotal - base, catalogVersion: quote.catalogVersion, effectiveFrom: effectiveAt, pricingSnapshot: commercialJson(quote.surchargeSteps) },
   ] });
   await materializeCommercialEntitlements(tx, updated, now);
   return updated;
+}
+
+/** Rebuild only this paid period. Historical hashes establish the original
+ * dependency chain even when an ancestor was subsequently reversed. Independent
+ * plan/seat deltas can survive; missing seat prerequisites cannot buy free seats. */
+async function rebuildPaidExpansions(tx: Prisma.TransactionClient, sub: CommercialSubscription, op: CommercialBillingOperation, eventId: string, now: Date) {
+  const base = await tx.commercialPaymentEvidence.findFirst({ where: {
+    businessId: sub.businessId, provider: "MERCADO_PAGO", providerSubscriptionId: op.providerSubscriptionId!,
+    eventId: sub.lastPaymentEventId ?? "", status: "CONFIRMED", periodStart: sub.periodStart!, periodEnd: sub.periodEnd!,
+    operation: { environment: op.environment, subscriptionId: sub.id },
+  }, include: { operation: true } });
+  const review: string[] = [], preserved: string[] = [];
+  if (!base) {
+    // An incomplete ledger cannot justify retaining the reversed selection.
+    const unknown = await tx.commercialSubscription.update({ where: { id: sub.id }, data: { status: "UNKNOWN", lastReconciledAt: now, lastReconciledEventId: eventId } });
+    await materializeCommercialEntitlements(tx, unknown, now);
+    return { preserved, ambiguousDependencies: ["CURRENT_RECURRING_EVIDENCE_MISSING"] };
+  }
+  const anchor = quoteOf(base.operation).selection;
+  let grant = { ...anchor };
+  const known = new Map([[selectionHash(anchor, base.operation.id, sub.periodEnd), anchor]]);
+  const evidence = await tx.commercialPaymentEvidence.findMany({ where: {
+    businessId: sub.businessId, provider: "MERCADO_PAGO", providerSubscriptionId: op.providerSubscriptionId!, periodEnd: sub.periodEnd!,
+    operation: { subscriptionId: sub.id, environment: op.environment, kind: "CONTRACT_CHANGE", strategy: "IMMEDIATE", appliedAt: { not: null } },
+  }, include: { operation: true }, orderBy: [{ operation: { effectiveAt: "asc" } }, { operation: { createdAt: "asc" } }, { id: "asc" }] });
+  // Resolve by hash, not arrival time or equal millisecond timestamps.
+  const remaining = evidence.filter(row => row.operationId !== base.operationId);
+  while (remaining.length) {
+    const index = remaining.findIndex(row => known.has(row.operation.previousContractHash));
+    if (index < 0) { review.push(...remaining.map(row => row.operationId)); break; }
+    const row = remaining.splice(index, 1)[0], change = row.operation, saved = quoteOf(change);
+    const previous = known.get(change.previousContractHash)!;
+    if (!saved.periodStart || +saved.periodStart !== +sub.periodStart! || !saved.periodEnd || +saved.periodEnd !== +sub.periodEnd!
+      || commercialHash(saved.previousSelection) !== commercialHash(previous) || saved.selection.billingCycle !== anchor.billingCycle
+      || changeTiming(previous, saved.selection) !== "IMMEDIATE"
+      || row.amountMinor !== change.expectedPaymentMinor || row.currencyCode !== "CLP"
+      || expansionAmount(previous, saved.selection, saved.periodStart, saved.periodEnd, change.effectiveAt) !== row.amountMinor) {
+      review.push(change.id); continue;
+    }
+    known.set(selectionHash(saved.selection, change.id, sub.periodEnd), saved.selection);
+    if (row.status !== "CONFIRMED") continue;
+    if (change.failureCode === "V2_PARTIAL_REFUND_REVIEW_REQUIRED") { review.push(change.id); continue; }
+    const from = v2Quote(previous), target = v2Quote(saved.selection);
+    const planDelta = v2Quote({ ...previous, plan: saved.selection.plan }).cycleTotal - from.cycleTotal;
+    const seatDelta = v2Quote({ ...previous, professionalTotal: saved.selection.professionalTotal }).cycleTotal - from.cycleTotal;
+    // Do not split economically coupled pricing. Preserve only grants whose
+    // prerequisite selection is already paid; flag all other dependencies.
+    if (planDelta + seatDelta !== target.cycleTotal - from.cycleTotal) {
+      if (grant.plan === previous.plan && grant.professionalTotal === previous.professionalTotal) grant = { ...saved.selection };
+      else review.push(change.id);
+    } else {
+      if (saved.selection.plan !== previous.plan) grant.plan = saved.selection.plan;
+      if (grant.professionalTotal >= previous.professionalTotal) grant.professionalTotal = Math.max(grant.professionalTotal, saved.selection.professionalTotal);
+      else review.push(change.id);
+    }
+    preserved.push(change.id);
+  }
+  if (commercialHash(selectionOf(sub)) !== commercialHash(grant)) {
+    await applySelection(tx, sub, base.operation, { lastReconciledAt: now, lastReconciledEventId: eventId }, now, grant);
+  }
+  return { preserved, ambiguousDependencies: review, selection: grant };
 }
 const paymentState = (payment: MpV2Payment) => payment.transaction_amount_refunded > 0 && payment.transaction_amount_refunded >= payment.transaction_amount ? "REFUNDED"
   : payment.status === "approved" ? "CONFIRMED" : payment.status === "refunded" ? "REFUNDED" : payment.status === "charged_back" ? "CHARGEBACK" : ["rejected", "cancelled"].includes(payment.status) ? "REJECTED" : "PENDING";
@@ -307,16 +379,13 @@ async function reconcileExpansion(op: CommercialBillingOperation, paymentId: str
       await applySelection(tx, sub, op, { lastReconciledAt: now, lastReconciledEventId: event.id }, now);
       await tx.commercialBillingOperation.update({ where: { id: op.id }, data: { status: "APPLIED", appliedAt: now, failureCode: null } });
     } else if (["REFUNDED", "CHARGEBACK"].includes(state)) {
-      // The supplemental payment never owns the base grant. Later recurring
-      // evidence is independent and must remain intact. For the same period,
-      // fall back to the unequivocally paid recurring selection, without ever
-      // deleting history or changing a remote amount on refund notification.
+      // A later full recurring payment is independent of old supplements.
+      let reconstruction: Awaited<ReturnType<typeof rebuildPaidExpansions>> | null = null;
       if (sub.periodStart && +sub.periodStart === +saved.periodStart! && sub.periodEnd && +sub.periodEnd === +saved.periodEnd!) {
-        const base=await tx.commercialPaymentEvidence.findFirst({where:{businessId:sub.businessId,providerSubscriptionId:op.providerSubscriptionId!,eventId:sub.lastPaymentEventId ?? "",status:"CONFIRMED",operation:{OR:[{kind:"NEW_SUBSCRIPTION"},{strategy:"NEXT_RENEWAL"}]}},include:{operation:true}});
-        if(base) await applySelection(tx,sub,base.operation,{lastReconciledAt:now,lastReconciledEventId:event.id},now);
+        reconstruction = await rebuildPaidExpansions(tx, sub, op, event.id, now);
       }
       await tx.commercialBillingOperation.update({where:{id:op.id},data:{status:op.appliedAt ? "APPLIED" : "REJECTED",failureCode:"V2_EXPANSION_REVERSAL_REVIEW_REQUIRED"}});
-      await tx.commercialEvent.upsert({where:{source_eventId:{source:"mp_v2_review",eventId}},update:{},create:{businessId:sub.businessId,subscriptionId:sub.id,source:"mp_v2_review",eventId,operation:"EXPANSION_REVERSAL_REVIEW",outcome:"RECEIVED",occurredAt:now,details:{operationId:op.id,paymentState:state,paidPeriodPreserved:true,remoteAmountUnchanged:true}}});
+      await tx.commercialEvent.upsert({where:{source_eventId:{source:"mp_v2_review",eventId}},update:{},create:{businessId:sub.businessId,subscriptionId:sub.id,source:"mp_v2_review",eventId,operation:"EXPANSION_REVERSAL_REVIEW",outcome:"RECEIVED",occurredAt:now,details:commercialJson({operationId:op.id,paymentState:state,paidPeriodPreserved:true,remoteAmountUnchanged:true,reconstruction})}});
     }
   },{maxWait:10000,timeout:60000});
 }
