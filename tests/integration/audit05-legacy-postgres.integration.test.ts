@@ -1,12 +1,14 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID,createHmac } from "node:crypto";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const wire = vi.hoisted(()=>({owner:"",business:"",get:vi.fn(async()=>({id:"audit05-legacy",status:"authorized",next_payment_date:new Date(Date.now()+365*86400000).toISOString()})),search:vi.fn(async()=>({results:[]}))}));
-vi.mock("mercadopago",async original=>({...await original<object>(),PreApproval:class{get=wire.get;},Invoice:class{search=wire.search;}}));
+const wire = vi.hoisted(()=>({owner:"",business:"",get:vi.fn(async()=>({id:"audit05-legacy",status:"authorized",next_payment_date:new Date(Date.now()+365*86400000).toISOString()})),update:vi.fn(async()=>({status:"authorized"})),search:vi.fn(async()=>({results:[]}))}));
+vi.mock("mercadopago",async original=>({...await original<object>(),PreApproval:class{get=wire.get;update=wire.update;},Invoice:class{search=wire.search;}}));
 vi.mock("@/server/auth/user-session",()=>({getApiSessionUser:async()=>({id:wire.owner})}));
 vi.mock("@/server/services/business.service",()=>({getBusinessForUser:async()=>({id:wire.business,countryCode:"CL"})}));
 import { prisma } from "@/server/db/prisma";
 import { POST } from "@/app/api/billing/verify/route";
+import { advanceBillingBenefitAfterAuthorized } from "@/server/services/subscription-billing.service";
+import { POST as webhook } from "@/app/api/webhooks/mercadopago/route";
 import { fixture, businesses } from "../fixtures/audit05-billing";
 const suite=describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 suite("Audit05 legacy authorization HTTP boundary with PostgreSQL",()=>{
@@ -20,5 +22,25 @@ suite("Audit05 legacy authorization HTTP boundary with PostgreSQL",()=>{
     expect(response.status).toBe(200);
     const after=await prisma.subscription.findUniqueOrThrow({where:{businessId:f.business.id}});
     expect(after.status).toBe(before.status);expect(after.isTrial).toBe(before.isTrial);expect(after.currentPeriodEnd).toEqual(before.currentPeriodEnd);expect(after.trialEndsAt).toEqual(before.trialEndsAt);
+  });
+  it("05-02 duplicate approved legacy invoice consumes a free month once",async()=>{
+    const f=await fixture();await prisma.subscription.update({where:{businessId:f.business.id},data:{plan:"INDIVIDUAL",mpSubscriptionId:"audit05-legacy",freeMonthsRemaining:3}});
+    const sub=await prisma.subscription.findUniqueOrThrow({where:{businessId:f.business.id}}), invoiceKey=randomUUID();
+    await prisma.subscription.update({where:{id:sub.id},data:{lastInvoiceId:invoiceKey,lastPaymentStatus:"approved"}});
+    await advanceBillingBenefitAfterAuthorized(sub.id,invoiceKey);
+    await advanceBillingBenefitAfterAuthorized(sub.id,invoiceKey);
+    expect((await prisma.subscription.findUniqueOrThrow({where:{id:sub.id}})).freeMonthsRemaining).toBe(2);
+  });
+  it.each(["INACTIVE","TRIALING","PAST_DUE","ACTIVE"] as const)("05-05 signed authorized webhook preserves %s without a paid invoice",async status=>{
+    const f=await fixture(),id=randomUUID(),end=new Date(Date.now()+86400000);
+    await prisma.subscription.update({where:{businessId:f.business.id},data:{plan:"INDIVIDUAL",mpSubscriptionId:id,status,isTrial:status==="TRIALING",trialEndsAt:status==="TRIALING"?end:null,currentPeriodEnd:status==="ACTIVE"?end:null,paymentFailedAt:status==="PAST_DUE"?new Date():null}});
+    wire.get.mockResolvedValue({id,status:"authorized",next_payment_date:new Date(Date.now()+365*86400000).toISOString()});
+    const secret="synthetic-audit05-webhook",ts=String(Date.now()),requestId=randomUUID(),signature=createHmac("sha256",secret).update(`id:${id};request-id:${requestId};ts:${ts};`).digest("hex");
+    vi.stubEnv("MERCADOPAGO_WEBHOOK_SECRET",secret);
+    const before=await prisma.subscription.findUniqueOrThrow({where:{businessId:f.business.id}});
+    const response=await webhook(new NextRequest(`http://127.0.0.1/api/webhooks/mercadopago?data.id=${id}&type=subscription_preapproval`,{method:"POST",headers:{"content-type":"application/json","x-request-id":requestId,"x-signature":`ts=${ts},v1=${signature}`},body:JSON.stringify({data:{id}})}));
+    expect(response.status).toBe(200);
+    const after=await prisma.subscription.findUniqueOrThrow({where:{businessId:f.business.id}});
+    expect(after.status).toBe(before.status);expect(after.currentPeriodEnd).toEqual(before.currentPeriodEnd);expect(after.isTrial).toBe(before.isTrial);
   });
 });

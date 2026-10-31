@@ -1,4 +1,3 @@
-import { addMonths, addYears } from "date-fns";
 import { Invoice, PreApproval } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,12 +11,6 @@ import {
 import { stateForCancelledProviderSubscription } from "@/server/services/subscription-billing.service";
 import { verifyMercadoPagoWebhookSignature } from "@/server/lib/mercadopago-webhook";
 import { syncMercadoPagoWebsitePreapproval, syncMercadoPagoWebsiteInvoice } from "@/server/websites/mercadopago-billing";
-
-function dateOrNull(value?: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
 
 async function processPreapproval(resourceId: string) {
   const preapproval = new PreApproval(mpClient);

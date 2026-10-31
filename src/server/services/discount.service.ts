@@ -1,6 +1,8 @@
 import { prisma } from "@/server/db/prisma";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
+import { isV2Plan } from "./commercial-plan-access";
+import { V2_BENEFIT_HOLD_MESSAGE } from "./commercial-benefit-hold";
 import {
   calculateSubscriptionBaseAmount,
   MIN_MERCADOPAGO_AMOUNT_CLP,
@@ -22,6 +24,7 @@ export async function applyDiscount(businessId: string, percentage: number) {
   if (!subscription) {
     return { success: false, error: "No se encontró una suscripción activa." };
   }
+  if (isV2Plan(subscription.plan)) return {success:false,error:V2_BENEFIT_HOLD_MESSAGE};
 
   if (subscription.paymentMethod === "BANK_TRANSFER") {
     return { success: false, error: "Las condiciones de transferencia bancaria se gestionan manualmente." };

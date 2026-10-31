@@ -59,11 +59,13 @@ export function RewardsClient({
   hasActiveDiscount,
   discountPercentage,
   prizes,
+  reservationOnly=false,
 }: {
   tokenBalance: number;
   hasActiveDiscount: boolean;
   discountPercentage: number;
   prizes: PrizeData[];
+  reservationOnly?:boolean;
 }) {
   const legacy = useTranslations("legacy");
   const [activeTab, setActiveTab] = useState<"ruleta" | "premios">("ruleta");
@@ -126,6 +128,8 @@ export function RewardsClient({
       const result = await activatePrizeAction(prizeId);
       if (!result.success) {
         setError(result.error || legacy("MWMw4_dRZUTr"));
+      } else if ("pendingCommercialConfirmation" in result && result.pendingCommercialConfirmation) {
+        setSuccessMsg("Premio reservado, sin consumir. Su cobro compatible está pendiente de confirmación. Los descuentos afectan una mensualidad, también en anualidad.");
       }
       setActivatingPrizeId(null);
     });
@@ -133,6 +137,7 @@ export function RewardsClient({
 
   return (
     <div className="space-y-6">
+      {reservationOnly && <p role="status" className="rounded-xl border border-border p-4">Los premios se reservan para la próxima facturación; todavía no se ejecutan cobros con beneficios. El descuento porcentual afecta una sola mensualidad del precio final, incluso en una anualidad. Los meses gratuitos se conservan completos hasta su confirmación.</p>}
       {/* ── Token Balance ── */}
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex items-center justify-between">
@@ -153,7 +158,7 @@ export function RewardsClient({
           {hasActiveDiscount && (
             <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-2">
               <p className="text-xs font-medium text-[#F59E0B]">
-                {discountPercentage}<LocalizedText id="DePUoxgwd0Zq" />
+                {reservationOnly ? `${discountPercentage}% de una mensualidad reservado, pendiente de confirmación` : <>{discountPercentage}<LocalizedText id="DePUoxgwd0Zq" /></>}
               </p>
             </div>
           )}
@@ -338,7 +343,7 @@ export function RewardsClient({
           {hasActiveDiscount && (
             <div className="rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-4 py-3">
               <p className="text-sm font-medium text-[#F59E0B]">
-                <LocalizedText id="rF2ZLA0zZW6A" />{discountPercentage}<LocalizedText id="GGTUJ_MnV-Lz" />
+                {reservationOnly ? "Beneficio reservado. El cobro compatible todavía no está confirmado." : <><LocalizedText id="rF2ZLA0zZW6A" />{discountPercentage}<LocalizedText id="GGTUJ_MnV-Lz" /></>}
               </p>
             </div>
           )}
@@ -381,7 +386,7 @@ export function RewardsClient({
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B" }}>
-                      <LocalizedText id="yySYGeu_Pqfo" />
+                      {reservationOnly ? "Reservado" : <LocalizedText id="yySYGeu_Pqfo" />}
                     </span>
                   </div>
                 );
@@ -523,7 +528,7 @@ export function RewardsClient({
                       </div>
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-[10px] text-muted-foreground/60">{new Date(prize.createdAt).toLocaleDateString("es-CL")}</p>
-                        <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: st.bg, color: st.text }}>{st.label}</span>
+                        <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: st.bg, color: st.text }}>{reservationOnly && prize.status === "ACTIVE" ? "Reservado" : st.label}</span>
                       </div>
                       {prize.status === "AVAILABLE" && (
                         <button
@@ -537,12 +542,12 @@ export function RewardsClient({
                         >
                           {activatingPrizeId === prize.id
                             ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : <><LocalizedText id="YrfHSN52KfpI" /> <ChevronRight className="h-3 w-3" /></>}
+                            : <>{reservationOnly ? "Reservar" : <LocalizedText id="YrfHSN52KfpI" />} <ChevronRight className="h-3 w-3" /></>}
                         </button>
                       )}
                       {prize.status === "ACTIVE" && (
                         <div className="w-full rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3 py-2 text-center">
-                          <p className="text-[11px] font-semibold text-[#F59E0B]"><LocalizedText id="yySYGeu_Pqfo" /></p>
+                          <p className="text-[11px] font-semibold text-[#F59E0B]">{reservationOnly ? "Reservado" : <LocalizedText id="yySYGeu_Pqfo" />}</p>
                         </div>
                       )}
                     </div>

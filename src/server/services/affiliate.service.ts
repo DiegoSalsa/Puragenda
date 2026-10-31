@@ -1,6 +1,9 @@
 import { prisma } from "@/server/db/prisma";
 import { applyDiscount } from "@/server/services/discount.service";
 import crypto from "crypto";
+import type { Prisma } from "@prisma/client";
+import { isV2Plan } from "./commercial-plan-access";
+import { hasPendingCommercialBenefit } from "./commercial-benefit-hold";
 
 // ═══════════════════════════════════════════
 // ROULETTE PRIZES — Probability Table
@@ -81,40 +84,51 @@ export async function applyReferralCode(newBusinessId: string, referralCode: str
     return { success: false as const, error: "No puedes usar tu propio código de referido" };
   }
 
-  await prisma.business.update({
-    where: { id: newBusinessId },
-    data: { referredByAffiliateId: affiliate.id },
+  return prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${newBusinessId} FOR UPDATE`;
+    const business=await tx.business.findUnique({where:{id:newBusinessId},include:{subscription:true}});
+    const referrer=await tx.business.findUnique({where:{id:affiliate.businessId},select:{ownerId:true}});
+    if(!business || business.ownerId===referrer?.ownerId) return {success:false as const,error:"No puedes usar tu propio código de referido"};
+    if(business.referredByAffiliateId===affiliate.id) return {success:true as const,affiliateBusinessName:affiliate.business.name};
+    if(business.referredByAffiliateId || business.subscription?.hasCountedAsPaidReferral
+      || await tx.commercialPaymentEvidence.findFirst({where:{businessId:newBusinessId,status:"CONFIRMED"}})) return {success:false as const,error:"El referido solo puede registrarse una vez, antes del primer pago"};
+    if(await tx.commercialBillingOperation.findFirst({where:{businessId:newBusinessId,status:{in:["PREPARED","EXECUTING","UNKNOWN","AWAITING_PAYMENT","SCHEDULED","PAID"]}}})) return {success:false as const,error:"La contratación ya está en curso"};
+    if(business.subscription?.pendingDiscountPercentage!=null || business.subscription?.activePrizeId) return {success:false as const,error:"Ya tienes un beneficio pendiente"};
+    await tx.business.update({where:{id:newBusinessId},data:{referredByAffiliateId:affiliate.id}});
+    await tx.subscription.updateMany({where:{businessId:newBusinessId},data:{pendingDiscountPercentage:25}});
+    return {success:true as const,affiliateBusinessName:affiliate.business.name};
   });
-
-  // Give the new business a 25% discount on their first payment
-  await prisma.subscription.updateMany({
-    where: { businessId: newBusinessId },
-    data: { pendingDiscountPercentage: 25 },
-  });
-
-  return { success: true as const, affiliateBusinessName: affiliate.business.name };
 }
 
 /**
  * Increment paid referrals for an affiliate.
  * Called when a referred business becomes a paying customer.
  */
-export async function incrementPaidReferrals(businessId: string) {
-  const business = await prisma.business.findUnique({
+export async function incrementPaidReferrals(businessId: string, transaction?: Prisma.TransactionClient) {
+  const apply=async(tx:Prisma.TransactionClient)=>{
+  await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${businessId} FOR UPDATE`;
+  const business = await tx.business.findUnique({
     where: { id: businessId },
-    select: { referredByAffiliateId: true },
+    select: { referredByAffiliateId: true, subscription:true, commercialSubscription:true },
   });
 
   if (!business?.referredByAffiliateId) return;
+  const sub=business.subscription;
+  const evidence=isV2Plan(sub?.plan) && business.commercialSubscription?.lastPaymentEventId
+    ? await tx.commercialPaymentEvidence.findFirst({where:{businessId,eventId:business.commercialSubscription.lastPaymentEventId,status:"CONFIRMED"}}) : null;
+  const legacyProof=!isV2Plan(sub?.plan) && sub?.lastPaymentStatus==="approved" && sub.lastPaymentId && sub.lastInvoiceId;
+  if(!evidence && !legacyProof) return;
 
-  const affiliate = await prisma.affiliate.update({
+  const claimed=await tx.subscription.updateMany({where:{businessId,hasCountedAsPaidReferral:false},data:{hasCountedAsPaidReferral:true}});
+  if(!claimed.count) return;
+  const affiliate = await tx.affiliate.update({
     where: { id: business.referredByAffiliateId },
     data: { paidReferrals: { increment: 1 } },
   });
 
-  console.log(
-    `[affiliate] Affiliate ${affiliate.id} now has ${affiliate.paidReferrals} paid referrals (${affiliate.paidReferrals - affiliate.spentTokens} tokens available)`
-  );
+  await tx.commercialEvent.upsert({where:{source_eventId:{source:"paid_referral",eventId:businessId}},update:{},create:{businessId,source:"paid_referral",eventId:businessId,operation:"FIRST_CONFIRMED_PAYMENT_REFERRAL",outcome:"APPLIED",occurredAt:new Date(),providerReference:evidence?.paymentId ?? sub!.lastPaymentId,details:{affiliateId:affiliate.id,paymentEvidenceId:evidence?.id ?? null,invoiceId:evidence?null:sub!.lastInvoiceId}}});
+  };
+  return transaction ? apply(transaction) : prisma.$transaction(apply);
 }
 
 /**
@@ -286,6 +300,25 @@ export async function redeemFixedDiscount(businessId: string) {
  * Only one prize can be active at a time.
  */
 export async function activatePrize(businessId: string, prizeId: string) {
+  const projection=await prisma.subscription.findUnique({where:{businessId}});
+  if(projection && isV2Plan(projection.plan)) {
+    return prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${businessId} FOR UPDATE`;
+      const sub=await tx.subscription.findUnique({where:{businessId}});
+      const affiliate=await tx.affiliate.findUnique({where:{businessId}});
+      if(!sub || !affiliate) return {success:false as const,error:"Afiliado o suscripción no encontrado"};
+      if(hasPendingCommercialBenefit(sub) || await tx.prize.findFirst({where:{affiliateId:affiliate.id,status:"ACTIVE"}})) return {success:false as const,error:"Ya tienes un beneficio pendiente"};
+      if(await tx.commercialBillingOperation.findFirst({where:{businessId,status:{in:["PREPARED","EXECUTING","UNKNOWN","AWAITING_PAYMENT","SCHEDULED","PAID"]}}})) return {success:false as const,error:"Espera a que termine la operación comercial pendiente"};
+      const prize=await tx.prize.findFirst({where:{id:prizeId,affiliateId:affiliate.id,status:"AVAILABLE"}});
+      if(!prize || (prize.type!=="PERCENTAGE" && prize.type!=="FREE_MONTH")) return {success:false as const,error:"Premio no disponible"};
+      if(prize.type==="PERCENTAGE" && ![10,15,20,30,50].includes(prize.percentage ?? 0)) return {success:false as const,error:"Porcentaje de premio no válido"};
+      if(prize.type==="FREE_MONTH" && ![1,3].includes(prize.freeMonths ?? 0)) return {success:false as const,error:"Meses de premio no válidos"};
+      await tx.prize.update({where:{id:prize.id},data:{status:"ACTIVE"}});
+      await tx.subscription.update({where:{id:sub.id},data:{activePrizeId:prize.id,pendingDiscountPercentage:prize.type==="PERCENTAGE"?prize.percentage:null,freeMonthsRemaining:prize.type==="FREE_MONTH"?prize.freeMonths!:0}});
+      await tx.commercialEvent.create({data:{businessId,source:"v2_benefit_reservation",eventId:prize.id,operation:"PRIZE_RESERVED",outcome:"RECEIVED",occurredAt:new Date(),details:{prizeId:prize.id,percentage:prize.percentage,freeMonths:prize.freeMonths,consumed:false,providerValidated:false}}});
+      return {success:true as const,pendingCommercialConfirmation:true as const};
+    });
+  }
   const affiliate = await prisma.affiliate.findUnique({ where: { businessId } });
   if (!affiliate) return { success: false as const, error: "Afiliado no encontrado" };
 

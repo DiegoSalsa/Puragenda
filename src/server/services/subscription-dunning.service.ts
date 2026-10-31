@@ -176,23 +176,6 @@ export async function processMercadoPagoInvoice(
         subscription.lastPaymentStatus === "approved");
     const wasPastDue = subscription.status === "PAST_DUE";
 
-    if (
-      !alreadyProcessed &&
-      subscription.activePrizeId &&
-      subscription.freeMonthsRemaining <= 1
-    ) {
-      await prisma.$transaction([
-        prisma.prize.update({
-          where: { id: subscription.activePrizeId },
-          data: { status: "USED" },
-        }),
-        prisma.subscription.update({
-          where: { id: subscription.id },
-          data: { activePrizeId: null },
-        }),
-      ]);
-    }
-
     const activeData = {
       status: "ACTIVE",
       isTrial: false,
@@ -209,7 +192,6 @@ export async function processMercadoPagoInvoice(
       paymentRetryCount: retryCount,
       dunningEmailSentAt: null,
       graceExpiryWarningSentAt: null,
-      hasCountedAsPaidReferral: true,
     } as const;
 
     if (wasPastDue) {
@@ -239,9 +221,9 @@ export async function processMercadoPagoInvoice(
       });
     }
 
-    if (!alreadyProcessed) {
+    if (!historicalInvoiceAlreadyAccounted) {
       const billingSync = await advanceBillingBenefitAfterAuthorized(
-        subscription.id
+        subscription.id, invoice.id
       );
       if (!billingSync.success) {
         console.warn(
@@ -252,9 +234,7 @@ export async function processMercadoPagoInvoice(
 
       await markPlatformDiscountApplied(subscription.id);
 
-      if (!subscription.hasCountedAsPaidReferral) {
-        await incrementPaidReferrals(subscription.businessId);
-      }
+      await incrementPaidReferrals(subscription.businessId);
     }
 
     if (wasPastDue && subscription.business.owner?.email) {
