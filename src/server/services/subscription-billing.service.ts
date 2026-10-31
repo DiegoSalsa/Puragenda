@@ -279,18 +279,25 @@ export async function syncMercadoPagoSubscriptionAmount(subscriptionId: string) 
 
 /** Consume a legacy benefit only for the persisted canonical approved invoice.
  * The receipt and balances commit together; retries may safely repeat amount sync. */
-export async function advanceBillingBenefitAfterAuthorized(subscriptionId: string, invoiceId?:string) {
+export async function advanceBillingBenefitAfterAuthorized(subscriptionId: string, invoiceId?:string, chargedAmount?:number, paidPeriodStart?:Date) {
   const initial=await prisma.subscription.findUnique({where:{id:subscriptionId}});
   if(!initial) return {success:false as const,error:"Suscripcion no encontrada"};
   if(initial.paymentMethod==="BANK_TRANSFER") return {success:true as const,skipped:true};
   if(isV2Plan(initial.plan)) return {success:false as const,error:"V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED"};
   if(!invoiceId) return {success:false as const,error:"CONFIRMED_INVOICE_REQUIRED"};
-  await prisma.$transaction(async tx=>{
+  const matched=await prisma.$transaction(async tx=>{
     await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${initial.businessId} FOR UPDATE`;
     const sub=await tx.subscription.findUniqueOrThrow({where:{id:subscriptionId}});
     if(sub.lastInvoiceId!==invoiceId || sub.lastPaymentStatus!=="approved") throw new Error("CONFIRMED_INVOICE_REQUIRED");
     const eventId=`${sub.id}:${invoiceId}`;
-    if(await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_billing_benefit",eventId}}})) return;
+    if(await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_billing_benefit",eventId}}})) return true;
+    const expected=calculateNextBillingPreview(sub).mpAmount;
+    const reservation=sub.activePrizeId ? await tx.commercialEvent.findUnique({where:{source_eventId:{source:"legacy_benefit_reservation",eventId:sub.activePrizeId}}}) : null;
+    if(hasPendingCommercialBenefit(sub) && (chargedAmount!==expected || (reservation && (!paidPeriodStart || paidPeriodStart<reservation.occurredAt)))) {
+      await tx.commercialEvent.upsert({where:{source_eventId:{source:"legacy_billing_review",eventId}},update:{},create:{businessId:sub.businessId,source:"legacy_billing_review",eventId,operation:"BENEFIT_PAYMENT_REVIEW",outcome:"RECEIVED",occurredAt:new Date(),details:{invoiceId,expected,charged:chargedAmount ?? null,consumed:false}}});
+      await tx.subscription.update({where:{id:sub.id},data:{lastBillingSyncError:"El importe cobrado requiere revisión antes de consumir el beneficio."}});
+      return false;
+    }
     const free=Math.max(sub.freeMonthsRemaining-1,0);
     const promoFree=sub.freeMonthsRemaining>0 ? sub.promoFreeMonthsRemaining : Math.max(sub.promoFreeMonthsRemaining-1,0);
     const promoDiscount=sub.freeMonthsRemaining<=0 && sub.promoFreeMonthsRemaining<=0 ? Math.max(sub.promoDiscountMonthsRemaining-1,0) : sub.promoDiscountMonthsRemaining;
@@ -300,6 +307,8 @@ export async function advanceBillingBenefitAfterAuthorized(subscriptionId: strin
       promoDiscountMonthsRemaining:promoDiscount,promoDiscountPercentage:promoDiscount>0?sub.promoDiscountPercentage:null,promoName:promoFree>0||promoDiscount>0?sub.promoName:null,
       ...(finishPrize?{activePrizeId:null}:{})}});
     await tx.commercialEvent.create({data:{businessId:sub.businessId,source:"legacy_billing_benefit",eventId,operation:"APPROVED_INVOICE_BENEFIT",outcome:"APPLIED",occurredAt:new Date(),details:{invoiceId,hadBenefit:hasPendingCommercialBenefit(sub)}}});
+    return true;
   });
+  if(!matched) return {success:false as const,error:"LEGACY_BENEFIT_PAYMENT_REVIEW_REQUIRED"};
   return syncMercadoPagoSubscriptionAmount(subscriptionId);
 }

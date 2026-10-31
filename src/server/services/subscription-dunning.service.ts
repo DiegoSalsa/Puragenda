@@ -223,7 +223,7 @@ export async function processMercadoPagoInvoice(
 
     if (!historicalInvoiceAlreadyAccounted) {
       const billingSync = await advanceBillingBenefitAfterAuthorized(
-        subscription.id, invoice.id
+        subscription.id, invoice.id, invoice.transaction_amount, debitDate
       );
       if (!billingSync.success) {
         console.warn(

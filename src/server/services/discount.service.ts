@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import { PreApproval } from "mercadopago";
 import { mpClient } from "@/server/lib/mercadopago";
@@ -14,9 +15,10 @@ import {
  * @param businessId The ID of the business
  * @param percentage The discount percentage (e.g., 15, 30, 50)
  */
-export async function applyDiscount(businessId: string, percentage: number) {
+export async function applyDiscount(businessId: string, percentage: number, transaction?:Prisma.TransactionClient, reservedPrizeId?:string) {
+  const db=transaction ?? prisma;
   // 1. Find active subscription
-  const subscription = await prisma.subscription.findUnique({
+  const subscription = await db.subscription.findUnique({
     where: { businessId },
     include: { business: true },
   });
@@ -35,7 +37,7 @@ export async function applyDiscount(businessId: string, percentage: number) {
   }
 
   // 2. Validate pending discount
-  if (subscription.pendingDiscountPercentage !== null) {
+  if (subscription.pendingDiscountPercentage !== null && !(reservedPrizeId && subscription.activePrizeId===reservedPrizeId && subscription.pendingDiscountPercentage===percentage)) {
     return { success: false, error: "Ya existe un descuento pendiente para el próximo mes." };
   }
 
@@ -65,14 +67,17 @@ export async function applyDiscount(businessId: string, percentage: number) {
     });
 
     // 5. Update Prisma
-    await prisma.subscription.update({
+    await db.subscription.update({
       where: { id: subscription.id },
       data: { pendingDiscountPercentage: percentage },
     });
 
     return { success: true, discountedPrice, originalPrice: totalBasePrice };
   } catch (error) {
-    console.error("[discount.service] Error applying discount via MP:", error);
+    void error;
+    // The PUT may have succeeded remotely. Persist the reservation instead of
+    // issuing another benefit or claiming a confirmed discount.
+    await db.subscription.update({where:{id:subscription.id},data:{pendingDiscountPercentage:percentage,lastBillingSyncAt:new Date(),lastBillingSyncError:"El resultado del descuento requiere confirmación con Mercado Pago."}});
     return { success: false, error: "Error al aplicar el descuento en MercadoPago." };
   }
 }

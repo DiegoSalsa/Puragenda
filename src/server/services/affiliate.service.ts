@@ -319,59 +319,35 @@ export async function activatePrize(businessId: string, prizeId: string) {
       return {success:true as const,pendingCommercialConfirmation:true as const};
     });
   }
-  const affiliate = await prisma.affiliate.findUnique({ where: { businessId } });
-  if (!affiliate) return { success: false as const, error: "Afiliado no encontrado" };
-
-  // Check no other prize is currently ACTIVE
-  const activePrize = await prisma.prize.findFirst({
-    where: { affiliateId: affiliate.id, status: "ACTIVE" },
-  });
-  if (activePrize) {
-    return { success: false as const, error: "Ya tienes un premio activo. Espera a que se aplique en tu próximo cobro." };
-  }
-
-  // Check subscription doesn't already have a pending discount
-  const subscription = await prisma.subscription.findUnique({ where: { businessId } });
-  if (!subscription) return { success: false as const, error: "No tienes una suscripción activa" };
-  if (subscription.pendingDiscountPercentage !== null) {
-    return { success: false as const, error: "Ya tienes un descuento pendiente" };
-  }
-
-  // Find the prize
-  const prize = await prisma.prize.findFirst({
-    where: { id: prizeId, affiliateId: affiliate.id, status: "AVAILABLE" },
-  });
-  if (!prize) return { success: false as const, error: "Premio no encontrado o ya usado" };
-
-  // Apply based on type
-  if (prize.type === "PERCENTAGE" && prize.percentage) {
-    const result = await applyDiscount(businessId, prize.percentage);
-    if (!result.success) return result;
-  } else if (prize.type === "FREE_MONTH" && prize.freeMonths) {
-    // Free month = 100% discount (MP charges minimum $10 CLP)
-    const result = await applyDiscount(businessId, 100);
-    if (!result.success) return result;
-
-    // Track remaining free months
-    await prisma.subscription.update({
-      where: { businessId },
-      data: { freeMonthsRemaining: prize.freeMonths - 1 }, // -1 because current cycle counts
-    });
-  }
-
-  // Mark prize as ACTIVE and link to subscription
-  await prisma.$transaction([
-    prisma.prize.update({
-      where: { id: prizeId },
-      data: { status: "ACTIVE" },
-    }),
-    prisma.subscription.update({
-      where: { businessId },
-      data: { activePrizeId: prizeId },
-    }),
-  ]);
-
-  return { success: true as const };
+  const reserved=await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${businessId} FOR UPDATE`;
+    const affiliate=await tx.affiliate.findUnique({where:{businessId}});
+    const sub=await tx.subscription.findUnique({where:{businessId}});
+    if(!affiliate || !sub) return {success:false as const,error:"Afiliado o suscripción no encontrado"};
+    if(isV2Plan(sub.plan) || sub.paymentMethod==="BANK_TRANSFER" || !sub.mpSubscriptionId) return {success:false as const,error:"Contrato automático legacy requerido"};
+    if(hasPendingCommercialBenefit(sub) || await tx.prize.findFirst({where:{affiliateId:affiliate.id,status:"ACTIVE"}})) return {success:false as const,error:"Ya tienes un beneficio pendiente"};
+    const prize=await tx.prize.findFirst({where:{id:prizeId,affiliateId:affiliate.id,status:"AVAILABLE"}});
+    if(!prize || (prize.type!=="PERCENTAGE" && prize.type!=="FREE_MONTH")) return {success:false as const,error:"Premio no disponible"};
+    if(prize.type==="PERCENTAGE" && ![10,15,20,30,50].includes(prize.percentage ?? 0)) return {success:false as const,error:"Porcentaje de premio no válido"};
+    if(prize.type==="FREE_MONTH" && ![1,3].includes(prize.freeMonths ?? 0)) return {success:false as const,error:"Meses de premio no válidos"};
+    // Reserve the entire benefit before the provider PUT. An uncertain result
+    // remains reserved and blocks a competing prize, without losing months.
+    await tx.prize.update({where:{id:prize.id},data:{status:"ACTIVE"}});
+    const percentage=prize.type==="FREE_MONTH"?100:prize.percentage!;
+    await tx.subscription.update({where:{id:sub.id},data:{activePrizeId:prize.id,pendingDiscountPercentage:percentage,freeMonthsRemaining:prize.type==="FREE_MONTH"?prize.freeMonths!:0}});
+    await tx.commercialEvent.create({data:{businessId,source:"legacy_benefit_reservation",eventId:prize.id,operation:"PRIZE_RESERVED",outcome:"RECEIVED",occurredAt:new Date(),providerReference:sub.mpSubscriptionId,details:{percentage,freeMonths:prize.freeMonths,consumed:false}}});
+    return {success:true as const,percentage};
+  },{maxWait:10000,timeout:60000});
+  if(!reserved?.success) return reserved;
+  // Commit the intent BEFORE remote I/O. A crash/timeout in this second
+  // transaction leaves the complete reservation recoverable by invoice.
+  return prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id"=${businessId} FOR UPDATE`;
+    const sub=await tx.subscription.findUniqueOrThrow({where:{businessId}});
+    if(sub.activePrizeId!==prizeId || sub.pendingDiscountPercentage!==reserved.percentage) return {success:false as const,error:"El premio ya fue conciliado o requiere revisión"};
+    const result=await applyDiscount(businessId,reserved.percentage,tx,prizeId);
+    return result.success ? {success:true as const}:result;
+  },{maxWait:10000,timeout:60000});
 }
 
 /**
