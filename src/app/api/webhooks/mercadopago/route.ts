@@ -41,33 +41,9 @@ async function processPreapproval(resourceId: string) {
   }
 
   if (mpSubscription.status === "authorized") {
-    // An authorized preapproval only proves that the recurring agreement is
-    // active. It must never clear a PAST_DUE state; invoice notifications do.
-    const canActivateOnboarding =
-      (subscription.status === "INACTIVE" ||
-        subscription.status === "TRIALING") &&
-      !subscription.paymentFailedAt;
-
-    if (!canActivateOnboarding) {
-      return { handled: true, state: subscription.status };
-    }
-
-    const providerPeriodEnd = dateOrNull(mpSubscription.next_payment_date);
-    const fallbackPeriodEnd =
-      subscription.billingCycle === "ANNUAL"
-        ? addYears(new Date(), 1)
-        : addMonths(new Date(), 1);
-
-    await prisma.subscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: "ACTIVE",
-        isTrial: false,
-        currentPeriodEnd: providerPeriodEnd ?? fallbackPeriodEnd,
-      },
-    });
-
-    return { handled: true, state: "ACTIVE" };
+    // Preserve legitimate legacy grants without creating paid time from a
+    // recurring authorization. Invoice reconciliation is the payment boundary.
+    return { handled: true, state: subscription.status };
   }
 
   if (

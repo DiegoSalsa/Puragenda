@@ -1,4 +1,3 @@
-import { addMonths, addYears } from "date-fns";
 import { PreApproval } from "mercadopago";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -91,30 +90,9 @@ export async function POST(request: NextRequest) {
       id: subscription.mpSubscriptionId,
     });
 
-    if (mpSubscription.status === "authorized" && !subscription.paymentFailedAt) {
-      const nextPaymentDate = mpSubscription.next_payment_date
-        ? new Date(mpSubscription.next_payment_date)
-        : null;
-      const validNextPaymentDate =
-        nextPaymentDate && !Number.isNaN(nextPaymentDate.getTime())
-          ? nextPaymentDate
-          : null;
-      const periodEnd =
-        validNextPaymentDate ??
-        (subscription.billingCycle === "ANNUAL"
-          ? addYears(new Date(), 1)
-          : addMonths(new Date(), 1));
-
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: "ACTIVE",
-          isTrial: false,
-          currentPeriodEnd: periodEnd,
-        },
-      });
-      return NextResponse.json({ status: "ACTIVE" });
-    }
+    // Authorization proves consent to future charges, never payment. Keep
+    // recognized trial/courtesy/paid time exactly as recorded; only a canonical
+    // approved invoice can create or extend the paid grant.
 
     return NextResponse.json({
       status: subscription.status,
