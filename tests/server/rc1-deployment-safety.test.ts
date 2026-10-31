@@ -24,12 +24,12 @@ afterAll(()=>{
 describe("RC1 push/deployment isolation",()=>{
   it("disables automatic Vercel deployment for RC1 and both audit branches without changing legacy schedules",()=>{
     const config=JSON.parse(readFileSync("vercel.json","utf8"));
-    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false,"fix/puragenda-next-audit-02-agenda":false,"fix/puragenda-next-audit-03-services-staff":false,"fix/puragenda-next-audit-04-clients-privacy":false});
+    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false,"fix/puragenda-next-audit-02-agenda":false,"fix/puragenda-next-audit-03-services-staff":false,"fix/puragenda-next-audit-04-clients-privacy":false,"fix/puragenda-next-audit-05-billing-subscriptions":false});
     expect(config.crons).toHaveLength(5);
     expect(config.crons.some((cron:{path:string})=>cron.path==="/api/cron/puragenda-next")).toBe(false);
   });
   it.each(["production","preview","development",""])("refuses every audit %s build before any CLI executes",environment=>{
-    for(const branch of ["fix/puragenda-next-audit-01-registration","fix/puragenda-next-audit-02-agenda","fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy"]) {
+    for(const branch of ["fix/puragenda-next-audit-01-registration","fix/puragenda-next-audit-02-agenda","fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy","fix/puragenda-next-audit-05-billing-subscriptions"]) {
       for(const approved of ["0","1"]) {
         const r=run(environment,approved,branch);
         expect(r.status).toBe(1);expect(r.stderr).toContain("AUDIT_BRANCH_BUILD_DISABLED");
@@ -47,6 +47,9 @@ describe("RC1 push/deployment isolation",()=>{
     ["push","refs/heads/fix/puragenda-next-audit-04-clients-privacy","",false,false],
     ["workflow_dispatch","refs/heads/fix/puragenda-next-audit-04-clients-privacy","",false,false],
     ["pull_request","refs/pull/15/merge","fix/puragenda-next-audit-04-clients-privacy",false,false],
+    ["push","refs/heads/fix/puragenda-next-audit-05-billing-subscriptions","",false,false],
+    ["workflow_dispatch","refs/heads/fix/puragenda-next-audit-05-billing-subscriptions","",false,false],
+    ["pull_request","refs/pull/16/merge","fix/puragenda-next-audit-05-billing-subscriptions",false,false],
     ["push","refs/heads/main","",true,false],
     ["schedule","refs/heads/main","",true,false],
     ["workflow_dispatch","refs/heads/main","",true,false],

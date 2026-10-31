@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { validateProductionEnv } from "./validate-production-env.mjs";
 
 // These branches are published exclusively for independent code review.
-if (["fix/puragenda-next-audit-01-registration", "fix/puragenda-next-audit-02-agenda", "fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy"].includes(process.env.VERCEL_GIT_COMMIT_REF ?? "")) {
+if (["fix/puragenda-next-audit-01-registration", "fix/puragenda-next-audit-02-agenda", "fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy","fix/puragenda-next-audit-05-billing-subscriptions"].includes(process.env.VERCEL_GIT_COMMIT_REF ?? "")) {
   console.error("[vercel-build] AUDIT_BRANCH_BUILD_DISABLED: this review branch cannot deploy.");
   process.exit(1);
 }
