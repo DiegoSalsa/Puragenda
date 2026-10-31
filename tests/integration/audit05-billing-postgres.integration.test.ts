@@ -176,4 +176,11 @@ suite("Audit05 financial regressions with real isolated PostgreSQL",()=>{
     const results=await Promise.allSettled([run(),run()]);expect(results.every(x=>x.status==="rejected"&&x.reason.message==="BILLING_CYCLE_CHANGE_REQUIRES_RENEWAL")).toBe(true);
     expect(await prisma.commercialBillingOperation.count({where:{businessId:f.business.id}})).toBe(1);expect(f.port.create).toHaveBeenCalledTimes(1);expect(f.port.update).not.toHaveBeenCalled();
   });
+  it.each([undefined,999])("canonical application identity %s cannot authorize another application's contract",async application_id=>{
+    const f=await fixture(),root=await checkout(f),invoice=invoiceFor(f,root);
+    Object.assign(f.subscriptions.get(root.providerSubscriptionId!)!,{application_id});
+    await expect(reconcileMpV2Invoice(invoice,f.provider)).rejects.toThrow();
+    expect((await getCommercialPlanAccess(f.business.id)).allowed).toBe(false);
+    expect(await prisma.commercialPaymentEvidence.count({where:{businessId:f.business.id}})).toBe(0);
+  });
 });

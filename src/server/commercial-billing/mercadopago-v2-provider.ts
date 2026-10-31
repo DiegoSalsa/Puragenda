@@ -76,7 +76,7 @@ export class MpV2Provider {
   }
   validateSubscription(value: unknown) {
     const sub = mpV2SubscriptionSchema.parse(value);
-    if (sub.collector_id !== this.config.accountId || (sub.application_id !== undefined && sub.application_id !== this.config.applicationId) ||
+    if (sub.collector_id !== this.config.accountId || sub.application_id !== this.config.applicationId ||
       (this.config.sandboxAccountLiveMode && (!this.verifiedTestAccount || sub.application_id !== this.config.applicationId)) ||
       (sub.live_mode !== undefined && sub.live_mode !== this.expectedLiveMode)) throw new Error("V2_PROVIDER_ACCOUNT_MISMATCH");
     return sub;
