@@ -228,7 +228,8 @@ suite("Next registration and real local trial lifecycle", () => {
     expect((await getCommercialPlanAccess(businessId)).has("contact_flow")).toBe(true);
     expect(await prisma.subscription.findUnique({ where: { businessId } })).toMatchObject({ status: "ACTIVE", isTrial: false, currentPeriodEnd: end });
     expect(await expireCommercialTrial(businessId, sub.trialEnd!)).toBe(false);
-    expect((await getCommercialPlanAccess(businessId, end)).allowed).toBe(false);
+    expect((await getCommercialPlanAccess(businessId, end)).allowed).toBe(true);
+    expect((await getCommercialPlanAccess(businessId, new Date(+end + 48 * 3600000))).allowed).toBe(false);
     sub = await prisma.commercialSubscription.findUniqueOrThrow({ where: { businessId } });
     expect(sub.lastPaymentEventId).toBeTruthy(); expect(sub.trialEnd).not.toEqual(end);
   });

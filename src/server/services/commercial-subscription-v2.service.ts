@@ -4,6 +4,7 @@ import { prisma } from "@/server/db/prisma";
 import { COMMERCIAL_CATALOG_VERSION, getCommercialPlanMetadata, quoteCommercialPlan, type CommercialBillingCycle, type CommercialPlanIdentifier } from "@/core/commercial-catalog";
 import { evaluateCommercialEntitlements } from "@/core/commercial-entitlements";
 import { assertCommercialSandbox, commercialHash, commercialInteger } from "./commercial-internal";
+import { mpV2RenewalGraceDeadline, type RenewalGraceSnapshot } from "@/server/commercial-billing/mercadopago-v2-grace";
 
 export type CommercialSnapshotStatus = CommercialSubscription["status"];
 export type CommercialSnapshotProvider = CommercialSubscription["provider"];
@@ -28,7 +29,7 @@ type SnapshotDb = Pick<Prisma.TransactionClient, "business" | "subscription" | "
 /** Entitlements are a rebuildable projection, never a separately editable contract. */
 export async function materializeCommercialEntitlements(
   db: Pick<Prisma.TransactionClient, "commercialEntitlement"> & Partial<Pick<Prisma.TransactionClient, "subscription">>,
-  snapshot: Pick<CommercialSubscription, "id" | "businessId" | "planCode" | "status" | "professionalTotal" | "periodStart" | "periodEnd" | "trialEnd" | "gracePeriodEndsAt" | "termsSnapshot" | "trialStart" | "lastPaymentAt" | "lastPaymentStatus" | "lastPaymentEventId" | "billingCycle">,
+  snapshot: Pick<CommercialSubscription, "id" | "businessId" | "planCode" | "status" | "professionalTotal" | "periodStart" | "periodEnd" | "trialEnd" | "gracePeriodEndsAt" | "termsSnapshot" | "trialStart" | "lastPaymentAt" | "lastPaymentStatus" | "lastPaymentEventId" | "billingCycle"> & RenewalGraceSnapshot,
   now = new Date(),
 ) {
   const terms = snapshot.termsSnapshot as { websiteAddon?: { active?: boolean; validUntil?: string | null } } | null;
@@ -41,7 +42,8 @@ export async function materializeCommercialEntitlements(
     where: { subscriptionId: snapshot.id, businessId: snapshot.businessId },
     data: { status: "REVOKED", reason: evaluation.reason || "PROJECTION_REBUILT" },
   });
-  const boundaries = [snapshot.status === "PAST_DUE_GRACE" ? snapshot.gracePeriodEndsAt : snapshot.periodEnd,
+  const deadline = mpV2RenewalGraceDeadline(snapshot, now);
+  const boundaries = [deadline ?? snapshot.periodEnd,
     snapshot.status === "TRIALING" ? snapshot.trialEnd : null].filter((d): d is Date => Boolean(d));
   const validTo = boundaries.length ? new Date(Math.min(...boundaries.map(d => d.getTime()))) : null;
   for (const capability of evaluation.capabilities) {
@@ -58,8 +60,10 @@ export async function materializeCommercialEntitlements(
   if (db.subscription && isV2Plan(snapshot.planCode)) {
     const effective = effectiveSnapshotAccess(snapshot, now);
     await db.subscription.updateMany({ where: { businessId: snapshot.businessId, plan: { in: ["PURAGENDA", "PURAGENDA_PLUS"] } }, data: {
-      status: effective.commercialAccess ? (snapshot.status === "TRIALING" ? "TRIALING" : snapshot.status === "PAST_DUE_GRACE" ? "PAST_DUE" : "ACTIVE") : "INACTIVE",
-      gracePeriodEndsAt: snapshot.gracePeriodEndsAt,
+      status: effective.commercialAccess ? (snapshot.status === "TRIALING" ? "TRIALING" : effective.status === "PAST_DUE_GRACE" ? "PAST_DUE" : "ACTIVE") : "INACTIVE",
+      // Reserve the same fixed allowance while paid, so legacy Agenda/widget
+      // gates do not depend on the timing of the first worker execution.
+      gracePeriodEndsAt: deadline,
       billingCycle: snapshot.billingCycle, isTrial: snapshot.status === "TRIALING", trialEndsAt: snapshot.trialEnd, currentPeriodEnd: snapshot.periodEnd,
       plan: snapshot.planCode as "PURAGENDA" | "PURAGENDA_PLUS", staffLimitOverride: snapshot.professionalTotal, extraStaffCount: snapshot.professionalTotal - 1,
     } });

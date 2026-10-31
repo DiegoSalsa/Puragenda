@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
+import { effectiveSnapshotAccess, isRegistrationV2Contract } from "./commercial-plan-access";
 import {
   evaluateCommercialEntitlements,
   type CommercialEntitlementEvaluation,
@@ -70,7 +71,7 @@ export async function getCommercialEntitlementShadow(
         quantities: { "professional.seats": 0 }, reason: "LEGACY_SOURCE_DRIFT_REQUIRES_REVIEW", persistedEntitlements: snapshot.entitlements,
         source: "COMMERCIAL_SNAPSHOT", shadow: true, error: null };
     }
-    const evaluation = evaluateCommercialEntitlements(
+    const evaluation = isRegistrationV2Contract(snapshot) ? effectiveSnapshotAccess(snapshot, now) : evaluateCommercialEntitlements(
       {
         ...snapshot,
         plan: snapshot.planCode,

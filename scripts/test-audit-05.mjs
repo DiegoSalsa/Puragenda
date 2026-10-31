@@ -48,7 +48,7 @@ const commands = {
   "http-agenda":["scripts/test-next-staging-agenda.mjs"],
   "http-services":["scripts/test-next-staging-services-staff.mjs"],
   "http-clients":["--import","tsx","scripts/test-next-staging-clients-privacy.mjs"],
-  "http-billing":["scripts/test-next-staging-billing.mjs"],
+  "http-billing":["--import","tsx","scripts/test-next-staging-billing.mjs"],
   tests: ["node_modules/vitest/vitest.mjs", "run", ...process.argv.slice(3)],
 };
 if (!commands[mode]) throw new Error("UNKNOWN_AUDIT_CHECK");

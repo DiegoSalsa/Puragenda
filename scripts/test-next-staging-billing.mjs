@@ -5,6 +5,10 @@ import assert from "node:assert/strict";
 import {randomUUID,randomBytes} from "node:crypto";
 import pg from "pg";
 import {localCommercialDatabase} from "./commercial-migrations.mjs";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import * as projectionService from "../src/server/services/commercial-subscription-v2.service.ts";
+const materializeCommercialEntitlements = projectionService.materializeCommercialEntitlements ?? projectionService.default?.materializeCommercialEntitlements;
 const state=JSON.parse(fs.readFileSync("scratch/next-staging/current.json","utf8"));
 const target=path.resolve(state.target);assert(target.startsWith(path.resolve("scratch/next-staging")+path.sep));
 assert.equal(state.httpOrigin,"http://127.0.0.1:3128");
@@ -12,6 +16,7 @@ const env=JSON.parse(fs.readFileSync(path.join(target,"staging-runtime.private.j
 assert.equal(env.NEXT_STAGING_NETWORK_GUARD,"1");assert.equal(env.PURAGENDA_MP_V2_ENABLED,"0");
 assert(!env.MERCADOPAGO_ACCESS_TOKEN && !env.RESEND_API_KEY);
 const db=new pg.Pool({connectionString:localCommercialDatabase(env.DATABASE_URL)}),origin=state.httpOrigin,checks=[];
+const projectionDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: localCommercialDatabase(env.DATABASE_URL) }) });
 let cookie="";
 const check=(name,value)=>{assert(value,name);checks.push(name);console.log("PASS "+name);};
 async function call(route,body,headers={}) {
@@ -23,6 +28,7 @@ try {
   const auth=await call("/api/auth/register",{...account,name:"Synthetic rewards owner",businessName:"Synthetic rewards business",countryCode:"CL",timezone:"America/Santiago",currencyCode:"CLP",planIntent:"PURAGENDA_PLUS",commercialPlanIntent:"PURAGENDA_PLUS",professionalTotal:1,billingCycle:"MONTHLY",marketplaceCategorySlug:"otro",marketplaceOtherDescription:"Synthetic rewards",marketplaceLocalityNotFound:true,marketplaceCityName:"Synthetic city",marketplaceAuthorized:false,termsAccepted:true},{"x-forwarded-for":`192.0.2.${150+Math.floor(Math.random()*50)}`});
   check("Synthetic reward owner registers through the actual application",auth.response.status===201);
   cookie=auth.response.headers.getSetCookie().map(c=>c.split(";")[0]).join("; ");
+  const rewardCookie = cookie;
   const business=(await db.query('SELECT b.id FROM "Business" b JOIN "User" u ON u.id=b."ownerId" WHERE u.email=$1',[account.email])).rows[0];assert(business);
   const rewards=await call("/dashboard/rewards");check("Rewards page explicitly presents pending V2 reservation without a payment promise",rewards.response.status===200&&rewards.text.includes("Los premios se reservan"));
   const affiliate=(await db.query('SELECT * FROM "Affiliate" WHERE "businessId"=$1',[business.id])).rows[0];assert(affiliate);
@@ -59,5 +65,26 @@ try {
   const annual=await call("/api/dashboard/subscription/billing");assert.equal(annual.response.status,200);
   check("Referral discount survives annual registration as 25 percent of one month",annual.data.benefitHold&&annual.data.benefitQuote.monthlyTotal===12990&&annual.data.benefitQuote.amountDue===126653);
   check("Annual offer remains 12 months paying 10 before the single-month benefit",annual.data.total===129900&&annual.data.benefitQuote.cycleTotal===129900);
+  // Seed confirmed local-only evidence; never enable a provider or a worker.
+  // The production materializer, HTTP gates and dashboard then evaluate it.
+  cookie = rewardCookie;
+  const paymentEventId = randomUUID();
+  await projectionDb.commercialEvent.create({ data: { id: paymentEventId, businessId: business.id, source: "synthetic_http_audit05", eventId: paymentEventId, operation: "PAYMENT_CONFIRMED", outcome: "APPLIED", occurredAt: new Date() } });
+  for (const elapsed of [-60000, 60000, 24 * 3600000, 49 * 3600000]) {
+    const end = new Date(Date.now() - elapsed), start = new Date(+end - 30 * 86400000), allowed = elapsed < 48 * 3600000;
+    const snapshot = await projectionDb.commercialSubscription.update({ where: { businessId: business.id }, data: {
+      provider: "MERCADO_PAGO", externalSubscriptionId: "synthetic-http-paid-contract", status: "ACTIVE", periodStart: start, periodEnd: end, renewalAt: end,
+      lastPaymentAt: start, lastPaymentStatus: "CONFIRMED", lastPaymentEventId: paymentEventId, gracePeriodEndsAt: null,
+    } });
+    await materializeCommercialEntitlements(projectionDb, snapshot);
+    const billing = await call("/api/dashboard/subscription/billing");
+    check(`HTTP billing derives the fixed grace state without a worker, offset=${elapsed}`, billing.response.status === 200 && billing.data.status === (elapsed < 0 ? "ACTIVE" : allowed ? "PAST_DUE_GRACE" : "PAST_DUE_BLOCKED") && (elapsed < 0 || +new Date(billing.data.gracePeriodEndsAt) === +end + 48 * 3600000));
+    const contact = await call("/api/dashboard/contact-flow", { action: "LOAD" });
+    check(`HTTP Contact Flow agrees with bounded grace, offset=${elapsed}`, allowed ? contact.response.status === 200 : contact.response.status >= 400);
+    const puri = await call("/api/dashboard/puri-plus", { action: "ANALYZE" });
+    check(`HTTP Puri agrees with bounded grace, offset=${elapsed}`, allowed ? puri.response.status === 200 : puri.response.status >= 400);
+    const persisted = await projectionDb.commercialSubscription.findUniqueOrThrow({ where: { id: snapshot.id } });
+    check(`HTTP reads do not persist or restart the grace window, offset=${elapsed}`, persisted.status === "ACTIVE" && persisted.gracePeriodEndsAt === null && +persisted.periodEnd === +end);
+  }
   fs.writeFileSync(path.join(target,"audit05-billing-http-results.json"),JSON.stringify({passed:true,syntheticOnly:true,providerCalls:0,checks},null,2));
-}finally{await db.end();}
+}finally{await projectionDb.$disconnect();await db.end();}

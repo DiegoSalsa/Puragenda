@@ -54,7 +54,11 @@ export function getSubscriptionAccessState(
     case "ACTIVE":
       if (["PURAGENDA", "PURAGENDA_PLUS"].includes(subscription.plan ?? "")) {
         const end = validDate(subscription.currentPeriodEnd);
-        if (!end || end <= now) return "INACTIVE";
+        if (!end) return "INACTIVE";
+        if (end <= now) {
+          const grace = validDate(subscription.gracePeriodEndsAt);
+          return grace && grace > now && +grace <= +end + 48 * 3600000 ? "PAST_DUE_GRACE" : "INACTIVE";
+        }
       }
       return "ACTIVE";
     case "TRIALING":

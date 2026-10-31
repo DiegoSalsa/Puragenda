@@ -10,6 +10,8 @@ import { prepareMpV2Operation, executeMpV2Operation, reconcileMpV2Operation, can
 import { V2_OPEN_STATUSES } from "@/core/commercial-billing-policy";
 import { hasPendingCommercialBenefit } from "@/server/services/commercial-benefit-hold";
 import { quoteCommercialBenefit } from "@/core/commercial-benefits";
+import { effectiveSnapshotAccess } from "@/server/services/commercial-plan-access";
+import { mpV2RenewalGraceDeadline } from "./mercadopago-v2-grace";
 
 const common = { idempotencyKey: z.string().regex(/^[a-zA-Z0-9_-]{8,100}$/), accepted: z.literal(true), expectedContractHash: z.string().regex(/^[a-f0-9]{64}$/), mercadoPagoEmail: z.email().optional() };
 const command = z.discriminatedUnion("action", [
@@ -57,10 +59,11 @@ export async function mpV2DashboardState(request: NextRequest) {
   const review=await prisma.commercialBillingOperation.findFirst({where:{businessId:owner.business.id,failureCode:{endsWith:"_REVIEW_REQUIRED"}}});
   const benefit=projection?.pendingDiscountPercentage ? {percentage:projection.pendingDiscountPercentage} : projection?.freeMonthsRemaining ? {freeMonths:projection.freeMonthsRemaining} : null;
   const benefitQuote=benefit ? quoteCommercialBenefit(commercialSelectionSchema.parse({plan:owner.sub.planCode,professionalTotal:owner.sub.professionalTotal,billingCycle:owner.sub.billingCycle}),benefit) : null;
+  const now = new Date(), effective = effectiveSnapshotAccess(owner.sub, now);
   return NextResponse.json({ enabled, contractHash: owner.sub.snapshotHash, plan: owner.sub.planCode, professionalTotal: owner.sub.professionalTotal, billingCycle: owner.sub.billingCycle, total: owner.sub.totalPriceClp,
-    status: owner.sub.status, trialEnd: owner.sub.trialEnd, periodEnd: owner.sub.periodEnd, periodStart: owner.sub.periodStart, renewalAt: owner.sub.renewalAt,
+    status: effective.status, trialEnd: owner.sub.trialEnd, periodEnd: owner.sub.periodEnd, periodStart: owner.sub.periodStart, renewalAt: owner.sub.renewalAt,
     cancellationStatus: owner.sub.renewalCancellationStatus, hasProvider: !!owner.sub.externalSubscriptionId,
-    benefitHold:hasPendingCommercialBenefit(projection), reviewRequired:!!review, gracePeriodEndsAt:owner.sub.gracePeriodEndsAt,
+    benefitHold:hasPendingCommercialBenefit(projection), reviewRequired:!!review, gracePeriodEndsAt:effective.status === "PAST_DUE_GRACE" || effective.status === "PAST_DUE_BLOCKED" ? mpV2RenewalGraceDeadline(owner.sub, now) : owner.sub.gracePeriodEndsAt,
     billingCycleChangeEnabled:false, benefitQuote,
     operation: open ? { id: open.id, status: open.status, kind: open.kind, effectiveAt: open.effectiveAt } : null,
     reconcileOperationId: open?.id ?? root?.id ?? null,

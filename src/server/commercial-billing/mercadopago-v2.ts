@@ -459,7 +459,10 @@ export async function cancelMpV2Renewal(businessId: string, actorId: string, pro
     const key = `mp-v2:cancel:${provider.config.environment}:${remote.id}`;
     const found = await tx.commercialBillingOperation.findUnique({ where: { idempotencyKey: key } });
     if (found) return found;
-    await tx.commercialSubscription.update({ where: { id: sub.id }, data: { renewalCancellationStatus: "REQUESTED", renewalCancellationRequestedAt: new Date() } });
+    const requested = await tx.commercialSubscription.update({ where: { id: sub.id }, data: { renewalCancellationStatus: "REQUESTED", renewalCancellationRequestedAt: new Date() } });
+    // Withdraw the projected courtesy immediately, including when the provider
+    // times out. The already paid interval remains accessible.
+    await materializeCommercialEntitlements(tx, requested);
     return tx.commercialBillingOperation.create({ data: { businessId, subscriptionId: sub.id, provider: "MERCADO_PAGO", environment: provider.config.environment, kind: "CANCEL_RENEWAL", strategy: "NEXT_RENEWAL", status: "EXECUTING", idempotencyKey: key,
       inputHash: commercialHash({ remote: remote.id, actorId }), previousContractHash: sub.snapshotHash, targetPlanCode: sub.planCode, targetProfessionalTotal: sub.professionalTotal,
       quoteSnapshot: commercialJson({ selection: selectionOf(sub), quote: v2Quote(selectionOf(sub)), acceptedAt: new Date(), actorId }), recurringAmountMinor: v2Quote(selectionOf(sub)).cycleTotal,

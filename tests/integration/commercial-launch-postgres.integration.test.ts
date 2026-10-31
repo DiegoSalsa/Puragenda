@@ -115,7 +115,7 @@ suite("Commercial launch consolidation / real isolated PostgreSQL", () => {
   });
   it("uses the same bounded paid recovery policy for Puri and expires at grace end", async () => {
     const f = await fixture();
-    await prisma.commercialSubscription.update({ where: { businessId: f.businessId }, data: { status: "PAST_DUE_GRACE", periodEnd: new Date(Date.now() - 1000), gracePeriodEndsAt: new Date(Date.now() + 86400000) } });
+    await prisma.commercialSubscription.update({ where: { businessId: f.businessId }, data: { status: "PAST_DUE_GRACE", provider: "MERCADO_PAGO", externalSubscriptionId: "synthetic-paid-contract", termsSnapshot: { origin: "registration_v2" }, periodEnd: new Date(Date.now() - 1000), gracePeriodEndsAt: new Date(Date.now() + 86400000) } });
     await expect(createGrowthScope(f.context)).resolves.toMatchObject({businessId:f.businessId});
     await prisma.commercialSubscription.update({where:{businessId:f.businessId},data:{gracePeriodEndsAt:new Date(Date.now()-1)}});
     await expect(createGrowthScope(f.context)).rejects.toThrow("PLUS_ENTITLEMENT_REQUIRED");
