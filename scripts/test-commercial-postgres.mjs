@@ -29,6 +29,7 @@ postgresFiles.push("tests/integration/clients-privacy-postgres.integration.test.
 postgresFiles.push("tests/integration/audit05-billing-postgres.integration.test.ts","tests/integration/audit05-legacy-postgres.integration.test.ts","tests/integration/audit05-rate-limit-postgres.integration.test.ts");
 postgresFiles.push("tests/integration/audit05-expansions-postgres.integration.test.ts", "tests/integration/audit05-grace-postgres.integration.test.ts");
 postgresFiles.push("tests/integration/audit06-websites-postgres.integration.test.ts");
+postgresFiles.push("tests/integration/audit06-review-postgres.integration.test.ts");
 const postgresStatus=run([...(process.argv.includes("--audit05")?postgresFiles.filter(file=>file.includes("audit05-")):process.argv.includes("--clients-privacy")?[postgresFiles[11]]:process.argv.includes("--services-staff")?[postgresFiles[10]]:process.argv.includes("--contact-flow-free")?[postgresFiles[9]]:process.argv.includes("--contact-flow")?[postgresFiles[4]]:process.argv.includes("--launch")?[postgresFiles[5]]:postgresFiles),"--no-file-parallelism"]);
 if(postgresStatus!==0)process.exit(postgresStatus);
 if(process.argv.includes("--all"))process.exit(run(postgresFiles.flatMap(file=>["--exclude",file])));
