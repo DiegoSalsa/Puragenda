@@ -41,7 +41,7 @@ try{
  check("Two HTTP catalog edits yield one winner and one stale 409",JSON.stringify(edits.map(r=>r.response.status).sort())==="[200,409]");service=edits.find(r=>r.response.status===200).body;
  check("HTTP edits preserve category and alternative identifiers",service.optionCategories[0].id===categoryId&&service.optionCategories[0].alternatives[0].id===alternativeId);
  const date=new Date(Date.now()+6*86400000).toISOString().slice(0,10);
- const available=await call("/api/dashboard/availability",{mode:"services",locationId:location.id,serviceIds:[service.id],staffId:staff.id,selectedOptionAlternativeIds:[alternativeId],fromDate:date,days:1});assert.equal(available.response.status,200);const slot=available.body.days[0].slots[0];assert(slot);
+ const available=await call("/api/dashboard/availability",{mode:"services",locationId:location.id,serviceIds:[service.id],staffId:staff.id,selectedOptionAlternativeIds:[alternativeId],fromDate:date,days:7});assert.equal(available.response.status,200);const slot=available.body.days.flatMap(day=>day.slots)[0];assert(slot);
  const appointmentPayload={serviceId:service.id,staffId:staff.id,locationId:location.id,startTime:slot.startTime,customerName:"Cliente Auditoría",customerEmail:"audit03-client@rc.example.invalid",selectedOptionAlternativeIds:[alternativeId],sendConfirmation:false};
  const booked=await call("/api/dashboard/appointments",appointmentPayload);assert.equal(booked.response.status,201);const appointment=booked.body;
  const blocked=await action("deleteStaffAction",[staff.id]);check("HTTP deactivation reports one future booking and preserves its professional",blocked.error?.includes("1 reserva(s)")&&(await db.staff.findUniqueOrThrow({where:{id:staff.id}})).isActive);
