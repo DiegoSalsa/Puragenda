@@ -13,7 +13,7 @@ import { loadBookingContext, toBookingCatalog } from "@/server/booking/read.serv
 import { websiteCatalog } from "@/websites/catalog";
 import type { WebsiteView } from "@/websites/types";
 import type { Prisma } from "@prisma/client";
-import { websiteDomainOwnership } from "./domain-ownership";
+import { resolveWebsiteDomains } from "./domain-ownership";
 import { safeLink, safeMediaUrl } from "@/websites/shared-config";
 
 export const websiteRootDomain = () => normalizeHostname(process.env.WEBSITE_ROOT_DOMAIN || "puragenda.cl");
@@ -53,8 +53,7 @@ export async function resolveWebsiteHost(raw: string) {
     ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
     : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE", tenantVerifiedAt: { not: null } } } }, include: includeBusiness });
   if (!site || site.business.deletedAt || site.status !== "PUBLISHED" || !site.publishedConfig || !(await resolveWebsiteCommercialAccess(site.businessId)).hosting) return null;
-  const domains = await Promise.all(site.domains.map(async domain => await websiteDomainOwnership(domain) ? domain : null));
-  site.domains = domains.filter((domain): domain is NonNullable<typeof domain> => !!domain);
+  site.domains = (await resolveWebsiteDomains(site.domains)).active;
   if (!slug && !site.domains.some(domain => domain.hostname === hostname)) return null;
   const identity = websiteTemplate(site, false);
   resolveTemplate(identity.key, identity.version);
@@ -74,7 +73,7 @@ export async function websiteView(site: { businessId: string; templateKey: strin
   const maps = business.mapsUrl || primaryLocation?.mapsUrl || null;
   return { config, catalog: websiteCatalog(toBookingCatalog(context), preview), business: { id: business.id, name: business.name, logo: business.logoUrl && safeMediaUrl(business.logoUrl) ? business.logoUrl : null, address: business.address || primaryLocation?.address || null, mapsUrl: maps && safeLink(maps) ? maps : null, hours: (primaryLocation?.hours.length ? primaryLocation.hours : context.businessHours).map(({ dayOfWeek, startTime, endTime, isOpen }) => ({ dayOfWeek, startTime, endTime, isOpen })) }, preview };
 }
-export function canonicalWebsiteUrl(site: PublicWebsite) {
+export function canonicalWebsiteUrl(site: Pick<PublicWebsite, "domains" | "subdomain">) {
   const primary = site.domains.find(domain => domain.isPrimary);
   return `https://${primary?.hostname || `${site.subdomain}.${websiteRootDomain()}`}`;
 }
