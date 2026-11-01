@@ -4,13 +4,13 @@ Fecha: **1 de noviembre de 2026**, America/Santiago. Repositorio: `DiegoSalsa/Pu
 
 ## Resumen ejecutivo
 
-Auditoría correctiva del módulo existente, sin reconstrucción ni cambio de identidad visual. Se identificaron **17 hallazgos: 16 corregidos y 1 pendiente de mantenimiento de dependencias de desarrollo**. Las comprobaciones de proveedores reales se separan de los resultados locales: no se certifican DNS, SSL, Cloudinary ni operaciones comerciales productivas mediante mocks.
+Auditoría correctiva del módulo existente, sin reconstrucción ni cambio de identidad visual. La entrega inicial identificó **17 hallazgos: 16 corregidos y 1 pendiente de mantenimiento de dependencias de desarrollo**. La revisión independiente del SHA `f4651297bb7a73e052836140eb88354f462c6c0d` añadió **06-A y 06-B**, ambos reproducidos y corregidos. El cierre contiene **19 hallazgos: 18 corregidos y 1 pendiente**. Las comprobaciones de proveedores reales se separan de los resultados locales: no se certifican DNS, SSL, Cloudinary ni operaciones comerciales productivas mediante mocks.
 
 La política efectiva de sitios ahora gobierna editor, publicación, hosting y escrituras sensibles. Conserva el contrato independiente legacy pagado hasta su vencimiento o retiro mediante migración probada; una promoción legacy no eleva un contrato V2 base. La vigencia del editor incluye la gracia legítima de Auditoría 05. Se bloquean contrataciones superpuestas, se conservan borradores y publicaciones, y se vuelven a comprobar derechos después de adquirir el bloqueo del negocio.
 
 Se ejercitaron **Bella, Matchday, Ritual y Y2K**, editor y página pública, a 1440, 768 y 390 px. Se comprobó el guardado mediante controles reales de navegador y acciones HTTP compiladas, además de reservas, idempotencia, suspensión, recuperación, canonical, robots y sitemap. Ritual conserva contenido visible sin JavaScript y con las animaciones de aparición deshabilitadas por accesibilidad.
 
-**Alcance de la aprobación:** preparado para revisión local independiente. Los controles locales no autorizan push, merge, deploy, migraciones remotas, cambios DNS ni cobros. Permanecen las validaciones externas indicadas al final y el mantenimiento de herramientas de desarrollo.
+**Alcance de la aprobación:** preparado para una nueva revisión independiente. El usuario autorizó publicar exclusivamente la misma rama de auditoría después de la regresión; esa publicación no autoriza merge, deploy, migraciones remotas, cambios DNS ni cobros. Permanecen las validaciones externas indicadas al final y el mantenimiento de herramientas de desarrollo.
 
 ## Aislamiento y procedencia
 
@@ -140,6 +140,26 @@ Se contrastaron las semánticas con la [referencia de cancelación de Paddle](ht
 
 **Corrección:** se reutilizan el estado y los controles Editar/Vista previa existentes en los otros editores; al abrir preview móvil se selecciona el viewport móvil. No se rediseña la plantilla. La prueba exige texto del borrador dentro del iframe, cambio de modo efectivo y ausencia de overflow en los tres tamaños.
 
+### 06-A · Alto · Eliminación de medios con autorización anterior al lock
+
+**Reproducción contra el SHA revisado:** en PostgreSQL real aislado, una transacción bloquea la fila `Business`; otra inicia `deleteWebsiteAsset()`. La prueba usa `pg_blocking_pids` desde autocommit para demostrar que la eliminación espera exactamente al backend bloqueante antes de cambiar el contrato. Downgrade, suspensión y vencimiento permitían marcar la imagen eliminada y llamar al mock de Cloudinary. También se reprodujo la revocación de `WEBSITE_MANAGE` durante la espera. El permiso ausente desde el comienzo ya estaba protegido. Evidencia local anterior al cambio: `scratch/audit06/review/reproduction.json` (cinco fallos esperados y dos controles aprobados, incluidos los de 06-B).
+
+**Causa raíz:** el chequeo inicial precedía al bloqueo y la transacción solo comprobaba pertenencia y referencias; no volvía a leer la autorización efectiva.
+
+**Corrección:** después del lock se vuelven a consultar usuario, revocación de sesión (`tokenVersion`), negocio, permiso y entitlement `.media` dentro de la transacción. El servicio compartido de permisos admite un cliente transaccional opcional sin cambiar el comportamiento de sus consumidores existentes. Solo después se consulta y marca la imagen; Cloudinary se invoca después del éxito de la transacción. Una denegación no llama a `destroy`, no cambia `deletedAt` y no borra referencias. No se abre una excepción comercial nueva: el complemento legacy independiente pagado, incluso con cancelación programada y período vigente, conserva el mantenimiento autorizado; la recuperación tras evidencia sintética de pago vuelve a permitir eliminar.
+
+**Pruebas:** carreras reales de downgrade, suspensión, vencimiento, permiso revocado y sesión revocada; rechazo inicial sin permiso; conservación de fila y cero llamadas Cloudinary; recuperación y contrato legacy pagado; mocks de entitlement/permiso/sesión. El HTTP compilado repite la espera detrás de `Business`, rechazo tras downgrade y eliminación válida tras recuperar acceso. Archivos: `media.ts`, `permissions.service.ts`, pruebas unitarias e integración y arnés HTTP de revisión.
+
+### 06-B · Alto · El editor ofrecía un dominio principal que el resolver rechazaba
+
+**Reproducción contra el SHA revisado:** sitio publicado, dominio principal `ACTIVE`, prueba de titularidad de 25 horas y TXT controlado incorrecto. `resolveWebsiteHost()` retornaba `null`, mientras la página real del editor construía `publicUrl` con ese dominio. No había una garantía oculta que justificara omitir la corrección.
+
+**Causa raíz:** el resolver público comprobaba la vigencia de la titularidad y el editor solo consultaba un timestamp histórico no nulo.
+
+**Corrección:** ambos usan `resolveWebsiteDomains()`, que devuelve dominios válidos y dominios que requieren revisión. Una misma resolución se reutiliza para enlace, canonical y presentación de estado; deduplica TXT por hostname/token/fecha dentro de la operación y no comparte decisiones entre solicitudes. La carga pública ya usa `React.cache` por solicitud para metadata/página. El editor emplea la misma construcción de canonical, muestra «Revisar titularidad» y explica la comprobación pendiente; ofrece el subdominio propio cuando hay publicación y hosting vigentes. El estado de revisión es una presentación temporal: no cambia la fila `WebsiteDomain`, la selección principal, la propiedad ni la reserva. Un dominio secundario no se promueve automáticamente.
+
+**Pruebas:** TXT vigente, caducado con TXT correcto, incorrecto, ausente o fallo DNS; principal y secundario; subdominio propio y canonical; una consulta DNS por dominio en la página real; ausencia de cambios en BD y recuperación con una prueba reciente. HTTP y Chromium comprueban el aviso y enlace a 1440/390 px usando un TXT vacío instalado únicamente en la copia desechable del staging. Nunca se consultan ni modifican DNS reales. Archivos: página del editor, panel de dominios, `service.ts`, `domain-ownership.ts`, pruebas unitarias/PG y arnés HTTP.
+
 ### 06-10 · Medio · Preview de reserva y Origin malformado
 
 **Reproducción:** `POST /api/website/book?preview=1` ignoraba la intención explícita de preview; `new URL(origin)` podía terminar en error interno ante un valor malformado.
@@ -154,7 +174,13 @@ Se contrastaron las semánticas con la [referencia de cancelación de Paddle](ht
 
 ### 06-17 · Medio/Bajo · Mantenimiento de dependencias de desarrollo pendiente
 
-`npm audit --json`: **21 avisos moderados y 2 bajos**, sin altos/críticos. `npm audit --omit=dev --json`: **0 avisos**. Los avisos corresponden al árbol de herramientas de desarrollo. Algunas correcciones propuestas por npm implican retroceder versiones principales de ESLint/Next; no se ejecutó `audit fix --force` ni se cambió el lockfile durante esta auditoría. Se deja pendiente su actualización compatible, con regresión independiente. Resultados completos locales: `dependencies.json` y `dependencies-runtime.json`.
+`npm audit --json`: **21 avisos moderados y 2 bajos**, sin altos/críticos. `npm audit --omit=dev --json`: **0 avisos**. Los avisos corresponden al árbol de herramientas de desarrollo. Algunas correcciones propuestas por npm implican retroceder versiones principales de ESLint/Next; no se ejecutó `audit fix --force` ni se cambió el lockfile durante esta auditoría. Se deja pendiente su actualización compatible, con regresión independiente. Resultados iniciales locales: `dependencies.json` y `dependencies-runtime.json`; repetidos sin cambios al cierre en `scratch/audit06/review/`. Todos los nodos afectados del lockfile están marcados `dev: true`; no hay imports de estas herramientas desde el código productivo.
+
+| Cadena afectada | Impacto y mantenimiento recomendado, fuera de esta auditoría |
+| --- | --- |
+| `minimatch`, `eslint`, `@eslint/{config-array,eslintrc}`, `@eslint-community/eslint-utils`, `eslint-config-next`, `@next/eslint-plugin-next`, `eslint-plugin-{import,jsx-a11y,react}`, `typescript-eslint`, `@typescript-eslint/{eslint-plugin,parser,type-utils,typescript-estree,utils}`, `ts-morph`, `@ts-morph/common`, `shadcn` (19 moderados) | Patrones de glob no confiables pueden agotar CPU/memoria en herramientas de desarrollo. Actualizar la cadena compatible con `minimatch` 11.0.1; no forzar un override mayor sin regresión ni aceptar los retrocesos principales sugeridos por npm. [Aviso](https://github.com/advisories/GHSA-g3hv-75wg-m249). |
+| `vitest`, `@vitest/mocker` (2 moderados) | Inyección de mocks y traversal de Windows si un servidor de desarrollo vulnerable queda accesible. Actualizar ambos a la línea 4.1.12 o posterior compatible y repetir QA. [Inyección](https://github.com/advisories/GHSA-qxg6-89mg-rqv8), [traversal](https://github.com/advisories/GHSA-xp26-3454-mjgp). |
+| `deepmerge`, `@shadcn/registry` (2 bajos) | Alteración del prototipo del objeto resultante al fusionar entradas no confiables en el generador. Sin parche publicado para `deepmerge` al verificar el aviso; actualizar o sustituir la dependencia desde una versión compatible del generador. [Aviso](https://github.com/advisories/GHSA-gcqx-w48m-w2h4). |
 
 ## Cobertura y matrices comerciales
 
@@ -180,14 +206,16 @@ No se modificó el catálogo: Puragenda desde $12.990 CLP, Plus desde $27.990 CL
 
 | Comprobación | Resultado |
 | --- | --- |
-| Vitest general | **1.908 aprobadas**, 727 condicionadas omitidas en este modo; 260 archivos aprobados y 25 condicionados. Ningún fallo final. |
-| PostgreSQL comercial, registro, planes, Puri, Contact Flow, servicios, clientes y auditorías anteriores | **555 aprobadas**, 18 archivos. Incluye las **18 pruebas nuevas PostgreSQL** de esta auditoría. |
+| Vitest general | **1.913 aprobadas**, 742 condicionadas omitidas en este modo; 260 archivos aprobados y 26 condicionados. Ningún fallo final. |
+| PostgreSQL comercial, registro, planes, Puri, Contact Flow, servicios, clientes y auditorías anteriores | **570 aprobadas**, 19 archivos. Incluye las 18 pruebas web iniciales y las 15 adicionales de revisión independiente. |
 | PostgreSQL de agenda/reservas | **97 aprobadas**. |
 | PostgreSQL y regresión MCP | **53 aprobadas**. |
 | PostgreSQL de pagos, complementos e intención legacy | **85 aprobadas**. |
-| PostgreSQL web final, después del último ajuste de presentación legacy | **18 aprobadas**; RLS, concurrencia y derechos incluidos. |
-| HTTP de regresiones | Bootstrap, general, agenda, servicios/profesionales, clientes/privacidad, cobros y sitio: aprobados. Recibos bajo el staging privado y `scratch/audit04/`, `scratch/audit-03/`. |
-| HTTP y Chromium, cuatro plantillas | **93 comprobaciones aprobadas**, 24 capturas de página/editor y una captura adicional sin JS; **0 excepciones JavaScript**. |
+| PostgreSQL web y revisión independiente | **33 aprobadas** (18 iniciales + 15 nuevas); RLS, concurrencia, derechos y DNS incluidos. |
+| HTTP de regresiones | Entrega inicial: bootstrap, general, agenda, servicios/profesionales, clientes/privacidad, cobros y sitio aprobados. Cierre independiente: repetidos bootstrap (6), cobros/gracia (30) y sitio (12), todos aprobados; las suites PostgreSQL de agenda, servicios y clientes se repitieron completas. Recibos bajo staging privado y `scratch/audit06/review/`. |
+| HTTP y Chromium, cuatro plantillas | **93 comprobaciones aprobadas**, 24 capturas de página/editor y una sin JS; **0 excepciones JavaScript**. Repetidas sobre las correcciones finales. |
+| HTTP y Chromium, cierre 06-A/06-B | **19 comprobaciones aprobadas**, incluyendo la carrera de eliminación por acción compilada y el aviso DNS a 1440/390 px; **0 excepciones JavaScript**, sin llamadas a proveedores reales. |
+| Protecciones de despliegue | **29 aprobadas**, sin fallos ni omisiones; se mantienen las exclusiones de rama, PR y builds. |
 | Prisma | `generate` y `validate` aprobados. |
 | Next y TypeScript | `next typegen` y `tsc --noEmit` aprobados. |
 | ESLint | **0 errores, 32 advertencias**; avisos heredados, principalmente imágenes y herramientas. |
@@ -196,7 +224,7 @@ No se modificó el catálogo: Puragenda desde $12.990 CLP, Plus desde $27.990 CL
 | Secretos y Git | Escaneo de patrones sin hallazgos; `git diff --check` limpio. Excluidos secretos, recibos y capturas temporales. |
 | Proveedores reales | **No ejecutado**: DNS productivo, emisión SSL, cambios Vercel, subida/borrado Cloudinary y cobros/cancelaciones reales. |
 
-Se añadieron **48 pruebas**: 30 unitarias/regresiones y 18 PostgreSQL. Archivos nuevos: `tests/core/audit06-template-snapshots.test.ts`, `tests/server/audit06-domain-ownership.test.ts`, `tests/server/audit06-website-booking.test.ts` y `tests/integration/audit06-websites-postgres.integration.test.ts`. Se ampliaron biblioteca de medios, interfaz comercial y protecciones de despliegue; se adaptaron los mocks de acciones/servicio a la nueva frontera transaccional.
+Se añadieron **68 pruebas**: 35 unitarias/regresiones y 33 PostgreSQL; 20 corresponden al cierre independiente (5 unitarias y 15 PostgreSQL). Archivos nuevos: `tests/core/audit06-template-snapshots.test.ts`, `tests/server/audit06-domain-ownership.test.ts`, `tests/server/audit06-website-booking.test.ts` y `tests/integration/audit06-websites-postgres.integration.test.ts` y `tests/integration/audit06-review-postgres.integration.test.ts`. Se ampliaron biblioteca de medios, interfaz comercial y protecciones de despliegue; se adaptaron los mocks de acciones/servicio a la nueva frontera transaccional.
 
 Las omisiones de PostgreSQL en Vitest general son intencionales; las suites condicionadas se ejecutaron en sus entornos aislados correspondientes. Las pruebas con proveedores mock no equivalen a certificación productiva.
 
@@ -206,11 +234,15 @@ Una corrida conjunta detectó además dos problemas del arnés: observación cac
 
 Reproducción local: `npm ci --ignore-scripts`, `node scripts/test-audit-06.mjs init`, `node scripts/test-audit-06.mjs verify`, luego modos `general`, `commercial`, `booking`, `mcp`, `legacy` y `build`. Para HTTP: modos `prepare`, `staging` y `http-bootstrap`, seguidos de `http-general`, `http-agenda`, `http-services`, `http-clients`, `http-billing` y `http-websites`. El navegador requiere Playwright **solo en QA**, instalable con `npm install --prefix scratch/audit06/browser --no-audit --no-fund playwright`, y ejecuta `node scripts/test-audit06-websites-http.mjs` usando Chrome local. No añade dependencias al producto. `node scripts/test-audit-06.mjs stop` detiene exclusivamente el clúster propio.
 
+La regresión del cierre independiente se conserva en `scratch/audit06/review/`: `general.log`, `commercial.log`, `booking.log`, `mcp.log`, `legacy.log`, `verify.log`, `build.log`, `protections.json`, `final-postgres.json`, recibos HTTP y capturas. Las pruebas existentes de autosave, revisión obsoleta, publicaciones, biblioteca concurrente, Plus/legacy y gracia de Auditoría 05 se volvieron a ejecutar. No se cuentan como defectos productivos los errores de preparación del arnés local (cierre de función y columna inexistente del fixture de medios); la versión final pasó sintaxis, ESLint y recorrido real. Una primera corrida de las cuatro plantillas falló al activar el preview móvil de Y2K; la repetición completa y serial pasó sin modificar ese editor. Se conservan ambos registros y no se oculta el intento inicial.
+
+Para repetir el recorrido adicional: `node scripts/test-audit-06.mjs prepare`, `node scripts/test-audit06-review-http.mjs --prepare-dns` y después iniciar `staging`, ejecutar `http-bootstrap`, `http-websites` y `node scripts/test-audit06-review-http.mjs`. El fixture TXT se instala exclusivamente en la copia bajo `scratch/next-staging/` antes del arranque; no añade flags de producción ni modifica el guard versionado.
+
 El escaneo de secretos revisa líneas introducidas en todos los commits locales y cambios, con patrones de credenciales y revisión del diff. Es un control acotado, no una garantía frente a todos los formatos posibles. No se versionan credenciales sintéticas, cookies, certificados, recibos privados ni capturas.
 
 ## Evidencia visual
 
-Capturas locales fuera de Git: `scratch/audit06/screenshots/`, con `{bella,matchday,ritual,y2k}-{public,editor}-{1440,768,390}.png` y `ritual-no-js.png`. Los reportes JSON HTTP incluyen sus nombres. Se inspeccionaron las composiciones públicas y del editor, con especial atención a móvil, y se comprobó ausencia de desbordamiento horizontal, destinos de anclas y alt en imágenes. Las capturas finales esperan imágenes y visibilidad de contenido; las primeras capturas transitorias no se utilizaron como evidencia de un defecto de diseño.
+Capturas locales fuera de Git: `scratch/audit06/screenshots/`, con `{bella,matchday,ritual,y2k}-{public,editor}-{1440,768,390}.png` y `ritual-no-js.png`. Los reportes JSON HTTP incluyen sus nombres. Se inspeccionaron las composiciones públicas y del editor, con especial atención a móvil, y se comprobó ausencia de desbordamiento horizontal, destinos de anclas y alt en imágenes. Las capturas adicionales `scratch/audit06/review/dns-review-{1440,390}.png` muestran el aviso de titularidad y enlace alternativo tras cerrar el anuncio de bienvenida; se inspeccionaron ambas y se comprobó que no hay overflow horizontal. Las capturas finales esperan imágenes y visibilidad de contenido; las primeras capturas transitorias no se utilizaron como evidencia de un defecto de diseño.
 
 El entorno dev usa fuentes de respaldo cuando el guard bloquea Google Fonts; no certifica tiempos de carga ni Core Web Vitals de producción. La identidad, colores, estructura y componentes de las plantillas se preservaron. Los cambios visuales de Ritual corrigen la invisibilidad sin JavaScript y habilitan el control de vista previa móvil que faltaba en su editor.
 
@@ -232,18 +264,20 @@ Las correcciones usan transacciones y bloqueos PostgreSQL ya empleados por el pr
 ## Archivos y entrega Git
 
 <!-- INVENTORY -->
-44 archivos modificados respecto de RC1, incluido este informe:
+48 archivos modificados respecto de RC1, incluido este informe:
 
 - `.github/workflows/security.yml`
 - `docs/puragenda-next/34-auditoria-06-sitios-web-2026-11-01.md`
 - `scripts/scan-audit06-secrets.mjs`
 - `scripts/test-audit-05.mjs`
 - `scripts/test-audit-06.mjs`
+- `scripts/test-audit06-review-http.mjs`
 - `scripts/test-audit06-websites-http.mjs`
 - `scripts/test-commercial-postgres.mjs`
 - `scripts/test-next-staging-services-staff.mjs`
 - `scripts/vercel-build.mjs`
 - `src/app/api/websites/purchase-intent/route.ts`
+- `src/app/dashboard/website/domain-panel.tsx`
 - `src/app/dashboard/website/legacy-contract-notice.tsx`
 - `src/app/dashboard/website/page.tsx`
 - `src/app/dashboard/website/ritual-editor.tsx`
@@ -251,6 +285,7 @@ Las correcciones usan transacciones y bloqueos PostgreSQL ya empleados por el pr
 - `src/app/onboarding/website/page.tsx`
 - `src/server/actions/website.actions.ts`
 - `src/server/commercial-billing/mercadopago-v2.ts`
+- `src/server/services/permissions.service.ts`
 - `src/server/websites/billing-safety.ts`
 - `src/server/websites/billing.ts`
 - `src/server/websites/booking.ts`
@@ -263,9 +298,10 @@ Las correcciones usan transacciones y bloqueos PostgreSQL ya empleados por el pr
 - `src/server/websites/service.ts`
 - `src/websites/catalog.ts`
 - `src/websites/template-snapshots.ts`
-- `src/websites/templates/ritual/ritual.module.css`
 - `src/websites/templates/ritual/Ritual.tsx`
+- `src/websites/templates/ritual/ritual.module.css`
 - `tests/core/audit06-template-snapshots.test.ts`
+- `tests/integration/audit06-review-postgres.integration.test.ts`
 - `tests/integration/audit06-websites-postgres.integration.test.ts`
 - `tests/server/audit06-domain-ownership.test.ts`
 - `tests/server/audit06-website-booking.test.ts`
@@ -280,6 +316,8 @@ Las correcciones usan transacciones y bloqueos PostgreSQL ya empleados por el pr
 - `vercel.json`
 <!-- /INVENTORY -->
 
-La entrega consta de **11 commits locales en español y 44 archivos modificados** sobre la base exacta aprobada. RC1 local/remota y el merge-base permanecen en el SHA inicial; la rama de auditoría no existe en el remoto. El SHA final se entrega en el chat y se obtiene con `git rev-parse HEAD`; el informe no intenta autorreferenciar el hash del commit que lo contiene. El árbol se deja limpio tras el commit de cierre. No se hizo push, merge ni deploy, ni se crearon recursos remotos.
+La entrega inicial se publicó en el SHA `f4651297bb7a73e052836140eb88354f462c6c0d` (11 commits, 44 archivos). El cierre de revisión añade **4 commits correctivos en español** a la misma rama, sin reescribir esa historia: **15 commits y 48 archivos frente a RC1**, con **14 archivos modificados respecto del SHA revisado**. La comparación exacta y el SHA definitivo se entregan en el chat para no autorreferenciar el hash de este informe. No se modifica `main` ni RC1, no se hace force push, merge ni deploy y no se crean recursos remotos fuera de la publicación Git autorizada.
 
-Al cerrar se detuvieron exclusivamente los procesos del staging y el clúster PostgreSQL propios de esta auditoría. Se comprobaron libres los puertos locales 3128, 3448 y 55446; no se detuvieron servicios de otros worktrees.
+Se revalidan antes del push: base RC1 exacta, remoto anterior como ancestro, árbol limpio, escaneo de secretos, inventario, migraciones intactas y las 29 pruebas de protecciones. GitHub Actions y los registros de despliegue de GitHub se consultan después del push. No hay acceso autenticado directo a Vercel en esta sesión; la ausencia de registros en GitHub no certifica por sí sola ausencia de despliegues en Vercel. La configuración remota, DNS, servicios y datos productivos permanecen fuera de las operaciones de esta auditoría.
+
+Al cerrar se detienen exclusivamente los procesos del staging y el clúster PostgreSQL propios. Se comprueban libres los puertos locales 3128, 3448 y 55446; no se detienen servicios de otros worktrees. La rama queda congelada para una nueva revisión independiente.
