@@ -1,18 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
 import type { Prisma } from "@prisma/client";
-const m = vi.hoisted(() => ({ access: vi.fn(), manager: vi.fn(), ensure: vi.fn(), find: vi.fn(), create: vi.fn(), update: vi.fn(), count: vi.fn(), query: vi.fn(), upload: vi.fn(), destroy: vi.fn() }));
+const m = vi.hoisted(() => ({ access: vi.fn(), permission: vi.fn(), user: vi.fn(), business: vi.fn(), manager: vi.fn(), ensure: vi.fn(), find: vi.fn(), create: vi.fn(), update: vi.fn(), count: vi.fn(), query: vi.fn(), upload: vi.fn(), destroy: vi.fn() }));
 vi.mock("@/server/websites/commercial-access", () => ({ resolveWebsiteCommercialAccess: m.access }));
+vi.mock("@/server/services/permissions.service", () => ({ hasBusinessPermission: m.permission }));
 vi.mock("@/server/websites/service", () => ({ requireWebsiteManager: m.manager, ensureWebsite: m.ensure }));
 vi.mock("@/server/lib/cloudinary", () => ({ cloudinary: { uploader: { upload: m.upload, destroy: m.destroy } } }));
-vi.mock("@/server/db/prisma", () => { const db = { websiteMedia: { findFirst: m.find, findMany: m.find, create: m.create, update: m.update, count: m.count }, $queryRaw: m.query }; return { prisma: { ...db, $transaction: (callback: (db: unknown) => unknown) => callback(db) } }; });
+vi.mock("@/server/db/prisma", () => { const db = { user: { findUnique: m.user }, business: { findUnique: m.business }, websiteMedia: { findFirst: m.find, findMany: m.find, create: m.create, update: m.update, count: m.count }, $queryRaw: m.query }; return { prisma: { ...db, $transaction: (callback: (db: unknown) => unknown) => callback(db) } }; });
 import { normalizeWebsiteImage, storeWebsiteImage, validateWebsiteAssets, deleteWebsiteAsset } from "@/server/websites/media";
 import { emptyBellaConfig } from "@/websites/config";
 import { POST } from "@/app/api/website/media/route";
 const asset = { id: "asset-a", publicId: "puragenda_websites/tenant-a/photo", secureUrl: "https://res.cloudinary.com/qa/image/upload/photo.webp", width: 128, height: 128, format: "webp" as const, bytes: 200, websiteId: "website-a", deletedAt: null };
 async function photo(width = 128, height = 128) { const data = await sharp({ create: { width, height, channels: 3, background: "#ce7467" } }).png().withMetadata({ exif: { IFD0: { Artist: "private" } } }).toBuffer(); return new File([new Uint8Array(data)], "photo.png", { type: "image/png" }); }
-beforeEach(() => { vi.resetAllMocks(); m.access.mockResolvedValue({media: true}); m.manager.mockResolvedValue({ business: { id: "tenant-a", slug: "tenant-a" } }); m.ensure.mockResolvedValue({ id: "website-a" }); m.count.mockResolvedValue(0); m.create.mockImplementation(async ({ data }) => ({ id: "asset-a", ...data })); m.upload.mockResolvedValue({ secure_url: asset.secureUrl }); m.destroy.mockResolvedValue({ result: "ok" }); });
+beforeEach(() => { vi.resetAllMocks(); m.permission.mockResolvedValue(true); m.user.mockResolvedValue({ id: 'owner', role: 'ADMIN', tokenVersion: 1, deletedAt: null }); m.business.mockResolvedValue({ id: 'tenant-a', ownerId: 'owner', deletedAt: null }); m.access.mockResolvedValue({media: true}); m.manager.mockResolvedValue({ user: { id: 'owner', tokenVersion: 1 }, business: { id: "tenant-a", slug: "tenant-a" } }); m.ensure.mockResolvedValue({ id: "website-a" }); m.count.mockResolvedValue(0); m.create.mockImplementation(async ({ data }) => ({ id: "asset-a", ...data })); m.upload.mockResolvedValue({ secure_url: asset.secureUrl }); m.destroy.mockResolvedValue({ result: "ok" }); });
 describe("website media ownership and decoding", () => {
+  it.each(['entitlement', 'permission', 'session'] as const)('06-A never deletes in Cloudinary after %s revocation under the lock', async reason => {
+    if (reason === 'entitlement') m.access.mockResolvedValue({ media: false });
+    if (reason === 'permission') m.permission.mockResolvedValue(false);
+    if (reason === 'session') m.user.mockResolvedValue({ id: 'owner', role: 'ADMIN', tokenVersion: 2 });
+    await expect(deleteWebsiteAsset(asset.id)).rejects.toThrow(reason === 'entitlement' ? 'acceso' : 'autorizado');
+    expect(m.find).not.toHaveBeenCalled(); expect(m.update).not.toHaveBeenCalled(); expect(m.destroy).not.toHaveBeenCalled();
+  });
   it.each(['jpeg', 'png', 'webp'] as const)('decodes a real %s and emits normalized WebP', async format => {
     const bytes = await sharp({ create: { width: 32, height: 32, channels: 3, background: 'red' } }).toFormat(format).toBuffer();
     const result = await normalizeWebsiteImage(new File([new Uint8Array(bytes)], 'synthetic.' + format, {type: 'image/' + format}), 'hero');

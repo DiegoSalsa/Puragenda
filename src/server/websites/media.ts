@@ -8,6 +8,8 @@ import { WebsiteError } from "./errors";
 import { MEDIA_PROFILES, MAX_WEBSITE_IMAGE_BYTES, type MediaUsage, type WebsiteAsset } from "@/websites/media";
 import { storedMediaUrls } from "@/websites/stored-media";
 import { resolveWebsiteCommercialAccess } from "./commercial-access";
+import { hasBusinessPermission } from "@/server/services/permissions.service";
+import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 
 export async function normalizeWebsiteImage(file: File, usage: MediaUsage) {
   if (!file.size || file.size > MAX_WEBSITE_IMAGE_BYTES || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new WebsiteError("Usa JPG, PNG o WebP de hasta 5 MB");
@@ -81,9 +83,14 @@ export async function validateWebsiteAssets(db: MediaDb, websiteId: string, conf
   if (fresh.some(url => !owns.has(url)) || refs.some(ref => { const owned = owns.get(ref.secureUrl); return !owned || owned.id !== ref.id || owned.publicId !== ref.publicId || owned.width !== ref.width || owned.height !== ref.height || owned.bytes !== ref.bytes || owned.format !== ref.format; })) throw new WebsiteError("Esta imagen no pertenece a tu negocio. Sube tu propia foto.");
 }
 export async function deleteWebsiteAsset(id: string) {
-  const { business } = await requireWebsiteManager();
+  const { business, user } = await requireWebsiteManager();
   const asset = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    const currentUser = await tx.user.findUnique({ where: { id: user.id }, select: { id: true, role: true, deletedAt: true, tokenVersion: true } });
+    const currentBusiness = await tx.business.findUnique({ where: { id: business.id }, select: { id: true, ownerId: true, deletedAt: true } });
+    if (!currentUser || currentUser.deletedAt || currentUser.tokenVersion !== user.tokenVersion || !currentBusiness || currentBusiness.deletedAt ||
+      !await hasBusinessPermission(currentUser, currentBusiness, DASHBOARD_PERMISSIONS.WEBSITE_MANAGE, tx)) throw new WebsiteError("No autorizado");
+    if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).media) throw new WebsiteError("Necesitas acceso vigente al sitio web para eliminar fotos");
     const item = await tx.websiteMedia.findFirst({ where: { id, deletedAt: null, website: { businessId: business.id } }, include: { website: true } });
     if (!item) throw new WebsiteError("Imagen no encontrada");
     const referenced = [item.website.draftConfig, item.website.publishedConfig, item.website.templateConfigs].some(value => storedMediaUrls(value).includes(item.secureUrl));

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-const actor = vi.hoisted(() => ({ user: null as { id: string; role: string } | null }));
+const actor = vi.hoisted(() => ({ user: null as { id: string; role: string; tokenVersion: number } | null }));
 vi.mock('@/server/auth/user-session', () => ({ getCurrentSessionUser: async () => actor.user }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 const cloud = vi.hoisted(() => ({ upload: vi.fn(), destroy: vi.fn() }));
@@ -23,7 +23,7 @@ import { fixtureView } from '@/websites/fixtures/views';
 const suite = describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL);
 async function site(plan: 'PURAGENDA' | 'PURAGENDA_PLUS' = 'PURAGENDA_PLUS') {
   const f = await fixture({ plan, professionalTotal: 1, billingCycle: 'MONTHLY' }, true);
-  actor.user = { id: f.user.id, role: 'ADMIN' };
+  actor.user = { id: f.user.id, role: 'ADMIN', tokenVersion: f.user.tokenVersion };
   const s = await ensureWebsite(f.business.id, f.business.slug);
   await prisma.businessWebsite.update({ where: { id: s.id }, data: { draftConfig: fixtureView('a').config, publishedConfig: fixtureView('a').config, publishedTemplateKey: 'bella', publishedTemplateVersion: 1, publishedAt: new Date(), publishedRevision: 0, status: 'PUBLISHED' } });
   return { ...f, site: s };
@@ -81,7 +81,7 @@ suite('Audit 06 website policy and atomic storage on real PostgreSQL', () => {
   it('rejects another tenant media reference and incomplete publication', async () => {
     const a = await site(), b = await site();
     await prisma.websiteMedia.create({ data: { websiteId: b.site.id, publicId: randomUUID(), secureUrl: 'https://res.cloudinary.com/audit06/image/upload/foreign.webp', width: 128, height: 128, format: 'webp', bytes: 200, usage: 'hero' } });
-    actor.user = { id: a.user.id, role: 'ADMIN' };
+    actor.user = { id: a.user.id, role: 'ADMIN', tokenVersion: a.user.tokenVersion };
     expect(await saveWebsiteDraft({ ...fixtureView('a').config, heroImage: 'https://res.cloudinary.com/audit06/image/upload/foreign.webp' }, 0, a.site.subdomain)).toHaveProperty('error');
     expect(await saveWebsiteDraft({ ...fixtureView('a').config, heroImage: '' }, 0, a.site.subdomain)).toEqual({ revision: 1 });
     expect(await publishWebsite(1)).toHaveProperty('error');
@@ -128,7 +128,7 @@ suite('Audit 06 website policy and atomic storage on real PostgreSQL', () => {
     const member = await prisma.staff.create({ data: { businessId: a.business.id, userId: b.user.id, name: 'Synthetic restricted staff' } });
     // Remove the second owned business so the effective session tenant is A.
     await prisma.business.update({ where: { id: b.business.id }, data: { ownerId: null } });
-    actor.user = { id: b.user.id, role: 'STAFF' };
+    actor.user = { id: b.user.id, role: 'STAFF', tokenVersion: b.user.tokenVersion };
     await expect(requireWebsiteManager()).rejects.toThrow('autorizado');
     const profile = await prisma.accessProfile.create({ data: { businessId: a.business.id, name: 'Website QA', permissions: [DASHBOARD_PERMISSIONS.WEBSITE_MANAGE] } });
     await prisma.staff.update({ where: { id: member.id }, data: { accessProfileId: profile.id } });
