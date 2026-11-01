@@ -16,6 +16,8 @@ export function templateSwitchDraft(site: { templateKey: string; templateVersion
   const retained = snapshots[templateSnapshotKey(key, version)];
   if (retained) return { config: target.readConfig(retained), snapshots };
   const source = current.readConfig(site.draftConfig);
-  const fields = Object.fromEntries(universal.filter(field => source[field] !== undefined).map(field => [field, source[field]]));
+  const fields: Record<string, unknown> = Object.fromEntries(universal.filter(field => source[field] !== undefined).map(field => [field, source[field]]));
+  const headline = Array.isArray(source.headline) ? source.headline.join(' ').trim() : source.headline;
+  if (headline && (key !== 'y2k' || headline.length <= 110)) fields.headline = key === 'y2k' ? [headline.slice(0, 55), headline.slice(55)] : headline;
   return { config: target.parseDraft({ ...target.defaultConfig(), ...fields }), snapshots };
 }
