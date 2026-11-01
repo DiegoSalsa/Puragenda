@@ -201,7 +201,7 @@ suite('Audit 06 website policy and atomic storage on real PostgreSQL', () => {
       for (let attempt = 0; attempt < 100 && !waiting; attempt++) {
         // Observe from autocommit: PostgreSQL may cache activity snapshots
         // inside the transaction holding the lock under test.
-        const rows = await prisma.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE 'SELECT id FROM "Business"%FOR UPDATE'`;
+        const rows = await prisma.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE 'SELECT id FROM "Business"%FOR UPDATE'`;
         waiting = rows[0].count > 0;
         if (!waiting) await new Promise(resolve => setTimeout(resolve, 20));
       }

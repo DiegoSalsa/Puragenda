@@ -91,6 +91,15 @@ try {
     for (let i = 0; i < 40 && (await site()).revision === s.revision; i++) await new Promise(resolve => setTimeout(resolve, 250));
     s = await site();
     check(`${key}: real browser autosave persists input`, JSON.stringify(s.draftConfig).includes(marker));
+    const previewHeadline = key === 'y2k' ? '[data-pink-headline]' : '[data-website-field="headline"]';
+    const initialPreview = page.frameLocator('iframe').locator(previewHeadline).first();
+    await initialPreview.waitFor({state:'visible'});
+    let previewMatches = false;
+    for (let attempt = 0; attempt < 40 && !previewMatches; attempt++) {
+      previewMatches = (await initialPreview.textContent()).includes(marker);
+      if (!previewMatches) await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    check(`${key}: private live preview receives the edited draft`, previewMatches);
     const host = `${s.subdomain}.localhost:3128`;
     if (s.status === 'PUBLISHED') check(`${key}: editing keeps the public snapshot`, !(await tenant(host)).text.includes(marker));
     const published = await action('publishWebsite', [s.revision, { ignoreContrast: true }]);
@@ -124,6 +133,25 @@ try {
       await page.setViewportSize({ width, height: 1000 }); await page.bringToFront(); await page.reload({ waitUntil: 'domcontentloaded' });
       await page.getByRole('heading', {name: 'Mi sitio', exact: true}).waitFor({state:'visible'});
       await page.locator('iframe').waitFor({ state: 'attached' });
+      const previewToggle = page.getByRole('button',{name:'Vista previa',exact:true});
+      const mobileEditor = await previewToggle.isVisible();
+      if (mobileEditor) {
+        for (let attempt=0;attempt<20 && await previewToggle.getAttribute('aria-pressed')!=='true';attempt++) {
+          await previewToggle.click(); await new Promise(resolve=>setTimeout(resolve,250));
+        }
+        assert.equal(await previewToggle.getAttribute('aria-pressed'),'true');
+      }
+      const livePreview = page.frameLocator('iframe');
+      try { await livePreview.locator(previewHeadline).first().waitFor({state:'visible'}); }
+      catch (error) {
+        console.log(JSON.stringify({key,width,frame:await page.locator('iframe').evaluate(element=>{const rows=[];while(element){const r=element.getBoundingClientRect(),s=getComputedStyle(element);rows.push({tag:element.tagName,class:element.className,width:r.width,height:r.height,display:s.display,visibility:s.visibility});element=element.parentElement;}return rows;})}));
+        console.log(JSON.stringify({content:await livePreview.locator(previewHeadline).first().evaluate(element=>{const rows=[];while(element){const r=element.getBoundingClientRect(),s=getComputedStyle(element);rows.push({tag:element.tagName,width:r.width,height:r.height,display:s.display,visibility:s.visibility,opacity:s.opacity});element=element.parentElement;}return rows;})}));
+        await page.screenshot({path:path.join(output,'screenshots',`${key}-iframe-failure.png`)});
+        throw error;
+      }
+      const frameLayout = await livePreview.locator('html').evaluate(element=>({width:element.clientWidth,scroll:element.scrollWidth}));
+      check(`${key} ${width}px: authenticated iframe renders without overflow`,frameLayout.scroll<=frameLayout.width+1);
+      if (mobileEditor) await page.getByRole('button',{name:'Editar',exact:true}).click();
       const editorWidth = await page.evaluate(() => document.documentElement.scrollWidth);
       check(`${key} ${width}px: responsive editor`, editorWidth <= width + 1);
       const editorFile = `${key}-editor-${width}.png`; await page.screenshot({ path: path.join(output, 'screenshots', editorFile), fullPage: false }); screenshots.push(editorFile);
