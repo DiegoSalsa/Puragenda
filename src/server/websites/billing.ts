@@ -6,7 +6,7 @@ import { getPaddleEnvironment, getPaddleServerClient } from "@/server/lib/paddle
 import { requireWebsiteManager } from "./service";
 import { hasWebsiteEntitlement } from "@/websites/policy";
 import { WEBSITE_CATALOG, WEBSITE_TRIAL_MS, websitePriceTier } from "@/websites/offers";
-import { assertStandaloneWebsiteContract } from "./billing-safety";
+import { assertStandaloneWebsiteContract, assertWebsiteAgreementNotPrimary } from "./billing-safety";
 
 function sandboxClient() {
   if (getPaddleEnvironment() !== Environment.sandbox) throw new WebsiteError("El add-on está habilitado solo en sandbox durante esta fase");
@@ -67,6 +67,7 @@ export async function changeWebsiteBilling(operation: "cancel" | "reactivate", c
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (!addon.paddleSubscriptionId || addon.provider !== "paddle") throw new WebsiteError("No hay una suscripción Paddle del add-on");
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   const client = sandboxClient();
   if (operation === "cancel") await client.subscriptions.cancel(addon.paddleSubscriptionId, { effectiveFrom: "next_billing_period" });
   else {
@@ -79,6 +80,7 @@ export async function recoverWebsitePayment() {
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (addon.provider !== "paddle" || addon.status !== "PAST_DUE" || !addon.paddleSubscriptionId) throw new WebsiteError("No existe un pago pendiente del add-on");
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   const transaction = await sandboxClient().subscriptions.getPaymentMethodChangeTransaction(addon.paddleSubscriptionId);
   return { transactionId: transaction.id };
 }

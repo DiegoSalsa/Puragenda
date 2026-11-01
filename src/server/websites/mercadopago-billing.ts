@@ -7,7 +7,7 @@ import { prisma } from "@/server/db/prisma";
 import { requireBundlePaidBase } from "./purchase-intent";
 import { mpClient } from "@/server/lib/mercadopago";
 import { requireWebsiteManager } from "./service";
-import { assertStandaloneWebsiteContract } from "./billing-safety";
+import { assertStandaloneWebsiteContract, assertWebsiteAgreementNotPrimary } from "./billing-safety";
 import { WebsiteError } from "./errors";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { hasWebsiteTrial, WEBSITE_CATALOG, websitePriceTier } from "@/websites/offers";
@@ -185,6 +185,7 @@ export async function changeMercadoPagoWebsiteBilling(operation: "cancel" | "rea
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (addon.provider !== "mercadopago" || !addon.mpSubscriptionId) throw new WebsiteError("No hay una suscripción Mercado Pago de Sitio Web.");
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   const sub = await fetchWebsitePreapproval(addon.mpSubscriptionId);
   if (operation === "reactivate") {
     requireWebsiteAcquisition();
@@ -202,6 +203,7 @@ export async function recoverMercadoPagoWebsitePayment() {
   const { business } = await requireWebsiteManager(true);
   const addon = await prisma.websiteAddon.findUniqueOrThrow({ where: { businessId: business.id } });
   if (!addon.mpSubscriptionId) return startMercadoPagoWebsiteCheckout();
+  await assertWebsiteAgreementNotPrimary(business.id, addon);
   await syncMercadoPagoWebsitePreapproval(await fetchWebsitePreapproval(addon.mpSubscriptionId));
   // MP hosted subscriptions have no documented payment-method recovery link.
   // Cancel the failed recurring agreement, preserve paid period, then create one.

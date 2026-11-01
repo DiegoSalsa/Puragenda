@@ -1,6 +1,14 @@
 import type { Prisma } from '@prisma/client';
 import { getCommercialPlanAccess } from '@/server/services/commercial-plan-access';
 import { WebsiteError } from './errors';
+import { prisma } from '@/server/db/prisma';
+
+export async function assertWebsiteAgreementNotPrimary(businessId: string, addon: {mpSubscriptionId?:string|null;paddleSubscriptionId?:string|null}) {
+  const business = await prisma.business.findUnique({where:{id:businessId},select:{deletedAt:true,subscription:{select:{mpSubscriptionId:true,paddleSubscriptionId:true}},commercialSubscription:{select:{externalSubscriptionId:true}}}});
+  if (!business || business.deletedAt) throw new WebsiteError('Negocio no disponible');
+  const primaryIds = [business.subscription?.mpSubscriptionId,business.subscription?.paddleSubscriptionId,business.commercialSubscription?.externalSubscriptionId].filter(Boolean);
+  if ([addon.mpSubscriptionId,addon.paddleSubscriptionId].some(id=>!!id && primaryIds.includes(id))) throw new WebsiteError('El contrato de sitio coincide con la suscripción principal. Requiere revisión antes de modificarlo.');
+}
 
 export async function assertStandaloneWebsiteContract(businessId: string, db: Pick<Prisma.TransactionClient, 'business'>) {
   if ((await getCommercialPlanAccess(businessId, new Date(), db)).v2) throw new WebsiteError('El sitio web forma parte de Puragenda+. No requiere una contratación independiente.');
