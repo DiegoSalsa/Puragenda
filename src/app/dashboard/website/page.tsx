@@ -22,6 +22,7 @@ export default async function WebsitePage() {
   const commercialAccess = await getCommercialPlanAccess(business.id);
   const websiteAccess = await resolveWebsiteCommercialAccess(business.id);
   const included = websiteAccess.source === "PLUS_INCLUDED";
+  if (commercialAccess.v2 && !websiteAccess.editor && websiteAccess.legacyBillingReviewRequired) return <section className="space-y-3"><h1 className="text-2xl font-black">Contrato histórico de Sitio Web</h1><LegacyWebsiteContractNotice included={false} cancelAt={websiteAccess.legacyBillingCancelAt?.toISOString() ?? null} canCancel={business.ownerId === user.id && websiteAccess.legacyBillingCancellable} /></section>;
   if (commercialAccess.v2 && !websiteAccess.editor) return <section className="space-y-3 rounded-2xl border-2 border-black bg-white p-6 text-black"><h1 className="text-2xl font-black">Sitio web incluido en Puragenda+</h1><p>Para crear, editar y publicar tu sitio necesitas acceso vigente a Puragenda+. Tu contenido existente se conserva.</p><Link href="/dashboard/settings#plan" className="font-bold underline">Revisar mi plan</Link></section>;
   const site = await ensureWebsite(business.id, business.slug);
   const [addon, offer, domains, requests] = await Promise.all([

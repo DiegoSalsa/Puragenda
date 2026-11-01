@@ -74,6 +74,11 @@ describe("Website billing lifecycle is separate from public acquisition", () => 
     m.entitlement.mockResolvedValue({editor:true,source:"PLUS_INCLUDED",validUntil:future});
     expect(hasWebsitePaidAccess((await editorProps()).addon,now)).toBe(true);
   });
+  it("reproduction: expired independent V2 website contracts show legacy review instead of a Plus upsell", async () => {
+    m.plan.mockResolvedValue({v2:true});
+    m.entitlement.mockResolvedValue({editor:false,source:"NONE",legacyBillingReviewRequired:true,legacyBillingCancelAt:null,legacyBillingCancellable:true});
+    expect(JSON.stringify(await WebsitePage())).toContain("Contrato histórico de Sitio Web");
+  });
   it.each(cases)("$name", async ({ addon, intent, founder, allowed }) => {
     m.addon.mockResolvedValue(addon); if (intent === false) m.intent.mockResolvedValue(null);
     if (founder) m.offer.mockResolvedValue({ offerCode: "BETA_FOUNDER" });

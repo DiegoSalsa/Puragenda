@@ -37,10 +37,14 @@ export async function resolveWebsiteCommercialAccess(businessId: string, now = n
     : commercial!.status === "PAST_DUE_GRACE" ? mpV2RenewalGraceDeadline(sub, now) ?? sub.gracePeriodEndsAt
     : sub.periodEnd : null;
   const allowed = !!(plus || legacyWeb);
+  const historicalBilling = !retired && !!business?.websiteAddon && !!(business.websiteAddon.mpSubscriptionId || business.websiteAddon.paddleSubscriptionId || business.websiteAddon.validUntil);
   return { shadow: false as const, changesEffectiveAccess: true as const,
     source: plus ? "PLUS_INCLUDED" : legacyWeb ? "LEGACY" : "NONE",
     editor: allowed, preview: allowed, publish: allowed, hosting: allowed, domains: allowed, media: allowed,
     validUntil: plus ? plusUntil : legacyWeb ? business?.websiteAddon?.validUntil ?? business?.websiteOfferEligibility?.trialEndsAt ?? null : null,
+    legacyBillingReviewRequired: v2Contract && !allowed && historicalBilling,
+    legacyBillingCancelAt: historicalBilling ? business?.websiteAddon?.cancelAt ?? null : null,
+    legacyBillingCancellable: historicalBilling && business?.websiteAddon?.status !== "CANCELLED" && !!(business?.websiteAddon?.mpSubscriptionId || business?.websiteAddon?.paddleSubscriptionId),
     bookingLink: v2Contract ? v2Effective : legacyOperational, bookingWidget: v2Contract ? v2Effective : legacyOperational,
     standaloneCheckoutAllowed: !v2Contract && !allowed && !retired,
     upgradeRequiredForWebsite: v2Contract && !allowed,

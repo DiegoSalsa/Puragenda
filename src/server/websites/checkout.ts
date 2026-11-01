@@ -5,6 +5,7 @@ import * as paddle from "./billing";
 import * as mp from "./mercadopago-billing";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { WebsiteError } from "./errors";
+import { resolveWebsiteCommercialAccess } from "./commercial-access";
 export async function startWebsiteCheckout() {
   mp.requireWebsiteAcquisition();
   const { business } = await requireWebsiteManager(true);
@@ -27,7 +28,10 @@ export async function changeWebsiteBilling(operation: "cancel" | "reactivate", c
 }
 export async function recoverWebsitePayment() {
   const { business } = await requireWebsiteManager(true);
-  if ((await getCommercialPlanAccess(business.id)).v2) throw new WebsiteError("El sitio web forma parte de Puragenda+. No requiere una contratación independiente.");
+  if ((await getCommercialPlanAccess(business.id)).v2) {
+    if ((await resolveWebsiteCommercialAccess(business.id)).legacyBillingReviewRequired) throw new WebsiteError("La regularización del contrato histórico requiere revisión controlada. No creamos otro acuerdo ni cancelamos el vigente.");
+    throw new WebsiteError("El sitio web forma parte de Puragenda+. No requiere una contratación independiente.");
+  }
   const addon = await prisma.websiteAddon.findUnique({ where: { businessId: business.id } });
   return addon?.provider === "mercadopago" || business.countryCode === "CL" ? mp.recoverMercadoPagoWebsitePayment() : paddle.recoverWebsitePayment();
 }
