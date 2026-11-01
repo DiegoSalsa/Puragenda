@@ -11,7 +11,7 @@ const past=new Date(now.getTime()-86_400_000),future=new Date(now.getTime()+86_4
 function fixture(plan="PURAGENDA_PLUS",status="ACTIVE",paid=true){return {deletedAt:null,subscription:null as unknown,websiteAddon:null as unknown,websiteOfferEligibility:null as unknown,
   commercialSubscription:{id:"commercial-a",businessId:"business-a",planCode:plan,status,professionalTotal:1,periodStart:past,periodEnd:future,
     trialEnd:future,gracePeriodEndsAt:future,lastPaymentStatus:paid?"CONFIRMED":null,lastPaymentAt:paid?past:null,lastPaymentEventId:paid?"verified-evidence":null}};}
-describe("one shadow website entitlement policy",()=>{
+describe("one effective website entitlement policy",()=>{
   beforeEach(()=>{
     vi.useFakeTimers({toFake:["Date"]});vi.setSystemTime(now);
     vi.clearAllMocks();mocks.business.mockResolvedValue(fixture());mocks.retired.mockResolvedValue(null);
@@ -27,7 +27,7 @@ describe("one shadow website entitlement policy",()=>{
     ["PURAGENDA_PLUS","SCHEDULED_CHANGE",true,true],["PURAGENDA_PLUS","TRIALING",false,false],
   ])("plan %s status %s paid %s resolves web %s",async(plan,status,paid,expected)=>{
     mocks.business.mockResolvedValue(fixture(String(plan),String(status),Boolean(paid)));
-    expect(await resolveWebsiteCommercialAccess("business-a",now)).toMatchObject({editor:expected,publish:expected,hosting:expected,domains:expected,media:expected,domainPurchaseIncluded:false,changesEffectiveAccess:false});
+    expect(await resolveWebsiteCommercialAccess("business-a",now)).toMatchObject({editor:expected,publish:expected,hosting:expected,domains:expected,media:expected,domainPurchaseIncluded:false,changesEffectiveAccess:true});
   });
   it("standard keeps public link and widget without full website",async()=>{
     mocks.business.mockResolvedValue(fixture("PURAGENDA"));

@@ -21,7 +21,7 @@ export async function startWebsiteTrial() {
 export async function changeWebsiteBilling(operation: "cancel" | "reactivate", confirmed: boolean) {
   if (operation === "reactivate") mp.requireWebsiteAcquisition();
   const { business } = await requireWebsiteManager(true);
-  if ((await getCommercialPlanAccess(business.id)).v2) throw new WebsiteError("El sitio web forma parte de Puragenda+. No requiere una contratación independiente.");
+  if (operation === "reactivate" && (await getCommercialPlanAccess(business.id)).v2) throw new WebsiteError("El sitio web forma parte de Puragenda+. No requiere una contratación independiente.");
   const addon = await prisma.websiteAddon.findUnique({ where: { businessId: business.id } });
   return addon?.provider === "mercadopago" ? mp.changeMercadoPagoWebsiteBilling(operation, confirmed) : paddle.changeWebsiteBilling(operation, confirmed);
 }

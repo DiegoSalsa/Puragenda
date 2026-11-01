@@ -6,6 +6,7 @@ import { getPaddleEnvironment, getPaddleServerClient } from "@/server/lib/paddle
 import { requireWebsiteManager } from "./service";
 import { hasWebsiteEntitlement } from "@/websites/policy";
 import { WEBSITE_CATALOG, WEBSITE_TRIAL_MS, websitePriceTier } from "@/websites/offers";
+import { assertStandaloneWebsiteContract } from "./billing-safety";
 
 function sandboxClient() {
   if (getPaddleEnvironment() !== Environment.sandbox) throw new WebsiteError("El add-on está habilitado solo en sandbox durante esta fase");
@@ -30,6 +31,7 @@ export async function startWebsiteCheckout() {
   const client = sandboxClient();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await assertStandaloneWebsiteContract(business.id, tx);
     const addon = await tx.websiteAddon.findUnique({ where: { businessId: business.id } });
     if (hasWebsiteEntitlement(addon, new Date(), offer) || addon?.paddleSubscriptionId && !["CANCELLED", "INACTIVE"].includes(addon.status)) throw new WebsiteError("Ya existe un add-on. Reactívalo o regulariza su pago.");
     if (addon?.checkoutTransactionId) {
@@ -49,6 +51,7 @@ export async function startWebsiteTrial() {
   const now = new Date();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+    await assertStandaloneWebsiteContract(business.id, tx);
     const offer = await tx.websiteOfferEligibility.findUnique({ where: { businessId: business.id } });
     if (!offer || offer.offerCode !== "BETA_FOUNDER") throw new WebsiteError("Esta prueba está disponible para clientes de Puragenda al lanzamiento");
     if (offer.trialConsumedAt || offer.trialStartedAt) throw new WebsiteError("La prueba gratuita ya fue utilizada");
@@ -132,8 +135,9 @@ export async function syncWebsiteAddon(event: EventEntity) {
     const eventName = status === "ACTIVE" && old?.status === "CANCELLED" ? "website_addon_reactivated" : status === "ACTIVE" ? (tier === "BETA_FOUNDER" ? "website_beta_activated" : "website_standard_activated") : status === "CANCELLED" ? "website_addon_cancelled" : null;
     if (eventName) await tx.websiteCommercialEvent?.create?.({ data: { key: `${businessId}:${eventName}:${event.eventId}`, businessId, event: eventName, priceTier: tier } });
     await tx.websiteBillingEvent.create({ data: { eventId: event.eventId } });
-    // Retain snapshots. Suspension is reversible with an explicit publication.
-    if (!["ACTIVE", "TRIALING"].includes(status)) await tx.businessWebsite.updateMany({ where: { businessId, status: "PUBLISHED" }, data: { status: "SUSPENDED" } });
+    // Public access is derived from all current rights at read time. An old
+    // add-on webhook must not suspend a site now included in Plus, nor erase
+    // the owner's publication choice when payment is later recovered.
   }, { timeout: 30000 });
   return true;
 }

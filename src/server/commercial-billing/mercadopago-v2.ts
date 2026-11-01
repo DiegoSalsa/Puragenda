@@ -10,6 +10,7 @@ import { createMpV2Provider, MpV2Provider, mpV2InvoiceSchema, type MpV2Invoice, 
 import { refreshMpV2Dunning, refreshMpV2DunningInTransaction } from "./mercadopago-v2-dunning";
 import { hasPendingCommercialBenefit } from "@/server/services/commercial-benefit-hold";
 import { incrementPaidReferrals } from "@/server/services/affiliate.service";
+import { assertNoOverlappingWebsiteBilling } from "@/server/websites/billing-safety";
 
 const savedQuote = z.object({ selection: commercialSelectionSchema, quote: z.unknown(),
   acceptedAt: z.coerce.date(), actorId: z.string(), periodStart: z.coerce.date().optional(), periodEnd: z.coerce.date().optional(), previousSelection: commercialSelectionSchema.optional() });
@@ -72,6 +73,7 @@ export async function prepareMpV2Operation(input: { businessId: string; actorId:
     if(hasPendingCommercialBenefit(business.subscription)) throw new Error("V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED");
     if (await tx.commercialBillingOperation.findFirst({where:{businessId:input.businessId,failureCode:{endsWith:"_REVIEW_REQUIRED"}}})) throw new Error("V2_COMMERCIAL_REVIEW_REQUIRED");
     const selection = input.action === "SUBSCRIBE" ? selectionOf(sub) : commercialSelectionSchema.parse(input.selection);
+    await assertNoOverlappingWebsiteBilling(input.businessId, selection.plan, tx, now);
     const quote = v2Quote(selection), inputHash = commercialHash({ action: input.action, selection });
     const key = `mp-v2:${input.businessId}:${input.idempotencyKey}`;
     const previous = await tx.commercialBillingOperation.findUnique({ where: { idempotencyKey: key } });
@@ -126,6 +128,7 @@ export async function executeMpV2Operation(businessId: string, id: string, payer
   if (!z.email().safeParse(payerEmail).success) throw new Error("V2_PAYER_EMAIL_INVALID");
   const claimed = await prisma.$transaction(async tx => {
     await lock(tx, businessId); const { sub, business } = await runtimeContract(tx, businessId);
+    await assertNoOverlappingWebsiteBilling(businessId, op.targetPlanCode, tx);
     if(hasPendingCommercialBenefit(business.subscription)) throw new Error("V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED");
     if(await tx.commercialBillingOperation.findFirst({where:{businessId,failureCode:{endsWith:"_REVIEW_REQUIRED"}}})) throw new Error("V2_COMMERCIAL_REVIEW_REQUIRED");
     if(sub.renewalCancellationStatus && !(op.kind === "NEW_SUBSCRIPTION" && sub.renewalCancellationStatus === "CANCELLED_VERIFIED")) throw new Error("V2_CANCELLATION_PENDING");
