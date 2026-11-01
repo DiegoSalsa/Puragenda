@@ -1,4 +1,3 @@
-import { getCommercialPlanAccess, isV2Plan } from "@/server/services/commercial-plan-access";
 import { resolveWebsiteCommercialAccess } from "./commercial-access";
 import { WebsiteError } from "@/server/websites/errors";
 import { randomUUID } from "node:crypto";
@@ -7,22 +6,25 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { getBusinessForUser } from "@/server/services/business.service";
 import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
-import { normalizeHostname, validSubdomain, websiteIsVisible, websiteSubdomain } from "@/websites/policy";
+import { normalizeHostname, validSubdomain, websiteSubdomain } from "@/websites/policy";
 import { websiteTemplate } from "@/websites/template-snapshots";
 import { resolveTemplate } from "@/websites/registry";
 import { loadBookingContext, toBookingCatalog } from "@/server/booking/read.service";
 import { websiteCatalog } from "@/websites/catalog";
 import type { WebsiteView } from "@/websites/types";
 import type { Prisma } from "@prisma/client";
+import { websiteDomainOwnership } from "./domain-ownership";
+import { safeLink, safeMediaUrl } from "@/websites/shared-config";
 
 export const websiteRootDomain = () => normalizeHostname(process.env.WEBSITE_ROOT_DOMAIN || "puragenda.cl");
-export async function requireWebsiteManager(ownerOnly = false, requireEntitlement = true) {
+export async function requireWebsiteManager(ownerOnly = false, requireEntitlement = !ownerOnly) {
   const user = await getCurrentSessionUser();
   if (!user) throw new WebsiteError("No autenticado");
   const business = await getBusinessForUser(user.id);
   if (!business || business.deletedAt || (ownerOnly ? business.ownerId !== user.id : !await hasBusinessPermission(user, business, DASHBOARD_PERMISSIONS.WEBSITE_MANAGE))) throw new WebsiteError("No autorizado");
-  const access = requireEntitlement ? await getCommercialPlanAccess(business.id) : null;
-  if (access?.v2 && !access.has("website.editor")) throw new WebsiteError("Tu plan necesita acceso vigente a Puragenda+ para gestionar el sitio web");
+  // Billing recovery/cancellation needs ownership even after access expires.
+  // Content and domain mutations opt into the same effective website policy.
+  if (requireEntitlement && !(await resolveWebsiteCommercialAccess(business.id)).editor) throw new WebsiteError("Necesitas acceso vigente al sitio web para gestionar su contenido");
   return { user, business };
 }
 export async function getManagedWebsite() {
@@ -32,17 +34,28 @@ export async function getManagedWebsite() {
 export async function ensureWebsite(businessId: string, slug: string) {
   const existing = await prisma.businessWebsite.findUnique({ where: { businessId } });
   if (existing) return existing;
-  const subdomain = validSubdomain(slug) ? slug : `sitio-${randomUUID().slice(0, 8)}`;
-  return prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: resolveTemplate("bella", 1).defaultConfig() }, update: {} });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const subdomain = attempt === 0 && validSubdomain(slug) ? slug : `sitio-${randomUUID().slice(0, 8)}`;
+    try {
+      return await prisma.businessWebsite.upsert({ where: { businessId }, create: { businessId, subdomain, draftConfig: resolveTemplate("bella", 1).defaultConfig() }, update: {} });
+    } catch (error) {
+      if (!error || typeof error !== "object" || !("code" in error) || error.code !== "P2002") throw error;
+    }
+  }
+  throw new WebsiteError("No pudimos reservar una dirección para tu sitio. Intenta nuevamente.");
 }
 const includeBusiness = { business: { include: { subscription: true, websiteAddon: true, websiteOfferEligibility: true } }, domains: { where: { status: "ACTIVE" as const, tenantVerifiedAt: { not: null } } } } satisfies Prisma.BusinessWebsiteInclude;
 export async function resolveWebsiteHost(raw: string) {
-  const hostname = normalizeHostname(raw);
+  let hostname: string;
+  try { hostname = normalizeHostname(raw); } catch { return null; }
   const slug = websiteSubdomain(hostname, websiteRootDomain());
   const site = slug
     ? await prisma.businessWebsite.findUnique({ where: { subdomain: slug }, include: includeBusiness })
     : await prisma.businessWebsite.findFirst({ where: { domains: { some: { hostname, status: "ACTIVE", tenantVerifiedAt: { not: null } } } }, include: includeBusiness });
-  if (!site || !(isV2Plan(site.business.subscription?.plan) ? site.status === "PUBLISHED" && !!site.publishedConfig && (await resolveWebsiteCommercialAccess(site.businessId)).hosting : websiteIsVisible(site, site.business.websiteAddon, site.business.subscription, site.business.deletedAt, new Date(), site.business.websiteOfferEligibility))) return null;
+  if (!site || site.business.deletedAt || site.status !== "PUBLISHED" || !site.publishedConfig || !(await resolveWebsiteCommercialAccess(site.businessId)).hosting) return null;
+  const domains = await Promise.all(site.domains.map(async domain => await websiteDomainOwnership(domain) ? domain : null));
+  site.domains = domains.filter((domain): domain is NonNullable<typeof domain> => !!domain);
+  if (!slug && !site.domains.some(domain => domain.hostname === hostname)) return null;
   const identity = websiteTemplate(site, false);
   resolveTemplate(identity.key, identity.version);
   return site;
@@ -52,12 +65,14 @@ export async function websiteView(site: { businessId: string; templateKey: strin
   const identity = websiteTemplate(site, preview);
   const template = resolveTemplate(identity.key, identity.version);
   const config = template.readConfig(preview ? site.draftConfig : site.publishedConfig);
+  if (!preview) delete config.mediaAssets;
   const [business, context] = await Promise.all([
     prisma.business.findUniqueOrThrow({ where: { id: site.businessId }, select: { id: true, name: true, logoUrl: true, address: true, mapsUrl: true } }),
     loadBookingContext(site.businessId),
   ]);
   const primaryLocation = context.locations.find(location => location.isPrimary) ?? context.locations[0];
-  return { config, catalog: websiteCatalog(toBookingCatalog(context), preview), business: { id: business.id, name: business.name, logo: business.logoUrl, address: business.address || primaryLocation?.address || null, mapsUrl: business.mapsUrl || primaryLocation?.mapsUrl || null, hours: (primaryLocation?.hours.length ? primaryLocation.hours : context.businessHours).map(({ dayOfWeek, startTime, endTime, isOpen }) => ({ dayOfWeek, startTime, endTime, isOpen })) }, preview };
+  const maps = business.mapsUrl || primaryLocation?.mapsUrl || null;
+  return { config, catalog: websiteCatalog(toBookingCatalog(context), preview), business: { id: business.id, name: business.name, logo: business.logoUrl && safeMediaUrl(business.logoUrl) ? business.logoUrl : null, address: business.address || primaryLocation?.address || null, mapsUrl: maps && safeLink(maps) ? maps : null, hours: (primaryLocation?.hours.length ? primaryLocation.hours : context.businessHours).map(({ dayOfWeek, startTime, endTime, isOpen }) => ({ dayOfWeek, startTime, endTime, isOpen })) }, preview };
 }
 export function canonicalWebsiteUrl(site: PublicWebsite) {
   const primary = site.domains.find(domain => domain.isPrimary);

@@ -6,6 +6,7 @@ vi.mock("@/server/db/prisma", () => { const db = { businessWebsite: { findUnique
 import { addWebsiteDomain, customHostname, pendingDomainAdapter, removeWebsiteDomain, verifyWebsiteDomain } from "@/server/websites/domains";
 const dns = vi.hoisted(() => ({ txt: vi.fn() }));
 vi.mock("node:dns/promises", () => ({ resolveTxt: dns.txt }));
+vi.mock("@/server/websites/commercial-access",()=>({resolveWebsiteCommercialAccess:async()=>({domains:true})}));
 const project = { name: "studio.cl", apexName: "studio.cl", projectId: "prj_qa", verified: false, verification: [{ type: "TXT", domain: "_vercel.studio.cl", value: "provider-challenge" }] };
 const configuration = { misconfigured: true, configuredBy: null, recommendedCNAME: [{ rank: 1, value: "dynamic.vercel-dns-qa.com" }], recommendedIPv4: [{ rank: 1, value: ["192.0.2.27"] }] };
 beforeEach(() => { vi.resetAllMocks(); m.manager.mockResolvedValue({ business: { id: "tenant-a" } }); m.site.mockResolvedValue({ id: "website-a" }); m.count.mockResolvedValue(0); m.create.mockResolvedValue({ id: "domain-a" }); m.update.mockImplementation(async ({ data }) => ({ id: "domain-a", ...data })); });

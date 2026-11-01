@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/server/websites/commercial-access",()=>({resolveWebsiteCommercialAccess:async()=>({editor:true,hosting:true})}));
 const mocks = vi.hoisted(() => ({ site: vi.fn(), custom: vi.fn(), user: vi.fn(), business: vi.fn(), permission: vi.fn() }));
 vi.mock("@/server/db/prisma", () => ({ prisma: { businessWebsite: { findUnique: mocks.site, findFirst: mocks.custom } } }));
 vi.mock("@/server/auth/user-session", () => ({ getCurrentSessionUser: mocks.user }));
 vi.mock("@/server/services/business.service", () => ({ getBusinessForUser: mocks.business }));
 vi.mock("@/server/services/permissions.service", () => ({ hasBusinessPermission: mocks.permission }));
 import { resolveWebsiteHost, requireWebsiteManager } from "@/server/websites/service";
-const website = (id: string) => ({ businessId: id, status: "PUBLISHED", publishedConfig: {}, templateKey: "bella", templateVersion: 1, business: { deletedAt: null, subscription: { status: "ACTIVE", tenantVerifiedAt: { not: null } }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) } } });
+const website = (id: string) => ({ businessId: id, domains: [{hostname:"studio-b.cl",tenantVerifiedAt:new Date(),verificationToken:"qa"}], status: "PUBLISHED", publishedConfig: {}, templateKey: "bella", templateVersion: 1, business: { deletedAt: null, subscription: { status: "ACTIVE", tenantVerifiedAt: { not: null } }, websiteAddon: { status: "ACTIVE", validUntil: new Date(Date.now() + 86400000) } } });
 describe("website server tenant boundaries", () => {
   beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("WEBSITE_ROOT_DOMAIN", "puragenda.cl"); });
   it("looks up each hostname by its own unique tenant key", async () => {
