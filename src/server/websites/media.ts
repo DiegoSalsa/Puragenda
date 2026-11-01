@@ -7,6 +7,7 @@ import { WebsiteError } from "./errors";
 
 import { MEDIA_PROFILES, MAX_WEBSITE_IMAGE_BYTES, type MediaUsage, type WebsiteAsset } from "@/websites/media";
 import { storedMediaUrls } from "@/websites/stored-media";
+import { resolveWebsiteCommercialAccess } from "./commercial-access";
 
 export async function normalizeWebsiteImage(file: File, usage: MediaUsage) {
   if (!file.size || file.size > MAX_WEBSITE_IMAGE_BYTES || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new WebsiteError("Usa JPG, PNG o WebP de hasta 5 MB");
@@ -40,14 +41,30 @@ export async function storeWebsiteImage(form: FormData): Promise<WebsiteAsset> {
     secureUrl = `/website-media-qa/${business.id}/${filename}`; provider = "local";
   } else {
     const { cloudinary } = await import("@/server/lib/cloudinary");
-    const result = await cloudinary.uploader.upload(`data:image/webp;base64,${normalized.data.toString("base64")}`, { resource_type: "image", public_id: publicId, overwrite: false });
-    secureUrl = result.secure_url;
+    try {
+      const result = await cloudinary.uploader.upload(`data:image/webp;base64,${normalized.data.toString("base64")}`, { resource_type: "image", public_id: publicId, overwrite: false });
+      secureUrl = result.secure_url;
+    } catch {
+      // The provider may have accepted an upload before the connection failed.
+      await cloudinary.uploader.destroy(publicId, { invalidate: true }).catch(() => undefined);
+      throw new WebsiteError("No pudimos subir la foto. Intenta nuevamente.");
+    }
   }
   try {
-    const asset = await prisma.websiteMedia.create({ data: { websiteId: site.id, publicId, secureUrl, width: normalized.info.width, height: normalized.info.height, format: "webp", bytes: normalized.info.size, usage, provider } });
+    const asset = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "Business" WHERE id = ${business.id} FOR UPDATE`;
+      if (!(await resolveWebsiteCommercialAccess(business.id, new Date(), tx)).media) throw new WebsiteError("Necesitas acceso vigente al sitio web para subir fotos");
+      if (await tx.websiteMedia.count({ where: { websiteId: site.id, deletedAt: null } }) >= 150) throw new WebsiteError("Tu biblioteca está llena. Retira las fotos que ya no usas.");
+      return tx.websiteMedia.create({ data: { websiteId: site.id, publicId, secureUrl, width: normalized.info.width, height: normalized.info.height, format: "webp", bytes: normalized.info.size, usage, provider } });
+    });
     return { id: asset.id, publicId: asset.publicId, secureUrl: asset.secureUrl, width: asset.width, height: asset.height, format: "webp", bytes: asset.bytes };
   } catch (error) {
     if (provider === "cloudinary") { const { cloudinary } = await import("@/server/lib/cloudinary"); await cloudinary.uploader.destroy(publicId, { invalidate: true }).catch(() => undefined); }
+    else if (provider === "local") {
+      const { unlink } = await import("node:fs/promises");
+      const { join } = await import("node:path");
+      await unlink(join(process.cwd(), "public", "website-media-qa", business.id, `${publicId.split("/").at(-1)}.webp`)).catch(() => undefined);
+    }
     throw error;
   }
 }

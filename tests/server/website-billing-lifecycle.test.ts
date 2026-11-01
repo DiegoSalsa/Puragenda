@@ -3,7 +3,9 @@ import { Children, isValidElement } from "react";
 import { hasExistingWebsiteBillingLifecycle } from "@/websites/billing-lifecycle";
 import { hasWebsitePaidAccess } from "@/websites/policy";
 
-const m = vi.hoisted(() => ({ addon: vi.fn(), intent: vi.fn(), offer: vi.fn(), base: vi.fn(), operation: vi.fn() }));
+vi.mock("@/server/services/commercial-plan-access",()=>({getCommercialPlanAccess:(...args: unknown[])=>m.plan(...args)}));
+vi.mock("@/server/websites/commercial-access",()=>({resolveWebsiteCommercialAccess:(...args: unknown[])=>m.entitlement(...args)}));
+const m = vi.hoisted(() => ({ plan:vi.fn(), entitlement:vi.fn(), addon: vi.fn(), intent: vi.fn(), offer: vi.fn(), base: vi.fn(), operation: vi.fn() }));
 vi.mock("@/server/websites/service", () => ({
   requireWebsiteManager: async () => ({ business: { id: "local-business", ownerId: "owner", slug: "local-qa", countryCode: "CL" }, user: { id: "owner" } }),
   ensureWebsite: async () => ({ id: "local-site", templateKey: "bella", templateVersion: 1, draftConfig: {}, revision: 1, publishedRevision: null, subdomain: "local-qa", status: "DRAFT" }),
@@ -53,6 +55,7 @@ const cases: { name: string; addon: Addon; intent?: boolean; founder?: boolean; 
 describe("Website billing lifecycle is separate from public acquisition", () => {
   beforeEach(() => {
     vi.useFakeTimers(); vi.setSystemTime(now);
+    m.plan.mockResolvedValue({v2:false});m.entitlement.mockResolvedValue({editor:true,source:"LEGACY"});
     vi.stubEnv("WEBSITE_CHECKOUT_ENABLED", "1"); vi.stubEnv("WEBSITE_PUBLIC_ACQUISITION_ENABLED", "0");
     vi.stubEnv("MERCADOPAGO_ACCESS_TOKEN", "local-no-network"); vi.stubEnv("MERCADOPAGO_WEBHOOK_SECRET", "local-no-network");
     m.intent.mockResolvedValue({ businessId: "local-business" }); m.addon.mockResolvedValue(null); m.offer.mockResolvedValue(null);
@@ -63,9 +66,14 @@ describe("Website billing lifecycle is separate from public acquisition", () => 
   async function editorProps() {
     const page = await WebsitePage();
     const editor = Children.toArray(page.props.children).find(child => isValidElement<{ templateKey?: string }>(child) && child.props.templateKey === "bella");
-    if (!isValidElement<{ price: { enabled: boolean } }>(editor)) throw new Error("Website editor missing from the page");
+    if (!isValidElement<{ price: { enabled: boolean }; addon: Parameters<typeof hasWebsitePaidAccess>[0] }>(editor)) throw new Error("Website editor missing from the page");
     return editor.props;
   }
+  it("reproduction: included grace keeps the editor publication button entitled", async () => {
+    m.plan.mockResolvedValue({v2:true,snapshot:{periodEnd:past}});
+    m.entitlement.mockResolvedValue({editor:true,source:"PLUS_INCLUDED",validUntil:future});
+    expect(hasWebsitePaidAccess((await editorProps()).addon,now)).toBe(true);
+  });
   it.each(cases)("$name", async ({ addon, intent, founder, allowed }) => {
     m.addon.mockResolvedValue(addon); if (intent === false) m.intent.mockResolvedValue(null);
     if (founder) m.offer.mockResolvedValue({ offerCode: "BETA_FOUNDER" });

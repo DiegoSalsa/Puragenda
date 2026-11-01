@@ -6,6 +6,7 @@ import { prisma } from "@/server/db/prisma";
 import { hasWebsitePaidAccess } from "@/websites/policy";
 import { requireSameOrigin } from "@/server/security/same-origin";
 import { publicWebsiteAcquisitionEnabled } from "@/server/websites/public-acquisition";
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
 
 export async function POST(request: NextRequest) {
   const blocked = requireSameOrigin(request);
@@ -14,6 +15,8 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Inicia sesión." }, { status: 401 });
   const business = await getBusinessForUser(user.id);
   if (!business || business.ownerId !== user.id) return NextResponse.json({ error: "Solo el propietario puede contratar el sitio." }, { status: 403 });
+  if (business.deletedAt) return NextResponse.json({ error: "Negocio no disponible." }, { status: 403 });
+  if ((await getCommercialPlanAccess(business.id)).v2) return NextResponse.json({ nextUrl: "/dashboard/website" });
   if (business.countryCode !== "CL") return NextResponse.json({ error: "Oferta pública disponible en Chile." }, { status: 400 });
   // Pricing must not turn an existing account into a gated public bundle.
   // Registration intents and all existing Website lifecycle state remain intact.
