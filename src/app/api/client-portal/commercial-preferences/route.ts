@@ -2,12 +2,13 @@ import { z } from "zod";
 import { NextRequest } from "next/server";
 import { getClientPortalAccountFromRequest } from "@/server/services/client-portal.service";
 import { requireSameOrigin } from "@/server/security/same-origin";
-import { publicConsentEnabled, portalCommercialPreferences, updatePortalCommercialPreference } from "@/server/contact-flow/public-consent";
+import { portalCommercialPreferences, updatePortalCommercialPreference } from "@/server/contact-flow/public-consent";
+import { contactOptOutEnabled } from "@/server/contact-flow/resend-test";
 import { readContactText, contactPublicLimiter } from "@/server/contact-flow/http";
 import { COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 const input = z.object({ businessId: z.string().min(1).max(100), accepted: z.boolean(), textVersion: z.literal(COMMERCIAL_CONSENT_VERSION) }).strict();
 export async function GET(request: NextRequest) {
-  if (!publicConsentEnabled()) return new Response(null, { status: 404 });
+  if (!contactOptOutEnabled()) return new Response(null, { status: 404 });
   try {
     const account = await getClientPortalAccountFromRequest(request);
     if (!account) return new Response(null, { status: 401 });
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
   } catch { return Response.json({ code: "PREFERENCE_UNAVAILABLE" }, { status: 503 }); }
 }
 export async function POST(request: NextRequest) {
-  if (!publicConsentEnabled()) return new Response(null, { status: 404 });
+  if (!contactOptOutEnabled()) return new Response(null, { status: 404 });
   const origin = requireSameOrigin(request);
   if (origin) return origin;
   const limited = await contactPublicLimiter.check(request);

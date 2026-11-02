@@ -1,4 +1,5 @@
 import { publicConsentEnabled, portalCommercialPreferences } from "@/server/contact-flow/public-consent";
+import { contactOptOutEnabled } from "@/server/contact-flow/resend-test";
 import { CommercialPreferences } from "./commercial-preferences";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
@@ -200,7 +201,7 @@ export default async function ClientPortalPage({
           </div>
 
           <aside className="space-y-8">
-            {account && publicConsentEnabled() && <CommercialPreferences initial={await portalCommercialPreferences(account)} />}
+            {account && contactOptOutEnabled() && <CommercialPreferences initial={await portalCommercialPreferences(account)} canOptIn={publicConsentEnabled()} />}
             {profile
               ? <ClientPortalProfileEditor profile={profile} />
               : <ClientPortalActivationCard email={email} initialName={data.displayName === "Cliente" ? "" : data.displayName} />}

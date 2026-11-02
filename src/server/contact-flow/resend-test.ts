@@ -52,7 +52,10 @@ export function contactResendWebhookSecrets() {
   return [...new Set([current, ...(previous?.startsWith("whsec_") ? [previous] : [])])];
 }
 export function contactOptOutEnabled() {
-  return isProductionContactRuntime() ? (process.env.CONTACT_FLOW_TOKEN_SECRET ?? "").length >= 32 : (() => { try { assertContactLab(); return true; } catch { return false; } })();
+  if ((process.env.CONTACT_FLOW_TOKEN_SECRET ?? "").length < 32) return false;
+  if (isProductionContactRuntime()) return true;
+  // Existing signed links remain usable when new commercial activity is off.
+  try { assertCommercialSandbox(); return true; } catch { return false; }
 }
 export function contactAddressAllowed(businessId: string, email: string) {
   if (syntheticAddress(email)) return true;

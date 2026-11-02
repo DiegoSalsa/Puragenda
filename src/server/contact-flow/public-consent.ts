@@ -5,6 +5,7 @@ import { commercialHash } from "@/server/services/commercial-internal";
 import { COMMERCIAL_CONSENT_TEXT, COMMERCIAL_CONSENT_VERSION } from "@/core/commercial-consent";
 import { addressHash, assertContactLab, contactLabEnabled, contactLock, signature } from "./policy";
 import { receiptHash, suppress, verifyConsentReceipt } from "./consent";
+import { contactOptOutEnabled } from "./resend-test";
 
 export function publicConsentEnabled() {
   return process.env.CONTACT_FLOW_PUBLIC_CONSENT_ENABLED === "1" && contactLabEnabled();
@@ -57,8 +58,7 @@ export async function recordPublicConsent(input: {
 }
 
 export async function portalCommercialPreferences(account: { id: string; email: string }) {
-  assertContactLab();
-  if (!publicConsentEnabled()) throw new Error("CONSENT_DISABLED");
+  if (!contactOptOutEnabled()) throw new Error("CONSENT_DISABLED");
   if (!await prisma.clientPortalAccount.findFirst({ where: { id: account.id, email: account.email, emailVerifiedAt: { not: null } }, select: { id: true } })) throw new Error("VERIFIED_ACCOUNT_REQUIRED");
   const clients = await prisma.client.findMany({
     where: { email: { equals: account.email, mode: "insensitive" }, business: { deletedAt: null } },
@@ -76,8 +76,7 @@ export async function portalCommercialPreferences(account: { id: string; email: 
 }
 
 export async function updatePortalCommercialPreference(account: { id: string; email: string }, businessId: string, accepted: boolean) {
-  assertContactLab();
-  if (!publicConsentEnabled()) throw new Error("CONSENT_DISABLED");
+  if (accepted ? !publicConsentEnabled() : !contactOptOutEnabled()) throw new Error("CONSENT_DISABLED");
   if (!await prisma.clientPortalAccount.findFirst({ where: { id: account.id, email: account.email, emailVerifiedAt: { not: null } }, select: { id: true } })) throw new Error("VERIFIED_ACCOUNT_REQUIRED");
   const client = await prisma.client.findFirstOrThrow({ where: { businessId, email: { equals: account.email, mode: "insensitive" }, business: { deletedAt: null } } });
   if (accepted) {
