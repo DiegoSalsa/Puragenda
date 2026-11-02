@@ -10,7 +10,7 @@ export async function revalidatePuriContext(context: PuriContext): Promise<PuriC
   if (!user || user.deletedAt || (context.user.tokenVersion !== undefined && context.user.tokenVersion !== user.tokenVersion)) throw new PuriAccessError('FORBIDDEN');
   let current: PuriContext;
   try {
-    current = await createPuriContext(user, { pathname: context.pathname, locale: context.locale,
+    current = await createPuriContext(user, { businessId: context.business.id, pathname: context.pathname, locale: context.locale,
       locationSlug: context.location?.slug || undefined, agenda: context.ownAgenda ? 'mine' : 'all', period: context.selectedPeriod });
   } catch { throw new PuriAccessError('FORBIDDEN'); }
   if (current.business.id !== context.business.id || current.location?.id !== context.location?.id ||

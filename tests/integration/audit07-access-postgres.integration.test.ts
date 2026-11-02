@@ -10,6 +10,8 @@ import { publicBusiness } from '@/server/mcp/public';
 import { DASHBOARD_PERMISSIONS as P } from '@/core/permissions';
 import { createGrowthScope } from '@/server/puri/growth/access';
 import type { PuriContext } from '@/server/puri/types';
+import { readTools } from '@/server/mcp/read-tools';
+const oauthClients: string[] = [];
 
 async function account() {
   const f = await fixture({ plan: 'PURAGENDA_PLUS', professionalTotal: 2, billingCycle: 'MONTHLY' }, true);
@@ -27,6 +29,7 @@ const input = { pathname: '/dashboard', locale: 'es' };
 describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL)('Audit 07 real authorization boundaries', () => {
   afterAll(async () => {
     await prisma.business.deleteMany({ where: { id: { in: businesses } } });
+    await prisma.mcpOAuthClient.deleteMany({ where: { id: { in: oauthClients } } });
     await prisma.user.deleteMany({ where: { id: { in: users } } });
     await prisma.$disconnect();
   });
@@ -143,5 +146,14 @@ describe.skipIf(!process.env.COMMERCIAL_V2_TEST_DATABASE_URL)('Audit 07 real aut
     const spy = vi.spyOn(prisma.client, 'findMany').mockImplementationOnce(read as unknown as typeof prisma.client.findMany);
     try { await expect(executePuriTool('searchClients', { query: 'Private' }, context)).rejects.toThrow('FORBIDDEN'); }
     finally { spy.mockRestore(); }
+  });
+  it('preserves explicit MCP consent to a second legitimate business without using the default dashboard business', async () => {
+    const a = await account(), b = await account();
+    await prisma.business.update({ where: { id: b.business.id }, data: { ownerId: a.user.id } });
+    const client = await prisma.mcpOAuthClient.create({ data: { id: randomUUID(), name: 'QA multi-business', redirectUris: ['https://example.invalid/callback'] } }); oauthClients.push(client.id);
+    const profile = await prisma.mcpProfile.create({ data: { businessId: b.business.id, userId: a.user.id } });
+    const connection = await prisma.mcpConnection.create({ data: { profileId: profile.id, clientId: client.id, scopes: ['agenda:read'], tokenVersion: a.user.tokenVersion, expiresAt: new Date(Date.now() + 600000) }, include: { profile: true } });
+    const identity = { connection, scopes: ['agenda:read'] };
+    await expect(readTools.find(t => t.name === 'list_appointments')!.run({ period: 'today' }, identity)).resolves.toMatchObject({ appointments: [] });
   });
 });

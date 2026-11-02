@@ -7,9 +7,14 @@ import { PuriAccessError, type PuriContext } from "./types";
 
 export async function createPuriContext(
   user: { id: string; role: string; tokenVersion?: number },
-  input: { pathname: string; locationSlug?: string; agenda?: string; period?: "week" | "month"; locale: string },
+  input: { pathname: string; locationSlug?: string; agenda?: string; period?: "week" | "month"; locale: string; businessId?: string },
 ): Promise<PuriContext> {
-  const business = await getBusinessForUser(user.id);
+  // Only trusted server callers can select an explicit tenant (e.g. an OAuth
+  // consent). The browser schema never accepts businessId; membership is still
+  // resolved from the current user, including for an explicitly selected tenant.
+  const business = input.businessId
+    ? await prisma.business.findFirst({ where: { id: input.businessId, OR: [{ ownerId: user.id }, { staff: { some: { userId: user.id, isActive: true } } }] } })
+    : await getBusinessForUser(user.id);
   if (!business) throw new PuriAccessError("BUSINESS_NOT_FOUND");
   const access = await getCommercialPlanAccess(business.id);
   if (!access.has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
