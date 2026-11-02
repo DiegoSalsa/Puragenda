@@ -72,10 +72,13 @@ export async function loadSetup(context: Context) {
   const verified = !!setup?.verifiedAt && !!verification?.slots?.length && verification.fingerprint === fingerprint(data) && Date.now() - setup.verifiedAt.getTime() < 86400000 && context.access.allowed;
   const facts = { mode: setup?.mode ?? null, hours, staff: staffReady, services: catalog.services.length > 0, businessOnly: catalog.rules.scheduleMode === "BUSINESS", verified };
   const progress = setupProgress(facts);
+  const activation = !setup
+    ? "habitual" as const
+    : activationState(verified, !!setup.sharedAt, bookings);
   return { revision: setup?.revision ?? 0, started: !!setup, currentStep: setup?.currentStep ?? progress.next, mode: setup?.mode ?? null,
     industry: setup?.industry ?? classification?.categories[0]?.category.name ?? "", draft: (setup?.draft ?? {}) as Record<string, unknown>,
     completed: !!setup?.completedAt, verified, paused: !!setup?.pausedAt, shared: !!setup?.sharedAt, dismissed: !!setup?.dismissedAt,
-    facts, progress, issues, activation: activationState(verified || ((!setup || !!setup.completedAt) && context.access.allowed && issues.length === 0), !!setup?.sharedAt, bookings), bookings,
+    facts, progress, issues, activation, bookings,
     business: { name: data.name, slug: data.slug, currency: data.currencyCode, timezone: data.timezone }, userName: context.user.name ?? "",
     publicPath: `/widget/${encodeURIComponent(data.slug)}`, capacity: { current: capacity.currentCount, total: capacity.maxAllowed, canAdd: capacity.canAdd },
     catalog, selfStaffId: selfStaff?.id ?? null, locations: data.locations.map(l => ({ id: l.id, name: l.name, hours: l.hours })),
@@ -135,6 +138,16 @@ export async function mutateSetup(context: Context, raw: unknown) {
   const replay = await prisma.setupOperation.findUnique({ where: { businessId_key: { businessId, key } } });
   if (replay) {
     if (replay.payloadHash !== payloadHash) throw new SetupError("La solicitud ya fue utilizada con otros datos.", 409);
+    // A matching idempotency key is not an authorization grant. Reacquire the
+    // tenant lock and revalidate the current session, membership, permissions
+    // and entitlement before returning the prior result.
+    await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${businessId} FOR NO KEY UPDATE`;
+      await assertMutationAuthorization(context, tx);
+      const current = await tx.setupOperation.findUnique({ where: { businessId_key: { businessId, key } } });
+      if (!current) throw new SetupError("La operación ya no está disponible.", 409);
+      if (current.payloadHash !== payloadHash) throw new SetupError("La solicitud ya fue utilizada con otros datos.", 409);
+    });
     return loadSetup(context);
   }
   // Checks may contact authorized external calendars. Never hold a database lock while waiting.

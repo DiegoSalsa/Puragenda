@@ -111,6 +111,14 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     await expect(mutateSetup(context, { key, revision: 0, command: { ...value, price: 20000 } })).rejects.toThrow("otros datos");
     expect(await prisma.appointment.count({ where: { businessId: context.business.id } })).toBe(0);
   });
+  it("does not return an idempotent replay after the session was revoked", async () => {
+    const { context, snapshot } = await fixture();
+    const key = randomUUID();
+    const commandValue: SetupCommand = { type: "pause" };
+    await mutateSetup(context, { key, revision: snapshot.revision, command: commandValue });
+    await prisma.user.update({ where: { id: context.user.id }, data: { tokenVersion: { increment: 1 } } });
+    await expect(mutateSetup(context, { key, revision: snapshot.revision, command: commandValue })).rejects.toMatchObject({ status: 403 });
+  });
   it("enforces catalog capacity and serializes two devices without duplicate professionals", async () => {
     const { context, snapshot } = await fixture(2);
     const requests = ["Ana", "Bea"].map(name => mutateSetup(context, { key: randomUUID(), revision: snapshot.revision, command: { type: "staff", name } }));
@@ -154,6 +162,33 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     const changed = await command(context, { type: "hours", hours: hours.map(h => ({ ...h, isOpen: false })), locationId });
     expect(changed.verified).toBe(false);
     await expect(command(context, { type: "finish" })).rejects.toThrow("Comprueba");
+    expect((await loadSetup(context)).activation).toBe("incomplete");
+  });
+  it("does not call a new structurally valid setup ready before a live availability check", async () => {
+    const { context, snapshot } = await fixture();
+    const hours = defaultSetupHours().map(h => ({ ...h, isOpen: true }));
+    await command(context, { type: "hours", hours, locationId: snapshot.catalog.locations[0].id });
+    await command(context, { type: "staff-hours", hours, locationId: snapshot.catalog.locations[0].id, staffId: snapshot.staff[0].id });
+    await command(context, { type: "service", name: "Servicio estructural", description: "", duration: 30, price: 0, staffIds: [snapshot.staff[0].id] });
+    expect((await loadSetup(context)).activation).toBe("incomplete");
+  });
+  it("recognizes a legacy existing business without forcing first-run setup", async () => {
+    const { context, snapshot } = await fixture();
+    await command(context, { type: "service", name: "Servicio existente", description: "", duration: 30, price: 0, staffIds: [snapshot.staff[0].id] });
+    await prisma.businessSetup.delete({ where: { businessId: context.business.id } });
+    expect((await loadSetup(context)).activation).toBe("habitual");
+  });
+  it("expires readiness when a completed verification becomes stale", async () => {
+    const { context, snapshot } = await fixture();
+    const hours = defaultSetupHours().map(h => ({ ...h, isOpen: true }));
+    await command(context, { type: "hours", hours, locationId: snapshot.catalog.locations[0].id });
+    await command(context, { type: "staff-hours", hours, locationId: snapshot.catalog.locations[0].id, staffId: snapshot.staff[0].id });
+    const withService = await command(context, { type: "service", name: "Servicio con verificación", description: "", duration: 30, price: 0, staffIds: [snapshot.staff[0].id] });
+    await command(context, { type: "check", serviceId: withService.catalog.services[0].id, locationId: snapshot.catalog.locations[0].id, optionIds: [] });
+    await command(context, { type: "finish" });
+    await prisma.businessSetup.update({ where: { businessId: context.business.id }, data: { verifiedAt: new Date(Date.now() - 2 * 86400000) } });
+    const stale = await loadSetup(context);
+    expect(stale.verified).toBe(false); expect(stale.activation).toBe("incomplete");
   });
   it("rejects foreign professional, service and location references and read access by limited users", async () => {
     const a = await fixture(); const b = await fixture();
