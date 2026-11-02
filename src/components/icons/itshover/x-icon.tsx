@@ -10,6 +10,7 @@ const XIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
     const [scope, animate] = useAnimate();
 
     const start = useCallback(async () => {
+      if (!scope.current?.isConnected) return;
       // Rotate the X icon slightly and add a scale effect
       animate(
         ".x-line-1",
@@ -34,9 +35,10 @@ const XIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
           ease: "easeOut",
         },
       );
-    }, [animate]);
+    }, [animate, scope]);
 
     const stop = useCallback(async () => {
+      if (!scope.current?.isConnected) return;
       animate(
         ".x-line-1",
         {
@@ -60,7 +62,7 @@ const XIcon = forwardRef<AnimatedIconHandle, AnimatedIconProps>(
           ease: "easeInOut",
         },
       );
-    }, [animate]);
+    }, [animate, scope]);
 
     useImperativeHandle(ref, () => ({
       startAnimation: start,

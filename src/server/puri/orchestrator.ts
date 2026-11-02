@@ -14,7 +14,7 @@ import type { ResponseCreateParamsNonStreaming } from "openai/resources/response
 // A server-created capability extension uses this same tool loop and response contract.
 // No browser request can supply executors or a model transport.
 export type PuriCapabilityExtension = {
-  tier: "PURI_PLUS" | "PURI_PLUS_PREPARE";
+  tier: "PURI_PLUS" | "PURI_PLUS_PREPARE" | "PURI_SETUP";
   tools: ResponseCreateParamsNonStreaming["tools"];
   instructions: string;
   execute: (name: string, args: unknown) => Promise<unknown>;

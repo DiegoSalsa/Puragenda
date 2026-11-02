@@ -1,3 +1,5 @@
+import { LearningProvider } from "@/components/dashboard/learning-provider";
+import { canManageSetup } from "@/core/onboarding";
 import { growthSandboxEnabled } from "@/server/puri/growth/access";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import Link from "next/link";
@@ -82,6 +84,8 @@ export default async function DashboardLayout({
     }
   }
 
+  const setupState = business && canManageSetup(permissions) ? await prisma.businessSetup.findUnique({ where: { businessId: business.id }, select: { completedAt: true } }) : null;
+  const setupPriority = !!setupState && !setupState.completedAt;
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
   const websiteLaunch = await getDashboardWebsiteLaunch();
   const reminderCandidate = shouldShowWebsiteTrialReminder({
@@ -97,11 +101,11 @@ export default async function DashboardLayout({
     ? { ...websiteLaunch, businessName: business!.name, dismissalKey: websiteTrialReminderKey(business!.id) }
     : null;
   const LATEST_CHANGELOG_VERSION = CHANGELOG_DATA[0].version;
-  const shouldShowChangelogPopup = !!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION;
+  const shouldShowChangelogPopup = !setupPriority && (!!websiteReminder || changelogSeenVersion !== LATEST_CHANGELOG_VERSION);
 
   return (
     <RequestIntlProvider>
-    <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup}>
+    <DashboardOverlayProvider initialChangelogOpen={shouldShowChangelogPopup} setupPriority={setupPriority}>
       <div className="fixed inset-0 flex min-h-[100dvh] min-w-0 max-w-full overflow-hidden bg-background">
         <DashboardSidebar
           userName={user.name}
@@ -123,7 +127,7 @@ export default async function DashboardLayout({
         <div className="md:hidden">
           <ContextualHelpButton />
         </div>
-        {business ? <PuriAssistant /> : null}
+        {business ? <><PuriAssistant /><LearningProvider /></> : null}
         <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} />
       </div>
     </DashboardOverlayProvider>

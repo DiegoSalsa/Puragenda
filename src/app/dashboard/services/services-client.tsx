@@ -1,4 +1,5 @@
 "use client";
+import { ServiceIdentityFields } from "@/components/dashboard/service-identity-fields";
 import { useTranslations } from "next-intl";
 
 import { LocalizedText } from "@/components/i18n/localized-text";
@@ -481,6 +482,7 @@ export function ServicesClient({
     setNewQuestion("");
     setOptionCategories([]);
     setDialogOpen(true);
+    window.dispatchEvent(new CustomEvent("learning:action", { detail: "service-form-opened" }));
   }
 
   function openEdit(service: Service) {
@@ -1027,16 +1029,7 @@ export function ServicesClient({
               <div className="overflow-y-auto flex-1 p-6 space-y-4">
 
                 {/* ── Base fields ── */}
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground"><LocalizedText id="ViuxV1eotZPW" /></label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder={legacy("JlT8wJtHHSkO")}
-                    required
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-                  />
-                </div>
+                <ServiceIdentityFields name={form.name} description={form.description} field="name" onChange={value => setForm(current => ({ ...current, ...value }))} />
                 <div className="space-y-1.5">
                   <label className="text-sm text-muted-foreground"><LocalizedText id="2HOUnzPlsTVu" /></label>
                   <select
@@ -1057,16 +1050,7 @@ export function ServicesClient({
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm text-muted-foreground"><LocalizedText id="xAYlrZz8MTts" /></label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder={legacy("c9HBi_6jNlD5")}
-                    rows={3}
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none transition-colors focus:border-[#7C3AED]/30"
-                  />
-                </div>
+                <ServiceIdentityFields name={form.name} description={form.description} field="description" onChange={value => setForm(current => ({ ...current, ...value }))} />
                 <div className="rounded-xl border border-border p-4">
                   <div className="flex items-start gap-4">
                     <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
@@ -1917,7 +1901,7 @@ export function ServicesClient({
       )}
 
       {/* Services Table */}
-      <div className="rounded-2xl border border-border bg-card">
+      <div data-tour="services-list" className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border p-6">
           <h2 className="text-lg font-semibold"><LocalizedText id="yOCZCoqkmrWP" /></h2>
         </div>

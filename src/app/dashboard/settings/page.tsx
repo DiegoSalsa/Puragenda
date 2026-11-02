@@ -331,7 +331,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           />
         </div>
 
-        <div id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
+        <div data-tour="schedule-overrides" id="schedule-overrides" className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <CalendarRange className="h-4 w-4 text-brand-foreground" /> <LocalizedText id="1cGLUQ-u54FK" />
           </div>

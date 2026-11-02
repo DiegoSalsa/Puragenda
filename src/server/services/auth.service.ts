@@ -196,6 +196,7 @@ export async function registerUser(data: {
       });
     }
 
+    await tx.businessSetup.create({ data: { businessId: business.id } });
     return { user, business, givesTrial, plan };
   });
 

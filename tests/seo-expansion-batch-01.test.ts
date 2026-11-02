@@ -234,6 +234,11 @@ describe("SEO expansion batch 01", () => {
         .replace(/export const COMMERCIAL_BASE_PRICING = \{[\s\S]*?\} as const;\n/, "")
         .replace("  ...COMMERCIAL_BASE_PRICING,\n", "")
         .replace("  PURAGENDA: 1,\n  PURAGENDA_PLUS: 1,\n", "");
+      // Closing Puri can unmount its icon before Motion dispatches hover.
+      // Permit only the two mount guards; preserve every other original byte.
+      if (path === "src/components/icons/itshover/x-icon.tsx") source = source
+        .replaceAll("      if (!scope.current?.isConnected) return;\n", "")
+        .replaceAll("    }, [animate, scope]);", "    }, [animate]);");
       const current = createHash("sha256").update(source).digest("hex");
       expect(current, path).toBe(hash);
     }

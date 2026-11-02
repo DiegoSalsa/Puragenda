@@ -223,7 +223,7 @@ export function AppointmentEditor({
           </div>
 
           <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
-            <section className="space-y-3">
+            <section data-tour="appointment-customer" className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("customerSection")}</p>
               <select value={clientId} onChange={(event) => chooseClient(event.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm">
                 <option value="">{t("newCustomer")}</option>

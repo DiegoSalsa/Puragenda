@@ -129,7 +129,7 @@ export function RegisterForm({
         website_intent: false,
       });
 
-      window.location.href = "/dashboard";
+      window.location.href = "/dashboard/setup";
     } finally {
       submitBusy.current = false;
       setLoading(false);

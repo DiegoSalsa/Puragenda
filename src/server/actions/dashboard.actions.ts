@@ -1,4 +1,5 @@
 "use server";
+import { writeBusinessHours } from "@/server/services/business-hours.service";
 import { resolveAppointmentVenue, appointmentVenueSelect } from "@/server/services/appointment-venue";
 
 import { prisma } from "@/server/db/prisma";
@@ -120,38 +121,11 @@ export async function saveBusinessHoursAction(hours: { dayOfWeek: number; startT
   }
   const validationError = validateDailyHours(hours);
   if (validationError) return { error: validationError };
-  if (locationId) {
-    const location = await prisma.businessLocation.findFirst({ where: { id: locationId, businessId: business.id, isActive: true }, select: { id: true } });
-    if (!location) return { error: "Sucursal no encontrada" };
-    await prisma.$transaction(hours.map((h) => prisma.locationHours.upsert({
-      where: { locationId_dayOfWeek: { locationId: location.id, dayOfWeek: h.dayOfWeek } },
-      create: { locationId: location.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-    })));
-    revalidatePath("/dashboard/settings");
-    revalidatePath(`/widget/${business.slug}`);
-    return { success: true };
-  }
-  const ops = hours.map((h) =>
-    prisma.businessHours.upsert({
-      where: { businessId_dayOfWeek: { businessId: business.id, dayOfWeek: h.dayOfWeek } },
-      create: { businessId: business.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-    })
-  );
-  const primaryLocation = await prisma.businessLocation.findFirst({
-    where: { businessId: business.id, isPrimary: true },
-    select: { id: true },
-  });
-  const locationOps = primaryLocation
-    ? hours.map((h) => prisma.locationHours.upsert({
-        where: { locationId_dayOfWeek: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek } },
-        create: { locationId: primaryLocation.id, dayOfWeek: h.dayOfWeek, startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-        update: { startTime: h.startTime, endTime: h.endTime, isOpen: h.isOpen, breakStart: h.breakStart || null, breakEnd: h.breakEnd || null },
-      }))
-    : [];
-  await prisma.$transaction([...ops, ...locationOps]);
+  try {
+    await prisma.$transaction(tx => writeBusinessHours(tx, business.id, hours, locationId));
+  } catch { return { error: "No se pudieron guardar los horarios de esta sucursal" }; }
   revalidatePath("/dashboard/settings");
+  revalidatePath(`/widget/${business.slug}`);
   return { success: true };
 }
 
