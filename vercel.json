@@ -11,7 +11,8 @@
       "fix/puragenda-next-audit-05-billing-subscriptions": false,
       "fix/puragenda-next-audit-06-websites-plus": false,
       "fix/puragenda-next-audit-07-puri-onboarding": false,
-      "fix/puragenda-next-audit-08-contact-flow": false
+      "fix/puragenda-next-audit-08-contact-flow": false,
+      "integration/puragenda-next-onboarding-v2": false
     }
   },
   "crons": [
