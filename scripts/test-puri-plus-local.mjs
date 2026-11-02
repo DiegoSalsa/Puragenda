@@ -1,5 +1,5 @@
 import { randomUUID, randomBytes } from "node:crypto";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import pg from "pg";
 import {
@@ -70,6 +70,7 @@ Object.assign(env, {
   WEBSITE_LAUNCH_ENABLED: "0",
   WEBSITE_VERCEL_WRITES_ENABLED: "0",
   WEBSITE_QA: "1",
+  PURI_QA_RUN_ID: randomBytes(6).toString("hex"),
   NEXT_TELEMETRY_DISABLED: "1",
   AUTH_SECRET: randomBytes(32).toString("hex"),
   APP_URL: "http://127.0.0.1:3119",
@@ -80,9 +81,12 @@ Object.assign(env, {
 console.log(
   `Puri+ browser QA uses disposable database ${name}; provider credentials are absent.`,
 );
+const priorTsconfig = readFileSync("tsconfig.json");
 const result = spawnSync(
   process.execPath,
   ["--import", "tsx", "scripts/puri-plus-browser-qa.ts"],
   { env, stdio: "inherit", windowsHide: true },
 );
+// Next adds the disposable distDir to tsconfig; do not persist run-specific paths.
+writeFileSync("tsconfig.json", priorTsconfig);
 process.exit(result.status ?? 1);

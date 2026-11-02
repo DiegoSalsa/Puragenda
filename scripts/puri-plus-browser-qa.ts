@@ -131,6 +131,10 @@ async function main() {
     await page.goto(origin + "/internal/puri-plus", {
       waitUntil: "domcontentloaded",
     });
+    // The server-rendered button can be clickable before React has attached
+    // its handlers. Wait for hydration rather than losing the first action.
+    await page.waitForFunction(() => Array.from(document.querySelectorAll("button")).some(button =>
+      Object.keys(button).some(key => key.startsWith("__reactProps$"))), { timeout: 30000 });
     assert.match(await page.title(), /Puri/);
     assert.equal(
       await page.locator('meta[name="robots"]').getAttribute("content"),
@@ -185,7 +189,7 @@ async function main() {
       .fill("Explícame la oportunidad principal");
     await click("Consultar");
     await page
-      .getByText(/Explicación determinista; IA no disponible/)
+      .getByText(/Resumen preparado con datos verificados del negocio/)
       .waitFor();
     page.on(
       "dialog",
@@ -320,6 +324,10 @@ async function main() {
       `${origin}/contact-flow/unsubscribe?token=${encodeURIComponent(value)}`,
     );
     assert.equal((await optout.content()).includes("@example.invalid"), false);
+    assert.equal(await prisma.cfSuppression.count({ where: { businessId: f.businessId, reason: "UNSUBSCRIBE" } }), 0);
+    const prefetch = await anonymous.request.get(`${origin}/contact-flow/unsubscribe?token=${encodeURIComponent(value)}&businessId=foreign`);
+    assert.equal(prefetch.headers()["cache-control"], "no-store");
+    assert.equal(prefetch.headers()["referrer-policy"], "no-referrer");
     await optout
       .getByRole("button", { name: "Confirmar baja comercial" })
       .click();
@@ -330,6 +338,27 @@ async function main() {
       }),
       1,
     );
+    const oneClick = await anonymous.request.post(`${origin}/contact-flow/unsubscribe?token=${encodeURIComponent(value)}`, { form: { "List-Unsubscribe": "One-Click" } });
+    assert.match(await oneClick.text(), /La baja comercial quedó registrada/);
+    assert.equal(await prisma.cfSuppression.count({ where: { businessId: f.businessId, reason: "UNSUBSCRIBE" } }), 1);
+    const bookingRedirect = await anonymous.request.get(`${origin}/contact-flow/r?token=${encodeURIComponent(bookingValue)}`, { maxRedirects: 0 });
+    assert.equal(bookingRedirect.status(), 303);
+    assert.equal(bookingRedirect.headers()["referrer-policy"], "no-referrer");
+    const signedWidget = await anonymous.request.get(origin + bookingRedirect.headers().location);
+    assert.equal(signedWidget.status(), 200);
+    assert.equal(signedWidget.headers()["referrer-policy"], "no-referrer");
+    assert.match(signedWidget.headers()["cache-control"], /no-store/);
+    const csrf = await context.request.post(origin + "/api/marketing/send", { headers: { Origin: "https://other.example.invalid" }, data: { subject: "Synthetic", message: "Synthetic" } });
+    assert.equal(csrf.status(), 403);
+    const legacy = await context.request.post(origin + "/api/marketing/send", { headers: { Origin: origin }, data: { subject: "Synthetic", message: "Synthetic" } });
+    assert.equal(legacy.status(), 409);
+    const forgedTenant = await context.request.post(origin + "/api/dashboard/contact-flow", { headers: { Origin: origin }, data: { action: "LOAD", businessId: standard.businessId } });
+    assert.equal(forgedTenant.status(), 400);
+    const monitor = await context.request.post(origin + "/api/dashboard/contact-flow", { headers: { Origin: origin }, data: { action: "MONITOR" } });
+    assert.equal(monitor.status(), 403);
+    assert.equal((await anonymous.request.get(origin + "/api/cron/puragenda-next")).status(), 404);
+    const invalidReceipt = await anonymous.request.post(origin + "/api/contact-flow/webhooks/simulated", { data: { id: "synthetic-invalid" } });
+    assert.equal(invalidReceipt.status(), 400);
     await anonymous.close();
     await page.screenshot({
       path: "scratch/puri-plus-qa/desktop.png",
@@ -365,20 +394,23 @@ async function main() {
     await page.setViewportSize({ width: 1440, height: 1050 });
     await page.goto(origin + "/dashboard/puri-plus", { waitUntil: "domcontentloaded" });
     await page.getByRole("heading", { name: "Puri+ y Contact Flow", exact: true }).waitFor();
-    await page.getByText("$27.990 CLP · IVA incluido", { exact: true }).waitFor();
+    await page.getByText(`${formatPublicClp(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly)} CLP/mes · IVA incluido`, { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await page.screenshot({ path: "scratch/puri-plus-qa/dashboard-desktop.png", fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await page.screenshot({ path: "scratch/puri-plus-qa/dashboard-mobile.png", fullPage: true });
     await page.getByRole("link", { name: "Configuración y límites", exact: true }).click();
-    await page.getByRole("heading", { name: "Configuración comercial", exact: true }).waitFor();
-    await page.getByText("Envíos productivos: desactivados.", { exact: false }).waitFor();
+    await page.getByRole("heading", { name: "Consumo y límites de tu plan", exact: true }).waitFor();
+    await page.getByText("Los envíos a clientes siguen desactivados.", { exact: false }).waitFor();
     const bookingPage = await context.newPage();
     bookingPage.on("pageerror", (e: Error) => errors.push(e.message));
     const widgetDate = f.day(-11).toISOString().slice(0, 10);
+    const availability = bookingPage.waitForResponse((response: { url: () => string; status: () => number }) =>
+      new URL(response.url()).pathname === `/api/business/${business.slug}/appointments` && response.status() === 200);
     await bookingPage.goto(`${origin}/widget/${business.slug}?service=${f.service.id}&location=${f.location.slug}&date=${widgetDate}`, { waitUntil: "domcontentloaded" });
-    await bookingPage.getByRole("button", { name: /^\d{2}:\d{2}$/ }).filter({ visible: true }).first().click();
+    await availability;
+    await bookingPage.getByRole("button", { name: /^\d{2}:\d{2}$/ }).filter({ visible: true }).and(bookingPage.locator(":enabled")).first().click();
     await bookingPage.getByRole("button", { name: "Continuar con mis datos", exact: true }).click();
     const optin = bookingPage.getByRole("checkbox", { name: /Acepto recibir comunicaciones comerciales/ });
     assert.equal(await optin.isChecked(), false);
@@ -397,9 +429,20 @@ async function main() {
     portalAccountId = portalAccount.id;
     await context.addCookies([{ name: CLIENT_PORTAL_COOKIE_NAME, value: await createClientPortalAccountSession(portalEmail, undefined, portalAccount.passwordHash), url: origin }]);
     await bookingPage.goto(origin + "/mi-agenda", { waitUntil: "domcontentloaded" });
+    await bookingPage.waitForFunction(() => Array.from(document.querySelectorAll("button")).some(button =>
+      button.textContent?.trim() === "Acepto recibir correos" && Object.keys(button).some(key => key.startsWith("__reactProps$"))));
     await bookingPage.getByRole("button", { name: "Acepto recibir correos", exact: true }).click();
     await bookingPage.getByText("Consentimiento registrado", { exact: true }).waitFor();
+    // The portal refreshes its server snapshot after resolving the account.
+    // Do not click a newly streamed button before that refresh is hydrated.
+    await bookingPage.goto(origin + "/mi-agenda", { waitUntil: "load" });
+    await bookingPage.waitForFunction(() => Array.from(document.querySelectorAll("button")).some(button =>
+      button.textContent?.trim() === "Retirar consentimiento" && Object.keys(button).some(key =>
+        key.startsWith("__reactProps$") && typeof (button as unknown as Record<string, { onClick?: unknown }>)[key]?.onClick === "function")));
+    const withdrawn = bookingPage.waitForResponse((response: { url: () => string; status: () => number }) =>
+      response.url().endsWith("/api/client-portal/commercial-preferences") && response.status() === 200);
     await bookingPage.getByRole("button", { name: "Retirar consentimiento", exact: true }).click();
+    await withdrawn;
     await bookingPage.getByText("Baja o supresión vigente", { exact: true }).waitFor();
     assert.equal(await prisma.cfSuppression.count({ where: { businessId: f.businessId, clientId: client.id } }), 1);
     await bookingPage.screenshot({ path: "scratch/puri-plus-qa/portal-consent-mobile.png", fullPage: true });
@@ -437,7 +480,7 @@ async function main() {
     await offerPage.goto(origin + "/dashboard/puri-plus", { waitUntil: "domcontentloaded" });
     const offer = offerPage.getByRole("region", { name: "Gestión de suscripción" });
     await offer.waitFor();
-    assert.equal(await offer.getByRole("button", { name: `Contratar prueba por ${formatPublicClp(COMMERCIAL_PLAN_METADATA.PURAGENDA_PLUS.baseMonthly)} CLP / mes` }).isDisabled(), true);
+    assert.equal(await offer.getByRole("button", { name: /^Contratar por / }).isDisabled(), true);
     assert.match(await offer.innerText(), /Pendiente de pago/);
     assert.match(await offerPage.locator("body").innerText(), /requiere acceso autorizado/);
     assert.equal(await offerPage.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -469,6 +512,12 @@ async function main() {
         "TECHNICAL_ATTRIBUTION_RESULTS",
         "SIGNED_ATTRIBUTION_THROUGH_REAL_BOOKING_HTTP",
         "ANONYMOUS_SIGNED_UNSUBSCRIBE_NO_PII",
+        "PREFETCH_GET_WITHOUT_SIDE_EFFECTS_AND_PRIVACY_HEADERS",
+        "RFC8058_POST_AND_IDEMPOTENT_REPEATED_OPTOUT",
+        "SIGNED_REDIRECT_AND_WIDGET_PRIVACY_HEADERS_HTTP",
+        "LEGACY_CSRF_AND_UNSAFE_DISPATCH_BLOCKED_HTTP",
+        "HTTP_TENANT_INJECTION_AND_SUPERADMIN_DENIED",
+        "SCHEDULER_SEALED_AND_UNSIGNED_RECEIPT_DENIED",
         "APPROVED_SQL_FLOW_AND_AUDIT",
         "EXPLICIT_APPROVAL_CHECKBOX",
         "STANDARD_API_403_AND_ZERO_RUNS",
