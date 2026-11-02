@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
+import pg from "pg";
 import { prisma } from "@/server/db/prisma";
 import { registerUser } from "@/server/services/auth.service";
 import { createStaff } from "@/server/services/staff.service";
@@ -27,6 +28,43 @@ async function fixture(total = 1) {
 async function command(context: Awaited<ReturnType<typeof setupContext>>, value: SetupCommand, key = randomUUID()) {
   const state = await loadSetup(context);
   return mutateSetup(context, { key, revision: state.revision, command: value });
+}
+async function whileBusinessLock<T>(businessId: string, start: () => Promise<T>, revoke: (client: pg.Client) => Promise<void>) {
+  const client = new pg.Client({ connectionString: local });
+  await client.connect(); await client.query("BEGIN");
+  await client.query('SELECT "id" FROM "Business" WHERE "id" = $1 FOR NO KEY UPDATE', [businessId]);
+  const pending = start().then(value => ({ value }), error => ({ error }));
+  let observed = false;
+  try {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const waiting = await client.query("SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid()");
+      if (waiting.rowCount) { observed = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    if (!observed) throw new Error("BUSINESS_LOCK_WAIT_NOT_OBSERVED");
+    await revoke(client);
+    await client.query("COMMIT");
+    const result = await pending;
+    return result;
+  } finally { await client.query("ROLLBACK").catch(() => undefined); await client.end(); }
+}
+async function whileLearningLock<T>(businessId: string, userId: string, tutorialId: string, start: () => Promise<T>, revoke: (client: pg.Client) => Promise<void>) {
+  const client = new pg.Client({ connectionString: local });
+  await client.connect(); await client.query("BEGIN");
+  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [`learning:${businessId}:${userId}:${tutorialId}`]);
+  const pending = start().then(value => ({ value }), error => ({ error }));
+  let observed = false;
+  try {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const waiting = await client.query("SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid()");
+      if (waiting.rowCount) { observed = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    if (!observed) throw new Error("LEARNING_LOCK_WAIT_NOT_OBSERVED");
+    await revoke(client); await client.query("COMMIT"); return await pending;
+  } finally { await client.query("ROLLBACK").catch(() => undefined); await client.end(); }
 }
 describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services", () => {
   beforeAll(() => {
@@ -83,6 +121,21 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     const current = await loadSetup(context);
     await command(context, { type: "staff", name: current.staff[1].name });
     expect((await loadSetup(context)).staff).toHaveLength(2);
+  });
+  it("revalidates authorization after a real business lock for session, membership, owner and plan changes", async () => {
+    const cases = [
+      { name: "revoked session", revoke: async (client: pg.Client, f: Awaited<ReturnType<typeof fixture>>) => { await client.query('UPDATE "User" SET "tokenVersion" = "tokenVersion" + 1 WHERE id = $1', [f.context.user.id]); } },
+      { name: "removed membership", revoke: async (client: pg.Client, f: Awaited<ReturnType<typeof fixture>>) => { await client.query('UPDATE "Business" SET "ownerId" = NULL WHERE id = $1', [f.context.business.id]); await client.query('UPDATE "Staff" SET "isActive" = false WHERE "businessId" = $1 AND "userId" = $2', [f.context.business.id, f.context.user.id]); } },
+      { name: "changed owner", revoke: async (client: pg.Client, f: Awaited<ReturnType<typeof fixture>>) => { const ownerId = randomUUID(); const other = await client.query('INSERT INTO "User" (id,email,password,name,role,"createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,NOW(),NOW()) RETURNING id', [ownerId, `owner-${randomUUID()}@example.invalid`, "fixture", "Nuevo propietario", "ADMIN"]); await client.query('UPDATE "Business" SET "ownerId" = $1 WHERE id = $2', [other.rows[0].id, f.context.business.id]); await client.query('UPDATE "Staff" SET "isActive" = false WHERE "businessId" = $1 AND "userId" = $2', [f.context.business.id, f.context.user.id]); } },
+      { name: "plan expired", revoke: async (client: pg.Client, f: Awaited<ReturnType<typeof fixture>>) => { await client.query('UPDATE "CommercialSubscription" SET status = \'INACTIVE\', "periodStart" = NOW() - INTERVAL \'3 days\', "periodEnd" = NOW() - INTERVAL \'1 day\', "gracePeriodEndsAt" = NULL, "lastPaymentStatus" = NULL, "lastPaymentAt" = NULL, "lastPaymentEventId" = NULL WHERE "businessId" = $1', [f.context.business.id]); } },
+    ];
+    for (const testCase of cases) {
+      const f = await fixture();
+      const result = await whileBusinessLock(f.context.business.id, () => command(f.context, { type: "pause" }), client => testCase.revoke(client, f));
+      console.log(`[onboarding-lock] ${testCase.name}: ${"error" in result ? (result.error instanceof Error ? result.error.message : "error") : "committed"}`);
+      expect(result).toMatchObject({ error: expect.objectContaining({ status: 403 }) });
+      expect((await loadSetup(f.context)).paused).toBe(false);
+    }
   });
   it("saves business and professional hours and checks public availability without writing appointments or payments", async () => {
     const { context, snapshot } = await fixture();
@@ -156,6 +209,15 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     await expect(saveLearning(learning, { tutorialId: "services", version: 1, step: 0, revision: 0, status: "active" })).rejects.toMatchObject({ status: 403 });
     await expect(saveLearning(learning, { tutorialId: "services", version: 2, step: 0, revision: done.revision, status: "active" })).rejects.toMatchObject({ status: 409 });
     expect((await saveLearning(learning, { tutorialId: "services", version: 2, step: 0, revision: done.revision, status: "active", reset: true })).step).toBe(0);
+  });
+  it("revalidates learning authorization after its advisory lock", async () => {
+    const { context } = await fixture();
+    const learning = await learningContext(context.user);
+    const result = await whileLearningLock(context.business.id, context.user.id, "services", () => saveLearning(learning, { tutorialId: "services", version: 2, step: 0, revision: 0, status: "active" }), async client => {
+      await client.query('UPDATE "User" SET "tokenVersion" = "tokenVersion" + 1 WHERE id = $1', [context.user.id]);
+    });
+    expect(result).toMatchObject({ error: expect.objectContaining({ status: 403 }) });
+    expect(await prisma.tutorialProgress.count({ where: { businessId: context.business.id, userId: context.user.id } })).toBe(0);
   });
   it("serves authenticated uncached setup and rejects CSRF and a tampered session", async () => {
     const { user, context, snapshot } = await fixture();

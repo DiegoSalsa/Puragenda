@@ -5,6 +5,7 @@ import { loadSetup, setupContext, SetupError, type SetupSnapshot } from "@/serve
 import { diagnoseSetup } from "@/server/onboarding/diagnostics";
 import { loadBookingContext } from "@/server/booking/read.service";
 import { answerWithPuri, type PuriCapabilityExtension } from "./orchestrator";
+import { revalidatePuriContext } from "./authorization";
 import { getPuriOpenAI, PURI_MODEL } from "./openai-client";
 import { withCommercialPuriUsage } from "./commercial-usage";
 import { answerLearningQuestion } from "./learning";
@@ -85,9 +86,18 @@ export async function answerSetupWithPuri(input: { context: PuriContext; setup: 
       prepared = prune(value, snapshot);
       return { verified: true, pendingConfirmation: true, proposal: prepared, message: "Solo se preparó una propuesta. No se modificó el negocio." };
     },
+    // The commercial reservation may wait behind another transaction. Re-read
+    // the signed session and setup entitlement immediately before provider I/O.
+    authorize: async () => {
+      const current = await revalidatePuriContext(input.context);
+      const latest = await setupContext(current.user);
+      if (latest.business.id !== context.business.id || !latest.access.allowed)
+        throw new SetupError("Tu sesión o acceso comercial cambió. Revisa la configuración antes de continuar.", 403);
+      return current;
+    },
     createResponse: async parameters => {
       const run = () => getPuriOpenAI().responses.create(parameters, { timeout: 20000, maxRetries: 0 });
-      return input.context.commercialV2 ? withCommercialPuriUsage({ businessId: context.business.id, model: PURI_MODEL, parameters, maxRetries: 0, run }) : run();
+      return withCommercialPuriUsage({ businessId: context.business.id, model: PURI_MODEL, parameters, maxRetries: 0, authorize: async () => { await revalidatePuriContext(input.context); }, run });
     },
   };
   try {

@@ -14,7 +14,7 @@ import { serviceSchema } from "@/server/validations/booking";
 import { activationState, canManageSetup, hoursSchema, setupProgress, setupStepSchema } from "@/core/onboarding";
 import { diagnoseSetup, type SetupIssue } from "./diagnostics";
 
-type User = { id: string; role: string; name?: string };
+type User = { id: string; role: string; name?: string; tokenVersion?: number };
 export class SetupError extends Error { constructor(message: string, public status = 400) { super(message); } }
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const draftSchemas = {
@@ -34,6 +34,23 @@ export async function setupContext(user: User) {
 }
 type Context = Awaited<ReturnType<typeof setupContext>>;
 type BookingContext = Awaited<ReturnType<typeof loadBookingContext>>;
+async function assertMutationAuthorization(context: Context, tx: Prisma.TransactionClient) {
+  const user = await tx.user.findUnique({
+    where: { id: context.user.id },
+    select: { id: true, role: true, deletedAt: true, tokenVersion: true },
+  });
+  if (!user || user.deletedAt || (context.user.tokenVersion !== undefined && user.tokenVersion !== context.user.tokenVersion))
+    throw new SetupError("Tu sesión o sus permisos cambiaron. Vuelve a cargar la configuración.", 403);
+  const business = await tx.business.findUnique({
+    where: { id: context.business.id },
+    select: { id: true, ownerId: true, deletedAt: true },
+  });
+  if (!business || business.deletedAt) throw new SetupError("El negocio ya no está disponible.", 403);
+  const permissions = await getEffectiveBusinessPermissions(user, business, tx);
+  if (!canManageSetup(permissions)) throw new SetupError("Ya no tienes permisos para modificar esta configuración.", 403);
+  if (!(await getCommercialPlanAccess(business.id, new Date(), tx)).allowed)
+    throw new SetupError("El acceso comercial cambió. No se guardaron cambios.", 403);
+}
 // No payment credentials or other provider fields are included in the fingerprint or DTO.
 function fingerprint(data: BookingContext) {
   return hash({ catalog: toBookingCatalog(data), hours: data.businessHours, overrides: data.scheduleOverrides,
@@ -134,6 +151,9 @@ export async function mutateSetup(context: Context, raw: unknown) {
   await prisma.$transaction(async tx => {
     // Shared with capacity and staff creation, so two devices cannot exceed the catalog limit.
     await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${businessId} FOR NO KEY UPDATE`;
+    // The request may have waited behind another transaction. Re-read session,
+    // membership, permissions and commercial access after acquiring the lock.
+    await assertMutationAuthorization(context, tx);
     const prior = await tx.setupOperation.findUnique({ where: { businessId_key: { businessId, key } } });
     if (prior) { if (prior.payloadHash !== payloadHash) throw new SetupError("La solicitud ya fue utilizada con otros datos.", 409); return; }
     const state = await tx.businessSetup.upsert({ where: { businessId }, create: { businessId }, update: {} });
