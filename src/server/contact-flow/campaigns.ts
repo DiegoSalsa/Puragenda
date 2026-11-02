@@ -121,6 +121,8 @@ export async function prepareCampaign(
   return prisma.$transaction(
     async (tx) => {
       await contactLock(tx);
+      await requireContactScope(scope, false, new Date(Math.max(+now, Date.now())), tx);
+      if (expiresAt <= new Date()) throw new Error("INVALID_CAMPAIGN_WINDOW_OR_LIMIT");
       await ensureCommercialContactPolicy(tx, scope.businessId, now);
       const prior = await tx.cfCampaign.findUnique({
         where: {
@@ -331,6 +333,9 @@ export async function authorizeCampaign(
   );
   return prisma.$transaction(async (tx) => {
     await contactLock(tx);
+    const at = new Date(Math.max(+now, Date.now()));
+    await requireContactScope(scope, true, at, tx);
+    if (v.expiresAt <= at) throw new Error("CAMPAIGN_VERSION_CONFLICT");
     const current = await tx.cfCampaign.findUniqueOrThrow({
       where: { id: c.id },
     });
@@ -440,6 +445,8 @@ export async function controlCampaign(
   const c = await scopedCampaign(scope, id);
   return prisma.$transaction(async (tx) => {
     await contactLock(tx);
+    const at = new Date(Math.max(+now, Date.now()));
+    await requireContactScope(scope, true, at, tx);
     const current = await tx.cfCampaign.findUniqueOrThrow({
       where: { id: c.id },
     });
@@ -464,7 +471,7 @@ export async function controlCampaign(
         where: {
           versionId: c.versions[0].id,
           revokedAt: null,
-          expiresAt: { gt: now },
+          expiresAt: { gt: at },
         },
       }))
     )

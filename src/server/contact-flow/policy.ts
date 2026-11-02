@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { prisma } from "@/server/db/prisma";
 import {
   assertGrowthSandbox,
   revalidateGrowthScope,
@@ -22,9 +23,9 @@ export function contactLabEnabled() {
     return false;
   }
 }
-export async function requireContactScope(scope: GrowthScope, owner = false) {
+export async function requireContactScope(scope: GrowthScope, owner = false, now = new Date(), db: Prisma.TransactionClient = prisma) {
   assertContactLab();
-  await revalidateGrowthScope(scope);
+  await revalidateGrowthScope(scope, now, db);
   if (!scope.canPrepare || !scope.canClients || (owner && !scope.owner))
     throw new Error("CONTACT_FLOW_FORBIDDEN");
 }
