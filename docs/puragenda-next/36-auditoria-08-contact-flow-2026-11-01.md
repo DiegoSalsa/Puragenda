@@ -6,9 +6,9 @@ Informe solicitado para el 01-11-2026; comprobaciones ejecutadas el 01 y 02-11-2
 
 Se conserva el módulo existente. Se corrigen autorización después de una espera, bajas con interruptores cerrados, resultados de entrega inciertos, privacidad HTTP y un fallo de hidratación. La vía directa legacy queda pausada por seguridad: no dispone de prueba de consentimiento, supresiones ni outbox duradero. Se mantienen sus datos, contratos, plantillas e historial; no se convierte ningún contrato a Plus.
 
-Esta auditoría prepara una revisión independiente del código local. No autoriza lanzamiento, envío real, scheduler, Puri+, MCP, proactividad, cobros o migraciones productivas. Los pendientes de retención y dependencias permanecen explícitos. La reapertura de campañas legacy requiere un recorrido seguro aprobado para sus contratos.
+Esta auditoría prepara una revisión independiente del código publicado en su rama exclusiva. No autoriza lanzamiento, envío real, scheduler, Puri+, MCP, proactividad, cobros o migraciones productivas. Los pendientes de retención y dependencias permanecen explícitos. La reapertura de campañas legacy requiere un recorrido seguro aprobado para sus contratos.
 
-Diez hallazgos: siete corregidos, uno contenido mediante pausa segura y dos pendientes. El código queda congelado localmente para revisión; el lanzamiento permanece sin autorizar.
+Once hallazgos, incluido el cierre correctivo 08-C1: ocho corregidos, uno contenido mediante pausa segura y dos pendientes. La corrección de experiencia de usuario no resuelve la compatibilidad contractual legacy de lanzamiento. La rama se congela nuevamente para revisión; el lanzamiento permanece sin autorizar.
 
 ## Aislamiento y referencias
 
@@ -44,6 +44,7 @@ Referencias históricas contrastadas: documentos 19, 25, 26 y 27 y sus política
 | 08-F08 | Media operativa | La nueva rama 08 todavía no estaba en las exclusiones versionadas. | Exclusión exacta en `vercel.json`, `vercel-build.mjs` y ambos jobs de Actions para ref y head_ref. Todas las exclusiones anteriores conservadas. 35 pruebas de protección. |
 | 08-F09 | Alta, pendiente de lanzamiento | No hay política de retención aprobada con responsable identificado, plazos fundamentados, procedimiento de derechos, conservación de evidencias y alcance de legal holds. Los mínimos técnicos existentes no constituyen plazos legales aprobados. | Pendiente. No se implementa purga nueva ni se activa la existente en producción. Coordinado con 07-20. Detalle por categoría más abajo. |
 | 08-F10 | Moderada, mantenimiento pendiente | `npm audit`: 23 nodos afectados, 21 moderados y 2 bajos, exclusivamente en herramientas de desarrollo. | Pendiente de actualización acotada y compatible. Auditoría productiva en cero. Sin `audit fix --force` ni cambios de dependencias. |
+| 08-C1 | Media funcional | El backend legacy respondía 409, pero la página mostraba formulario, capacidad histórica y acción de envío; la ayuda contextual invitaba a preparar campañas. Reproducción Chrome/HTTP/PostgreSQL anterior a la corrección. | Experiencia y contrato de lectura corregidos: pausa explícita, capacidad efectiva cero, historial conservado, sin formulario ni compra forzada; Contact Flow condicionado al acceso efectivo. Seguridad del backend contenida; prestación contractual legacy de lanzamiento pendiente. |
 
 Las pruebas fallidas que reprodujeron defectos y los fallos de preparación del entorno se conservan como evidencia local; no cuentan como aprobaciones. No se reconstruye el módulo para sustituir garantías que ya funcionaban.
 
@@ -148,9 +149,9 @@ Nueva ejecución: `npm audit --omit=dev --audit-level=low` devuelve **0 vulnerab
 
 Los 23 nodos incluyen dependencias transitivas y propagación de avisos; no son 23 defectos de runtime independientes. Ninguno aparece en la auditoría productiva. Las herramientas de desarrollo siguen requiriendo mantenimiento; no se elimina el riesgo porque no se desplieguen. No se ejecutaron actualizaciones masivas ni `npm audit fix --force`.
 
-## Regresión y evidencias
+## Regresión inicial y evidencias, anteriores a 08-C1
 
-Las pruebas son ejecuciones nuevas de esta auditoría. Los JSON/logs y capturas quedan en `scratch/`, ignorados; no se publican datos de sesiones sintéticas ni informes redundantes.
+Las siguientes ejecuciones corresponden al cierre inicial, antes de la revisión del SHA `4d043ba8515835a8aa0911f4f1587f3d9b99724b`. No se presentan como nuevas ejecuciones de 08-C1. Los JSON/logs y capturas quedan en `scratch/`, ignorados; no se publican datos de sesiones sintéticas ni informes redundantes.
 
 | Ejecución | Resultado verificado |
 | --- | --- |
@@ -179,10 +180,63 @@ No hay migraciones nuevas. Todos los archivos de `prisma/migrations` y `prisma/b
 
 La rama 08 está excluida mediante `git.deploymentEnabled: false`, rechazo previo a cualquier CLI de `vercel-build.mjs` y guards de Actions para push/ref, pull request/head_ref y workflow_dispatch. Los cinco cron históricos permanecen; no se añade el worker comercial. La automatización versionada no invoca un Deploy Hook ni API de despliegue al publicar esta rama.
 
-No se hizo push, merge, rebase, cherry-pick ni deploy. No se llamó a Resend/OpenAI reales ni se ejecutaron pagos o migraciones remotas. No se modificaron Vercel, DNS, dominios, Cloudinary o producción. No hay ejecución de GitHub Actions asociada a una publicación de esta auditoría porque sigue local. Vercel remoto no fue consultado; no se afirma ausencia de despliegues remotos ajenos a esta tarea.
+El cierre inicial local no incluyó push, merge, rebase, cherry-pick ni deploy. La publicación posterior para revisión dejó la rama remota en `4d043ba8515835a8aa0911f4f1587f3d9b99724b`, referencia comprobada antes de 08-C1. No se llamó a Resend/OpenAI reales ni se ejecutaron pagos o migraciones remotas. No se modificaron Vercel, DNS, dominios, Cloudinary o producción. Vercel remoto no fue consultado; no se afirma ausencia de despliegues remotos ajenos a esta tarea.
 
 Antes del lanzamiento quedan: política 07-20/08-F09 aprobada y procedimiento probado; mantenimiento 08-F10; certificación real independiente de cuenta/consumo Resend, idempotencia, webhook/rotación, sender/Reply-To/routing, reservas operativas, observabilidad/logs y scheduler; resolución contractual del envío legacy pausado. Ninguno se activa como parte de esta auditoría.
 
-El cierre consta de **9 commits lineales y 25 archivos**, respecto de la base indicada, sin divergencia de la base. El SHA final se entrega fuera del propio commit documental para evitar una autorreferencia imposible. No hay upstream remoto de Auditoría 08 ni push de esta tarea. La rama se congela localmente, Git limpio; los clusters/servidores propios se detienen al finalizar.
+El cierre inicial constó de **9 commits lineales y 25 archivos**, respecto de la base indicada, sin divergencia de la base. El cierre correctivo agrega commits sobre esa referencia, sin reescribirla. El SHA final y la comprobación posterior al push se entregan fuera del propio commit documental para evitar una autorreferencia imposible. Los clusters/servidores propios se detienen al finalizar.
 
 Inventario de cambios: protecciones (`vercel.json`, `scripts/vercel-build.mjs`, `.github/workflows/security.yml`, prueba `rc1-deployment-safety`); scope (`campaigns.ts`, `policy.ts`); bajas (`public-consent.ts`, `resend-test.ts`, API de preferencias, página y componente del portal); entrega (`worker.ts`); marketing legacy (ruta y prueba); consumo (`commercial-usage.ts`, panel y prueba de fecha); privacidad/QA (`next.config.ts`, `puri-plus-browser-qa.ts`, `test-puri-plus-local.mjs`, prueba de cabeceras); reproducibilidad (`test-audit-08.mjs`, `scan-audit08-secrets.mjs`, integración `audit08-contact-postgres`); este informe. No hay imágenes temporales, dumps, logs, credenciales, lockfiles modificados ni informes paralelos en el diff.
+
+## Cierre correctivo 08-C1 — 02-11-2026
+
+Base revisada local/remota exacta: `4d043ba8515835a8aa0911f4f1587f3d9b99724b`. RC1 permanece en `476e523ae35d8799f7c0e8c9573142c145495dd3`; main y onboarding V2 mantienen las referencias indicadas. Sólo se modifica la rama 08.
+
+### Reproducción anterior al cambio de producto
+
+El arnés `scripts/audit08-marketing-browser-qa.ts`, ejecutado mediante `node scripts/test-puri-plus-local.mjs --marketing --reproduce`, crea bases PostgreSQL desechables y propietarios sintéticos. El negocio EQUIPO legacy no tiene snapshot V2; conserva una campaña histórica y su contrato activo. Se crean también Puragenda y Puragenda+ V2 con pago sintético confirmado. Chrome real abre `/dashboard/marketing` y consulta el endpoint HTTP.
+
+Las **27 comprobaciones previas** confirmaron formulario legacy en los tres planes. Legacy mostraba capacidad de una campaña/100 destinatarios, cero consumido y botón habilitado. Redactar y pulsar el botón devolvió 409 `LEGACY_MARKETING_REVIEW_REQUIRED`. Las solicitudes de Básico/Plus devolvieron 409 `CONTACT_FLOW_REQUIRED`. El estado API conservaba la capacidad histórica legacy como disponible. Cero errores de página. La ruta de envío no importa Resend; los mocks comprueban cero llamadas, selección de audiencia o emisión de tokens. Las pruebas HTTP no tienen credenciales de proveedor y bloquean tráfico externo desde Node y navegador.
+
+### Corrección y límites
+
+La proyección compartida `marketing-availability.service.ts` consulta el acceso comercial central y, para el enlace a Contact Flow, el contexto y scope efectivos de Puri+. Verifica derechos, vigencia, sesión, permisos y sucursal mediante los controles existentes; no activa funciones ni escribe contratos. El espacio de revisión y la habilitación productiva de entrega se describen por separado. Básico, Plus vencido/bloqueado, permisos insuficientes o módulo desactivado no ofrecen el enlace. El destino conserva sus propias comprobaciones de autorización.
+
+La página conserva tarjetas, colores y tabla del diseño existente. Legacy conserva historial, datos y condiciones históricas, con explicación de la pausa de seguridad y sin compra forzada. No hay formulario ni botón condenado a 409 en ningún plan. No se cambian las cuotas del catálogo. El estado API mantiene nombres y tipos de `campaignsSentThisMonth`, `maxCampaignsPerMonth`, `maxAudienceSize`, `plan` y `lastCampaign`, pero los dos límites reflejan **capacidad efectiva cero** del endpoint pausado. Agrega `legacySendingPaused: true`, `sendingEnabled: false` y `availability`; usa `private, no-store`. No acepta parámetros del cliente para reactivar envíos.
+
+Se elimina la declaración obsoleta de PageTutorial (componente de compatibilidad sin efecto). La ayuda contextual existente explica estado e historial, sin instrucciones de envío ni un sistema adicional. Fechas del historial con formato numérico y zona UTC explícita evitan discrepancias de hidratación. Los correos transaccionales y `/api/marketing/send` no se modifican.
+
+**Seguridad del backend: contenida. Experiencia del usuario: corregida. Compatibilidad contractual legacy de cara al lanzamiento: pendiente de resolución definitiva.** La pausa continúa siendo una regresión funcional respecto de producción. Antes de lanzar debe aprobarse expresamente cómo conservar o sustituir de forma segura el beneficio histórico; requiere consentimiento verificable, supresión, baja, outbox, idempotencia, cuotas y política contractual. Ocultar el formulario no cierra ese requisito. No se implementa una sustitución ni una purga arbitraria bajo esta autorización.
+
+### Nuevas ejecuciones de 08-C1
+
+| Ejecución nueva | Resultado |
+| --- | --- |
+| Pruebas focalizadas de disponibilidad/estado y bloqueo de envío | 26 aprobadas: 21 nuevas y 5 existentes con Resend simulado |
+| Vitest general | 1.957 aprobadas; 814 condicionales omitidas en esa invocación y ejecutadas en los grupos PostgreSQL siguientes |
+| PostgreSQL comercial, auditorías 01–07 y Contact Flow/Free | 609 aprobadas, 21 suites |
+| PostgreSQL específico Auditoría 08 | 28 aprobadas |
+| Reservas/catálogo/agenda | 97 aprobadas (60 condicionales, 37 también en el general) |
+| MCP con cliente HTTP oficial | 58 aprobadas (32 condicionales, 26 también en el general) |
+| Compatibilidad legacy, sitios y pagos simulados | 85 aprobadas |
+| Chrome/HTTP/PostgreSQL con espacio de revisión habilitado | 49 comprobaciones aprobadas |
+| Chrome/HTTP/PostgreSQL con Contact Flow desactivado | 48 comprobaciones aprobadas |
+| Prisma generate/validate, Next typegen y TypeScript | Aprobados en la nueva ejecución aislada |
+| ESLint | Cero errores y 32 advertencias preexistentes |
+| Build aislado webpack | Aprobado, 162 páginas estáticas; proveedores ausentes y escritores comerciales deshabilitados |
+| Protecciones de publicación | 35 aprobadas nuevamente antes de publicar |
+| Secretos, inventario y migraciones | Cero coincidencias de patrones; sin temporales versionados ni cambios en migraciones/bootstrap |
+
+Los 97 controles de navegador/HTTP son comprobaciones de dos matrices con casos repetidos, no 97 casos únicos. Incluyen escritorio y móvil, ayuda, historial, lectores anteriores, manipulación de parámetros, Plus bloqueado/vencido, usuario sin permiso y ausencia de desbordamiento. Ambas matrices terminan sin errores de página. Los resultados de reserva, pago, suscripción y correo transaccional usan datos/proveedores sintéticos; no equivalen a entregas certificadas con un proveedor real.
+
+Las pruebas iniciales en rojo detectaron tres expectativas de estado incorrectas y la ausencia de la nueva proyección. Fallos del arnés durante preparación: cuarto envío limitado a 429 (separados clientes sintéticos sin cambiar el rate limit), timeout de compilación, dos controles responsive de ayuda, fixture con un estado inexistente (corregido a `PAST_DUE_BLOCKED`) y anotación TypeScript faltante. No se relajan controles del producto. Los logs y capturas quedan ignorados en `scratch/audit08/marketing-c1/`.
+
+Se mantienen 08-F09/07-20 (retención) y 08-F10 (dependencias). Nueva ejecución de `npm audit`: 23 avisos, 21 moderados y 2 bajos; los 30 nodos instalados señalados tienen `dev: true` en el lockfile y ninguno pertenece al árbol productivo auditado. `npm audit --omit=dev`: **cero**. Sin actualización de paquetes ni lockfile. La política de retención, responsables, eliminación y conservación de evidencia sigue siendo requisito de lanzamiento.
+
+Inventario correctivo: `src/app/dashboard/marketing/page.tsx`, `src/app/dashboard/marketing/marketing-dashboard.tsx`, `src/app/api/marketing/status/route.ts`, `src/components/dashboard/contextual-help.tsx`, `src/core/entities/index.ts`, `src/server/services/marketing-availability.service.ts`, `tests/server/marketing-availability.test.ts`, `tests/server/marketing-status.test.ts`, `scripts/audit08-marketing-browser-qa.ts`, `scripts/test-puri-plus-local.mjs` y este informe. No se alteran migraciones, onboarding V2, proveedores, credenciales, cuotas, DNS ni configuración remota.
+
+Las 814 condicionales se cubren mediante 609 comerciales + 28 de Auditoría 08 + 60 de reservas + 32 de MCP + 85 legacy; no se cuentan las repeticiones como pruebas nuevas. Las ejecuciones finales indicadas no tienen fallos. Se omiten expresamente proveedores/datos reales, operaciones financieras, migraciones remotas, despliegues y certificación operativa de producción. El build no constituye un despliegue.
+
+Se conservan la exclusión exacta de rama en `vercel.json`, el rechazo de `vercel-build.mjs` antes de CLI y los guards push/ref, PR/head_ref y dispatch de Actions. El scheduler continúa apagado, sin cron ni previews; no hay nueva automatización de despliegue o envío. La comprobación GitHub previa conserva Production `7342257567`, SHA `e74c92237e47db43425a7d47209520967e51bfb0`, estado success del 26-10-2026. Esto no sustituye una consulta directa a Vercel: no se dispone de esa verificación y no se afirma ausencia de despliegues Vercel. La comprobación posterior al push y el SHA definitivo se entregan al finalizar la publicación exclusiva de esta rama, sin integrar RC1.
+
+El cierre correctivo abarca **11 archivos y dos commits**, de código/pruebas y de documentación. La comparación completa contra RC1 queda en **11 commits lineales y 34 archivos**, sin divergencia. Se conserva la historia anterior y se prohíben merge y force push; la rama queda de nuevo congelada para revisión independiente tras publicar. No se autoriza integrar RC1 ni realizar operaciones productivas.
