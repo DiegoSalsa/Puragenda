@@ -82,9 +82,15 @@ console.log(
   `Puri+ browser QA uses disposable database ${name}; provider credentials are absent.`,
 );
 const priorTsconfig = readFileSync("tsconfig.json");
+const marketing = process.argv.includes("--marketing");
+if (marketing) {
+  env.NEXT_STAGING_NETWORK_GUARD = "1";
+  env.NODE_OPTIONS = `--import=${new URL("./next-staging-network-guard.mjs", import.meta.url).href}`;
+  if (process.argv.includes("--contact-flow-disabled")) env.CONTACT_FLOW_LAB_ENABLED = "0";
+}
 const result = spawnSync(
   process.execPath,
-  ["--import", "tsx", "scripts/puri-plus-browser-qa.ts"],
+  ["--import", "tsx", marketing ? "scripts/audit08-marketing-browser-qa.ts" : "scripts/puri-plus-browser-qa.ts", ...process.argv.slice(2)],
   { env, stdio: "inherit", windowsHide: true },
 );
 // Next adds the disposable distDir to tsconfig; do not persist run-specific paths.

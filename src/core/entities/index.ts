@@ -83,10 +83,20 @@ export interface MarketingCampaign {
   sentAt: Date;
 }
 
+export interface MarketingAvailability {
+  state: "LEGACY_PAUSED" | "SUBSCRIPTION_INACTIVE" | "CONTACT_FLOW_NOT_INCLUDED" | "CONTACT_FLOW_DISABLED" | "CONTACT_FLOW_FORBIDDEN" | "CONTACT_FLOW_REVIEW";
+  contactFlowHref: "/dashboard/puri-plus" | null;
+  contactFlowDeliveryEnabled: boolean;
+}
+
 export interface MarketingStatus {
   campaignsSentThisMonth: number;
   maxCampaignsPerMonth: number;
   maxAudienceSize: number;
   plan: SubscriptionPlan;
   lastCampaign: { subject: string; audienceSize: number; sentAt: string } | null;
+  /** Effective capacity of the paused legacy endpoint, never historical quotas. */
+  legacySendingPaused: true;
+  sendingEnabled: false;
+  availability: MarketingAvailability;
 }

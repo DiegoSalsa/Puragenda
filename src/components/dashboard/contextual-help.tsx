@@ -394,24 +394,24 @@ const TOURS: Record<string, TourDefinition> & Record<PrimaryHelpRoute, TourDefin
     steps: [
       pageHeading(
         "Marketing y recuperación",
-        "Prepara campañas para volver a contactar clientes inactivos y medir el resultado de cada envío."
+        "Consulta el estado de los envíos comerciales y el historial. Las campañas anteriores están pausadas por revisión de seguridad; esta página no permite enviar correos."
       ),
       {
-        selectors: ["#tutorial-main form", "#tutorial-main textarea", "#tutorial-main"],
+        selectors: ["#marketing-status", "#tutorial-main"],
         popover: {
-          title: "Preparar una campaña",
+          title: "Estado de los envíos",
           description:
-            "Selecciona la audiencia, revisa el contenido y confirma que el mensaje sea útil antes de enviarlo.",
+            "La pausa conserva tus datos y condiciones históricas. Si tienes acceso a Contact Flow, aquí se explica su disponibilidad; abrir su revisión no activa entregas.",
           side: "top",
           align: "start",
         },
       },
       {
-        selectors: ["#tutorial-main table", "#tutorial-main [class*='grid']", "#tutorial-main"],
+        selectors: ["#marketing-history", "#tutorial-main"],
         popover: {
-          title: "Seguimiento",
+          title: "Historial de campañas",
           description:
-            "Consulta campañas y estados para saber qué acciones se ejecutaron y evitar envíos repetidos.",
+            "Consulta asuntos, destinatarios y fechas de campañas anteriores. Conservar el historial no habilita nuevos envíos ni exige comprar otro plan.",
           side: "top",
           align: "start",
         },
