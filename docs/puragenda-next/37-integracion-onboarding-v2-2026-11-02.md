@@ -57,10 +57,24 @@ Persisten fuera de esta fase: retención 07-20/08-F09, continuidad contractual d
 
 ## Commits y estado de la rama
 
-La rama parte de RC1 sin modificarla y conserva la rama original `feature/puri-onboarding-v2`. Los commits de integración son pequeños y en español: protección de despliegue, integración del Setup V2 y corrección de revalidación post-lock. No se hizo push, merge a RC1/main, rebase, squash, cherry-pick ni deploy. La rama queda congelada localmente para revisión independiente.
+La rama parte de RC1 sin modificarla y conserva la rama original `feature/puri-onboarding-v2`. Los commits de integración limpia son pequeños y en español: protección de despliegue, integración del Setup V2 y correcciones de autorización/activación. No se hace merge a RC1/main, rebase, squash, cherry-pick ni deploy. La rama queda congelada para revisión independiente.
 
 ## Restricciones y pendientes de lanzamiento
 
 Sin push, integración en RC1/main, despliegue ni migración remota. Sin OpenAI facturable, correos reales, pagos, DNS, recursos Cloudinary productivos ni activaciones globales. Los permisos de demostración son exclusivamente locales.
 
 Permanecen fuera de esta fase: retención 07-20/08-F09 y responsables/plazos/procedimientos aprobados, continuidad contractual de marketing legacy, certificación de proveedores reales, presupuestos IA legacy y mantenimiento de los 23 avisos de desarrollo. No se implementa una purga ni se reabre marketing.
+
+## Cierre correctivo 09A-C1/C2 y rama limpia
+
+La rama `integration/puragenda-next-onboarding-v2-clean` se creó directamente desde RC1 (`7f1971c3058fa61d449c5791d87cc314edfc201a`). Se aplicó el diff del estado final de la integración publicada sin importar sus cinco commits como ancestros. Por ello, los commits nuevos de esta rama no contienen la contraseña sintética histórica. La rama publicada anterior se conserva congelada; sus objetos históricos pueden seguir accesibles en GitHub y no se afirma que esta rama los purgue.
+
+Se corrigió 09A-C1: una operación Setup ya confirmada vuelve a adquirir el lock de negocio y revalida sesión/token, pertenencia, permisos y entitlement antes de devolver el snapshot de replay. Una key con payload distinto conserva el conflicto 409. La prueba PostgreSQL reproduce una ejecución, revoca el token y rechaza el replay sin exponer el snapshot obsoleto.
+
+Se corrigió 09A-C2: un negocio nuevo sólo pasa a `unshared`, `no_bookings` o `first_booking` después de evidencia de disponibilidad vigente. Configuración estructural válida sin Check, slots bloqueados, verificación caducada o pérdida de horarios queda `incomplete`. Un negocio existente sin `BusinessSetup` se reconoce como `habitual` y no se obliga a rehacer onboarding. No se modifica el motor público de disponibilidad ni se ejecutan comprobaciones externas adicionales al abrir Hoy.
+
+La rotación de cuentas sintéticas se realizó únicamente en PostgreSQL loopback de demostración, actualizando hashes y `tokenVersion` sin borrar avances. La contraseña no se escribe en este informe, scripts, migración ni commits; la preparación de demo continúa exigiendo `ONBOARDING_DEMO_PASSWORD` fuera del repositorio. Las sesiones anteriores quedan invalidadas por el incremento de versión.
+
+La comparación de estado frente a RC1 conserva 60 archivos y una sola migración nueva (`20261031200000_puri_setup_learning_v2`). La historia nueva no contiene los cinco commits de la rama publicada anterior ni la contraseña sintética. Las nuevas pruebas de esta rama son 29/29 en PostgreSQL/Puri Setup, 38/38 protecciones, TypeScript aprobado y 10 escenarios Playwright con 0 errores de página en el servidor limpio. Los resultados transversales de las ocho auditorías se conservan como evidencia previa y no se presentan como nuevas ejecuciones de este cierre.
+
+La demo del servidor limpio responde en `http://127.0.0.1:3117/login`; el servidor anterior se conserva aparte en `http://127.0.0.1:3116/login`. Ninguna contraseña aparece en este informe, documentación ni historia nueva.
