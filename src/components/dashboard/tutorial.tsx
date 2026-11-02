@@ -6,6 +6,7 @@ import { driver } from "driver.js";
 import { useDashboardOverlay } from "@/components/dashboard/dashboard-overlay-context";
 import { GUIDED_HELP_KEYS } from "@/i18n/guided-help-keys";
 import "driver.js/dist/driver.css";
+import { helpOverlayBlocked, readHelpSeen, markHelpSeen, startDashboardTour, visibleHelpSteps } from "./guided-help-runtime";
 
 export function DashboardTutorial() {
   const legacy = useTranslations("legacy");
@@ -22,7 +23,7 @@ export function DashboardTutorial() {
     initialized.current = true;
     let startTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const hasSeen = localStorage.getItem("hasSeenTutorial_general");
+    const hasSeen = readHelpSeen("hasSeenTutorial_general");
 
     if (hasSeen) {
       return;
@@ -31,14 +32,14 @@ export function DashboardTutorial() {
     const driverObj = driver({
       animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       allowClose: true,
-      smoothScroll: true,
+      smoothScroll: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       showProgress: true,
       nextBtnText: translate("Siguiente"),
       prevBtnText: translate("Atrás"),
       doneBtnText: translate("Finalizar"),
       progressText: translate("GUÍA PASO {{current}} DE {{total}}"),
       popoverClass: "neo-brutalism-driver",
-      steps: [
+      steps: visibleHelpSteps([
         {
           popover: {
             title: translate("¡BIENVENIDO!"),
@@ -72,16 +73,16 @@ export function DashboardTutorial() {
             align: "end"
           }
         }
-      ],
+      ]),
       onDestroyStarted: () => {
-        localStorage.setItem("hasSeenTutorial_general", "true");
+        markHelpSeen("hasSeenTutorial_general");
         driverObj.destroy();
       }
     });
 
     // Timeout to ensure the DOM is fully rendered
     startTimeout = setTimeout(() => {
-      driverObj.drive();
+      if (!helpOverlayBlocked()) startDashboardTour(driverObj);
     }, 500);
 
     return () => {

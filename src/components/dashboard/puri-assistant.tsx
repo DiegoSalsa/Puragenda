@@ -14,12 +14,16 @@ import { CommercialUsagePanel } from "./commercial-usage-panel";
 import { commercialUsageMessage } from "@/core/commercial-usage";
 
 type Message = { role: "user" | "assistant"; content: string; answer?: PuriAnswer; failed?: boolean; responseId?: string; rating?: "positive" | "negative" };
+let memorySessionId: string | undefined;
+let impressionRecorded = false;
 
 function puriSessionId() {
   const key = "puragenda_puri_session_id";
-  let id = window.sessionStorage.getItem(key);
-  if (!id) { id = crypto.randomUUID(); window.sessionStorage.setItem(key, id); }
-  return id;
+  try {
+    let id = window.sessionStorage.getItem(key);
+    if (!id) { id = memorySessionId ?? crypto.randomUUID(); window.sessionStorage.setItem(key, id); }
+    return id;
+  } catch { return memorySessionId ??= crypto.randomUUID(); }
 }
 
 function recordPuriUiEvent(event: "impression" | "opened" | "action_clicked", locationSlug?: string, actionId?: string) {
@@ -68,6 +72,7 @@ export function PuriAssistant() {
 
   useEffect(() => {
     if (!open) return;
+    window.dispatchEvent(new Event("dashboard:overlay-open"));
     const priorOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     inputRef.current?.focus();
@@ -96,10 +101,12 @@ export function PuriAssistant() {
   }, [messages, loading, open]);
 
   useEffect(() => {
-    if (open || !launcherRef.current || window.sessionStorage.getItem("puragenda_puri_impression_recorded")) return;
+    if (open || !launcherRef.current || impressionRecorded) return;
+    try { if (window.sessionStorage.getItem("puragenda_puri_impression_recorded")) return; } catch { /* Optional analytics storage. */ }
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry?.isIntersecting) return;
-      window.sessionStorage.setItem("puragenda_puri_impression_recorded", "1");
+      impressionRecorded = true;
+      try { window.sessionStorage.setItem("puragenda_puri_impression_recorded", "1"); } catch { /* Optional analytics storage. */ }
       recordPuriUiEvent("impression", searchParams.get("location") ?? undefined);
       observer.disconnect();
     }, { threshold: 0.5 });

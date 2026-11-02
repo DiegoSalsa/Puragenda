@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
+import { findHelpTarget, helpOverlayBlocked, startDashboardTour } from "./guided-help-runtime";
 
 type TourStepSpec = {
   selectors: string[];
@@ -651,8 +652,8 @@ function getTour(pathname: string): TourDefinition {
 
 function resolveSteps(steps: TourStepSpec[]): DriveStep[] {
   return steps.flatMap((step) => {
-    const selector = step.selectors.find((candidate) => document.querySelector(candidate));
-    return selector ? [{ element: selector, popover: step.popover }] : [];
+    const target = findHelpTarget(step.selectors);
+    return target ? [{ element: target, popover: step.popover }] : [];
   });
 }
 
@@ -673,6 +674,7 @@ export function ContextualHelpButton() {
   }, [pathname]);
 
   function startTour() {
+    if (helpOverlayBlocked()) return;
     activeTour.current?.destroy();
     const tour = getTour(pathname);
     const localizedSteps = tour.steps.map((step) => ({
@@ -687,7 +689,7 @@ export function ContextualHelpButton() {
     const safeSteps = steps.length > 0
       ? steps
       : [{
-          element: "#tutorial-main",
+          element: findHelpTarget(["#tutorial-main"]),
           popover: {
             title: translate(tour.title),
             description: translate("Esta sección aún no tiene controles visibles para explicar."),
@@ -699,7 +701,7 @@ export function ContextualHelpButton() {
     const instance = driver({
       animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       allowClose: true,
-      smoothScroll: true,
+      smoothScroll: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       showProgress: true,
       stagePadding: 8,
       stageRadius: 14,
@@ -714,7 +716,7 @@ export function ContextualHelpButton() {
     });
 
     activeTour.current = instance;
-    instance.drive();
+    startDashboardTour(instance);
   }
 
   return (
