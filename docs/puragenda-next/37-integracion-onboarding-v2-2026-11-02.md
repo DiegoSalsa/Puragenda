@@ -94,3 +94,64 @@ Se intentó preparar una base PostgreSQL C3 independiente en un segundo cluster 
 La comparación de estado frente a RC1 conserva 60 archivos y una sola migración nueva (`20261031200000_puri_setup_learning_v2`). La historia nueva no contiene los cinco commits de la rama publicada anterior ni la contraseña sintética. Las nuevas pruebas de esta rama son 29/29 en PostgreSQL/Puri Setup, 38/38 protecciones, TypeScript aprobado y 10 escenarios Playwright con 0 errores de página en el servidor limpio. Los resultados transversales de las ocho auditorías se conservan como evidencia previa y no se presentan como nuevas ejecuciones de este cierre.
 
 La demo del servidor limpio responde en `http://127.0.0.1:3117/login`; el servidor anterior se conserva aparte en `http://127.0.0.1:3116/login`. Ninguna contraseña aparece en este informe, documentación ni historia nueva.
+
+## Certificación definitiva de migraciones — 2026-11-02
+
+### Causa raíz reproducida
+
+La preparación histórica se reprodujo en un clúster PostgreSQL 17 estándar, vacío y sin los roles de Supabase. `prisma migrate deploy` abrió correctamente las migraciones `00000000000000_legacy`, `20261021120000_commercial_infrastructure_v2` y `20261022120000_commercial_billing_sandbox`, pero falló al ejecutar la línea 145 de `20261022180000_commercial_migration_web_plus`:
+
+```sql
+REVOKE ALL ON "CommercialMigrationProposal","CommercialWebsiteTransition","CommercialMigrationEvidence" FROM PUBLIC, anon, authenticated;
+```
+
+El error exacto fue `SQLSTATE 42704: role "anon" does not exist`. La sentencia está dentro de la transacción de la migración: PostgreSQL revierte sus tablas, índices, claves, trigger, RLS y revocación, y `_prisma_migrations` conserva una fila de esa migración con `finished_at` nulo. La consulta posterior mostró 108 tablas públicas del bootstrap y ausencia de `CommercialMigrationProposal`; no quedó un esquema parcial aplicable. La reproducción fue sistemática.
+
+Al aislar el siguiente paso del historial también apareció la misma causa en la línea 306 de `20261022210000_puri_plus_growth`. Las migraciones anteriores ya utilizaban bloques `IF EXISTS`; no se encontraron otras sentencias comerciales sin guardia en el tramo que certifica el runner.
+
+### Corrección compatible
+
+No se modificaron los SQL históricos ni sus checksums. `scripts/commercial-migrations.mjs` detecta si faltan `anon` o `authenticated`. En ese caso despliega el prefijo anterior con Prisma, ejecuta una copia transaccional de sólo esas dos migraciones con `REVOKE ... FROM PUBLIC` y bloques `IF EXISTS` para cada rol, verifica el esquema mediante `migrate diff`, y registra cada migración con `prisma migrate resolve --applied` después de que su efecto real haya sido aplicado. No crea roles ficticios, no actualiza `_prisma_migrations` manualmente, no usa `db push`, reset ni down migrations. Con ambos roles presentes usa el SQL histórico sin adaptación; con una instalación existente que ya registró las migraciones conserva exactamente los checksums originales.
+
+Las migraciones 03 (`20261029180000_preserve_service_staff_history`) y 04 (`20261030120000_client_portal_privacy`) permanecen byte a byte intactas. No se añadieron directorios de migración; el inventario conserva 101 migraciones versionadas y la única adaptación está en el runner.
+
+### Escenarios de certificación
+
+| Escenario | Resultado |
+| --- | --- |
+| PostgreSQL 17 nuevo sin roles, clúster loopback 55453 | **17/17 migraciones, schemaMatches=true, sin drift** |
+| Repetición PostgreSQL 17 nuevo sin roles, clúster loopback 55454 | **17/17 migraciones, schemaMatches=true, sin drift** |
+| PostgreSQL 17 nuevo con `anon` y `authenticated`, clúster loopback 55453 | **17/17 migraciones, RLS activo y acceso público revocado** |
+| Reejecución de cada base certificada | **Idempotente, sin cambios de historial ni datos** |
+| Actualización legacy con datos sintéticos | **Conservados 1 negocio, 1 usuario, 1 profesional, 1 servicio, 1 cliente, 1 reserva, 1 suscripción y 1 WebsiteAddon; schemaMatches=true** |
+| `prisma migrate status` y `migrate diff` | **Base nueva al día; `This is an empty migration`** |
+
+Las bases fueron locales, desechables y sin credenciales productivas. La actualización legacy se ejecutó mediante `db:commercial:legacy`; no reconstruyó el esquema ni borró filas.
+
+### Regresión nueva de esta certificación
+
+- PostgreSQL comercial transversal: **609/609** en 21 suites.
+- Onboarding C1/C2/C3 sobre la base recién migrada: **30/30** (incluye Puri Setup).
+- Protecciones de despliegue: **44/44**; guardas de roles del runner: **2/2**.
+- Playwright real en `http://127.0.0.1:3119`: **10/10 recorridos**, 0 errores de página y 0 overflow; artefactos en `scratch/migration-certification/browser`.
+- Suites no integradas (registro, checkout, agenda, servicios, clientes, web, Puri, MCP, Contact Flow, legacy y seguridad): **1.989 aprobadas, 175 omitidas condicionales, 0 fallidas**.
+- TypeScript, Prisma generate/validate, build webpack aislado (164 páginas), escaneo de secretos y `npm audit --omit=dev`: **aprobados**.
+- ESLint: **0 errores y 32 advertencias preexistentes**.
+
+Una invocación mixta de todas las suites en paralelo no se considera certificación: tuvo 126 fallos de arnés por no propagar `CONTACT_FLOW_TOKEN_SECRET` y por compartir una base con fixtures concurrentes. Las suites PostgreSQL se repitieron de forma separada con el entorno correcto y son los resultados que figuran arriba.
+
+### Dependencias y seguridad
+
+`npm audit --omit=dev` mantiene **0 vulnerabilidades productivas**. La auditoría completa conserva **23 avisos exclusivamente de desarrollo** (21 moderados y 2 bajos): ESLint/eslint-config-next, TypeScript ESLint, Vitest, shadcn/ts-morph, minimatch, deepmerge y sus transitivas. No son alcanzables desde el runtime productivo; no se ejecutó `npm audit fix`, `--force` ni actualización masiva. El escaneo de los 19 commits de la rama terminó con 0 hallazgos y no hay secretos, credenciales, datos reales ni temporales versionados.
+
+### Estado de integración
+
+El SHA base confirmado es `fc2ffad6819eacb9ed9dfedae437f7a6a4f706a9`, en la rama exclusiva `fix/puragenda-next-onboarding-migration-certification`. RC1 (`7f1971c3058fa61d449c5791d87cc314edfc201a`), main (`e74c92237e47db43425a7d47209520967e51bfb0`), la rama C3 y las ramas históricas permanecen sin cambios. La nueva rama está excluida en `vercel.json`, `scripts/vercel-build.mjs` y ambos guards de `.github/workflows/security.yml`; no ejecuta migraciones ni despliegues automáticos. No se consultó Vercel directamente. No se hicieron despliegues, migraciones remotas, llamadas facturables, pagos, DNS, Cloudinary ni proveedores reales.
+
+La demostración certificada se mantiene activa en `http://127.0.0.1:3119/login` y devuelve HTTP 200; usa la base recién migrada `puragenda_commercial_test_onboarding` del clúster loopback 55452 y la contraseña externa `ONBOARDING_DEMO_PASSWORD`. Las demos 3116, 3117 y 3118 permanecen intactas.
+
+### Clasificación definitiva
+
+**APTA PARA RC1, sin autorización de despliegue productivo.** La instalación limpia es reproducible con y sin roles Supabase, la actualización legacy conserva datos e historial, no hay drift, C1/C2/C3 siguen aprobados y las regresiones nuevas no muestran fallos críticos. La integración a RC1 sigue siendo una operación separada y no se ejecutó en esta rama.
+
+Persisten como riesgos operativos: revisión independiente del diff del runner, validación de configuración remota de Vercel antes de cualquier despliegue, certificación posterior de proveedores reales y mantenimiento de los 23 avisos de desarrollo. Ninguno bloquea técnicamente integrar esta rama a RC1; ninguno autoriza publicar a producción.
