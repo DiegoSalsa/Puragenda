@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import type { Prisma } from "@prisma/client";
 import { mcpEnabled } from "./config";
 import { McpError } from "./security";
 
@@ -8,8 +9,8 @@ export const mcpReviewUserIds = () => ids(process.env.MCP_REVIEW_USER_IDS);
 export const mcpReviewBusinessIds = () => ids(process.env.MCP_REVIEW_BUSINESS_IDS);
 export const mcpReviewSuppressesEffects = (businessId: string) => process.env.MCP_REVIEW_SUPPRESS_EFFECTS === "true" && mcpReviewBusinessIds().includes(businessId);
 
-export async function getMcpRolloutState() {
-  const state = await prisma.mcpRolloutState.findUnique({ where: { id: MCP_ROLLOUT_ID } });
+export async function getMcpRolloutState(db: Pick<Prisma.TransactionClient, "mcpRolloutState"> = prisma) {
+  const state = await db.mcpRolloutState.findUnique({ where: { id: MCP_ROLLOUT_ID } });
   return {
     businessAccessEnabled: !!(state?.businessAccessEnabled && state.approvedAt && state.approvalReference?.trim()),
     version: state?.version ?? 0,
@@ -25,19 +26,19 @@ export async function mcpUserAllowed(userId: string) {
   return (await getMcpRolloutState()).businessAccessEnabled;
 }
 
-export async function mcpAccessAllowed(userId: string, businessId: string) {
+export async function mcpAccessAllowed(userId: string, businessId: string, db: Pick<Prisma.TransactionClient, "mcpRolloutState"> = prisma) {
   if (!mcpEnabled()) return false;
   if (mcpReviewUserIds().includes(userId) && mcpReviewBusinessIds().includes(businessId)) return true;
-  return (await getMcpRolloutState()).businessAccessEnabled;
+  return (await getMcpRolloutState(db)).businessAccessEnabled;
 }
 
-export async function requireMcpAccess(userId: string, businessId: string) {
-  if (!await mcpAccessAllowed(userId, businessId)) throw new McpError("MCP_NOT_AVAILABLE", 403);
+export async function requireMcpAccess(userId: string, businessId: string, db: Pick<Prisma.TransactionClient, "mcpRolloutState"> = prisma) {
+  if (!await mcpAccessAllowed(userId, businessId, db)) throw new McpError("MCP_NOT_AVAILABLE", 403);
 }
 
 // Anonymous discovery is limited to the review allowlist until launch, even
 // if another business has a historical opt-in or previously issued token.
-export async function mcpBusinessFilter() {
+export async function mcpBusinessFilter(db: Pick<Prisma.TransactionClient, "mcpRolloutState"> = prisma) {
   if (!mcpEnabled()) throw new McpError("MCP_DISABLED", 403);
-  return (await getMcpRolloutState()).businessAccessEnabled ? {} : { id: { in: mcpReviewBusinessIds() } };
+  return (await getMcpRolloutState(db)).businessAccessEnabled ? {} : { id: { in: mcpReviewBusinessIds() } };
 }

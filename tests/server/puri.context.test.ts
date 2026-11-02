@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ access: vi.fn(), business: vi.fn(), scope: vi.
 vi.mock("@/server/services/commercial-plan-access", () => ({ getCommercialPlanAccess: mocks.access }));
 vi.mock("@/server/services/business.service", () => ({ getBusinessForUser: mocks.business, getStaffAgendaScope: mocks.scope }));
 vi.mock("@/server/services/permissions.service", () => ({ getEffectiveBusinessPermissions: mocks.permissions }));
-vi.mock("@/server/db/prisma", () => ({ prisma: { businessLocation: { findMany: mocks.locations } } }));
+vi.mock("@/server/db/prisma", () => ({ prisma: { businessLocation: { findMany: mocks.locations, count: async () => 1 } } }));
 
 import { appointmentScope, createPuriContext } from "@/server/puri/context";
 

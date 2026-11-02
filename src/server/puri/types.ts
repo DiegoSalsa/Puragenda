@@ -3,7 +3,7 @@ export type PuriCapabilityTier = "PURI_STANDARD" | "PURI_PLUS" | "PURI_PLUS_PREP
 
 export type PuriContext = {
   commercialV2?: boolean;
-  user: { id: string; role: string };
+  user: { id: string; role: string; tokenVersion?: number };
   business: {
     id: string;
     ownerId: string | null;
