@@ -14,7 +14,8 @@
       "fix/puragenda-next-audit-08-contact-flow": false,
       "integration/puragenda-next-onboarding-v2": false,
       "integration/puragenda-next-onboarding-v2-clean": false,
-      "fix/puragenda-next-onboarding-09a-c3": false
+      "fix/puragenda-next-onboarding-09a-c3": false,
+      "fix/puragenda-next-onboarding-migration-certification": false
     }
   },
   "crons": [

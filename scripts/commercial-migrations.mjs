@@ -5,20 +5,57 @@ import { spawnSync } from "node:child_process";
 import pg from "pg";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const baselineName = "00000000000000_legacy";
+const optionalRoleMigrations = [
+  "20261022180000_commercial_migration_web_plus",
+  "20261022210000_puri_plus_growth",
+];
 const manifest = JSON.parse(readFileSync(resolve(root, "prisma/bootstrap/manifest.json"), "utf8"));
 export function localCommercialDatabase(raw) {
   const url = new URL(raw || "postgres://invalid/invalid");
   if (!["localhost", "127.0.0.1"].includes(url.hostname) || !/^\/puragenda_commercial_(test|bootstrap_test|legacy_test)(?:_[a-z0-9]+)?$/.test(url.pathname) || process.env.NODE_ENV === "production") throw new Error("ISOLATED_COMMERCIAL_DATABASE_REQUIRED");
   return url.href;
 }
-export function prepareCommercialMigrationConfig(databaseUrl) {
+export function optionalRoleSafeMigrationSql(name) {
+  const sql = readFileSync(resolve(root, "prisma/migrations", name, "migration.sql"), "utf8");
+  if (!optionalRoleMigrations.includes(name)) return sql;
+  const roleSafe = sql
+    .replace(
+      /REVOKE ALL ON "CommercialMigrationProposal","CommercialWebsiteTransition","CommercialMigrationEvidence" FROM PUBLIC, anon, authenticated;/,
+      () => `REVOKE ALL ON "CommercialMigrationProposal","CommercialWebsiteTransition","CommercialMigrationEvidence" FROM PUBLIC;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON "CommercialMigrationProposal","CommercialWebsiteTransition","CommercialMigrationEvidence" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON "CommercialMigrationProposal","CommercialWebsiteTransition","CommercialMigrationEvidence" FROM authenticated;
+  END IF;
+END $$;`,
+    )
+    .replace(
+      /REVOKE ALL ON "PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit" FROM PUBLIC, anon, authenticated;/,
+      () => `REVOKE ALL ON "PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit" FROM PUBLIC;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON "PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON "PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit" FROM authenticated;
+  END IF;
+END $$;`,
+    );
+  if (roleSafe === sql) throw new Error(`OPTIONAL_ROLE_GUARD_MISSING:${name}`);
+  return roleSafe;
+}
+export function prepareCommercialMigrationConfig(databaseUrl, { before } = {}) {
   const url = localCommercialDatabase(databaseUrl);
   mkdirSync(resolve(root, "scratch"), { recursive: true });
   const path = mkdtempSync(resolve(root, "scratch/migration-run-"));
   mkdirSync(resolve(path, "migrations"));
   cpSync(resolve(root, "prisma/bootstrap", baselineName), resolve(path, "migrations", baselineName), { recursive: true });
   for (const name of readdirSync(resolve(root, "prisma/migrations"))) {
-    if (name >= manifest.cutoverMigration && name !== "migration_lock.toml") cpSync(resolve(root, "prisma/migrations", name), resolve(path, "migrations", name), { recursive: true });
+    if (name >= manifest.cutoverMigration && name !== "migration_lock.toml" && (!before || name < before)) cpSync(resolve(root, "prisma/migrations", name), resolve(path, "migrations", name), { recursive: true });
   }
   writeFileSync(resolve(path, "migrations/migration_lock.toml"), 'provider = "postgresql"\n');
   const config = resolve(path, "prisma.config.ts");
@@ -74,14 +111,31 @@ export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap"
         run(["migrate", "resolve", "--applied", baselineName]);
       }
     }
-    run(["migrate", "deploy"]);
+    const optionalPublicRoles = (await pool.query("SELECT rolname FROM pg_roles WHERE rolname = ANY($1::text[])", [["anon", "authenticated"]])).rows.map(row => row.rolname);
+    const recordedNames = new Set(recorded.map(row => row.migration_name));
+    if (optionalPublicRoles.length === 2) {
+      run(["migrate", "deploy"]);
+    } else {
+      // Keep the historical SQL/checksum intact. On a standard PostgreSQL
+      // cluster, execute only these optional-role revocations through a
+      // guarded copy, verify the same schema, then let Prisma record the
+      // original migration checksum with its supported resolve command.
+      const prefix = prepareCommercialMigrationConfig(url, { before: optionalRoleMigrations[0] });
+      prefix.run(["migrate", "deploy"]);
+      for (const name of optionalRoleMigrations) {
+        if (recordedNames.has(name)) continue;
+        await pool.query(optionalRoleSafeMigrationSql(name));
+        run(["migrate", "resolve", "--applied", name]);
+      }
+      run(["migrate", "deploy"]);
+    }
     const diff = run(["migrate", "diff", "--from-config-datasource", "--to-schema", resolve(root, "prisma/schema.prisma"), "--script"]);
     if (!diff.includes("This is an empty migration")) throw new Error("FINAL_SCHEMA_DRIFT");
     await verifyLegacySecurity(pool);
     for (const table of ["CommercialWorkerState","PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit","CfPolicy","CfCampaign","CfVersion","CfAuthorization","CfConsent","CfSuppression","CfEnrollment","CfMessage","CfOutbox","CfAttempt","CfSimulatedReceipt","CfProviderEvent","CfQuotaBucket","CfQuotaReservation","CfQuotaAllocation","CfToken","CfAttribution","CfAudit"]) {
       const security=await pool.query('SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',[`"${table}"`]);
       if(!security.rows[0]?.relrowsecurity) throw new Error(`GROWTH_RLS_MISSING:${table}`);
-      for(const role of ["anon","authenticated"]) {
+      for(const role of optionalPublicRoles) {
         const grants=await pool.query("SELECT has_table_privilege($1,$2,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') AS access",[role,`"${table}"`]);
         if(grants.rows[0]?.access) throw new Error(`GROWTH_PUBLIC_GRANT:${table}:${role}`);
       }
