@@ -8,6 +8,16 @@ export type CommercialUsageSummary = {
   plan: "PURAGENDA" | "PURAGENDA_PLUS"; active: boolean; trial: boolean;
   resetsAt: string; periodLabel: string; items: CommercialUsageItem[];
 };
+// Numeric parts avoid ICU literal/day-period differences between Node and
+// browsers during hydration (for example "p. m." versus "p.\u00a0m.").
+export function commercialUsageResetDate(value: string, withTime = true) {
+  const parts = new Intl.DateTimeFormat("es-CL", {
+    timeZone: "America/Santiago", year: "numeric", month: "2-digit", day: "2-digit",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" as const } : {}),
+  }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find(entry => entry.type === type)?.value ?? "";
+  return `${part("day")}-${part("month")}-${part("year")}${withTime ? ` ${part("hour")}:${part("minute")}` : ""}`;
+}
 export function commercialUsageMessage(code: string): string | null {
   if (["BUDGET_EXHAUSTED", "OPERATION_BUDGET_EXHAUSTED"].includes(code)) return "Alcanzaste el cupo disponible de Puri. Revisa tu consumo y la fecha de renovación del cupo.";
   if (["UNKNOWN_COST_UNRECONCILED", "MODEL_OUTCOME_UNKNOWN"].includes(code)) return "Puri está temporalmente en pausa mientras verificamos una consulta anterior. Tu información está guardada.";
