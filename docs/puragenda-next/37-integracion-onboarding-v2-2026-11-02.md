@@ -133,7 +133,7 @@ Las bases fueron locales, desechables y sin credenciales productivas. La actuali
 - PostgreSQL comercial transversal: **609/609** en 21 suites.
 - Onboarding C1/C2/C3 sobre la base recién migrada: **30/30** (incluye Puri Setup).
 - Protecciones de despliegue: **44/44**; guardas de roles del runner: **2/2**.
-- Playwright real en `http://127.0.0.1:3119`: **10/10 recorridos**, 0 errores de página y 0 overflow; artefactos en `scratch/migration-certification/browser`.
+- Playwright real en `http://127.0.0.1:3119`: **10/10 recorridos**, 0 errores de página y 0 overflow; artefactos en `scratch/migration-certification/browser-final`.
 - Suites no integradas (registro, checkout, agenda, servicios, clientes, web, Puri, MCP, Contact Flow, legacy y seguridad): **1.989 aprobadas, 175 omitidas condicionales, 0 fallidas**.
 - TypeScript, Prisma generate/validate, build webpack aislado (164 páginas), escaneo de secretos y `npm audit --omit=dev`: **aprobados**.
 - ESLint: **0 errores y 32 advertencias preexistentes**.
@@ -148,7 +148,7 @@ Una invocación mixta de todas las suites en paralelo no se considera certificac
 
 El SHA base confirmado es `fc2ffad6819eacb9ed9dfedae437f7a6a4f706a9`, en la rama exclusiva `fix/puragenda-next-onboarding-migration-certification`. RC1 (`7f1971c3058fa61d449c5791d87cc314edfc201a`), main (`e74c92237e47db43425a7d47209520967e51bfb0`), la rama C3 y las ramas históricas permanecen sin cambios. La nueva rama está excluida en `vercel.json`, `scripts/vercel-build.mjs` y ambos guards de `.github/workflows/security.yml`; no ejecuta migraciones ni despliegues automáticos. No se consultó Vercel directamente. No se hicieron despliegues, migraciones remotas, llamadas facturables, pagos, DNS, Cloudinary ni proveedores reales.
 
-La demostración certificada se mantiene activa en `http://127.0.0.1:3119/login` y devuelve HTTP 200; usa la base recién migrada `puragenda_commercial_test_onboarding` del clúster loopback 55452 y la contraseña externa `ONBOARDING_DEMO_PASSWORD`. Las demos 3116, 3117 y 3118 permanecen intactas.
+La demostración certificada se mantiene activa en `http://127.0.0.1:3119/login` y devuelve HTTP 200; usa la base recién migrada `puragenda_commercial_test_onboarding` del clúster loopback 55455 y la contraseña externa `ONBOARDING_DEMO_PASSWORD`. Las demos 3116, 3117 y 3118 permanecen intactas.
 
 ### Clasificación definitiva
 
