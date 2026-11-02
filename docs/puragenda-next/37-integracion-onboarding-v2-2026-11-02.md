@@ -85,6 +85,12 @@ La nueva matriz C3 incluye propietario, administrador con `appointments.view_all
 
 Ejecuciones nuevas de esta corrección: **30/30** pruebas PostgreSQL/Puri Setup, **38/38** protecciones, TypeScript, Prisma y ESLint aprobados, build aislado aprobado, y una prueba Playwright focalizada de permisos con `apiAuthorizedToday=true`, `apiDeniedStaff=true`, `uiStartedToday=true`, `pageErrors=0`. El recorrido completo Playwright de C1/C2 se conserva como evidencia previa de esta misma rama limpia y no se cuenta nuevamente. Proveedores reales, OpenAI facturable, pagos y migraciones remotas siguen omitidos.
 
+Se intentó preparar una base PostgreSQL C3 independiente en un segundo cluster loopback. La aplicación de una migración histórica (`20261022180000_commercial_migration_web_plus`) falló durante esa preparación; el cluster se detuvo y no se usó ninguna base remota. Las demos 3116/3117 se conservaron y la demo C3 queda en 3118 sobre la base local ya certificada, con esta limitación documentada.
+
+## Clasificación
+
+**APTO CON OBSERVACIONES.** C3 está corregido y sus pruebas críticas pasan, C1/C2 permanecen cubiertos, y la rama está protegida. La certificación integral queda condicionada a resolver la aplicación limpia de la migración histórica en un cluster nuevo y a ejecutar las suites transversales completas y proveedores reales; no se autoriza integrar RC1 por este cierre.
+
 La comparación de estado frente a RC1 conserva 60 archivos y una sola migración nueva (`20261031200000_puri_setup_learning_v2`). La historia nueva no contiene los cinco commits de la rama publicada anterior ni la contraseña sintética. Las nuevas pruebas de esta rama son 29/29 en PostgreSQL/Puri Setup, 38/38 protecciones, TypeScript aprobado y 10 escenarios Playwright con 0 errores de página en el servidor limpio. Los resultados transversales de las ocho auditorías se conservan como evidencia previa y no se presentan como nuevas ejecuciones de este cierre.
 
 La demo del servidor limpio responde en `http://127.0.0.1:3117/login`; el servidor anterior se conserva aparte en `http://127.0.0.1:3116/login`. Ninguna contraseña aparece en este informe, documentación ni historia nueva.
