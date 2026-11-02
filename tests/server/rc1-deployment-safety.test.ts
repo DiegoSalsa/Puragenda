@@ -24,12 +24,12 @@ afterAll(()=>{
 describe("RC1 push/deployment isolation",()=>{
   it("disables automatic Vercel deployment for RC1 and both audit branches without changing legacy schedules",()=>{
     const config=JSON.parse(readFileSync("vercel.json","utf8"));
-    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false,"fix/puragenda-next-audit-02-agenda":false,"fix/puragenda-next-audit-03-services-staff":false,"fix/puragenda-next-audit-04-clients-privacy":false,"fix/puragenda-next-audit-05-billing-subscriptions":false,"fix/puragenda-next-audit-06-websites-plus":false,"fix/puragenda-next-audit-07-puri-onboarding":false,"fix/puragenda-next-audit-08-contact-flow":false,"integration/puragenda-next-onboarding-v2":false});
+    expect(config.git.deploymentEnabled).toEqual({"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false,"fix/puragenda-next-audit-02-agenda":false,"fix/puragenda-next-audit-03-services-staff":false,"fix/puragenda-next-audit-04-clients-privacy":false,"fix/puragenda-next-audit-05-billing-subscriptions":false,"fix/puragenda-next-audit-06-websites-plus":false,"fix/puragenda-next-audit-07-puri-onboarding":false,"fix/puragenda-next-audit-08-contact-flow":false,"integration/puragenda-next-onboarding-v2":false,"integration/puragenda-next-onboarding-v2-clean":false});
     expect(config.crons).toHaveLength(5);
     expect(config.crons.some((cron:{path:string})=>cron.path==="/api/cron/puragenda-next")).toBe(false);
   });
   it.each(["production","preview","development",""])("refuses every audit %s build before any CLI executes",environment=>{
-    for(const branch of ["fix/puragenda-next-audit-01-registration","fix/puragenda-next-audit-02-agenda","fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy","fix/puragenda-next-audit-05-billing-subscriptions","fix/puragenda-next-audit-06-websites-plus","fix/puragenda-next-audit-07-puri-onboarding","fix/puragenda-next-audit-08-contact-flow","integration/puragenda-next-onboarding-v2"]) {
+    for(const branch of ["fix/puragenda-next-audit-01-registration","fix/puragenda-next-audit-02-agenda","fix/puragenda-next-audit-03-services-staff","fix/puragenda-next-audit-04-clients-privacy","fix/puragenda-next-audit-05-billing-subscriptions","fix/puragenda-next-audit-06-websites-plus","fix/puragenda-next-audit-07-puri-onboarding","fix/puragenda-next-audit-08-contact-flow","integration/puragenda-next-onboarding-v2","integration/puragenda-next-onboarding-v2-clean"]) {
       for(const approved of ["0","1"]) {
         const r=run(environment,approved,branch);
         expect(r.status).toBe(1);expect(r.stderr).toContain("AUDIT_BRANCH_BUILD_DISABLED");
