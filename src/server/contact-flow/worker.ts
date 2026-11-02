@@ -74,6 +74,8 @@ async function checkJob(tx: Prisma.TransactionClient, job: Job, now: Date) {
     e = m.enrollment,
     v = e.version,
     c = v.campaign;
+  if (m.idempotencyKey !== commercialHash({ campaign: c.id, version: v.version, client: e.clientId, channel: "EMAIL" }))
+    return "IDEMPOTENCY_KEY_CHANGED";
   if (isProductionContactRuntime() && (m.provider !== "RESEND" || process.env.CONTACT_FLOW_DELIVERY_MODE !== "production")) return "CONTACT_FLOW_EXTERNAL_DELIVERY_BLOCKED";
   if (m.provider === "RESEND" && process.env.CONTACT_FLOW_DELIVERY_MODE === "production") {
     try { contactResendConfiguration(m.businessId); }
@@ -555,6 +557,12 @@ export async function dispatchContactClaim(
       where: { messageId_number: { messageId: m.id, number } },
       data: { outcome: result.outcome, code: result.code },
     });
+    // A later HTTP rejection describes only that request. It cannot prove that
+    // an earlier timed-out request was never accepted by the provider.
+    const priorAmbiguous = result.outcome === "PERMANENT" && !!await tx.cfAttempt.findFirst({
+      where: { messageId: m.id, number: { lt: number }, outcome: { in: ["STARTED", "UNKNOWN"] } },
+      select: { id: true },
+    });
     const retry =
       (result.outcome === "TEMPORARY" ||
         (result.outcome === "UNKNOWN" && result.idempotent)) &&
@@ -563,7 +571,7 @@ export async function dispatchContactClaim(
       result.outcome === "ACCEPTED"
         ? "ACCEPTED"
         : result.outcome === "PERMANENT"
-          ? "FAILED"
+          ? priorAmbiguous ? "UNKNOWN" : "FAILED"
           : retry
             ? "QUEUED"
             : "UNKNOWN";
@@ -580,7 +588,7 @@ export async function dispatchContactClaim(
       data: {
         state: retry ? "PENDING" : state === "UNKNOWN" ? "UNKNOWN" : "DONE",
         leaseUntil: null,
-        lastError: result.code ?? null,
+        lastError: priorAmbiguous ? "RECONCILIATION_REQUIRED" : result.code ?? null,
         nextAttemptAt: new Date(
           +now + backoff(number, m.idempotencyKey, result.retryAfterMs),
         ),
