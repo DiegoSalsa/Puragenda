@@ -73,7 +73,7 @@ node scripts/onboarding-local.mjs --iteration2 --prepare
 node scripts/onboarding-local.mjs --serve
 ```
 
-Cuentas ficticias, todas con contraseña local `PuriDemo2026!`:
+Cuentas ficticias (la contraseña se proporciona sólo mediante la variable local `ONBOARDING_DEMO_PASSWORD`; nunca se guarda en el repositorio):
 
 | Cuenta | Uso |
 | --- | --- |

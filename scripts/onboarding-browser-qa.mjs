@@ -9,6 +9,8 @@ const { CHANGELOG_DATA } = changelog;
 async function main() {
   const origin = process.env.ONBOARDING_QA_ORIGIN ?? "http://localhost:3116";
   if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) throw new Error("LOCAL_BROWSER_QA_ONLY");
+  const demoPassword = process.env.ONBOARDING_DEMO_PASSWORD;
+  if (!demoPassword || demoPassword.length < 12) throw new Error("ONBOARDING_DEMO_PASSWORD_REQUIRED");
   const require = createRequire(resolve(process.env.ONBOARDING_QA_MODULES ?? resolve(homedir(), ".codex/tools/puri-onboarding-qa"), "package.json"));
   const { chromium } = require("playwright");
   const artifacts = process.env.ONBOARDING_QA_ARTIFACTS ?? resolve(homedir(), ".codex/artifacts/puri-onboarding-v2-iteration2");
@@ -31,13 +33,13 @@ async function main() {
       await page.locator("#name").fill("Antonia QA"); await page.locator("#businessName").fill(`Manicure QA ${stamp}`);
       await page.locator("#marketplaceLocalitySlug").selectOption("__not_found__"); await page.locator("#marketplaceCityName").fill("Ciudad ficticia");
       await page.locator("#marketplaceCategorySlug").selectOption("puri-demo"); await page.locator("#email").fill(accountEmail);
-      await page.locator("#password").fill("PuriDemo2026!"); await page.locator("#confirmPassword").fill("PuriDemo2026!"); await page.locator("#terms").check();
+      await page.locator("#password").fill(demoPassword); await page.locator("#confirmPassword").fill(demoPassword); await page.locator("#terms").check();
       await page.locator("form button[type=submit]").click(); await page.waitForURL(`${origin}/dashboard/setup`, { waitUntil: "domcontentloaded" }); await page.waitForLoadState("networkidle"); await page.getByRole("heading", { name: /Empecemos,/ }).waitFor();
       assert.equal(await page.locator("[data-changelog-close]").isVisible(), false, "No promotion may precede Setup");
       return { page, context, email: accountEmail };
     }
-    const response = email ? await context.request.post(`${origin}/api/auth/login`, { data: { email, password: "PuriDemo2026!" } }) : await context.request.post(`${origin}/api/auth/register`, { data: {
-      name: team ? "Camila QA" : "Antonia QA", email: accountEmail, password: "PuriDemo2026!", businessName: `${team ? "Equipo" : "Estudio"} QA ${stamp}${mobile ? " móvil" : ""}`, countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", commercialPlanIntent: team ? "PURAGENDA_PLUS" : "PURAGENDA", professionalTotal: team ? 2 : 1,
+    const response = email ? await context.request.post(`${origin}/api/auth/login`, { data: { email, password: demoPassword } }) : await context.request.post(`${origin}/api/auth/register`, { data: {
+      name: team ? "Camila QA" : "Antonia QA", email: accountEmail, password: demoPassword, businessName: `${team ? "Equipo" : "Estudio"} QA ${stamp}${mobile ? " móvil" : ""}`, countryCode: "CL", currencyCode: "CLP", timezone: "America/Santiago", commercialPlanIntent: team ? "PURAGENDA_PLUS" : "PURAGENDA", professionalTotal: team ? 2 : 1,
       marketplaceCategorySlug: "puri-demo", marketplaceLocalityNotFound: true, marketplaceCityName: "Ciudad ficticia", marketplaceAuthorized: false, termsAccepted: true,
     } });
     assert.equal(response.ok(), true, `Auth failed: ${response.status()} ${await response.text()}`);
@@ -158,7 +160,7 @@ async function main() {
     await mobile.page.goto(`${origin}/dashboard`); await mobile.page.waitForURL(/\/login/);
     const secondDevice = await browser.newContext({ viewport: { width: 390, height: 844 }, extraHTTPHeaders: { "x-forwarded-for": "127.0.0.1" } }); contexts.push(secondDevice);
     const second = await secondDevice.newPage(); await second.goto(`${origin}/login`);
-    await second.locator("#email").fill(mobile.email); await second.locator("#password").fill("PuriDemo2026!"); await second.locator("form button[type=submit]").click(); await second.waitForURL(`${origin}/dashboard`);
+    await second.locator("#email").fill(mobile.email); await second.locator("#password").fill(demoPassword); await second.locator("form button[type=submit]").click(); await second.waitForURL(`${origin}/dashboard`);
     await second.getByRole("link", { name: "Continuar configuración", exact: true }).click(); await second.waitForURL(`${origin}/dashboard/setup`); await second.waitForLoadState("networkidle");
     assert.equal(await second.getByRole("textbox", { name: "Inicio Lunes", exact: true }).inputValue(), "11:00");
     await screenshot(second, "08-reanudacion-movil");

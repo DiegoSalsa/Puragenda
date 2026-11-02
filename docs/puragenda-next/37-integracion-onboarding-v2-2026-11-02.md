@@ -51,7 +51,7 @@ La migración se aplicó y se repitió sólo en PostgreSQL loopback. La prueba d
 
 ## Entrega local y riesgos
 
-La demo local queda preparada en `http://127.0.0.1:3116/login` con cuentas sintéticas documentadas en `onboarding-v2.md`, contraseña `PuriDemo2026!`, proveedor OpenAI ausente y correo simulado. El servidor se dejará activo sólo después de una comprobación HTTP 200 final; si el proceso se detiene, esta URL no se considera disponible.
+La demo local queda preparada en `http://127.0.0.1:3116/login` con cuentas sintéticas documentadas en `onboarding-v2.md`; la contraseña se suministra fuera del repositorio mediante `ONBOARDING_DEMO_PASSWORD`. OpenAI está ausente y el correo es simulado. El servidor se dejará activo sólo después de una comprobación HTTP 200 final; si el proceso se detiene, esta URL no se considera disponible.
 
 Persisten fuera de esta fase: retención 07-20/08-F09, continuidad contractual de marketing legacy, certificación de Resend/Mercado Pago/Vercel, presupuestos IA legacy y las 23 advertencias de desarrollo. La integración no habilita Puri+, MCP, Contact Flow, workers, marketing legacy ni onboarding en producción.
 
