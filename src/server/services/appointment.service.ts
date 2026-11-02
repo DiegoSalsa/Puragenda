@@ -151,6 +151,7 @@ export async function createAppointment(data: {
     const { getBookingAvailability, loadBookingContext } = await import("@/server/booking/read.service");
     const current = await loadBookingContext(data.businessId, db);
     const approvedQuote = bookingExpectedQuoteContext.getStore();
+    await approvedQuote?.authorize?.(db);
     if (approvedQuote?.requirePublicParticipation && !current.mcpPublicDiscovery) throw new BookingSelectionError("El negocio ya no participa", "BUSINESS_NOT_FOUND", 404);
     if (approvedQuote && (approvedQuote.price !== data.totalPrice || approvedQuote.duration !== data.totalDuration || (approvedQuote.forbidDeposit && current.depositRequired))) {
       throw new BookingSelectionError("La selección cambió; prepara y aprueba una nueva operación", "SELECTION_CHANGED", 409);

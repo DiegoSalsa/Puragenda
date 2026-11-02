@@ -97,10 +97,10 @@ export async function prepareCreation(args: z.infer<typeof creationSchema>, iden
     payload: { request, summary, inputHash, ...(publicSlug ? { publicSlug } : {}) } });
 }
 
-async function managedTarget(identity: McpIdentity | null, locationId: string, appointmentId: string) {
-  const context = await authorizedContext(identity, "appointments:write", locationId);
+async function managedTarget(identity: McpIdentity | null, locationId: string, appointmentId: string, db: Prisma.TransactionClient = prisma) {
+  const context = await authorizedContext(identity, "appointments:write", locationId, db);
   requireAgenda(context);
-  const appointment = await prisma.appointment.findFirst({ where: { id: appointmentId, businessId: context.business.id,
+  const appointment = await db.appointment.findFirst({ where: { id: appointmentId, businessId: context.business.id,
     AND: [appointmentScope(context), { OR: [{ locationId }, ...(context.location!.isPrimary ? [{ locationId: null }] : [])] }] }, include: { service: true } });
   if (!appointment) throw new McpError("APPOINTMENT_NOT_FOUND", 404);
   requireWrite(context, appointment.staffId);
@@ -161,7 +161,18 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
     await prisma.mcpOperation.updateMany({ where: { id: op.id, state: "APPROVED" }, data: { state: "EXECUTING" } });
     const request = new NextRequest(`${mcpConfig().origin}/api/business/${encodeURIComponent(business.slug)}/book`, { method: "POST",
       headers: { "Content-Type": "application/json", "Puragenda-Booking-Version": "1", "Idempotency-Key": `mcp-${op.id}` }, body: JSON.stringify(payload.request) });
-    const response = await bookingExpectedQuoteContext.run({ price: payload.summary.price, duration: payload.summary.duration, forbidDeposit: true, requirePublicParticipation: kind === "public_create" },
+    const response = await bookingExpectedQuoteContext.run({ price: payload.summary.price, duration: payload.summary.duration, forbidDeposit: true, requirePublicParticipation: kind === "public_create", authorize: async db => {
+      const current = await db.mcpOperation.findUniqueOrThrow({ where: { id: op.id } });
+      if (!current.approvedAt || !["APPROVED", "EXECUTING"].includes(current.state) || current.expiresAt <= new Date()) throw new McpError("OPERATION_EXPIRED", 409);
+      if (kind === "public_create") {
+        if (!publicBookingEnabled()) throw new McpError("PUBLIC_BOOKING_DISABLED");
+        if ((await publicBusiness(payload.publicSlug!, db)).id !== op.businessId) throw new McpError("OPERATION_FORBIDDEN");
+      } else {
+        const currentContext = await authorizedContext(identity, "appointments:write", String(payload.request.locationId), db);
+        if (currentContext.business.id !== op.businessId) throw new McpError("OPERATION_FORBIDDEN");
+        requireWrite(currentContext, payload.summary.staffId);
+      }
+    } },
       () => bookingReviewContext.run(mcpReviewSuppressesEffects(op.businessId), () => executeBooking(request, { params: Promise.resolve({ slug: business.slug }) }, op.businessId)));
     const body = await response.json();
     const result = { id: body.id ?? null, status: body.status ?? null, booking: body.booking ?? null, operationStatus: body.operationStatus ?? null,
@@ -179,6 +190,7 @@ export async function executeOperation(receipt: string, kind: OperationKind, ide
   if (kind === "reschedule") await validateAppointmentReschedule(appointment, start, end, context.location!.id);
   const result = await prisma.$transaction(async (db) => {
     await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`booking-capacity:${op.businessId}`}, 0))::text`;
+    await managedTarget(identity, String(payload.request.locationId), payload.appointmentId!, db);
     const currentOp = await db.mcpOperation.findUniqueOrThrow({ where: { id: op.id } });
     if (currentOp.state === "DONE") return { result: currentOp.result, executed: false };
     if (currentOp.expiresAt <= new Date()) throw new McpError("OPERATION_EXPIRED", 409);
