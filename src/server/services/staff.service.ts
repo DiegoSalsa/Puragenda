@@ -32,10 +32,11 @@ export async function createStaff(data: {
   email?: string;
   businessId: string;
   userId?: string;
-}) {
-  return withStaffCapacityLock(data.businessId, async (tx) => {
+  locationIds?: string[];
+}, transaction?: Prisma.TransactionClient) {
+  const operation = async (tx: Prisma.TransactionClient) => {
     await assertStaffCapacity(data.businessId, tx);
-    const locationIds = await resolveNewStaffLocations(tx, data.businessId);
+    const locationIds = await resolveNewStaffLocations(tx, data.businessId, data.locationIds);
     return tx.staff.create({
       data: {
         name: data.name,
@@ -47,7 +48,8 @@ export async function createStaff(data: {
         ...(locationIds.length ? { schedule: { create: initialStaffSchedule() } } : {}),
       },
     });
-  });
+  };
+  return transaction ? operation(transaction) : withStaffCapacityLock(data.businessId, operation);
 }
 
 export class StaffLifecycleError extends Error {}

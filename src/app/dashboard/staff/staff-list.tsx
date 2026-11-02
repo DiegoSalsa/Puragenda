@@ -351,7 +351,7 @@ export function StaffList({
         {!showForm ? (
           <button
             id="btn-add-staff"
-            onClick={() => { if (!atLimit) setShowForm(true); }}
+            onClick={() => { if (!atLimit) { setShowForm(true); window.dispatchEvent(new CustomEvent("learning:action", { detail: "staff-form-opened" })); } }}
             disabled={atLimit}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all ${
               atLimit ? "cursor-not-allowed border border-dashed border-border bg-muted/30 text-muted-foreground" : "border border-[#7C3AED] bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]"

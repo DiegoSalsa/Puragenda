@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 import { GUIDED_HELP_KEYS } from "@/i18n/guided-help-keys";
 
+import { useDashboardOverlay } from "./dashboard-overlay-context";
+import { TUTORIALS } from "@/core/tutorials";
 import { CircleHelp } from "@/components/icons/hover-icons";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -665,6 +667,8 @@ export function ContextualHelpButton() {
   };
   const pathname = usePathname();
   const activeTour = useRef<ReturnType<typeof driver> | null>(null);
+  const { activeHelp, openHelp, closeHelp } = useDashboardOverlay();
+  useEffect(() => { if (activeHelp !== "tour") activeTour.current?.destroy(); }, [activeHelp]);
 
   useEffect(() => {
     return () => {
@@ -675,6 +679,7 @@ export function ContextualHelpButton() {
 
   function startTour() {
     if (helpOverlayBlocked()) return;
+    if (TUTORIALS.some(t => t.route === pathname) || pathname === "/dashboard/setup") { window.dispatchEvent(new Event("learning:open")); return; }
     activeTour.current?.destroy();
     const tour = getTour(pathname);
     const localizedSteps = tour.steps.map((step) => ({
@@ -698,6 +703,7 @@ export function ContextualHelpButton() {
           },
         }];
 
+    openHelp("tour");
     const instance = driver({
       animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       allowClose: true,
@@ -713,6 +719,7 @@ export function ContextualHelpButton() {
       doneBtnText: translate("Finalizar"),
       progressText: translate("{{current}} de {{total}}"),
       steps: safeSteps,
+      onDestroyed: () => { activeTour.current = null; closeHelp("tour"); },
     });
 
     activeTour.current = instance;

@@ -1,4 +1,5 @@
 import type { DashboardPermission } from "@/core/permissions";
+import type { SetupPuriResult } from "@/core/setup-proposals";
 export type PuriCapabilityTier = "PURI_STANDARD" | "PURI_PLUS" | "PURI_PLUS_PREPARE";
 
 export type PuriContext = {
@@ -41,6 +42,8 @@ export type PuriAction = {
 };
 
 export type PuriAnswer = {
+  setup?: SetupPuriResult;
+  guides?: { id: string; title: string; href: string }[];
   message: string;
   cards: PuriCard[];
   actions: PuriAction[];

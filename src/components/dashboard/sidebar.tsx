@@ -390,6 +390,7 @@ function SidebarContent({
       <Link
         key={item.href}
         href={item.href}
+        data-tour={item.href === "/dashboard/agenda" ? "nav-agenda" : undefined}
         onClick={onClose}
         className={itemClass(active)}
         title={collapsed ? (item.label === "puriPlus" ? "Puri+ y Contact Flow" : t(item.label)) : undefined}

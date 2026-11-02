@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
 import type { ServiceInput } from "@/server/validations/booking";
 
@@ -86,7 +87,7 @@ export async function createService(data: {
   specialStartTime?: string | null;
   specialEndTime?: string | null;
   optionCategories?: ServiceInput["optionCategories"];
-}) {
+}, db: Prisma.TransactionClient = prisma) {
   const { optionCategories = [], ...serviceData } = data;
   if (optionCategories.some(c => c.id || c.alternatives.some(a => a.id))) throw new ServiceCatalogError("Las opciones nuevas no pueden reutilizar identificadores", 400);
   const availabilityData = {
@@ -101,17 +102,17 @@ export async function createService(data: {
     specialStartTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialStartTime : null,
     specialEndTime: serviceData.availabilityType === "SPECIAL" ? serviceData.specialEndTime : null,
   };
-  const aggregate = await prisma.service.aggregate({
+  const aggregate = await db.service.aggregate({
     where: { businessId: serviceData.businessId },
     _max: { position: true },
   });
 
-  const activeLocations = await prisma.businessLocation.findMany({
+  const activeLocations = await db.businessLocation.findMany({
     where: { businessId: serviceData.businessId, isActive: true },
     select: { id: true },
   });
 
-  return prisma.service.create({
+  return db.service.create({
     data: {
       ...serviceData,
       ...availabilityData,

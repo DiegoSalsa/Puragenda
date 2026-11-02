@@ -1,6 +1,15 @@
 import { isSafeSeoProperty, SEO_CONTENT_KEYS } from "@/lib/data/seo-expansion";
 
 export const TRACKING_EVENTS = [
+  "onboarding_started",
+  "onboarding_resumed",
+  "onboarding_paused",
+  "onboarding_step_completed",
+  "onboarding_agenda_ready",
+  "onboarding_link_copied",
+  "tutorial_started",
+  "tutorial_completed",
+
   "page_view",
   "landing_cta_clicked",
   "contact_lead_submitted",
@@ -68,6 +77,15 @@ export type TrackingProperties = Record<string, TrackingPropertyValue>;
 // This is a deny-by-default schema. Adding an event or property is an explicit
 // product decision and makes accidental collection of PII much harder.
 export const SAFE_EVENT_PROPERTIES: Record<TrackingEventName, readonly string[]> = {
+  onboarding_started: ['version'],
+  onboarding_resumed: ['version'],
+  onboarding_paused: ['step', 'version'],
+  onboarding_step_completed: ['step', 'version'],
+  onboarding_agenda_ready: ['version'],
+  onboarding_link_copied: ['version'],
+  tutorial_started: ['tutorial', 'version'],
+  tutorial_completed: ['tutorial', 'version'],
+
   page_view: ["page_type", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign", ...SEO_CONTENT_KEYS],
   landing_cta_clicked: ["cta", "placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign", ...SEO_CONTENT_KEYS],
   contact_lead_submitted: ["placement", "landing_path", "first_referrer_domain", "first_utm_source", "first_utm_medium", "first_utm_campaign"],

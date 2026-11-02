@@ -1,3 +1,6 @@
+import { answerLearningQuestion } from "@/server/puri/learning";
+import { answerSetupWithPuri, puriSetupContextSchema } from "@/server/puri/setup";
+import { SetupError } from "@/server/onboarding/service";
 import { GrowthBudgetError } from "@/server/puri/growth/budgets";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -23,6 +26,7 @@ const requestSchema = z.object({
     agenda: z.enum(["mine", "all"]).optional(),
     period: z.enum(["week", "month"]).optional(),
     locale: z.string().max(12).default("es"),
+    setup: puriSetupContextSchema.optional(),
   }).default({ pathname: "/dashboard", locale: "es" }),
 });
 
@@ -43,9 +47,11 @@ export async function POST(request: NextRequest) {
     let answer;
     let errorCode: string | undefined;
     try {
-      answer = await answerWithPuri({ context, message: parsed.data.message, history: parsed.data.history, telemetry });
+      answer = parsed.data.context.setup
+        ? await answerSetupWithPuri({ context, setup: parsed.data.context.setup, message: parsed.data.message, history: parsed.data.history, telemetry })
+        : await answerLearningQuestion(context, parsed.data.message) ?? await answerWithPuri({ context, message: parsed.data.message, history: parsed.data.history, telemetry });
     } catch (error) {
-      if (error instanceof GrowthBudgetError || (error instanceof PuriAccessError && !["MODEL_INCOMPLETE", "INVALID_MODEL_RESULT"].includes(error.code))) throw error;
+      if (error instanceof SetupError || error instanceof GrowthBudgetError || (error instanceof PuriAccessError && !["MODEL_INCOMPLETE", "INVALID_MODEL_RESULT"].includes(error.code))) throw error;
       errorCode = error instanceof Error && error.message === "PURI_NOT_CONFIGURED" ? "NOT_CONFIGURED"
         : error instanceof Error && ["APIConnectionTimeoutError", "TimeoutError", "AbortError"].includes(error.name) ? "MODEL_TIMEOUT"
         : "MODEL_OR_PROVIDER_ERROR";
@@ -73,6 +79,7 @@ export async function POST(request: NextRequest) {
     if (errorCode) return Response.json({ code: errorCode === "NOT_CONFIGURED" ? "NOT_CONFIGURED" : "UNAVAILABLE" }, { status: 503 });
     return Response.json({ answer, responseId }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (error instanceof SetupError) return Response.json({ code: "SETUP_ERROR", error: error.message }, { status: error.status });
     if (error instanceof GrowthBudgetError) return Response.json({ code: error.message }, { status: error.message === "BUDGET_EXHAUSTED" ? 429 : 503 });
     if (error instanceof PuriAccessError) {
       try {

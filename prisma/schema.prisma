@@ -307,6 +307,7 @@ enum BookingFeedbackRating {
 }
 
 model User {
+  tutorialProgress TutorialProgress[]
   mcpProfiles     McpProfile[]
   id              String       @id @default(cuid())
   email           String       @unique
@@ -838,6 +839,9 @@ model WebsitePurchaseIntent {
 }
 
 model Business {
+  setup BusinessSetup?
+  setupOperations SetupOperation[]
+  tutorialProgress TutorialProgress[]
   contactFlowAudits                            CfAudit[]
   contactFlowCampaigns                         CfCampaign[]
   contactFlowPolicies                          CfPolicy[]
@@ -3497,4 +3501,48 @@ model CommercialWorkerState {
   lastError     String?
   summary       Json?
   updatedAt     DateTime @updatedAt
+}
+
+// Business activation is derived from the live booking catalog, never a stored percentage.
+model BusinessSetup {
+  businessId String @id
+  version Int @default(2)
+  revision Int @default(0)
+  mode String?
+  industry String?
+  currentStep String @default("business")
+  draft Json @default("{}")
+  startedAt DateTime @default(now())
+  pausedAt DateTime?
+  verifiedAt DateTime?
+  verification Json?
+  completedAt DateTime?
+  sharedAt DateTime?
+  dismissedAt DateTime?
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+model SetupOperation {
+  businessId String
+  key String
+  payloadHash String
+  result Json
+  createdAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@id([businessId, key])
+  @@index([createdAt])
+}
+model TutorialProgress {
+  businessId String
+  userId String
+  tutorialId String
+  version Int
+  step Int @default(0)
+  revision Int @default(0)
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([businessId, userId, tutorialId, version])
+  @@index([userId, businessId])
 }

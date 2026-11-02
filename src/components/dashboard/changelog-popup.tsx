@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CHANGELOG_DATA, type ChangelogSpotlight } from "@/config/changelog";
 import { WebsiteLaunchPopup } from "./website-launch-popup";
 import type { WebsiteLaunchContext } from "@/websites/launch";
@@ -26,7 +26,10 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
   websiteReminder?: WebsiteTrialReminderContext | null;
 }) {
   const legacy = useTranslations("legacy");
-  const { isChangelogOpen, setChangelogOpen } = useDashboardOverlay();
+  const pathname = usePathname();
+  const learn = useSearchParams().has("learn");
+  const { isChangelogOpen, setChangelogOpen, setupPriority, activeHelp } = useDashboardOverlay();
+  const setupActive = pathname === "/dashboard/setup" || setupPriority || !!activeHelp || learn;
   const router = useRouter();
   const latestUpdate = CHANGELOG_DATA[0];
   const LATEST_CHANGELOG_VERSION = latestUpdate.version;
@@ -53,7 +56,7 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
   }, [setChangelogOpen, LATEST_CHANGELOG_VERSION, reminderOpen, reminderKey]);
 
   useEffect(() => {
-    if (!reminderKey) return;
+    if (setupActive || !reminderKey) return;
     const frame = window.requestAnimationFrame(() => {
       let dismissed = false;
       try { dismissed = localStorage.getItem(reminderKey) === "dismissed"; } catch { /* Server dismissal still applies. */ }
@@ -63,10 +66,10 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
       if (dismissed) void dismissWebsiteTrialReminder().catch(() => {});
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [reminderKey, setChangelogOpen]);
+  }, [reminderKey, setChangelogOpen, setupActive]);
 
   useEffect(() => {
-    if (!isChangelogOpen) return;
+    if (setupActive || !isChangelogOpen) return;
 
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusFrame = window.requestAnimationFrame(() => {
@@ -84,15 +87,15 @@ export function ChangelogPopup({ websiteLaunch, websiteReminder }: {
       window.removeEventListener("keydown", handleKeyDown);
       previousFocus.current?.focus();
     };
-  }, [handleDismiss, isChangelogOpen, websiteLaunch, reminderOpen]);
+  }, [handleDismiss, isChangelogOpen, websiteLaunch, reminderOpen, setupActive]);
 
   useEffect(() => {
-    if (!isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
+    if (setupActive || !isChangelogOpen || latestUpdate.popupVariant !== "launch" || viewedLaunch.current) return;
     viewedLaunch.current = true;
     track("changelog_launch_viewed");
-  }, [isChangelogOpen, latestUpdate.popupVariant]);
+  }, [isChangelogOpen, latestUpdate.popupVariant, setupActive]);
 
-  if (!reminderChecked || !isChangelogOpen) return null;
+  if (setupActive || !reminderChecked || !isChangelogOpen) return null;
 
   async function handleViewDetails() {
     if (latestUpdate.popupVariant === "launch") track("changelog_launch_cta_clicked", { feature: "changelog" });
