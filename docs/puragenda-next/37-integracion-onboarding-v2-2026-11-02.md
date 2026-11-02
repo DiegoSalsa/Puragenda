@@ -75,6 +75,16 @@ Se corrigió 09A-C2: un negocio nuevo sólo pasa a `unshared`, `no_bookings` o `
 
 La rotación de cuentas sintéticas se realizó únicamente en PostgreSQL loopback de demostración, actualizando hashes y `tokenVersion` sin borrar avances. La contraseña no se escribe en este informe, scripts, migración ni commits; la preparación de demo continúa exigiendo `ONBOARDING_DEMO_PASSWORD` fuera del repositorio. Las sesiones anteriores quedan invalidadas por el incremento de versión.
 
+## Corrección 09A-C3 — progreso de tutoriales por autorización específica
+
+La causa raíz era que `learningContext` filtraba el catálogo con permisos/capacidades del tutorial, pero `saveLearning` exigía además `canManageSetup`. Esa condición mezclaba autorización para modificar Setup con autorización para guardar el progreso de una guía independiente. Se eliminó sólo esa condición; Setup/Puri conserva `canManageSetup`, mientras que `saveLearning` exige la entrada actual de `allowedTutorials`, entitlement, pertenencia, sesión/token y revisión.
+
+La revalidación permanece dentro de la transacción después del advisory lock. Se comprueban usuario activo y token, negocio y pertenencia, permisos efectivos, suscripción/capacidades y la guía/versiones permitidas. Una guía revocada, un negocio ajeno o una sesión vencida no puede crear ni actualizar progreso. No se modifican precios, catálogo comercial ni el motor de reservas.
+
+La nueva matriz C3 incluye propietario, administrador con `appointments.view_all`, profesional parcial autorizado para `today`, profesional sin autorización para `staff`, revocación de pertenencia durante el lock, revocación de sesión, progreso concurrente/versionado, pausa/reanudación/reinicio y aislamiento entre negocios. La prueba de interfaz en móvil inicia `Preparar tu día` para el profesional parcial y confirma que `staff` no aparece; no hubo errores de página.
+
+Ejecuciones nuevas de esta corrección: **30/30** pruebas PostgreSQL/Puri Setup, **38/38** protecciones, TypeScript, Prisma y ESLint aprobados, build aislado aprobado, y una prueba Playwright focalizada de permisos con `apiAuthorizedToday=true`, `apiDeniedStaff=true`, `uiStartedToday=true`, `pageErrors=0`. El recorrido completo Playwright de C1/C2 se conserva como evidencia previa de esta misma rama limpia y no se cuenta nuevamente. Proveedores reales, OpenAI facturable, pagos y migraciones remotas siguen omitidos.
+
 La comparación de estado frente a RC1 conserva 60 archivos y una sola migración nueva (`20261031200000_puri_setup_learning_v2`). La historia nueva no contiene los cinco commits de la rama publicada anterior ni la contraseña sintética. Las nuevas pruebas de esta rama son 29/29 en PostgreSQL/Puri Setup, 38/38 protecciones, TypeScript aprobado y 10 escenarios Playwright con 0 errores de página en el servidor limpio. Los resultados transversales de las ocho auditorías se conservan como evidencia previa y no se presentan como nuevas ejecuciones de este cierre.
 
 La demo del servidor limpio responde en `http://127.0.0.1:3117/login`; el servidor anterior se conserva aparte en `http://127.0.0.1:3116/login`. Ninguna contraseña aparece en este informe, documentación ni historia nueva.
