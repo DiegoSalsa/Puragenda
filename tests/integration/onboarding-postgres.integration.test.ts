@@ -202,7 +202,17 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     await expect(setupContext(limited)).rejects.toMatchObject({ status: 403 });
     const help = await learningContext(limited);
     expect(help.tutorials.some(t => t.id === "hours" || t.id === "staff")).toBe(false);
+    expect(help.tutorials.some(t => t.id === "today")).toBe(true);
+    const savedPartialGuide = await saveLearning(help, { tutorialId: "today", version: 2, step: 0, revision: 0, status: "active" });
+    expect(savedPartialGuide.status).toBe("active");
     await expect(saveLearning(help, { tutorialId: "staff", version: 2, step: 0, revision: 0, status: "active" })).rejects.toMatchObject({ status: 403 });
+    const scopedAdmin = await prisma.user.create({ data: { email: `scoped-admin-${randomUUID()}@example.invalid`, name: "Administrador de agenda", password: "fixture", role: "ADMIN" } });
+    fixtures.push({ userId: scopedAdmin.id, businessId: "__none__" });
+    const profile = await prisma.accessProfile.create({ data: { businessId: a.context.business.id, name: `Agenda-${randomUUID()}`, permissions: ["appointments.view_all"] } });
+    await prisma.staff.create({ data: { businessId: a.context.business.id, userId: scopedAdmin.id, name: "Administrador de agenda", accessProfileId: profile.id, isActive: true } });
+    const adminLearning = await learningContext(scopedAdmin);
+    expect(adminLearning.tutorials.some(t => t.id === "today")).toBe(true);
+    expect(await saveLearning(adminLearning, { tutorialId: "today", version: 2, step: 0, revision: 0, status: "active" })).toMatchObject({ status: "active" });
   });
   it("rechecks busy dates at completion even when the catalog fingerprint has not changed", async () => {
     const { context, snapshot } = await fixture();
@@ -253,6 +263,19 @@ describe.runIf(!!local)("Puri Setup against real PostgreSQL and booking services
     });
     expect(result).toMatchObject({ error: expect.objectContaining({ status: 403 }) });
     expect(await prisma.tutorialProgress.count({ where: { businessId: context.business.id, userId: context.user.id } })).toBe(0);
+  });
+  it("revokes a partial professional's authorized tutorial after the advisory lock", async () => {
+    const f = await fixture();
+    const partial = await prisma.user.create({ data: { email: `partial-${randomUUID()}@example.invalid`, name: "Profesional parcial", password: "fixture", role: "STAFF" } });
+    fixtures.push({ userId: partial.id, businessId: "__none__" });
+    await prisma.staff.create({ data: { businessId: f.context.business.id, userId: partial.id, name: "Profesional parcial", isActive: true } });
+    const learning = await learningContext(partial);
+    expect(learning.tutorials.some(t => t.id === "today")).toBe(true);
+    const result = await whileLearningLock(f.context.business.id, partial.id, "today", () => saveLearning(learning, { tutorialId: "today", version: 2, step: 0, revision: 0, status: "active" }), async client => {
+      await client.query('UPDATE "Staff" SET "isActive" = false WHERE "businessId" = $1 AND "userId" = $2', [f.context.business.id, partial.id]);
+    });
+    expect(result).toMatchObject({ error: expect.objectContaining({ status: 403 }) });
+    expect(await prisma.tutorialProgress.count({ where: { businessId: f.context.business.id, userId: partial.id } })).toBe(0);
   });
   it("serves authenticated uncached setup and rejects CSRF and a tampered session", async () => {
     const { user, context, snapshot } = await fixture();

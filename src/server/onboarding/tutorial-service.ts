@@ -34,7 +34,9 @@ export async function saveLearning(context: Awaited<ReturnType<typeof learningCo
     const access = await getCommercialPlanAccess(businessId, new Date(), tx);
     const capabilities = access.has("website.editor") ? ["website.editor"] : [];
     const currentTutorial = allowedTutorials(permissions, capabilities).find(t => t.id === input.tutorialId && t.version === input.version);
-    if (!canManageSetup(permissions) || !access.allowed || !currentTutorial)
+    // Tutorial progress is authorized by the specific catalog entry and its
+    // current capability, while Setup writes remain gated by canManageSetup.
+    if (!access.allowed || !currentTutorial)
       throw new SetupError("Esta guía ya no está disponible con tus permisos o plan.", 403);
     const key = { businessId, userId, tutorialId: tutorial.id, version: tutorial.version };
     const existing = await tx.tutorialProgress.findUnique({ where: { businessId_userId_tutorialId_version: key } });
