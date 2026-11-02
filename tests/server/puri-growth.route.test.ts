@@ -16,6 +16,7 @@ vi.mock("@/server/auth/admin-session", () => ({
 vi.mock("@/server/puri/growth/access", () => ({
   growthSandboxEnabled: mocks.enabled,
   createGrowthScope: mocks.scope,
+  revalidateGrowthScope: vi.fn(),
 }));
 vi.mock("@/server/auth/user-session", () => ({
   getApiSessionUser: mocks.auth,

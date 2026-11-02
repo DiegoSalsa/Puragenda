@@ -1,4 +1,6 @@
 import { withCommercialPuriUsage } from "./commercial-usage";
+import { revalidatePuriContext } from "./authorization";
+import { verifiedMessage } from "./verified-answer";
 import { puriTools } from "./definitions";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { hasPermission } from "./context";
@@ -6,7 +8,7 @@ import { buildPuriSystemPrompt } from "./prompt";
 import { getPuriOpenAI, PURI_MODEL } from "./openai-client";
 import { executePuriTool, puriToolNames } from "./tools";
 import { PuriAccessError, type PuriAnswer, type PuriCard, type PuriContext, type PuriHistoryItem } from "./types";
-import { toolFailureStatus, toolResultCount, type PuriTelemetry } from "./telemetry";
+import { intentFromTools, toolFailureStatus, toolResultCount, type PuriTelemetry } from "./telemetry";
 import type { ResponseCreateParamsNonStreaming } from "openai/resources/responses/responses";
 
 // A server-created capability extension uses this same tool loop and response contract.
@@ -16,7 +18,8 @@ export type PuriCapabilityExtension = {
   tools: ResponseCreateParamsNonStreaming["tools"];
   instructions: string;
   execute: (name: string, args: unknown) => Promise<unknown>;
-  createResponse: (params: ResponseCreateParamsNonStreaming) => Promise<{ output: unknown[]; output_text?: string; model?: string; service_tier?: string | null; usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number } } }>;
+  authorize: () => Promise<unknown>;
+  createResponse: (params: ResponseCreateParamsNonStreaming) => Promise<{ status?: string; output: unknown[]; output_text?: string; model?: string; service_tier?: string | null; usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number } } }>;
 };
 
 const MAX_HISTORY = 12;
@@ -81,6 +84,13 @@ function parseModelMessage(text: string, locale: string) {
 }
 
 export async function answerWithPuri(input: { context: PuriContext; message: string; history: PuriHistoryItem[]; telemetry?: PuriTelemetry; extension?: PuriCapabilityExtension }): Promise<PuriAnswer> {
+  const authorize = () => input.extension ? input.extension.authorize() : revalidatePuriContext(input.context);
+  await authorize();
+  // Standard tools are read-only. A model cannot turn guidance into a write receipt.
+  if (!input.extension && /^(?:por favor[, ]+|please[, ]+)?(?:cancel[ae]|anula|elimina|borra|mueve|reagenda|reprograma|edita|modifica|registra|actualiza|delete|cancel|reschedule|refund|reembolsa)\b/i.test(input.message.trim()) && intentFromTools([], input.message) === "ACTION_REQUEST_UNSUPPORTED") return {
+    message: input.context.locale === "es" ? "Puedo consultar información y orientarte. Para realizar ese cambio, abre el módulo correspondiente y confírmalo allí." : "I can look up information and guide you. Open the relevant module to make and confirm that change.",
+    cards: [], actions: [], toolsUsed: [],
+  };
   const openai = input.extension ? null : getPuriOpenAI();
   const allowedNames = input.extension ? (input.extension.tools ?? []).flatMap(tool => tool.type === "function" ? [tool.name] : []) : puriToolNames as readonly string[];
   const toolsUsed: string[] = [];
@@ -104,11 +114,13 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
       max_output_tokens: 1_200,
       reasoning: { effort: "low" },
       store: false,
-      ...(input.context.commercialV2 ? { service_tier: "default" as const } : {}),
+      service_tier: "default",
     };
     const response = input.extension ? await input.extension.createResponse(parameters)
-      : input.context.commercialV2 ? await withCommercialPuriUsage({ businessId: input.context.business.id, model: PURI_MODEL, parameters, maxRetries: 0, run: () => openai!.responses.create(parameters, { maxRetries: 0, timeout: 20000 }) })
-      : await openai!.responses.create(parameters);
+      : await withCommercialPuriUsage({ businessId: input.context.business.id, model: PURI_MODEL, parameters, maxRetries: 0, authorize, run: () => openai!.responses.create(parameters, { maxRetries: 0, timeout: 20000 }) });
+    await authorize();
+    if (response.status && response.status !== "completed") throw new PuriAccessError("MODEL_INCOMPLETE");
+    if (!Array.isArray(response.output)) throw new PuriAccessError("INVALID_MODEL_RESULT");
     if (input.telemetry) {
       input.telemetry.modelDurationMs += Math.round(performance.now() - modelStarted);
       input.telemetry.model = response.model ?? PURI_MODEL;
@@ -126,7 +138,7 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
         try { value = JSON.parse(response.output_text ?? ""); } catch { throw new PuriAccessError("INVALID_MODEL_RESULT"); }
         if (!value || typeof value !== "object" || Object.keys(value).length !== 1 || !("message" in value) || typeof value.message !== "string" || !value.message.trim()) throw new PuriAccessError("INVALID_MODEL_RESULT");
       }
-      return { message: evidence.length ? parseModelMessage(response.output_text ?? "", input.context.locale) : failures.includes("FORBIDDEN") ? labels(input.context.locale).forbidden : labels(input.context.locale).unavailable, cards: verifiedCards(evidence, input.context), actions: verifiedActions(evidence, input.context), toolsUsed };
+      return { message: evidence.length ? input.extension ? parseModelMessage(response.output_text ?? "", input.context.locale) : verifiedMessage(evidence, input.context) : failures.includes("FORBIDDEN") ? labels(input.context.locale).forbidden : labels(input.context.locale).unavailable, cards: verifiedCards(evidence, input.context), actions: verifiedActions(evidence, input.context), toolsUsed };
     }
     modelInput.push(...(response.output as unknown as Array<Record<string, unknown>>));
     for (const call of calls) {
@@ -147,8 +159,9 @@ export async function answerWithPuri(input: { context: PuriContext; message: str
         const resultCount = errorCode ? undefined : toolResultCount(call.name, result);
         input.telemetry.toolCalls.push({ toolName: call.name, status: errorCode ? toolFailureStatus(errorCode) : resultCount === 0 ? "NO_DATA" : "SUCCESS", errorCode, resultCount, durationMs });
       }
-      modelInput.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result) });
+      modelInput.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result, (key, value) => /^(?:email|phone|customerEmail|customerPhone|privateNotes|internalNotes|notes|mpAccessToken|apiKey)$/i.test(key) ? undefined : value) });
     }
   }
+  await authorize();
   return { message: labels(input.context.locale).unavailable, cards: verifiedCards(evidence, input.context), actions: verifiedActions(evidence, input.context), toolsUsed };
 }

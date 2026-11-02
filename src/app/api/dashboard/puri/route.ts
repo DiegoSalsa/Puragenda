@@ -11,6 +11,7 @@ import { prisma } from "@/server/db/prisma";
 import { requireSameOrigin } from "@/server/security/same-origin";
 import { PURI_MODEL } from "@/server/puri/openai-client";
 import { emptyPuriTelemetry, estimatePuriCostUsd, intentFromTools, requestStatus } from "@/server/puri/telemetry";
+import { readContactText } from "@/server/contact-flow/http";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(2_000),
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
   if (originError) return originError;
   const user = await getApiSessionUser(request);
   if (!user) return Response.json({ code: "UNAUTHENTICATED" }, { status: 401 });
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  const parsed = requestSchema.safeParse(await readContactText(request, 64000).then(JSON.parse).catch(() => null));
   if (!parsed.success) return Response.json({ code: "INVALID_REQUEST" }, { status: 400 });
   const started = performance.now();
   const sessionId = parsed.data.sessionId ?? crypto.randomUUID();
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     try {
       answer = await answerWithPuri({ context, message: parsed.data.message, history: parsed.data.history, telemetry });
     } catch (error) {
-      if (error instanceof PuriAccessError || error instanceof GrowthBudgetError) throw error;
+      if (error instanceof GrowthBudgetError || (error instanceof PuriAccessError && !["MODEL_INCOMPLETE", "INVALID_MODEL_RESULT"].includes(error.code))) throw error;
       errorCode = error instanceof Error && error.message === "PURI_NOT_CONFIGURED" ? "NOT_CONFIGURED"
         : error instanceof Error && ["APIConnectionTimeoutError", "TimeoutError", "AbortError"].includes(error.name) ? "MODEL_TIMEOUT"
         : "MODEL_OR_PROVIDER_ERROR";

@@ -45,6 +45,7 @@ function extension() {
       },
     ],
     instructions: "Aggregate-only growth capabilities",
+    authorize: vi.fn().mockResolvedValue(undefined),
     execute: vi
       .fn()
       .mockResolvedValue({ counts: { current: 2, previous: 12 } }),

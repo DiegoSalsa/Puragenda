@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/prisma";
 import { assertGrowthSandbox } from "./access";
+import { effectiveSnapshotAccess } from "@/server/services/commercial-plan-access";
 export async function growthPlatformMetrics(actorId: string, now = new Date()) {
   assertGrowthSandbox();
   const user = await prisma.user.findUnique({
@@ -21,25 +22,11 @@ export async function growthPlatformMetrics(actorId: string, now = new Date()) {
     runStatuses,
     requests,
   ] = await Promise.all([
-    prisma.commercialSubscription.count({
+    prisma.commercialSubscription.findMany({
       where: {
         planCode: "PURAGENDA_PLUS",
         business: { deletedAt: null },
-        OR: [
-          {
-            status: { in: ["ACTIVE", "SCHEDULED_CHANGE"] },
-            periodEnd: { gt: now },
-          },
-          {
-            status: "PAST_DUE_GRACE",
-            periodEnd: { not: null },
-            gracePeriodEndsAt: { gt: now },
-          },
-        ],
-        periodStart: { lte: now },
-        lastPaymentStatus: "CONFIRMED",
-        lastPaymentAt: { lte: now },
-        lastPaymentEventId: { not: null },
+        status: { in: ["ACTIVE", "SCHEDULED_CHANGE", "PAST_DUE_GRACE", "PAST_DUE_BLOCKED"] },
       },
     }),
     prisma.puriGrowthRun.findMany({
@@ -100,7 +87,7 @@ export async function growthPlatformMetrics(actorId: string, now = new Date()) {
   ]);
   return {
     periodStart: since,
-    eligiblePaidSubscriptions: eligible,
+    eligiblePaidSubscriptions: eligible.filter(sub => effectiveSnapshotAccess(sub, now).capabilities.includes("puri.plus")).length,
     businessesUsing: using.length,
     signals,
     recommendations,

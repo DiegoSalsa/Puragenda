@@ -5,6 +5,8 @@ import { PuriAccessError, type PuriContext } from "@/server/puri/types";
 const mocks = vi.hoisted(() => ({ create: vi.fn(), execute: vi.fn() }));
 vi.mock("@/server/puri/openai-client", () => ({ getPuriOpenAI: () => ({ responses: { create: mocks.create } }), PURI_MODEL: "gpt-6-luna" }));
 vi.mock("@/server/puri/tools", () => ({ executePuriTool: mocks.execute, puriToolNames: ["getTodayOverview", "getRevenueSummary"] }));
+vi.mock("@/server/puri/authorization", () => ({ revalidatePuriContext: async (context: PuriContext) => context }));
+vi.mock("@/server/puri/commercial-usage", () => ({ withCommercialPuriUsage: async (input: { run: () => Promise<unknown> }) => input.run() }));
 
 import { answerWithPuri } from "@/server/puri/orchestrator";
 import { emptyPuriTelemetry } from "@/server/puri/telemetry";
@@ -25,8 +27,9 @@ describe("Puri orchestration", () => {
     mocks.create.mockResolvedValueOnce({ output: [], output_text: '{"message":"Tienes dos citas hoy."}' });
     mocks.execute.mockResolvedValue({ counts: { appointments: 2, openSlots: 1 }, canSeeMoney: false });
     const answer = await answerWithPuri({ context, message: "¿Qué tengo hoy?", history: [] });
-    expect(answer).toMatchObject({ message: "Tienes dos citas hoy.", cards: [{ type: "metric", value: 2 }], actions: [{ id: "agenda" }] });
-    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ model: "gpt-6-luna", store: false, parallel_tool_calls: false, tool_choice: "required" }));
+    expect(answer).toMatchObject({ cards: [{ type: "metric", value: 2 }], actions: [{ id: "agenda" }] });
+    expect(answer.message).toContain("Citas: 2");
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ model: "gpt-6-luna", store: false, parallel_tool_calls: false, tool_choice: "required" }), { maxRetries: 0, timeout: 20000 });
   });
 
   it("gives a permission response without exposing denied data", async () => {

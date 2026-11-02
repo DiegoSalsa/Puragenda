@@ -9,7 +9,7 @@ type ModelResult = { model?: string; service_tier?: string | null; usage?: { inp
  * transport stays with the existing orchestrator; this layer never invokes it
  * before verifying the grant and reserving the configured allowance. */
 export async function withCommercialPuriUsage<T extends ModelResult>(input: {
-  businessId: string; model: string; parameters: unknown; maxRetries: number; run: () => Promise<T>;
+  businessId: string; model: string; parameters: unknown; maxRetries: number; authorize?: () => Promise<unknown>; run: () => Promise<T>;
 }) {
   const access = await getCommercialPlanAccess(input.businessId);
   if (!access.has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
@@ -24,6 +24,15 @@ export async function withCommercialPuriUsage<T extends ModelResult>(input: {
     reservation = await reserveGrowthUsage({ businessId: input.businessId, category: "STANDARD_INTERACTIVE", key: `standard:${randomUUID()}`, inputHash: commercialHash(input.parameters), micros });
   } catch (error) {
     if (error instanceof Error && error.message === "COMMERCIAL_USAGE_LIMITS_UNDEFINED") throw new GrowthBudgetError(error.message);
+    throw error;
+  }
+  // A reservation can wait behind another transaction. Never reuse the grant
+  // observed before that wait. A denial here is provably before provider I/O.
+  try {
+    if (!(await getCommercialPlanAccess(input.businessId)).has("puri.standard")) throw new PuriAccessError("FORBIDDEN");
+    await input.authorize?.();
+  } catch (error) {
+    await settleGrowthUsage(reservation.reservation.id, { actualMicros: 0, model: input.model, errorCode: "AUTHORIZATION_REVOKED_BEFORE_CALL" });
     throw error;
   }
   try {

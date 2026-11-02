@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   assertCommercialSandbox,
   commercialHash,
@@ -25,6 +26,7 @@ export function growthSandboxEnabled() {
 export type GrowthScope = {
   businessId: string;
   actorId: string;
+  tokenVersion?: number;
   locationId: string | null;
   staffId: string | null;
   scopeKey: string;
@@ -40,9 +42,10 @@ export async function createGrowthScope(
   context: PuriContext,
   allLocations = false,
   now = new Date(),
+  db: Prisma.TransactionClient = prisma,
 ): Promise<GrowthScope> {
   assertGrowthSandbox();
-  const business = await prisma.business.findUniqueOrThrow({
+  const business = await db.business.findUniqueOrThrow({
     where: { id: context.business.id },
     select: {
       id: true,
@@ -72,19 +75,19 @@ export async function createGrowthScope(
       },
     },
   });
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: context.user.id },
-    select: { id: true, role: true, deletedAt: true },
+    select: { id: true, role: true, deletedAt: true, tokenVersion: true },
   });
-  if (!user || user.deletedAt || business.deletedAt)
+  if (!user || user.deletedAt || business.deletedAt || (context.user.tokenVersion !== undefined && context.user.tokenVersion !== user.tokenVersion))
     throw new PuriAccessError("FORBIDDEN");
   const owner = business.ownerId === user.id;
-  const member = await prisma.staff.findFirst({
+  const member = await db.staff.findFirst({
     where: { businessId: business.id, userId: user.id, isActive: true },
     select: { id: true },
   });
   if (!owner && !member) throw new PuriAccessError("FORBIDDEN");
-  const permissions = await getEffectiveBusinessPermissions(user, business);
+  const permissions = await getEffectiveBusinessPermissions(user, business, db);
   const allAgendas = permissions.includes(P.APPOINTMENTS_VIEW_ALL);
   if (
     !allAgendas &&
@@ -95,7 +98,7 @@ export async function createGrowthScope(
   const location =
     allLocations || !context.location
       ? null
-      : await prisma.businessLocation.findFirst({
+      : await db.businessLocation.findFirst({
           where: {
             id: context.location.id,
             businessId: business.id,
@@ -132,6 +135,7 @@ export async function createGrowthScope(
   return {
     ...identity,
     actorId: user.id,
+    tokenVersion: user.tokenVersion,
     owner,
     scopeKey: commercialHash(identity),
     timezone: location?.timezone || business.timezone,
@@ -142,14 +146,15 @@ export async function createGrowthScope(
 export async function revalidateGrowthScope(
   scope: GrowthScope,
   now = new Date(),
+  db: Prisma.TransactionClient = prisma,
 ) {
   const context = {
-    user: { id: scope.actorId },
+    user: { id: scope.actorId, tokenVersion: scope.tokenVersion },
     business: { id: scope.businessId },
     location: scope.locationId ? { id: scope.locationId } : null,
     ownAgenda: !!scope.staffId,
   } as PuriContext;
-  const current = await createGrowthScope(context, !scope.locationId, now);
+  const current = await createGrowthScope(context, !scope.locationId, now, db);
   if (commercialHash(current) !== commercialHash(scope))
     throw new PuriAccessError("SCOPE_CHANGED");
   return current;

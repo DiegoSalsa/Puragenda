@@ -6,6 +6,7 @@ import { createPuriContext } from "@/server/puri/context";
 import { checkPuriRateLimit } from "@/server/puri/rate-limit";
 import {
   createGrowthScope,
+  revalidateGrowthScope,
   growthSandboxEnabled,
 } from "@/server/puri/growth/access";
 import {
@@ -120,8 +121,7 @@ export async function POST(request: NextRequest) {
       delete publicResult.costMicros; delete publicResult.costKnown; delete publicResult.errorCode;
       result = publicResult;
     }
-    return Response.json(
-      {
+    const responseData = {
         result,
         signals: await listGrowthSignals(scope),
         recommendations: (await listGrowthRecommendations(scope)).map(row => dashboard ? { id: row.id, title: row.title, explanation: row.explanation, status: row.status, version: row.version, contentHash: row.contentHash, strategy: row.strategy, expiresAt: row.expiresAt, evidence: row.evidence } : row),
@@ -136,9 +136,9 @@ export async function POST(request: NextRequest) {
           location: context.location?.name ?? "Todas las sucursales",
           timezone: scope.timezone,
         },
-      },
-      { headers: { "Cache-Control": "private, no-store" } },
-    );
+      };
+    await revalidateGrowthScope(scope);
+    return Response.json(responseData, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     const code =
       error instanceof PuriAccessError

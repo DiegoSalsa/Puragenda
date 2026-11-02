@@ -3,6 +3,7 @@ import { getCurrentSessionUser } from "@/server/auth/user-session";
 import { createPuriContext } from "@/server/puri/context";
 import {
   createGrowthScope,
+  revalidateGrowthScope,
   growthSandboxEnabled,
 } from "@/server/puri/growth/access";
 import { listGrowthSignals } from "@/server/puri/growth/analysis";
@@ -104,6 +105,7 @@ export async function PuriPlusWorkspace({
         },
       }),
     ) as GrowthLabData;
+    await revalidateGrowthScope(scope);
   } catch (error) {
     if (!(error instanceof PuriAccessError)) throw error;
     return (

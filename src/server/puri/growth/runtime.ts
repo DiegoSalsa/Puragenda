@@ -52,6 +52,7 @@ export function createGrowthExtension(
     tier: allowPrepare ? "PURI_PLUS_PREPARE" : "PURI_PLUS",
     tools: growthToolDefinitions(scope, allowPrepare),
     instructions: GROWTH_INSTRUCTIONS,
+    authorize: () => revalidateGrowthScope(scope),
     execute: (name, args) => {
       if (
         (name === "prepare_contact_flow" ||
@@ -83,6 +84,12 @@ export function createGrowthExtension(
       if (reserved.duplicate) throw new Error("MODEL_ALREADY_ATTEMPTED");
       operationMicros += micros;
       options.reservationIds?.push(reserved.reservation.id);
+      try {
+        await revalidateGrowthScope(scope);
+      } catch (error) {
+        await settleGrowthUsage(reserved.reservation.id, { actualMicros: 0, model: PURI_MODEL, errorCode: "AUTHORIZATION_REVOKED_BEFORE_CALL" });
+        throw error;
+      }
       try {
         // Same singleton and Responses API as standard Puri; no automatic retry after an ambiguous charge.
         const response = options.transport
@@ -246,45 +253,53 @@ export async function answerWithGrowthPuri(
         ? error.message
         : "MODEL_UNAVAILABLE";
   }
-  const usages = await prisma.puriUsageReservation.findMany({
-    where: { id: { in: reservationIds }, businessId: scope.businessId },
-  });
-  const costKnown =
-      usages.length > 0 &&
-      usages.every((r) => r.state === "SETTLED" && r.actualMicros !== null),
+  await revalidateGrowthScope(scope);
+  // Optional monitoring must not disable a verified deterministic answer.
+  // Model prose is never a source of commercial facts or execution receipts.
+  answer = { ...answer, message: fallback };
+  let costKnown = false, costMicros: number | null = null;
+  try {
+    const usages = await prisma.puriUsageReservation.findMany({
+      where: { id: { in: reservationIds }, businessId: scope.businessId },
+    });
+    costKnown =
+        usages.length > 0 &&
+        usages.every((r) => r.state === "SETTLED" && r.actualMicros !== null);
     costMicros = costKnown
-      ? usages.reduce((n, r) => n + r.actualMicros!, 0)
-      : null;
-  await prisma.puriRequest.create({
-    data: {
-      businessId: scope.businessId,
-      businessLocationId: scope.locationId,
-      userId: scope.actorId,
-      role: context.user.role,
-      capabilityTier: scope.canPrepare ? "PURI_PLUS_PREPARE" : "PURI_PLUS",
-      sessionId: randomUUID(),
-      model: telemetry.model,
-      intent: options.recommendationId ? "growth_recommendation" : "growth",
-      status: errorCode ? "ERROR" : requestStatus(telemetry.toolCalls),
-      errorCode,
-      totalDurationMs: Math.round(performance.now() - started),
-      modelDurationMs: telemetry.modelDurationMs,
-      toolsDurationMs: telemetry.toolsDurationMs,
-      promptTokens: telemetry.promptTokens,
-      completionTokens: telemetry.completionTokens,
-      cachedTokens: telemetry.cachedTokens,
-      estimatedCostUsd: costMicros === null ? null : costMicros / 1e6,
-      completedAt: new Date(),
-      toolCalls: {
-        create: telemetry.toolCalls.map((t) => ({
-          ...t,
-          businessId: scope.businessId,
-          userId: scope.actorId,
-        })),
+        ? usages.reduce((n, r) => n + r.actualMicros!, 0)
+        : null;
+    await prisma.puriRequest.create({
+      data: {
+        businessId: scope.businessId,
+        businessLocationId: scope.locationId,
+        userId: scope.actorId,
+        role: context.user.role,
+        capabilityTier: scope.canPrepare ? "PURI_PLUS_PREPARE" : "PURI_PLUS",
+        sessionId: randomUUID(),
+        model: telemetry.model,
+        intent: options.recommendationId ? "growth_recommendation" : "growth",
+        status: errorCode ? "ERROR" : requestStatus(telemetry.toolCalls),
+        errorCode,
+        totalDurationMs: Math.round(performance.now() - started),
+        modelDurationMs: telemetry.modelDurationMs,
+        toolsDurationMs: telemetry.toolsDurationMs,
+        promptTokens: telemetry.promptTokens,
+        completionTokens: telemetry.completionTokens,
+        cachedTokens: telemetry.cachedTokens,
+        estimatedCostUsd: costMicros === null ? null : costMicros / 1e6,
+        completedAt: new Date(),
+        toolCalls: {
+          create: telemetry.toolCalls.map((t) => ({
+            ...t,
+            businessId: scope.businessId,
+            userId: scope.actorId,
+          })),
+        },
       },
-    },
-  });
+    });
+  } catch { console.error("[puri-plus] telemetry write failed"); }
   if (options.recommendationId && !errorCode) {
+    await revalidateGrowthScope(scope);
     await prisma.$transaction(async (tx) => {
       const r = await tx.puriGrowthRecommendation.findFirstOrThrow({
         where: {
@@ -302,7 +317,7 @@ export async function answerWithGrowthPuri(
             ...r,
             explanation: answer.message,
           }),
-          generation: "AI_EXPLANATION",
+          generation: "DETERMINISTIC",
           model: telemetry.model,
           inputTokens: telemetry.promptTokens,
           outputTokens: telemetry.completionTokens,
@@ -313,5 +328,6 @@ export async function answerWithGrowthPuri(
       });
     });
   }
+  await revalidateGrowthScope(scope);
   return { answer, fallback: !!errorCode, errorCode, costKnown, costMicros };
 }

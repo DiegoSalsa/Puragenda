@@ -18,6 +18,7 @@ export async function lockGrowthScope(
   scope: GrowthScope,
 ) {
   await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope.businessId + ":" + scope.scopeKey},0))::text`;
+  await revalidateGrowthScope(scope, new Date(), tx);
 }
 export async function analyzeGrowth(
   scope: GrowthScope,

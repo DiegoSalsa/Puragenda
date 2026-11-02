@@ -978,7 +978,7 @@ suite(
       expect(result.errorCode).toBe("MODEL_PRICE_UNKNOWN");
       expect(transport).not.toHaveBeenCalled();
     });
-    it("persists an AI explanation through the shared orchestrator using returned usage and configured fixture prices", async () => {
+    it("persists a grounded explanation through the shared orchestrator using returned usage and configured fixture prices", async () => {
       const f = await fixture(),
         a = await analyzeGrowth(f.scope),
         r = await draftGrowthRecommendation(
@@ -1035,7 +1035,7 @@ suite(
           where: { id: r.id },
         }),
       ).toMatchObject({
-        generation: "AI_EXPLANATION",
+        generation: "DETERMINISTIC",
         inputTokens: 300,
         outputTokens: 50,
         cachedTokens: 50,

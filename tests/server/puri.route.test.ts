@@ -42,6 +42,10 @@ describe("Puri API", () => {
     expect((await POST(request({ message: "x".repeat(2001) }))).status).toBe(400);
     expect(mocks.answer).not.toHaveBeenCalled();
   });
+  it("Audit 07 bounds a chunked body before parsing ignored fields", async () => {
+    expect((await POST(request({ message: 'Hoy', padding: 'x'.repeat(64001) }))).status).toBe(400);
+    expect(mocks.answer).not.toHaveBeenCalled();
+  });
 
   it("uses server locale, scopes rate limiting and returns a structured uncached answer", async () => {
     const response = await POST(request({ message: "Hoy", context: { pathname: "/dashboard", locale: "de" } }));
@@ -66,6 +70,11 @@ describe("Puri API", () => {
     const response = await POST(request({ message: "Hoy" }));
     expect(response.status).toBe(503);
     expect(JSON.stringify(await response.json())).not.toContain("secret upstream error");
+  });
+  it.each(['MODEL_INCOMPLETE', 'INVALID_MODEL_RESULT'])('Audit 07 reports provider failure %s as unavailable instead of a permission denial', async code => {
+    mocks.answer.mockRejectedValue(new PuriAccessError(code));
+    const response = await POST(request({ message: 'Hoy' }));
+    expect(response.status).toBe(503); expect(await response.json()).toEqual({ code: 'UNAVAILABLE' });
   });
 
   it("records provider timeouts as structured timeout metadata", async () => {
