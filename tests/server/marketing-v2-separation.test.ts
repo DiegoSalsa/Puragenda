@@ -11,20 +11,39 @@ vi.mock("@/server/services/marketing.service", () => ({ getMarketingLimits: mock
 vi.mock("@/server/email/resend", () => ({ resend: { emails: { send: mocks.send }, batch: { send: mocks.send } } }));
 vi.mock("@/server/services/client-portal.service", () => ({ issueClientPortalEmailTokens: mocks.tokens, getClientPortalAppUrl: () => "http://localhost", normalizeClientPortalEmail: (s: string) => s }));
 import { POST } from "@/app/api/marketing/send/route";
+import { marketingCampaignEmail, withClientPortalAccess } from "@/server/email/templates";
 describe("V2 cannot bypass reviewed Contact Flow through legacy marketing", () => {
   beforeEach(() => { vi.resetAllMocks(); mocks.access.mockResolvedValue({ allowed: true }); });
   it.each(["PURAGENDA", "PURAGENDA_PLUS"])("blocks %s before selecting an audience or invoking Resend", async plan => {
     mocks.subscription.mockResolvedValue({ plan, isTrial: true });
-    const response = await POST(new NextRequest("http://localhost/api/marketing/send", { method: "POST", body: "{}" }));
+    const response = await POST(new NextRequest("http://localhost/api/marketing/send", { method: "POST", headers: { origin: "http://localhost" }, body: "{}" }));
     expect(response.status).toBe(409); expect(await response.json()).toMatchObject({ code: "CONTACT_FLOW_REQUIRED" });
     expect(mocks.quota).not.toHaveBeenCalled(); expect(mocks.send).not.toHaveBeenCalled();
   });
-  it("04-03 legacy campaigns retain the commercial CTA without creating authentication credentials", async () => {
+  it("keeps unsafe legacy dispatch paused without selecting recipients or using Resend", async () => {
     mocks.subscription.mockResolvedValue({ plan: "EQUIPO" }); mocks.quota.mockReturnValueOnce(0).mockReturnValueOnce({ maxCampaignsPerMonth: 1, maxEmails: 10 });
     mocks.audience.mockResolvedValue([{ name: "Synthetic", email: "c@synthetic.invalid" }]); mocks.tokens.mockResolvedValue(new Map([["c@synthetic.invalid", "synthetic-auth-token"]]));
-    const response = await POST(new NextRequest("http://localhost/api/marketing/send", { method: "POST", body: JSON.stringify({ subject: "Synthetic", message: "Synthetic" }) }));
-    expect(response.status).toBe(200);
+    const response = await POST(new NextRequest("http://localhost/api/marketing/send", { method: "POST", headers: { origin: "http://localhost" }, body: JSON.stringify({ subject: "Synthetic", message: "Synthetic" }) }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: "LEGACY_MARKETING_REVIEW_REQUIRED" });
+    expect(mocks.audience).not.toHaveBeenCalled();
+    expect(mocks.send).not.toHaveBeenCalled();
     expect(mocks.tokens).not.toHaveBeenCalled();
-    expect(JSON.stringify(mocks.send.mock.calls)).not.toContain("/mi-agenda/entrar/");
+  });
+  it("04-03 keeps the legacy commercial template and portal CTA free of authentication credentials", () => {
+    const template = withClientPortalAccess(marketingCampaignEmail({ clientName: "Synthetic", businessName: "Synthetic", subject: "Synthetic", body: "Synthetic", widgetUrl: "http://localhost/widget/synthetic" }), "http://localhost/mi-agenda");
+    expect(template.html).toContain("/mi-agenda");
+    expect(template.html).not.toContain("/mi-agenda/entrar/");
+  });
+  it("rejects cross-site requests before selecting an audience or invoking Resend", async () => {
+    mocks.subscription.mockResolvedValue({ plan: "EQUIPO" });
+    const response = await POST(new NextRequest("http://localhost/api/marketing/send", {
+      method: "POST",
+      headers: { origin: "https://attacker.example" },
+      body: JSON.stringify({ subject: "Synthetic", message: "Synthetic" }),
+    }));
+    expect(response.status).toBe(403);
+    expect(mocks.audience).not.toHaveBeenCalled();
+    expect(mocks.send).not.toHaveBeenCalled();
   });
 });
