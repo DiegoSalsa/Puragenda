@@ -142,7 +142,7 @@ Una invocación mixta de todas las suites en paralelo no se considera certificac
 
 ### Dependencias y seguridad
 
-`npm audit --omit=dev` mantiene **0 vulnerabilidades productivas**. La auditoría completa conserva **23 avisos exclusivamente de desarrollo** (21 moderados y 2 bajos): ESLint/eslint-config-next, TypeScript ESLint, Vitest, shadcn/ts-morph, minimatch, deepmerge y sus transitivas. No son alcanzables desde el runtime productivo; no se ejecutó `npm audit fix`, `--force` ni actualización masiva. El escaneo de los 19 commits de la rama terminó con 0 hallazgos y no hay secretos, credenciales, datos reales ni temporales versionados.
+`npm audit --omit=dev` mantiene **0 vulnerabilidades productivas**. La auditoría completa conserva **23 avisos exclusivamente de desarrollo** (21 moderados y 2 bajos): ESLint/eslint-config-next, TypeScript ESLint, Vitest, shadcn/ts-morph, minimatch, deepmerge y sus transitivas. No son alcanzables desde el runtime productivo; no se ejecutó `npm audit fix`, `--force` ni actualización masiva. El escaneo de los 19 commits de la rama terminó con 0 hallazgos y no se añadieron secretos, credenciales, datos reales ni temporales al diff; los archivos `scratch` ya versionados en la base no fueron modificados.
 
 ### Estado de integración
 
