@@ -15,6 +15,20 @@ jobs:
   baseline:
     if: github.ref != 'refs/heads/fix/puragenda-next-audit-02-agenda' && github.head_ref != 'fix/puragenda-next-audit-02-agenda' && github.ref != 'refs/heads/fix/puragenda-next-audit-03-services-staff' && github.head_ref != 'fix/puragenda-next-audit-03-services-staff' && github.ref != 'refs/heads/fix/puragenda-next-audit-04-clients-privacy' && github.head_ref != 'fix/puragenda-next-audit-04-clients-privacy' && github.ref != 'refs/heads/fix/puragenda-next-audit-05-billing-subscriptions' && github.head_ref != 'fix/puragenda-next-audit-05-billing-subscriptions' && github.ref != 'refs/heads/fix/puragenda-next-audit-06-websites-plus' && github.head_ref != 'fix/puragenda-next-audit-06-websites-plus' && github.ref != 'refs/heads/fix/puragenda-next-audit-07-puri-onboarding' && github.head_ref != 'fix/puragenda-next-audit-07-puri-onboarding' && github.ref != 'refs/heads/fix/puragenda-next-audit-08-contact-flow' && github.head_ref != 'fix/puragenda-next-audit-08-contact-flow' && github.ref != 'refs/heads/integration/puragenda-next-onboarding-v2' && github.head_ref != 'integration/puragenda-next-onboarding-v2' && github.ref != 'refs/heads/integration/puragenda-next-onboarding-v2-clean' && github.head_ref != 'integration/puragenda-next-onboarding-v2-clean' && github.ref != 'refs/heads/fix/puragenda-next-onboarding-09a-c3' && github.head_ref != 'fix/puragenda-next-onboarding-09a-c3' && github.ref != 'refs/heads/fix/puragenda-next-onboarding-migration-certification' && github.head_ref != 'fix/puragenda-next-onboarding-migration-certification'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: puragenda_commercial_test_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-synthetic-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d puragenda_commercial_test_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,7 +40,14 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      - name: Prepare disposable PostgreSQL for build
+        env:
+          COMMERCIAL_V2_TEST_DATABASE_URL: postgresql://postgres:ci-synthetic-only@127.0.0.1:5432/puragenda_commercial_test_ci
+        run: node scripts/commercial-migrations.mjs bootstrap
+      - name: Build without production services or secrets
+        env:
+          COMMERCIAL_V2_TEST_DATABASE_URL: postgresql://postgres:ci-synthetic-only@127.0.0.1:5432/puragenda_commercial_test_ci
+        run: npm run build:commercial:isolated
 
   codex-security:
     if: github.event_name == 'pull_request' && github.head_ref != 'fix/puragenda-next-audit-02-agenda' && github.ref != 'refs/heads/fix/puragenda-next-audit-02-agenda' && github.head_ref != 'fix/puragenda-next-audit-03-services-staff' && github.ref != 'refs/heads/fix/puragenda-next-audit-03-services-staff' && github.head_ref != 'fix/puragenda-next-audit-04-clients-privacy' && github.ref != 'refs/heads/fix/puragenda-next-audit-04-clients-privacy' && github.head_ref != 'fix/puragenda-next-audit-05-billing-subscriptions' && github.ref != 'refs/heads/fix/puragenda-next-audit-05-billing-subscriptions' && github.head_ref != 'fix/puragenda-next-audit-06-websites-plus' && github.ref != 'refs/heads/fix/puragenda-next-audit-06-websites-plus' && github.head_ref != 'fix/puragenda-next-audit-07-puri-onboarding' && github.ref != 'refs/heads/fix/puragenda-next-audit-07-puri-onboarding' && github.head_ref != 'fix/puragenda-next-audit-08-contact-flow' && github.ref != 'refs/heads/integration/puragenda-next-onboarding-v2' && github.head_ref != 'integration/puragenda-next-onboarding-v2' && github.ref != 'refs/heads/integration/puragenda-next-onboarding-v2-clean' && github.head_ref != 'integration/puragenda-next-onboarding-v2-clean' && github.ref != 'refs/heads/fix/puragenda-next-onboarding-09a-c3' && github.head_ref != 'fix/puragenda-next-onboarding-09a-c3' && github.ref != 'refs/heads/fix/puragenda-next-onboarding-migration-certification' && github.head_ref != 'fix/puragenda-next-onboarding-migration-certification' && github.ref != 'refs/heads/fix/puragenda-next-audit-08-contact-flow'
