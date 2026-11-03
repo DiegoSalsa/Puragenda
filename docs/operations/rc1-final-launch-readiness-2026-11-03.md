@@ -4,7 +4,7 @@
 
 Base RC1: `a3fd2a35480d8152a33550d42e510291a49664a7`. Producción/main: `e74c92237e47db43425a7d47209520967e51bfb0`. Rama: `fix/puragenda-next-final-launch-blockers`. Ambas referencias locales/remotas conservan los SHA esperados. No se integró esta corrección a RC1 ni a main.
 
-El build local está resuelto. Faltan staging remoto aislado y protección remota general contra previews de ramas antiguas. Esto corrige el veredicto anterior de este informe: **GO CON CONDICIONES no corresponde**. Las lecturas remotas son observaciones puntuales, no monitoreo continuo.
+El build local está resuelto. Tras autorización específica del propietario se aplicaron el filtro remoto de builds, las dos reglas GitHub y la creación de recursos independientes de staging. Falta configurar y certificar el runtime remoto y su aislamiento efectivo: **GO CON CONDICIONES no corresponde**. Las lecturas remotas son observaciones puntuales, no monitoreo continuo.
 
 ## A. Build y pruebas ejecutadas
 
@@ -34,21 +34,23 @@ Navegador local: registro sintético, entrada automática al onboarding V2, nego
 
 ## B. Vercel y GitHub
 
-Panel autenticado: `purocode-projects/puragenda`, producción Ready en main `e74c922`. Raíz vacía, Node 24.x y build sin override que omita el comando versionado. Ignored Build Step **Automatic**, fuentes heredadas **No restrictions**, cero Deploy Hooks observados (ninguno invocado). Build machine **Elastic**, concurrencia **Run all builds immediately on-demand**, sin checks de promoción.
+Panel autenticado: `purocode-projects/puragenda`, producción Ready en main `e74c922`. Raíz vacía, Node 24.x y build sin override que omita el comando versionado. Ignored Build Step cambió, con autorización específica, de **Automatic** a **Only build production**; persistencia confirmada tras recarga y en Project Settings. Fuentes heredadas **No restrictions**, cero Deploy Hooks observados (ninguno invocado). Build machine **Elastic**, concurrencia **Run all builds immediately on-demand**, sin checks de promoción; estos otros campos no se modificaron.
 
 Commit publicado `1aa408fa23f711ce51c4b75085fcab5b9dff2147`: `git.deploymentEnabled` contiene `**: false`, `main: true` y exclusiones históricas. Vercel devolvió **No matches found** al buscar la rama exacta; GitHub devolvió cero deployments para ese SHA. Esto acredita el bloqueo observado de **esta rama con esta configuración**. No protege retroactivamente ramas sin ese archivo ni impide acciones manuales de administradores.
 
-Cambio preparado, **no aplicado**: Ignored Build Step → **Only build production**. Conserva Production y cancela Preview de ramas antiguas. Vercel puede crear registros CANCELED que consumen cuotas/concurrencia: no equivale a impedir su creación inicial. La allowlist versionada sigue siendo la primera barrera. No se desconectó GitHub ni se modificó el proyecto remoto. [Documentación](https://vercel.com/docs/project-configuration/project-settings).
+Cambio **aplicado y verificado**: Ignored Build Step → **Only build production**, comando oficial `if [ "$VERCEL_ENV" == "production" ]; then exit 1; else exit 0; fi`. Conserva Production y cancela Preview de ramas antiguas. Vercel puede crear registros CANCELED que consumen cuotas/concurrencia: no equivale a impedir su creación inicial. No se provocó un deployment como prueba. La allowlist versionada sigue siendo la primera barrera y no se desconectó GitHub productivo. [Documentación](https://vercel.com/docs/project-configuration/project-settings).
 
-GitHub autenticado muestra **cero rulesets y ninguna protección clásica**. [Actions 41501071169](https://github.com/DiegoSalsa/Puragenda/actions/runs/41501071169): failure sin pasos, cuenta bloqueada por problema de facturación; codex-security omitido. La rama de corrección no dispara push (workflow limitado a main); cero checks no significa CI aprobado.
+GitHub pasó de cero reglas a **dos rulesets Active** tras autorización y verificación de identidad del propietario: [26426317, historial main/RC1](https://github.com/DiegoSalsa/Puragenda/settings/rules/26426317), sin bypass y con deletion/non_fast_forward; [26426379, revisión main](https://github.com/DiegoSalsa/Puragenda/settings/rules/26426379), PR, una aprobación, descartar aprobaciones obsoletas y resolver conversaciones, excepción administrativa sólo por PR. RC1 conserva fast-forward. Parámetros comprobados en el formulario persistido; la primera regla también por REST. Después la API pública alcanzó su rate limit y la comprobación continuó por panel, sin eludirlo. [Actions 41501071169](https://github.com/DiegoSalsa/Puragenda/actions/runs/41501071169) sigue failure sin pasos por facturación; codex-security omitido. Cero checks en esta rama no significa CI aprobado.
 
-El [plan externo](rc1-final-launch-external-plan-2026-11-03.json) prepara reglas para dos socios: historial protegido en main/RC1; PR y una revisión en main. No exige todavía un check imposible de ejecutar. Se corrigió localmente `security.yml`: servicio PostgreSQL 17 desechable, bootstrap certificado y `build:commercial:isolated`, sin credenciales productivas ni variables de base expuestas a las unitarias. Los comandos de bootstrap/build pasaron localmente; el workflow completo aún no se ejecutó en GitHub. Antes de lanzamiento: desbloquear Actions, ejecutar baseline y autorizar exigir su nombre real. El agente no paga ni cambia planes. [Reglas GitHub](https://docs.github.com/en/rest/repos/rules?apiVersion=2026-03-10).
+El [plan externo](rc1-final-launch-external-plan-2026-11-03.json) registra lo aplicado. No exige todavía un check imposible de ejecutar. `security.yml` usa PostgreSQL 17 desechable, bootstrap certificado y `build:commercial:isolated`, sin credenciales productivas ni variables de base expuestas a las unitarias. Los comandos pasaron localmente; el workflow completo no se ejecutó en GitHub. Antes de lanzamiento: desbloquear Actions, ejecutar baseline y autorizar exigir su nombre real. El agente no paga ni cambia planes. [Reglas GitHub](https://docs.github.com/en/rest/repos/rules?apiVersion=2026-03-10).
 
 ## C. Staging y PostgreSQL
 
-**Staging remoto no creado ni certificado.** No se identificó proyecto Puragenda de staging reutilizable. Vercel Storage no mostró bases. Neon PuroCode mostró Pressita y PuroCode Capture; no se reutilizaron recursos ajenos.
+**Recursos remotos creados; runtime todavía no desplegado ni certificado.** Vercel: [puragenda-next-staging](https://vercel.com/purocode-projects/puragenda-next-staging), ID `prj_ma5nkDSDzQGBCFMhroTTzsGi07YD`, creado mediante la opción oficial de proyecto vacío y renombrado desde su nombre temporal. Panel: No Production Deployment, No Preview Deployments, Connect Git, cero variables de proyecto y **No shared variables linked**. Vercel Authentication está activada en Standard Protection (incluye Preview); sin bypass secrets ni enlaces compartidos. No se activó Password Protection de pago.
 
-Preparado: proyecto `puragenda-next-staging`, nueva base PostgreSQL **17**, dominio temporal `*.vercel.app` protegido por autenticación, variables exclusivas, sin Git auto-deploy ni dominios propios. No se usará el dominio `next-staging.puragenda.cl` del perfil histórico: DNS no está autorizado.
+Neon PuroCode: [puragenda-next-staging](https://console.neon.tech/app/projects/divine-glade-04170205/branches/br-quiet-fog-bebr4tlj), proyecto `divine-glade-04170205`, rama `br-quiet-fog-bebr4tlj`, base `puragenda_next_staging`, **PostgreSQL 17**, AWS Ohio y **Free plan**, comprobados después de crear. No se habilitaron almacenamiento, funciones, AI gateway, Realtime ni Better Auth. Pressita y PuroCode Capture no se reutilizaron. No se leyeron ni copiaron cadenas de conexión.
+
+El proyecto nuevo mantiene Node 24.x; se prepararon Framework Next.js, build `node scripts/vercel-build.mjs` e install `npm ci`, sin compilar. Faltan secretos nuevos por canal protegido, migraciones exclusivamente de staging y pruebas de roles/runtime antes del primer Preview autorizado. No hay cron desplegado. No se usará `next-staging.puragenda.cl` del perfil histórico: DNS no está autorizado.
 
 Crear el proyecto **sin desplegar**. El primer deploy autorizado debe ser **Preview**: importar y pulsar Deploy como Production ejecutaría la rama migradora de `vercel-build.mjs`. Usar primero el bundle bootstrap/cutover de `scripts/prepare-rc1-staging-release.mjs` contra la base nueva identificada en el panel. El fingerprint de URL evita errores de transcripción, pero no prueba aislamiento por sí solo. En el artefacto exclusivo de staging: `crons: []`, `git.deploymentEnabled: false`; no aplicar esos valores al proyecto productivo.
 
@@ -62,9 +64,9 @@ Migraciones **locales nuevamente ejecutadas**: bootstrap desde cero y actualizac
 
 | Área | Estado real y evidencia | Bloqueante |
 |---|---|---|
-| Vercel | Rama corregida sin deployment observado; protección global pendiente | Sí |
+| Vercel | Allowlist y filtro remoto Only build production aplicados; rama sin deployment observado | Runtime staging pendiente |
 | PostgreSQL | Migraciones, diff y restore certificados localmente; remoto pendiente | Sí |
-| GitHub | Sin reglas; CI bloqueado por facturación | Sí |
+| GitHub | Dos rulesets Active; CI bloqueado por facturación | CI pendiente |
 | Registro | HTTP y navegador local; trial/catálogo sintéticos | Smoke remoto |
 | Checkout | Simulado; cero suscripciones/pagos reales | Sandbox externo |
 | Mercado Pago | Sesión autorizada; PuragendaSubs/Suscripciones; cuentas test existen; URLs test/live apuntan a raíz productiva | Entrega sandbox sin certificar |
@@ -90,7 +92,7 @@ Cifras del panel a la fecha, variables y agregadas por equipo; no una cotizació
 | Proveedor | Observación | Límite práctico |
 |---|---|---|
 | Vercel | **Pro**, ciclo 1 nov–1 dic, crédito $0,28/$20 usado; Elastic/on-demand | Staging consume crédito y puede tener sobrecosto; no prometer costo marginal cero |
-| Neon | Free $0/mes; panel: 1 GB, 100 horas cómputo, 10 ramas por proyecto | Crear PG17 sin upgrade; no se creó recurso |
+| Neon | Free $0/mes; panel: 1 GB, 100 horas cómputo, 10 ramas por proyecto | PG17 creado sin upgrade; no se habilitaron add-ons |
 | Resend | Free; 94/3.000 mensual, 3/100 diario, 2/3 dominios, 10 req/s | Cuota compartida; cero correos de prueba a clientes |
 | OpenAI | Org visible: $100, **Limit not enforced**, alertas 80/100, gasto $0 | No se pudo asociar a Puragenda; no acredita corte efectivo |
 | Google Cloud | Sin cuenta billing asociada al proyecto observado | Cuota OAuth no equivale a cuota Calendar |
@@ -126,14 +128,14 @@ Abortar ante drift, secreto live en staging, acceso cross-tenant, reservas/cobro
 ## G. Diez respuestas de cierre
 
 1. **Build completo:** sí en local aislado; sin deploy remoto de certificación.
-2. **Previews:** ninguno observado para el SHA corregido; control general aún pendiente.
-3. **Producción:** main/RC1 intactas; Vercel Ready en SHA esperado; sin mutaciones productivas por este trabajo.
-4. **Staging real:** local sí, remoto no.
+2. **Previews:** allowlist y Only build production aplicados; ninguno observado para la rama corregida. El filtro puede generar registros CANCELED; no se ensayó con un deployment.
+3. **Producción:** main/RC1 intactas; Ready en SHA esperado; sólo cambió el filtro de builds autorizado, sin deploy, SQL ni datos productivos.
+4. **Staging real:** local sí; recursos remotos independientes creados, sin runtime/deploy.
 5. **Migraciones/backup:** certificados localmente; repetir en recurso remoto independiente.
 6. **Proveedores:** paneles leídos y simulaciones locales; sandbox end-to-end/OAuth pendientes.
-7. **GitHub:** sin reglas activas; Actions bloqueado por billing.
-8. **Bloqueantes:** staging/aislamiento remoto, protección global previews/GitHub, CI operativo, smoke y proveedores a activar.
+7. **GitHub:** dos reglas activas y verificadas; Actions bloqueado por billing.
+8. **Bloqueantes:** configuración/migraciones/aislamiento efectivo de staging, CI operativo, smoke remoto y proveedores a activar.
 9. **Riesgos/costos:** Vercel Elastic/on-demand, OpenAI no atribuible ni limitado, cuotas Resend compartidas, callback MP y rollback histórico pendientes.
 10. **Lanzamiento:** **NO-GO**. Corrección preparada; sin autorización de lanzamiento ni merge.
 
-No se desplegó Next a producción, no hubo SQL remoto, pagos reales, correos a clientes, inferencias facturables, cambios DNS, planes, secretos remotos ni datos reales. No se publican URLs de hooks, tokens, cookies ni credenciales.
+No se desplegó Next a producción, no hubo migraciones/SQL remoto, pagos reales, correos a clientes, inferencias facturables, cambios DNS, planes, secretos productivos ni datos reales. Se ejecutaron únicamente los tres cambios externos específicamente autorizados. No se publican URLs de hooks, tokens, cookies ni credenciales.

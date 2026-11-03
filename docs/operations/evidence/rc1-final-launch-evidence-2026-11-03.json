@@ -167,9 +167,9 @@
       "githubDeploymentsForCodeSha": 0,
       "scope": "Only the correction branch with the new allowlist; no retroactive guarantee for old branches"
     },
-    "ignoredBuildStepObserved": "Automatic",
-    "pendingAuthorizedChange": "Only build production; may create canceled records consuming quota",
-    "remoteConfigurationChanged": false,
+    "ignoredBuildStepObserved": "Only build production",
+    "pendingAuthorizedChange": null,
+    "remoteConfigurationChanged": true,
     "buildMachine": "Elastic",
     "concurrency": "Run all builds immediately on-demand",
     "plan": "Pro",
@@ -177,10 +177,11 @@
       "cycle": "2026-11-01/2026-12-01",
       "teamIncludedCreditUsedUsd": 0.28,
       "teamIncludedCreditUsd": 20
-    }
+    },
+    "savedCommand": "if [ \"$VERCEL_ENV\" == \"production\" ]; then exit 1; else exit 0; fi"
   },
   "github": {
-    "rulesetsObserved": 0,
+    "rulesetsObserved": 2,
     "classicProtection": "none shown in authenticated settings",
     "mainActions": {
       "runId": 41501071169,
@@ -191,7 +192,7 @@
       "codexSecurity": "skipped"
     },
     "correctionBranchChecks": 0,
-    "remoteRulesApplied": false,
+    "remoteRulesApplied": true,
     "workflowCorrection": {
       "postgresService": "17, disposable local CI database only",
       "bootstrap": "certified commercial-migrations bootstrap",
@@ -200,7 +201,35 @@
       "localCommandsPassed": true,
       "githubExecution": "not executed; billing blocked",
       "yamlParsed": true
-    }
+    },
+    "rulesets": [
+      {
+        "id": 26426317,
+        "active": true,
+        "branches": [
+          "main",
+          "release/puragenda-next-rc1"
+        ],
+        "rules": [
+          "deletion",
+          "non_fast_forward"
+        ],
+        "bypass": []
+      },
+      {
+        "id": 26426379,
+        "active": true,
+        "branches": [
+          "main"
+        ],
+        "requiredApprovals": 1,
+        "dismissStaleApprovals": true,
+        "conversationResolution": true,
+        "adminBypass": "pull_request",
+        "requiredChecks": []
+      }
+    ],
+    "finalVerification": "Persisted UI; first ruleset also REST. Public REST rate limit reached afterwards; no further API polling."
   },
   "productionMutations": [],
   "remoteMigrations": false,
@@ -209,9 +238,24 @@
   "dnsChanges": false,
   "verdict": "NO_GO",
   "stagingRemote": {
-    "created": false,
+    "created": true,
     "deployed": false,
     "isolationCertified": false,
+    "resourceIdentityVerified": true,
+    "vercelProject": "purocode-projects/puragenda-next-staging",
+    "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+    "neonProjectId": "divine-glade-04170205",
+    "neonBranchId": "br-quiet-fog-bebr4tlj",
+    "databaseName": "puragenda_next_staging",
+    "postgresVersion": 17,
+    "plan": "Free",
+    "region": "AWS US East 2 (Ohio)",
+    "gitConnected": false,
+    "projectVariables": 0,
+    "sharedVariablesLinked": 0,
+    "protection": "Vercel Authentication enabled, Standard Protection, no automation bypass or shared links",
+    "credentialsRetrieved": false,
+    "remoteSqlExecuted": false,
     "configuration": "docs/operations/rc1-final-launch-external-plan-2026-11-03.json"
   },
   "providers": {
@@ -277,7 +321,7 @@
       "observedGbPerProject": 1,
       "observedComputeHoursPerProject": 100,
       "observedBranchesPerProject": 10,
-      "puragendaStagingCreated": false
+      "puragendaStagingCreated": true
     }
   },
   "rollback": {
@@ -287,9 +331,11 @@
     "productionRestoreExecuted": false
   },
   "pendingAuthorizations": [
-    "Vercel Only build production",
-    "GitHub history and main review rulesets",
-    "Isolated staging resources without deployment",
-    "Separate first protected staging Preview after isolation review"
+    "First protected Preview only after staging variables, migrations and isolation review; not authorized by resource creation"
+  ],
+  "authorizedRemoteConfigurationChanges": [
+    "Vercel ignored build step only; no production deployment or data change",
+    "GitHub two rulesets",
+    "New isolated Vercel project and Neon PG17 Free"
   ]
 }

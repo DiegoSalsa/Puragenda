@@ -1,5 +1,5 @@
 {
-  "status": "PREPARED_NOT_APPLIED_REQUIRES_SPECIFIC_AUTHORIZATION",
+  "status": "AUTHORIZED_CONTROLS_APPLIED_RESOURCES_CREATED_NO_DEPLOY",
   "date": "2026-11-03",
   "vercelProduction": {
     "page": "https://vercel.com/purocode-projects/puragenda/settings/build-and-deployment",
@@ -10,7 +10,8 @@
     "effect": "Keep Production builds; cancel Preview builds, including old branches without the new allowlist",
     "limitation": "Canceled deployment records and quota usage remain possible; administrators can manually skip this step",
     "rollback": "Restore Automatic only with owner authorization",
-    "applied": false
+    "applied": true,
+    "persistedAfterReload": true
   },
   "github": {
     "page": "https://github.com/DiegoSalsa/Puragenda/settings/rules",
@@ -25,7 +26,8 @@
         "deletion",
         "non_fast_forward"
       ],
-      "bypassActors": []
+      "bypassActors": [],
+      "id": 26426317
     },
     "reviewRuleset": {
       "name": "Puragenda main - revision de socio",
@@ -43,11 +45,13 @@
         "mode": "pull_request"
       },
       "requiredStatusChecksInitially": [],
-      "requiredStatusChecksGate": "Restore Actions billing, successfully run corrected baseline with its disposable PostgreSQL and isolated build, then authorize requiring its actual check name"
+      "requiredStatusChecksGate": "Restore Actions billing, successfully run corrected baseline with its disposable PostgreSQL and isolated build, then authorize requiring its actual check name",
+      "id": 26426379
     },
     "effect": "No force push or deletion; main changes through reviewed PR; RC1 remains fast-forward capable; no role or account-access changes",
     "adminRecovery": "Administrators retain ruleset management; emergency bypass only via PR and never bypasses the separate history ruleset",
-    "applied": false
+    "applied": true,
+    "verified": "Active in dashboard; history also read via REST; review settings read after reload"
   },
   "staging": {
     "vercelTeam": "purocode-projects",
@@ -57,7 +61,7 @@
     "databaseProject": "puragenda-next-staging",
     "postgresMajor": 17,
     "databasePlan": "Free; no upgrade or payment method",
-    "region": "Choose an available Free region near the Vercel function region; confirm before creation",
+    "region": "AWS US East 2 (Ohio)",
     "reuseOtherApplicationResources": false,
     "data": "synthetic only",
     "domain": "Vercel-generated temporary domain; no custom domain or DNS",
@@ -133,7 +137,18 @@
       "Create isolated resources and configure protection without deployment",
       "Authorize first protected Preview after identity, secrets, no-cron and database isolation review"
     ],
-    "created": false,
-    "deployed": false
+    "created": true,
+    "deployed": false,
+    "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+    "databaseProjectId": "divine-glade-04170205",
+    "databaseBranchId": "br-quiet-fog-bebr4tlj",
+    "databaseName": "puragenda_next_staging",
+    "environmentApplied": false,
+    "projectVariables": 0,
+    "sharedVariablesLinked": 0,
+    "credentialsRetrieved": false,
+    "migrationsExecuted": false,
+    "runtimeCertified": false,
+    "observedProtection": "Vercel Authentication enabled, Standard Protection, no automation bypass or shared links"
   }
 }
