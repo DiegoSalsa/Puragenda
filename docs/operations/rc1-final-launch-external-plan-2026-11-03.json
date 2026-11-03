@@ -1,5 +1,5 @@
 {
-  "status": "AUTHORIZED_CONTROLS_APPLIED_RESOURCES_CREATED_NO_DEPLOY",
+  "status": "STAGING_READY_PROTECTED_CERTIFICATION_PARTIAL_CI_BLOCKED",
   "date": "2026-11-03",
   "vercelProduction": {
     "page": "https://vercel.com/purocode-projects/puragenda/settings/build-and-deployment",
@@ -72,10 +72,13 @@
       "git": {
         "deploymentEnabled": false
       },
-      "crons": []
+      "crons": [],
+      "outputDirectory": ".next-websites-qa",
+      "installCommand": "node .staging/preview-install.mjs",
+      "buildCommand": "node .staging/preview-build.mjs"
     },
-    "installCommand": "npm ci",
-    "buildCommand": "node scripts/vercel-build.mjs",
+    "installCommand": "Artifact-only guarded npm ci",
+    "buildCommand": "Artifact-only guarded preview wrapper then scripts/vercel-build.mjs",
     "migrationProcedure": "scripts/prepare-rc1-staging-release.mjs bootstrap/cutover bundle; verify new project and endpoint identity plus URL fingerprint; run against new staging only before build",
     "newSecretNames": [
       "DATABASE_URL",
@@ -93,8 +96,8 @@
       "COMMERCIAL_V2_SANDBOX_WEBHOOKS": "0",
       "COMMERCIAL_V2_MIGRATION_WRITES": "0",
       "COMMERCIAL_V2_WEBSITE_GATES": "1",
-      "APP_URL": "SET_TO_NEW_PROTECTED_STAGING_ORIGIN",
-      "NEXT_PUBLIC_APP_URL": "SET_TO_NEW_PROTECTED_STAGING_ORIGIN",
+      "APP_URL": "https://project-8xjzo.vercel.app",
+      "NEXT_PUBLIC_APP_URL": "https://project-8xjzo.vercel.app",
       "PURI_PLUS_INTERNAL_ENABLED": "1",
       "PURI_PLUS_AI_ENABLED": "0",
       "PURI_PLUS_PROACTIVE_ENABLED": "0",
@@ -132,23 +135,40 @@
       "VERCEL_TOKEN",
       "production DATABASE_URL or AUTH_SECRET"
     ],
-    "costBoundary": "No paid plan or add-on. Vercel Pro consumes team credit and may incur overage; require owner acceptance or verified hard limit before first deploy",
+    "costBoundary": "Owner accepted three builds and up to 1000 certification requests total; no fourth build; alerts are not effective spend caps",
     "authorizationStages": [
       "Create isolated resources and configure protection without deployment",
       "Authorize first protected Preview after identity, secrets, no-cron and database isolation review"
     ],
     "created": true,
-    "deployed": false,
+    "deployed": true,
     "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
     "databaseProjectId": "divine-glade-04170205",
     "databaseBranchId": "br-quiet-fog-bebr4tlj",
     "databaseName": "puragenda_next_staging",
-    "environmentApplied": false,
-    "projectVariables": 0,
+    "environmentApplied": true,
+    "projectVariables": 50,
     "sharedVariablesLinked": 0,
-    "credentialsRetrieved": false,
-    "migrationsExecuted": false,
-    "runtimeCertified": false,
-    "observedProtection": "Vercel Authentication enabled, Standard Protection, no automation bypass or shared links"
-  }
+    "credentialsRetrieved": true,
+    "migrationsExecuted": true,
+    "runtimeCertified": "login, individual and team onboarding; remaining flows documented",
+    "observedProtection": "Vercel Authentication All Deployments; anonymous checks redirect to Vercel SSO",
+    "url": "https://project-8xjzo.vercel.app",
+    "deploymentId": "dpl_BkxGsTrcMTeQ1oWrLiRgf5RtYpz8",
+    "artifactSourceSha": "40b455b095dce882967e308c8839e23c1611f840",
+    "deploymentTarget": "staging",
+    "runtimeVercelEnv": "preview",
+    "buildMachine": "basic fixed",
+    "nodeVersion": "24.x",
+    "migrations": 17,
+    "newMigrations": 0,
+    "backupRestore": "actual Neon to owned disposable loopback clone passed; no owner/ACL restore"
+  },
+  "calendar": {
+    "productionConfigurationChanged": false,
+    "disableRequested": false,
+    "testAccountAvailable": false,
+    "procedure": "Use separately authorized synthetic account and secondary calendar; preserve current integration"
+  },
+  "primaryReport": "docs/operations/PURAGENDA-NEXT-LAUNCH-READY.md"
 }

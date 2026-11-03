@@ -1,5 +1,7 @@
 # Puragenda Next — cierre de preproducción y bloqueantes finales
 
+> Actualización posterior del mismo día: el estado operativo vigente está en [PURAGENDA-NEXT-LAUNCH-READY](PURAGENDA-NEXT-LAUNCH-READY.md). Staging ya tiene deployment Ready, variables y Neon migrado; este documento conserva el registro de la fase anterior y sus pruebas históricas. Calendar existente permanece sin cambios.
+
 **Comprobación: 2026-11-03. Resultado: NO-GO — BLOQUEANTES TÉCNICOS.**
 
 Base RC1: `a3fd2a35480d8152a33550d42e510291a49664a7`. Producción/main: `e74c92237e47db43425a7d47209520967e51bfb0`. Rama: `fix/puragenda-next-final-launch-blockers`. Ambas referencias locales/remotas conservan los SHA esperados. No se integró esta corrección a RC1 ni a main.
