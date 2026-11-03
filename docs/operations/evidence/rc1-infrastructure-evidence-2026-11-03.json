@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-03",
+  "repository": "DiegoSalsa/Puragenda",
+  "rc1": {
+    "branch": "release/puragenda-next-rc1",
+    "sha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+    "baseWorktree": "C:/Users/diego/.codex/worktrees/puragenda-next-preproduction-readiness/agenda"
+  },
+  "vercel": {
+    "team": "purocode-projects",
+    "project": "puragenda",
+    "productionBranchObserved": "main",
+    "productionShaObserved": "e74c92237e47db43425a7d47209520967e51bfb0",
+    "productionStatusObserved": "Ready",
+    "incidentDeployment": {
+      "id": "GMx6UpcdjLCqUwLFRxt3ibuqy56A",
+      "sourceBranch": "integration/puragenda-next-onboarding-rc1-final",
+      "sha": "a3fd2a3",
+      "environment": "Preview",
+      "status": "Error",
+      "command": "node scripts/vercel-build.mjs",
+      "failure": "TypeScript cannot resolve five tests/fixtures imports"
+    },
+    "deployHooks": "none observed in Project Settings > Git",
+    "buildSettingsObserved": {
+      "framework": "Next.js",
+      "rootDirectory": "",
+      "buildCommandOverride": "disabled",
+      "ignoredBuildStep": "Automatic",
+      "nodeVersion": "24.x",
+      "gitSources": "Inherit from Team",
+      "deploymentSources": "Inherit from Team"
+    },
+    "environmentVariableValuesRead": false,
+    "maskedVariableNamesObserved": [
+      "MCP_OPERATION_ENCRYPTION_KEY",
+      "MCP_ENABLED",
+      "MCP_ORIGIN",
+      "MCP_PUBLIC_BOOKING_ENABLED",
+      "OPENAI_API_KEY",
+      "PURI_MODEL",
+      "WEBSITE_LAUNCH_ENABLED"
+    ]
+  },
+  "github": {
+    "rulesetsObserved": 0,
+    "classicProtection": "not certified by connector; UI listed no existing rule",
+    "actionsRunsForRc1Sha": 0,
+    "checksForRc1Sha": 1,
+    "deploymentsForRc1Sha": 1
+  },
+  "localChecks": {
+    "prismaValidate": "passed",
+    "deploymentProtectionAndMigrationRoles": "47/47 passed",
+    "npmAuditOmitDev": "0 vulnerabilities",
+    "vercelBuild": "failed during page data collection because local database access is unavailable",
+    "secretsOrTemporaryFilesAdded": false
+  },
+  "decision": "NO-GO",
+  "blockingReasons": [
+    "Vercel Preview build fails on missing fixtures",
+    "No isolated remote staging certification",
+    "GitHub classic branch protection details unavailable",
+    "Production environment variable values and alert require owner review"
+  ],
+  "mutationsPerformed": [],
+  "deployHooksInvoked": false,
+  "remoteMigrationsExecuted": false
+}
