@@ -50,7 +50,14 @@ try{
  check("Location and working hours configured through the application",true);
  const prior=(await db.query('SELECT id FROM "Appointment" WHERE "businessId"=$1 AND "customerEmail"=$2',[business.id,"reserva-integral@rc.example.invalid"])).rows;
  if(!prior.length){
-  const date=new Date(Date.now()+4*86400000).toISOString().slice(0,10),query=new URLSearchParams({date,serviceId:service.id,staffId:staff.id,locationId:location.id});
+  const openDays=new Set((await db.query('SELECT "dayOfWeek" FROM "LocationHours" WHERE "locationId"=$1 AND "isOpen"=true',[location.id])).rows.map(row=>Number(row.dayOfWeek)));
+  let bookingDate=null;
+  for(let offset=1;offset<=14;offset++){
+   const candidate=new Date(Date.now()+offset*86400000);
+   if(openDays.has(candidate.getDay())){bookingDate=candidate.toISOString().slice(0,10);break;}
+  }
+  assert(bookingDate,"Synthetic staging location must expose an open day within 14 days");
+  const date=bookingDate,query=new URLSearchParams({date,serviceId:service.id,staffId:staff.id,locationId:location.id});
   const available=await json(`/api/business/${business.slug}/availability?${query}`,undefined,{"x-api-key":business.apiKey});assert.equal(available.response.status,200);
   const slot=available.body.slots?.[0];assert(slot,"Configured professional must have a public slot");
   const booking={serviceId:service.id,staffId:staff.id,locationId:location.id,startTime:slot.startTime,endTime:slot.endTime,customerName:"Cliente Sintético RC",customerEmail:"reserva-integral@rc.example.invalid",customerPhone:"+56900000001"};

@@ -3,6 +3,8 @@
   "buildCommand": "node scripts/vercel-build.mjs",
   "git": {
     "deploymentEnabled": {
+      "**": false,
+      "main": true,
       "release/puragenda-next-rc1": false,
       "fix/puragenda-next-audit-01-registration": false,
       "fix/puragenda-next-audit-02-agenda": false,

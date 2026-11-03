@@ -42,6 +42,12 @@ const canonicalHostRedirects = [
 const securityPolicy = `default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'${unsafeEval} https://sdk.mercadopago.com https://cdn.paddle.com https://*.posthog.com https://www.googletagmanager.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://api.mercadopago.com https://secure-fields.mercadopago.com https://*.paddle.com https://*.posthog.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com; worker-src 'self' blob: data:; frame-src 'self' https://*.mercadopago.com https://*.mercadolibre.com https://*.paddle.com; frame-ancestors 'none';${upgradeInsecureRequests}`;
 
 const nextConfig: NextConfig = {
+  typescript: {
+    // Production type-checking covers runtime code only. QA and staging
+    // scripts keep using the complete root tsconfig through `npm run typecheck`.
+    ignoreBuildErrors: false,
+    tsconfigPath: "tsconfig.build.json",
+  },
   logging: { incomingRequests: { ignore: [/\/contact-flow\//, /[?&]cf_ref=/] } },
   devIndicators: process.env.WEBSITE_PINK_Y2K_PREVIEW === "1" ? false : undefined,
   skipProxyUrlNormalize: true,

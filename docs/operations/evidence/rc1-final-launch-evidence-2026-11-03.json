@@ -1,0 +1,75 @@
+{
+  "date": "2026-11-03",
+  "base": {
+    "branch": "release/puragenda-next-rc1",
+    "sha": "a3fd2a35480d8152a33550d42e510291a49664a7"
+  },
+  "correction": {
+    "branch": "fix/puragenda-next-final-launch-blockers",
+    "baseSha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+    "changes": [
+      "tsconfig.build.json",
+      "next.config.ts",
+      "vercel.json",
+      "scripts/bootstrap-next-staging-http.mjs",
+      "tests/server/rc1-deployment-safety.test.ts"
+    ]
+  },
+  "build": {
+    "rootTypecheck": "passed",
+    "qaTypecheck": "passed",
+    "isolatedProductionBuild": "passed",
+    "typescriptErrors": 0,
+    "externalProviderCalls": 0,
+    "productionDatabaseUsed": false
+  },
+  "checks": {
+    "deploymentProtectionAndMigrationRoles": "47/47 passed",
+    "prismaValidate": "passed",
+    "eslint": "0 errors, 32 existing warnings",
+    "npmAuditOmitDev": "0 vulnerabilities",
+    "backupRestoreLocal": {
+      "sourceTables": 142,
+      "restoredTables": 142,
+      "result": "passed"
+    }
+  },
+  "stagingLocal": {
+    "database": "PostgreSQL 17 loopback disposable",
+    "tls": "local CA validated",
+    "externalProviderCalls": 0,
+    "aiProviderCalls": 0,
+    "suites": {
+      "bootstrapHttp": "passed",
+      "integratedHttp": "passed",
+      "websitesHttp": "passed",
+      "schedulerHttp": "passed",
+      "servicesStaffHttp": "passed",
+      "agendaHttp": "passed",
+      "billingHttp": "passed with node --import tsx",
+      "clientsPrivacyHttp": "passed with node --import tsx"
+    }
+  },
+  "vercel": {
+    "project": "purocode-projects/puragenda",
+    "productionBranchObserved": "main",
+    "productionShaObserved": "e74c92237e47db43425a7d47209520967e51bfb0",
+    "deployHooksObserved": 0,
+    "versionedPolicy": {
+      "**": false,
+      "main": true
+    },
+    "remotePolicyAfterCorrectionPush": "pending verification"
+  },
+  "github": {
+    "rulesetsObserved": 0,
+    "classicProtection": "not verified by current connector",
+    "actionsRuns": 0
+  },
+  "productionMutations": [],
+  "remoteMigrations": false,
+  "realPayments": false,
+  "realEmails": false,
+  "dnsChanges": false,
+  "verdict": "GO_CON_CONDICIONES"
+}
