@@ -112,10 +112,15 @@ export class MpV2Provider {
     throw new Error("V2_INVOICE_PAGINATION_INCOMPLETE");
   }
   verifyWebhook(raw: string, headers: Headers, queryId: string | null) {
-    const payload = z.object({ id, type: z.enum(["payment", "subscription_preapproval", "subscription_authorized_payment"]), data: z.object({ id }), live_mode: z.boolean() }).parse(JSON.parse(raw));
+    // Subscription v8 notifications (including the official simulator) omit
+    // live_mode. They remain hints: reconciliation fetches the resource and
+    // verifies its collector, application, environment and owned operation.
+    const payload = z.object({ id, type: z.enum(["payment", "subscription_preapproval", "subscription_authorized_payment"]), data: z.object({ id }), live_mode: z.boolean().optional(), application_id: id.optional() }).parse(JSON.parse(raw));
     const ts = Number(headers.get("x-signature")?.match(/(?:^|,)\s*ts=(\d+)/)?.[1]);
     if (!queryId || queryId !== payload.data.id || !Number.isFinite(ts) || Math.abs(Date.now() - (ts < 1e12 ? ts * 1000 : ts)) > 300_000 ||
-      payload.live_mode !== this.expectedLiveMode || !verifyMercadoPagoWebhookSignature({ xSignature: headers.get("x-signature"), xRequestId: headers.get("x-request-id"), dataId: queryId, secret: this.config.secret }).valid) throw new Error("V2_INVALID_WEBHOOK_SIGNATURE");
+      (payload.live_mode === undefined ? payload.type === "payment" : payload.live_mode !== this.expectedLiveMode) ||
+      (payload.application_id !== undefined && payload.application_id !== String(this.config.applicationId)) ||
+      !verifyMercadoPagoWebhookSignature({ xSignature: headers.get("x-signature"), xRequestId: headers.get("x-request-id"), dataId: queryId, secret: this.config.secret }).valid) throw new Error("V2_INVALID_WEBHOOK_SIGNATURE");
     return { id: payload.id, type: payload.type, resourceId: payload.data.id, hash: commercialHash(payload) };
   }
 }

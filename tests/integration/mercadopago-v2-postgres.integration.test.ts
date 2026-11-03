@@ -159,9 +159,9 @@ suite("Mercado Pago V2 runtime against isolated PostgreSQL (provider mocked)", (
     expect((await getCommercialPlanAccess(f.business.id, op.effectiveAt)).professionalTotal).toBe(2);
     expect((await getCommercialPlanAccess(f.business.id, op.effectiveAt)).has("puri.plus")).toBe(false);
   });
-  it("accepts signed duplicate/out-of-order notifications and rejects tampering before provider IO", async () => {
+  it.each([false, undefined])("accepts signed duplicate/out-of-order notifications and rejects tampering, live_mode=%s", async liveMode => {
     const f = await fixture(), op = await checkout(f), invoice = invoiceFor(f, op);
-    const raw = JSON.stringify({ id: randomUUID(), type: "subscription_authorized_payment", data: { id: invoice.id }, live_mode: false });
+    const raw = JSON.stringify({ id: randomUUID(), type: "subscription_authorized_payment", application_id: "456", data: { id: invoice.id }, ...(liveMode === undefined ? {} : { live_mode: liveMode }) });
     const ts = String(Math.floor(Date.now() / 1000)), req = randomUUID(), signature = createHmac("sha256", f.provider.config.secret).update(`id:${invoice.id};request-id:${req};ts:${ts};`).digest("hex");
     const headers = new Headers({ "x-request-id": req, "x-signature": `ts=${ts},v1=${signature}` });
     await handleMpV2Webhook(raw, headers, invoice.id, f.provider); await handleMpV2Webhook(raw, headers, invoice.id, f.provider);
@@ -177,6 +177,16 @@ suite("Mercado Pago V2 runtime against isolated PostgreSQL (provider mocked)", (
     expect((await getCommercialPlanAccess(f.business.id)).allowed).toBe(false);
     f.payments.get(invoice.payment.id)!.status = "approved";
     await reconcileMpV2Invoice(invoice, f.provider);
+    expect((await getCommercialPlanAccess(f.business.id)).allowed).toBe(false);
+  });
+  it.each([{ collector_id: 999 }, { application_id: 999 }])("rejects a foreign canonical subscription despite a signed v8 envelope: %j", async foreign => {
+    const f = await fixture(), op = await checkout(f), resourceId = op.providerSubscriptionId!;
+    Object.assign(f.subscriptions.get(resourceId)!, foreign);
+    const ts = String(Date.now()), req = randomUUID();
+    const signature = createHmac("sha256", f.provider.config.secret).update(`id:${resourceId};request-id:${req};ts:${ts};`).digest("hex");
+    const raw = JSON.stringify({ id: randomUUID(), type: "subscription_preapproval", application_id: "456", data: { id: resourceId }, version: 8 });
+    await expect(handleMpV2Webhook(raw, new Headers({ "x-request-id": req, "x-signature": `ts=${ts},v1=${signature}` }), resourceId, f.provider)).rejects.toThrow("V2_PROVIDER_ACCOUNT_MISMATCH");
+    expect(await prisma.commercialPaymentEvidence.count({ where: { operationId: op.id } })).toBe(0);
     expect((await getCommercialPlanAccess(f.business.id)).allowed).toBe(false);
   });
   it("recovers cancellation after a provider timeout and never shortens the paid period", async () => {
