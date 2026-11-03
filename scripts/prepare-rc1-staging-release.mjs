@@ -58,9 +58,12 @@ if(process.argv.includes("--artifact")) {
  fs.writeFileSync(path.join(stagingDir,"preview-install.mjs"),`import {spawnSync} from "node:child_process";\nif(process.env.VERCEL_ENV!=="preview"||process.env.VERCEL_PROJECT_ID!=="prj_ma5nkDSDzQGBCFMhroTTzsGi07YD"){console.error("ISOLATED_STAGING_PREVIEW_REQUIRED");process.exit(1);}\nconst result=spawnSync("npm",["ci"],{stdio:"inherit",shell:process.platform==="win32"});process.exit(result.status??1);\n`);
  const vc=JSON.parse(fs.readFileSync(path.join(artifact,"vercel.json"),"utf8"));
  vc.git={...vc.git,deploymentEnabled:false};vc.crons=[];vc.buildCommand="node .staging/preview-build.mjs";vc.installCommand="node .staging/preview-install.mjs";
+ // WEBSITE_QA=1 selects this distDir in next.config.ts. The Vercel adapter
+ // requires the matching Output Directory, independently of Next compilation.
+ vc.outputDirectory=".next-websites-qa";
  vc.headers=[...(vc.headers??[]),{source:"/(.*)",headers:[{key:"X-Robots-Tag",value:"noindex, nofollow"}]}];
  fs.writeFileSync(path.join(artifact,"vercel.json"),JSON.stringify(vc,null,2)+"\n");
- const manifest={sourceSha,projectId:"prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",environment:"preview",gitAutomatic:false,crons:0,providerSecretsIncluded:false,files:copied.map(file=>({file,sha256:sha(path.join(artifact,file))})),wrapperSha256:sha(path.join(stagingDir,"preview-build.mjs")),installWrapperSha256:sha(path.join(stagingDir,"preview-install.mjs"))};
+ const manifest={sourceSha,projectId:"prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",environment:"preview",outputDirectory:vc.outputDirectory,gitAutomatic:false,crons:0,providerSecretsIncluded:false,files:copied.map(file=>({file,sha256:sha(path.join(artifact,file))})),wrapperSha256:sha(path.join(stagingDir,"preview-build.mjs")),installWrapperSha256:sha(path.join(stagingDir,"preview-install.mjs"))};
  fs.writeFileSync(path.join(stagingDir,"manifest.json"),JSON.stringify(manifest,null,2));
  result.artifact={path:artifact,sourceSha,files:copied.length,manifestSha256:sha(path.join(stagingDir,"manifest.json"))};
 }
