@@ -4,24 +4,36 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomBytes, createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { rootCertificates } from "node:tls";
 import pg from "pg";
-import { localCommercialDatabase } from "./commercial-migrations.mjs";
+import { localCommercialDatabase, stagingCommercialDatabase } from "./commercial-migrations.mjs";
 
 const root = process.cwd();
-const state = JSON.parse(fs.readFileSync("scratch/next-staging/current.json", "utf8"));
-const target = path.resolve(state.target);
-assert(target.startsWith(path.resolve("scratch/next-staging") + path.sep));
-const env = JSON.parse(fs.readFileSync(path.join(target, "staging-runtime.private.json"), "utf8"));
-const source = new URL(localCommercialDatabase(env.DATABASE_URL));
-assert.equal(source.hostname, "127.0.0.1");
-assert.match(source.pathname, /^\/puragenda_commercial_test_rc[a-f0-9]{12}$/);
+const remoteStaging = process.argv.includes("--staging");
+let source;
+if (remoteStaging) {
+  source = new URL(stagingCommercialDatabase(process.env.RC1_STAGING_DATABASE_URL));
+  source.searchParams.set("sslmode", "verify-full");
+} else {
+  const state = JSON.parse(fs.readFileSync("scratch/next-staging/current.json", "utf8"));
+  const target = path.resolve(state.target);
+  assert(target.startsWith(path.resolve("scratch/next-staging") + path.sep));
+  const env = JSON.parse(fs.readFileSync(path.join(target, "staging-runtime.private.json"), "utf8"));
+  source = new URL(localCommercialDatabase(env.DATABASE_URL));
+  assert.equal(source.hostname, "127.0.0.1");
+  assert.match(source.pathname, /^\/puragenda_commercial_test_rc[a-f0-9]{12}$/);
+}
+// A remote source is restored only into an owned, disposable LOOPBACK clone.
+const restoreBase = remoteStaging ? new URL(localCommercialDatabase(process.env.COMMERCIAL_V2_TEST_DATABASE_URL)) : source;
 const cloneName = `puragenda_commercial_test_restore${randomBytes(6).toString("hex")}`;
-const clone = new URL(source); clone.pathname = `/${cloneName}`;
-const adminUrl = new URL(source); adminUrl.pathname = "/postgres";
+const clone = new URL(restoreBase); clone.pathname = `/${cloneName}`;
+const adminUrl = new URL(restoreBase); adminUrl.pathname = "/postgres";
 const bin = process.env.PG_BIN_DIR ?? (process.platform === "win32" ? "C:/Program Files/PostgreSQL/17/bin" : "");
 const binary = name => path.join(bin, name + (process.platform === "win32" ? ".exe" : ""));
-const out = path.resolve("scratch/final-launch/backup");
+const out = path.resolve(remoteStaging ? "scratch/launch-final/backup-neon" : "scratch/final-launch/backup");
 fs.mkdirSync(out, { recursive: true, mode: 0o700 });
+const caBundle = path.join(out, "public-ca.pem");
+if (remoteStaging) fs.writeFileSync(caBundle, rootCertificates.join("\n"));
 const archive = path.join(out, `${cloneName}.dump`);
 const admin = new pg.Client({ connectionString: adminUrl.href });
 const src = new pg.Client({ connectionString: source.href });
@@ -29,6 +41,8 @@ const restored = new pg.Client({ connectionString: clone.href });
 const quote = value => '"' + value.replaceAll('"', '""') + '"';
 const hash = value => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 async function snapshot(client) {
+  // timestamptz JSON must be canonical across Neon and the local restore host.
+  await client.query("SET TIME ZONE 'UTC'");
   const tables = (await client.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows;
   const data = [];
   for (const { tablename } of tables) {
@@ -41,9 +55,10 @@ async function snapshot(client) {
     ORDER BY 1,2,3`)).rows;
   return { data, metadata };
 }
-function pgCommand(command, database, args) {
-  execFileSync(binary(command), ["--host", source.hostname, "--port", source.port || "5432", "--username", decodeURIComponent(source.username), "--no-password", "--dbname", database, ...args], {
-    cwd: root, windowsHide: true, stdio: "pipe", env: { ...process.env, PGPASSWORD: decodeURIComponent(source.password) },
+function pgCommand(command, connection, database, args) {
+  execFileSync(binary(command), ["--host", connection.hostname, "--port", connection.port || "5432", "--username", decodeURIComponent(connection.username), "--no-password", "--dbname", database, ...args], {
+    cwd: root, windowsHide: true, stdio: "pipe", env: { ...process.env, PGPASSWORD: decodeURIComponent(connection.password),
+      ...(remoteStaging && command === "pg_dump" ? { PGSSLMODE: "verify-full", PGSSLROOTCERT: caBundle, PGCHANNELBINDING: "require" } : { PGSSLMODE: "prefer" }) },
   });
 }
 const started = Date.now(); let created = false, cloneConnected = false;
@@ -52,23 +67,23 @@ try {
   const version = Number((await src.query("SHOW server_version_num")).rows[0].server_version_num);
   assert.equal(Math.floor(version / 10000), 17, "PostgreSQL 17 is required for this certification");
   const before = await snapshot(src);
-  pgCommand("pg_dump", source.pathname.slice(1), ["--format=custom", "--file", archive]);
+  pgCommand("pg_dump", source, source.pathname.slice(1), ["--format=custom", "--no-owner", "--no-acl", "--file", archive]);
   await admin.query(`CREATE DATABASE ${quote(cloneName)}`); created = true;
-  pgCommand("pg_restore", cloneName, ["--exit-on-error", archive]);
+  pgCommand("pg_restore", clone, cloneName, ["--exit-on-error", "--no-owner", "--no-acl", archive]);
   await restored.connect(); cloneConnected = true;
   assert.deepEqual(await snapshot(restored), before);
   const marker = await restored.query('UPDATE "Business" SET name=name||\' RESTORE_PROBE\' WHERE id=(SELECT id FROM "Business" ORDER BY id LIMIT 1)');
   assert.equal(marker.rowCount, 1, "Synthetic clone requires one business to mutate");
   assert.notEqual(hash(await snapshot(restored)), hash(before));
   await restored.end(); cloneConnected = false;
-  pgCommand("pg_restore", cloneName, ["--clean", "--if-exists", "--exit-on-error", archive]);
+  pgCommand("pg_restore", clone, cloneName, ["--clean", "--if-exists", "--exit-on-error", "--no-owner", "--no-acl", archive]);
   const check = new pg.Client({ connectionString: clone.href }); await check.connect();
   try { assert.deepEqual(await snapshot(check), before); } finally { await check.end(); }
   assert.deepEqual(await snapshot(src), before, "Source staging must be unchanged");
   // PostgreSQL normalizes nested AND nodes when restoring CHECK expressions;
   // compare their names/validation and test their behavior in migration suites.
   // FK/PK/UNIQUE definitions and RLS policies are compared verbatim above.
-  const report = { passed: true, syntheticOnly: true, sourceUnchanged: true, mutationRevertedByRestore: true, tableCount: before.data.length,
+  const report = { passed: true, syntheticOnly: true, remoteStagingSource: remoteStaging, restoreTarget: "owned disposable loopback clone", ownershipAndGrantsRestored: false, sourceUnchanged: true, mutationRevertedByRestore: true, tableCount: before.data.length,
     constraintComparison: "FK/PK/UNIQUE definitions, RLS and CHECK names/validation; CHECK behavior covered separately",
     rowCount: before.data.reduce((n,t)=>n+t.count,0), fullDataSha256: hash(before.data), rlsAndConstraintsSha256: hash(before.metadata),
     archiveSha256: createHash("sha256").update(fs.readFileSync(archive)).digest("hex"), elapsedMs: Date.now()-started, postgresMajor: 17 };
