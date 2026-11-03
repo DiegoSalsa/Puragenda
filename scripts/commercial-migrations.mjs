@@ -9,6 +9,56 @@ const optionalRoleMigrations = [
   "20261022180000_commercial_migration_web_plus",
   "20261022210000_puri_plus_growth",
 ];
+const optionalRoleMigrationExpectations = {
+  "20261022180000_commercial_migration_web_plus": {
+    tables: ["CommercialMigrationProposal", "CommercialWebsiteTransition", "CommercialMigrationEvidence"],
+    indexes: [
+      "CommercialMigrationProposal_idempotencyKey_key", "CommercialMigrationProposal_subscriptionId_businessId_idx",
+      "CommercialMigrationProposal_businessId_status_effectiveAt_idx", "CommercialMigrationProposal_id_businessId_key",
+      "CommercialMigrationProposal_one_open_business", "CommercialWebsiteTransition_proposalId_key",
+      "CommercialWebsiteTransition_businessId_status_idx", "CommercialWebsiteTransition_proposalId_businessId_key",
+      "CommercialMigrationEvidence_proposalId_businessId_state_idx", "CommercialMigrationEvidence_provider_eventId_key",
+      "CommercialMigrationEvidence_provider_paymentId_key",
+    ],
+    constraints: [
+      "CommercialMigrationProposal_pkey", "CommercialMigrationProposal_businessId_fkey", "CommercialMigrationProposal_subscriptionId_businessId_fkey",
+      "CommercialMigrationProposal_status_check", "CommercialMigrationProposal_target_check", "CommercialMigrationProposal_approval_check",
+      "CommercialWebsiteTransition_pkey", "CommercialWebsiteTransition_proposalId_businessId_fkey", "CommercialWebsiteTransition_status_check",
+      "CommercialWebsiteTransition_evidence_check", "CommercialMigrationEvidence_pkey", "CommercialMigrationEvidence_proposalId_businessId_fkey",
+      "CommercialMigrationEvidence_origin_check", "CommercialMigrationEvidence_state_check", "CommercialMigrationEvidence_money_check",
+      "CommercialMigrationEvidence_period_check", "CommercialMigrationEvidence_confirmed_check",
+    ],
+    functions: ["commercial_migration_immutable_proposal"],
+    triggers: ["CommercialMigrationProposal_immutable"],
+  },
+  "20261022210000_puri_plus_growth": {
+    tables: ["PuriGrowthPolicy", "PuriGrowthRun", "PuriGrowthSignal", "PuriGrowthRecommendation", "PuriBudgetBucket", "PuriUsageReservation", "PuriGrowthAudit"],
+    indexes: [
+      "PuriGrowthRun_analysisKey_key", "PuriGrowthRun_businessId_scopeKey_status_periodEnd_idx", "PuriGrowthRun_status_leaseUntil_idx",
+      "PuriGrowthRun_expiresAt_idx", "PuriGrowthRun_id_businessId_scopeKey_key", "PuriGrowthRun_businessId_scopeKey_proactiveCheckedAt_idx",
+      "PuriGrowthSignal_dedupeKey_key", "PuriGrowthSignal_businessId_scopeKey_kind_materialHash_idx", "PuriGrowthSignal_businessId_scopeKey_status_expiresAt_idx",
+      "PuriGrowthSignal_runId_businessId_scopeKey_idx", "PuriGrowthSignal_expiresAt_idx", "PuriGrowthSignal_id_businessId_scopeKey_key",
+      "PuriGrowthRecommendation_dedupeKey_key", "PuriGrowthRecommendation_businessId_scopeKey_status_created_idx", "PuriGrowthRecommendation_signalId_businessId_scopeKey_idx",
+      "PuriGrowthRecommendation_expiresAt_idx", "PuriGrowthRecommendation_id_businessId_scopeKey_key", "PuriBudgetBucket_businessId_category_periodStart_idx",
+      "PuriBudgetBucket_periodStart_idx", "PuriUsageReservation_idempotencyKey_key", "PuriUsageReservation_businessId_category_createdAt_idx",
+      "PuriUsageReservation_state_createdAt_idx", "PuriGrowthAudit_dedupeKey_key", "PuriGrowthAudit_businessId_event_createdAt_idx",
+      "PuriGrowthAudit_recommendationId_businessId_scopeKey_idx", "PuriGrowthAudit_createdAt_idx",
+    ],
+    constraints: [
+      "PuriRequest_capabilityTier_check", "PuriGrowthPolicy_pkey", "PuriGrowthPolicy_businessId_fkey", "PuriGrowthPolicy_frequency_check", "PuriGrowthRun_pkey", "PuriGrowthRun_businessId_fkey",
+      "PuriGrowthRun_status_check", "PuriGrowthRun_kind_check", "PuriGrowthRun_period_check", "PuriGrowthRun_complete_check", "PuriGrowthSignal_pkey",
+      "PuriGrowthSignal_runId_businessId_scopeKey_fkey", "PuriGrowthSignal_status_check", "PuriGrowthSignal_kind_check", "PuriGrowthSignal_confidence_check",
+      "PuriGrowthRecommendation_pkey", "PuriGrowthRecommendation_signalId_businessId_scopeKey_fkey", "PuriGrowthRecommendation_status_check",
+      "PuriGrowthRecommendation_no_execution", "PuriGrowthRecommendation_approval_check", "PuriGrowthRecommendation_strategy_check", "PuriGrowthRecommendation_cost_check",
+      "PuriBudgetBucket_pkey", "PuriBudgetBucket_businessId_fkey", "PuriBudgetBucket_nonnegative", "PuriBudgetBucket_category", "PuriUsageReservation_pkey",
+      "PuriUsageReservation_businessId_fkey", "PuriUsageReservation_amounts", "PuriUsageReservation_state", "PuriUsageReservation_category", "PuriGrowthAudit_pkey",
+      "PuriGrowthAudit_businessId_fkey", "PuriGrowthAudit_recommendationId_businessId_scopeKey_fkey",
+    ],
+    functions: ["puri_growth_immutable_proposal"],
+    triggers: ["PuriGrowthRecommendation_immutable"],
+    columns: [{ table: "PuriRequest", column: "capabilityTier" }],
+  },
+};
 const manifest = JSON.parse(readFileSync(resolve(root, "prisma/bootstrap/manifest.json"), "utf8"));
 export function localCommercialDatabase(raw) {
   const url = new URL(raw || "postgres://invalid/invalid");
@@ -45,7 +95,7 @@ BEGIN
   END IF;
 END $$;`,
     );
-  if (roleSafe === sql) throw new Error(`OPTIONAL_ROLE_GUARD_MISSING:${name}`);
+  if (roleSafe === sql || roleSafe.includes("FROM PUBLIC, anon, authenticated;")) throw new Error(`OPTIONAL_ROLE_GUARD_MISSING:${name}`);
   return roleSafe;
 }
 export function prepareCommercialMigrationConfig(databaseUrl, { before } = {}) {
@@ -68,6 +118,26 @@ export function prepareCommercialMigrationConfig(databaseUrl, { before } = {}) {
     return result.stdout;
   };
   return { run, config };
+}
+export async function inspectOptionalRoleMigration(pool, name) {
+  const expected = optionalRoleMigrationExpectations[name];
+  if (!expected) throw new Error(`UNKNOWN_OPTIONAL_ROLE_MIGRATION:${name}`);
+  const tables = await pool.query("SELECT count(*)::int AS count FROM pg_class WHERE relkind='r' AND relname = ANY($1::text[])", [expected.tables]);
+  const indexes = await pool.query("SELECT count(*)::int AS count FROM pg_class WHERE relkind IN ('i','I') AND relname = ANY($1::text[])", [expected.indexes]);
+  const constraints = await pool.query("SELECT count(*)::int AS count FROM pg_constraint WHERE conname = ANY($1::text[])", [expected.constraints]);
+  const functions = await pool.query("SELECT count(*)::int AS count FROM pg_proc WHERE proname = ANY($1::text[])", [expected.functions]);
+  const triggers = await pool.query("SELECT count(*)::int AS count FROM pg_trigger WHERE NOT tgisinternal AND tgname = ANY($1::text[])", [expected.triggers]);
+  const rls = await pool.query("SELECT count(*)::int AS count FROM pg_class WHERE relname = ANY($1::text[]) AND relrowsecurity", [expected.tables]);
+  const columns = expected.columns ? await pool.query("SELECT count(*)::int AS count FROM information_schema.columns WHERE table_schema='public' AND (table_name, column_name) IN (SELECT * FROM unnest($1::text[], $2::text[]))", [expected.columns.map(item => item.table), expected.columns.map(item => item.column)]) : { rows: [{ count: 0 }] };
+  const found = [tables, indexes, constraints, functions, triggers, rls, columns].reduce((sum, result) => sum + Number(result.rows[0]?.count ?? 0), 0);
+  const required = expected.tables.length + expected.indexes.length + expected.constraints.length + expected.functions.length + expected.triggers.length + expected.tables.length + (expected.columns?.length ?? 0);
+  if (found === 0) return "absent";
+  if (found !== required) throw new Error(`OPTIONAL_ROLE_MIGRATION_PARTIAL:${name}:${found}/${required}`);
+  for (const role of (await pool.query("SELECT rolname FROM pg_roles WHERE rolname = ANY($1::text[])", [["anon", "authenticated"]])).rows.map(row => row.rolname)) {
+    const access = await pool.query("SELECT has_table_privilege($1,$2,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') AS access", [role, `"${expected.tables[0]}"`]);
+    if (access.rows[0]?.access) throw new Error(`OPTIONAL_ROLE_MIGRATION_PUBLIC_GRANT:${name}:${role}`);
+  }
+  return "complete";
 }
 export async function verifyLegacySecurity(pool) {
   // No public RLS policies are present in the versioned baseline. Existing
@@ -123,8 +193,17 @@ export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap"
       const prefix = prepareCommercialMigrationConfig(url, { before: optionalRoleMigrations[0] });
       prefix.run(["migrate", "deploy"]);
       for (const name of optionalRoleMigrations) {
-        if (recordedNames.has(name)) continue;
-        await pool.query(optionalRoleSafeMigrationSql(name));
+        const state = await inspectOptionalRoleMigration(pool, name);
+        if (recordedNames.has(name)) {
+          if (state !== "complete") throw new Error(`OPTIONAL_ROLE_MIGRATION_HISTORY_MISMATCH:${name}`);
+          continue;
+        }
+        if (state === "absent") {
+          await pool.query(optionalRoleSafeMigrationSql(name));
+          if ((await inspectOptionalRoleMigration(pool, name)) !== "complete") throw new Error(`OPTIONAL_ROLE_MIGRATION_SCHEMA_UNVERIFIED:${name}`);
+          if (process.env.NODE_ENV === "test" && process.env.COMMERCIAL_MIGRATION_TEST_INTERRUPT_AFTER_SQL === name) throw new Error(`INTERRUPTED_AFTER_OPTIONAL_ROLE_SQL:${name}`);
+        }
+        if ((await inspectOptionalRoleMigration(pool, name)) !== "complete") throw new Error(`OPTIONAL_ROLE_MIGRATION_SCHEMA_UNVERIFIED:${name}`);
         run(["migrate", "resolve", "--applied", name]);
       }
       run(["migrate", "deploy"]);
@@ -132,6 +211,7 @@ export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap"
     const diff = run(["migrate", "diff", "--from-config-datasource", "--to-schema", resolve(root, "prisma/schema.prisma"), "--script"]);
     if (!diff.includes("This is an empty migration")) throw new Error("FINAL_SCHEMA_DRIFT");
     await verifyLegacySecurity(pool);
+    for (const name of optionalRoleMigrations) await inspectOptionalRoleMigration(pool, name);
     for (const table of ["CommercialWorkerState","PuriGrowthPolicy","PuriGrowthRun","PuriGrowthSignal","PuriGrowthRecommendation","PuriBudgetBucket","PuriUsageReservation","PuriGrowthAudit","CfPolicy","CfCampaign","CfVersion","CfAuthorization","CfConsent","CfSuppression","CfEnrollment","CfMessage","CfOutbox","CfAttempt","CfSimulatedReceipt","CfProviderEvent","CfQuotaBucket","CfQuotaReservation","CfQuotaAllocation","CfToken","CfAttribution","CfAudit"]) {
       const security=await pool.query('SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',[`"${table}"`]);
       if(!security.rows[0]?.relrowsecurity) throw new Error(`GROWTH_RLS_MISSING:${table}`);

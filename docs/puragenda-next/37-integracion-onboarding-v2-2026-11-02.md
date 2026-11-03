@@ -155,3 +155,13 @@ La demostración certificada se mantiene activa en `http://127.0.0.1:3119/login`
 **APTA PARA RC1, sin autorización de despliegue productivo.** La instalación limpia es reproducible con y sin roles Supabase, la actualización legacy conserva datos e historial, no hay drift, C1/C2/C3 siguen aprobados y las regresiones nuevas no muestran fallos críticos. La integración a RC1 sigue siendo una operación separada y no se ejecutó en esta rama.
 
 Persisten como riesgos operativos: revisión independiente del diff del runner, validación de configuración remota de Vercel antes de cualquier despliegue, certificación posterior de proveedores reales y mantenimiento de los 23 avisos de desarrollo. Ninguno bloquea técnicamente integrar esta rama a RC1; ninguno autoriza publicar a producción.
+
+## Revisión final del runner para integración RC1 — 2026-11-02
+
+La rama de preparación `integration/puragenda-next-onboarding-rc1-final` parte del SHA certificado `4a4718e3329cccaaf26364742c159591d2de3045` y no importa ramas antiguas. Las migraciones históricas Web Plus y Puri Growth permanecen sin cambios; la adaptación sólo vive en el runner local y sus pruebas.
+
+El SQL adaptado se genera con sustituciones exactas: si no se encuentra la revocación histórica esperada, el runner falla con `OPTIONAL_ROLE_GUARD_MISSING`. La copia conserva todas las demás operaciones, se ejecuta dentro del `BEGIN`/`COMMIT` original y se verifica antes de `migrate resolve` mediante tablas, columnas, índices, restricciones, funciones, triggers, RLS y revocaciones públicas. Un esquema parcial produce `OPTIONAL_ROLE_MIGRATION_PARTIAL` y bloquea nuevas operaciones; no se intenta completar a ciegas.
+
+Se simuló una interrupción justo después de aplicar Web Plus y antes de registrar la migración. La primera ejecución terminó con `INTERRUPTED_AFTER_OPTIONAL_ROLE_SQL`; la siguiente detectó el esquema completo, registró el checksum original con Prisma y terminó con `schemaMatches=true`. La repetición posterior fue idempotente. Al eliminar un índice de la copia interrumpida, la recuperación terminó con `OPTIONAL_ROLE_MIGRATION_PARTIAL:...` y no alteró el historial. Los checksums registrados coinciden con los SQL fuente.
+
+El build de Vercel continúa usando `npx prisma migrate deploy` y no se modificó. En una base productiva existente con estas migraciones ya aplicadas, Prisma conserva el historial y el runner no se usa; en una base nueva sin roles Supabase, el build productivo estándar todavía fallaría con `42704`, por lo que esa adaptación requiere un procedimiento de despliegue futuro aprobado antes de usar una base nueva. Con ambos roles, el SQL histórico puede aplicarse sin cambios. Esta integración no ejecuta migraciones remotas.
