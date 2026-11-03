@@ -720,6 +720,44 @@
             }
           ]
         }
+      },
+      {
+        "run": 4,
+        "at": "2026-11-03T20:28:33.986Z",
+        "origin": "https://project-8xjzo.vercel.app",
+        "results": [
+          {
+            "scenario": "B: Natural-language business/team proposals → two professionals → schedules and shared service → functional agenda without exceeding the granted contract",
+            "status": "passed"
+          },
+          {
+            "scenario": "Browser run",
+            "status": "failed",
+            "detail": "page.goto: net::ERR_BLOCKED_BY_CLIENT at https://project-8xjzo.vercel.app/dashboard/setup\nCall log:\n\u001b[2m  - navigating to \"https://project-8xjzo.vercel.app/dashboard/setup\", waiting until \"load\"\u001b[22m\n\n    at main (C:\\Users\\diego\\.codex\\worktrees\\puragenda-next-final-launch-blockers\\agenda\\scratch\\launch-final\\onboarding-remote-resume.mjs:107:23)"
+          }
+        ],
+        "errors": [],
+        "network": {
+          "origin": "https://project-8xjzo.vercel.app",
+          "limit": 270,
+          "requests": 270,
+          "externalBlocked": 0,
+          "limitReached": true,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 1440,
+              "height": 1000
+            },
+            {
+              "width": 390,
+              "height": 844
+            }
+          ]
+        }
       }
     ],
     "trialFixtures": {
@@ -853,6 +891,34 @@
       ],
       "hardPreviewCap": false,
       "observedAt": "2026-11-03T20:32:12Z"
+    },
+    "publicBooking": {
+      "passed": true,
+      "requests": 5,
+      "statuses": [
+        200,
+        409,
+        201,
+        201,
+        200
+      ],
+      "checks": [
+        "Remote public availability returns real configured slots",
+        "Concurrent remote booking has one winner and one conflict",
+        "Remote public idempotency replay succeeds",
+        "Concurrent requests persist exactly one reservation",
+        "Concurrent requests persist exactly one linked client",
+        "Booked slot is removed from subsequent public availability"
+      ],
+      "syntheticOnly": true,
+      "source": "actual Preview HTTP + remote Neon assertions",
+      "providerCalls": 0
+    },
+    "publicTenantIsolation": {
+      "passed": true,
+      "status": 401,
+      "syntheticTenants": true,
+      "foreignApiKeyCannotReadCatalog": true
     }
   }
 }

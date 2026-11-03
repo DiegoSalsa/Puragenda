@@ -51,7 +51,7 @@ Limitación explícita: dump portable `--no-owner --no-acl`; no se restauraron o
 |---|---|---|---|
 | Registro V2 | Antecedentes HTTP y validaciones previas | UI de registro, creación real y entrada a Setup aprobadas; primer trial 30 días; siguiente registro de misma IP sin otro trial | CERTIFICADO CON LIMITACIONES |
 | Planes y checkout | Catálogo y contratos previos; sin cambiar precios | Basic/Plus y equipo observados; matriz mensual/anual y contratación externa todavía incompleta | BLOQUEADO |
-| Agenda | Suites anteriores, sin contarlas nuevamente | Disponibilidad real interna y widget tras onboarding; concurrencia/reservar/mover/cancelar pendientes | CERTIFICADO CON LIMITACIONES |
+| Agenda | Suites anteriores, sin contarlas nuevamente | Disponibilidad real interna/widget; reserva pública concurrente un 201 y un 409, replay idempotente, una reserva/cliente y slot retirado. Mover/cancelar pendientes | CERTIFICADO CON LIMITACIONES |
 | Onboarding/Puri | 14 pruebas nuevas de uso comercial, orquestador y Setup; modelos simulados | Registro → propuesta determinista de horarios sin escritura → revisión → tres servicios → disponibilidad → enlace → finalizar y recargar, aprobado. Equipo dos profesionales y horario compartido aprobado con trial sintético explícito | CERTIFICADO CON LIMITACIONES |
 | Sitios web Plus | HTTP/editor/multi-tenant anteriores | Login Plus, editor, preview con datos propios, autosave real y borrador aislado aprobados. Publicación rechazó portada incompleta. Subida Cloudinary y publicación completa pendientes | CERTIFICADO CON LIMITACIONES |
 | Mercado Pago | Simulaciones y reconciliación anteriores | Sesión y cuentas test observadas; operación sandbox y webhook V2 aún sin certificar | BLOQUEADO |
@@ -60,7 +60,7 @@ Limitación explícita: dump portable `--no-owner --no-acl`; no se restauraron o
 | Contact Flow | Parte de 35 pruebas nuevas MCP/Contact Flow; consentimiento y límites | Externo apagado; no tick/productor ni envíos. Transporte remoto pendiente | CERTIFICADO CON LIMITACIONES |
 | MCP | Contratos, OAuth/scopes y cifrado en 35 pruebas nuevas | Clave nueva sensible: cifrar → persistir Neon → leer → descifrar; alteración/clave distinta rechazadas; transacción revertida. MCP/OAuth remoto apagado y no ejercitado | CERTIFICADO CON LIMITACIONES |
 | PostgreSQL | Regresión nueva bootstrap y legacy aprobada | Migración/drift/idempotencia/privilegios/RLS/backups aprobados en proyecto exacto | CERTIFICADO CON LIMITACIONES |
-| Seguridad | 48 pruebas de protección/guardas, ocho canarios install/build, ESLint afectado y secret scan | Vercel SSO completo, variables separadas y flags comprobados; prueba tenant HTTP pendiente | CERTIFICADO CON LIMITACIONES |
+| Seguridad | 48 pruebas de protección/guardas, ocho canarios install/build, ESLint afectado y secret scan | Vercel SSO completo, variables separadas y flags comprobados; clave API de otro tenant rechazada en HTTP; sesiones de dashboard cruzadas pendientes | CERTIFICADO CON LIMITACIONES |
 | CI/CD | Comandos relevantes locales; build remoto real aprobado | Dos rulesets activos; Actions no inicia jobs por bloqueo de billing | BLOQUEADO |
 
 ### Fallos y omisiones de QA
@@ -120,7 +120,7 @@ Vercel Pro comparte crédito por equipo. Budget observado US$10 es alerta, Pause
 1. **Staging:** desplegado y login sintético funcional, con Vercel Authentication completa.
 2. **Neon:** migrada e independiente, sin SQL productivo; privilegios/RLS con los límites indicados.
 3. **Build remoto:** tercer intento Ready; dos fallos anteriores documentados.
-4. **Registro/checkout/agenda:** registro y disponibilidad sí; contratación sandbox y operaciones de reserva aún pendientes.
+4. **Registro/checkout/agenda:** registro, disponibilidad y reserva concurrente/idempotente sí; contratación sandbox y mover/cancelar aún pendientes.
 5. **Onboarding V2:** recorrido individual y equipo aprobados; móvil/recuperación completa pendientes.
 6. **Plus/editor:** editor/autosave/preview sí; publicación completa y proveedor de medios no certificados remotamente.
 7. **MP sandbox:** no certificado; no pagos reales.
