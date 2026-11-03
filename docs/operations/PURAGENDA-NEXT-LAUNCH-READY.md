@@ -13,7 +13,7 @@ Existe un staging remoto funcional y protegido. Esto no autoriza producción: fa
 | Código del Preview certificado | `40b455b095dce882967e308c8839e23c1611f840` |
 | Rama correctiva | `fix/puragenda-next-final-launch-blockers`; la entrega documental posterior conserva el runtime del SHA anterior |
 
-No se integró a RC1 ni a main. Los resultados de las auditorías anteriores y del informe de preproducción son antecedentes, no nuevas ejecuciones. Evidencia estructurada en [el registro existente](evidence/rc1-final-launch-evidence-2026-11-03.json); preparación/configuración en [el plan existente](rc1-final-launch-external-plan-2026-11-03.json).
+Publicación de la rama correctiva solamente; comparada con RC1, relación lineal sin divergencia. No se integró a RC1 ni a main. Los resultados de las auditorías anteriores y del informe de preproducción son antecedentes, no nuevas ejecuciones. Evidencia estructurada en [el registro existente](evidence/rc1-final-launch-evidence-2026-11-03.json); preparación/configuración en [el plan existente](rc1-final-launch-external-plan-2026-11-03.json).
 
 ## Infraestructura real
 
@@ -23,7 +23,7 @@ No se integró a RC1 ni a main. Los resultados de las auditorías anteriores y d
 - Protección: Vercel Authentication **All Deployments**, comprobada con peticiones sin cookies: tanto alias como URL inmutable redirigen a `vercel.com/sso-api`. Standard dejó el alias público durante una comprobación inicial; se retiró inmediatamente, se reforzó sólo staging y se volvió a vincular. Había datos exclusivamente sintéticos, sin credenciales de proveedores. No presentar esa primera comprobación como aprobada.
 - Artefacto exclusivo de staging: cron vacío, Git deployment desactivado, noindex, install/build bloqueados antes de ejecutar npm si el proyecto o `VERCEL_ENV` no coinciden. Configuración productiva versionada conservada. El adapter Vercel recibe `.next-websites-qa`, igual al `distDir` efectivo de Next.
 - 50 variables, sólo Preview; ocho sensibles. Secretos de sesión, cron, worker, Contact Flow y MCP nuevos. `DATABASE_URL` y `DIRECT_URL` remotos usan el rol de aplicación; la credencial de migración queda únicamente en el archivo privado local. Ninguna clave OpenAI, Google, Mercado Pago live, Resend, Cloudinary o Vercel de proveedor se cargó al runtime.
-- Cron cero; worker apagado y kill switch activo. MP V2 y sus writers/recovery apagados; IA facturable, proactividad, Contact Flow externo y MCP externo apagados. Sitios usan publicación de aplicación sobre datos ficticios; no DNS ni conexión de dominio externa.
+- Cron cero; worker apagado y kill switch activo. MP V2 y sus writers/recovery apagados; IA facturable, proactividad, Contact Flow externo y MCP externo apagados. El permiso temporal oficial para automatización de QA fue revocado al terminar: cero bypasses restantes y SSO conservado. Sitios usan publicación de aplicación sobre datos ficticios; no DNS ni conexión de dominio externa.
 
 ### Intentos de build, sin ocultar fallos
 
@@ -51,7 +51,7 @@ Limitación explícita: dump portable `--no-owner --no-acl`; no se restauraron o
 |---|---|---|---|
 | Registro V2 | Antecedentes HTTP y validaciones previas | UI de registro, creación real y entrada a Setup aprobadas; primer trial 30 días; siguiente registro de misma IP sin otro trial | CERTIFICADO CON LIMITACIONES |
 | Planes y checkout | Catálogo y contratos previos; sin cambiar precios | Basic/Plus y equipo observados; matriz mensual/anual y contratación externa todavía incompleta | BLOQUEADO |
-| Agenda | Suites anteriores, sin contarlas nuevamente | Disponibilidad real interna/widget; reserva pública concurrente un 201 y un 409, replay idempotente, una reserva/cliente y slot retirado. Mover/cancelar pendientes | CERTIFICADO CON LIMITACIONES |
+| Agenda | Suites anteriores, sin contarlas nuevamente | Disponibilidad real interna/widget; reserva pública concurrente un 201 y un 409, replay idempotente, una reserva/cliente y slot retirado. Reprogramación, versión obsoleta, cancelación y replay aprobados; vínculos preservados | CERTIFICADO CON LIMITACIONES |
 | Onboarding/Puri | 14 pruebas nuevas de uso comercial, orquestador y Setup; modelos simulados | Registro → propuesta determinista de horarios sin escritura → revisión → tres servicios → disponibilidad → enlace → finalizar y recargar, aprobado. Equipo dos profesionales y horario compartido aprobado con trial sintético explícito | CERTIFICADO CON LIMITACIONES |
 | Sitios web Plus | HTTP/editor/multi-tenant anteriores | Login Plus, editor, preview con datos propios, autosave real y borrador aislado aprobados. Publicación rechazó portada incompleta. Subida Cloudinary y publicación completa pendientes | CERTIFICADO CON LIMITACIONES |
 | Mercado Pago | Simulaciones y reconciliación anteriores | Sesión y cuentas test observadas; operación sandbox y webhook V2 aún sin certificar | BLOQUEADO |
@@ -60,21 +60,21 @@ Limitación explícita: dump portable `--no-owner --no-acl`; no se restauraron o
 | Contact Flow | Parte de 35 pruebas nuevas MCP/Contact Flow; consentimiento y límites | Externo apagado; no tick/productor ni envíos. Transporte remoto pendiente | CERTIFICADO CON LIMITACIONES |
 | MCP | Contratos, OAuth/scopes y cifrado en 35 pruebas nuevas | Clave nueva sensible: cifrar → persistir Neon → leer → descifrar; alteración/clave distinta rechazadas; transacción revertida. MCP/OAuth remoto apagado y no ejercitado | CERTIFICADO CON LIMITACIONES |
 | PostgreSQL | Regresión nueva bootstrap y legacy aprobada | Migración/drift/idempotencia/privilegios/RLS/backups aprobados en proyecto exacto | CERTIFICADO CON LIMITACIONES |
-| Seguridad | 48 pruebas de protección/guardas, ocho canarios install/build, ESLint afectado y secret scan | Vercel SSO completo, variables separadas y flags comprobados; clave API de otro tenant rechazada en HTTP; sesiones de dashboard cruzadas pendientes | CERTIFICADO CON LIMITACIONES |
+| Seguridad | 48 pruebas de protección/guardas, ocho canarios install/build, ESLint afectado y secret scan | Vercel SSO completo, variables separadas y flags comprobados; clave API ajena rechazada y sesión de otro tenant no puede modificar reserva; SSO final y bypass QA revocado | CERTIFICADO CON LIMITACIONES |
 | CI/CD | Comandos relevantes locales; build remoto real aprobado | Dos rulesets activos; Actions no inicia jobs por bloqueo de billing | BLOQUEADO |
 
 ### Fallos y omisiones de QA
 
 - El primer adaptador de navegador esperaba la categoría local `puri-demo`, ausente en Neon. Se adaptó al formulario real «Otro» con descripción; no fue un defecto de registro.
 - El caso de equipo inicialmente mostró acceso terminado: el contrato era INACTIVE sin trial por reutilizar IP. Se comprobó en SQL y no se cambió antifraude. Dos cuentas sintéticas recibieron trials de fixture para continuar; no confundir esto con una concesión real de trial por registro.
-- La continuación de navegador aprobó equipo y se detuvo por el límite explícito de solicitudes antes de móvil. No hay certificación de 390×844 ni 360×800 todavía; solicitar viewport sin completar recorrido no cuenta.
-- Una aserción inicial esperaba CSRF en el endpoint de disponibilidad, que es lectura sin mutación; se corrigió el objetivo del harness a Puri. No hubo cambio funcional. Otra ejecución recibió 429 en login; se respeta el periodo de espera, sin spoof de IP ni desactivar el limitador.
+- La continuación aprobó equipo y se detuvo por el límite de solicitudes antes de móvil. Un smoke móvil posterior inició sesión y mostró onboarding a 390 px; el límite bloqueó la continuación con «Failed to fetch». No se considera defecto del producto ni prueba aprobada: **390×844 y 360×800 siguen sin certificación completa**, tampoco móvil checkout/agenda/recuperación. No reutilizar esa captura como evidencia de éxito.
+- Una aserción inicial esperaba CSRF en el endpoint de disponibilidad, que es lectura sin mutación; se corrigió el objetivo del harness a Puri. No hubo cambio funcional. Otra ejecución recibió 429 en login; se esperó el periodo sin spoof de IP ni desactivar el limitador. Después login y administración de reservas pasaron. Las respuestas vacías 404 de MCP/worker deshabilitados requirieron adaptar el parser del harness; no se activó ni ejecutó el worker.
 - Cero excepciones de página registradas en los recorridos aprobados; esto no certifica todas las pantallas. Hay capturas y videos locales sintéticos; no se suben credenciales, cookies o dumps a Git.
 - No se repitieron las miles de pruebas de auditorías anteriores. Regresión final nueva: **100 pruebas únicas / 11 archivos, cero fallos u omisiones**; incluye las 48 de protección/guardas y las de roles/Puri/MCP/Contact Flow, sin sumar ejecuciones repetidas. Prisma validate y TypeScript completo aprobados; build remoto nuevo tipó runtime. ESLint de archivos afectados sin errores. `npm audit --omit=dev`: cero.
 
 ## Proveedores y requisitos antes de activación
 
-**Mercado Pago:** aplicación PuragendaSubs / Suscripciones. El panel «Credenciales de prueba» identifica otra aplicación y vendedor test; no inferir live/test por prefijo APP_USR. Verificar `/users/me`, país y etiqueta de test antes de cualquier escritura. La sesión vuelve a requerir identidad; no se envían OTP por chat. No se cambió la URL live. Callback previsto: `https://project-8xjzo.vercel.app/api/webhooks/mercadopago-v2`. Requiere habilitación sandbox acotada, firma test e identificación del vendedor; Vercel SSO seguirá activo. La autorización temporal usada por QA no se debe entregar como enlace público ni dejarla vigente al cerrar. No se probó webhook ni cobro.
+**Mercado Pago:** aplicación PuragendaSubs / Suscripciones. El panel «Credenciales de prueba» identifica otra aplicación y vendedor test; no inferir live/test por prefijo APP_USR. Verificar `/users/me`, país y etiqueta de test antes de cualquier escritura. La verificación de identidad se completó de nuevo; no se enviaron OTP por chat. No se cambió la URL live. Callback previsto: `https://project-8xjzo.vercel.app/api/webhooks/mercadopago-v2`. Requiere habilitación sandbox acotada, firma test e identificación del vendedor; Vercel SSO seguirá activo. La autorización temporal usada por QA no se debe entregar como enlace público ni dejarla vigente al cerrar. No se probó webhook ni cobro.
 
 **Resend:** simulación predeterminada, sin claves en staging. Dominio/remitente/quota verificados en panel no prueban entrega. Una prueba externa deberá usar el modo test oficial y recipientes reservados, certificado del lab y cuota disponible; no enviar a clientes. No se cambió plan ni pay-as-you-go.
 
@@ -113,14 +113,14 @@ Abortar ante drift, referencia distinta, secreto live en staging, acceso cruzado
 
 ### Costos y límites
 
-Vercel Pro comparte crédito por equipo. Budget observado US$10 es alerta, Pause false; **no garantiza tope para Preview**. On-demand seguía en US$0 en lectura autenticada de las 17:32 de Chile después de los tres builds; las métricas pueden retrasarse y la duración facturable no estaba disponible. Tres builds autorizados en total (dos errores y uno Ready), sin cuarto build aprobado. Solicitudes iniciales hasta 500 y extensión posterior de 500: máximo combinado 1.000; recursos/prefetch del navegador también cuentan. El harness se detuvo al límite, no se usa una alerta como corte. Neon Free sin upgrade; Resend sin envíos; OpenAI cero inferencias. Sin cron, workers ni automatización Git activos en staging.
+Vercel Pro comparte crédito por equipo. Budget observado US$10 es alerta, Pause false; **no garantiza tope para Preview**. On-demand seguía en US$0 en lectura autenticada de las 17:32 de Chile después de los tres builds; las métricas pueden retrasarse y la duración facturable no estaba disponible. Tres builds autorizados en total (dos errores y uno Ready), sin cuarto build aprobado. Solicitudes iniciales hasta 500 y extensión posterior de 500: máximo combinado 1.000; recursos/prefetch del navegador también cuentan. Vercel observó **979 solicitudes** al detener las pruebas funcionales; después sólo se hicieron dos verificaciones anónimas finales de protección (981 entre la métrica y esas dos comprobaciones, sin tratar una métrica retrasada como medidor instantáneo). No se envía más tráfico de certificación. El harness se detuvo al límite, no se usa una alerta como corte. Neon Free sin upgrade; Resend sin envíos; OpenAI cero inferencias. Sin cron, workers ni automatización Git activos en staging.
 
 ## Respuestas de cierre
 
-1. **Staging:** desplegado y login sintético funcional, con Vercel Authentication completa.
+1. **Staging:** desplegado y login sintético funcional, con Vercel Authentication completa y sin bypass QA vigente.
 2. **Neon:** migrada e independiente, sin SQL productivo; privilegios/RLS con los límites indicados.
 3. **Build remoto:** tercer intento Ready; dos fallos anteriores documentados.
-4. **Registro/checkout/agenda:** registro, disponibilidad y reserva concurrente/idempotente sí; contratación sandbox y mover/cancelar aún pendientes.
+4. **Registro/checkout/agenda:** registro, disponibilidad, reserva concurrente/idempotente, mover/cancelar y rechazo entre tenants sí; contratación sandbox pendiente.
 5. **Onboarding V2:** recorrido individual y equipo aprobados; móvil/recuperación completa pendientes.
 6. **Plus/editor:** editor/autosave/preview sí; publicación completa y proveedor de medios no certificados remotamente.
 7. **MP sandbox:** no certificado; no pagos reales.
@@ -129,7 +129,7 @@ Vercel Pro comparte crédito por equipo. Budget observado US$10 es alerta, Pause
 10. **Reglas:** dos rulesets activos, allowlist versionada y SSO staging completo; no permisos remotos debilitados al cierre.
 11. **Backup/rollback:** restore sintético real aprobado; rollback a main rechazado; alternativa Next compatible con prueba ORM y smoke pendiente.
 12. **Consumo:** riesgo Pro aceptado, sin tope efectivo; pruebas acotadas y sin IA/envíos/pagos reales.
-13. **Intervención exacta:** resolver billing GitHub; completar acceso/certificación test MP; revisar PR a RC1 tras cerrar bloqueos; cuenta Calendar sólo si se solicita nueva certificación, sin deshabilitar la integración actual.
+13. **Intervención exacta:** el propietario debe resolver el cobro rechazado de GitHub en Billing and licensing → Payment information, o con soporte; el técnico ejecutará entonces baseline y pedirá revisión a RC1. Para MP, completar por canal seguro las credenciales/firma del vendedor test y habilitar el callback de staging, sin tocar live; no basta una sesión abierta. Quedan móvil completo, mensual/anual y publicación externa, para una certificación acotada posterior. Cuenta Calendar sólo si se solicita nueva certificación, sin deshabilitar la integración actual.
 14. **Lanzamiento:** **NO-GO — BLOQUEANTE REAL** por CI y contratación/smoke remoto incompletos. No declarar GO CON LIMITACIONES para funciones necesarias sin certificar.
 
 Esta integración no adelanta el lanzamiento. No se desplegó Puragenda productivo, no se migró su base, no se activaron funciones globales, pagos, correos, DNS ni inferencias reales.

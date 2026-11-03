@@ -771,11 +771,13 @@
     "requestBudget": {
       "ownerAcceptedTotal": 1000,
       "countsIncludeBrowserAssets": true,
-      "lastObserved": [
-        {
-          "vercel_request_count_count": 917
-        }
-      ]
+      "observedRequests": 979,
+      "observedPeriodEnd": "2026-11-03T20:45:00.000Z",
+      "finalAnonymousVerificationRequests": 2,
+      "moreCertificationTrafficStopped": true,
+      "metricLagPossible": true,
+      "observedPlusFinalChecks": 981,
+      "instantaneousHardMeter": false
     },
     "audit": {
       "productive": {
@@ -863,7 +865,57 @@
         "stepsRun": 0,
         "result": "failure",
         "reason": "The job was not started because your account is locked due to a billing issue."
-      }
+      },
+      "productionProjectDeploymentsAfterPush": [
+        {
+          "id": "dpl_HcXve2Tnze5uCf7fM6KHhx6ui4sR",
+          "state": "ERROR",
+          "created": 1793679129362,
+          "target": null,
+          "sha": "3f9bbaddfdf6f1bfd106cf3fc90f7dcbced612b6",
+          "branch": "release/puragenda-next-preproduction-readiness"
+        },
+        {
+          "id": "dpl_3N4chkDiibVSaBUURZaFYTMDURnz",
+          "state": "ERROR",
+          "created": 1793678862839,
+          "target": null,
+          "sha": "5af07f587fabe0696357cdc8bc0a3c863e2a9a74",
+          "branch": "release/puragenda-next-preproduction-readiness"
+        },
+        {
+          "id": "dpl_GMx6UpcdjLCqUwLFRxt3ibuqy56A",
+          "state": "ERROR",
+          "created": 1793674646931,
+          "target": null,
+          "sha": "a3fd2a35480d8152a33550d42e510291a49664a7",
+          "branch": "integration/puragenda-next-onboarding-rc1-final"
+        },
+        {
+          "id": "dpl_DtsikE158TtrppQJVgHfnzNmGKv5",
+          "state": "ERROR",
+          "created": 1793150070900,
+          "target": null,
+          "sha": "8d28501c55c876ffee18f7c5513aa8ecdd0c3fe8",
+          "branch": "feature/puragenda-next"
+        },
+        {
+          "id": "dpl_C29ToGLShM1ba5KedPkPchToUYLg",
+          "state": "READY",
+          "created": 1793044972641,
+          "target": "production",
+          "sha": "e74c92237e47db43425a7d47209520967e51bfb0",
+          "branch": "main"
+        },
+        {
+          "id": "dpl_FX1p3pmuYpXpjAN1ZCf3LAcujCVP",
+          "state": "READY",
+          "created": 1793044803559,
+          "target": null,
+          "sha": "13838010e14d90830551f2ba56479d204acbe60d",
+          "branch": "hotfix/sanando-widget-availability"
+        }
+      ]
     },
     "productionDataOrDeployChanged": false,
     "newMigrations": 0,
@@ -919,6 +971,106 @@
       "status": 401,
       "syntheticTenants": true,
       "foreignApiKeyCannotReadCatalog": true
+    },
+    "remoteBookingManagement": {
+      "passed": true,
+      "requests": 14,
+      "statuses": [
+        200,
+        200,
+        404,
+        200,
+        409,
+        200,
+        200,
+        403,
+        503,
+        200,
+        404,
+        404,
+        404,
+        404
+      ],
+      "checks": [
+        "Dashboard rejects another tenant reservation",
+        "Remote dashboard reschedules through central service",
+        "Stale reservation edits are rejected",
+        "Remote dashboard cancels synthetic reservation",
+        "Remote cancellation replay is idempotent",
+        "Reservation retains client, professional, service and branch identities",
+        "Puri cross-origin requests rejected",
+        "Unconfigured AI fails safely",
+        "Unsupported AI writes return guidance without inference",
+        "MCP external transport is disabled (404)",
+        "Commercial worker remains disabled (404 before authorization)"
+      ],
+      "retryAfter": null,
+      "initialHarnessFailures": [
+        "Empty disabled MCP response initially parsed as JSON",
+        "Expected worker 401 corrected to actual disabled contract 404; reran worker only"
+      ],
+      "executedWorkerTick": false
+    },
+    "mobileSmoke": {
+      "passed": false,
+      "requests": 50,
+      "prefetchBlocked": 1,
+      "viewports": [],
+      "checks": [],
+      "errors": [],
+      "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: 'Horarios', exact: true }) to be visible\u001b[22m\n"
+    },
+    "automationRevocation": {
+      "revoked": true,
+      "projectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+      "generatedOnlyForBoundedCertification": true,
+      "remainingAutomationBypasses": 0,
+      "protection": {
+        "deploymentType": "all"
+      },
+      "productionSecretChanged": false
+    },
+    "finalAnonymousProtection": [
+      {
+        "host": "project-8xjzo.vercel.app",
+        "status": 302,
+        "protected": true
+      },
+      {
+        "host": "puragenda-next-staging-ohzylu884-purocode-projects.vercel.app",
+        "status": 302,
+        "protected": true
+      }
+    ],
+    "mercadoPago": {
+      "sandboxSettingsAccessible": true,
+      "selectedMode": "test",
+      "testUrlRootProduction": true,
+      "secretPresent": true,
+      "settingsChanged": false,
+      "liveModeOpened": false,
+      "notificationSent": false,
+      "credentialUsableInProcess": false,
+      "sandboxEndToEnd": false,
+      "ownerReauthenticated": true
+    },
+    "integration": {
+      "preparedLocally": true,
+      "prCreated": false,
+      "rc1Changed": false,
+      "reason": "CI/sandbox/mobile gates not satisfied; no bypass or premature integration"
+    },
+    "secretScan": {
+      "introducedCommitsScanned": 45,
+      "findings": 0,
+      "scope": "introduced lines and working/untracked files, credential patterns only; repeat after final documentation commit"
+    },
+    "providerCalls": {
+      "billableAI": 0,
+      "realPayments": 0,
+      "realEmails": 0,
+      "productionCalendarReadsOrWrites": 0,
+      "cloudinaryWrites": 0
     }
   }
 }
