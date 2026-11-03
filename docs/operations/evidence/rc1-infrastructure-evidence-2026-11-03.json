@@ -21,6 +21,17 @@
       "command": "node scripts/vercel-build.mjs",
       "failure": "TypeScript cannot resolve five tests/fixtures imports"
     },
+    "prepBranchAutomaticPreview": {
+      "branch": "release/puragenda-next-preproduction-readiness",
+      "sha": "5af07f587fabe0696357cdc8bc0a3c863e2a9a74",
+      "deploymentId": "dpl_3N4chkDiibVSaBUURZaFYTMDURnz",
+      "deploymentSlug": "3N4chkDiibVSaBUURZaFYTMDURnz",
+      "environment": "Preview",
+      "status": "Error",
+      "githubStatus": "failure",
+      "trigger": "Vercel GitHub integration after branch push",
+      "deployHookInvoked": false
+    },
     "deployHooks": "none observed in Project Settings > Git",
     "buildSettingsObserved": {
       "framework": "Next.js",

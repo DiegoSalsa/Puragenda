@@ -62,6 +62,12 @@ En RC1 se revisaron `vercel.json`, `scripts/vercel-build.mjs` y `.github/workflo
 
 La comprobación de código no encuentra un workflow, script o URL versionada que invoque Deploy Hooks o la API de despliegue al publicar la rama de preproducción. Se mantiene como condición de revisión del propietario comprobar integraciones externas del equipo Vercel/GitHub que no estén versionadas.
 
+## Resultado posterior al push de esta rama
+
+El push de `release/puragenda-next-preproduction-readiness` activó la integración GitHub/Vercel automáticamente y creó un segundo despliegue **Preview**, `3N4chkDiibVSaBUURZaFYTMDURnz` (deployment id `dpl_3N4chkDiibVSaBUURZaFYTMDURnz`). GitHub informó primero `Vercel is deploying your app` y después `Deployment has failed`; no fue un Deploy Hook invocado por este trabajo. El estado de producción no cambió según la evidencia disponible.
+
+Este hecho demuestra que una exclusión en el repositorio no basta para impedir la creación de Previews si la configuración Git de Vercel sigue heredándose del equipo. Antes de volver a publicar una rama de revisión se debe configurar o confirmar una exclusión remota equivalente, o usar un proyecto Vercel separado.
+
 ## GitHub
 
 La página autenticada de GitHub muestra **cero rulesets** para `DiegoSalsa/Puragenda`. La página de protecciones clásicas no lista reglas existentes y sólo ofrece crear una nueva; la API del conector no tiene permisos de administración para certificar detalles de protección clásica. Por ello, la protección de `main` y RC1 contra push directo, force push y merge no queda certificada por este acceso.

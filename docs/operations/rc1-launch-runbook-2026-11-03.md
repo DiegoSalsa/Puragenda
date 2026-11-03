@@ -7,8 +7,9 @@ Este runbook describe una ejecución controlada. No autoriza desplegar, migrar p
 1. Confirmar que `release/puragenda-next-rc1` sigue en `a3fd2a35480d8152a33550d42e510291a49664a7` y que `main` no cambió por esta operación.
 2. Revisar diff y migraciones: sólo se aceptan migraciones ya certificadas; no crear ni ejecutar nuevas en este ciclo.
 3. Obtener lectura autenticada de Vercel y GitHub. Registrar proyecto, equipo, rama de producción, Root Directory, Build Command, Ignored Build Step, Deploy Hooks, deployment sources y protecciones de `main`/RC1.
-4. Confirmar backup verificable de la base de staging y un restore ensayado. El responsable de datos debe aprobar cualquier migración.
-5. Ejecutar escaneo de secretos, `npm audit --omit=dev`, Prisma validate, TypeScript, ESLint, build aislado y pruebas de despliegue.
+4. Confirmar explícitamente que la integración Git de Vercel no crea Preview para la rama candidata. Un push de documentación de esta auditoría creó el Preview `3N4chkDiibVSaBUURZaFYTMDURnz` y terminó en error; ese comportamiento debe quedar bloqueado o aislado antes de repetir un push.
+5. Confirmar backup verificable de la base de staging y un restore ensayado. El responsable de datos debe aprobar cualquier migración.
+6. Ejecutar escaneo de secretos, `npm audit --omit=dev`, Prisma validate, TypeScript, ESLint, build aislado y pruebas de despliegue.
 
 ## 1. Preparar staging aislado
 
