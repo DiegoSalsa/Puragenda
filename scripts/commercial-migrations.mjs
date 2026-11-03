@@ -65,6 +65,21 @@ export function localCommercialDatabase(raw) {
   if (!["localhost", "127.0.0.1"].includes(url.hostname) || !/^\/puragenda_commercial_(test|bootstrap_test|legacy_test)(?:_[a-z0-9]+)?$/.test(url.pathname) || process.env.NODE_ENV === "production") throw new Error("ISOLATED_COMMERCIAL_DATABASE_REQUIRED");
   return url.href;
 }
+// This is an explicit exception for the independently verified empty staging
+// resource. Local test runners retain their original loopback-only contract.
+export function stagingCommercialDatabase(raw) {
+  const target = JSON.parse(readFileSync(resolve(root, "config/release/puragenda-next-staging.json"), "utf8"));
+  const url = new URL(raw || "postgres://invalid/invalid");
+  const keys = [...url.searchParams.keys()];
+  if (process.env.RC1_STAGING_CONFIRM !== target.name || process.env.VERCEL_ENV !== "preview" || process.env.NODE_ENV === "production" ||
+      !["postgres:", "postgresql:"].includes(url.protocol) || url.hostname !== target.directHost ||
+      url.pathname !== `/${target.database}` || decodeURIComponent(url.username) !== target.migrationRole ||
+      !url.password || url.hash || (url.port && url.port !== "5432") ||
+      keys.length !== 3 || new Set(keys).size !== 3 || keys.some(key => !["sslmode", "sslaccept", "channel_binding"].includes(key)) ||
+      url.searchParams.get("sslmode") !== "require" || url.searchParams.get("sslaccept") !== "strict" ||
+      url.searchParams.get("channel_binding") !== "require") throw new Error("ISOLATED_STAGING_DATABASE_REQUIRED");
+  return url.href;
+}
 export function optionalRoleSafeMigrationSql(name) {
   const sql = readFileSync(resolve(root, "prisma/migrations", name, "migration.sql"), "utf8");
   if (!optionalRoleMigrations.includes(name)) return sql;
@@ -98,8 +113,8 @@ END $$;`,
   if (roleSafe === sql || roleSafe.includes("FROM PUBLIC, anon, authenticated;")) throw new Error(`OPTIONAL_ROLE_GUARD_MISSING:${name}`);
   return roleSafe;
 }
-export function prepareCommercialMigrationConfig(databaseUrl, { before } = {}) {
-  const url = localCommercialDatabase(databaseUrl);
+export function prepareCommercialMigrationConfig(databaseUrl, { before, staging = false } = {}) {
+  const url = staging ? stagingCommercialDatabase(databaseUrl) : localCommercialDatabase(databaseUrl);
   mkdirSync(resolve(root, "scratch"), { recursive: true });
   const path = mkdtempSync(resolve(root, "scratch/migration-run-"));
   mkdirSync(resolve(path, "migrations"));
@@ -158,12 +173,24 @@ export async function verifyLegacySecurity(pool) {
   const trigger = await pool.query("SELECT 1 FROM pg_trigger WHERE tgname='Appointment_capacity_guard' AND NOT tgisinternal");
   if (!trigger.rowCount) throw new Error("BASELINE_BOOKING_TRIGGER_MISSING");
 }
-export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap") {
-  const url = localCommercialDatabase(databaseUrl);
+export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap", { staging = false } = {}) {
+  const url = staging ? stagingCommercialDatabase(databaseUrl) : localCommercialDatabase(databaseUrl);
   if (!["bootstrap", "legacy"].includes(mode)) throw new Error("INVALID_MIGRATION_MODE");
-  const pool = new pg.Pool({ connectionString: url });
-  const { run } = prepareCommercialMigrationConfig(url);
+  if (staging && mode !== "bootstrap") throw new Error("STAGING_BOOTSTRAP_ONLY");
+  const pgUrl = new URL(url);
+  if (staging) pgUrl.searchParams.set("sslmode", "verify-full");
+  const pool = new pg.Pool({ connectionString: pgUrl.href, ...(staging ? { enableChannelBinding: true, connectionTimeoutMillis: 15000 } : {}) });
+  const { run } = prepareCommercialMigrationConfig(url, { staging });
   try {
+    if (staging) {
+      const client = await pool.connect();
+      try {
+        const target = JSON.parse(readFileSync(resolve(root, "config/release/puragenda-next-staging.json"), "utf8"));
+        const identity = (await client.query("SELECT current_database() AS db,current_user AS role,current_setting('server_version_num')::int AS version,has_schema_privilege(current_user,'public','CREATE') AS can_create")).rows[0];
+        if (identity.db !== target.database || identity.role !== target.migrationRole || Math.floor(identity.version / 10000) !== target.postgresMajor ||
+            !identity.can_create || !client.connection.stream.encrypted || !client.connection.stream.authorized) throw new Error("STAGING_CONNECTION_IDENTITY_OR_TLS_MISMATCH");
+      } finally { client.release(); }
+    }
     const historyExists = (await pool.query("SELECT to_regclass('public._prisma_migrations') AS table_name")).rows[0].table_name;
     const recorded = historyExists ? (await pool.query('SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL')).rows : [];
     if (historyExists && (await pool.query('SELECT 1 FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL')).rowCount) throw new Error("FAILED_HISTORY_REQUIRES_REVIEW");
@@ -190,7 +217,7 @@ export async function deployCommercialMigrations(databaseUrl, mode = "bootstrap"
       // cluster, execute only these optional-role revocations through a
       // guarded copy, verify the same schema, then let Prisma record the
       // original migration checksum with its supported resolve command.
-      const prefix = prepareCommercialMigrationConfig(url, { before: optionalRoleMigrations[0] });
+      const prefix = prepareCommercialMigrationConfig(url, { before: optionalRoleMigrations[0], staging });
       prefix.run(["migrate", "deploy"]);
       for (const name of optionalRoleMigrations) {
         const state = await inspectOptionalRoleMigration(pool, name);

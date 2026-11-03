@@ -2,6 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import {execFileSync} from "node:child_process";
 import {createHash} from "node:crypto";
+import {deployCommercialMigrations} from "./commercial-migrations.mjs";
+
+// Default: preparation only. The explicit --migrate mode reuses the certified
+// runner, including its exact staging allowlist, TLS and optional-role checks.
+if(process.argv.includes("--migrate")) {
+ try { console.log(JSON.stringify(await deployCommercialMigrations(process.env.RC1_STAGING_DATABASE_URL,"bootstrap",{staging:true}))); }
+ catch { console.error("STAGING_MIGRATION_FAILED: inspect the protected runner evidence; no credentials are printed"); process.exitCode=1; }
+ process.exit(process.exitCode??0);
+}
 
 // Preparation only: no SQL, network, credentials, environment writes or deploy.
 // Remote staging must use the same bootstrap/cutover tested locally, rather
@@ -31,6 +40,26 @@ export default defineConfig({schema:${JSON.stringify(path.join(root,"prisma/sche
 `);
 const sha=p=>createHash("sha256").update(fs.readFileSync(p)).digest("hex");
 const files=fs.readdirSync(migrations).filter(name=>name!=="migration_lock.toml").map(name=>({name,sha256:sha(path.join(migrations,name,"migration.sql"))}));
-const result={prepared:true,target,config,baseline,cutover:manifest.cutoverMigration,schemaSha256:sha("prisma/schema.prisma"),migrations:files,sqlExecuted:false,remoteResourcesCreated:false,credentialsCopied:false};
+const result={prepared:true,target,config,baseline,cutover:manifest.cutoverMigration,schemaSha256:sha("prisma/schema.prisma"),migrations:files,migrationCommand:"node scripts/prepare-rc1-staging-release.mjs --migrate",rawBundleDeployApproved:false,sqlExecuted:false,remoteResourcesCreated:false,credentialsCopied:false};
+if(process.argv.includes("--artifact")) {
+ const git=args=>execFileSync("git",args,{encoding:"utf8",windowsHide:true});
+ if(git(["status","--porcelain"]).trim())throw Error("STAGING_ARTIFACT_REQUIRES_CLEAN_COMMIT");
+ const sourceSha=git(["rev-parse","HEAD"]).trim(),artifact=path.join(target,"artifact");fs.mkdirSync(artifact);
+ const copied=[];
+ for(const file of git(["ls-files","-z"]).split("\0").filter(Boolean)) {
+  if(/^(?:scratch|node_modules|tests|marketing|\.git|\.vercel)\//.test(file)||(/^\.env/.test(file)&&file!==".env.example")||/\.(?:pem|key|log)$/.test(file))continue;
+  const source=path.resolve(root,file);if(!source.startsWith(root+path.sep)||!fs.statSync(source).isFile())throw Error("UNSAFE_ARTIFACT_SOURCE");
+  const dest=path.join(artifact,file);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(source,dest);copied.push(file);
+ }
+ const stagingDir=path.join(artifact,".staging");fs.mkdirSync(stagingDir);
+ fs.writeFileSync(path.join(stagingDir,"preview-build.mjs"),`if(process.env.VERCEL_ENV!=="preview"||process.env.VERCEL_PROJECT_ID!=="prj_ma5nkDSDzQGBCFMhroTTzsGi07YD"){console.error("ISOLATED_STAGING_PREVIEW_REQUIRED");process.exit(1);}\nawait import("../scripts/vercel-build.mjs");\n`);
+ const vc=JSON.parse(fs.readFileSync(path.join(artifact,"vercel.json"),"utf8"));
+ vc.git={...vc.git,deploymentEnabled:false};vc.crons=[];vc.buildCommand="node .staging/preview-build.mjs";
+ vc.headers=[...(vc.headers??[]),{source:"/(.*)",headers:[{key:"X-Robots-Tag",value:"noindex, nofollow"}]}];
+ fs.writeFileSync(path.join(artifact,"vercel.json"),JSON.stringify(vc,null,2)+"\n");
+ const manifest={sourceSha,projectId:"prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",environment:"preview",gitAutomatic:false,crons:0,providerSecretsIncluded:false,files:copied.map(file=>({file,sha256:sha(path.join(artifact,file))})),wrapperSha256:sha(path.join(stagingDir,"preview-build.mjs"))};
+ fs.writeFileSync(path.join(stagingDir,"manifest.json"),JSON.stringify(manifest,null,2));
+ result.artifact={path:artifact,sourceSha,files:copied.length,manifestSha256:sha(path.join(stagingDir,"manifest.json"))};
+}
 fs.writeFileSync(path.join(target,"bundle-manifest.json"),JSON.stringify(result,null,2));
 console.log(JSON.stringify(result,null,2));

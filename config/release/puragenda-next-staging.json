@@ -1,0 +1,10 @@
+{
+  "name": "puragenda-next-staging",
+  "vercelProjectId": "prj_ma5nkDSDzQGBCFMhroTTzsGi07YD",
+  "neonProjectId": "divine-glade-04170205",
+  "neonBranchId": "br-quiet-fog-bebr4tlj",
+  "directHost": "ep-twilight-hat-be6cl0zr.c-9.us-east-2.aws.neon.tech",
+  "database": "puragenda_next_staging",
+  "migrationRole": "puragenda_next_staging_owner",
+  "postgresMajor": 17
+}
