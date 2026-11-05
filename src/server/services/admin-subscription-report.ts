@@ -51,7 +51,7 @@ export function getAdminSubscriptionReport(
     cycleLabel: subscription.billingCycle === "ANNUAL" ? "anual" : "mensual",
     staffLimit: getStaffLimit(subscription),
     hasCustomStaffLimit: subscription.staffLimitOverride != null,
-    hasCustomPrice: isManual && subscription.customMonthlyPriceClp != null,
+    hasCustomPrice: subscription.recurringPriceOverrideClp != null || (isManual && subscription.customMonthlyPriceClp != null),
     periodEnd: periodEnd?.toISOString() ?? null,
     monthlyRevenueClp: contributesRevenue ? preview.baseAmount / (subscription.billingCycle === "ANNUAL" ? 12 : 1) : 0,
     nextTransferClp: contributesRevenue && isManual ? preview.amountDue : 0,

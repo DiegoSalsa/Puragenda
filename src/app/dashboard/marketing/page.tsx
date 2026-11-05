@@ -20,13 +20,14 @@ export default async function MarketingPage() {
     getMarketingAvailability(user, business.id),
     getCampaignHistory(business.id),
   ]);
+  const visibleHistory = availability.state === "LEGACY_PAUSED" ? [] : history;
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight"><LocalizedText id="dyefH5KVKfWL" /></h1>
         <p className="mt-1 text-sm text-muted-foreground">Consulta el estado de los envíos comerciales y tu historial de campañas.</p>
       </div>
-      <MarketingDashboard availability={availability} history={history.map(c => ({
+       <MarketingDashboard availability={availability} history={visibleHistory.map(c => ({
         id: c.id, subject: c.subject, audienceSize: c.audienceSize, sentAt: c.sentAt.toISOString(),
       }))} />
     </div>

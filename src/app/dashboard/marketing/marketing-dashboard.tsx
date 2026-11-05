@@ -10,8 +10,8 @@ interface MarketingDashboardProps {
 
 const messages: Record<MarketingAvailability["state"], { title: string; description: string }> = {
   LEGACY_PAUSED: {
-    title: "Envíos comerciales temporalmente pausados",
-    description: "Los envíos anteriores están pausados por revisión de seguridad. Tu historial, tus datos y las condiciones históricas de tu contrato se conservan. Los cupos históricos no están disponibles para enviar durante esta pausa. No necesitas comprar Puragenda+ para conservarlos.",
+    title: "Marketing está incluido en Puragenda+",
+    description: "El plan Puragenda conserva tus reservas y clientes. Las campañas y Contact Flow se habilitan al pasar a Puragenda+.",
   },
   SUBSCRIPTION_INACTIVE: {
     title: "Contact Flow requiere acceso comercial vigente",
@@ -51,6 +51,7 @@ export function MarketingDashboard({ availability, history }: MarketingDashboard
               <p className="text-sm font-medium">Los envíos comerciales están desactivados. Acceder al espacio de revisión no habilita entregas.</p>
             )}
             <p className="text-xs text-muted-foreground">Los correos de reservas y pagos mantienen su funcionamiento habitual.</p>
+            {availability.state === "LEGACY_PAUSED" && <Link href="/puragenda-plus" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted">Conocer Puragenda+ <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}
             {availability.contactFlowHref && (
               <Link href={availability.contactFlowHref} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
                 Revisar Contact Flow <ArrowUpRight className="h-4 w-4" aria-hidden="true" />

@@ -198,6 +198,8 @@ function SidebarContent({
   permissions,
   productionOrdersEnabled,
   puriPlusEnabled,
+  marketingEnabled,
+  websiteEnabled,
   collapsed,
   onClose,
   onToggleCollapsed,
@@ -208,6 +210,8 @@ function SidebarContent({
   permissions?: string[];
   productionOrdersEnabled?: boolean;
   puriPlusEnabled?: boolean;
+  marketingEnabled?: boolean;
+  websiteEnabled?: boolean;
   collapsed: boolean;
   onClose?: () => void;
   onToggleCollapsed?: () => void;
@@ -228,6 +232,8 @@ function SidebarContent({
             ? item.href
             : (item.children?.[0]?.href ?? "");
         if (href === "/dashboard/puri-plus" && !puriPlusEnabled) return false;
+        if (href === "/dashboard/marketing" && !marketingEnabled) return false;
+        if (href === "/dashboard/website" && !websiteEnabled) return false;
         if (href === "/dashboard/orders" && !productionOrdersEnabled)
           return false;
         if (permissions) {
@@ -291,7 +297,7 @@ function SidebarContent({
           return false;
         return true;
       }),
-    [permissions, productionOrdersEnabled, puriPlusEnabled, userRole],
+    [marketingEnabled, permissions, productionOrdersEnabled, puriPlusEnabled, userRole, websiteEnabled],
   );
 
   const visibleSections = useMemo(
@@ -546,6 +552,8 @@ export function DashboardSidebar({
   userRole,
   productionOrdersEnabled,
   puriPlusEnabled,
+  marketingEnabled,
+  websiteEnabled,
   permissions,
 }: {
   userName: string;
@@ -553,6 +561,8 @@ export function DashboardSidebar({
   userRole?: string;
   productionOrdersEnabled?: boolean;
   puriPlusEnabled?: boolean;
+  marketingEnabled?: boolean;
+  websiteEnabled?: boolean;
   permissions?: string[];
 }) {
   const t = useTranslations("navigation");
@@ -674,6 +684,8 @@ export function DashboardSidebar({
               permissions={permissions}
               productionOrdersEnabled={productionOrdersEnabled}
           puriPlusEnabled={puriPlusEnabled}
+              marketingEnabled={marketingEnabled}
+              websiteEnabled={websiteEnabled}
               collapsed={false}
               onClose={() => setMobileOpen(false)}
             />
@@ -694,6 +706,8 @@ export function DashboardSidebar({
           permissions={permissions}
           productionOrdersEnabled={productionOrdersEnabled}
           puriPlusEnabled={puriPlusEnabled}
+          marketingEnabled={marketingEnabled}
+          websiteEnabled={websiteEnabled}
           collapsed={sidebarState.collapsed}
           onToggleCollapsed={toggleCollapsed}
         />

@@ -1,6 +1,5 @@
 import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
 import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
-import LegacyBillingPanel from "./billing-panel";
 import LegacyWebsiteContractNotice from "./legacy-contract-notice";
 import { hasWebsitePaidAccess } from "@/websites/policy";
 import { WebsiteTrialWelcome } from "@/components/dashboard/website-trial-welcome";
@@ -25,6 +24,7 @@ export default async function WebsitePage() {
   const included = websiteAccess.source === "PLUS_INCLUDED";
   if (commercialAccess.v2 && !websiteAccess.editor && websiteAccess.legacyBillingReviewRequired) return <section className="space-y-3"><h1 className="text-2xl font-black">Contrato histórico de Sitio Web</h1><LegacyWebsiteContractNotice included={false} cancelAt={websiteAccess.legacyBillingCancelAt?.toISOString() ?? null} canCancel={business.ownerId === user.id && websiteAccess.legacyBillingCancellable} /></section>;
   if (commercialAccess.v2 && !websiteAccess.editor) return <section className="space-y-3 rounded-2xl border-2 border-black bg-white p-6 text-black"><h1 className="text-2xl font-black">Sitio web incluido en Puragenda+</h1><p>Para crear, editar y publicar tu sitio necesitas acceso vigente a Puragenda+. Tu contenido existente se conserva.</p><Link href="/dashboard/settings#plan" className="font-bold underline">Revisar mi plan</Link></section>;
+  if (!websiteAccess.editor) return <section className="space-y-4 rounded-2xl border-2 border-black bg-white p-6 text-black"><h1 className="text-2xl font-black">Sitio web incluido en Puragenda+</h1><p>El sitio web personalizable, su editor y hosting se habilitan con Puragenda+. Tu contenido existente se conserva.</p><Link href="/puragenda-plus" className="font-bold underline">Conocer Puragenda+</Link></section>;
   const site = await ensureWebsite(business.id, business.slug);
   const [addon, offer, domains, requests] = await Promise.all([
     prisma.websiteAddon.findUnique({ where: { businessId: business.id }, include: { checkoutOperations: { orderBy: { createdAt: "desc" }, take: 1, select: { state: true, mpSubscriptionId: true } } } }),
@@ -43,7 +43,6 @@ export default async function WebsitePage() {
     await prisma.websiteCommercialEvent.upsert({ where: { key: `trial-expired:${business.id}` }, create: { key: `trial-expired:${business.id}`, businessId: business.id, event: "website_trial_expired", priceTier: tier }, update: {} });
   }
   const price = included ? null : business.countryCode === "CL" ? { id: "mercadopago", ...WEBSITE_CATALOG[tier], provider: "mercadopago" as const, enabled: process.env.WEBSITE_CHECKOUT_ENABLED === "1" && bundleAllowed } : await websitePrice(tier).catch(() => null);
-  if (!websiteAccess.editor) return <section className="space-y-4"><h1 className="text-2xl font-black">Tu sitio web</h1><p>Tu contenido se conserva. Activa o regulariza tu contrato de sitio web para editar y publicar.</p><LegacyBillingPanel addon={addon ? { status: addon.status, provider: addon.provider, cancelAt: addon.cancelAt?.toISOString() ?? null, validUntil: addon.validUntil?.toISOString() ?? null } : null} offer={offer} price={price} canManage={business.ownerId === user.id} /></section>;
   const root = websiteRootDomain();
   const local = root === "localhost";
   const host = (await headers()).get("host") ?? "localhost:3005";

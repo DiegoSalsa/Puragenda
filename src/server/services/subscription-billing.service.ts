@@ -53,6 +53,7 @@ export type BillingSubscriptionInput = {
   extraStaffCount: number;
   paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
   customMonthlyPriceClp?: number | null;
+  recurringPriceOverrideClp?: number | null;
   pendingDiscountPercentage?: number | null;
   freeMonthsRemaining?: number | null;
   promoName?: string | null;
@@ -80,7 +81,11 @@ export function calculateSubscriptionBaseAmount(subscription: {
   extraStaffCount: number;
   paymentMethod?: "AUTOMATIC" | "BANK_TRANSFER";
   customMonthlyPriceClp?: number | null;
+  recurringPriceOverrideClp?: number | null;
 }) {
+  if (subscription.recurringPriceOverrideClp != null) {
+    return subscription.recurringPriceOverrideClp;
+  }
   if (subscription.paymentMethod === "BANK_TRANSFER" && subscription.customMonthlyPriceClp != null) {
     return subscription.customMonthlyPriceClp;
   }

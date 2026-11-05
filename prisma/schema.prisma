@@ -599,6 +599,9 @@ model Subscription {
   paymentMethod                SubscriptionPaymentMethod @default(AUTOMATIC)
   // Agreed manual monthly price in CLP, VAT included; never sent to a provider.
   customMonthlyPriceClp        Int?
+  // Explicit recurring CLP override for an automatic legacy subscription.
+  // It is synchronized to the linked provider by the operator flow.
+  recurringPriceOverrideClp    Int?
   pendingDiscountPercentage    Int?
   hasCountedAsPaidReferral     Boolean                   @default(false)
   trialWarningEmailSent        Boolean                   @default(false)

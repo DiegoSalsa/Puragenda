@@ -70,7 +70,7 @@ export async function buildMigrationPreview(source: MigrationSource, request: Mi
   if (legacy?.mpSubscriptionId && legacy.paddleSubscriptionId) blockers.push("MULTIPLE_BASE_PROVIDERS");
   if (!["MERCADO_PAGO", "PADDLE"].includes(current.provider) || !current.externalSubscriptionId) blockers.push("PROVIDER_MIGRATION_REQUIRES_REVIEW");
   if (legacy?.paymentMethod === "BANK_TRANSFER") blockers.push("MANUAL_PAYMENT_REQUIRES_REVIEW");
-  const specialTerms = !!legacy && (legacy.customMonthlyPriceClp !== null || legacy.freeMonthsRemaining > 0 || legacy.promoFreeMonthsRemaining > 0
+  const specialTerms = !!legacy && (legacy.customMonthlyPriceClp !== null || legacy.recurringPriceOverrideClp !== null || legacy.freeMonthsRemaining > 0 || legacy.promoFreeMonthsRemaining > 0
     || legacy.pendingDiscountPercentage !== null || legacy.promoDiscountPercentage !== null || legacy.activePrizeId !== null
     || legacy.nextBillingOverrideAmount !== null || !!legacy.promoName || legacy.staffLimitOverride !== null || legacy.hasCountedAsPaidReferral);
   if (specialTerms) blockers.push("SPECIAL_TERMS_REQUIRE_EXPLICIT_REVIEW");
@@ -98,7 +98,7 @@ export async function buildMigrationPreview(source: MigrationSource, request: Mi
     if (providerPreview.currencyCode !== quote.currencyCode || providerPreview.recurringAmountMinor !== quote.monthlyTotal) blockers.push("PROVIDER_RECURRING_AMOUNT_MISMATCH");
     if (providerPreview.expectedPaymentMinor === null) blockers.push("PROVIDER_PAYMENT_AMOUNT_UNKNOWN");
   } catch { blockers.push("PROVIDER_INFORMATION_UNAVAILABLE"); }
-  const benefits = legacy ? { customMonthlyPriceClp: legacy.customMonthlyPriceClp, pendingDiscountPercentage: legacy.pendingDiscountPercentage,
+  const benefits = legacy ? { customMonthlyPriceClp: legacy.customMonthlyPriceClp, recurringPriceOverrideClp: legacy.recurringPriceOverrideClp, pendingDiscountPercentage: legacy.pendingDiscountPercentage,
     freeMonthsRemaining: legacy.freeMonthsRemaining, promoFreeMonthsRemaining: legacy.promoFreeMonthsRemaining,
     promoDiscountPercentage: legacy.promoDiscountPercentage, promoDiscountMonthsRemaining: legacy.promoDiscountMonthsRemaining,
     nextBillingOverrideAmount: legacy.nextBillingOverrideAmount, activePrizeId: legacy.activePrizeId, promoName: legacy.promoName,

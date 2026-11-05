@@ -22,6 +22,8 @@ import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { PuriAssistant } from "@/components/dashboard/puri-assistant";
 import { shouldShowWebsiteTrialReminder, websiteTrialReminderKey } from "@/websites/trial-reminder";
 import { getDashboardWebsiteLaunch } from "@/server/websites/launch-context";
+import { getCommercialPlanAccess } from "@/server/services/commercial-plan-access";
+import { resolveWebsiteCommercialAccess } from "@/server/websites/commercial-access";
 import { getCurrentAdminSessionUser } from "@/server/auth/admin-session";
 import { exitImpersonationAction } from "@/server/actions/impersonate.actions";
 
@@ -86,6 +88,14 @@ export default async function DashboardLayout({
 
   const setupState = business && canManageSetup(permissions) ? await prisma.businessSetup.findUnique({ where: { businessId: business.id }, select: { completedAt: true } }) : null;
   const setupPriority = !!setupState && !setupState.completedAt;
+  const [commercialAccess, websiteAccess] = business
+    ? await Promise.all([
+        getCommercialPlanAccess(business.id),
+        resolveWebsiteCommercialAccess(business.id),
+      ])
+    : [null, null];
+  const marketingEnabled = !!commercialAccess?.has("contact_flow");
+  const websiteEnabled = !!websiteAccess?.editor;
   const changelogSeenVersion = (await cookies()).get("puragenda_changelog_seen")?.value;
   const websiteLaunch = await getDashboardWebsiteLaunch();
   const reminderCandidate = shouldShowWebsiteTrialReminder({
@@ -113,7 +123,9 @@ export default async function DashboardLayout({
           userRole={user.role}
           productionOrdersEnabled={business?.productionOrdersEnabled}
           permissions={permissions}
-          puriPlusEnabled={growthSandboxEnabled()}
+          puriPlusEnabled={growthSandboxEnabled() && !!commercialAccess?.has("puri.plus")}
+          marketingEnabled={marketingEnabled}
+          websiteEnabled={websiteEnabled}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           {impersonationBanner}

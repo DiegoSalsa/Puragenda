@@ -68,6 +68,7 @@ function stableTerms(subscription: {
   staffLimitOverride: number | null;
   paymentMethod: string;
   customMonthlyPriceClp: number | null;
+  recurringPriceOverrideClp: number | null;
   pendingDiscountPercentage: number | null;
   hasCountedAsPaidReferral: boolean;
   freeMonthsRemaining: number;
@@ -90,6 +91,7 @@ function stableTerms(subscription: {
     staffLimitOverride: subscription.staffLimitOverride,
     paymentMethod: subscription.paymentMethod,
     customMonthlyPriceClp: subscription.customMonthlyPriceClp,
+    recurringPriceOverrideClp: subscription.recurringPriceOverrideClp,
     pendingDiscountPercentage: subscription.pendingDiscountPercentage,
     hasCountedAsPaidReferral: subscription.hasCountedAsPaidReferral,
     freeMonthsRemaining: subscription.freeMonthsRemaining,
@@ -134,6 +136,7 @@ async function readLegacyReport(
   if (websiteAddon && activeWebsiteAddon(websiteAddon, now)) warnings.push("ACTIVE_WEBSITE_ADDON_PRESERVED_AS_LEGACY_ITEM");
   if (activeStaff > professionalTotal) warnings.push("ACTIVE_STAFF_ABOVE_LEGACY_CAPACITY");
   if (subscription.customMonthlyPriceClp !== null) warnings.push("MANUAL_PRICE_PRESERVED");
+  if (subscription.recurringPriceOverrideClp !== null) warnings.push("RECURRING_PRICE_OVERRIDE_PRESERVED");
   if (subscription.lastPaymentStatus && !["approved", "completed", "paid"].includes(subscription.lastPaymentStatus)) warnings.push("LEGACY_PAYMENT_REQUIRES_RECONCILIATION");
   if (historicalStaff > activeStaff) differences.push("INACTIVE_STAFF_HISTORY_PRESENT");
 
@@ -153,6 +156,7 @@ async function readLegacyReport(
   }, now);
   if (legacyAccess !== evaluation.commercialAccess) differences.push("ACCESS_STATE_DIFFERS");
   if (subscription.customMonthlyPriceClp !== null) differences.push("CUSTOM_PRICE_REQUIRES_EXPLICIT_TERMS_REVIEW");
+  if (subscription.recurringPriceOverrideClp !== null) differences.push("RECURRING_PRICE_OVERRIDE_REQUIRES_EXPLICIT_TERMS_REVIEW");
 
   const websiteActive = activeWebsiteAddon(websiteAddon, now);
   const termsSnapshot = stableTerms(subscription, websiteAddon ? {
@@ -170,6 +174,7 @@ async function readLegacyReport(
   // A catalogue tariff is reference data, not evidence of the agreed charge.
   // Incomplete/ambiguous economic conditions stay explicitly unknown.
   const manualPrice = subscription.paymentMethod === "BANK_TRANSFER" ? subscription.customMonthlyPriceClp : null;
+  const agreedPrice = subscription.recurringPriceOverrideClp ?? manualPrice;
   const snapshotInput: CommercialSnapshotInput = {
     businessId,
     plan,
@@ -181,8 +186,8 @@ async function readLegacyReport(
     professionalTotal,
     legacySubscriptionId: subscription.id,
     legacyExtraStaffCount: extraStaffCount,
-    basePriceClp: business.currencyCode === "CLP" ? (manualPrice ?? tariff.total) : null,
-    totalPriceClp: business.currencyCode === "CLP" && !hasBenefits ? (manualPrice ?? tariff.total) : null,
+    basePriceClp: business.currencyCode === "CLP" ? (agreedPrice ?? tariff.total) : null,
+    totalPriceClp: business.currencyCode === "CLP" && !hasBenefits ? (agreedPrice ?? tariff.total) : null,
     termsSnapshot: { ...termsSnapshot, sourceUpdatedAt: subscription.updatedAt?.toISOString() ?? null,
       sourceWebsiteUpdatedAt: websiteAddon?.updatedAt?.toISOString() ?? null,
       websiteOffer: business.websiteOfferEligibility ? JSON.parse(JSON.stringify(business.websiteOfferEligibility)) : null,

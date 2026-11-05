@@ -5,7 +5,6 @@ import { differenceInDays, differenceInHours } from "date-fns";
 import { ArrowUpRight, Crown, Sparkles, Clock, Zap, AlertTriangle } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ActivatePlanButton } from "./activate-plan-button";
-import { PRICING, STAFF_LIMITS } from "@/core/constants";
 import { DunningActions } from "./dunning-actions";
 import { isV2Plan } from "@/server/services/commercial-plan-access";
 
@@ -151,9 +150,9 @@ export async function SubscriptionBanner({
 
             {/* Secondary CTA: Upgrade if on Individual */}
             {plan === "INDIVIDUAL" && (
-              <Link href="/dashboard/settings#plan">
+              <Link href="/puragenda-plus">
                 <button className="flex items-center gap-1.5 rounded-xl border border-[#7C3AED]/30 px-4 py-2.5 text-sm font-semibold text-[#A78BFA] transition-all hover:border-[#7C3AED] hover:bg-[#7C3AED]/10">
-                  <Crown className="h-3.5 w-3.5" /> <LocalizedText id="jxCec3Nc3DIX" /> <ArrowUpRight className="h-3.5 w-3.5" />
+                  <Crown className="h-3.5 w-3.5" /> Pasar a Puragenda+ <ArrowUpRight className="h-3.5 w-3.5" />
                 </button>
               </Link>
             )}
@@ -163,7 +162,7 @@ export async function SubscriptionBanner({
     );
   }
 
-  // INDIVIDUAL paid: upsell to Equipo
+  // Legacy Individual paid: direct the owner to the new Plus offer.
   if (plan === "INDIVIDUAL" && status === "ACTIVE" && !isTrial) {
     return (
       <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
@@ -171,12 +170,12 @@ export async function SubscriptionBanner({
           <div className="space-y-1">
             <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" /><LocalizedText id="ecv0CSnVXwha" /></p>
             <p className="text-sm text-muted-foreground">
-              <LocalizedText id="ldt0Y3vGeiOY" />{PRICING.EQUIPO.monthly.toLocaleString("es-CL")} <LocalizedText id="DEYY0K7es8d8" /> {STAFF_LIMITS.EQUIPO} <LocalizedText id="gD5EREn2bDGy" />
+              Desbloquea sitio web, Puri+ y marketing con Puragenda+.
             </p>
           </div>
-          <Link href="/dashboard/settings#plan">
+          <Link href="/puragenda-plus">
             <button className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#7C3AED]/20">
-              <Crown className="h-3.5 w-3.5" /> <LocalizedText id="B0rydBFNOg1_" /> <ArrowUpRight className="h-3.5 w-3.5" />
+              <Crown className="h-3.5 w-3.5" /> Pasar a Puragenda+ <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </Link>
         </div>

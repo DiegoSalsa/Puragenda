@@ -81,9 +81,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const contract = commercialAccess.v2 ? commercialAccess.snapshot : null;
   const planName = contract ? (contract.planCode === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda") : subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
   const isManualTransfer = subscription?.paymentMethod === "BANK_TRANSFER";
-  const planPrice = contract?.totalPriceClp ?? (isManualTransfer && subscription.customMonthlyPriceClp != null
+  const planPrice = contract?.totalPriceClp ?? (subscription?.recurringPriceOverrideClp ?? (isManualTransfer && subscription.customMonthlyPriceClp != null
     ? subscription.customMonthlyPriceClp
-    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly);
+    : subscription?.plan === "EQUIPO" ? PRICING.EQUIPO.monthly : PRICING.INDIVIDUAL.monthly));
   const isActive = hasOperationalSubscriptionAccess(subscription) && !subscription?.isTrial;
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =

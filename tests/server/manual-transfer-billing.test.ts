@@ -57,6 +57,10 @@ describe("manual subscription billing", () => {
     expect(calculateNextBillingPreview({ ...manual, status: "INACTIVE", paymentMethod: "AUTOMATIC" })).toMatchObject({ baseAmount: 29990, mpAmount: 29990 });
   });
 
+  it("uses an approved recurring override for an automatic legacy contract", () => {
+    expect(calculateNextBillingPreview({ ...manual, paymentMethod: "AUTOMATIC", recurringPriceOverrideClp: 17990 })).toMatchObject({ baseAmount: 17990, amountDue: 17990, mpAmount: 17990 });
+  });
+
   it("blocks a tampered checkout before creating any provider subscription or updating the database", async () => {
     const response = await subscribe(request());
     expect(response.status).toBe(409);

@@ -8,6 +8,7 @@ import { isDemoAccountEmail } from "@/server/auth/demo-session";
 import { resolveTemplate } from "@/websites/registry";
 import type { WebsiteLaunchContext } from "@/websites/launch";
 import { websiteRootDomain } from "./service";
+import { resolveWebsiteCommercialAccess } from "./commercial-access";
 
 // Shared by the layout and home page; only the authenticated owner sees this offer.
 // Reading the invitation never creates a website or consumes a trial.
@@ -19,6 +20,7 @@ export const getDashboardWebsiteLaunch = cache(async (): Promise<WebsiteLaunchCo
   if (!business || business.deletedAt || business.ownerId !== user.id) return null;
   const subscription = await prisma.subscription.findUnique({ where: { businessId: business.id }, select: { plan: true } });
   if (isV2Plan(subscription?.plan)) return null;
+  if (!(await resolveWebsiteCommercialAccess(business.id)).editor) return null;
   const [offer, addon, site, services, locations] = await Promise.all([
     prisma.websiteOfferEligibility.findUnique({ where: { businessId: business.id }, select: { offerCode: true, eligibleAt: true, trialStartedAt: true, trialEndsAt: true, trialConsumedAt: true } }),
     prisma.websiteAddon.findUnique({ where: { businessId: business.id }, select: { status: true, validUntil: true, cancelAt: true } }),
