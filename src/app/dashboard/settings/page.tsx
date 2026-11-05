@@ -45,6 +45,7 @@ import {
   isMercadoPagoCurrencyCompatible,
 } from "@/core/countries";
 import { getMercadoPagoOAuthConfig } from "@/server/services/mercadopago-oauth.service";
+import { getWidgetUrl } from "@/server/booking/widget-url";
 
 export const dynamic = "force-dynamic";
 
@@ -73,10 +74,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const mpConnectedSuccess = params.mp_connected === "true";
   const mpError = params.mp_error;
 
-  const isProduction = process.env.NODE_ENV === "production";
-  const widgetUrl = isProduction
-    ? `https://www.puragenda.cl/widget/${business.slug}`
-    : `http://localhost:3000/widget/${business.slug}`;
+  const widgetUrl = getWidgetUrl(business.slug);
   const iframeCode = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" style="border-radius: 16px; border: 1px solid #222;"></iframe>`;
 
   const commercialAccess = await getCommercialPlanAccess(business.id);
