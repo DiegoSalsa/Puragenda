@@ -25,7 +25,14 @@ describe("RC1 push/deployment isolation",()=>{
   it("allows only main to deploy automatically without changing legacy schedules",()=>{
     const config=JSON.parse(readFileSync("vercel.json","utf8"));
     expect(config.git.deploymentEnabled).toEqual({"**":false,"main":true,"release/puragenda-next-rc1":false,"fix/puragenda-next-audit-01-registration":false,"fix/puragenda-next-audit-02-agenda":false,"fix/puragenda-next-audit-03-services-staff":false,"fix/puragenda-next-audit-04-clients-privacy":false,"fix/puragenda-next-audit-05-billing-subscriptions":false,"fix/puragenda-next-audit-06-websites-plus":false,"fix/puragenda-next-audit-07-puri-onboarding":false,"fix/puragenda-next-audit-08-contact-flow":false,"integration/puragenda-next-onboarding-v2":false,"integration/puragenda-next-onboarding-v2-clean":false,"fix/puragenda-next-onboarding-09a-c3":false,"fix/puragenda-next-onboarding-migration-certification":false});
-    expect(config.crons).toHaveLength(5);
+    expect(config.crons.filter((cron:{path:string})=>cron.path!=="/api/cron/billing-v2-reconciliation")).toEqual([
+      {path:"/api/cron/mcp-cleanup",schedule:"0 4 * * *"},
+      {path:"/api/cron/tracking-retention",schedule:"0 3 * * *"},
+      {path:"/api/cron/trial-expiry",schedule:"0 13 * * *"},
+      {path:"/api/cron/reminders",schedule:"0 14 * * *"},
+      {path:"/api/cron/payment-holds",schedule:"30 4 * * *"},
+    ]);
+    expect(config.crons.filter((cron:{path:string})=>cron.path==="/api/cron/billing-v2-reconciliation")).toEqual([{path:"/api/cron/billing-v2-reconciliation",schedule:"*/15 * * * *"}]);
     expect(config.crons.some((cron:{path:string})=>cron.path==="/api/cron/puragenda-next")).toBe(false);
   });
   it.each(["production","preview","development",""])("refuses every audit %s build before any CLI executes",environment=>{
