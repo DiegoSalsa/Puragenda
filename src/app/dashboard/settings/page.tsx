@@ -10,6 +10,8 @@ import { CommercialUsagePanel } from "@/components/dashboard/commercial-usage-pa
 import { getCommercialPlanAccess, isRegistrationV2Contract, isV2Plan } from "@/server/services/commercial-plan-access";
 import { hasOperationalSubscriptionAccess } from "@/core/subscription-access";
 import { PRICING } from "@/core/constants";
+import { contractedProfessionalsLabel } from "@/core/commercial-display";
+import { getStaffLimit } from "@/core/subscription-plan";
 import Link from "next/link";
 import { LATEST_CHANGELOG_VERSION } from "@/config/changelog";
 import { Key, Link2, Code2, Clock, Store, ImageIcon, MapPin, Crown, CheckCircle2, AlertCircle, CreditCard, Banknote, RefreshCw, Sparkles, Package, CalendarRange, Globe2 } from "@/components/icons/hover-icons";
@@ -202,6 +204,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   <> <LocalizedText id="U34Bfej7YVY-" /> {new Date(subscription.currentPeriodEnd).toLocaleDateString("es-CL")}</>
                 )}
               </p>
+              <p className="text-sm text-muted-foreground">{contractedProfessionalsLabel(contract?.professionalTotal ?? getStaffLimit(subscription))}</p>
             </div>
             {showUpgrade && (
               <div className="w-full sm:w-auto sm:min-w-[220px]">

@@ -71,7 +71,7 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
     fixes: [
       "Puri distingue los cupos totales de las horas disponibles para evitar respuestas ambiguas sobre la disponibilidad.",
       "Se reforzó la validación del acceso al terminar el periodo de prueba y al reactivar una suscripción, para que el panel y el widget reflejen el estado correcto.",
-      "Se corrigieron casos del primer pago después de la prueba y de la selección del plan Equipo durante el pago.",
+      "Se corrigieron casos del primer pago después de la prueba y de la selección del plan durante el pago.",
     ],
     notice: "Puri consulta información y orienta; por ahora no modifica citas, clientes ni configuraciones.",
   },
@@ -176,7 +176,7 @@ export const CHANGELOG_DATA: ChangelogEntry[] = [
       "Enlaces reservables para el sticker de Instagram, con servicio, profesional, sucursal y fecha preseleccionados cuando corresponde.",
       "Métricas de visitas, reservas e ingresos atribuidos para medir qué historias generan resultados reales.",
       "Presets reutilizables, historial de campañas y recomendaciones automáticas basadas en horas disponibles o cancelaciones.",
-      "Diseños adaptados al plan Individual: se ocultan profesional y sucursal cuando no aportan valor, y cada negocio decide si muestra la dirección.",
+      "Diseños adaptados a negocios con un profesional: se ocultan profesional y sucursal cuando no aportan valor, y cada negocio decide si muestra la dirección.",
       "El menú del panel ahora agrupa Agenda, Gestión, Crecimiento y Configuración en secciones desplegables más claras.",
       "Google Calendar, Encargos e Historias incorporan tutoriales completos; todas las secciones principales mantienen ayuda contextual.",
     ],

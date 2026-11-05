@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { LocalizedText } from "@/components/i18n/localized-text";
 
 import { useState, useTransition } from "react";
+import { commercialPlanName } from "@/core/commercial-display";
 import { Copy, Loader2, Pause, Play, Plus, Tag } from "@/components/icons/hover-icons";
 import {
   createPlatformDiscountCodeAction,
@@ -27,7 +28,7 @@ type DiscountCode = {
   createdByName: string | null;
 };
 
-const PLAN_OPTIONS = ["INDIVIDUAL", "EQUIPO", "TEST"] as const;
+const PLAN_OPTIONS = ["PURAGENDA", "PURAGENDA_PLUS"] as const;
 
 function discountLabel(code: DiscountCode) {
   return code.discountType === "PERCENTAGE"
@@ -50,7 +51,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
     expiresAt: "",
     trialEndsAtFrom: "",
     trialEndsAtTo: "",
-    appliesToPlans: ["INDIVIDUAL", "EQUIPO"],
+    appliesToPlans: ["PURAGENDA"],
   });
 
   function togglePlan(plan: string) {
@@ -87,7 +88,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
         expiresAt: "",
         trialEndsAtFrom: "",
         trialEndsAtTo: "",
-        appliesToPlans: ["INDIVIDUAL", "EQUIPO"],
+        appliesToPlans: ["PURAGENDA"],
       });
     });
   }
@@ -237,7 +238,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                         selected ? "bg-[#BFFCC6]" : "bg-white text-black/40"
                       }`}
                     >
-                      {plan}
+                      {commercialPlanName(plan)}
                     </button>
                   );
                 })}
@@ -312,7 +313,7 @@ export function DiscountsClient({ codes }: { codes: DiscountCode[] }) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {(code.appliesToPlans.length ? code.appliesToPlans : ["TODOS"]).map((plan) => (
+                          {(code.appliesToPlans.length ? [...new Set(code.appliesToPlans.map(commercialPlanName))] : ["Todos"]).map((plan) => (
                             <span key={plan} className="border border-black bg-[#85E3FF] px-1.5 py-0.5 text-[10px] font-black">
                               {plan}
                             </span>

@@ -22,6 +22,8 @@ describe("subscription payment admin email", () => {
 
     expect(template.subject).toBe("Nueva suscripción pagada — Cinnamon nails");
     expect(template.html).toContain("Cinnamon nails");
+    expect(template.html).toContain("Puragenda");
+    expect(template.html).not.toContain("EQUIPO");
     expect(template.html).toContain("payment-123");
     expect(template.html).toContain("Conversión desde prueba");
     expect(template.html).toContain("Ana &lt;Owner&gt;");

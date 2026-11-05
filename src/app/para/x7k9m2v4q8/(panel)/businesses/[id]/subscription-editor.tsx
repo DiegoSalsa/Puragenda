@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Loader2, CheckCircle2, Save } from "@/components/icons/hover-icons";
 import { updateSubscriptionAction } from "@/server/actions/admin.actions";
-import { STAFF_LIMITS } from "@/core/constants";
+import { commercialPlanName } from "@/core/commercial-display";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 import { SubscriptionBillingDetails } from "@/components/admin/subscription-billing-details";
 import type { AdminSubscriptionReport } from "@/server/services/admin-subscription-report";
@@ -31,7 +31,6 @@ interface SubscriptionData {
 export function SubscriptionEditor({ subscription, billingReport, activeStaff }: { subscription: SubscriptionData; billingReport: AdminSubscriptionReport; activeStaff: number }) {
   const legacy = useTranslations("legacy");
   const router = useRouter();
-  const [plan, setPlan] = useState(subscription.plan);
   const [status, setStatus] = useState(subscription.status);
   const [billingCycle, setBillingCycle] = useState(subscription.billingCycle);
   const [extraStaff, setExtraStaff] = useState(subscription.extraStaffCount);
@@ -47,7 +46,6 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
 
     try {
       const result = await updateSubscriptionAction(subscription.id, {
-        plan: plan as "INDIVIDUAL" | "EQUIPO",
         status: status as "ACTIVE" | "TRIALING" | "PAST_DUE" | "INACTIVE" | "CANCELLED",
         billingCycle: billingCycle as "MONTHLY" | "ANNUAL",
         extraStaffCount: extraStaff,
@@ -80,10 +78,7 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
         <SubscriptionBillingDetails report={billingReport} activeStaff={activeStaff} />
         <div className="space-y-1.5">
           <label className="text-xs font-black uppercase text-black/60"><LocalizedText id="-o7Qvavda8sc" /></label>
-          <select disabled={billingReport.isManual} value={plan} onChange={(e) => setPlan(e.target.value)} className={selectClass}>
-            <option value="INDIVIDUAL">Individual</option>
-            <option value="EQUIPO">Equipo</option>
-          </select>
+          <p className="border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black">{commercialPlanName(subscription.plan)} · {billingReport.professionalsLabel}</p>
         </div>
 
         <div className="space-y-1.5">
@@ -116,11 +111,7 @@ export function SubscriptionEditor({ subscription, billingReport, activeStaff }:
             onChange={(e) => setExtraStaff(parseInt(e.target.value) || 0)}
             className="w-full border-2 border-black bg-white px-3 py-2 text-sm font-bold text-black outline-none"
           />
-          {subscription.staffLimitOverride !== null ? <p className="text-xs font-bold text-black/50">El acuerdo permite {subscription.staffLimitOverride} profesionales activos en total. Los cupos extra no aumentan ese límite.</p> : plan === "EQUIPO" && (
-            <p className="text-xs font-bold text-black/50">
-              <LocalizedText id="fEkJPD20uVSY" /> {STAFF_LIMITS.EQUIPO}<LocalizedText id="fy_ghNZ9TscP" /> {STAFF_LIMITS.EQUIPO + 1}.
-            </p>
-          )}
+          <p className="text-xs font-bold text-black/50">{billingReport.professionalsLabel}. Las condiciones y el precio acordado se conservan.</p>
         </div>
 
         {subscription.isTrial && subscription.trialEndsAt && (

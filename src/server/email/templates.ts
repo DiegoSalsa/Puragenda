@@ -1,3 +1,4 @@
+import { commercialPlanName } from "@/core/commercial-display";
 import { formatInTimeZone } from "date-fns-tz";
 import type { AppLocale } from "@/i18n/config";
 import { getDateLocale } from "@/i18n/date-locale";
@@ -591,7 +592,7 @@ export function newRegistrationAdminEmail(data: NewRegistrationData): { subject:
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Plan</td>
-          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${escapeHtml(data.plan)}</td>
+          <td style="padding:10px 14px;font-size:13px;color:#0f172a;font-weight:500;">${escapeHtml(commercialPlanName(data.plan))}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;"> Estado</td>
@@ -654,7 +655,7 @@ export function subscriptionPaymentAdminEmail(data: SubscriptionPaymentAdminEmai
         ${detailRow("Negocio", safe(data.businessName))}
         ${detailRow("Dueño", safe(data.ownerName))}
         ${detailRow("Email", safe(data.ownerEmail))}
-        ${detailRow("Plan", safe(data.plan))}
+        ${detailRow("Plan", safe(commercialPlanName(data.plan)))}
         ${detailRow("Ciclo", safe(data.billingCycle))}
         ${detailRow("Tipo", safe(badge))}
         ${detailRow("Proveedor", safe(data.provider))}
@@ -956,7 +957,7 @@ interface TrialExpiringEmailData {
 
 /** Email to owner when trial is about to expire */
 export function trialExpiringEmail(data: TrialExpiringEmailData): { subject: string; html: string } {
-  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planLabel = commercialPlanName(data.plan);
   const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
 
   return {
@@ -1000,7 +1001,7 @@ interface TrialExpiredEmailData {
 
 /** Email to owner when trial has expired */
 export function trialExpiredEmail(data: TrialExpiredEmailData): { subject: string; html: string } {
-  const planLabel = data.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planLabel = commercialPlanName(data.plan);
   const pricingUrl = process.env.NODE_ENV === "production" ? "https://www.puragenda.cl/pricing" : "http://localhost:3000/pricing";
 
   return {

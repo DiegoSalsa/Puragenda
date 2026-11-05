@@ -256,7 +256,7 @@ export async function saveStaffScheduleAction(staffId: string, schedule: { dayOf
     select: { plan: true },
   });
   if (usesBusinessScheduleOnly(subscription?.plan)) {
-    return { error: "El plan Individual usa automáticamente el horario del negocio" };
+    return { error: "Los negocios con un profesional usan automáticamente el horario del negocio" };
   }
   const validationError = validateDailyHours(schedule);
   if (validationError) return { error: validationError };

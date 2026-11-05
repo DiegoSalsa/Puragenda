@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/prisma";
+import { commercialPlanGroup } from "@/core/commercial-display";
 
-type DiscountPlan = "INDIVIDUAL" | "EQUIPO" | "TEST";
+type DiscountPlan = "PURAGENDA" | "PURAGENDA_PLUS" | "INDIVIDUAL" | "EQUIPO" | "TEST";
 
 export type PlatformDiscountQuote = {
   id: string;
@@ -53,7 +54,7 @@ export async function quotePlatformDiscount(params: {
   const now = new Date();
   if (discount.startsAt && discount.startsAt > now) return { error: "Este codigo aun no esta activo" };
   if (discount.expiresAt && discount.expiresAt < now) return { error: "Este codigo ya expiro" };
-  if (discount.appliesToPlans.length > 0 && !discount.appliesToPlans.includes(params.plan)) {
+  if (discount.appliesToPlans.length > 0 && !discount.appliesToPlans.includes(params.plan) && !discount.appliesToPlans.includes(commercialPlanGroup(params.plan))) {
     return { error: "Este codigo no aplica para el plan seleccionado" };
   }
   if (discount.maxRedemptions !== null && discount.redeemedCount >= discount.maxRedemptions) {

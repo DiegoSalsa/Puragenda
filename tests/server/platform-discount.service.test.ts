@@ -94,6 +94,12 @@ describe("platform discount eligibility", () => {
     expect(result.discount?.discountedAmount).toBe(24_592);
   });
 
+  it("a new Puragenda discount covers existing normal contracts without elevating them to Plus", async () => {
+    findDiscount.mockResolvedValue(discount({ appliesToPlans: ["PURAGENDA"] }) as never);
+    expect((await quotePlatformDiscount({ code: "PRIMERMES18", plan: "EQUIPO", businessId: "synthetic", amount: 17990 })).discount).toBeDefined();
+    expect((await quotePlatformDiscount({ code: "PRIMERMES18", plan: "PURAGENDA_PLUS", businessId: "synthetic", amount: 27990 })).error).toBeDefined();
+  });
+
   it("allows VIVACHILE18 after prior trials or free months when no paid payment exists", async () => {
     findDiscount.mockResolvedValue(discount({
       code: "VIVACHILE18",

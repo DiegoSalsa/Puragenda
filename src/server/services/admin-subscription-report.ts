@@ -1,4 +1,5 @@
 import { getStaffLimit } from "@/core/subscription-plan";
+import { commercialPlanGroup, commercialPlanName, contractedProfessionalsLabel } from "@/core/commercial-display";
 import { calculateNextBillingPreview, type BillingSubscriptionInput } from "./subscription-billing.service";
 
 type ReportSubscription = BillingSubscriptionInput & {
@@ -37,7 +38,9 @@ export function getAdminSubscriptionReport(
   const amountDue = isClp ? preview.amountDue : null;
   const baseAmount = isClp ? preview.baseAmount : null;
   return {
-    plan: subscription.plan,
+    plan: commercialPlanGroup(subscription.plan),
+    planLabel: commercialPlanName(subscription.plan),
+    professionalsLabel: contractedProfessionalsLabel(getStaffLimit(subscription)),
     method,
     methodLabel,
     isManual,

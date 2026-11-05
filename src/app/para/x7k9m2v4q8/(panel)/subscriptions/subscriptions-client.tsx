@@ -9,6 +9,7 @@ import { es } from "date-fns/locale";
 import { AlertTriangle, XCircle, Clock, TrendingUp, RefreshCw, Gift, Percent, Save, Trash2, Zap } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { commercialPlanGroup, commercialPlanName, contractedProfessionalsLabel } from "@/core/commercial-display";
 import type { AdminSubscriptionReport, getAdminRevenueSummary } from "@/server/services/admin-subscription-report";
 import { SubscriptionBillingDetails } from "@/components/admin/subscription-billing-details";
 import {
@@ -255,7 +256,7 @@ export function SubscriptionsClient({
                       </Link>
                       <p className="font-mono text-xs text-black/40">/{s.business.slug}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
-                        <span className="border border-black bg-[#85E3FF] px-1.5 py-0.5 text-[10px] font-black">{s.plan}</span>
+                        <span className="border border-black bg-[#85E3FF] px-1.5 py-0.5 text-[10px] font-black">{commercialPlanName(s.plan)} · {contractedProfessionalsLabel(s.billingReport.staffLimit)}</span>
                         <span className="border border-black bg-white px-1.5 py-0.5 text-[10px] font-black">{s.status}</span>
                       </div>
                     </td>
@@ -445,7 +446,7 @@ export function SubscriptionsClient({
                       </td>
                       <td className="px-4 py-3">
                         <span className="border-2 border-black bg-[#85E3FF] px-2 py-0.5 text-xs font-black uppercase">
-                          {s.plan}
+                          {commercialPlanName(s.plan)} · {contractedProfessionalsLabel(s.billingReport.staffLimit)}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-bold text-black">
@@ -511,7 +512,7 @@ export function SubscriptionsClient({
                     </td>
                     <td className="px-4 py-3">
                       <span className="border-2 border-black bg-black/10 px-2 py-0.5 text-xs font-black uppercase">
-                        {s.plan}
+                        {commercialPlanName(s.plan)} · {contractedProfessionalsLabel(s.billingReport.staffLimit)}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-bold text-black/60 text-xs uppercase">{s.billingCycle}</td>
@@ -536,12 +537,12 @@ export function SubscriptionsClient({
         </div>
         <div className="border-4 border-black bg-white p-6 shadow-[6px_6px_0_#000]">
           {[
-            { plan: "INDIVIDUAL", cycle: "MONTHLY", label: "Individual Mensual" },
-            { plan: "INDIVIDUAL", cycle: "ANNUAL", label: "Individual Anual" },
-            { plan: "EQUIPO", cycle: "MONTHLY", label: "Equipo Mensual" },
-            { plan: "EQUIPO", cycle: "ANNUAL", label: "Equipo Anual" },
+            { plan: "PURAGENDA", cycle: "MONTHLY", label: "Puragenda Mensual" },
+            { plan: "PURAGENDA", cycle: "ANNUAL", label: "Puragenda Anual" },
+            { plan: "PURAGENDA_PLUS", cycle: "MONTHLY", label: "Puragenda+ Mensual" },
+            { plan: "PURAGENDA_PLUS", cycle: "ANNUAL", label: "Puragenda+ Anual" },
           ].map((row) => {
-            const matching = active.filter((s) => s.plan === row.plan && s.billingCycle === row.cycle && s.billingReport.currencyCode === "CLP");
+            const matching = active.filter((s) => commercialPlanGroup(s.plan) === row.plan && s.billingCycle === row.cycle && s.billingReport.currencyCode === "CLP");
             const count = matching.length;
             const mrrContrib = Math.round(matching.reduce((sum, s) => sum + s.billingReport.monthlyRevenueClp, 0));
             return (
@@ -610,7 +611,7 @@ export function SubscriptionsClient({
                         </td>
                         <td className="px-4 py-3">
                           <span className="border-2 border-black bg-[#85E3FF] px-2 py-0.5 text-xs font-black uppercase">
-                            {s.plan}
+                            {commercialPlanName(s.plan)} · {contractedProfessionalsLabel(s.billingReport.staffLimit)}
                           </span>
                         </td>
                         <td className="px-4 py-3 font-bold text-black">

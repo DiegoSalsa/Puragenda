@@ -21,6 +21,7 @@ import {
 } from "@/components/icons/hover-icons";
 import Link from "next/link";
 import { ADMIN_SECRET_PATH } from "@/core/constants";
+import { commercialPlanGroup, commercialPlanName } from "@/core/commercial-display";
 import { getCountryName } from "@/core/countries";
 import { resolveSubscriptionEndDate } from "@/lib/admin/subscription-end-date";
 import { extendTrialAction } from "@/server/actions/admin.actions";
@@ -88,7 +89,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
         biz.owner?.name.toLowerCase().includes(q);
 
       const matchPlan =
-        planFilter === "ALL" || biz.subscription?.plan === planFilter;
+        planFilter === "ALL" || (!!biz.subscription && commercialPlanGroup(biz.subscription.plan) === planFilter);
 
       const matchStatus =
         statusFilter === "ALL" || biz.subscription?.status === statusFilter;
@@ -107,7 +108,7 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
         getCountryName(biz.countryCode),
         biz.owner?.name || "",
         biz.owner?.email || "",
-        biz.subscription?.plan || "",
+        commercialPlanName(biz.subscription?.plan),
         biz.subscription?.status || "",
         subscriptionEnd ? format(subscriptionEnd, "dd/MM/yyyy") : "",
         biz._count.staff,
@@ -185,8 +186,8 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
           className="border-2 border-black bg-white px-3 py-2 text-sm font-black uppercase text-black focus:outline-none focus:border-[#B28DFF]"
         >
           <option value="ALL">Todos los planes</option>
-          <option value="INDIVIDUAL">Individual</option>
-          <option value="EQUIPO">Equipo</option>
+          <option value="PURAGENDA">Puragenda</option>
+          <option value="PURAGENDA_PLUS">Puragenda+</option>
         </select>
         <select
           value={statusFilter}
@@ -233,12 +234,12 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                {sub && <span className={`border border-black px-1.5 py-0.5 font-black uppercase ${sub.plan === "EQUIPO" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"}`}>{sub.plan}</span>}
+                {sub && <span className={`border border-black px-1.5 py-0.5 font-black uppercase ${commercialPlanGroup(sub.plan) === "PURAGENDA_PLUS" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"}`}>{commercialPlanName(sub.plan)}</span>}
                 <span className="border border-black bg-[#FFFAEB] px-1.5 py-0.5 font-black text-black">{countryLabel(biz.countryCode)}</span>
                 <span className="font-bold text-black/40">{biz.owner?.name || legacy("ccvM499wENUT")}</span>
                 <span className="font-bold text-black/40">{biz._count.staff}<LocalizedText id="wtPweAXxxFPk" /> {biz._count.services}<LocalizedText id="J_56giO82IOd" /> {biz._count.appointments}c</span>
               </div>
-              {biz.billingReport && <p className="text-xs font-bold text-black">{biz.billingReport.methodLabel} · {biz.billingReport.baseAmountLabel} {biz.billingReport.cycleLabel} · máximo {biz.billingReport.staffLimit} profesionales activos{biz.billingReport.hasCustomPrice ? " · IVA incluido" : ""}</p>}
+              {biz.billingReport && <p className="text-xs font-bold text-black">{biz.billingReport.professionalsLabel} · {biz.billingReport.methodLabel} · {biz.billingReport.baseAmountLabel} {biz.billingReport.cycleLabel}{biz.billingReport.hasCustomPrice ? " · IVA incluido" : ""}</p>}
               <div className="flex flex-wrap items-center gap-2 border-t-2 border-black/10 pt-2 text-xs">
                 <Clock className="h-3.5 w-3.5 text-black/50" />
                 <span className="font-black uppercase text-black/50">Próximo pago / vencimiento</span>
@@ -311,16 +312,12 @@ export function BusinessesClient({ businesses }: { businesses: Business[] }) {
                   <td className="px-4 py-4">
                     <span
                       className={`border-2 border-black px-2 py-0.5 text-xs font-black uppercase ${
-                        sub?.plan === "EQUIPO" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"
+                        commercialPlanGroup(sub?.plan) === "PURAGENDA_PLUS" ? "bg-[#B28DFF]" : "bg-[#85E3FF]"
                       }`}
                     >
-                      {sub?.plan === "EQUIPO"
-                        ? "Equipo"
-                        : sub?.plan === "INDIVIDUAL"
-                        ? "Individual"
-                        : sub?.plan || "N/A"}
+                      {commercialPlanName(sub?.plan)}
                     </span>
-                    {biz.billingReport && <div className="mt-2 space-y-1 text-xs font-bold text-black"><p>{biz.billingReport.methodLabel}</p><p>{biz.billingReport.baseAmountLabel} · {biz.billingReport.cycleLabel}</p><p>Máximo {biz.billingReport.staffLimit} activos{biz.billingReport.hasCustomStaffLimit ? " · personalizado" : ""}</p></div>}
+                    {biz.billingReport && <div className="mt-2 space-y-1 text-xs font-bold text-black"><p>{biz.billingReport.professionalsLabel}</p><p>{biz.billingReport.methodLabel}</p><p>{biz.billingReport.baseAmountLabel} · {biz.billingReport.cycleLabel}</p></div>}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-col gap-1">

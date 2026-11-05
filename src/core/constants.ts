@@ -43,8 +43,8 @@ export const COMMERCIAL_BASE_PRICING = {
 } as const;
 export const PRICING = {
   ...COMMERCIAL_BASE_PRICING,
-  INDIVIDUAL: { monthly: 12990, name: "Individual" },
-  EQUIPO:     { monthly: 29990, name: "Equipo" },
+  INDIVIDUAL: { monthly: 12990, name: "Puragenda" },
+  EQUIPO:     { monthly: 29990, name: "Puragenda" },
   TEST:       { monthly: 1000, name: "Test" },
 } as const;
 

@@ -1,4 +1,5 @@
 "use client";
+import { commercialPlanName } from "@/core/commercial-display";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -144,7 +145,7 @@ export function MarketplaceClient({
                       <p className="font-mono text-xs text-black/40">/{business.slug}</p>
                     </td>
                     <td className="font-bold">
-                      {business.deleted ? "ELIMINADO" : `${business.plan} · ${business.status}`}
+                      {business.deleted ? "ELIMINADO" : `${commercialPlanName(business.plan)} · ${business.status}`}
                     </td>
                     <td className="font-black">{summary.marketplaceLabel}</td>
                     <td className="font-bold">{summary.categoriesLabel}</td>
