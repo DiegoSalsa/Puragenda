@@ -2,6 +2,8 @@ import { isV2Plan } from "./commercial-plan-access";
 import { prisma } from "@/server/db/prisma";
 import { createHash } from "node:crypto";
 import { isValid, parseISO } from "date-fns";
+import {legacyPlusTerms} from "@/core/legacy-plus";
+import {commercialJson, materializeCommercialEntitlements} from "./commercial-subscription-v2.service";
 
 export type ManualTeamTerms = {
   businessId: string;
@@ -121,7 +123,11 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
     }
     if (subscription.paddleSubscriptionId) blockers.push("La suscripción internacional debe gestionarse en su flujo correspondiente");
     if (!["ACTIVE", "INACTIVE"].includes(subscription.status)) blockers.push("Revisa el estado de la suscripción antes de renovarla manualmente");
-    if (subscription.customMonthlyPriceClp !== input.amountClp) blockers.push("El monto recibido no coincide con el precio mensual configurado");
+    const snapshot = process.env.PURAGENDA_NEXT_ENABLED === "1" ? await tx.commercialSubscription.findUnique({where: {businessId: input.businessId}}) : null;
+    const plusTerms = legacyPlusTerms(snapshot?.termsSnapshot);
+    const includePlus = !!plusTerms && !plusTerms.cancelAt && snapshot?.planCode === "PURAGENDA_PLUS";
+    const expectedAmount = (subscription.customMonthlyPriceClp ?? 0) + (includePlus ? plusTerms!.upgradeCycleAmount : 0);
+    if (expectedAmount !== input.amountClp) blockers.push("El monto recibido no coincide con el precio mensual configurado");
     if ((subscription.currentPeriodEnd?.getTime() ?? null) !== (expectedPeriodEnd?.getTime() ?? null)) {
       blockers.push("El período actual cambió; vuelve a revisar antes de aplicar");
     }
@@ -139,6 +145,13 @@ export async function recordManualSubscriptionPayment(input: ManualSubscriptionP
       if (blockers.length) throw new Error(blockers.join(". "));
       await tx.subscription.update({ where: { id: subscription.id }, data: changes });
       await tx.auditLog.create({ data: { id: auditId, action: "MANUAL_SUBSCRIPTION_PAYMENT_RECORDED", details: JSON.stringify(evidence) } });
+      if (snapshot && plusTerms && includePlus) {
+        const event = await tx.commercialEvent.create({data: {businessId: input.businessId, subscriptionId: snapshot.id, source: "legacy_plus_transfer", eventId: auditId,
+          operation: "MANUAL_PAYMENT_CONFIRMED", occurredAt: new Date(), outcome: "APPLIED", payloadHash: createHash("sha256").update(JSON.stringify(evidence)).digest("hex"), details: commercialJson(evidence)}});
+        const updated = await tx.commercialSubscription.update({where: {id: snapshot.id}, data: {status: "ACTIVE", periodStart: paidFrom, periodEnd: paidThrough, renewalAt: paidThrough,
+          lastPaymentStatus: "CONFIRMED", lastPaymentAt: event.occurredAt, lastPaymentEventId: event.id, totalPriceClp: input.amountClp}});
+        await materializeCommercialEntitlements(tx, updated);
+      }
     }
     return { subscriptionId: subscription.id, currentPeriodEnd: subscription.currentPeriodEnd, changes, evidence, applied: apply, alreadyRecorded: false, blockers };
   });

@@ -7,6 +7,7 @@ vi.mock("@/server/db/prisma", () => ({ prisma: { subscription: { findFirst: m.ba
 vi.mock("@/server/websites/mercadopago-billing", () => ({ syncMercadoPagoWebsitePreapproval: m.syncAgreement, syncMercadoPagoWebsiteInvoice: m.syncInvoice }));
 vi.mock("@/server/services/subscription-dunning.service", () => ({ getMercadoPagoInvoiceByPaymentId: m.invoiceByPayment, processMercadoPagoInvoice: m.processBase }));
 vi.mock("@/server/commercial-billing/mercadopago-v2", () => ({ handleMpV2Webhook: m.v2 }));
+vi.mock("@/server/commercial-billing/legacy-plus", () => ({ reconcileLegacyPlusInvoice: vi.fn(async () => false), reconcileLegacyPlusOperation: vi.fn() }));
 import { POST } from "@/app/api/webhooks/mercadopago/route";
 const secret = "local-webhook-test-secret-only";
 function request(type = "subscription_preapproval", valid = true, overrides = {}) {

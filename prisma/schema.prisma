@@ -2908,7 +2908,7 @@ model CommercialPaymentEvidence {
   periodStart             DateTime
   periodEnd               DateTime
   occurredAt              DateTime
-  providerSubscriptionId  String
+  providerSubscriptionId  String?
   eventId                 String
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt

@@ -9,6 +9,7 @@ import { hasBusinessPermission } from "@/server/services/permissions.service";
 import { DASHBOARD_PERMISSIONS } from "@/core/permissions";
 import { assertCommercialSandbox } from "@/server/services/commercial-internal";
 import { mpV2RenewalGraceDeadline } from "@/server/commercial-billing/mercadopago-v2-grace";
+import { legacyPlusTerms } from "@/core/legacy-plus";
 
 type WebDb = Pick<Prisma.TransactionClient, "business" | "commercialWebsiteTransition">;
 /** Website policy consumes the shared V2 access decision. Legacy add-on terms
@@ -20,10 +21,11 @@ export async function resolveWebsiteCommercialAccess(businessId: string, now = n
     commercialSubscription: true,
   } });
   const sub = business?.commercialSubscription;
+  const extension = legacyPlusTerms(sub?.termsSnapshot);
   const legacyOperational = !!business && !business.deletedAt && hasOperationalSubscriptionAccess(business.subscription, now);
-  const v2Contract = isV2Plan(sub?.planCode) || isV2Plan(business?.subscription?.plan);
+  const v2Contract = !extension && (isV2Plan(sub?.planCode) || isV2Plan(business?.subscription?.plan));
   const commercial = sub && isV2Plan(sub.planCode) ? effectiveSnapshotAccess(sub, now) : null;
-  const v2Effective = !business?.deletedAt && !!commercial?.commercialAccess;
+  const v2Effective = !business?.deletedAt && !!commercial?.commercialAccess && (!extension || legacyOperational);
   const retired = business?.websiteAddon ? await db.commercialWebsiteTransition.findFirst({ where: {
     businessId, addonId: business.websiteAddon.id, status: "INCLUDED", proposal: { status: "APPLIED", effectiveAt: { lte: now } },
   }, select: { id: true } }) : null;

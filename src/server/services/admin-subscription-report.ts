@@ -1,6 +1,7 @@
 import { getStaffLimit } from "@/core/subscription-plan";
 import { commercialPlanGroup, commercialPlanName, contractedProfessionalsLabel } from "@/core/commercial-display";
 import { calculateNextBillingPreview, type BillingSubscriptionInput } from "./subscription-billing.service";
+import {legacyPlusTerms} from "@/core/legacy-plus";
 
 type ReportSubscription = BillingSubscriptionInput & {
   status: string;
@@ -11,10 +12,14 @@ type ReportSubscription = BillingSubscriptionInput & {
 
 export function getAdminSubscriptionReport(
   subscription: ReportSubscription,
-  business: { countryCode: string; currencyCode?: string },
+  business: { countryCode: string; currencyCode?: string; commercialSubscription?: {planCode: string; status: string; termsSnapshot: unknown; periodEnd: Date|null; trialEnd: Date|null; lastPaymentStatus: string|null}|null },
   now = new Date(),
 ) {
-  const preview = calculateNextBillingPreview(subscription);
+  const basePreview = calculateNextBillingPreview(subscription);
+  const snapshot = business.commercialSubscription, terms = legacyPlusTerms(snapshot?.termsSnapshot);
+  const plus = !!terms && snapshot?.planCode === "PURAGENDA_PLUS" && (snapshot.status === "TRIALING" && !!snapshot.trialEnd && snapshot.trialEnd > now || snapshot.status === "ACTIVE" && snapshot.lastPaymentStatus === "CONFIRMED" && !!snapshot.periodEnd && snapshot.periodEnd > now);
+  const extra = plus && !terms?.cancelAt ? terms!.upgradeCycleAmount : 0;
+  const preview = {...basePreview,baseAmount:basePreview.baseAmount+extra,amountDue:basePreview.amountDue+extra,mpAmount:extra?basePreview.amountDue+extra:basePreview.mpAmount};
   const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
   const isManual = subscription.paymentMethod === "BANK_TRANSFER";
   const isCourtesy = !isManual && !subscription.mpSubscriptionId && !subscription.paddleSubscriptionId &&
@@ -38,8 +43,8 @@ export function getAdminSubscriptionReport(
   const amountDue = isClp ? preview.amountDue : null;
   const baseAmount = isClp ? preview.baseAmount : null;
   return {
-    plan: commercialPlanGroup(subscription.plan),
-    planLabel: commercialPlanName(subscription.plan),
+    plan: commercialPlanGroup(plus ? "PURAGENDA_PLUS" : subscription.plan),
+    planLabel: commercialPlanName(plus ? "PURAGENDA_PLUS" : subscription.plan),
     professionalsLabel: contractedProfessionalsLabel(getStaffLimit(subscription)),
     method,
     methodLabel,

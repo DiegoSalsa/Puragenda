@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from "vitest";
 const m=vi.hoisted(()=>({authorize:vi.fn(),run:vi.fn()}));
 vi.mock("@/server/auth/cron",()=>({authorizeCronRequest:m.authorize}));
 vi.mock("@/server/commercial-billing/mercadopago-v2",()=>({runMpV2Reconciliation:m.run}));
+vi.mock("@/server/commercial-billing/legacy-plus",()=>({runLegacyPlusRecovery:vi.fn(async()=>({completed:0,failed:0}))}));
 import {GET} from "@/app/api/cron/billing-v2-reconciliation/route";
 describe("subscription recovery independent of marketing",()=>{
   beforeEach(()=>{vi.resetAllMocks();m.authorize.mockReturnValue(null);});
