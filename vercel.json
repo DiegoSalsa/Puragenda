@@ -22,6 +22,10 @@
   },
   "crons": [
     {
+      "path": "/api/cron/billing-v2-reconciliation",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/mcp-cleanup",
       "schedule": "0 4 * * *"
     },

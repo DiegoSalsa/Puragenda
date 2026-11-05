@@ -181,6 +181,20 @@ describe("SEO expansion batch 01", () => {
 
   it("preserves all protected sources, existing feature selection and original guide content", () => {
     expect(baseline.initialDiff).toBe("");
+    // The owner explicitly approved the RC1 plan presentation after this SEO
+    // baseline. Keep exact byte checks for those revisions, rather than freezing
+    // their obsolete plan labels or exempting the files from validation.
+    const approvedRc1Revisions: Record<string, string> = {
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/[id]/subscription-editor.tsx": "9416e9d2d83c62d338cd55a89faf336600d8ad0d6eac2806f2bb77a918eec569",
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/businesses-client.tsx": "fe3afb822818d86b56955ec0c48772aa57996fd78569f8b5f5f64e1306fc1524",
+      "src/app/para/x7k9m2v4q8/(panel)/businesses/new/page.tsx": "78ac68cee7098b4c9d3bea6a11b92468961261701c66122631e296734e5ef847",
+      "src/app/para/x7k9m2v4q8/(panel)/discounts/discounts-client.tsx": "fb9df40a15ab82aa06b493f158e6f5c21ace4f7f417b65d7a513b0d67448bddb",
+      "src/app/para/x7k9m2v4q8/(panel)/marketplace/[businessId]/marketplace-editor.tsx": "c4ee9f4f2784e46d57c2dcb28dcb5fb47d2df811dacea808258dc72954d296fb",
+      "src/app/para/x7k9m2v4q8/(panel)/marketplace/marketplace-client.tsx": "74416b2cc7e0ed367365f66264c412adb4f001cad6968493793572111362b73b",
+      "src/app/para/x7k9m2v4q8/(panel)/page.tsx": "87b66c64694be09a449a4e778cdeb8f5e761ba66c7cf628724e0dcc74de9669e",
+      "src/app/para/x7k9m2v4q8/(panel)/subscriptions/subscriptions-client.tsx": "0c7d2c183b8c99538989da4867db86849da3901ef958bbb52b7ec4f6dd881f81",
+      "src/core/constants.ts": "bd1d9c6216ced9dead9dd94403472039a70a881127f0c715775f571b5846a767",
+    };
     // These public sources are intentionally revised by the two-plan refresh.
     // Their prices, visible content, schema and routes have dedicated tests.
     const commercialSources = new Set([
@@ -208,6 +222,10 @@ describe("SEO expansion batch 01", () => {
       // The commercial task explicitly authorizes adding a section to home.
       // Check every original byte, allowing only its two exact insertion points.
       let source = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
+      if (approvedRc1Revisions[path]) {
+        expect(createHash("sha256").update(source).digest("hex"), path).toBe(approvedRc1Revisions[path]);
+        continue;
+      }
       if (commercialSources.has(path)) {
         expect(source, path).not.toMatch(/PRICING\.(INDIVIDUAL|EQUIPO)|Plan Individual|Plan Equipo|newBadge/);
         continue;

@@ -1,11 +1,12 @@
 import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const m = vi.hoisted(() => ({ get: vi.fn(), invoice: vi.fn(), syncAgreement: vi.fn(), syncInvoice: vi.fn(), base: vi.fn(), processBase: vi.fn(), invoiceByPayment: vi.fn() }));
+const m = vi.hoisted(() => ({ get: vi.fn(), invoice: vi.fn(), syncAgreement: vi.fn(), syncInvoice: vi.fn(), base: vi.fn(), processBase: vi.fn(), invoiceByPayment: vi.fn(), v2: vi.fn() }));
 vi.mock("mercadopago", async original => ({ ...await original<typeof import("mercadopago")>(), PreApproval: class { get = m.get; }, Invoice: class { get = m.invoice; } }));
 vi.mock("@/server/db/prisma", () => ({ prisma: { subscription: { findFirst: m.base } } }));
 vi.mock("@/server/websites/mercadopago-billing", () => ({ syncMercadoPagoWebsitePreapproval: m.syncAgreement, syncMercadoPagoWebsiteInvoice: m.syncInvoice }));
 vi.mock("@/server/services/subscription-dunning.service", () => ({ getMercadoPagoInvoiceByPaymentId: m.invoiceByPayment, processMercadoPagoInvoice: m.processBase }));
+vi.mock("@/server/commercial-billing/mercadopago-v2", () => ({ handleMpV2Webhook: m.v2 }));
 import { POST } from "@/app/api/webhooks/mercadopago/route";
 const secret = "local-webhook-test-secret-only";
 function request(type = "subscription_preapproval", valid = true, overrides = {}) {
@@ -36,5 +37,21 @@ describe("Website MP routing uses verified provider resources", () => {
   });
   it("unbound Website operation returns retryable error", async () => {
     m.syncAgreement.mockRejectedValue(new Error("Checkout pendiente de conciliación")); expect((await POST(request())).status).toBe(500); expect(m.base).not.toHaveBeenCalled();
+  });
+  it("routes a canonical V2 preapproval through its signed reconciler, preserving the existing application callback", async () => {
+    m.get.mockResolvedValue({ id: "mp-web-123", external_reference: "v2_durable-operation" });
+    expect((await POST(request())).status).toBe(200);
+    expect(m.v2).toHaveBeenCalledOnce();
+    expect(m.syncAgreement).not.toHaveBeenCalled(); expect(m.base).not.toHaveBeenCalled();
+  });
+  it("never selects V2 from untrusted notification fields", async () => {
+    await POST(request(undefined, true, { external_reference: "v2_forged" }));
+    expect(m.v2).not.toHaveBeenCalled();
+  });
+  it("preserves a retryable failure when V2 reconciliation rejects the signature or account", async () => {
+    m.get.mockResolvedValue({ id: "mp-web-123", external_reference: "v2_durable-operation" });
+    m.v2.mockRejectedValue(new Error("V2_PROVIDER_ACCOUNT_MISMATCH"));
+    expect((await POST(request())).status).toBe(500);
+    expect(m.base).not.toHaveBeenCalled();
   });
 });

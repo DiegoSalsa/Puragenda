@@ -40,6 +40,18 @@ describe("V2 commercial billing policy and provider boundary", () => {
     vi.stubEnv("DATABASE_URL", "postgresql://synthetic@127.0.0.1:55439/puragenda_commercial_test");
     expect(() => mpV2Configuration()).toThrow("V2_BILLING_CONFIGURATION_REQUIRED");
   });
+  it("can reuse the existing production app secrets only behind production switches and an explicit account binding", () => {
+    vi.stubEnv("PURAGENDA_MP_V2_ENABLED", "1"); vi.stubEnv("PURAGENDA_MP_V2_ENVIRONMENT", "production");
+    vi.stubEnv("PURAGENDA_MP_V2_PRODUCTION_WRITES", "1"); vi.stubEnv("PURAGENDA_MP_V2_PRODUCTION_ACCOUNT_ID", "123");
+    for (const key of ["ACCESS_TOKEN", "WEBHOOK_SECRET", "APPLICATION_ID"]) vi.stubEnv(`PURAGENDA_MP_V2_PRODUCTION_${key}`, "");
+    vi.stubEnv("MERCADOPAGO_ACCESS_TOKEN", "synthetic-server-token"); vi.stubEnv("MERCADOPAGO_WEBHOOK_SECRET", "synthetic-server-webhook");
+    vi.stubEnv("MP_APP_ID", "456"); vi.stubEnv("PURAGENDA_MP_V2_APP_URL", "https://example.test");
+    expect(mpV2Configuration()).toMatchObject({ environment: "V2_PRODUCTION", accountId: 123, applicationId: 456, token: "synthetic-server-token", secret: "synthetic-server-webhook" });
+    vi.stubEnv("PURAGENDA_MP_V2_PRODUCTION_WRITES", "0"); expect(() => mpV2Configuration()).toThrow("V2_PRODUCTION_WRITES_DISABLED");
+    vi.stubEnv("PURAGENDA_MP_V2_ENVIRONMENT", "sandbox"); vi.stubEnv("DATABASE_URL", "postgresql://synthetic@127.0.0.1:55439/puragenda_commercial_test");
+    for (const key of ["ACCESS_TOKEN", "WEBHOOK_SECRET", "APPLICATION_ID", "ACCOUNT_ID"]) vi.stubEnv(`PURAGENDA_MP_V2_SANDBOX_${key}`, "");
+    expect(() => mpV2Configuration()).toThrow("V2_BILLING_CONFIGURATION_REQUIRED");
+  });
   it("verifies signatures, signed IDs, environment and freshness before any provider IO", () => {
     const provider = new MpV2Provider(config, {} as MpV2Port), id = "abc123", ts = String(Math.floor(Date.now() / 1000)), req = "request-test";
     const hash = createHmac("sha256", config.secret).update(`id:${id};request-id:${req};ts:${ts};`).digest("hex");

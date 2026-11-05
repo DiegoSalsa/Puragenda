@@ -205,7 +205,7 @@ describe("dashboard action permission boundaries", () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it("does not save a separate professional schedule for Individual", async () => {
+  it("does not save a separate schedule for the historical single-professional allowance", async () => {
     vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
       plan: "INDIVIDUAL",
     } as never);
@@ -220,7 +220,7 @@ describe("dashboard action permission boundaries", () => {
     ]);
 
     expect(result).toEqual({
-      error: "El plan Individual usa automáticamente el horario del negocio",
+      error: "Los negocios con un profesional usan automáticamente el horario del negocio",
     });
     expect(prisma.staff.findFirst).not.toHaveBeenCalled();
   });

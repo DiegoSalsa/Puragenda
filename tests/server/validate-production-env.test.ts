@@ -25,4 +25,11 @@ describe("production environment validation", () => {
   it("accepts the documented AUTH_SECRET configuration", () => {
     expect(() => validateProductionEnv(valid)).not.toThrow();
   });
+  it("refuses to launch Next with its checkout disabled or pointed at Preview", () => {
+    expect(() => validateProductionEnv({ ...valid, PURAGENDA_NEXT_ENABLED: "1" })).toThrow(/checkout to be enabled/);
+    const billing = { ...valid, PURAGENDA_NEXT_ENABLED: "1", PURAGENDA_MP_V2_ENABLED: "1", PURAGENDA_MP_V2_ENVIRONMENT: "production", PURAGENDA_MP_V2_PRODUCTION_WRITES: "1", PURAGENDA_MP_V2_PRODUCTION_ACCOUNT_ID: "123", MP_APP_ID: "456", PURAGENDA_MP_V2_APP_URL: valid.NEXT_PUBLIC_APP_URL };
+    expect(() => validateProductionEnv(billing)).not.toThrow();
+    expect(() => validateProductionEnv({ ...billing, PURAGENDA_MP_V2_APP_URL: "https://example-preview.vercel.app" })).toThrow(/production application origin/);
+    expect(() => validateProductionEnv({ ...billing, PURAGENDA_MP_V2_PRODUCTION_ACCOUNT_ID: "" })).toThrow(/verified production account/);
+  });
 });

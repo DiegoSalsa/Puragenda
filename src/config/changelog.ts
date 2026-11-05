@@ -20,10 +20,37 @@ export interface ChangelogEntry {
   popupEyebrow?: string;
   popupTitle?: string;
   popupDescription?: string;
+  popupFeatureTitles?: string[];
   spotlights?: ChangelogSpotlight[];
 }
 
 export const CHANGELOG_DATA: ChangelogEntry[] = [
+  {
+    version: "v3.0.0",
+    date: "2026-11-05",
+    title: "Llegó Puragenda Next",
+    description: "Renovamos Puragenda para acompañar mejor el trabajo de tu negocio: una configuración guiada por Puri, planes según tus profesionales y una experiencia más clara en la agenda y el panel.",
+    popupVariant: "standard",
+    popupFeatureTitles: ["Puragenda y Puragenda+", "Tu trabajo, más ordenado", "Puri te acompaña desde el inicio"],
+    features: [
+      "Los planes ahora se llaman Puragenda y Puragenda+. En Configuración puedes revisar tu suscripción y cuántos profesionales tienes contratados.",
+      "Agenda, servicios, profesionales y clientes comparten una navegación más clara, también desde el celular.",
+      "Puri te guía paso a paso para configurar tu negocio, sus servicios, profesionales y horarios, y preparar tu enlace de reservas.",
+      "Puragenda+ incluye el sitio web y las herramientas de crecimiento. Sus secciones se muestran según los permisos y lo contratado por tu negocio.",
+      "El editor de sitios reúne contenido, diseño, servicios y reservas en una misma experiencia.",
+      "La gestión de clientes incorpora búsquedas, paginación y controles de acceso a la información.",
+      "El widget de reservas valida disponibilidad, profesionales y condiciones del negocio antes de confirmar una cita.",
+      "El panel de administración muestra el nombre del plan y los profesionales contratados de cada negocio.",
+    ],
+    fixes: [
+      "Se eliminaron las etiquetas de planes Individual y Equipo de las pantallas de suscripción y administración.",
+      "Las opciones de sitio web y marketing respetan el acceso de Puragenda+, conservando los acuerdos de sitio web anteriores.",
+      "La contratación de Puragenda+ comienza dentro de Configuración, con el detalle del contrato, en lugar de llevarte a la página promocional.",
+      "Se reforzaron las validaciones de permisos, cobros, pruebas gratuitas y profesionales disponibles.",
+      "Se mejoraron los recorridos y la presentación en pantallas pequeñas.",
+    ],
+    notice: "Esta actualización no aumenta el precio de tu suscripción actual. Se conservan los profesionales y las condiciones acordadas de los negocios existentes. Puragenda+ se activa únicamente al contratarlo; las automatizaciones de envío requieren su activación y los consentimientos correspondientes.",
+  },
   {
     version: "v2.2.1",
     date: "2026-10-02",

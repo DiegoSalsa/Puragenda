@@ -41,8 +41,13 @@ export function mpV2Configuration(): MpV2Config {
     if (!localTestDatabase && (!approvedHash || !rawDatabase || approvedHash !== createHash("sha256").update(rawDatabase).digest("hex"))) throw new Error("V2_SANDBOX_DATABASE_REQUIRED");
   }
   const prefix = `PURAGENDA_MP_V2_${live ? "PRODUCTION" : "SANDBOX"}_`;
-  const accountId = Number(process.env[`${prefix}ACCOUNT_ID`]), applicationId = Number(process.env[`${prefix}APPLICATION_ID`]);
-  const token = process.env[`${prefix}ACCESS_TOKEN`] ?? "", secret = process.env[`${prefix}WEBHOOK_SECRET`] ?? "";
+  const accountId = Number(process.env[`${prefix}ACCOUNT_ID`]);
+  const applicationId = Number(process.env[`${prefix}APPLICATION_ID`] || (live ? process.env.MP_APP_ID : undefined));
+  // Production may use the existing subscription application's server secrets.
+  // Sandbox never falls back to live credentials. The explicit account binding
+  // and both production write switches still apply before any provider call.
+  const token = process.env[`${prefix}ACCESS_TOKEN`] || (live ? process.env.MERCADOPAGO_ACCESS_TOKEN : "") || "";
+  const secret = process.env[`${prefix}WEBHOOK_SECRET`] || (live ? process.env.MERCADOPAGO_WEBHOOK_SECRET : "") || "";
   if (!token || !secret || !Number.isSafeInteger(accountId) || accountId <= 0 || !Number.isSafeInteger(applicationId) || applicationId <= 0) throw new Error("V2_BILLING_CONFIGURATION_REQUIRED");
   const base = new URL(process.env.PURAGENDA_MP_V2_APP_URL ?? "");
   if (base.username || base.password || base.search || base.hash || base.pathname !== "/" ||

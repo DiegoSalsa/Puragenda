@@ -141,7 +141,7 @@ export default async function DashboardLayout({
           <ContextualHelpButton />
         </div>
         {business ? <><PuriAssistant /><LearningProvider /></> : null}
-        <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} />
+        <ChangelogPopup websiteLaunch={websiteLaunch} websiteReminder={websiteReminder} releaseAnnouncementPending={changelogSeenVersion !== LATEST_CHANGELOG_VERSION} />
       </div>
     </DashboardOverlayProvider>
     </RequestIntlProvider>
