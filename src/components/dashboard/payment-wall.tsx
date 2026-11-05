@@ -56,8 +56,7 @@ export function PaymentWall({
   const v2 = plan === "PURAGENDA" || plan === "PURAGENDA_PLUS";
   const isPastDue = reason === "past_due";
   const isInternational = countryCode !== "CL";
-  const planName =
-    plan === "EQUIPO" ? "Equipo" : plan === "INDIVIDUAL" ? "Individual" : "Test";
+  const planName = plan === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda";
   const planPrice =
     plan === "EQUIPO"
       ? PRICING.EQUIPO.monthly

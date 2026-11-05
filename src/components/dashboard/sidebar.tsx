@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Settings,
   Stamp,
+  Sparkles,
   Sun,
   Trophy,
   Users,
@@ -200,6 +201,7 @@ function SidebarContent({
   puriPlusEnabled,
   marketingEnabled,
   websiteEnabled,
+  upgradeToPlus,
   collapsed,
   onClose,
   onToggleCollapsed,
@@ -212,6 +214,7 @@ function SidebarContent({
   puriPlusEnabled?: boolean;
   marketingEnabled?: boolean;
   websiteEnabled?: boolean;
+  upgradeToPlus?: boolean;
   collapsed: boolean;
   onClose?: () => void;
   onToggleCollapsed?: () => void;
@@ -508,6 +511,17 @@ function SidebarContent({
       <div
         className={`shrink-0 border-t border-border ${collapsed ? "space-y-2 p-2" : "p-3"}`}
       >
+        {upgradeToPlus && (
+          <Link
+            href="/dashboard/settings#plan"
+            onClick={onClose}
+            title="Sube a Puragenda+"
+            className={`mb-2 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-3 py-2.5 text-sm font-bold text-white hover:bg-[#6D28D9] ${collapsed ? "px-2" : ""}`}
+          >
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <NavLabel collapsed={collapsed}>Sube a Puragenda+</NavLabel>
+          </Link>
+        )}
         <Link
           id="tutorial-widget"
           href={widgetHref}
@@ -554,6 +568,7 @@ export function DashboardSidebar({
   puriPlusEnabled,
   marketingEnabled,
   websiteEnabled,
+  upgradeToPlus,
   permissions,
 }: {
   userName: string;
@@ -563,6 +578,7 @@ export function DashboardSidebar({
   puriPlusEnabled?: boolean;
   marketingEnabled?: boolean;
   websiteEnabled?: boolean;
+  upgradeToPlus?: boolean;
   permissions?: string[];
 }) {
   const t = useTranslations("navigation");
@@ -683,9 +699,10 @@ export function DashboardSidebar({
               userRole={userRole}
               permissions={permissions}
               productionOrdersEnabled={productionOrdersEnabled}
-          puriPlusEnabled={puriPlusEnabled}
+              puriPlusEnabled={puriPlusEnabled}
               marketingEnabled={marketingEnabled}
               websiteEnabled={websiteEnabled}
+              upgradeToPlus={upgradeToPlus}
               collapsed={false}
               onClose={() => setMobileOpen(false)}
             />
@@ -708,6 +725,7 @@ export function DashboardSidebar({
           puriPlusEnabled={puriPlusEnabled}
           marketingEnabled={marketingEnabled}
           websiteEnabled={websiteEnabled}
+          upgradeToPlus={upgradeToPlus}
           collapsed={sidebarState.collapsed}
           onToggleCollapsed={toggleCollapsed}
         />

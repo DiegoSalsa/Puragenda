@@ -36,7 +36,7 @@ export async function SubscriptionBanner({
   const { plan, status, isTrial, trialEndsAt } = subscription;
   const daysLeft = trialEndsAt ? Math.max(0, differenceInDays(new Date(trialEndsAt), new Date())) : 0;
   const isUrgent = daysLeft <= 5;
-  const planLabel = plan === "INDIVIDUAL" ? "Individual" : "Equipo";
+  const planLabel = "Puragenda";
 
   if (subscription.paymentMethod === "BANK_TRANSFER") {
     if (hideHealthyStatus && status === "ACTIVE") return null;
@@ -168,7 +168,7 @@ export async function SubscriptionBanner({
       <div className="rounded-2xl border border-[#7C3AED]/15 bg-[#7C3AED]/5 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" /><LocalizedText id="ecv0CSnVXwha" /></p>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Zap className="h-4 w-4 text-[#A78BFA]" />Potencia tu negocio con Puragenda+</p>
             <p className="text-sm text-muted-foreground">
               Desbloquea sitio web, Puri+ y marketing con Puragenda+.
             </p>
@@ -189,7 +189,7 @@ export async function SubscriptionBanner({
     return (
       <div className="flex items-center gap-2 rounded-xl border border-[#7C3AED]/20 bg-[#7C3AED]/5 px-4 py-2.5">
         <Crown className="h-4 w-4 text-[#A78BFA]" />
-        <p className="text-sm text-[#A78BFA]"><LocalizedText id="-o7Qvavda8sc" /> <span className="font-bold"><LocalizedText id="wpRGdUrhm5Ag" /></span> <LocalizedText id="1_f-j6jtjoTN" /></p>
+        <p className="text-sm text-[#A78BFA]">Plan <span className="font-bold">Puragenda</span> activo.</p>
       </div>
     );
   }

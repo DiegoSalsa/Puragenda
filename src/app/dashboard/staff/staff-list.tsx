@@ -55,7 +55,7 @@ function scheduleKey(staffId: string, locationId?: string) {
   return locationId ? `${staffId}:${locationId}` : staffId;
 }
 
-const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Individual", EQUIPO: "Equipo", PURAGENDA: "Puragenda", PURAGENDA_PLUS: "Puragenda+" };
+const PLAN_LABELS: Record<string, string> = { INDIVIDUAL: "Puragenda", EQUIPO: "Puragenda", PURAGENDA: "Puragenda", PURAGENDA_PLUS: "Puragenda+" };
 const ROLE_LABELS: Record<StaffAccessRole, string> = {
   ADMIN: "Admin",
   RECEPTIONIST: "Recepcionista",

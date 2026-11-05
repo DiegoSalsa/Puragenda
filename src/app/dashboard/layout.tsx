@@ -126,6 +126,7 @@ export default async function DashboardLayout({
           puriPlusEnabled={growthSandboxEnabled() && !!commercialAccess?.has("puri.plus")}
           marketingEnabled={marketingEnabled}
           websiteEnabled={websiteEnabled}
+          upgradeToPlus={!!business && business.ownerId === user.id && commercialAccess?.snapshot?.planCode !== "PURAGENDA_PLUS"}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           {impersonationBanner}

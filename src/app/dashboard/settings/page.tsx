@@ -79,7 +79,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   const commercialAccess = await getCommercialPlanAccess(business.id);
   const contract = commercialAccess.v2 ? commercialAccess.snapshot : null;
-  const planName = contract ? (contract.planCode === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda") : subscription?.plan === "EQUIPO" ? "Equipo" : "Individual";
+  const planName = contract ? (contract.planCode === "PURAGENDA_PLUS" ? "Puragenda+" : "Puragenda") : "Puragenda";
   const isManualTransfer = subscription?.paymentMethod === "BANK_TRANSFER";
   const planPrice = contract?.totalPriceClp ?? (subscription?.recurringPriceOverrideClp ?? (isManualTransfer && subscription.customMonthlyPriceClp != null
     ? subscription.customMonthlyPriceClp
@@ -87,12 +87,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const isActive = hasOperationalSubscriptionAccess(subscription) && !subscription?.isTrial;
   const isTrial = subscription?.isTrial ?? false;
   const showUpgrade =
-    !isManualTransfer &&
-    business.countryCode === "CL" &&
-    subscription?.status !== "PAST_DUE" &&
-    (!subscription ||
-      subscription.plan === "INDIVIDUAL" ||
-      (subscription.plan === "EQUIPO" && isTrial));
+    business.ownerId === user.id && subscription?.plan !== "PURAGENDA_PLUS";
 
   const isMpConnected = !!business.mpAccessToken;
   const region = getCountryConfig(business.countryCode);

@@ -14,6 +14,12 @@ describe("dashboard subscription identity",()=>{
   it("preserves the existing legacy bank-transfer banner without querying V2 contracts",async()=>{
     mocks.contract.mockClear();mocks.subscription.mockResolvedValue({plan:"INDIVIDUAL",status:"ACTIVE",paymentMethod:"BANK_TRANSFER"});
     const html=renderToStaticMarkup(await SubscriptionBanner({businessId:"legacy",timezone:"UTC",countryCode:"CL"}));
-    expect(html).toContain("Plan Individual");expect(html).toContain("Transferencia bancaria");expect(mocks.contract).not.toHaveBeenCalled();
+    expect(html).toContain("Plan Puragenda");expect(html).toContain("Transferencia bancaria");expect(mocks.contract).not.toHaveBeenCalled();
+  });
+  it("displays a legacy Equipo contract as Puragenda without changing the stored plan", async () => {
+    mocks.subscription.mockResolvedValue({plan:"EQUIPO",status:"ACTIVE",paymentMethod:"AUTOMATIC",isTrial:false});
+    const html=renderToStaticMarkup(await SubscriptionBanner({businessId:"legacy-team",timezone:"UTC",countryCode:"CL"}));
+    expect(html).toContain("Puragenda");
+    expect(html).not.toContain("Equipo");
   });
 });
