@@ -65,14 +65,14 @@ async function subscriptionRoot(sub: MpV2Subscription, provider: MpV2Provider) {
   return { ...op, providerSubscriptionId: sub.id };
 }
 
-export async function prepareMpV2Operation(input: { businessId: string; actorId: string; idempotencyKey: string; action: "SUBSCRIBE" | "CHANGE"; selection?: CommercialSelection; expectedContractHash?: string }, provider = createMpV2Provider(), now = new Date()) {
+export async function prepareMpV2Operation(input: { businessId: string; actorId: string; idempotencyKey: string; action: "SUBSCRIBE" | "CHANGE"; selection?: CommercialSelection; expectedContractHash?: string; upgradeToPlus?: boolean }, provider = createMpV2Provider(), now = new Date()) {
   if (!/^[a-zA-Z0-9_-]{8,100}$/.test(input.idempotencyKey)) throw new Error("IDEMPOTENCY_KEY_REQUIRED");
   return prisma.$transaction(async tx => {
     await lock(tx, input.businessId);
     const { sub, business } = await runtimeContract(tx, input.businessId, input.actorId);
     if(hasPendingCommercialBenefit(business.subscription)) throw new Error("V2_BENEFIT_PROVIDER_VALIDATION_REQUIRED");
     if (await tx.commercialBillingOperation.findFirst({where:{businessId:input.businessId,failureCode:{endsWith:"_REVIEW_REQUIRED"}}})) throw new Error("V2_COMMERCIAL_REVIEW_REQUIRED");
-    const selection = input.action === "SUBSCRIBE" ? selectionOf(sub) : commercialSelectionSchema.parse(input.selection);
+    const selection = input.upgradeToPlus ? { ...selectionOf(sub), plan: "PURAGENDA_PLUS" as const } : input.action === "SUBSCRIBE" ? selectionOf(sub) : commercialSelectionSchema.parse(input.selection);
     await assertNoOverlappingWebsiteBilling(input.businessId, selection.plan, tx, now);
     const quote = v2Quote(selection), inputHash = commercialHash({ action: input.action, selection });
     const key = `mp-v2:${input.businessId}:${input.idempotencyKey}`;

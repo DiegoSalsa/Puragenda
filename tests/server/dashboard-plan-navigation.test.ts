@@ -29,10 +29,11 @@ describe("customer plan navigation", () => {
     const html = renderToStaticMarkup(createElement(DashboardSidebar, { userName: "Synthetic owner", marketingEnabled: enabled }));
     expect(html.includes('href="/dashboard/marketing"')).toBe(enabled);
   });
-  it("replaces the old automatic Equipo checkout with the Plus offer", () => {
+  it("opens the authenticated Plus checkout instead of the public landing", () => {
     const html = renderToStaticMarkup(createElement(UpgradeButton));
     expect(html).toContain("Pasar a Puragenda+");
-    expect(html).toContain('href="/puragenda-plus"');
+    expect(html).toContain('href="/dashboard/settings/upgrade"');
+    expect(html).not.toContain('href="/puragenda-plus"');
     expect(html).not.toContain("Equipo");
   });
 });

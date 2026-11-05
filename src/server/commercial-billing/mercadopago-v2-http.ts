@@ -16,6 +16,7 @@ import { mpV2RenewalGraceDeadline } from "./mercadopago-v2-grace";
 const common = { idempotencyKey: z.string().regex(/^[a-zA-Z0-9_-]{8,100}$/), accepted: z.literal(true), expectedContractHash: z.string().regex(/^[a-f0-9]{64}$/), mercadoPagoEmail: z.email().optional() };
 const command = z.discriminatedUnion("action", [
   z.object({ action: z.literal("SUBSCRIBE"), ...common }).strict(),
+  z.object({ action: z.literal("UPGRADE"), ...common }).strict(),
   z.object({ action: z.literal("CHANGE"), ...common, selection: commercialSelectionSchema }).strict(),
   z.object({ action: z.literal("RECONCILE"), operationId: z.string().min(1).max(150) }).strict(),
   z.object({ action: z.literal("CANCEL"), accepted: z.literal(true) }).strict(),
@@ -43,8 +44,13 @@ export async function handleMpV2Command(request: NextRequest, suppliedBody?: unk
     const input = parsed.data, provider = createMpV2Provider();
     if (input.action === "RECONCILE") return NextResponse.json(await reconcileMpV2Operation(owner.business.id, input.operationId, provider));
     if (input.action === "CANCEL") return NextResponse.json(await cancelMpV2Renewal(owner.business.id, owner.user.id, provider));
+    const upgrade = input.action === "UPGRADE";
+    if (upgrade && owner.sub.planCode === "PURAGENDA_PLUS") return NextResponse.json({ error: "SELECTION_UNCHANGED" }, { status: 409 });
+    const paid = owner.sub.status === "ACTIVE" && owner.sub.lastPaymentStatus === "CONFIRMED" && !!owner.sub.periodEnd && owner.sub.periodEnd > new Date();
+    const action = upgrade ? paid ? "CHANGE" : "SUBSCRIBE" : input.action;
+    const selection = upgrade ? commercialSelectionSchema.parse({ plan: "PURAGENDA_PLUS", professionalTotal: owner.sub.professionalTotal, billingCycle: owner.sub.billingCycle }) : input.action === "CHANGE" ? input.selection : undefined;
     const op = await prepareMpV2Operation({ businessId: owner.business.id, actorId: owner.user.id, idempotencyKey: input.idempotencyKey,
-      action: input.action, expectedContractHash: input.expectedContractHash, selection: input.action === "CHANGE" ? input.selection : undefined }, provider);
+      action, expectedContractHash: input.expectedContractHash, selection, upgradeToPlus: upgrade }, provider);
     return NextResponse.json(await executeMpV2Operation(owner.business.id, op.id, input.mercadoPagoEmail ?? owner.user.email, provider));
   } catch (error) { return mpV2HttpError(error); }
 }

@@ -29,4 +29,25 @@ describe("V2 billing HTTP authorization and consent", () => {
     m.execute.mockRejectedValue(new Error("Authorization: Bearer sensitive-provider-response"));
     const response = await handleMpV2Command(request(body)); expect(response.status).toBe(502); expect(await response.text()).not.toContain("sensitive");
   });
+  it.each([false, true])("selects Plus with the contracted seats and cycle for an upgrade (paid=%s)", async paid => {
+    m.sub.mockResolvedValue({ planCode: "PURAGENDA", professionalTotal: 5, billingCycle: "ANNUAL", legacySubscriptionId: null,
+      termsSnapshot: { origin: "registration_v2" }, status: paid ? "ACTIVE" : "TRIALING", lastPaymentStatus: paid ? "CONFIRMED" : null,
+      periodEnd: paid ? new Date(Date.now() + 86_400_000) : null });
+    m.execute.mockResolvedValue({ status: "AWAITING_PAYMENT", checkoutUrl: "https://sandbox.mercadopago.cl/checkout/v1/redirect?pref_id=synthetic" });
+    const response = await handleMpV2Command(request({ ...body, action: "UPGRADE" }));
+    expect(response.status).toBe(200);
+    expect(m.prepare).toHaveBeenCalledWith(expect.objectContaining({ action: paid ? "CHANGE" : "SUBSCRIBE", upgradeToPlus: true,
+      selection: { plan: "PURAGENDA_PLUS", professionalTotal: 5, billingCycle: "ANNUAL" } }), expect.anything());
+    expect((await response.json()).checkoutUrl).toContain("sandbox.mercadopago.cl/checkout/");
+  });
+  it("rejects client-supplied prices/seats for the Plus upgrade", async () => {
+    expect((await handleMpV2Command(request({ ...body, action: "UPGRADE", selection: { plan: "PURAGENDA_PLUS", professionalTotal: 1, billingCycle: "MONTHLY" } }))).status).toBe(400);
+    expect(m.prepare).not.toHaveBeenCalled();
+  });
+  it("preserves the boundary around existing historical contracts", async () => {
+    m.sub.mockResolvedValue({ planCode: "PURAGENDA", legacySubscriptionId: "existing-contract", termsSnapshot: { origin: "legacy_backfill" } });
+    expect((await handleMpV2Command(request({ ...body, action: "UPGRADE" }))).status).toBe(409);
+    expect(m.provider).not.toHaveBeenCalled();
+    expect(m.prepare).not.toHaveBeenCalled();
+  });
 });

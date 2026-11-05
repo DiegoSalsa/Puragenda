@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { COMMERCIAL_CATALOG_VERSION, COMMERCIAL_MAX_PROFESSIONALS, quoteCommercialContract, type CommercialPlanCode, type CommercialBillingCycle } from "@/core/commercial-catalog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,21 +15,22 @@ const date = (value: string) => new Date(value).toLocaleDateString("es-CL", { ti
 const options = Array.from({ length: COMMERCIAL_MAX_PROFESSIONALS }, (_, i) => ({ value: i + 1, label: `${i + 1} ${i ? "profesionales" : "profesional"}` }));
 const paymentLabels: Record<string, string> = { CONFIRMED: "Aprobado", PENDING: "Pendiente", REJECTED: "Rechazado. Revisa el medio de pago en Mercado Pago.", REFUNDED: "Reembolsado", CHARGEBACK: "Pago desconocido" };
 const operationLabels: Record<string, string> = { PREPARED: "Contratación preparada", EXECUTING: "Confirmando con Mercado Pago", UNKNOWN: "Estamos verificando el resultado con Mercado Pago. No inicies otra contratación.", AWAITING_PAYMENT: "Autorización o pago pendiente en Mercado Pago", SCHEDULED: "Cambio programado para la siguiente renovación", CANCELLED: "Cancelado", APPLIED: "Confirmado" };
-export function CommercialSubscriptionPanel() {
+export function CommercialSubscriptionPanel({ upgradeToPlus = false }: { upgradeToPlus?: boolean } = {}) {
   const router = useRouter(), returned = useRef(false), key = useRef<string | null>(null);
   const [state, setState] = useState<State | null>(null), [plan, setPlan] = useState<CommercialPlanCode>("PURAGENDA"), [count, setCount] = useState(1);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [accepted, setAccepted] = useState(false), [cancelling, setCancelling] = useState(false);
-  async function load() {
+  const load = useCallback(async () => {
     const response = await fetch("/api/dashboard/subscription/billing", { cache: "no-store" });
     if (!response.ok) throw new Error("load");
-    const value: State = await response.json(); setState(value); setPlan(value.plan); setCount(value.professionalTotal); return value;
-  }
+    const value: State = await response.json(); setState(value); setPlan(upgradeToPlus ? "PURAGENDA_PLUS" : value.plan); setCount(value.professionalTotal); return value;
+  }, [upgradeToPlus]);
   useEffect(() => { let active = true;
     void (async () => {
       try {
         const response = await fetch("/api/dashboard/subscription/billing", { cache: "no-store" });
-        if (!response.ok || !active) return;
-        const value: State = await response.json(); setState(value); setPlan(value.plan); setCount(value.professionalTotal);
+        if (!active) return;
+        if (!response.ok) { setMessage("No se pudo consultar el pago de tu suscripción. Vuelve a cargar la página."); return; }
+        const value: State = await response.json(); setState(value); setPlan(upgradeToPlus ? "PURAGENDA_PLUS" : value.plan); setCount(value.professionalTotal);
         if (!returned.current && new URLSearchParams(window.location.search).has("billing_return") && value.enabled && value.reconcileOperationId) {
           returned.current = true;
           await fetch("/api/dashboard/subscription/billing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "RECONCILE", operationId: value.reconcileOperationId }) });
@@ -37,16 +38,15 @@ export function CommercialSubscriptionPanel() {
         }
       } catch { if (active) setMessage("No se pudo consultar la suscripción. Vuelve a cargar la página."); }
     })(); return () => { active = false; };
-  }, [router]);
+  }, [router, upgradeToPlus, load]);
   if (!state) return <p className="mt-4 text-sm" role="status">{message || "Consultando tu suscripción…"}</p>;
   const changed = plan !== state.plan || count !== state.professionalTotal;
   const quote = quoteCommercialContract({ plan, professionalTotal: count, billingCycle: state.billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION });
-  const current = quoteCommercialContract({ plan: state.plan, professionalTotal: state.professionalTotal, billingCycle: state.billingCycle, catalogVersion: COMMERCIAL_CATALOG_VERSION });
   const paid = !!state.periodEnd && new Date(state.periodEnd) > new Date() && state.status === "ACTIVE";
   const expansion = changed && count >= state.professionalTotal && (plan === state.plan || plan === "PURAGENDA_PLUS");
   const instant = paid && expansion && state.periodStart && state.periodEnd ? expansionAmount({ plan: state.plan, professionalTotal: state.professionalTotal, billingCycle: state.billingCycle }, { plan, professionalTotal: count, billingCycle: state.billingCycle }, new Date(state.periodStart), new Date(state.periodEnd), new Date()) : 0;
   const trial = state.trialEnd && new Date(state.trialEnd) > new Date() && state.status === "TRIALING";
-  async function run(action: "SUBSCRIBE" | "CHANGE" | "RECONCILE" | "CANCEL", openCheckout = false) {
+  async function run(action: "SUBSCRIBE" | "CHANGE" | "UPGRADE" | "RECONCILE" | "CANCEL", openCheckout = false) {
     if (busy) return; setBusy(true); setMessage("");
     key.current ??= crypto.randomUUID();
     try {
@@ -77,18 +77,18 @@ export function CommercialSubscriptionPanel() {
     {state.benefitQuote && <p>Propuesta pendiente de confirmación: crédito de {money(state.benefitQuote.credit)} sobre el precio mensual final de {money(state.benefitQuote.monthlyTotal)}. Próxima factura con el beneficio: {money(state.benefitQuote.amountDue)}, IVA incluido. El cobro todavía no está programado.</p>}
     {state.reviewRequired && <p role="status">Hay un pago en revisión. Se conserva el acceso respaldado por pagos vigentes; los cambios de contrato requieren revisión.</p>}
     {state.status === "PAST_DUE_GRACE" && state.gracePeriodEndsAt && <p>Renovación pendiente de confirmación. Acceso de recuperación hasta el {date(state.gracePeriodEndsAt)}.</p>}
-    {paid && <p>El cambio entre mensual y anual está pendiente de validación de cobro. Tu ciclo actual sigue vigente.</p>}
-    {paid && !state.operation && !state.cancellationStatus && <>
+    {paid && !upgradeToPlus && <p>El cambio entre mensual y anual está pendiente de validación de cobro. Tu ciclo actual sigue vigente.</p>}
+    {paid && !state.operation && !state.cancellationStatus && !upgradeToPlus && <>
       <div className="flex flex-wrap gap-3">
         <Select value={plan} items={[{ value: "PURAGENDA", label: "Puragenda" }, { value: "PURAGENDA_PLUS", label: "Puragenda+" }]} onValueChange={value => { if (value) setPlan(value); setAccepted(false); key.current = null; }}><SelectTrigger aria-label="Cambiar plan" disabled={busy} className="w-44 rounded-xl border-2 border-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PURAGENDA">Puragenda</SelectItem><SelectItem value="PURAGENDA_PLUS">Puragenda+</SelectItem></SelectContent></Select>
         <Select value={count} items={options} onValueChange={value => { if (value) setCount(value); setAccepted(false); key.current = null; }}><SelectTrigger aria-label="Profesionales del plan" disabled={busy} className="w-48 rounded-xl border-2 border-black"><SelectValue /></SelectTrigger><SelectContent className="max-h-64">{options.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select>
       </div>
-      {changed && <p>{expansion ? `Ampliación al confirmar el pago: aproximadamente ${money(instant)} por el tiempo restante hasta el ${date(state.periodEnd!)}. El importe exacto queda fijado al continuar.` : `Cambio desde el ${date(state.periodEnd!)}; mantienes tu plan actual hasta esa fecha.`} Próximas renovaciones: {money(quote.cycleTotal)}/{state.billingCycle === "ANNUAL" ? "año" : "mes"}, IVA incluido.</p>}
     </>}
+    {paid && changed && <p>{expansion ? `Ampliación al confirmar el pago: aproximadamente ${money(instant)} por el tiempo restante hasta el ${date(state.periodEnd!)}. El importe exacto queda fijado al continuar.` : `Cambio desde el ${date(state.periodEnd!)}; mantienes tu plan actual hasta esa fecha.`} Próximas renovaciones: {money(quote.cycleTotal)}/{state.billingCycle === "ANNUAL" ? "año" : "mes"}, IVA incluido.</p>}
     {!state.operation && ((!paid && (!state.hasProvider || state.cancellationStatus === "CANCELLED_VERIFIED")) || changed) && <>
       <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 accent-[#7C3AED]" checked={accepted} onChange={event => setAccepted(event.target.checked)} disabled={busy || !state.enabled} />
-        <span>Autorizo {changed ? "el cambio y sus cobros indicados" : `el cobro ${state.billingCycle === "ANNUAL" ? "anual" : "mensual"} de ${money(current.cycleTotal)}${trial ? ` desde el ${date(state.trialEnd!)}` : " al completar el checkout"}`} y las renovaciones automáticas. Puedo cancelar la renovación desde aquí.</span></label>
-      <button disabled={busy || !state.enabled || !accepted || state.benefitHold || state.reviewRequired} onClick={() => run(changed ? "CHANGE" : "SUBSCRIBE", true)} className="rounded-xl border-2 border-black bg-[#E9D8FF] px-4 py-2 font-bold disabled:opacity-50">{busy ? "Confirmando…" : changed ? "Confirmar cambio" : "Contratar con Mercado Pago"}</button>
+        <span>Autorizo {paid && changed ? "el cambio y sus cobros indicados" : `el cobro ${state.billingCycle === "ANNUAL" ? "anual" : "mensual"} de ${money(quote.cycleTotal)}${trial ? ` desde el ${date(state.trialEnd!)}` : " al completar el checkout"}`} y las renovaciones automáticas. Puedo cancelar la renovación desde aquí.</span></label>
+      <button disabled={busy || !state.enabled || !accepted || state.benefitHold || state.reviewRequired} onClick={() => run(upgradeToPlus ? "UPGRADE" : changed ? "CHANGE" : "SUBSCRIBE", true)} className="rounded-xl border-2 border-black bg-[#E9D8FF] px-4 py-2 font-bold disabled:opacity-50">{busy ? "Confirmando…" : upgradeToPlus ? "Continuar al pago de Puragenda+" : changed ? "Confirmar cambio" : "Contratar con Mercado Pago"}</button>
     </>}
     <div className="flex flex-wrap gap-3">
       {state.reconcileOperationId && <button disabled={busy || !state.enabled} onClick={() => run("RECONCILE", state.operation?.status === "AWAITING_PAYMENT" || state.operation?.status === "PREPARED" || state.paymentStatus === "REJECTED")} className="rounded-xl border-2 border-black px-4 py-2 font-bold disabled:opacity-50">{state.operation?.status === "AWAITING_PAYMENT" || state.operation?.status === "PREPARED" ? "Continuar en Mercado Pago" : state.paymentStatus === "REJECTED" ? "Revisar pago en Mercado Pago" : "Comprobar estado"}</button>}
